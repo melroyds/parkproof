@@ -1,0 +1,12 @@
+{
+  "name": "parkproof-lambda",
+  "version": "1.0.0",
+  "type": "module",
+  "private": true,
+  "main": "index.js",
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.95.2",
+    "@aws-sdk/client-kms": "^3.700.0",
+    "tz-lookup": "^6.1.25"
+  }
+}

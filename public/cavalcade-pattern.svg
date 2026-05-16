@@ -1,0 +1,111 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="600" height="600" viewBox="0 0 600 600" fill="none">
+  <title>Seamless pastel car traffic pattern</title>
+  <desc>Tileable top-down geometric pattern with pastel car silhouettes arranged in diagonal alternating traffic lanes on a cool off-white background.</desc>
+
+  <defs>
+    <style>
+      .bg { fill: #F2F4F7; }
+      .lane { stroke: #1A2233; stroke-opacity: 0.04; stroke-width: 2; stroke-linecap: round; stroke-dasharray: 10 18; }
+      .windshield { fill: #1A2233; fill-opacity: 0.08; }
+      .carstroke { stroke: #1A2233; stroke-opacity: 0.04; stroke-width: 1; }
+    </style>
+
+    <!-- Car silhouettes are drawn horizontally and then rotated/translated -->
+    <g id="sedan">
+      <rect x="-40" y="-17" width="80" height="34" rx="14" class="carstroke"/>
+      <rect x="-28" y="-15" width="56" height="30" rx="11" fill="currentColor"/>
+      <rect x="-20" y="-14" width="40" height="10" rx="4" class="windshield"/>
+    </g>
+
+    <g id="hatch">
+      <path d="M-38,-15 h42 c10,0 18,8 18,18 s-8,18 -18,18 h-26 c-9,0 -16,-7 -16,-16 v-14 c0,-8 6,-14 14,-14 z" fill="currentColor" class="carstroke"/>
+      <path d="M-34,-13 h38 c9,0 16,7 16,16 s-7,16 -16,16 h-24 c-8,0 -14,-6 -14,-14 v-12 c0,-4 2,-6 4,-6 z" fill="currentColor"/>
+      <rect x="-18" y="-12" width="30" height="9" rx="4" class="windshield"/>
+    </g>
+
+    <g id="suv">
+      <rect x="-41" y="-18" width="82" height="36" rx="11" class="carstroke"/>
+      <rect x="-35" y="-16" width="70" height="32" rx="9" fill="currentColor"/>
+      <rect x="-22" y="-13" width="44" height="10" rx="4" class="windshield"/>
+      <rect x="-28" y="3" width="56" height="8" rx="3" fill="#ffffff" fill-opacity="0.06"/>
+    </g>
+
+    <g id="van">
+      <rect x="-42" y="-18" width="84" height="36" rx="9" class="carstroke"/>
+      <rect x="-36" y="-16" width="72" height="32" rx="7" fill="currentColor"/>
+      <rect x="-24" y="-13" width="48" height="10" rx="3" class="windshield"/>
+      <path d="M-18 3 h36" stroke="#ffffff" stroke-opacity="0.08" stroke-width="2" stroke-linecap="round"/>
+      <path d="M-18 8 h36" stroke="#ffffff" stroke-opacity="0.08" stroke-width="2" stroke-linecap="round"/>
+    </g>
+
+    <g id="ute">
+      <path d="M-40,-16 h45 c8,0 14,6 14,14 v2 h11 c8,0 14,6 14,14 v7 h-80 z" fill="currentColor" class="carstroke"/>
+      <path d="M-34,-14 h38 c7,0 12,5 12,12 v3 h14 c6,0 10,4 10,10 v3 h-74 z" fill="currentColor"/>
+      <rect x="-21" y="-12" width="28" height="9" rx="4" class="windshield"/>
+      <path d="M12 3 h18" stroke="#ffffff" stroke-opacity="0.08" stroke-width="2" stroke-linecap="round"/>
+      <path d="M12 8 h18" stroke="#ffffff" stroke-opacity="0.08" stroke-width="2" stroke-linecap="round"/>
+    </g>
+
+    <g id="wagon">
+      <rect x="-43" y="-16" width="86" height="32" rx="13" class="carstroke"/>
+      <rect x="-37" y="-14" width="74" height="28" rx="11" fill="currentColor"/>
+      <rect x="-24" y="-12" width="48" height="9" rx="4" class="windshield"/>
+      <rect x="-10" y="2" width="30" height="8" rx="3" fill="#ffffff" fill-opacity="0.06"/>
+    </g>
+
+    <g id="compact">
+      <rect x="-34" y="-16" width="68" height="32" rx="15" class="carstroke"/>
+      <rect x="-29" y="-14" width="58" height="28" rx="13" fill="currentColor"/>
+      <rect x="-18" y="-12" width="36" height="9" rx="4" class="windshield"/>
+    </g>
+  </defs>
+
+  <rect width="600" height="600" class="bg"/>
+
+  <!-- faint dashed lane separators -->
+  <g>
+    <!-- slope +1 -->
+    <line x1="-120" y1="120" x2="480" y2="720" class="lane"/>
+    <line x1="60" y1="-120" x2="660" y2="480" class="lane"/>
+    <line x1="240" y1="-120" x2="840" y2="480" class="lane"/>
+    <line x1="420" y1="-120" x2="1020" y2="480" class="lane"/>
+    <!-- slope -1 -->
+    <line x1="-120" y1="480" x2="480" y2="-120" class="lane"/>
+    <line x1="60" y1="720" x2="660" y2="120" class="lane"/>
+    <line x1="240" y1="720" x2="840" y2="120" class="lane"/>
+    <line x1="420" y1="720" x2="1020" y2="120" class="lane"/>
+  </g>
+
+  <!-- Cars placed within four alternating diagonal traffic lanes; duplicates across edges maintain seamless tiling -->
+  <g fill-opacity="0.16">
+    <!-- Lane A, NE->SW (angle 135) -->
+    <g transform="translate(62 62) rotate(135)" style="color:#D9E4F5"><use href="#van"/></g>
+    <g transform="translate(242 242) rotate(135)" style="color:#DCD8EE"><use href="#ute"/></g>
+    <g transform="translate(422 422) rotate(135)" style="color:#D6E0CE"><use href="#sedan"/></g>
+    <g transform="translate(602 602) rotate(135)" style="color:#D9E4F5"><use href="#van"/></g>
+    <g transform="translate(-118 -118) rotate(135)" style="color:#D6E0CE"><use href="#compact"/></g>
+
+    <!-- Lane B, SW->NE (angle 45) -->
+    <g transform="translate(118 482) rotate(45)" style="color:#F0D7D2"><use href="#wagon"/></g>
+    <g transform="translate(298 302) rotate(45)" style="color:#F0E7CC"><use href="#compact"/></g>
+    <g transform="translate(478 122) rotate(45)" style="color:#D2ECE9"><use href="#sedan"/></g>
+    <g transform="translate(658 -58) rotate(45)" style="color:#F0D7D2"><use href="#wagon"/></g>
+    <g transform="translate(-62 662) rotate(45)" style="color:#D2ECE9"><use href="#compact"/></g>
+
+    <!-- Lane C, NE->SW (angle 135) -->
+    <g transform="translate(538 62) rotate(135)" style="color:#F2D7D2"><use href="#ute"/></g>
+    <g transform="translate(358 242) rotate(135)" style="color:#DCE8F6"><use href="#compact"/></g>
+    <g transform="translate(178 422) rotate(135)" style="color:#DCE8F6"><use href="#sedan"/></g>
+    <g transform="translate(-2 602) rotate(135)" style="color:#F2D7D2"><use href="#wagon"/></g>
+    <g transform="translate(718 -118) rotate(135)" style="color:#DCE8F6"><use href="#compact"/></g>
+
+    <!-- Lane D, SW->NE (angle 45) -->
+    <g transform="translate(62 358) rotate(45)" style="color:#DCE4D7"><use href="#suv"/></g>
+    <g transform="translate(242 178) rotate(45)" style="color:#DCE4D7"><use href="#hatch"/></g>
+    <g transform="translate(422 -2) rotate(45)" style="color:#D2ECE9"><use href="#compact"/></g>
+    <g transform="translate(602 -182) rotate(45)" style="color:#DCE4D7"><use href="#suv"/></g>
+    <g transform="translate(542 358) rotate(45)" style="color:#D2ECE9"><use href="#van"/></g>
+    <g transform="translate(722 178) rotate(45)" style="color:#E1D8EE"><use href="#sedan"/></g>
+    <g transform="translate(2 178) rotate(45)" style="color:#E1D8EE"><use href="#ute"/></g>
+  </g>
+</svg>

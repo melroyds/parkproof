@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">ParkProof app icon</title>
+  <desc id="desc">Layered blue and navy serif P monogram with an integrated alarm clock.</desc>
+  <defs>
+    <style>
+      .serif { font-family: Fraunces, Georgia, 'Times New Roman', serif; font-weight: 800; }
+    </style>
+  </defs>
+
+  <!-- App tile -->
+  <rect x="34" y="34" width="444" height="444" rx="96" fill="#F2F4F7"/>
+
+  <!-- Shadow P -->
+  <text class="serif" x="154" y="394" font-size="330" fill="#1A2233">P</text>
+
+  <!-- Front P -->
+  <text class="serif" x="106" y="344" font-size="330" fill="#275BFF">P</text>
+
+  <!-- Alarm clock integrated into the bowl of the front P -->
+  <g transform="translate(252 185)">
+    <!-- bells -->
+    <path d="M-70,-50 C-94,-44 -102,-22 -94,-4 L-48,-18 C-49,-35 -57,-45 -70,-50Z" fill="#F2F4F7"/>
+    <path d="M70,-50 C94,-44 102,-22 94,-4 L48,-18 C49,-35 57,-45 70,-50Z" fill="#F2F4F7"/>
+    <circle cx="-82" cy="-57" r="5" fill="#F2F4F7"/>
+    <circle cx="82" cy="-57" r="5" fill="#F2F4F7"/>
+
+    <!-- face -->
+    <circle cx="0" cy="0" r="76" fill="#F2F4F7"/>
+    <circle cx="0" cy="0" r="68" fill="none" stroke="#275BFF" stroke-width="10"/>
+    <circle cx="0" cy="0" r="84" fill="none" stroke="#F2F4F7" stroke-width="8"/>
+
+    <!-- hands -->
+    <line x1="0" y1="0" x2="-38" y2="-28" stroke="#1A2233" stroke-width="12" stroke-linecap="round"/>
+    <line x1="0" y1="0" x2="45" y2="-34" stroke="#1A2233" stroke-width="12" stroke-linecap="round"/>
+    <circle cx="0" cy="0" r="12" fill="#1A2233"/>
+  </g>
+</svg>

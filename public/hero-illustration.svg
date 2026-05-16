@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300" viewBox="0 0 400 300" role="img" aria-labelledby="title desc">
+  <title id="title">ParkProof hero illustration</title>
+  <desc id="desc">Minimal Melbourne laneway parking illustration with sign pole, tram wires and parked car.</desc>
+  <defs><style>.serif { font-family: Fraunces, Georgia, 'Times New Roman', serif; font-weight: 800; }</style></defs>
+  <rect width="400" height="300" fill="none"/>
+  <path d="M110 28 C170 36 227 48 390 21" fill="none" stroke="#275BFF" stroke-width="0.8" opacity="0.65"/>
+  <path d="M150 60 C220 38 287 45 400 58" fill="none" stroke="#275BFF" stroke-width="0.8" opacity="0.55"/>
+  <path d="M254 0 L254 78" fill="none" stroke="#275BFF" stroke-width="0.8" opacity="0.45"/>
+  <circle cx="235" cy="43" r="2" fill="#275BFF" opacity="0.65"/><circle cx="305" cy="47" r="2" fill="#275BFF" opacity="0.55"/>
+  <path d="M18 102 L66 82 M18 250 L67 221 M67 82 L67 221" fill="none" stroke="#1A2233" stroke-width="1.3" stroke-linecap="round" opacity="0.75"/>
+  <path d="M8 116 H52 M8 126 H52 M8 136 H52 M8 146 H52" fill="none" stroke="#1A2233" stroke-width="0.8" opacity="0.55"/>
+  <path d="M72 173 C86 160 99 156 116 154" fill="none" stroke="#275BFF" stroke-width="0.9" opacity="0.5"/>
+  <path d="M85 204 C105 198 126 198 147 203" fill="none" stroke="#275BFF" stroke-width="0.8" opacity="0.35"/>
+  <path d="M62 198 C77 187 90 180 106 175" fill="none" stroke="#20C4C7" stroke-width="1.2" opacity="0.65"/>
+  <path d="M166 89 L166 276" fill="none" stroke="#1A2233" stroke-width="2"/><path d="M174 89 L174 276" fill="none" stroke="#1A2233" stroke-width="1.2" opacity="0.75"/>
+  <rect x="160" y="276" width="20" height="7" rx="1" fill="none" stroke="#1A2233" stroke-width="1.2"/>
+  <rect x="126" y="39" width="88" height="88" rx="12" fill="#F2F4F7" stroke="#1A2233" stroke-width="1.4"/>
+  <path d="M214 48 L222 43 L222 118 L214 127Z" fill="#20C4C7" opacity="0.9"/>
+  
+  <g transform="translate(121 33) scale(0.19)">
+    <text class="serif" x="154" y="394" font-size="330" fill="#1A2233">P</text>
+    <text class="serif" x="106" y="344" font-size="330" fill="#275BFF">P</text>
+    <g transform="translate(252 185)">
+      <path d="M-70,-50 C-94,-44 -102,-22 -94,-4 L-48,-18 C-49,-35 -57,-45 -70,-50Z" fill="#F2F4F7"/>
+      <path d="M70,-50 C94,-44 102,-22 94,-4 L48,-18 C49,-35 57,-45 70,-50Z" fill="#F2F4F7"/>
+      <circle cx="-82" cy="-57" r="5" fill="#F2F4F7"/>
+      <circle cx="82" cy="-57" r="5" fill="#F2F4F7"/>
+      <circle cx="0" cy="0" r="76" fill="#F2F4F7"/>
+      <circle cx="0" cy="0" r="68" fill="none" stroke="#275BFF" stroke-width="10"/>
+      <circle cx="0" cy="0" r="84" fill="none" stroke="#F2F4F7" stroke-width="8"/>
+      <line x1="0" y1="0" x2="-38" y2="-28" stroke="#1A2233" stroke-width="12" stroke-linecap="round"/>
+      <line x1="0" y1="0" x2="45" y2="-34" stroke="#1A2233" stroke-width="12" stroke-linecap="round"/>
+      <circle cx="0" cy="0" r="12" fill="#1A2233"/>
+    </g>
+  </g>
+  <path d="M245 183 C270 166 323 159 398 164" fill="none" stroke="#1A2233" stroke-width="1.5" stroke-linecap="round"/>
+  <path d="M233 209 L321 209 C344 209 374 214 400 225" fill="none" stroke="#1A2233" stroke-width="1.1"/>
+  <path d="M250 209 L243 232 L374 232" fill="none" stroke="#1A2233" stroke-width="1.1"/>
+  <path d="M321 172 C337 178 349 191 352 209" fill="none" stroke="#1A2233" stroke-width="1" opacity="0.75"/>
+  <circle cx="304" cy="238" r="25" fill="none" stroke="#1A2233" stroke-width="1.3"/>
+  <circle cx="304" cy="238" r="14" fill="none" stroke="#275BFF" stroke-width="0.8" opacity="0.7"/>
+  <path d="M280 238 H328 M304 214 V262 M287 221 L321 255 M321 221 L287 255" stroke="#1A2233" stroke-width="0.7" opacity="0.55"/>
+  <path d="M377 203 H400" stroke="#275BFF" stroke-width="1.2"/><path d="M314 197 H335" stroke="#20C4C7" stroke-width="1.4" opacity="0.75"/>
+  <path d="M35 276 H212 M234 276 H382" fill="none" stroke="#275BFF" stroke-width="0.8" opacity="0.45"/><path d="M119 281 H146" stroke="#20C4C7" stroke-width="1.1" opacity="0.8"/>
+</svg>

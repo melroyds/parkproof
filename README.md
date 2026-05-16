@@ -1,0 +1,256 @@
+# 🅿️ ParkProof
+
+> Photograph any Australian parking sign → get a plain-English answer to **"Can I park here right now?"** plus a timestamped, GPS-tagged evidence record in case you get a wrongful ticket.
+
+A mobile-first, installable PWA with end-to-end AI: sign translation, evidence capture, departure reminders, and a court-friendly PDF export — all working against a real AWS backend.
+
+> **🚀 Try it live:** [https://d1jmpu2roekssu.cloudfront.net](https://d1jmpu2roekssu.cloudfront.net)
+>
+> Best on a phone — tap your browser's share menu → **"Add to Home Screen"** and ParkProof installs like a native app (own icon, fullscreen, no browser chrome). Also works fine on desktop if you upload sign photos from your library.
+
+---
+
+## Demo
+
+| 1. Scan | 2. Clarify (when needed) | 3. Result |
+|---|---|---|
+| ![scan](docs/screenshots/01-scan.png) | ![clarify](docs/screenshots/02-clarify.png) | ![result](docs/screenshots/03-result.png) |
+
+| 4. Log session | 5. Reminder | 6. History |
+|---|---|---|
+| ![logger](docs/screenshots/04-logger.png) | ![remind](docs/screenshots/05-remind.png) | ![history](docs/screenshots/06-history.png) |
+
+> _Drop your own screenshots into `docs/screenshots/` to populate the grid._
+
+---
+
+## What it does
+
+### Core flow
+1. **Sign Translator.** Camera-or-library photo → Claude vision reads the sign → plain-English **"can I park now?"** answer in ~8–12 seconds, with the exact moment by which you must leave.
+2. **Clarify step.** When the model detects position-dependent rules (different arrows, side-specific bays, EV-only spots), it surfaces a chooser before answering, so the time-math matches your actual spot.
+3. **Session Logger.** Capture the moment of parking: GPS coords + reverse-geocoded street address (editable if wrong) + optional car photo. Saved to the device's local storage.
+4. **Departure Reminder.** One-tap **.ics calendar event** (fires on iOS / Android / Outlook even with the app closed) OR an in-tab browser notification.
+5. **Evidence Export.** Multi-page PDF with arrival time in the parker's local timezone, address, GPS, ParkProof Guidance one-liner, sign photo, and car photo with **address + timestamp burnt into the bottom corner** as caption overlay.
+6. **Session History.** Every saved parking session, with status (active / expired) and the option to re-export the PDF or delete.
+
+### Smart features
+- **Smart Re-scan.** When you arrive at a spot you've scanned before (within 40m and 7 days), ParkProof recognises it and offers to **reuse the prior reading** — no photo, just refresh the current-time answer. ~3× faster and ~4× cheaper per scan. Desktop and no-GPS users get a "Reuse a recent scan" picker instead.
+- **Timezone-aware.** The "until" time is computed in the user's *actual* timezone, derived from GPS coords via `tz-lookup` — works correctly anywhere in Australia (and globally), not just Melbourne.
+- **Photo-resize.** Photos are downscaled to ≤1200px and re-encoded as 0.82-quality JPEG before they touch state — keeps localStorage under quota, makes API payloads small, lowers per-scan cost.
+- **Stepped loading UX.** While the model thinks, the loading screen progresses through "Reading the sign… Identifying parking rules… Computing when you can park… Composing the answer…" with a real progress bar. Timings tuned from actual CloudWatch latency data.
+- **AI feedback loop.** After each result, "Yes, looks right" or "Retake photo" fires a structured event to CloudWatch — turning user verdicts into a queryable signal that informs prompt iteration.
+
+### PWA
+Installable to the iPhone / Android home screen with a real app icon, theme colour, splash screen, and offline-capable service worker. Initial bundle is ~225KB gzipped; heavier libraries (jsPDF, ics) are lazy-loaded only when used.
+
+---
+
+## The problem
+
+Australian parking signs are notoriously dense — especially in inner-city Melbourne, Sydney and Brisbane. A typical pole stacks 3–4 signs with overlapping time windows, side-specific arrows, permit-zone overlays, and ticket-machine bays. Existing apps (ParkingMate.ai, Parky.AI, SIGNlanguage) translate the rules — none give you the **evidence trail** you'd need to dispute a ticket later: timestamp, GPS, car-at-the-spot photo. ParkProof does both.
+
+---
+
+## Architecture
+
+```mermaid
+flowchart LR
+  subgraph Browser
+    Cam[Camera input]
+    UI[React UI]
+    SW[Service Worker<br/>offline + push]
+    LS[(localStorage)]
+    PDF[jsPDF<br/>evidence export]
+    ICS[ics<br/>calendar event]
+    Notif[Notification API<br/>in-tab reminder]
+  end
+
+  subgraph AWS["AWS (ap-southeast-2)"]
+    CF[CloudFront<br/>+ OAC]
+    S3[(S3 — private<br/>static hosting)]
+    APIGW[API Gateway HTTP API<br/>POST /sign-translate<br/>POST /feedback]
+    Lambda[Lambda<br/>parkproof-sign-translator]
+    Logs[CloudWatch Logs<br/>feedback + timings]
+  end
+
+  subgraph External
+    Claude[Anthropic API<br/>claude-sonnet-4-6<br/>vision · JSON schema · adaptive thinking]
+    Nom[OpenStreetMap<br/>Nominatim]
+  end
+
+  Cam --> UI
+  UI -- "GET /" --> CF --> S3
+  UI -- "POST /sign-translate<br/>(image, lat, lng)" --> APIGW --> Lambda
+  UI -- "POST /sign-translate<br/>(prior_rules, lat, lng)" --> APIGW
+  UI -- "POST /feedback<br/>(verdict)" --> APIGW
+  Lambda -- "messages.create" --> Claude
+  Claude -- "structured JSON" --> Lambda --> APIGW --> UI
+  Lambda -- "[parkproof.feedback] ..." --> Logs
+  UI <-- "reverse + forward geocode" --> Nom
+  UI --> LS
+  UI --> PDF
+  UI --> ICS
+  UI --> Notif
+```
+
+A single Lambda handler ([`lambda/index.js`](lambda/index.js)) is **reused as the local dev proxy** via a small Vite plugin in [`vite.config.ts`](vite.config.ts). One handler, two runtimes — no mocks during dev, no surprise differences on deploy. The handler dispatches by path: `/sign-translate` (with optional image or prior_rules) and `/feedback` route to different internal functions but share the same Lambda.
+
+---
+
+## Stack
+
+| Layer | Choice | Why |
+|---|---|---|
+| UI | Vite + React 19 + TypeScript | Fast HMR, type safety, modern ergonomics |
+| Styling | Tailwind CSS 4 (Vite plugin) | One-utility-class-per-thing keeps the JSX legible |
+| Brand | Fraunces (display) + Inter (body), blue/navy/teal palette | Modern + civic, layered serif "P" + clock monogram |
+| AI | Claude Sonnet 4.6 + adaptive thinking + `effort: low` | Multi-rule time-window reasoning needs adaptive thinking; `effort: low` keeps latency in the 6–12s range |
+| Schema | `output_config.format: { json_schema }` | API-enforced JSON shape — no fragile regex parsing |
+| Backend | AWS Lambda (prod) / Vite middleware (dev) | Same handler runs in both — what you debug locally is what runs in prod |
+| Hosting | S3 (private) + CloudFront with Origin Access Control | HTTPS, global CDN, no public bucket |
+| Storage (user data) | `localStorage` | No backend for user data needed at POC scale; sessions are user-private by design |
+| Geocoding | OpenStreetMap Nominatim | Free, no key, in-browser; results cached per coord pair |
+| Timezone | [`tz-lookup`](https://www.npmjs.com/package/tz-lookup) | Offline polygon library; ~200KB; resolves lat/lng → IANA timezone |
+| Calendar | [`ics`](https://www.npmjs.com/package/ics) | RFC 5545 compliant `.ics` with `GEO` field; lazy-loaded |
+| PDF | [`jsPDF`](https://www.npmjs.com/package/jspdf) + [`jspdf-autotable`](https://www.npmjs.com/package/jspdf-autotable) | Multi-page evidence doc with embedded photos and a caption-overlay on the car photo; lazy-loaded |
+| PWA | [`vite-plugin-pwa`](https://www.npmjs.com/package/vite-plugin-pwa) | Manifest + service worker + auto-generated icons in all sizes |
+| Telemetry | CloudWatch Logs Insights | Free at this scale; structured log events for feedback aggregation |
+
+---
+
+## Notable engineering decisions
+
+- **One handler, two runtimes.** The Lambda function and the local dev proxy share the same `translateSign()` function. The Vite plugin dynamically imports `lambda/index.js` on each `/api/sign-translate` request — so what you debug locally is what runs in production.
+- **API-enforced JSON, not prompted JSON.** The response shape is defined as a JSON Schema and passed via `output_config.format`. The model can't return malformed JSON or missing fields — eliminating an entire class of "the LLM forgot the rules field today" bugs. The schema covers nested per-variant clarifications too.
+- **Adaptive thinking + `effort: low`.** Multi-rule parking-sign math (e.g. "compute the earliest leave-by across 1/4P-on-the-left, 2P-on-the-right, Permit-Zone-on-weekends") genuinely needs reasoning. We tried Haiku 4.5 (no thinking) to chase ~3s scans and it produced wrong "until" answers on stacked signs — so we reverted to Sonnet 4.6 with adaptive thinking, but lowered `effort` from `medium` to `low` to cut typical latency from 15–30s to 6–12s while keeping correctness.
+- **Per-variant clarifications when signs are position-dependent.** When the model detects different rules per arrow / bay / side, it returns a `clarification: { question, options[] }`. The UI shows a chooser before the green/red card so the time-to-move calculation matches the user's actual spot.
+- **Grouped observations.** The "On the sign" panel renders `observations: { scope, items[] }[]` — bullets grouped under headings like `→ Right arrow` or `↔ Both directions` — instead of a flat blob, mirroring how a human reads a sign.
+- **Editable reverse geocode.** GPS → Nominatim → address shown next to coords. If the resolved address is wrong (or you parked just up the block), tap **Edit** and type a new one — forward-geocode swaps the coords and the rest of the pipeline (.ics, PDF, history) inherits the corrected location.
+- **Smart re-scan with text-only refresh.** When the user lands within 40m of a recently-scanned spot (or picks one manually on desktop), ParkProof skips the vision call entirely and sends a text-only request: prior rules + current time → updated `can_park_now` + `until`. Same Sonnet model, same schema, but no image input → ~3× faster, ~4× cheaper. The frontend trusts the prior reading for everything except current-time fields.
+- **Photo-resize before state.** Phone photos (3–8MB raw) are downscaled to ≤1200px @ 0.82 JPEG quality the moment they hit `handleFile()`. Originally added to fix a `localStorage` quota crash, but the same resize also shrinks the API payload and cuts per-scan Anthropic cost.
+- **Timezone derived from coords.** The `until` time is computed in the user's actual local timezone, resolved from GPS via `tz-lookup`. Falls back to `Australia/Melbourne` when no coords are sent. Works correctly for anyone scanning anywhere — not just the home market.
+- **Stepped loading state driven by real timings.** The 6–12s wait shows "Reading the sign… → Identifying parking rules… → Computing when you can park… → Composing the answer…" with a progress bar. Stages aren't real streaming (API Gateway HTTP API buffers responses), but the timing was tuned from CloudWatch latency data so it stays in sync with what the model is actually doing.
+- **Anonymous-by-default.** No login, no email, no user accounts. localStorage holds user data on-device; the Lambda is stateless. Cross-device sync isn't supported, and that's a deliberate POC choice — it makes the privacy story trivial and zero-friction onboarding the default.
+- **AI feedback loop.** "Yes, looks right" / "Retake photo" verdicts fire structured events to CloudWatch via `POST /feedback`. Logs Insights aggregates verdict counts and rates without a database — gives a real measured signal for prompt iteration. No PII captured (just verdict + random per-render UUID + timestamp).
+
+---
+
+## Running locally
+
+```bash
+# 1. Install
+npm install
+
+# 2. Add your Anthropic API key
+echo "ANTHROPIC_API_KEY=sk-ant-..." > .env
+
+# 3. Run
+npm run dev
+# → http://localhost:5173
+```
+
+You'll need a Claude API key from <https://console.anthropic.com/settings/keys>. Localhost is treated as a secure context, so geolocation, notifications, and the camera input all work without HTTPS.
+
+> **Gotcha — if you're on Windows with [vestauth](https://www.vestauth.com/) installed**, it wraps `dotenv` and stops it from populating `process.env`. `vite.config.ts` works around this by assigning the parsed values explicitly — leave that bit alone or your `.env` will silently load to nowhere.
+
+---
+
+## Deploying
+
+The deploy is fully automated by five idempotent scripts in [`scripts/`](scripts/):
+
+| Script | What it does | Frequency |
+|---|---|---|
+| [`scripts/deploy.sh`](scripts/deploy.sh) | Day-to-day deploy: rebuilds Lambda zip, updates function code + env, builds the frontend with the prod API URL baked in, syncs `dist/` to S3, invalidates CloudFront. Also ensures `POST /feedback` route exists on every run. | Every code change |
+| [`scripts/harden.sh`](scripts/harden.sh) | One-time security pass: locks API Gateway CORS to the CloudFront origin only, creates a CloudFront Origin Access Control, migrates the S3 origin from public website-endpoint to private REST-endpoint + OAC. | Once after initial deploy |
+| [`scripts/set-throttle.sh`](scripts/set-throttle.sh) | Sets API Gateway request rate limits (default 20 burst / 10 rate per second). Bot protection without WAF cost. | Once; re-run to retune |
+| [`scripts/billing-alarm.sh`](scripts/billing-alarm.sh) | Creates an AWS Budgets monthly alarm — emails you at 80% actual and 100% forecasted of a USD threshold. | Once; re-run with different threshold/email |
+| [`scripts/teardown.sh`](scripts/teardown.sh) | Destroys every AWS resource the deploy created. Dry-run by default; pass `--confirm` to actually delete. Handles the CloudFront disable + wait + delete dance. | Only when walking away |
+
+Stack: AWS Lambda (Node.js 20) + API Gateway HTTP API + S3 (private) + CloudFront. Hosted in `ap-southeast-2` (Sydney) — closest region to the primary use case.
+
+**Prereqs:** AWS CLI configured with an IAM user that has admin (or scoped) permissions, `node`, plus PowerShell (Windows) or `zip` (everywhere else) on PATH.
+
+---
+
+## What's not built yet
+
+- **True background push notifications** via the Web Push protocol. The current `.ics` calendar event covers the real "you'll be reminded even with the app closed" need. A proper Web Push pipeline would need a service worker push subscription, server-side scheduler (Lambda + EventBridge), and a session-store database — out of scope for the POC.
+- **Cross-device sync.** Sessions are device-local by design (`localStorage`). A user who scans on their phone can't view that session from their laptop. A database (DynamoDB + S3) would fix it; deliberately deferred until there's signal that users want it.
+- **Auto-submit infringement appeals.** Pre-fill a council's online dispute form with the session ID and a public PDF link. Technically interesting; blocked by council-side captchas, login walls, and the absence of public APIs across Australian councils. Realistic version is deep-linking.
+- **Cryptographic evidence signing.** Hash the photo + timestamp + GPS with a Lambda-side key and embed the signature in the PDF. Would give the evidence chain non-repudiation for actual legal use. ~1.5–2 days of work; not yet justified for the POC.
+- **Voice confirmation.** "Hey ParkProof, when does parking expire?" — Web Speech API + simple intent matching. ~half day. Limited by browser support in PWA-installed mode on iOS.
+- **AI feedback Layers 2 + 3.** Layer 1 (counts) is live. Layer 2 (capture rules + confidence) and Layer 3 (capture photos for training data) are natural next steps once the Layer 1 signal warrants deeper analysis.
+
+---
+
+## Files
+
+```
+ParkProof/
+├── src/
+│   ├── App.tsx                  ← view-state machine (home → scan → clarify → result → log → remind → history)
+│   ├── types.ts                 ← ParkingRules, ParkingSession, ObservationGroup, RuleVariant, Clarification
+│   ├── tz-lookup.d.ts           ← ambient module declaration
+│   ├── index.css                ← Tailwind v4 @theme tokens + body styles + cavalcade background
+│   ├── components/
+│   │   ├── SignScanner.tsx      ← camera/library + silent GPS + reuse card + recent-scans picker
+│   │   ├── Clarify.tsx          ← position chooser when the sign has arrows
+│   │   ├── ParkingResult.tsx    ← green/red answer + observations + verify card + feedback wiring
+│   │   ├── SessionLogger.tsx    ← GPS + reverse-geocode + editable address + car photo
+│   │   ├── ReminderOptions.tsx  ← .ics download + browser notification
+│   │   ├── SessionHistory.tsx   ← list of saved sessions
+│   │   ├── SessionDetail.tsx    ← single session + PDF export + delete
+│   │   ├── BrandMark.tsx        ← inline SVG layered-P + clock logo
+│   │   ├── Icon.tsx             ← 8-icon stroke set (currentColor)
+│   │   ├── LoadingProgress.tsx  ← stepped progress UI during the model call
+│   │   ├── ReuseCard.tsx        ← proximity-matched "scanned here recently" card
+│   │   └── RecentScansPicker.tsx← desktop / no-GPS fallback for smart re-scan
+│   └── lib/
+│       ├── claude.ts            ← translateSign + refreshInterpretation (text-only)
+│       ├── feedback.ts          ← fire-and-forget verdict submission
+│       ├── storage.ts           ← localStorage CRUD + quota-error handling
+│       ├── geocode.ts           ← Nominatim reverse + forward
+│       ├── geo.ts               ← Haversine distance
+│       ├── image.ts             ← canvas-based resize + JPEG re-encode
+│       ├── ics.ts               ← calendar event generator
+│       ├── notifications.ts     ← Notification API scheduler
+│       ├── pdf.ts               ← evidence PDF (with caption overlay)
+│       └── time-format.ts       ← relative time helper
+├── lambda/
+│   ├── index.js                 ← translateSign (vision + refresh) + handleFeedback + AWS handler
+│   ├── index.d.ts               ← types for the local-dev import
+│   └── package.json             ← deploy-zip dependencies (@anthropic-ai/sdk, tz-lookup)
+├── public/
+│   ├── parkproof-icon.svg       ← layered-P + clock app icon
+│   ├── parkproof-wordmark.svg   ← horizontal logo lockup
+│   ├── parkproof-icon-mono.svg  ← single-colour variant
+│   ├── parkproof-splash.svg     ← portrait splash for PWA install
+│   ├── hero-illustration.svg    ← home-screen scene
+│   ├── empty-history.svg        ← parking-bay empty state
+│   ├── cavalcade-pattern.svg    ← repeating background of stylised cars in diagonal lanes
+│   ├── og-image.png             ← social share card (1200×630)
+│   ├── icons/                   ← 8 stroke icons (camera, gallery, calendar, bell, list, pin, check, warning)
+│   └── pwa-*.png                ← auto-generated PWA install icons (gitignored)
+├── archive/old-melbourne-civic/ ← archived first-round assets (Melbourne Civic direction)
+├── scripts/
+│   ├── deploy.sh                ← day-to-day deploy
+│   ├── harden.sh                ← one-time security pass
+│   ├── set-throttle.sh          ← API rate limits
+│   ├── billing-alarm.sh         ← AWS Budgets alarm
+│   └── teardown.sh              ← destroy everything (dry-run by default)
+├── vite.config.ts               ← API middleware (sign-translate + feedback) + .env loader + PWA
+├── docs/
+│   ├── asset-brief.md           ← historical brief for asset generation
+│   └── screenshots/             ← user-captured screenshots for the demo grid
+├── parkproof-spec.md            ← original product brief (kept for reference)
+├── CLAUDE.md                    ← engineering notes for future AI sessions
+└── README.md                    ← this file
+```
+
+---
+
+## Credits
+
+Built with [Claude Code](https://claude.com/claude-code). Spec by Melroy D'Souza.

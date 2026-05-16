@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="300" height="200" viewBox="0 0 300 200" fill="none" role="img" aria-labelledby="title desc">
+  <title id="title">Empty parking history illustration</title>
+  <desc id="desc">A minimal empty parking bay seen from above, using ParkProof blue and ink linework.</desc>
+  <rect width="300" height="200" fill="none"/>
+  <path d="M58 44h184c12 0 22 10 22 22v78c0 12-10 22-22 22H58c-12 0-22-10-22-22V66c0-12 10-22 22-22Z" fill="#F2F4F7"/>
+  <path d="M73 61h154c9 0 16 7 16 16v56c0 9-7 16-16 16H73c-9 0-16-7-16-16V77c0-9 7-16 16-16Z" stroke="#1A2233" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="10 10"/>
+  <path d="M100 105h100" stroke="#275BFF" stroke-width="6" stroke-linecap="round"/>
+  <path d="m136 84 21 21-21 21" stroke="#20C4C7" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="m171 84 21 21-21 21" stroke="#20C4C7" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M67 162c20 10 51 15 83 15s63-5 83-15" stroke="#DDE4EE" stroke-width="2" stroke-linecap="round"/>
+  <circle cx="64" cy="66" r="3" fill="#275BFF"/>
+  <circle cx="236" cy="66" r="3" fill="#275BFF"/>
+</svg>

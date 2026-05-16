@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1290" height="2796" viewBox="0 0 1290 2796" role="img" aria-labelledby="title desc">
+  <title id="title">ParkProof splash screen</title>
+  <desc id="desc">Minimal ParkProof PWA splash screen with clock monogram and wordmark.</desc>
+  <defs><style>.serif { font-family: Fraunces, Georgia, 'Times New Roman', serif; font-weight: 800; }</style></defs>
+  <rect width="1290" height="2796" fill="#F2F4F7"/>
+  <g transform="translate(385 1010) scale(1.02)">
+    <text class="serif" x="154" y="394" font-size="330" fill="#1A2233">P</text>
+    <text class="serif" x="106" y="344" font-size="330" fill="#275BFF">P</text>
+    <g transform="translate(252 185)">
+      <path d="M-70,-50 C-94,-44 -102,-22 -94,-4 L-48,-18 C-49,-35 -57,-45 -70,-50Z" fill="#F2F4F7"/>
+      <path d="M70,-50 C94,-44 102,-22 94,-4 L48,-18 C49,-35 57,-45 70,-50Z" fill="#F2F4F7"/>
+      <circle cx="-82" cy="-57" r="5" fill="#F2F4F7"/><circle cx="82" cy="-57" r="5" fill="#F2F4F7"/>
+      <circle cx="0" cy="0" r="76" fill="#F2F4F7"/><circle cx="0" cy="0" r="68" fill="none" stroke="#275BFF" stroke-width="10"/><circle cx="0" cy="0" r="84" fill="none" stroke="#F2F4F7" stroke-width="8"/>
+      <line x1="0" y1="0" x2="-38" y2="-28" stroke="#1A2233" stroke-width="12" stroke-linecap="round"/><line x1="0" y1="0" x2="45" y2="-34" stroke="#1A2233" stroke-width="12" stroke-linecap="round"/><circle cx="0" cy="0" r="12" fill="#1A2233"/>
+    </g>
+  </g>
+  <text class="serif" x="645" y="1675" text-anchor="middle" font-size="116" fill="#1A2233" letter-spacing="-2">ParkProof</text>
+  <line x1="84" y1="2696" x2="1206" y2="2696" stroke="#275BFF" stroke-width="4" stroke-linecap="round"/>
+</svg>

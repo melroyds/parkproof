@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Background tile (cream paper, rounded for PWA install icon) -->
+  <rect width="512" height="512" fill="#F5F0E6" rx="96" ry="96"/>
+
+  <!-- Sign frame: white interior, tram-green stroke -->
+  <rect x="76" y="76" width="360" height="360"
+        fill="#FFFFFF" stroke="#0F7B5E" stroke-width="28"
+        rx="40" ry="40"/>
+
+  <!-- Bold serif P, centered in the upper portion of the sign -->
+  <text x="256" y="296"
+        font-family="'Fraunces','Times New Roman',Georgia,serif"
+        font-size="260"
+        font-weight="800"
+        text-anchor="middle"
+        fill="#0F7B5E">P</text>
+
+  <!-- Chevron under the P, inside the sign — reads as "this spot" / direction -->
+  <path d="M 196 386 L 256 416 L 316 386"
+        fill="none" stroke="#0F7B5E" stroke-width="24"
+        stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

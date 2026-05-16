@@ -1,0 +1,61 @@
+@import "tailwindcss";
+
+@theme {
+  /* ─── Typography ─────────────────────────────────────────────── */
+  --font-sans: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-display: "Fraunces", Georgia, "Times New Roman", serif;
+
+  /* ─── Paper (background scale, cool off-white) ──────────────── */
+  --color-paper-50:  #F8FAFC;
+  --color-paper-100: #F2F4F7;
+  --color-paper-200: #E5E8EE;
+  --color-paper-300: #DDE4EE;
+
+  /* ─── Ink (text scale, navy) ──────────────────────────────── */
+  --color-ink-500: #5C6680;
+  --color-ink-600: #404B66;
+  --color-ink-700: #2D374F;
+  --color-ink-800: #232C42;
+  --color-ink-900: #1A2233;
+
+  /* ─── Brand (vivid blue) ─────────────────────────────────── */
+  --color-brand-50:  #EAEFFF;
+  --color-brand-100: #CDD9FF;
+  --color-brand-200: #9FB6FF;
+  --color-brand-300: #6F8FFF;
+  --color-brand-400: #4870FF;
+  --color-brand-500: #275BFF;
+  --color-brand-600: #1F4CD9;
+  --color-brand-700: #173EB3;
+  --color-brand-800: #11308C;
+  --color-brand-900: #0B2466;
+
+  /* ─── Accent (teal) ──────────────────────────────────────── */
+  --color-accent-50:  #E0F7F8;
+  --color-accent-100: #B8EDEF;
+  --color-accent-200: #88DFE2;
+  --color-accent-300: #57D0D3;
+  --color-accent-400: #36C7CA;
+  --color-accent-500: #20C4C7;
+  --color-accent-600: #1AA9AC;
+  --color-accent-700: #138B8E;
+  --color-accent-800: #0F6F71;
+  --color-accent-900: #0B5557;
+}
+
+/* ─── Global defaults ──────────────────────────────────────────── */
+body {
+  font-family: var(--font-sans);
+  color: var(--color-ink-900);
+  background-color: var(--color-paper-100);
+  background-image: url("/cavalcade-pattern.svg");
+  background-repeat: repeat;
+  background-size: 600px 600px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3, h4, .font-display {
+  font-family: var(--font-display);
+  letter-spacing: -0.015em;
+}
