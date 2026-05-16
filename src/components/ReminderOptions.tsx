@@ -1,63 +1,144 @@
 import { useMemo, useState } from 'react'
 import type { ParkingSession } from '../types'
-import { scheduleParkingReminder, type ScheduleResult } from '../lib/notifications'
+import { scheduleParkingReminders, type ScheduleResult } from '../lib/notifications'
+import { useNow } from '../lib/use-now'
 import Icon from './Icon'
 
-const MINUTES_BEFORE_EXPIRY = 15
+/**
+ * Offsets the user can pick from, in minutes before expiry. Covers the realistic
+ * range from a leisurely 30-min "head back to the car" prompt down to a frantic
+ * "you're about to time out right now" ping. 0 = exactly at expiry — useful on
+ * very short tickets where every other offset is already in the past.
+ */
+const REMINDER_OFFSETS = [30, 15, 10, 5, 2, 0] as const
+type Offset = (typeof REMINDER_OFFSETS)[number]
+
+// If a reminder would fire in under 30s, treat it as past — keeps the UX honest.
+// Mirrors SAFETY_MARGIN_MS in notifications.ts.
+const SAFETY_MARGIN_MS = 30 * 1000
+
+const TZ = 'Australia/Melbourne'
 
 interface Props {
   session: ParkingSession
   onDone: () => void
 }
 
-function NotifMessage({ state }: { state: ScheduleResult | 'idle' | 'pending' }) {
-  switch (state) {
-    case 'idle':
-      return <span>Enable browser notification</span>
-    case 'pending':
-      return <span>Requesting permission…</span>
-    case 'scheduled':
-      return <span>✓ Notification scheduled</span>
+interface OffsetInfo {
+  offset: Offset
+  /** Wall-clock time this offset would fire at. */
+  fireAt: Date
+  /** True if this offset is already past (incl. safety margin). */
+  isPast: boolean
+  /** "3:35 PM" style local time. */
+  fireLabel: string
+}
+
+function chipLabel(offset: Offset): string {
+  if (offset === 0) return 'At expiry'
+  return `${offset} min`
+}
+
+function fmtTime(d: Date): string {
+  return d.toLocaleTimeString('en-AU', { hour: 'numeric', minute: '2-digit', timeZone: TZ })
+}
+
+/** Pick sensible defaults given which offsets are fireable. */
+function pickDefaults(fireable: OffsetInfo[]): Set<Offset> {
+  if (fireable.length === 0) return new Set()
+  // Longest available lead time + the 5-min ping (a useful "final warning") if
+  // it's separately fireable. This covers both long tickets (30 + 5) and short
+  // ones (e.g., 10 + 5 or just 2 / 0 if that's all that's left).
+  const result = new Set<Offset>([fireable[0].offset])
+  const five = fireable.find((o) => o.offset === 5)
+  if (five && five.offset !== fireable[0].offset) result.add(5)
+  return result
+}
+
+function NotifStatusLine({ result }: { result: ScheduleResult }) {
+  switch (result.status) {
+    case 'scheduled': {
+      const skipped = result.totalSelected - result.scheduledCount
+      const base = `✓ ${result.scheduledCount} notification${result.scheduledCount === 1 ? '' : 's'} scheduled`
+      return <span>{skipped > 0 ? `${base} (${skipped} skipped — already past)` : base}</span>
+    }
     case 'denied':
-      return <span>Permission denied — use the calendar option</span>
+      return <span>Permission denied — use the calendar option instead</span>
     case 'unsupported':
       return <span>Not supported on this browser</span>
-    case 'past':
-      return <span>Reminder time has already passed</span>
     case 'no-expiry':
-      return <span>No expiry time on this session</span>
-    case 'too-far':
-      return <span>Expires in over 24h — use calendar instead</span>
+      return <span>No expiry on this session</span>
+    case 'all-past':
+      return <span>All selected reminders are already in the past</span>
+    case 'all-too-far':
+      return <span>Expires in over 24h — use the calendar option instead</span>
+    case 'nothing-selected':
+      return <span>Pick at least one reminder above</span>
   }
 }
 
 export default function ReminderOptions({ session, onDone }: Props) {
-  const [icsState, setIcsState] = useState<'idle' | 'downloaded' | 'error'>('idle')
-  const [notifState, setNotifState] = useState<ScheduleResult | 'idle' | 'pending'>('idle')
+  const [icsState, setIcsState] = useState<'idle' | 'downloaded' | 'error' | 'empty'>('idle')
+  const [notifResult, setNotifResult] = useState<ScheduleResult | null>(null)
+  const [notifBusy, setNotifBusy] = useState(false)
 
-  const expiryInfo = useMemo(() => {
-    if (!session.expires_at) return null
-    const expires = new Date(session.expires_at)
-    const reminderAt = new Date(expires.getTime() - MINUTES_BEFORE_EXPIRY * 60 * 1000)
-    return {
-      expiresLabel: expires.toLocaleTimeString('en-AU', {
-        hour: 'numeric',
-        minute: '2-digit',
-        timeZone: 'Australia/Melbourne',
-      }),
-      reminderLabel: reminderAt.toLocaleTimeString('en-AU', {
-        hour: 'numeric',
-        minute: '2-digit',
-        timeZone: 'Australia/Melbourne',
-      }),
-      reminderInPast: reminderAt.getTime() < Date.now(),
+  // Re-tick every 30s so chips that slide into the past auto-disable without
+  // requiring the user to re-enter the screen. Matches SAFETY_MARGIN_MS exactly,
+  // so the moment a chip becomes "fireable in <30s" it flips to disabled.
+  const now = useNow(30_000)
+
+  const { offsets, expiresLabel, anyFireable } = useMemo(() => {
+    if (!session.expires_at) {
+      return { offsets: [] as OffsetInfo[], expiresLabel: null as string | null, anyFireable: false }
     }
-  }, [session.expires_at])
+    const expires = new Date(session.expires_at)
+    const offsets: OffsetInfo[] = REMINDER_OFFSETS.map((offset) => {
+      const fireAt = new Date(expires.getTime() - offset * 60 * 1000)
+      return {
+        offset,
+        fireAt,
+        isPast: fireAt.getTime() - now < SAFETY_MARGIN_MS,
+        fireLabel: fmtTime(fireAt),
+      }
+    })
+    return {
+      offsets,
+      expiresLabel: fmtTime(expires),
+      anyFireable: offsets.some((o) => !o.isPast),
+    }
+  }, [session.expires_at, now])
+
+  const [selected, setSelected] = useState<Set<Offset>>(() =>
+    pickDefaults(offsets.filter((o) => !o.isPast)),
+  )
+
+  const toggle = (offset: Offset) => {
+    setSelected((prev) => {
+      const next = new Set(prev)
+      if (next.has(offset)) next.delete(offset)
+      else next.add(offset)
+      return next
+    })
+    // Any prior submission state is now stale — reset so buttons re-enable.
+    setIcsState('idle')
+    setNotifResult(null)
+  }
+
+  // Sorted highest → lowest so summaries and downstream lists read left-to-right
+  // in chronological order ("3:30 PM, 3:40 PM, 3:43 PM").
+  const selectedList = useMemo(
+    () => [...selected].sort((a, b) => b - a),
+    [selected],
+  )
 
   const handleIcs = async () => {
+    if (selectedList.length === 0) {
+      setIcsState('empty')
+      return
+    }
     try {
       const { downloadIcs } = await import('../lib/ics')
-      downloadIcs(session)
+      downloadIcs(session, selectedList)
       setIcsState('downloaded')
     } catch {
       setIcsState('error')
@@ -65,26 +146,114 @@ export default function ReminderOptions({ session, onDone }: Props) {
   }
 
   const handleNotify = async () => {
-    setNotifState('pending')
-    const result = await scheduleParkingReminder(session, MINUTES_BEFORE_EXPIRY)
-    setNotifState(result)
+    setNotifBusy(true)
+    const result = await scheduleParkingReminders(session, selectedList)
+    setNotifResult(result)
+    setNotifBusy(false)
   }
 
-  return (
-    <div className="min-h-screen flex flex-col p-6 max-w-md mx-auto w-full">
-      <h2 className="font-display text-3xl font-extrabold text-ink-900 mb-1">Set a reminder</h2>
-      {expiryInfo ? (
-        <p className="text-sm text-ink-700 mb-6 leading-relaxed">
-          Parking expires at{' '}
-          <span className="font-display font-bold text-ink-900">{expiryInfo.expiresLabel}</span>.
-          We'll remind you 15 minutes before — at{' '}
-          <span className="font-display font-bold text-ink-900">{expiryInfo.reminderLabel}</span>.
-        </p>
-      ) : (
+  // === Empty states ===
+  if (!session.expires_at) {
+    return (
+      <div className="min-h-screen flex flex-col p-6 max-w-md mx-auto w-full">
+        <h2 className="font-display text-3xl font-extrabold text-ink-900 mb-2">Set reminders</h2>
         <p className="text-sm text-ink-700 mb-6 leading-relaxed">
           This session has no expiry time, so a timed reminder doesn't apply.
         </p>
-      )}
+        <button
+          onClick={onDone}
+          className="mt-auto bg-ink-900 hover:bg-ink-800 text-white font-semibold py-4 rounded-2xl shadow-md transition-colors"
+        >
+          Done
+        </button>
+      </div>
+    )
+  }
+
+  if (!anyFireable) {
+    return (
+      <div className="min-h-screen flex flex-col p-6 max-w-md mx-auto w-full">
+        <h2 className="font-display text-3xl font-extrabold text-ink-900 mb-2">Set reminders</h2>
+        <p className="text-sm text-ink-700 mb-6 leading-relaxed">
+          Parking expired at{' '}
+          <span className="font-display font-bold text-ink-900">{expiresLabel}</span>. Too late for
+          a reminder — but your session is still saved as evidence if you need to dispute a ticket.
+        </p>
+        <button
+          onClick={onDone}
+          className="mt-auto bg-ink-900 hover:bg-ink-800 text-white font-semibold py-4 rounded-2xl shadow-md transition-colors"
+        >
+          Done
+        </button>
+      </div>
+    )
+  }
+
+  // === Main flow ===
+  const selectedTimesLabel =
+    selectedList.length === 0
+      ? null
+      : selectedList
+          .map((o) => offsets.find((x) => x.offset === o)!.fireLabel)
+          .join(', ')
+
+  return (
+    <div className="min-h-screen flex flex-col p-6 max-w-md mx-auto w-full">
+      <h2 className="font-display text-3xl font-extrabold text-ink-900 mb-1">Set reminders</h2>
+      <p className="text-sm text-ink-700 mb-6 leading-relaxed">
+        Parking expires at{' '}
+        <span className="font-display font-bold text-ink-900">{expiresLabel}</span>. Pick when you
+        want to be pinged — choose as many as you like.
+      </p>
+
+      {/* Chip selector */}
+      <div className="flex flex-wrap gap-2 mb-3">
+        {offsets.map(({ offset, isPast, fireLabel }) => {
+          const isSelected = selected.has(offset)
+          const base =
+            'px-4 py-2 rounded-full text-sm font-semibold border-2 transition-colors min-w-[88px] text-center'
+          let cls: string
+          if (isPast) {
+            cls = `${base} bg-paper-100 border-paper-200 text-ink-400 line-through cursor-not-allowed`
+          } else if (isSelected) {
+            cls = `${base} bg-brand-500 border-brand-500 text-white shadow-sm shadow-brand-500/30`
+          } else {
+            cls = `${base} bg-white border-paper-300 text-ink-700 hover:border-brand-300`
+          }
+          return (
+            <button
+              key={offset}
+              type="button"
+              onClick={() => !isPast && toggle(offset)}
+              disabled={isPast}
+              aria-pressed={isSelected}
+              aria-label={
+                isPast
+                  ? `${chipLabel(offset)} — already past`
+                  : `${chipLabel(offset)} — would fire at ${fireLabel}`
+              }
+              title={isPast ? 'Already in the past' : `Fires at ${fireLabel}`}
+              className={cls}
+            >
+              {chipLabel(offset)}
+            </button>
+          )
+        })}
+      </div>
+
+      {/* Live summary of selected fire-times */}
+      <p className="text-xs text-ink-600 mb-6 leading-relaxed min-h-[2.25rem]">
+        {selectedTimesLabel ? (
+          <>
+            You'll be pinged at{' '}
+            <span className="font-display font-semibold text-ink-900">{selectedTimesLabel}</span>.
+          </>
+        ) : (
+          <span className="italic text-ink-500">
+            No reminders selected — pick at least one chip above.
+          </span>
+        )}
+      </p>
 
       {/* Calendar */}
       <section className="mb-3 bg-white rounded-2xl border border-paper-300 p-5">
@@ -95,21 +264,23 @@ export default function ReminderOptions({ session, onDone }: Props) {
           <div>
             <h3 className="font-display font-bold text-ink-900">Calendar reminder</h3>
             <p className="text-xs text-ink-600 mt-1 leading-relaxed">
-              Drops into the iPhone / Android / Outlook calendar. Survives even if you close this
-              app.
+              Drops into the iPhone / Android / Outlook calendar with one alarm per chip. Survives
+              even if you close this app.
             </p>
           </div>
         </div>
         <button
           onClick={handleIcs}
-          disabled={icsState === 'downloaded' || !expiryInfo || expiryInfo.reminderInPast}
+          disabled={icsState === 'downloaded' || selectedList.length === 0}
           className="w-full bg-brand-500 hover:bg-brand-600 disabled:bg-brand-200 disabled:text-white/70 text-white font-semibold py-3 rounded-xl shadow-md shadow-brand-500/20 transition-colors"
         >
           {icsState === 'downloaded'
             ? '✓ Downloaded — open the file to add it'
             : icsState === 'error'
               ? 'Download failed — try again'
-              : 'Download .ics file'}
+              : icsState === 'empty'
+                ? 'Pick at least one reminder above'
+                : `Download .ics with ${selectedList.length} alarm${selectedList.length === 1 ? '' : 's'}`}
         </button>
       </section>
 
@@ -122,16 +293,32 @@ export default function ReminderOptions({ session, onDone }: Props) {
           <div>
             <h3 className="font-display font-bold text-ink-900">Browser notification</h3>
             <p className="text-xs text-ink-600 mt-1 leading-relaxed">
-              Only fires while this tab stays open. Good as a backup to the calendar option.
+              Fires while this tab stays open. One notification per selected chip. Good as a backup
+              to the calendar option.
             </p>
           </div>
         </div>
         <button
           onClick={handleNotify}
-          disabled={notifState === 'pending' || notifState === 'scheduled'}
+          disabled={
+            notifBusy ||
+            notifResult?.status === 'scheduled' ||
+            selectedList.length === 0
+          }
           className="w-full bg-accent-500 hover:bg-accent-600 disabled:opacity-60 text-white font-semibold py-3 rounded-xl shadow-md shadow-accent-500/20 transition-colors"
         >
-          <NotifMessage state={notifState} />
+          {notifBusy ? (
+            <span>Requesting permission…</span>
+          ) : notifResult ? (
+            <NotifStatusLine result={notifResult} />
+          ) : selectedList.length === 0 ? (
+            <span>Pick at least one reminder above</span>
+          ) : (
+            <span>
+              Enable {selectedList.length} browser notification
+              {selectedList.length === 1 ? '' : 's'}
+            </span>
+          )}
         </button>
       </section>
 
