@@ -12,6 +12,14 @@ A mobile-first, installable PWA with end-to-end AI: sign translation, evidence c
 
 ## Demo
 
+When you're actively parked, the home screen becomes the countdown — open the app, see how much time you have left.
+
+<p align="center">
+  <img src="docs/screenshots/09-home-active.png" alt="Home screen showing a live 'Currently parked' card with countdown" width="320" />
+</p>
+
+The full flow:
+
 | 1. Scan | 2. Clarify (when needed) | 3. Result |
 |---|---|---|
 | ![scan](docs/screenshots/01-scan.png) | ![clarify](docs/screenshots/02-clarify.png) | ![result](docs/screenshots/03-result.png) |
@@ -37,6 +45,7 @@ A mobile-first, installable PWA with end-to-end AI: sign translation, evidence c
 4. **Departure Reminder.** One-tap **.ics calendar event** (fires on iOS / Android / Outlook even with the app closed) OR an in-tab browser notification.
 5. **Evidence Export.** Multi-page PDF with arrival time in the parker's local timezone, address, GPS, ParkProof Guidance one-liner, sign photo, and car photo with **address + timestamp burnt into the bottom corner** as caption overlay.
 6. **Session History.** Every saved parking session, with status (active / expired) and the option to re-export the PDF or delete.
+7. **Live "Currently parked" home.** When at least one session is still in the future, the home screen swaps its hero illustration for a live countdown card colour-coded by urgency (green > 1h, amber 15–60min, red <15min). One tap takes you into the evidence record for that session.
 
 ### Smart features
 - **Smart Re-scan.** When you arrive at a spot you've scanned before (within 40m and 7 days), ParkProof recognises it and offers to **reuse the prior reading** — no photo, just refresh the current-time answer. ~3× faster and ~4× cheaper per scan. Desktop and no-GPS users get a "Reuse a recent scan" picker instead.

@@ -404,6 +404,17 @@ async function captureFlow({ page, signPhotoPath }) {
   await page.waitForTimeout(500)
   await page.screenshot({ path: join(OUT_DIR, '08-appeal.png'), animations: 'disabled', fullPage: true })
   console.log('[screenshots] ✓ 08-appeal')
+
+  // === 09-home-active: home screen with the live "Currently parked" card ===
+  // The Lygon session from the main flow has expires_at = now + 2h, so it's
+  // still active here. Navigate back to home via the URL (faster than the
+  // back-button chain and avoids any state in the AppealFlow component).
+  await page.goto(APP_URL, { waitUntil: 'networkidle' })
+  // The card needs the useNow tick to flush; 400ms is comfortable.
+  await page.getByText(/Currently parked/i).waitFor({ timeout: 5_000 })
+  await page.waitForTimeout(400)
+  await page.screenshot({ path: join(OUT_DIR, '09-home-active.png'), animations: 'disabled', fullPage: true })
+  console.log('[screenshots] ✓ 09-home-active')
 }
 
 // ---------- Orchestrator ----------

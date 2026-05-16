@@ -25,6 +25,7 @@ export function saveSession(session: ParkingSession): void {
     ) {
       throw new Error(
         'Your device storage is full. Open History and delete a few older sessions, then try again.',
+        { cause: err },
       )
     }
     throw err
@@ -54,4 +55,27 @@ export function updateSession(id: string, patch: Partial<ParkingSession>): void 
 
 export function getSession(id: string): ParkingSession | undefined {
   return loadSessions().find((s) => s.id === id)
+}
+
+/**
+ * Sessions that are currently in progress — `expires_at` is set and still in
+ * the future. Sorted soonest-expiring first so the home-screen card surfaces
+ * the most urgent one when (rarely) multiple are open at once.
+ *
+ * Pure derivation off `expires_at` — no extra schema field — which means a
+ * session naturally moves from "active" to "past" the moment its timer
+ * elapses, with zero extra bookkeeping.
+ */
+export function loadActiveSessions(now: number = Date.now()): ParkingSession[] {
+  return loadSessions()
+    .filter((s) => {
+      if (!s.expires_at) return false
+      const ms = new Date(s.expires_at).getTime()
+      return Number.isFinite(ms) && ms > now
+    })
+    .sort(
+      (a, b) =>
+        new Date(a.expires_at as string).getTime() -
+        new Date(b.expires_at as string).getTime(),
+    )
 }
