@@ -5,6 +5,13 @@ export interface ObservationGroup {
   items: string[]
 }
 
+export interface NextTransition {
+  /** ISO 8601 timestamp (in the spot's local timezone) when the parking rule changes. */
+  when: string
+  /** Plain-English description of what changes — ≤80 chars. Shown verbatim in a banner. */
+  change: string
+}
+
 export interface RuleVariant {
   label: string
   rules: string
@@ -12,6 +19,8 @@ export interface RuleVariant {
   can_park_now: boolean
   until: string | null
   duration_minutes: number | null
+  /** Optional heads-up — set when a meaningful rule change is approaching. */
+  next_transition?: NextTransition | null
 }
 
 export interface Clarification {
@@ -27,6 +36,8 @@ export interface ParkingRules {
   duration_minutes: number | null
   confidence: Confidence
   clarification: Clarification | null
+  /** Optional heads-up — set when a meaningful rule change is approaching. */
+  next_transition?: NextTransition | null
   /** Frontend-only — set when the user picked a variant from a clarification step. */
   chosen_label?: string
   /** Frontend-only — variants the user did NOT pick. Carried through for PDF context. */
@@ -73,4 +84,11 @@ export interface ParkingSession {
   alternate_variants?: RuleVariant[]
   /** Cryptographic signature over the session evidence — added asynchronously after save. */
   signature?: SignatureBundle
+  /**
+   * Free-text context the user adds about the session — e.g. "Mum's chemo at
+   * the Royal Melbourne", "Saturday market on Lygon", "Christmas party at
+   * work". Surfaces in the evidence PDF and helps soften a council review
+   * when the context matters.
+   */
+  note?: string
 }

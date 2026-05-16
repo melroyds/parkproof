@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNow } from './lib/use-now'
 import SignScanner from './components/SignScanner'
 import ParkingResult from './components/ParkingResult'
@@ -13,16 +13,18 @@ import Icon from './components/Icon'
 import LoadingProgress from './components/LoadingProgress'
 import { refreshInterpretation, translateSign } from './lib/claude'
 import { loadActiveSessions, loadSessions, saveSession, updateSession } from './lib/storage'
-import { signSession } from './lib/signing'
+import { retryUnsignedSessions, signSession } from './lib/signing'
 import type { ParkingRules, ParkingSession, RuleVariant } from './types'
+
+type Coords = { lat: number; lng: number } | null
 
 type View =
   | { name: 'home' }
   | { name: 'scan' }
   | { name: 'loading' }
-  | { name: 'clarify'; result: ParkingRules; signPhoto: string }
-  | { name: 'result'; result: ParkingRules; signPhoto: string }
-  | { name: 'logging'; result: ParkingRules; signPhoto: string }
+  | { name: 'clarify'; result: ParkingRules; signPhoto: string; coords: Coords }
+  | { name: 'result'; result: ParkingRules; signPhoto: string; coords: Coords }
+  | { name: 'logging'; result: ParkingRules; signPhoto: string; coords: Coords }
   | { name: 'remind'; session: ParkingSession }
   | { name: 'history' }
   | { name: 'session'; session: ParkingSession }
@@ -42,6 +44,13 @@ function App() {
   const now = useNow(30_000)
   const activeSessions = useMemo(() => loadActiveSessions(now), [now])
 
+  // On app start, sweep localStorage for sessions that landed unsigned (tab
+  // closed mid-signing) and retry them in the background. Throttled per
+  // session inside the helper — safe to invoke on every mount.
+  useEffect(() => {
+    retryUnsignedSessions()
+  }, [])
+
   const handleCapture = async (
     dataUrl: string,
     mediaType: string,
@@ -52,9 +61,9 @@ function App() {
       const base64 = stripDataUrlPrefix(dataUrl)
       const result = await translateSign(base64, mediaType, coords)
       if (result.clarification && result.clarification.options.length > 1) {
-        setView({ name: 'clarify', result, signPhoto: dataUrl })
+        setView({ name: 'clarify', result, signPhoto: dataUrl, coords })
       } else {
-        setView({ name: 'result', result, signPhoto: dataUrl })
+        setView({ name: 'result', result, signPhoto: dataUrl, coords })
       }
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err)
@@ -62,7 +71,12 @@ function App() {
     }
   }
 
-  const handlePickVariant = (variant: RuleVariant, base: ParkingRules, signPhoto: string) => {
+  const handlePickVariant = (
+    variant: RuleVariant,
+    base: ParkingRules,
+    signPhoto: string,
+    coords: Coords,
+  ) => {
     const alternates =
       base.clarification?.options.filter((o) => o.label !== variant.label) ?? []
     const merged: ParkingRules = {
@@ -72,11 +86,14 @@ function App() {
       can_park_now: variant.can_park_now,
       until: variant.until,
       duration_minutes: variant.duration_minutes,
+      // Variant carries its own transition awareness — use it in preference
+      // to the top-level one (which describes the unmerged combined rule).
+      next_transition: variant.next_transition ?? base.next_transition ?? null,
       clarification: null,
       chosen_label: variant.label,
       alternate_variants: alternates,
     }
-    setView({ name: 'result', result: merged, signPhoto })
+    setView({ name: 'result', result: merged, signPhoto, coords })
   }
 
   const handleReuseSession = async (session: ParkingSession) => {
@@ -101,7 +118,13 @@ function App() {
         clarification: null,
         chosen_label: session.chosen_label,
       }
-      setView({ name: 'result', result, signPhoto: session.sign_photo })
+      // Reuse the prior session's coords for the result view — they're a
+      // strict superset of what handleCapture would pass and they correctly
+      // anchor the result-screen timezone to where the user was parked.
+      const reusedCoords: Coords = session.location
+        ? { lat: session.location.lat, lng: session.location.lng }
+        : null
+      setView({ name: 'result', result, signPhoto: session.sign_photo, coords: reusedCoords })
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err)
       setView({ name: 'error', message })
@@ -110,14 +133,31 @@ function App() {
 
   const handleSessionSaved = (session: ParkingSession) => {
     try {
-      saveSession(session)
+      const report = saveSession(session)
+      // If the quota recovery had to evict or strip old sessions to fit, log
+      // it so the diagnostic surfaces in the console. We don't block the user
+      // — they get straight to the reminder screen — but the History view
+      // will reflect the cleanup on next render.
+      if (report.evicted > 0 || report.trimmedPhotosFrom > 0) {
+        console.info(
+          `[storage] freed space for this session — stripped photos from ${report.trimmedPhotosFrom}, evicted ${report.evicted} old session(s).`,
+        )
+      }
       setView({ name: 'remind', session })
       // Sign the evidence asynchronously — never blocks the reminder flow.
       // If it succeeds, patch the saved session with the signature bundle so
-      // the PDF + SessionDetail can show it.
-      void signSession(session).then((signature) => {
-        if (signature) updateSession(session.id, { signature })
-      })
+      // the PDF + SessionDetail can show it. Errors are swallowed (best-effort
+      // enrichment); the signing-retry task handles the unsigned-tab-closed case.
+      void signSession(session)
+        .then((signature) => {
+          if (signature) {
+            try {
+              updateSession(session.id, { signature })
+            } catch (err) {
+              console.warn('[signing] could not persist signature:', err)
+            }
+          }
+        })
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err)
       setView({ name: 'error', message })
@@ -172,7 +212,9 @@ function App() {
         <Clarify
           signPhoto={view.signPhoto}
           clarification={view.result.clarification!}
-          onPick={(variant) => handlePickVariant(variant, view.result, view.signPhoto)}
+          onPick={(variant) =>
+            handlePickVariant(variant, view.result, view.signPhoto, view.coords)
+          }
           onCancel={() => setView({ name: 'home' })}
         />
       </main>
@@ -185,9 +227,15 @@ function App() {
         <ParkingResult
           result={view.result}
           signPhoto={view.signPhoto}
+          coords={view.coords}
           onScanAnother={() => setView({ name: 'scan' })}
           onLogSession={() =>
-            setView({ name: 'logging', result: view.result, signPhoto: view.signPhoto })
+            setView({
+              name: 'logging',
+              result: view.result,
+              signPhoto: view.signPhoto,
+              coords: view.coords,
+            })
           }
           onRetake={() => setView({ name: 'scan' })}
         />
@@ -203,7 +251,12 @@ function App() {
           signPhoto={view.signPhoto}
           onComplete={handleSessionSaved}
           onCancel={() =>
-            setView({ name: 'result', result: view.result, signPhoto: view.signPhoto })
+            setView({
+              name: 'result',
+              result: view.result,
+              signPhoto: view.signPhoto,
+              coords: view.coords,
+            })
           }
         />
       </main>

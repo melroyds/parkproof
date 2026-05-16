@@ -1,9 +1,13 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import type { ParkingSession } from '../types'
-import { deleteSession } from '../lib/storage'
+import { deleteSession, updateSession } from '../lib/storage'
 import Icon from './Icon'
 import { useNow } from '../lib/use-now'
 import { formatCountdown } from '../lib/countdown'
+import { sessionTimezone } from '../lib/timezone'
+import { navigationUrl } from '../lib/walk-back'
+
+const NOTE_MAX_LENGTH = 280
 
 interface Props {
   session: ParkingSession
@@ -12,9 +16,9 @@ interface Props {
   onDraftAppeal: () => void
 }
 
-function fmtMelb(iso: string, full = false): string {
+function fmtLocal(iso: string, timeZone: string, full = false): string {
   return new Date(iso).toLocaleString('en-AU', {
-    timeZone: 'Australia/Melbourne',
+    timeZone,
     weekday: full ? 'short' : undefined,
     day: 'numeric',
     month: 'short',
@@ -30,6 +34,7 @@ export default function SessionDetail({ session, onBack, onDeleted, onDraftAppea
   const isExpired = expiresMs !== null && expiresMs < now
   const countdown =
     expiresMs !== null && !isExpired ? formatCountdown(expiresMs - now) : null
+  const timeZone = useMemo(() => sessionTimezone(session.location), [session.location])
 
   // Pre-import the PDF chunk so the click → save chain stays inside the
   // user-gesture window (iOS Safari otherwise sometimes blocks the download
@@ -73,6 +78,39 @@ export default function SessionDetail({ session, onBack, onDeleted, onDraftAppea
     onDeleted()
   }
 
+  // Editable note — persists to localStorage on save. The committed value lives
+  // in `currentNote` so re-renders pick up the latest copy without re-reading
+  // session storage; `noteDraft` is the in-progress textarea state.
+  const [currentNote, setCurrentNote] = useState(session.note ?? '')
+  const [noteEditing, setNoteEditing] = useState(false)
+  const [noteDraft, setNoteDraft] = useState(currentNote)
+  const [noteError, setNoteError] = useState<string | null>(null)
+
+  const startNoteEdit = () => {
+    setNoteDraft(currentNote)
+    setNoteError(null)
+    setNoteEditing(true)
+  }
+  const cancelNoteEdit = () => {
+    setNoteEditing(false)
+    setNoteDraft(currentNote)
+    setNoteError(null)
+  }
+  const saveNote = () => {
+    const trimmed = noteDraft.trim()
+    try {
+      updateSession(session.id, { note: trimmed || undefined })
+      setCurrentNote(trimmed)
+      setNoteEditing(false)
+      setNoteError(null)
+    } catch (err) {
+      // Quota error after recovery exhausted, or another storage failure.
+      // Keep the user in edit mode so their text isn't lost.
+      const message = err instanceof Error ? err.message : String(err)
+      setNoteError(message)
+    }
+  }
+
   return (
     <div className="min-h-screen flex flex-col p-6 max-w-md mx-auto w-full">
       <button
@@ -84,7 +122,7 @@ export default function SessionDetail({ session, onBack, onDeleted, onDraftAppea
 
       <h2 className="font-display text-3xl font-extrabold text-ink-900 mb-1">Parking session</h2>
       <p className="text-sm text-ink-600 mb-3 leading-relaxed">
-        Arrived {fmtMelb(session.arrived_at, true)}
+        Arrived {fmtLocal(session.arrived_at, timeZone, true)}
       </p>
 
       {session.signature && (
@@ -117,7 +155,7 @@ export default function SessionDetail({ session, onBack, onDeleted, onDraftAppea
               {session.expires_at
                 ? isExpired
                   ? 'Expired'
-                  : `Active until ${fmtMelb(session.expires_at)}`
+                  : `Active until ${fmtLocal(session.expires_at, timeZone)}`
                 : 'No expiry recorded'}
             </dd>
             {countdown && (
@@ -166,6 +204,25 @@ export default function SessionDetail({ session, onBack, onDeleted, onDraftAppea
                 <p className="text-xs text-ink-500 font-mono mt-0.5">
                   ({session.location.lat.toFixed(5)}, {session.location.lng.toFixed(5)})
                 </p>
+                {/* Walking-mode deep-link — separate from the "View on Maps"
+                    pin above because they're different intents. The pin shows
+                    "where is it"; this navigates you there. */}
+                {(() => {
+                  const mapsUrl = navigationUrl(session)
+                  if (!mapsUrl) return null
+                  return (
+                    <a
+                      href={mapsUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="mt-2 inline-flex items-center gap-1.5 bg-brand-50 hover:bg-brand-100 text-brand-800 border border-brand-200 text-xs font-semibold px-3 py-1.5 rounded-full transition-colors"
+                    >
+                      <Icon name="pin" className="w-3.5 h-3.5" />
+                      Walk back to the car
+                      <span aria-hidden>→</span>
+                    </a>
+                  )
+                })()}
               </dd>
             </div>
           )}
@@ -176,6 +233,78 @@ export default function SessionDetail({ session, onBack, onDeleted, onDraftAppea
             <dd className="mt-1 text-ink-900 capitalize">{session.confidence}</dd>
           </div>
         </dl>
+      </section>
+
+      {/* Note — user-supplied context. Soft-asks for it on empty so people
+          remember to add the WHY rather than just the WHEN-and-WHERE. */}
+      <section className="bg-white rounded-2xl border border-paper-300 p-5 mb-3">
+        <div className="flex items-baseline justify-between mb-2">
+          <h3 className="text-xs uppercase tracking-widest font-semibold text-ink-500">
+            Note
+          </h3>
+          {!noteEditing && (
+            <button
+              onClick={startNoteEdit}
+              className="text-xs font-medium text-brand-700 hover:text-brand-800 underline"
+            >
+              {currentNote ? 'Edit' : 'Add note'}
+            </button>
+          )}
+        </div>
+        {noteEditing ? (
+          <div className="space-y-2">
+            <textarea
+              value={noteDraft}
+              onChange={(e) =>
+                setNoteDraft(e.target.value.slice(0, NOTE_MAX_LENGTH))
+              }
+              rows={3}
+              autoFocus
+              placeholder="Why you were here — e.g. 'Mum's chemo at the Royal', 'Saturday market on Lygon'. Used as context if you ever need to appeal a ticket."
+              className="w-full text-sm text-ink-900 bg-paper-50 border border-paper-300 rounded-xl p-3 leading-relaxed focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 resize-y"
+            />
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-[10px] text-ink-500 font-mono">
+                {noteDraft.length}/{NOTE_MAX_LENGTH}
+              </span>
+              <div className="flex gap-2">
+                <button
+                  onClick={cancelNoteEdit}
+                  className="bg-paper-200 hover:bg-paper-300 text-ink-700 font-medium px-3 py-1.5 rounded-lg text-xs transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={saveNote}
+                  className="bg-brand-500 hover:bg-brand-600 text-white font-semibold px-3 py-1.5 rounded-lg text-xs transition-colors"
+                >
+                  Save note
+                </button>
+              </div>
+            </div>
+            {noteError && (
+              <p className="text-xs text-accent-700 break-words leading-relaxed">
+                {noteError}
+              </p>
+            )}
+          </div>
+        ) : currentNote ? (
+          <p className="text-sm text-ink-900 whitespace-pre-wrap break-words leading-relaxed">
+            {currentNote}
+          </p>
+        ) : (
+          <p className="text-xs text-ink-500 italic leading-relaxed">
+            No note added. Tap{' '}
+            <button
+              onClick={startNoteEdit}
+              className="underline font-medium text-brand-700"
+            >
+              Add note
+            </button>{' '}
+            to record why you were here — softens a council review when the
+            context matters.
+          </p>
+        )}
       </section>
 
       <section className="bg-white rounded-2xl border border-paper-300 p-5 mb-3">

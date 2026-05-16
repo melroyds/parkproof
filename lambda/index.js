@@ -185,7 +185,31 @@ Worked examples:
 3. Sign: "No Stopping Mon–Fri 7am–9am". Now: Sun 2pm. Next prohibition: Mon 7am. 'until' = Mon 7am.
 4. Sign: "1/4P Mon–Fri 8am–6pm". Now: Thu 9am. Inside the window. leave-by = 9:15am (capped by end-of-window 6pm, but duration wins). 'until' = Thu 9:15am.
 
-Sanity check before returning: if your computed 'until' is more than ~24 hours away on a weekday, you have probably missed an earlier restriction — recheck.`
+Sanity check before returning: if your computed 'until' is more than ~24 hours away on a weekday, you have probably missed an earlier restriction — recheck.
+
+NEXT_TRANSITION — the rule-of-thumb advice the user would get if they asked a knowledgeable friend.
+
+Populate next_transition when the parking calculus is about to shift meaningfully within the next ~3 hours and the user genuinely benefits from knowing — typically:
+- The current restriction is about to END and parking becomes free or longer-allowed (e.g. it's 5:50 pm at "2P Mon–Fri 8am–6pm" → after 6 pm the 2P limit no longer applies; or the user is currently inside No Stopping that lifts soon).
+- A new restriction is about to START in the next ~3 hours that flips can_park_now from true to false (e.g. it's 6:55 am and Clearway begins at 7 am).
+
+Do NOT populate next_transition when:
+- The next transition is more than ~3 hours away (it's not actionable advice yet — keep the result clean).
+- The transition is exactly equal to 'until' (it would just duplicate the existing answer).
+- The current restriction simply continues unchanged (no transition is happening soon).
+
+Shape: { when: ISO 8601 in user's local timezone, change: ≤80 chars plain-English description }.
+Examples of good 'change' strings:
+- "2P restriction ends — free parking until 8am tomorrow"
+- "Clearway begins — must move by then"
+- "Permit Zone ends — anyone can park"
+- "1P starts — 1-hour limit kicks in"
+Examples of bad 'change' strings (too verbose, not actionable, or duplicate of 'until'):
+- "The restriction described above will conclude at this time, after which..." (verbose)
+- "Same as until" (duplicates existing field)
+- "Things change" (not actionable)
+
+If no meaningful transition is approaching within 3 hours, set next_transition to null.`
 
 const OBSERVATION_GROUP_SCHEMA = {
   type: 'object',
@@ -197,6 +221,21 @@ const OBSERVATION_GROUP_SCHEMA = {
   additionalProperties: false,
 }
 
+const NEXT_TRANSITION_SCHEMA = {
+  anyOf: [
+    { type: 'null' },
+    {
+      type: 'object',
+      properties: {
+        when: { type: 'string' },
+        change: { type: 'string' },
+      },
+      required: ['when', 'change'],
+      additionalProperties: false,
+    },
+  ],
+}
+
 const RULE_VARIANT_SCHEMA = {
   type: 'object',
   properties: {
@@ -206,8 +245,17 @@ const RULE_VARIANT_SCHEMA = {
     can_park_now: { type: 'boolean' },
     until: { anyOf: [{ type: 'string' }, { type: 'null' }] },
     duration_minutes: { anyOf: [{ type: 'number' }, { type: 'null' }] },
+    next_transition: NEXT_TRANSITION_SCHEMA,
   },
-  required: ['label', 'rules', 'observations', 'can_park_now', 'until', 'duration_minutes'],
+  required: [
+    'label',
+    'rules',
+    'observations',
+    'can_park_now',
+    'until',
+    'duration_minutes',
+    'next_transition',
+  ],
   additionalProperties: false,
 }
 
@@ -220,6 +268,7 @@ const RESPONSE_SCHEMA = {
     until: { anyOf: [{ type: 'string' }, { type: 'null' }] },
     duration_minutes: { anyOf: [{ type: 'number' }, { type: 'null' }] },
     confidence: { type: 'string', enum: ['low', 'medium', 'high'] },
+    next_transition: NEXT_TRANSITION_SCHEMA,
     clarification: {
       anyOf: [
         { type: 'null' },
@@ -238,7 +287,16 @@ const RESPONSE_SCHEMA = {
       ],
     },
   },
-  required: ['rules', 'observations', 'can_park_now', 'until', 'duration_minutes', 'confidence', 'clarification'],
+  required: [
+    'rules',
+    'observations',
+    'can_park_now',
+    'until',
+    'duration_minutes',
+    'confidence',
+    'next_transition',
+    'clarification',
+  ],
   additionalProperties: false,
 }
 

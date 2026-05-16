@@ -70,6 +70,7 @@ function mockTranslateResponse() {
     until: new Date(now + 90 * 60 * 1000).toISOString(),
     duration_minutes: 90,
     confidence: 'high',
+    next_transition: null,
     clarification: {
       question: 'Which side of the sign are you parked on?',
       options: [
@@ -82,6 +83,7 @@ function mockTranslateResponse() {
           can_park_now: true,
           until: new Date(now + 15 * 60 * 1000).toISOString(),
           duration_minutes: 15,
+          next_transition: null,
         },
         {
           label: 'Right side (2P)',
@@ -92,6 +94,12 @@ function mockTranslateResponse() {
           can_park_now: true,
           until: new Date(now + 120 * 60 * 1000).toISOString(),
           duration_minutes: 120,
+          // Featured in screenshot #03 — surfaces the new transition banner so
+          // the portfolio demo grid showcases the feature.
+          next_transition: {
+            when: new Date(now + 60 * 60 * 1000).toISOString(),
+            change: 'Permit Zone ends — anyone can park free until 8am Mon-Fri',
+          },
         },
       ],
     },
@@ -214,7 +222,9 @@ async function captureFlow({ page, signPhotoPath }) {
   await page.locator('input[type=file]').first().setInputFiles(signPhotoPath)
   // resizeImageFile() runs async on the change event — wait for the preview
   // image and Translate button to render before clicking.
-  await page.getByRole('button', { name: /^Translate$/ }).click()
+  // Button reads "Translate" when the photo-quality pre-check is happy and
+  // "Translate anyway" when it flags an issue — both lead to the same flow.
+  await page.getByRole('button', { name: /^Translate( anyway)?$/ }).click()
 
   // === 02-clarify: variant chooser ===
   await page.getByText('Which side of the sign are you parked on?').waitFor()

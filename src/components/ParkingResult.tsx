@@ -5,23 +5,26 @@ import { submitFeedback } from '../lib/feedback'
 import { useNow } from '../lib/use-now'
 import { formatCountdown } from '../lib/countdown'
 import { formatExpiryAbsolute } from '../lib/time-format'
+import { timezoneForCoords } from '../lib/timezone'
 
 interface Props {
   result: ParkingRules
   signPhoto: string
+  /** Coords from the scan that produced this result — used to pin the displayed timezone. */
+  coords: { lat: number; lng: number } | null
   onScanAnother: () => void
   onLogSession: () => void
   onRetake: () => void
 }
 
-function formatUntil(iso: string | null): string | null {
+function formatUntil(iso: string | null, timeZone: string): string | null {
   if (!iso) return null
   const d = new Date(iso)
   if (Number.isNaN(d.getTime())) return null
   // Returns "10:00 am" when expiry is today, "10:00 am, Mon 18/05/2026"
   // when it's a future day — disambiguates 33h-away signs (until 10am
   // could be tomorrow OR Monday, the user shouldn't have to do the math).
-  return formatExpiryAbsolute(d).combined
+  return formatExpiryAbsolute(d, { timeZone }).combined
 }
 
 const URGENCY_STYLE = {
@@ -40,6 +43,7 @@ const CONFIDENCE_LABEL = {
 export default function ParkingResult({
   result,
   signPhoto,
+  coords,
   onScanAnother,
   onLogSession,
   onRetake,
@@ -49,11 +53,25 @@ export default function ParkingResult({
   // without storing anything identifiable.
   const [feedbackId] = useState(() => crypto.randomUUID())
   const now = useNow()
-  const { observations, can_park_now, until, confidence, chosen_label } = result
-  const untilLabel = formatUntil(until)
+  const { observations, can_park_now, until, confidence, chosen_label, next_transition } =
+    result
+  const timeZone = timezoneForCoords(coords?.lat, coords?.lng)
+  const untilLabel = formatUntil(until, timeZone)
   const countdown =
     can_park_now && until ? formatCountdown(new Date(until).getTime() - now) : null
   const confidenceMeta = CONFIDENCE_LABEL[confidence] ?? CONFIDENCE_LABEL.low
+
+  // Surface the transition banner only when the AI returned one AND it's
+  // actually in the near future. Server is told ≤3h but we add a client-side
+  // sanity guard in case it returns a stale or duplicate transition.
+  const transitionLabel = (() => {
+    if (!next_transition) return null
+    const whenMs = new Date(next_transition.when).getTime()
+    if (!Number.isFinite(whenMs)) return null
+    const minutesAway = Math.round((whenMs - now) / 60_000)
+    if (minutesAway <= 0 || minutesAway > 180) return null
+    return formatUntil(next_transition.when, timeZone)
+  })()
 
   return (
     <div className="min-h-screen flex flex-col p-6 max-w-md mx-auto w-full">
@@ -84,6 +102,25 @@ export default function ParkingResult({
           </p>
         )}
       </div>
+
+      {/* Transition-awareness banner — surfaces approaching rule changes so
+          the user can make a smarter decision than "should I start parking
+          now or wait 5 minutes for the restriction to lift". */}
+      {next_transition && transitionLabel && (
+        <div className="mt-4 bg-brand-50 border border-brand-200 rounded-2xl p-4 flex items-start gap-3">
+          <div className="w-8 h-8 rounded-full bg-brand-500 text-white flex items-center justify-center shrink-0 mt-0.5">
+            <Icon name="bell" className="w-4 h-4" strokeWidth={2.5} />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-xs font-semibold uppercase tracking-wider text-brand-700">
+              Heads up — at {transitionLabel}
+            </p>
+            <p className="text-sm text-ink-900 mt-1 leading-relaxed">
+              {next_transition.change}
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* On the sign */}
       <section className="mt-6 bg-white rounded-2xl p-5 border border-paper-300">

@@ -1,20 +1,15 @@
 import { jsPDF } from 'jspdf'
 import autoTable from 'jspdf-autotable'
-import tzlookup from 'tz-lookup'
 import type { AppealDraft, ParkingSession } from '../types'
 import { ACCURACY_USABLE_M, formatAccuracy } from './accuracy'
+import { sessionTimezone } from './timezone'
 
 const MARGIN = 40
-const DEFAULT_TIMEZONE = 'Australia/Melbourne'
 
 // ─── Time helpers ───────────────────────────────────────────────────────────
 function timezoneFor(session: ParkingSession): string {
-  if (!session.location) return DEFAULT_TIMEZONE
-  try {
-    return tzlookup(session.location.lat, session.location.lng) || DEFAULT_TIMEZONE
-  } catch {
-    return DEFAULT_TIMEZONE
-  }
+  // Thin wrapper — kept so the existing callsites stay readable.
+  return sessionTimezone(session.location)
 }
 
 function fmtLocal(iso: string, timezone: string): string {
@@ -305,6 +300,32 @@ export function downloadPdf(session: ParkingSession): void {
     )
     doc.text(wrapped, MARGIN + 12, y + 30)
     y += 60
+  }
+
+  // User note — context the user added about why they were here.
+  // Reviewers value this: an "appointment at hospital" or "school pickup"
+  // can materially soften a council's stance.
+  if (session.note && session.note.trim()) {
+    y = ensureSpace(doc, y, 80)
+    doc.setFontSize(13)
+    doc.setFont('helvetica', 'bold')
+    doc.setTextColor(15, 23, 42)
+    doc.text("Driver's note", MARGIN, y)
+    y += 16
+    doc.setFontSize(10)
+    doc.setFont('helvetica', 'normal')
+    doc.setTextColor(45, 55, 79)
+    const pageWidth0 = doc.internal.pageSize.getWidth()
+    const noteLines = doc.splitTextToSize(
+      session.note.trim(),
+      pageWidth0 - 2 * MARGIN,
+    )
+    for (const line of noteLines) {
+      y = ensureSpace(doc, y, 13)
+      doc.text(line, MARGIN, y)
+      y += 13
+    }
+    y += 10
   }
 
   // Statement

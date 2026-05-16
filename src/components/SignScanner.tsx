@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { resizeImageFile } from '../lib/image'
 import { haversineMeters } from '../lib/geo'
 import { loadSessions } from '../lib/storage'
+import { analyseSignPhoto, type QualityResult } from '../lib/photo-quality'
 import Icon from './Icon'
 import ReuseCard from './ReuseCard'
 import RecentScansPicker from './RecentScansPicker'
@@ -65,19 +66,25 @@ export default function SignScanner({ onCapture, onReuseSession, onCancel }: Pro
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null)
   const [match, setMatch] = useState<ProximityMatch | null>(null)
   const [matchDismissed, setMatchDismissed] = useState(false)
-  const [gpsState, setGpsState] = useState<GpsState>('pending')
-  const [recentSessions, setRecentSessions] = useState<ParkingSession[]>([])
+  // Initialise gpsState synchronously based on API availability — avoids the
+  // pattern of an effect immediately setting state, which the rules-of-hooks
+  // lint correctly flags as wasted work.
+  const [gpsState, setGpsState] = useState<GpsState>(() =>
+    typeof navigator !== 'undefined' &&
+    'geolocation' in navigator &&
+    'permissions' in navigator
+      ? 'pending'
+      : 'unavailable',
+  )
+  const [recentSessions] = useState<ParkingSession[]>(() => loadRecentSessions())
   const [pickerDismissed, setPickerDismissed] = useState(false)
+  const [quality, setQuality] = useState<QualityResult | null>(null)
 
   useEffect(() => {
-    // Always compute the recent-sessions list so we can offer the picker fallback
-    // when GPS isn't available (desktop, denied, or too imprecise).
-    setRecentSessions(loadRecentSessions())
-
-    if (!('geolocation' in navigator) || !('permissions' in navigator)) {
-      setGpsState('unavailable')
-      return
-    }
+    // Recent-sessions list is initialised lazily via useState above — no need
+    // to fetch it again here. This effect is now purely GPS bootstrap.
+    // If the lazy-init above already set unavailable, this effect short-circuits.
+    if (gpsState === 'unavailable') return
     let cancelled = false
     navigator.permissions
       .query({ name: 'geolocation' as PermissionName })
@@ -117,6 +124,9 @@ export default function SignScanner({ onCapture, onReuseSession, onCancel }: Pro
     return () => {
       cancelled = true
     }
+    // Mount-only bootstrap; gpsState is read once as a fast-exit. Re-running on
+    // gpsState transitions would re-fire the GPS request unnecessarily.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const showProximityCard = match && !matchDismissed && !preview
@@ -132,9 +142,20 @@ export default function SignScanner({ onCapture, onReuseSession, onCancel }: Pro
     recentSessions.length > 0
 
   const handleFile = async (file: File) => {
-    const { dataUrl, mediaType: mt } = await resizeImageFile(file)
+    // Run the quality check on the ORIGINAL file (full resolution) — the
+    // resize step we do for storage drops detail we want to evaluate against.
+    // The two operations run in parallel so the user sees the preview at the
+    // normal speed; quality just lands a tick later.
+    const [{ dataUrl, mediaType: mt }, qualityResult] = await Promise.all([
+      resizeImageFile(file),
+      analyseSignPhoto(file).catch((err) => {
+        console.warn('[photo-quality] analysis error, continuing:', err)
+        return null
+      }),
+    ])
     setMediaType(mt)
     setPreview(dataUrl)
+    setQuality(qualityResult)
   }
 
   const confirm = () => {
@@ -181,9 +202,33 @@ export default function SignScanner({ onCapture, onReuseSession, onCancel }: Pro
             alt="Captured parking sign"
             className="w-full rounded-2xl mb-4 border border-paper-300 object-contain max-h-[60vh] bg-white"
           />
+          {/* Pre-flight quality warning — doesn't block, just informs.
+              Saves a wasted Claude call on obvious bad input AND helps the
+              user understand why a result might be low-confidence. */}
+          {quality && quality.verdict !== 'ok' && quality.message && (
+            <div className="mb-3 bg-amber-50 border-2 border-amber-400 rounded-xl p-3">
+              <div className="flex items-start gap-2">
+                <Icon
+                  name="warning"
+                  className="w-5 h-5 text-amber-700 shrink-0 mt-0.5"
+                />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-display font-bold text-ink-900">
+                    Photo could be clearer
+                  </p>
+                  <p className="text-xs text-ink-700 mt-0.5 leading-relaxed">
+                    {quality.message}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
           <div className="flex gap-2 mt-auto">
             <button
-              onClick={() => setPreview(null)}
+              onClick={() => {
+                setPreview(null)
+                setQuality(null)
+              }}
               className="flex-1 bg-paper-200 hover:bg-paper-300 text-ink-900 font-medium py-3 rounded-xl transition-colors"
             >
               Retake
@@ -192,7 +237,7 @@ export default function SignScanner({ onCapture, onReuseSession, onCancel }: Pro
               onClick={confirm}
               className="flex-1 bg-brand-500 hover:bg-brand-600 active:bg-brand-700 text-white font-semibold py-3 rounded-xl shadow-md shadow-brand-500/20 transition-colors"
             >
-              Translate
+              {quality && quality.verdict !== 'ok' ? 'Translate anyway' : 'Translate'}
             </button>
           </div>
         </>

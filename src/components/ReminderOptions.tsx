@@ -3,6 +3,7 @@ import type { ParkingSession } from '../types'
 import { scheduleParkingReminders, type ScheduleResult } from '../lib/notifications'
 import { useNow } from '../lib/use-now'
 import { formatExpiryAbsolute, formatReminderTimesLine } from '../lib/time-format'
+import { sessionTimezone } from '../lib/timezone'
 import Icon from './Icon'
 
 /**
@@ -80,6 +81,8 @@ export default function ReminderOptions({ session, onDone }: Props) {
   // so the moment a chip becomes "fireable in <30s" it flips to disabled.
   const now = useNow(30_000)
 
+  const timeZone = useMemo(() => sessionTimezone(session.location), [session.location])
+
   const { offsets, expiresLabel, anyFireable } = useMemo(() => {
     if (!session.expires_at) {
       return { offsets: [] as OffsetInfo[], expiresLabel: null as string | null, anyFireable: false }
@@ -98,11 +101,11 @@ export default function ReminderOptions({ session, onDone }: Props) {
       offsets,
       // "3:45 pm" for today's expiry; "10:00 am, Mon 18/05/2026" for a
       // multi-day-future one. Same rule as the result screen so both
-      // surfaces stay consistent.
-      expiresLabel: formatExpiryAbsolute(expires, { now: nowDate }).combined,
+      // surfaces stay consistent. TZ is anchored to the parking spot.
+      expiresLabel: formatExpiryAbsolute(expires, { now: nowDate, timeZone }).combined,
       anyFireable: offsets.some((o) => !o.isPast),
     }
-  }, [session.expires_at, now])
+  }, [session.expires_at, now, timeZone])
 
   const [selected, setSelected] = useState<Set<Offset>>(() =>
     pickDefaults(offsets.filter((o) => !o.isPast)),
@@ -142,8 +145,8 @@ export default function ReminderOptions({ session, onDone }: Props) {
     () =>
       selectedFireAtList.length === 0
         ? null
-        : formatReminderTimesLine(selectedFireAtList, { now: new Date(now) }),
-    [selectedFireAtList, now],
+        : formatReminderTimesLine(selectedFireAtList, { now: new Date(now), timeZone }),
+    [selectedFireAtList, now, timeZone],
   )
 
   const handleIcs = async () => {
@@ -232,6 +235,7 @@ export default function ReminderOptions({ session, onDone }: Props) {
           // 10:00 am, Mon 18/05/2026" rather than the ambiguous "10:00 am".
           const fireDescription = formatExpiryAbsolute(fireAt, {
             now: new Date(now),
+            timeZone,
           }).combined
           return (
             <button

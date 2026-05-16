@@ -1,12 +1,10 @@
 import { createEvent } from 'ics'
 import type { ParkingSession } from '../types'
+import { sessionTimezone } from './timezone'
 
 // Event covers the expiry moment plus a short tail so calendars don't display
 // it as zero-length. The actual alarms come from the VALARM blocks below.
 const EVENT_DURATION_MINUTES = 10
-// TODO: derive from session.location via tz-lookup for non-Melbourne sessions.
-// Tracked alongside the same hard-code in ParkingResult/SessionDetail/ReminderOptions.
-const DISPLAY_TIMEZONE = 'Australia/Melbourne'
 
 function utcParts(d: Date): [number, number, number, number, number] {
   return [
@@ -41,9 +39,13 @@ export function downloadIcs(session: ParkingSession, offsetsMinutes: number[]): 
 
   const expires = new Date(session.expires_at)
   const endAt = new Date(expires.getTime() + EVENT_DURATION_MINUTES * 60 * 1000)
+  const timeZone = sessionTimezone(session.location)
+  // City name from the IANA tz string ("Australia/Sydney" → "Sydney") for the
+  // human description. Cheap and works for every region tz-lookup returns.
+  const cityLabel = timeZone.split('/').pop()?.replace(/_/g, ' ') ?? timeZone
 
   const expiresLabel = expires.toLocaleString('en-AU', {
-    timeZone: DISPLAY_TIMEZONE,
+    timeZone,
     weekday: 'short',
     day: 'numeric',
     month: 'short',
@@ -56,7 +58,7 @@ export function downloadIcs(session: ParkingSession, offsetsMinutes: number[]): 
   const sortedOffsets = [...offsetsMinutes].sort((a, b) => b - a)
 
   const description = [
-    `Your parking expires at ${expiresLabel} (Melbourne).`,
+    `Your parking expires at ${expiresLabel} (${cityLabel}).`,
     `Reminders: ${sortedOffsets.map(offsetWord).join(', ')}.`,
     `ParkProof session: ${session.id}`,
   ].join('\n')
