@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import type { ParkingSession } from '../types'
 import { scheduleParkingReminders, type ScheduleResult } from '../lib/notifications'
 import { useNow } from '../lib/use-now'
+import { formatExpiryAbsolute, formatReminderTimesLine } from '../lib/time-format'
 import Icon from './Icon'
 
 /**
@@ -17,8 +18,6 @@ type Offset = (typeof REMINDER_OFFSETS)[number]
 // Mirrors SAFETY_MARGIN_MS in notifications.ts.
 const SAFETY_MARGIN_MS = 30 * 1000
 
-const TZ = 'Australia/Melbourne'
-
 interface Props {
   session: ParkingSession
   onDone: () => void
@@ -30,17 +29,11 @@ interface OffsetInfo {
   fireAt: Date
   /** True if this offset is already past (incl. safety margin). */
   isPast: boolean
-  /** "3:35 PM" style local time. */
-  fireLabel: string
 }
 
 function chipLabel(offset: Offset): string {
   if (offset === 0) return 'At expiry'
   return `${offset} min`
-}
-
-function fmtTime(d: Date): string {
-  return d.toLocaleTimeString('en-AU', { hour: 'numeric', minute: '2-digit', timeZone: TZ })
 }
 
 /** Pick sensible defaults given which offsets are fireable. */
@@ -92,18 +85,21 @@ export default function ReminderOptions({ session, onDone }: Props) {
       return { offsets: [] as OffsetInfo[], expiresLabel: null as string | null, anyFireable: false }
     }
     const expires = new Date(session.expires_at)
+    const nowDate = new Date(now)
     const offsets: OffsetInfo[] = REMINDER_OFFSETS.map((offset) => {
       const fireAt = new Date(expires.getTime() - offset * 60 * 1000)
       return {
         offset,
         fireAt,
         isPast: fireAt.getTime() - now < SAFETY_MARGIN_MS,
-        fireLabel: fmtTime(fireAt),
       }
     })
     return {
       offsets,
-      expiresLabel: fmtTime(expires),
+      // "3:45 pm" for today's expiry; "10:00 am, Mon 18/05/2026" for a
+      // multi-day-future one. Same rule as the result screen so both
+      // surfaces stay consistent.
+      expiresLabel: formatExpiryAbsolute(expires, { now: nowDate }).combined,
       anyFireable: offsets.some((o) => !o.isPast),
     }
   }, [session.expires_at, now])
@@ -129,6 +125,25 @@ export default function ReminderOptions({ session, onDone }: Props) {
   const selectedList = useMemo(
     () => [...selected].sort((a, b) => b - a),
     [selected],
+  )
+
+  // Reminder summary that says e.g. "9:30 am, 9:45 am" (today) or
+  // "9:30 am, 9:45 am on Mon 18/05/2026" (future day). Computed off the
+  // selected offsets' fireAt times, in chronological order.
+  const selectedFireAtList = useMemo(
+    () =>
+      selectedList
+        .map((o) => offsets.find((x) => x.offset === o))
+        .filter((x): x is OffsetInfo => Boolean(x))
+        .map((x) => x.fireAt),
+    [selectedList, offsets],
+  )
+  const selectedTimesLabel = useMemo(
+    () =>
+      selectedFireAtList.length === 0
+        ? null
+        : formatReminderTimesLine(selectedFireAtList, { now: new Date(now) }),
+    [selectedFireAtList, now],
   )
 
   const handleIcs = async () => {
@@ -190,13 +205,6 @@ export default function ReminderOptions({ session, onDone }: Props) {
   }
 
   // === Main flow ===
-  const selectedTimesLabel =
-    selectedList.length === 0
-      ? null
-      : selectedList
-          .map((o) => offsets.find((x) => x.offset === o)!.fireLabel)
-          .join(', ')
-
   return (
     <div className="min-h-screen flex flex-col p-6 max-w-md mx-auto w-full">
       <h2 className="font-display text-3xl font-extrabold text-ink-900 mb-1">Set reminders</h2>
@@ -208,7 +216,7 @@ export default function ReminderOptions({ session, onDone }: Props) {
 
       {/* Chip selector */}
       <div className="flex flex-wrap gap-2 mb-3">
-        {offsets.map(({ offset, isPast, fireLabel }) => {
+        {offsets.map(({ offset, isPast, fireAt }) => {
           const isSelected = selected.has(offset)
           const base =
             'px-4 py-2 rounded-full text-sm font-semibold border-2 transition-colors min-w-[88px] text-center'
@@ -220,6 +228,11 @@ export default function ReminderOptions({ session, onDone }: Props) {
           } else {
             cls = `${base} bg-white border-paper-300 text-ink-700 hover:border-brand-300`
           }
+          // Date-aware tooltip so a chip for tomorrow says "would fire at
+          // 10:00 am, Mon 18/05/2026" rather than the ambiguous "10:00 am".
+          const fireDescription = formatExpiryAbsolute(fireAt, {
+            now: new Date(now),
+          }).combined
           return (
             <button
               key={offset}
@@ -230,9 +243,9 @@ export default function ReminderOptions({ session, onDone }: Props) {
               aria-label={
                 isPast
                   ? `${chipLabel(offset)} — already past`
-                  : `${chipLabel(offset)} — would fire at ${fireLabel}`
+                  : `${chipLabel(offset)} — would fire at ${fireDescription}`
               }
-              title={isPast ? 'Already in the past' : `Fires at ${fireLabel}`}
+              title={isPast ? 'Already in the past' : `Fires at ${fireDescription}`}
               className={cls}
             >
               {chipLabel(offset)}

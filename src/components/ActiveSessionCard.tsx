@@ -1,6 +1,7 @@
 import type { ParkingSession } from '../types'
 import { formatCountdown } from '../lib/countdown'
 import { useNow } from '../lib/use-now'
+import { formatExpiryAbsolute } from '../lib/time-format'
 import Icon from './Icon'
 
 interface Props {
@@ -35,14 +36,6 @@ const URGENCY_STYLES = {
   },
 } as const
 
-function fmtExpiry(iso: string): string {
-  return new Date(iso).toLocaleTimeString('en-AU', {
-    hour: 'numeric',
-    minute: '2-digit',
-    timeZone: 'Australia/Melbourne',
-  })
-}
-
 export default function ActiveSessionCard({ session, extraCount, onOpen }: Props) {
   // 30s tick is enough granularity for minute-level countdowns; the totalMinutes
   // value only ever shifts by ±1 per tick at the boundary, which matches what a
@@ -52,6 +45,8 @@ export default function ActiveSessionCard({ session, extraCount, onOpen }: Props
   const expiresMs = new Date(session.expires_at).getTime()
   const countdown = formatCountdown(expiresMs - now)
   const style = URGENCY_STYLES[countdown.urgency]
+  // Date-aware: same day → "Move by 3:45 pm"; multi-day → "Move by 10:00 am, Mon 18/05/2026"
+  const expiryLabel = formatExpiryAbsolute(session.expires_at, { now: new Date(now) })
 
   const addressLine =
     session.location?.address ??
@@ -86,12 +81,12 @@ export default function ActiveSessionCard({ session, extraCount, onOpen }: Props
         )}
       </div>
 
-      <div className="mt-4 flex items-baseline justify-between gap-3">
+      <div className="mt-4">
         <p className="font-display text-3xl font-extrabold tracking-tight">
           {countdown.label}
         </p>
-        <p className="text-sm text-white/90 font-semibold whitespace-nowrap">
-          Move by {fmtExpiry(session.expires_at)}
+        <p className="mt-1 text-sm text-white/90 font-semibold">
+          Move by {expiryLabel.combined}
         </p>
       </div>
 

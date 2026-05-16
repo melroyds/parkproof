@@ -4,6 +4,7 @@ import Icon from './Icon'
 import { submitFeedback } from '../lib/feedback'
 import { useNow } from '../lib/use-now'
 import { formatCountdown } from '../lib/countdown'
+import { formatExpiryAbsolute } from '../lib/time-format'
 
 interface Props {
   result: ParkingRules
@@ -17,11 +18,10 @@ function formatUntil(iso: string | null): string | null {
   if (!iso) return null
   const d = new Date(iso)
   if (Number.isNaN(d.getTime())) return null
-  return d.toLocaleTimeString('en-AU', {
-    hour: 'numeric',
-    minute: '2-digit',
-    timeZone: 'Australia/Melbourne',
-  })
+  // Returns "10:00 am" when expiry is today, "10:00 am, Mon 18/05/2026"
+  // when it's a future day — disambiguates 33h-away signs (until 10am
+  // could be tomorrow OR Monday, the user shouldn't have to do the math).
+  return formatExpiryAbsolute(d).combined
 }
 
 const URGENCY_STYLE = {
