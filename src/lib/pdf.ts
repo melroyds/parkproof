@@ -77,10 +77,17 @@ function splitRules(rules: string): string {
 }
 
 function buildGuidance(session: ParkingSession, timezone: string): string {
-  if (session.expires_at) {
-    return `Free to park. Move by ${fmtLocalShort(session.expires_at, timezone)}.`
+  if (!session.expires_at) {
+    return 'Free to park. No expiry shown on the sign.'
   }
-  return 'Free to park. No expiry shown on the sign.'
+  const expiresMs = new Date(session.expires_at).getTime()
+  // If the PDF is exported AFTER expiry (typical for evidence-after-the-fact),
+  // the "Move by …" copy reads as a contradiction. State the past tense honestly
+  // — the evidence record is about what the session was at the time of parking.
+  if (Number.isFinite(expiresMs) && expiresMs < Date.now()) {
+    return `Session expired at ${fmtLocalShort(session.expires_at, timezone)}.`
+  }
+  return `Free to park. Move by ${fmtLocalShort(session.expires_at, timezone)}.`
 }
 
 // ─── PDF layout helpers ─────────────────────────────────────────────────────
@@ -311,12 +318,46 @@ export function downloadPdf(session: ParkingSession): void {
   const wrapped = doc.splitTextToSize(statement, pageWidth - 2 * MARGIN)
   doc.text(wrapped, MARGIN, y)
 
-  // Signature appendix (only if the session was signed)
-  if (session.signature) {
-    drawSignatureAppendix(doc, session.signature)
+  // Signature appendix (only if the session was signed AND the bundle is
+  // structurally complete). Older sessions saved during the deploy-bug
+  // window briefly had an empty-object signature; we don't want a partial
+  // bundle to crash the whole PDF. If anything is missing or the appendix
+  // itself fails, log + continue without it — the main evidence record
+  // (page 1) is the user's actual deliverable.
+  if (isValidSignature(session.signature)) {
+    try {
+      drawSignatureAppendix(doc, session.signature)
+    } catch (err) {
+      console.warn('[pdf] signature appendix failed, omitting:', err)
+    }
+  } else if (session.signature) {
+    console.warn(
+      '[pdf] signature bundle is incomplete, omitting appendix. Saved fields:',
+      Object.keys(session.signature),
+    )
   }
 
   doc.save(`parkproof-${session.id.slice(0, 8)}.pdf`)
+}
+
+/**
+ * A signature bundle is "valid enough to render" if every field the appendix
+ * actually reads is present and a string. We don't verify cryptographically
+ * here — the PDF surfaces the raw bytes for an external `openssl dgst` check.
+ */
+function isValidSignature(
+  sig: ParkingSession['signature'],
+): sig is NonNullable<ParkingSession['signature']> {
+  if (!sig || typeof sig !== 'object') return false
+  const required = [
+    'schema',
+    'signed_at',
+    'algorithm',
+    'key_alias',
+    'canonical_payload',
+    'signature_base64',
+  ] as const
+  return required.every((k) => typeof sig[k] === 'string' && sig[k].length > 0)
 }
 
 function drawSignatureAppendix(doc: jsPDF, sig: NonNullable<ParkingSession['signature']>): void {
@@ -546,7 +587,7 @@ export function downloadAppealPdf(params: {
     }
     caption.push(fmtLocal(session.arrived_at, timezone))
 
-    y = addImageWithOverlayCaption(doc, session.car_photo, y, caption, 260) + 18
+    addImageWithOverlayCaption(doc, session.car_photo, y, caption, 260)
   }
 
   doc.save(`parkproof-appeal-${session.id.slice(0, 8)}.pdf`)

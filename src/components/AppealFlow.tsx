@@ -53,15 +53,27 @@ export default function AppealFlow({ session, onBack }: Props) {
     }
   }
 
+  const [pdfError, setPdfError] = useState<string | null>(null)
+  const [pdfBusy, setPdfBusy] = useState(false)
   const handleDownloadPdf = async () => {
     if (stage.name !== 'review') return
-    const { downloadAppealPdf } = await import('../lib/pdf')
-    downloadAppealPdf({
-      session,
-      draft: stage.draft,
-      editedLetter,
-      ticketPhoto: stage.ticketPhoto,
-    })
+    setPdfError(null)
+    setPdfBusy(true)
+    try {
+      const { downloadAppealPdf } = await import('../lib/pdf')
+      downloadAppealPdf({
+        session,
+        draft: stage.draft,
+        editedLetter,
+        ticketPhoto: stage.ticketPhoto,
+      })
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err)
+      console.error('[pdf] appeal export failed:', err)
+      setPdfError(message)
+    } finally {
+      setPdfBusy(false)
+    }
   }
 
   if (stage.name === 'drafting') {
@@ -168,11 +180,20 @@ export default function AppealFlow({ session, onBack }: Props) {
           </button>
           <button
             onClick={handleDownloadPdf}
-            className="bg-white border border-paper-300 hover:border-ink-600 text-ink-900 font-medium py-3 rounded-2xl transition-colors"
+            disabled={pdfBusy}
+            className="bg-white border border-paper-300 hover:border-ink-600 disabled:opacity-60 text-ink-900 font-medium py-3 rounded-2xl transition-colors"
           >
-            Download as PDF
+            {pdfBusy ? 'Building PDF…' : 'Download as PDF'}
           </button>
         </div>
+        {pdfError && (
+          <div className="mt-3 bg-accent-50 border-2 border-accent-400 rounded-xl p-3 text-sm">
+            <p className="font-display font-bold text-ink-900 mb-1">
+              Couldn't build the PDF
+            </p>
+            <p className="text-xs text-ink-700 leading-relaxed break-words">{pdfError}</p>
+          </div>
+        )}
 
         <p className="text-xs text-ink-500 mt-4 text-center leading-relaxed">
           The AI draft is a starting point. Read carefully, edit the letter to match your voice

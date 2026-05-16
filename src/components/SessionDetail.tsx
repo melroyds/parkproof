@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from 'react'
 import type { ParkingSession } from '../types'
 import { deleteSession } from '../lib/storage'
 import Icon from './Icon'
@@ -29,6 +30,42 @@ export default function SessionDetail({ session, onBack, onDeleted, onDraftAppea
   const isExpired = expiresMs !== null && expiresMs < now
   const countdown =
     expiresMs !== null && !isExpired ? formatCountdown(expiresMs - now) : null
+
+  // Pre-import the PDF chunk so the click → save chain stays inside the
+  // user-gesture window (iOS Safari otherwise sometimes blocks the download
+  // because the await import() breaks the gesture). We hold the module in a
+  // ref and call it synchronously from the click handler.
+  const pdfModuleRef = useRef<typeof import('../lib/pdf') | null>(null)
+  const [pdfError, setPdfError] = useState<string | null>(null)
+  const [pdfBusy, setPdfBusy] = useState(false)
+
+  useEffect(() => {
+    let cancelled = false
+    void import('../lib/pdf').then((mod) => {
+      if (!cancelled) pdfModuleRef.current = mod
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  const handleExportPdf = async () => {
+    setPdfError(null)
+    setPdfBusy(true)
+    try {
+      // If the chunk is already in the ref, run synchronously. Otherwise
+      // fall back to a fresh dynamic import — slower on first click on a
+      // cold cache, but at least it works.
+      const mod = pdfModuleRef.current ?? (await import('../lib/pdf'))
+      mod.downloadPdf(session)
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err)
+      console.error('[pdf] export failed:', err)
+      setPdfError(message)
+    } finally {
+      setPdfBusy(false)
+    }
+  }
 
   const handleDelete = () => {
     if (!window.confirm('Delete this parking session? This cannot be undone.')) return
@@ -167,14 +204,26 @@ export default function SessionDetail({ session, onBack, onDeleted, onDraftAppea
 
       <div className="mt-6 flex flex-col gap-2">
         <button
-          onClick={async () => {
-            const { downloadPdf } = await import('../lib/pdf')
-            downloadPdf(session)
-          }}
-          className="bg-brand-500 hover:bg-brand-600 active:bg-brand-700 text-white font-semibold py-4 rounded-2xl shadow-lg shadow-brand-500/25 transition-colors"
+          onClick={handleExportPdf}
+          disabled={pdfBusy}
+          className="bg-brand-500 hover:bg-brand-600 active:bg-brand-700 disabled:bg-brand-300 text-white font-semibold py-4 rounded-2xl shadow-lg shadow-brand-500/25 transition-colors"
         >
-          Export as PDF
+          {pdfBusy ? 'Building PDF…' : 'Export as PDF'}
         </button>
+        {pdfError && (
+          <div className="bg-accent-50 border-2 border-accent-400 rounded-xl p-3 text-sm">
+            <p className="font-display font-bold text-ink-900 mb-1">
+              Couldn't build the PDF
+            </p>
+            <p className="text-xs text-ink-700 leading-relaxed break-words">
+              {pdfError}
+            </p>
+            <p className="text-[10px] text-ink-500 mt-2">
+              The error has been logged to the browser console. If this keeps
+              happening, take a screenshot of the console output and share it.
+            </p>
+          </div>
+        )}
         <button
           onClick={onDraftAppeal}
           className="bg-white border border-ink-700 hover:bg-ink-900 hover:text-white text-ink-900 font-semibold py-3 rounded-2xl transition-colors"
