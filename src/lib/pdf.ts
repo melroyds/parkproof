@@ -613,3 +613,194 @@ export function downloadAppealPdf(params: {
 
   doc.save(`parkproof-appeal-${session.id.slice(0, 8)}.pdf`)
 }
+
+// ─── Full-account export PDF ────────────────────────────────────────────────
+//
+// Multi-session "everything I have" PDF for the cloud-sync export route. The
+// shape matches what /me/export returns. Single-session details get full
+// metadata + photos; the cover page summarises the whole set so a reviewer
+// (council, lawyer, accountant) can navigate quickly.
+
+export interface FullExportPayload {
+  exported_at: string
+  schema: string
+  account: {
+    user_id: string
+    email: string | null
+    created_at: string | null
+  }
+  sessions: ParkingSession[]
+  notes?: string
+}
+
+export function downloadFullExportPdf(payload: FullExportPayload): void {
+  const doc = new jsPDF({ unit: 'pt', format: 'a4' })
+  const pageWidth = doc.internal.pageSize.getWidth()
+
+  // ─── Cover page ───
+  let y = MARGIN
+
+  doc.setFontSize(24)
+  doc.setFont('helvetica', 'bold')
+  doc.setTextColor(15, 23, 42)
+  doc.text('ParkProof — Account Export', MARGIN, y)
+  y += 30
+
+  doc.setFontSize(11)
+  doc.setFont('helvetica', 'normal')
+  doc.setTextColor(80)
+  if (payload.account.email) {
+    doc.text(`Account: ${payload.account.email}`, MARGIN, y)
+    y += 14
+  }
+  doc.text(`User ID: ${payload.account.user_id}`, MARGIN, y)
+  y += 14
+  doc.text(
+    `Exported: ${new Date(payload.exported_at).toLocaleString('en-AU')}`,
+    MARGIN,
+    y,
+  )
+  y += 14
+  doc.text(`Sessions in this export: ${payload.sessions.length}`, MARGIN, y)
+  y += 22
+
+  // Intro paragraph — sets reviewer expectations.
+  doc.setFontSize(10)
+  doc.setTextColor(100)
+  const intro =
+    'This document is a complete, contemporaneous record of every parking session this account '
+    + 'has logged with ParkProof. Each session was captured at the moment of parking with GPS, '
+    + 'photographs, and an AI-translated reading of the parking sign. Where a session was signed '
+    + 'with the ParkProof KMS key, the badge on that section indicates a verifiable cryptographic '
+    + 'signature exists (export the individual session PDF for the full signature appendix).'
+  const introLines = doc.splitTextToSize(intro, pageWidth - 2 * MARGIN)
+  doc.text(introLines, MARGIN, y)
+  y += introLines.length * 12 + 16
+
+  if (payload.sessions.length === 0) {
+    // No sessions — still produce a valid file the user can keep.
+    doc.setFontSize(11)
+    doc.setTextColor(15, 23, 42)
+    doc.text('No parking sessions have been saved to this account yet.', MARGIN, y)
+    doc.save(`parkproof-export-${new Date().toISOString().slice(0, 10)}.pdf`)
+    return
+  }
+
+  // ─── Cover summary table ───
+  doc.setTextColor(15, 23, 42)
+  const summary: [string, string, string, string][] = payload.sessions.map((s, i) => {
+    const tz = timezoneFor(s)
+    const arrived = fmtLocalShort(s.arrived_at, tz)
+    const expires = s.expires_at ? fmtLocalShort(s.expires_at, tz) : '—'
+    const address =
+      s.location?.address
+      ?? (s.location
+        ? `${s.location.lat.toFixed(4)}, ${s.location.lng.toFixed(4)}`
+        : '—')
+    return [String(i + 1), arrived, expires, address]
+  })
+  autoTable(doc, {
+    startY: y,
+    head: [['#', 'Arrived', 'Expires', 'Location']],
+    body: summary,
+    styles: { fontSize: 9, cellPadding: 5, valign: 'top' },
+    headStyles: { fillColor: [15, 23, 42] },
+    columnStyles: {
+      0: { fontStyle: 'bold', cellWidth: 24 },
+      1: { cellWidth: 105 },
+      2: { cellWidth: 105 },
+      // location takes the remaining width
+    },
+    margin: { left: MARGIN, right: MARGIN },
+  })
+
+  // ─── One detail block per session ───
+  payload.sessions.forEach((session, i) => {
+    doc.addPage()
+    y = MARGIN
+
+    const tz = timezoneFor(session)
+
+    // Section header
+    doc.setFontSize(16)
+    doc.setFont('helvetica', 'bold')
+    doc.setTextColor(15, 23, 42)
+    doc.text(`Session ${i + 1} of ${payload.sessions.length}`, MARGIN, y)
+    y += 22
+
+    // Signed badge (if applicable)
+    if (isValidSignature(session.signature)) {
+      doc.setFillColor(232, 240, 254) // brand-50
+      doc.setDrawColor(124, 156, 222) // brand-300
+      doc.setLineWidth(0.5)
+      const badgeText = `Cryptographically signed at ${new Date(session.signature.signed_at).toLocaleString('en-AU')}`
+      const badgeTextWidth = doc.getTextWidth(badgeText)
+      doc.roundedRect(MARGIN, y - 10, badgeTextWidth + 16, 16, 8, 8, 'FD')
+      doc.setFontSize(8)
+      doc.setFont('helvetica', 'normal')
+      doc.setTextColor(60, 96, 168) // brand-700
+      doc.text(badgeText, MARGIN + 8, y + 1)
+      y += 18
+    }
+
+    // Metadata table (compact)
+    doc.setTextColor(15, 23, 42)
+    const body: [string, string][] = [
+      ['Arrived at', fmtLocal(session.arrived_at, tz)],
+      ['Expires at', session.expires_at ? fmtLocal(session.expires_at, tz) : '—'],
+      ['Address', session.location?.address ?? '—'],
+      [
+        'Location (GPS)',
+        session.location
+          ? `${session.location.lat.toFixed(6)}, ${session.location.lng.toFixed(6)}`
+          : 'Not captured',
+      ],
+      ['Side / Variant selected', session.chosen_label || '—'],
+      ['Sign rules', splitRules(session.rules)],
+      ['AI confidence', session.confidence],
+    ]
+    if (session.note && session.note.trim()) {
+      body.push(['Driver’s note', session.note.trim()])
+    }
+    autoTable(doc, {
+      startY: y,
+      head: [['Field', 'Value']],
+      body,
+      styles: { fontSize: 9, cellPadding: 5, valign: 'top' },
+      headStyles: { fillColor: [15, 23, 42] },
+      columnStyles: { 0: { fontStyle: 'bold', cellWidth: 120 } },
+      margin: { left: MARGIN, right: MARGIN },
+    })
+    const lastTable = (doc as unknown as { lastAutoTable?: { finalY: number } })
+      .lastAutoTable
+    y = (lastTable?.finalY ?? y) + 14
+
+    // Photos — compact at 200pt max-height each so a typical session fits one page.
+    if (session.sign_photo) {
+      y = ensureSpace(doc, y, 220)
+      doc.setFontSize(11)
+      doc.setFont('helvetica', 'bold')
+      doc.text('Sign photo', MARGIN, y)
+      y += 12
+      y = addImageFitted(doc, session.sign_photo, y, 200) + 14
+    }
+    if (session.car_photo) {
+      y = ensureSpace(doc, y, 220)
+      doc.setFontSize(11)
+      doc.setFont('helvetica', 'bold')
+      doc.text('Car at the spot', MARGIN, y)
+      y += 12
+      const caption: string[] = []
+      if (session.location?.address) caption.push(session.location.address)
+      else if (session.location) {
+        caption.push(
+          `${session.location.lat.toFixed(5)}, ${session.location.lng.toFixed(5)}`,
+        )
+      }
+      caption.push(fmtLocal(session.arrived_at, tz))
+      y = addImageWithOverlayCaption(doc, session.car_photo, y, caption, 200) + 14
+    }
+  })
+
+  doc.save(`parkproof-export-${new Date().toISOString().slice(0, 10)}.pdf`)
+}

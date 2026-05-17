@@ -34,21 +34,14 @@ export default function AuthSettings({ onBack, onOpenPrivacy, onDeleted }: Props
     setExportStatus('busy')
     setExportError(null)
     try {
-      const data = await exportCloudData()
-      // Render to a file the browser downloads. JSON is sufficient — the
-      // human-readable bits are obvious; the metadata is structured for
-      // import elsewhere.
-      const blob = new Blob([JSON.stringify(data, null, 2)], {
-        type: 'application/json',
-      })
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = `parkproof-export-${new Date().toISOString().slice(0, 10)}.json`
-      document.body.appendChild(a)
-      a.click()
-      document.body.removeChild(a)
-      setTimeout(() => URL.revokeObjectURL(url), 0)
+      const [data, pdfModule] = await Promise.all([
+        exportCloudData(),
+        import('../lib/pdf'),
+      ])
+      // The cloud /me/export response shape matches downloadFullExportPdf's
+      // FullExportPayload exactly. Renders a multi-page PDF: cover with
+      // summary table, then one detail block per session with photos.
+      pdfModule.downloadFullExportPdf(data as Parameters<typeof pdfModule.downloadFullExportPdf>[0])
       setExportStatus('idle')
     } catch (err) {
       setExportStatus('error')
@@ -96,16 +89,16 @@ export default function AuthSettings({ onBack, onOpenPrivacy, onDeleted }: Props
       <section className="bg-white rounded-2xl border border-paper-300 p-5 mb-3">
         <h3 className="font-display font-bold text-ink-900 mb-1">Export your data</h3>
         <p className="text-xs text-ink-600 mb-3 leading-relaxed">
-          Downloads a JSON file with every session you've stored in the cloud
-          plus your account metadata. Photos are referenced by S3 key — visit
-          them directly while signed in to download.
+          Downloads a PDF with every parking session you've stored in the
+          cloud — cover page summary plus a per-session detail block with
+          photos. Share-ready, print-ready, council-ready.
         </p>
         <button
           onClick={handleExport}
           disabled={exportStatus === 'busy'}
           className="w-full bg-brand-500 hover:bg-brand-600 disabled:bg-brand-300 text-white font-semibold py-3 rounded-xl shadow-md transition-colors"
         >
-          {exportStatus === 'busy' ? 'Preparing…' : 'Download my data'}
+          {exportStatus === 'busy' ? 'Building PDF…' : 'Download as PDF'}
         </button>
         {exportError && (
           <p className="text-xs text-accent-700 mt-2 break-words">{exportError}</p>

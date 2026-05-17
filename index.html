@@ -36,6 +36,19 @@
   </head>
   <body>
     <div id="root"></div>
+    <!--
+      Node-globals polyfill. amazon-cognito-identity-js (and a few other
+      browser SDKs that pre-date ESM) references `global` and `process` as
+      if it were running in Node. Vite's build-time `define` substitution
+      doesn't always pierce bundled CJS, so this synchronous inline script
+      runs BEFORE any module loads and patches both. Without it, the SPA
+      hard-fails with "ReferenceError: global is not defined" before any
+      React component mounts.
+    -->
+    <script>
+      window.global = window
+      window.process = window.process || { env: {} }
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

@@ -104,8 +104,9 @@ export default function PrivacyPolicy({ onBack }: Props) {
           </p>
           <ul className="list-disc pl-6 space-y-1">
             <li>
-              <strong>Export.</strong> Tap "Download my data" in Account to get a
-              JSON file with everything we hold about you.
+              <strong>Export.</strong> Tap "Download as PDF" in Account to get
+              a complete document with every session you've stored — cover
+              page summary plus a per-session detail block with photos.
             </li>
             <li>
               <strong>Delete.</strong> Tap "Delete account" in Account. Removes

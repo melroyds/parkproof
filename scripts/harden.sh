@@ -62,13 +62,13 @@ aws apigatewayv2 update-api \
   --api-id "$API_ID" \
   --cors-configuration "{
     \"AllowOrigins\": [\"$CORS_ORIGIN\"],
-    \"AllowMethods\": [\"POST\", \"OPTIONS\"],
-    \"AllowHeaders\": [\"Content-Type\"],
+    \"AllowMethods\": [\"GET\", \"POST\", \"OPTIONS\"],
+    \"AllowHeaders\": [\"Content-Type\", \"Authorization\"],
     \"MaxAge\": 300
   }" \
   --region "$REGION" \
   >/dev/null
-echo "  • CORS tightened"
+echo "  • CORS tightened (GET + Authorization included for /sessions/list + /me/export)"
 
 # ───── [2/5] CloudFront Origin Access Control (OAC) ────────────────────────
 echo "▶ [2/5] OAC: $OAC_NAME"

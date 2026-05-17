@@ -300,6 +300,15 @@ function signTranslateApi(): Plugin {
 
 // https://vite.dev/config/
 export default defineConfig({
+  // amazon-cognito-identity-js was written before browser ESM was a thing —
+  // it expects `global` to exist as an alias for the window object. Vite
+  // doesn't polyfill that. Map it to `globalThis` (the spec-compliant
+  // universal global) and the library boots cleanly in the browser.
+  // Same trick for `process.env`, which the lib touches during init.
+  define: {
+    global: 'globalThis',
+    'process.env': '{}',
+  },
   plugins: [
     react(),
     tailwindcss(),
