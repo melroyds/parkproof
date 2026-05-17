@@ -64,8 +64,13 @@ The full flow:
 - **AI feedback loop (Layers 1 + 2).** After each result, "Yes, looks right" or "Retake photo" fires a structured event to CloudWatch with the model's confidence, the rules-shape, whether clarification fired, the local hour, and a 120-char rules excerpt. Lets you slice failure modes in Logs Insights — *"of all retake verdicts, what's the confidence distribution? Which sign patterns? Which hours-of-day?"* — without any PII. Verdict counts (Layer 1) tell you *whether* there's a problem; Layer 2's context tells you *which kind*.
 - **Multi-lingual UI — 7 languages.** Language picker on the home screen swaps the entire interface between 🇦🇺 English (default), 🇨🇳 简体中文, 🇻🇳 Tiếng Việt, 🇮🇹 Italiano, 🇬🇷 Ελληνικά, 🇮🇳 हिन्दी, and 🇮🇳 ਪੰਜਾਬੀ. Language list chosen from the top non-English languages spoken in the **City of Melbourne LGA** (2021 ABS Census). Powered by `react-i18next` with browser-language auto-detection + localStorage persistence. The Claude AI's sign-translation output stays in English (it reflects what's literally on the sign); the entire UI scaffolding around it — including the evidence PDF — translates.
 
+### Opt-in cloud
+- **Sign-in is optional**, never gated. Every feature works fully anonymous. If you choose to sign in (email + password, or Apple / Google federation via Cognito Hosted UI), every saved session opportunistically mirrors to DynamoDB, and photos go into a private per-user prefix in an S3 evidence bucket via short-TTL presigned `PUT` URLs. Local storage stays the source of truth; cloud is durability + cross-device recovery for evidence that might be needed weeks after the fact.
+- **Account export.** One tap exports a complete PDF dump of every session you've saved — handy for legal hand-off or just walking away with your own data.
+- **Account delete.** Wipes everything: DynamoDB rows, S3 photos under your prefix, the Cognito user record itself. No retention, no soft-delete, no "we kept a copy for analytics."
+
 ### PWA
-Installable to the iPhone / Android home screen with a real app icon, theme colour, splash screen, and offline-capable service worker. Initial main bundle is ~360KB raw / ~100KB gzipped after the i18n libs landed; heavier libraries (jsPDF, ics, html2canvas, locale chunks for non-English languages) are lazy-loaded only when used.
+Installable to the iPhone / Android home screen with a real app icon, theme colour, splash screen, and offline-capable service worker. Main bundle ~225KB gzipped (~750KB raw) — heavier libraries (jsPDF, ics, html2canvas, DOMPurify) are lazy-loaded only when used; UI locale strings are bundled inline so the language picker is instant.
 
 ---
 
