@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import type { ParkingSession } from '../types'
 import { loadSessions } from '../lib/storage'
 import { useNow } from '../lib/use-now'
@@ -24,12 +24,10 @@ function statusFor(session: ParkingSession, now: number): { label: string; color
 }
 
 export default function SessionHistory({ onBack, onOpen }: Props) {
-  const [sessions, setSessions] = useState<ParkingSession[]>([])
+  // Lazy init pulls the list from localStorage once at mount; no useEffect
+  // needed (avoids the rules-of-hooks "setState inside effect" gripe).
+  const [sessions] = useState<ParkingSession[]>(() => loadSessions())
   const now = useNow()
-
-  useEffect(() => {
-    setSessions(loadSessions())
-  }, [])
 
   return (
     <div className="min-h-screen flex flex-col p-6 max-w-md mx-auto w-full">

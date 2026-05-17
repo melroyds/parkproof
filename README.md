@@ -200,10 +200,19 @@ Stack: AWS Lambda (Node.js 20) + API Gateway HTTP API + S3 (private) + CloudFron
 
 ---
 
+## Optional cloud sync
+
+ParkProof works fully without sign-in — that's the deliberate default. Open the app, scan a sign, log a session, get a reminder. Everything stays on the device.
+
+If you sign in (Cognito-backed email/password, with hosted-UI hooks ready for Apple + Google federation — see [`docs/federation-setup.md`](docs/federation-setup.md)), the same sessions sync to **AWS DynamoDB** + **S3**, viewable from any device you sign into. Cloud writes are mirrored on save, deletes on delete; localStorage stays as the canonical source of truth.
+
+Account management is in-app: **export your data** as a JSON download, **delete your account** to remove every DynamoDB row + S3 object + Cognito user record. Smoke-tested end-to-end via `npm run smoke-test:auth` — drives a throwaway account through sign-up → upload → list → presign → delete → account-nuke against the live API, asserting each step.
+
+Anonymous-by-default, opt-in cloud — same code path either way. No login wall, no friction tax on first use.
+
 ## What's not built yet
 
 - **True background push notifications** via the Web Push protocol. The current `.ics` calendar event covers the real "you'll be reminded even with the app closed" need. A proper Web Push pipeline would need a service worker push subscription, server-side scheduler (Lambda + EventBridge), and a session-store database — out of scope for the POC.
-- **Cross-device sync.** Sessions are device-local by design (`localStorage`). A user who scans on their phone can't view that session from their laptop. A database (DynamoDB + S3) would fix it; deliberately deferred until there's signal that users want it.
 - **Citywide parking heatmap.** Every scan captures the raw data needed (translated rules + GPS) for a crowdsourced map of parking rules across Melbourne. Would be a genuine moat — council parking data is fragmented; nobody else has the AI-translation pipeline. Blocked on (a) reversing the anonymous-by-default privacy model into opt-in, (b) the cold-start problem (a map with five scans is useless). Build trigger: a few hundred consistent users *or* a council partnership offer.
 - **Auto-submit infringement appeals.** The current flow drafts the letter and exports it as a PDF the user submits manually. Auto-submit would pre-fill a council's online dispute form with the session ID and a public PDF link — blocked by council-side captchas, login walls, and the absence of public APIs across Australian councils. Realistic version is deep-linking to the form with the metadata pre-encoded.
 - **Voice confirmation.** "Hey ParkProof, when does parking expire?" — Web Speech API + simple intent matching, or an iOS Shortcut routing to a `parkproof://countdown` URL handler. ~half day. Limited by browser support in PWA-installed mode on iOS.

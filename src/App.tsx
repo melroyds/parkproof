@@ -9,11 +9,21 @@ import SessionHistory from './components/SessionHistory'
 import SessionDetail from './components/SessionDetail'
 import AppealFlow from './components/AppealFlow'
 import ActiveSessionCard from './components/ActiveSessionCard'
+import AuthFlow from './components/AuthFlow'
+import AuthSettings from './components/AuthSettings'
+import PrivacyPolicy from './components/PrivacyPolicy'
 import Icon from './components/Icon'
 import LoadingProgress from './components/LoadingProgress'
 import { refreshInterpretation, translateSign } from './lib/claude'
 import { loadActiveSessions, loadSessions, saveSession, updateSession } from './lib/storage'
 import { retryUnsignedSessions, signSession } from './lib/signing'
+import { useAuth } from './lib/use-auth'
+import {
+  mirrorSessionToCloud,
+  mirrorSessionUpdateToCloud,
+  performInitialSync,
+} from './lib/sync'
+import { handleCallback as handleFederatedCallback } from './lib/federated-auth'
 import type { ParkingRules, ParkingSession, RuleVariant } from './types'
 
 type Coords = { lat: number; lng: number } | null
@@ -29,6 +39,9 @@ type View =
   | { name: 'history' }
   | { name: 'session'; session: ParkingSession }
   | { name: 'appeal'; session: ParkingSession }
+  | { name: 'signin' }
+  | { name: 'settings' }
+  | { name: 'privacy' }
   | { name: 'error'; message: string }
 
 function stripDataUrlPrefix(dataUrl: string): string {
@@ -37,6 +50,7 @@ function stripDataUrlPrefix(dataUrl: string): string {
 
 function App() {
   const [view, setView] = useState<View>({ name: 'home' })
+  const auth = useAuth()
 
   // Hooks must run unconditionally on every render — keep these above the
   // view-name early-returns. The home view consumes them; non-home views
@@ -50,6 +64,40 @@ function App() {
   useEffect(() => {
     retryUnsignedSessions()
   }, [])
+
+  // If the browser landed here as a federated-sign-in callback (?code=…),
+  // exchange the code for tokens and refresh the auth context. Runs once
+  // per mount; the helper no-ops when there's no code in the URL.
+  useEffect(() => {
+    void (async () => {
+      try {
+        const handled = await handleFederatedCallback()
+        if (handled) {
+          // Clean the OAuth params out of the URL — leaves the page on / with
+          // the user signed in.
+          window.history.replaceState({}, '', window.location.pathname)
+          await auth.refresh()
+        }
+      } catch (err) {
+        console.warn('[auth] federated callback failed:', err)
+      }
+    })()
+    // Mount-only — refresh is stable across renders for our purposes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // Run a local↔cloud merge the first time the user becomes signed-in in
+  // this session. Subsequent saves are mirrored individually by handleSessionSaved.
+  // Keyed on user-id so the sync fires exactly once per sign-in; the lint
+  // wants the whole `auth.user` object on the dep list, but that would
+  // re-fire on every refresh() call (unnecessary).
+  const userId = auth.user?.userId
+  useEffect(() => {
+    if (!userId) return
+    void performInitialSync().catch((err) => {
+      console.warn('[sync] initial sync failed:', err)
+    })
+  }, [userId])
 
   const handleCapture = async (
     dataUrl: string,
@@ -144,6 +192,11 @@ function App() {
         )
       }
       setView({ name: 'remind', session })
+      // Mirror to cloud immediately when signed in. Fire-and-forget — local
+      // is the source of truth, the cloud is a best-effort backup.
+      if (auth.user) {
+        mirrorSessionToCloud(session)
+      }
       // Sign the evidence asynchronously — never blocks the reminder flow.
       // If it succeeds, patch the saved session with the signature bundle so
       // the PDF + SessionDetail can show it. Errors are swallowed (best-effort
@@ -153,6 +206,9 @@ function App() {
           if (signature) {
             try {
               updateSession(session.id, { signature })
+              if (auth.user) {
+                mirrorSessionUpdateToCloud(session.id)
+              }
             } catch (err) {
               console.warn('[signing] could not persist signature:', err)
             }
@@ -306,6 +362,37 @@ function App() {
     )
   }
 
+  if (view.name === 'signin') {
+    return (
+      <main className="min-h-screen">
+        <AuthFlow
+          onDone={() => setView({ name: 'home' })}
+          onCancel={() => setView({ name: 'home' })}
+        />
+      </main>
+    )
+  }
+
+  if (view.name === 'settings') {
+    return (
+      <main className="min-h-screen">
+        <AuthSettings
+          onBack={() => setView({ name: 'home' })}
+          onOpenPrivacy={() => setView({ name: 'privacy' })}
+          onDeleted={() => setView({ name: 'home' })}
+        />
+      </main>
+    )
+  }
+
+  if (view.name === 'privacy') {
+    return (
+      <main className="min-h-screen">
+        <PrivacyPolicy onBack={() => setView({ name: 'home' })} />
+      </main>
+    )
+  }
+
   // The useNow tick at the top of the function drives:
   //  (a) the active-session card's countdown stays live without manual refresh
   //  (b) when an active session crosses its expiry, it falls out of the
@@ -379,6 +466,36 @@ function App() {
           </span>
         </button>
 
+        {/* Auth affordance — only renders when Cognito is wired in. Anonymous
+            users see a "Sign in to sync" CTA; signed-in users see their email
+            + a cog icon that opens settings. Skipped entirely on builds
+            without auth credentials (open-source / first-time clones). */}
+        {auth.configured && (
+          auth.user ? (
+            <button
+              onClick={() => setView({ name: 'settings' })}
+              className="mt-2 w-full bg-white hover:bg-paper-50 border border-paper-300 text-ink-900 font-medium py-3 rounded-2xl flex items-center justify-between px-5 transition-colors"
+            >
+              <span className="flex items-center gap-2 truncate">
+                <Icon name="check" className="w-5 h-5 text-brand-600" strokeWidth={2.5} />
+                <span className="truncate">{auth.user.email}</span>
+              </span>
+              <span className="text-xs text-ink-600 shrink-0">Account</span>
+            </button>
+          ) : (
+            <button
+              onClick={() => setView({ name: 'signin' })}
+              className="mt-2 w-full bg-white hover:bg-paper-50 border border-paper-300 text-ink-900 font-medium py-3 rounded-2xl flex items-center justify-between px-5 transition-colors"
+            >
+              <span className="flex items-center gap-2">
+                <Icon name="bell" className="w-5 h-5 text-ink-600" />
+                Sign in to sync across devices
+              </span>
+              <span className="text-xs text-ink-600">optional</span>
+            </button>
+          )
+        )}
+
         {!primaryActive && (
           <ol className="mt-10 space-y-4 self-stretch">
             {[
@@ -395,6 +512,13 @@ function App() {
             ))}
           </ol>
         )}
+
+        <button
+          onClick={() => setView({ name: 'privacy' })}
+          className="mt-8 text-xs text-ink-500 hover:text-ink-700 underline self-center"
+        >
+          Privacy
+        </button>
       </section>
     </main>
   )

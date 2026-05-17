@@ -169,6 +169,82 @@ function signTranslateApi(): Plugin {
         }
       })
 
+      // ── Auth-required routes (cloud sync) ──
+      // In production, API Gateway's JWT authorizer validates the JWT and
+      // injects claims at event.requestContext.authorizer.jwt.claims. In dev,
+      // we decode the JWT WITHOUT verifying its signature — the user is hitting
+      // their own localhost with their own token; trusting the bearer locally
+      // is reasonable for development speed. Production code path is unchanged.
+      const decodeDevJwt = (req: import('node:http').IncomingMessage) => {
+        const auth = req.headers['authorization']
+        if (!auth || Array.isArray(auth)) return null
+        const m = /^Bearer\s+(.+)$/i.exec(auth)
+        if (!m) return null
+        try {
+          const parts = m[1].split('.')
+          if (parts.length !== 3) return null
+          const payload = Buffer.from(parts[1], 'base64url').toString('utf8')
+          return JSON.parse(payload)
+        } catch {
+          return null
+        }
+      }
+
+      const authRoutes: Array<{ path: string; methods: readonly string[] }> = [
+        { path: '/api/sessions/upload', methods: ['POST'] },
+        { path: '/api/sessions/list',   methods: ['GET', 'POST'] },
+        { path: '/api/sessions/delete', methods: ['POST'] },
+        { path: '/api/photos/presign',  methods: ['POST'] },
+        { path: '/api/me/export',       methods: ['GET', 'POST'] },
+        { path: '/api/me/delete',       methods: ['POST'] },
+      ]
+      for (const route of authRoutes) {
+        server.middlewares.use(route.path, async (req, res) => {
+          if (req.method === 'OPTIONS') {
+            res.statusCode = 204
+            res.end()
+            return
+          }
+          if (!route.methods.includes(req.method ?? 'POST')) {
+            res.statusCode = 405
+            res.end()
+            return
+          }
+          try {
+            const claims = decodeDevJwt(req)
+            if (!claims) {
+              res.statusCode = 401
+              res.setHeader('Content-Type', 'application/json')
+              res.end(JSON.stringify({ error: 'Missing or unreadable Authorization header' }))
+              return
+            }
+            const chunks: Buffer[] = []
+            for await (const chunk of req) chunks.push(chunk as Buffer)
+            const bodyStr = chunks.length ? Buffer.concat(chunks).toString('utf8') : ''
+            const lambda = await import('./lambda/index.js')
+            const result = await lambda.handler({
+              requestContext: {
+                http: { method: req.method, path: route.path.replace(/^\/api/, '') },
+                authorizer: { jwt: { claims } },
+              },
+              body: bodyStr,
+            })
+            res.statusCode = result.statusCode
+            if (result.headers) {
+              for (const [k, v] of Object.entries(result.headers)) {
+                res.setHeader(k, v as string)
+              }
+            }
+            res.end(result.body)
+          } catch (err) {
+            console.error(`[${route.path}]`, err)
+            res.statusCode = 500
+            res.setHeader('Content-Type', 'application/json')
+            res.end(JSON.stringify({ error: (err as Error)?.message || String(err) }))
+          }
+        })
+      }
+
       server.middlewares.use('/api/feedback', async (req, res) => {
         if (req.method === 'OPTIONS') {
           res.statusCode = 204

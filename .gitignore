@@ -23,6 +23,10 @@ lambda/node_modules
 *.tmp.json
 *.tmp.der
 
+# Provisioning artefacts (resource IDs written by setup-auth.sh,
+# project-specific, regenerate from AWS on a clean clone).
+scripts/.aws-resources
+
 # Claude Code workspace (machine-specific settings, never commit)
 .claude/
 

@@ -2,6 +2,14 @@ import Anthropic from '@anthropic-ai/sdk'
 import { KMSClient, SignCommand } from '@aws-sdk/client-kms'
 import crypto from 'node:crypto'
 import tzlookup from 'tz-lookup'
+import {
+  handleMeDelete,
+  handleMeExport,
+  handlePhotosPresign,
+  handleSessionsDelete,
+  handleSessionsList,
+  handleSessionsUpload,
+} from './cloud-sync.js'
 
 const MODEL = 'claude-sonnet-4-6'
 const DEFAULT_TIMEZONE = 'Australia/Melbourne'
@@ -467,8 +475,8 @@ export async function translateSign({
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'POST,OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type',
+  'Access-Control-Allow-Methods': 'POST,GET,OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type,Authorization',
 }
 
 // ─── /sign-session handler ────────────────────────────────────────────────
@@ -691,6 +699,38 @@ export async function handler(event) {
         statusCode: 500,
         headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
         body: JSON.stringify({ error: err?.message || String(err) }),
+      }
+    }
+  }
+
+  // Auth-required routes — API Gateway has already verified the JWT and put
+  // claims on event.requestContext.authorizer.jwt.claims. Each handler reads
+  // sub from there and scopes data access to that user only.
+  const authRoutes = [
+    { match: /\/sessions\/upload$/, handler: handleSessionsUpload },
+    { match: /\/sessions\/list$/, handler: handleSessionsList },
+    { match: /\/sessions\/delete$/, handler: handleSessionsDelete },
+    { match: /\/photos\/presign$/, handler: handlePhotosPresign },
+    { match: /\/me\/export$/, handler: handleMeExport },
+    { match: /\/me\/delete$/, handler: handleMeDelete },
+  ]
+  for (const route of authRoutes) {
+    if (route.match.test(path)) {
+      try {
+        const result = await route.handler(event)
+        return {
+          statusCode: 200,
+          headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
+          body: JSON.stringify(result),
+        }
+      } catch (err) {
+        const status = err?.statusCode || 500
+        console.error(`${path} handler error (${status}):`, err)
+        return {
+          statusCode: status,
+          headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ error: err?.message || String(err) }),
+        }
       }
     }
   }

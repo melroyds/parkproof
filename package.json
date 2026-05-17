@@ -8,12 +8,14 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "screenshots": "node scripts/screenshots.mjs"
+    "screenshots": "node scripts/screenshots.mjs",
+    "smoke-test:auth": "node scripts/smoke-test-auth.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.95.2",
     "@aws-sdk/client-kms": "^3.1047.0",
     "@tailwindcss/vite": "^4.3.0",
+    "amazon-cognito-identity-js": "^6.3.16",
     "dotenv": "^17.4.2",
     "ics": "^3.12.0",
     "jspdf": "^4.2.1",

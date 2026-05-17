@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import type { ParkingSession } from '../types'
 import { formatRelative } from '../lib/time-format'
 
@@ -8,6 +9,17 @@ interface Props {
 }
 
 export default function RecentScansPicker({ sessions, onPick, onDismiss }: Props) {
+  // Pre-compute ages at mount so the render-pass stays pure. The labels are
+  // "5 minutes ago" coarse — fine to freeze them while the picker is open.
+  const [agesById] = useState<Map<string, string>>(() => {
+    const now = Date.now()
+    const map = new Map<string, string>()
+    for (const s of sessions) {
+      map.set(s.id, formatRelative(now - new Date(s.arrived_at).getTime()))
+    }
+    return map
+  })
+
   if (sessions.length === 0) return null
 
   return (
@@ -29,7 +41,7 @@ export default function RecentScansPicker({ sessions, onPick, onDismiss }: Props
       </p>
       <div className="flex flex-col gap-2">
         {sessions.map((s) => {
-          const age = formatRelative(Date.now() - new Date(s.arrived_at).getTime())
+          const age = agesById.get(s.id) ?? ''
           const headline = s.location?.address ?? 'Saved scan'
           return (
             <button

@@ -31,7 +31,14 @@ type GpsState =
 
 export default function SessionLogger({ rules, signPhoto, onComplete, onCancel }: Props) {
   const [carPhoto, setCarPhoto] = useState<string | null>(null)
-  const [gps, setGps] = useState<GpsState>({ status: 'idle' })
+  // Initialise the GPS state synchronously based on API availability — avoids
+  // setState-in-effect lint by deciding 'pending' vs 'error' here.
+  const [gps, setGps] = useState<GpsState>(() => {
+    if (typeof navigator !== 'undefined' && 'geolocation' in navigator) {
+      return { status: 'pending' }
+    }
+    return { status: 'error', message: 'Geolocation is not supported by this browser.' }
+  })
   const [editMode, setEditMode] = useState(false)
   const [editValue, setEditValue] = useState('')
   const [editStatus, setEditStatus] = useState<'idle' | 'pending'>('idle')
@@ -85,7 +92,9 @@ export default function SessionLogger({ rules, signPhoto, onComplete, onCancel }
       setGps({ status: 'error', message: 'Geolocation is not supported by this browser.' })
       return
     }
-    setGps({ status: 'pending' })
+    // Mark pending only when this is a retry (after an error) — the initial
+    // pending state was set synchronously via useState's lazy init.
+    setGps((curr) => (curr.status === 'pending' ? curr : { status: 'pending' }))
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         const coords = { lat: pos.coords.latitude, lng: pos.coords.longitude }
@@ -126,7 +135,14 @@ export default function SessionLogger({ rules, signPhoto, onComplete, onCancel }
   }
 
   useEffect(() => {
-    requestGps()
+    // Mount-only GPS bootstrap. The synchronous "pending" state was set in
+    // the useState initialiser above so the visible state at first paint is
+    // already 'pending' — this effect only kicks off the async
+    // navigator.geolocation call. Its callback eventually transitions state
+    // to 'ok' or 'error'. The functional-update inside requestGps is a no-op
+    // when already pending, but lint can't see that.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (gps.status === 'pending') requestGps()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 

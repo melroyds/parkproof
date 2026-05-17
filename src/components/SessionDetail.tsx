@@ -6,6 +6,8 @@ import { useNow } from '../lib/use-now'
 import { formatCountdown } from '../lib/countdown'
 import { sessionTimezone } from '../lib/timezone'
 import { navigationUrl } from '../lib/walk-back'
+import { useAuth } from '../lib/use-auth'
+import { deleteCloudSession, mirrorSessionUpdateToCloud } from '../lib/sync'
 
 const NOTE_MAX_LENGTH = 280
 
@@ -29,6 +31,7 @@ function fmtLocal(iso: string, timeZone: string, full = false): string {
 }
 
 export default function SessionDetail({ session, onBack, onDeleted, onDraftAppeal }: Props) {
+  const { user } = useAuth()
   const now = useNow()
   const expiresMs = session.expires_at ? new Date(session.expires_at).getTime() : null
   const isExpired = expiresMs !== null && expiresMs < now
@@ -75,6 +78,13 @@ export default function SessionDetail({ session, onBack, onDeleted, onDraftAppea
   const handleDelete = () => {
     if (!window.confirm('Delete this parking session? This cannot be undone.')) return
     deleteSession(session.id)
+    // Mirror the deletion to the cloud when signed in — fire-and-forget; the
+    // local delete is authoritative for this device regardless of network.
+    if (user) {
+      void deleteCloudSession(session.id).catch((err) => {
+        console.warn('[sync] cloud delete failed:', err)
+      })
+    }
     onDeleted()
   }
 
@@ -103,6 +113,11 @@ export default function SessionDetail({ session, onBack, onDeleted, onDraftAppea
       setCurrentNote(trimmed)
       setNoteEditing(false)
       setNoteError(null)
+      // Mirror the patched session to the cloud — picks up the latest local
+      // copy from storage so the cloud row matches what the user just saved.
+      if (user) {
+        mirrorSessionUpdateToCloud(session.id)
+      }
     } catch (err) {
       // Quota error after recovery exhausted, or another storage failure.
       // Keep the user in edit mode so their text isn't lost.

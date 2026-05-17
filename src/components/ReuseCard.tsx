@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import type { ParkingSession } from '../types'
 import { formatRelative } from '../lib/time-format'
 
@@ -9,7 +10,11 @@ interface Props {
 }
 
 export default function ReuseCard({ session, distanceMeters, onReuse, onDismiss }: Props) {
-  const age = formatRelative(Date.now() - new Date(session.arrived_at).getTime())
+  // Frozen at mount — "scanned 5 minutes ago" doesn't need live ticking; the
+  // user is looking at the card for seconds, not minutes.
+  const [age] = useState(() =>
+    formatRelative(Date.now() - new Date(session.arrived_at).getTime()),
+  )
   const bulletItems = session.observations.flatMap((g) => g.items).slice(0, 4)
 
   return (

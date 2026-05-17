@@ -35,6 +35,18 @@ command -v aws >/dev/null 2>&1 || { echo "✗ aws CLI not found on PATH"; exit 1
 set -a; . ./.env; set +a
 [[ -n "${ANTHROPIC_API_KEY:-}" ]] || { echo "✗ ANTHROPIC_API_KEY missing from .env"; exit 1; }
 
+# scripts/.aws-resources is written by setup-auth.sh and carries the Cognito,
+# DynamoDB and S3 identifiers. Optional — deploy keeps working without auth
+# (the existing /sign-translate etc. routes don't need it). When present,
+# auth-enabled features get wired in too.
+if [[ -f scripts/.aws-resources ]]; then
+  set -a; . ./scripts/.aws-resources; set +a
+  echo "▶ Loaded auth resources from scripts/.aws-resources"
+  echo "    Cognito User Pool: ${COGNITO_USER_POOL_ID:-(unset)}"
+  echo "    DDB sessions:      ${DYNAMODB_TABLE_SESSIONS:-(unset)}"
+  echo "    S3 evidence:       ${S3_BUCKET_EVIDENCE:-(unset)}"
+fi
+
 ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
 BUCKET=$PROJECT-app-$ACCOUNT_ID
 
@@ -105,19 +117,27 @@ else
   aws lambda wait function-active --function-name "$LAMBDA_NAME" --region "$REGION"
 fi
 
-echo "  • setting ANTHROPIC_API_KEY (preserving other env vars)"
-# Merge ANTHROPIC_API_KEY into the existing env so we don't wipe out anything
-# set by setup-signing.sh or other one-time setup scripts (e.g. KMS_KEY_ID).
+echo "  • setting env vars (preserving anything not in this script)"
+# Merge new env values into the existing config so we don't wipe out anything
+# set by setup-signing.sh, setup-auth.sh, or future one-time setup scripts.
 EXISTING_ENV=$(aws lambda get-function-configuration \
   --function-name "$LAMBDA_NAME" \
   --region "$REGION" \
   --query 'Environment.Variables' \
   --output json)
-MERGED_ENV=$(ANTHROPIC_API_KEY="$ANTHROPIC_API_KEY" \
+MERGED_ENV=$(
+  ANTHROPIC_API_KEY="$ANTHROPIC_API_KEY" \
+  COGNITO_USER_POOL_ID="${COGNITO_USER_POOL_ID:-}" \
+  COGNITO_APP_CLIENT_ID="${COGNITO_APP_CLIENT_ID:-}" \
+  DYNAMODB_TABLE_SESSIONS="${DYNAMODB_TABLE_SESSIONS:-}" \
+  S3_BUCKET_EVIDENCE="${S3_BUCKET_EVIDENCE:-}" \
   echo "$EXISTING_ENV" | node -e "
   const data = require('fs').readFileSync(0, 'utf8');
   const incoming = JSON.parse(data || '{}') || {};
   incoming.ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
+  for (const key of ['COGNITO_USER_POOL_ID', 'COGNITO_APP_CLIENT_ID', 'DYNAMODB_TABLE_SESSIONS', 'S3_BUCKET_EVIDENCE']) {
+    if (process.env[key]) incoming[key] = process.env[key];
+  }
   process.stdout.write(JSON.stringify({ Variables: incoming }));
 ")
 aws lambda update-function-configuration \
@@ -178,37 +198,65 @@ else
   echo "  • API exists: $API_ID"
 fi
 
-# ─── Ensure /feedback and /draft-appeal routes exist (idempotent) ───
+# ─── Idempotent route management ───
+# Usage: ensure_route <route_path> [--auth]
+#   <route_path>     URL path under the API (e.g. "feedback" or "sessions/upload")
+#   --auth           Attach the Cognito JWT authorizer (requires COGNITO_AUTHORIZER_ID
+#                    in scripts/.aws-resources). Anonymous routes leave it off.
+# Route keys with slashes (e.g. "POST /sessions/upload") work fine in API Gateway.
 ensure_route() {
   local route_path="$1"
+  local with_auth="${2:-}"
   local route_key="POST /$route_path"
-  local count
-  count=$(aws apigatewayv2 get-routes \
+  local route_id
+  route_id=$(aws apigatewayv2 get-routes \
     --api-id "$API_ID" \
     --region "$REGION" \
-    --query "length(Items[?RouteKey=='$route_key'])" \
-    --output text 2>/dev/null || echo "0")
-  if [[ "$count" == "0" ]]; then
+    --query "Items[?RouteKey=='$route_key'].RouteId | [0]" \
+    --output text 2>/dev/null || echo "")
+  local int_id
+  int_id=$(aws apigatewayv2 get-integrations \
+    --api-id "$API_ID" \
+    --region "$REGION" \
+    --query 'Items[0].IntegrationId' --output text)
+
+  if [[ -z "$route_id" || "$route_id" == "None" ]]; then
     echo "  • adding /$route_path route"
-    local int_id
-    int_id=$(aws apigatewayv2 get-integrations \
-      --api-id "$API_ID" \
-      --region "$REGION" \
-      --query 'Items[0].IntegrationId' --output text)
-    aws apigatewayv2 create-route \
-      --api-id "$API_ID" \
-      --route-key "$route_key" \
-      --target "integrations/$int_id" \
-      --region "$REGION" \
-      >/dev/null
+    if [[ "$with_auth" == "--auth" && -n "${COGNITO_AUTHORIZER_ID:-}" ]]; then
+      route_id=$(aws apigatewayv2 create-route \
+        --api-id "$API_ID" \
+        --route-key "$route_key" \
+        --target "integrations/$int_id" \
+        --authorization-type JWT \
+        --authorizer-id "$COGNITO_AUTHORIZER_ID" \
+        --region "$REGION" \
+        --query RouteId --output text)
+    else
+      route_id=$(aws apigatewayv2 create-route \
+        --api-id "$API_ID" \
+        --route-key "$route_key" \
+        --target "integrations/$int_id" \
+        --region "$REGION" \
+        --query RouteId --output text)
+    fi
     aws lambda add-permission \
       --function-name "$LAMBDA_NAME" \
-      --statement-id "apigateway-invoke-$route_path-$(date +%s)" \
+      --statement-id "apigateway-invoke-${route_path//\//-}-$(date +%s)" \
       --action lambda:InvokeFunction \
       --principal apigateway.amazonaws.com \
       --source-arn "arn:aws:execute-api:$REGION:$ACCOUNT_ID:$API_ID/*/*/$route_path" \
       --region "$REGION" \
       >/dev/null
+  elif [[ "$with_auth" == "--auth" && -n "${COGNITO_AUTHORIZER_ID:-}" ]]; then
+    # Existing route — re-confirm the authorizer is attached. Cheap idempotent update.
+    aws apigatewayv2 update-route \
+      --api-id "$API_ID" \
+      --route-id "$route_id" \
+      --authorization-type JWT \
+      --authorizer-id "$COGNITO_AUTHORIZER_ID" \
+      --region "$REGION" \
+      >/dev/null
+    echo "  • /$route_path exists (auth attached)"
   else
     echo "  • /$route_path route exists"
   fi
@@ -218,12 +266,69 @@ ensure_route "feedback"
 ensure_route "draft-appeal"
 ensure_route "sign-session"
 
+# Auth-required routes — JWT authorizer is attached when COGNITO_AUTHORIZER_ID
+# is set (which it is whenever scripts/.aws-resources exists).
+ensure_route "sessions/upload" --auth
+ensure_route "sessions/list"   --auth
+ensure_route "sessions/delete" --auth
+ensure_route "photos/presign"  --auth
+ensure_route "me/export"       --auth
+ensure_route "me/delete"       --auth
+
+# GET method variant for the two listing/export routes, so the frontend can
+# use natural GETs instead of POSTs. ensure_route created the POST already;
+# add a GET pointing at the same integration + authorizer.
+ensure_get_route() {
+  local route_path="$1"
+  local route_key="GET /$route_path"
+  local existing
+  existing=$(aws apigatewayv2 get-routes \
+    --api-id "$API_ID" \
+    --region "$REGION" \
+    --query "Items[?RouteKey=='$route_key'].RouteId | [0]" \
+    --output text 2>/dev/null || echo "")
+  if [[ -n "$existing" && "$existing" != "None" ]]; then return; fi
+  local int_id
+  int_id=$(aws apigatewayv2 get-integrations \
+    --api-id "$API_ID" --region "$REGION" \
+    --query 'Items[0].IntegrationId' --output text)
+  echo "  • adding GET /$route_path"
+  aws apigatewayv2 create-route \
+    --api-id "$API_ID" \
+    --route-key "$route_key" \
+    --target "integrations/$int_id" \
+    --authorization-type JWT \
+    --authorizer-id "$COGNITO_AUTHORIZER_ID" \
+    --region "$REGION" \
+    >/dev/null
+  aws lambda add-permission \
+    --function-name "$LAMBDA_NAME" \
+    --statement-id "apigateway-invoke-GET-${route_path//\//-}-$(date +%s)" \
+    --action lambda:InvokeFunction \
+    --principal apigateway.amazonaws.com \
+    --source-arn "arn:aws:execute-api:$REGION:$ACCOUNT_ID:$API_ID/*/*/$route_path" \
+    --region "$REGION" \
+    >/dev/null
+}
+
+if [[ -n "${COGNITO_AUTHORIZER_ID:-}" ]]; then
+  ensure_get_route "sessions/list"
+  ensure_get_route "me/export"
+fi
+
 API_URL="https://$API_ID.execute-api.$REGION.amazonaws.com/sign-translate"
 echo "  • endpoint: $API_URL"
 
 # ───── [4/6] Build frontend ─────────────────────────────────────────────────
 echo "▶ [4/6] Building frontend"
-VITE_API_URL="$API_URL" npm run build --silent
+# Bake the Cognito identifiers + API URL into the bundle. These are public
+# values (anyone inspecting the JS bundle can see them); not secrets.
+VITE_API_URL="$API_URL" \
+VITE_COGNITO_USER_POOL_ID="${COGNITO_USER_POOL_ID:-}" \
+VITE_COGNITO_APP_CLIENT_ID="${COGNITO_APP_CLIENT_ID:-}" \
+VITE_COGNITO_REGION="${COGNITO_REGION:-ap-southeast-2}" \
+VITE_COGNITO_HOSTED_UI_DOMAIN="${COGNITO_HOSTED_UI_DOMAIN:-}" \
+  npm run build --silent
 
 # ───── [5/6] S3 bucket + upload ─────────────────────────────────────────────
 echo "▶ [5/6] S3 bucket: $BUCKET"
