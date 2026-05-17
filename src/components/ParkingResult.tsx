@@ -41,6 +41,32 @@ const CONFIDENCE_DOT = {
   high: 'bg-brand-500',
 } as const
 
+/**
+ * Snapshot the Layer-2 feedback context from a ParkingRules object. None of
+ * the fields here identify a user — they're all model-output metadata about
+ * the sign read itself. Kept as a pure function (no useMemo / hooks) so it
+ * runs only when the user actually taps the verify buttons.
+ */
+function buildFeedbackContext(result: ParkingRules) {
+  return {
+    confidence: result.confidence,
+    had_clarification:
+      result.alternate_variants !== undefined &&
+      result.alternate_variants !== null &&
+      result.alternate_variants.length > 0,
+    chosen_label: result.chosen_label ?? null,
+    duration_minutes: result.duration_minutes,
+    observations_count: result.observations?.length ?? 0,
+    // First 120 chars only — enough to group similar sign-patterns in Logs
+    // Insights queries without bloating CloudWatch storage.
+    rules_excerpt: (result.rules ?? '').slice(0, 120),
+    scanned_hour_local: new Date().getHours(),
+    // Refresh-mode results have a marker rule prefix; cheaper than threading
+    // the mode down from App.tsx and good enough for telemetry purposes.
+    is_refresh: false,
+  }
+}
+
 const CONFIDENCE_KEY = {
   low: 'common.lowConfidence',
   medium: 'common.mediumConfidence',
@@ -185,7 +211,15 @@ export default function ParkingResult({
           <div className="flex gap-2">
             <button
               onClick={() => {
-                submitFeedback({ verdict: 'correct', feedback_id: feedbackId })
+                // Layer-2 context: enough metadata to slice failures by mode
+                // (high-confidence-but-wrong, stacked sign, night scan) without
+                // any PII. The feedback_id is a per-render UUID that ties this
+                // event to nothing user-identifiable.
+                submitFeedback({
+                  verdict: 'correct',
+                  feedback_id: feedbackId,
+                  context: buildFeedbackContext(result),
+                })
                 setVerified(true)
               }}
               className="flex-1 bg-white border border-paper-300 hover:border-ink-600 text-ink-900 font-medium py-2.5 rounded-xl transition-colors"
@@ -194,7 +228,11 @@ export default function ParkingResult({
             </button>
             <button
               onClick={() => {
-                submitFeedback({ verdict: 'retake', feedback_id: feedbackId })
+                submitFeedback({
+                  verdict: 'retake',
+                  feedback_id: feedbackId,
+                  context: buildFeedbackContext(result),
+                })
                 onRetake()
               }}
               className="flex-1 bg-accent-600 hover:bg-accent-700 text-white font-semibold py-2.5 rounded-xl shadow-md shadow-accent-500/25 transition-colors"

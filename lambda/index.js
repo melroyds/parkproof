@@ -611,11 +611,45 @@ async function handleFeedback(event) {
     }
   }
 
+  // Layer-2 context fields. Optional — old clients still send just verdict +
+  // feedback_id and that continues to work. New clients send a `context` object;
+  // we whitelist what we log (don't blindly pass through any client field) and
+  // truncate the rules_excerpt defensively. No PII in any of these fields.
+  const ctx = body.context && typeof body.context === 'object' ? body.context : {}
+  const safeCtx = {
+    confidence:
+      ctx.confidence === 'low' || ctx.confidence === 'medium' || ctx.confidence === 'high'
+        ? ctx.confidence
+        : undefined,
+    had_clarification:
+      typeof ctx.had_clarification === 'boolean' ? ctx.had_clarification : undefined,
+    chosen_label:
+      typeof ctx.chosen_label === 'string' ? ctx.chosen_label.slice(0, 60) : undefined,
+    duration_minutes:
+      typeof ctx.duration_minutes === 'number' && Number.isFinite(ctx.duration_minutes)
+        ? ctx.duration_minutes
+        : undefined,
+    observations_count:
+      typeof ctx.observations_count === 'number' && Number.isFinite(ctx.observations_count)
+        ? ctx.observations_count
+        : undefined,
+    rules_excerpt:
+      typeof ctx.rules_excerpt === 'string' ? ctx.rules_excerpt.slice(0, 120) : undefined,
+    scanned_hour_local:
+      typeof ctx.scanned_hour_local === 'number' &&
+      ctx.scanned_hour_local >= 0 &&
+      ctx.scanned_hour_local <= 23
+        ? ctx.scanned_hour_local
+        : undefined,
+    is_refresh: typeof ctx.is_refresh === 'boolean' ? ctx.is_refresh : undefined,
+  }
+
   console.log(
     `[parkproof.feedback] ${JSON.stringify({
       verdict,
       feedback_id,
       timestamp: new Date().toISOString(),
+      ...safeCtx,
     })}`,
   )
 

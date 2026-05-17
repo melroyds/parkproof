@@ -147,16 +147,58 @@ All in `scripts/`. All idempotent. All re-runnable.
 Two structured log prefixes worth knowing:
 
 - `[parkproof]` — per-request timing: `preflight=Nms model=X tz=Y image_b64_len=Z mode=translate|refresh`, then `anthropic_call=Nms stop=... usage={...}`, then `parse=Nms total=Nms`.
-- `[parkproof.feedback]` — Layer-1 feedback events: `{verdict, feedback_id, timestamp}` as a JSON sub-string.
+- `[parkproof.feedback]` — Feedback events. Layer 1 fields: `{verdict, feedback_id, timestamp}`. Layer 2 (additive — old clients still work without these): `{confidence, had_clarification, chosen_label, duration_minutes, observations_count, rules_excerpt, scanned_hour_local, is_refresh}`.
 
 **Useful Logs Insights queries** (log group `/aws/lambda/parkproof-sign-translator`):
 
 ```
-# Feedback verdict counts
+# Layer 1 — Verdict counts (overall accept rate)
 fields @timestamp, @message
 | filter @message like "[parkproof.feedback]"
 | parse @message /"verdict":"(?<verdict>[a-z]+)"/
 | stats count() as events by verdict
+```
+
+```
+# Layer 2 — Retake rate by model confidence
+# Surfaces "wrongly-confident" failures: high confidence + retake = prompt regression.
+fields @timestamp, @message
+| filter @message like "[parkproof.feedback]"
+| parse @message /"verdict":"(?<verdict>[a-z]+)"/
+| parse @message /"confidence":"(?<confidence>[a-z]+)"/
+| stats count() as events, sum(verdict = 'retake') as retakes by confidence
+| display confidence, events, retakes, retakes / events * 100 as retake_pct
+```
+
+```
+# Layer 2 — Failure rate by hour of day (lighting / night-scan diagnostics)
+fields @timestamp, @message
+| filter @message like "[parkproof.feedback]"
+| parse @message /"verdict":"(?<verdict>[a-z]+)"/
+| parse @message /"scanned_hour_local":(?<hour>\d+)/
+| stats sum(verdict = 'retake') as retakes, count() as total by hour
+| sort hour
+```
+
+```
+# Layer 2 — Top failing rule patterns (where to focus prompt work)
+fields @timestamp, @message
+| filter @message like "[parkproof.feedback]"
+| filter @message like "\"verdict\":\"retake\""
+| parse @message /"rules_excerpt":"(?<rules>[^"]+)"/
+| stats count() as retakes by rules
+| sort retakes desc
+| limit 20
+```
+
+```
+# Layer 2 — Does clarification (stacked / arrow signs) increase retake rate?
+fields @timestamp, @message
+| filter @message like "[parkproof.feedback]"
+| parse @message /"verdict":"(?<verdict>[a-z]+)"/
+| parse @message /"had_clarification":(?<clarified>(?:true|false))/
+| stats count() as events, sum(verdict = 'retake') as retakes by clarified
+| display clarified, events, retakes, retakes / events * 100 as retake_pct
 ```
 
 ```
