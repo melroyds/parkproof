@@ -462,15 +462,19 @@ function App() {
           </p>
         )}
 
+        {/* Long translations (Italian / Hindi / Punjabi) wrap to two lines.
+            Use items-start + flex-1 min-w-0 so the icon anchors to the first
+            line and the right-side label sits flush with it, instead of all
+            three drifting to the vertical centre of the 2-line text block. */}
         <button
           onClick={() => setView({ name: 'history' })}
-          className="mt-8 w-full bg-white hover:bg-paper-50 border border-paper-300 text-ink-900 font-medium py-3 rounded-2xl flex items-center justify-between px-5 transition-colors"
+          className="mt-8 w-full bg-white hover:bg-paper-50 border border-paper-300 text-ink-900 font-medium py-3 rounded-2xl flex items-start justify-between gap-3 px-5 transition-colors"
         >
-          <span className="flex items-center gap-2">
-            <Icon name="list" className="w-5 h-5 text-ink-600" />
-            {t('home.history')}
+          <span className="flex items-start gap-2 min-w-0 flex-1">
+            <Icon name="list" className="w-5 h-5 text-ink-600 shrink-0 mt-px" />
+            <span className="leading-snug text-left">{t('home.history')}</span>
           </span>
-          <span className="text-sm text-ink-600">
+          <span className="text-sm text-ink-600 shrink-0 mt-px">
             {sessionCount === 0 ? t('home.historyEmpty') : t('home.historyCount', { count: sessionCount })}
           </span>
         </button>
@@ -483,24 +487,24 @@ function App() {
           auth.user ? (
             <button
               onClick={() => setView({ name: 'settings' })}
-              className="mt-2 w-full bg-white hover:bg-paper-50 border border-paper-300 text-ink-900 font-medium py-3 rounded-2xl flex items-center justify-between px-5 transition-colors"
+              className="mt-2 w-full bg-white hover:bg-paper-50 border border-paper-300 text-ink-900 font-medium py-3 rounded-2xl flex items-start justify-between gap-3 px-5 transition-colors"
             >
-              <span className="flex items-center gap-2 truncate">
-                <Icon name="check" className="w-5 h-5 text-brand-600" strokeWidth={2.5} />
+              <span className="flex items-start gap-2 min-w-0 flex-1">
+                <Icon name="check" className="w-5 h-5 text-brand-600 shrink-0 mt-px" strokeWidth={2.5} />
                 <span className="truncate">{auth.user.email}</span>
               </span>
-              <span className="text-xs text-ink-600 shrink-0">{t('home.account')}</span>
+              <span className="text-xs text-ink-600 shrink-0 mt-1">{t('home.account')}</span>
             </button>
           ) : (
             <button
               onClick={() => setView({ name: 'signin' })}
-              className="mt-2 w-full bg-white hover:bg-paper-50 border border-paper-300 text-ink-900 font-medium py-3 rounded-2xl flex items-center justify-between px-5 transition-colors"
+              className="mt-2 w-full bg-white hover:bg-paper-50 border border-paper-300 text-ink-900 font-medium py-3 rounded-2xl flex items-start justify-between gap-3 px-5 transition-colors"
             >
-              <span className="flex items-center gap-2">
-                <Icon name="bell" className="w-5 h-5 text-ink-600" />
-                {t('home.signInToSync')}
+              <span className="flex items-start gap-2 min-w-0 flex-1">
+                <Icon name="bell" className="w-5 h-5 text-ink-600 shrink-0 mt-px" />
+                <span className="leading-snug text-left">{t('home.signInToSync')}</span>
               </span>
-              <span className="text-xs text-ink-600">{t('common.optional')}</span>
+              <span className="text-xs text-ink-600 shrink-0 mt-1">{t('common.optional')}</span>
             </button>
           )
         )}
