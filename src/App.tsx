@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useNow } from './lib/use-now'
 import SignScanner from './components/SignScanner'
 import ParkingResult from './components/ParkingResult'
@@ -12,6 +13,7 @@ import ActiveSessionCard from './components/ActiveSessionCard'
 import AuthFlow from './components/AuthFlow'
 import AuthSettings from './components/AuthSettings'
 import PrivacyPolicy from './components/PrivacyPolicy'
+import LanguageSelector from './components/LanguageSelector'
 import Icon from './components/Icon'
 import LoadingProgress from './components/LoadingProgress'
 import { refreshInterpretation, translateSign } from './lib/claude'
@@ -51,6 +53,7 @@ function stripDataUrlPrefix(dataUrl: string): string {
 function App() {
   const [view, setView] = useState<View>({ name: 'home' })
   const auth = useAuth()
+  const { t } = useTranslation()
 
   // Hooks must run unconditionally on every render — keep these above the
   // view-name early-returns. The home view consumes them; non-home views
@@ -242,20 +245,20 @@ function App() {
         <div className="w-16 h-16 rounded-full bg-accent-100 border-2 border-accent-500 text-accent-700 flex items-center justify-center mb-4">
           <Icon name="warning" className="w-8 h-8" />
         </div>
-        <h2 className="font-display text-2xl font-extrabold text-ink-900">Something went wrong</h2>
+        <h2 className="font-display text-2xl font-extrabold text-ink-900">{t('errors.somethingWrong')}</h2>
         <p className="text-sm text-ink-700 mt-3 mb-6 break-words">{view.message}</p>
         <div className="flex flex-col gap-2 w-full">
           <button
             onClick={() => setView({ name: 'scan' })}
             className="bg-brand-500 hover:bg-brand-600 active:bg-brand-700 text-white font-semibold py-3 rounded-2xl shadow-md transition-colors"
           >
-            Try again
+            {t('errors.tryAgain')}
           </button>
           <button
             onClick={() => setView({ name: 'home' })}
             className="bg-paper-200 hover:bg-paper-300 text-ink-900 font-medium py-3 rounded-2xl transition-colors"
           >
-            Back to home
+            {t('errors.backHome')}
           </button>
         </div>
       </main>
@@ -422,10 +425,16 @@ function App() {
               ParkProof
             </h1>
             <p className="text-sm text-ink-600 mt-2 max-w-[20rem] mx-auto leading-relaxed">
-              Aussie parking, decoded — with photo evidence in case of a wrongful ticket.
+              {t('home.tagline')}
             </p>
           </>
         )}
+        {/* Language selector — always present on the home header. Tiny
+            footprint above the rest of the content; the active flag's
+            highlight makes the current choice obvious without explanation. */}
+        <div className="mt-4">
+          <LanguageSelector />
+        </div>
       </header>
 
       <section className="flex-1 px-6 pb-8 flex flex-col items-center justify-center max-w-md mx-auto w-full">
@@ -444,12 +453,12 @@ function App() {
           className="w-full bg-brand-500 hover:bg-brand-600 active:bg-brand-700 text-white text-lg font-semibold py-5 rounded-2xl shadow-lg shadow-brand-500/25 flex items-center justify-center gap-3 transition-colors"
         >
           <Icon name="camera" className="w-6 h-6" />
-          {primaryActive ? 'Scan another sign' : 'Scan a parking sign'}
+          {primaryActive ? t('home.scanAnother') : t('home.scanCta')}
         </button>
 
         {!primaryActive && (
           <p className="text-xs text-ink-600/80 mt-4 text-center">
-            We'll read the sign, tell you if you can park now, and offer a reminder before time runs out.
+            {t('home.scanHelp')}
           </p>
         )}
 
@@ -459,10 +468,10 @@ function App() {
         >
           <span className="flex items-center gap-2">
             <Icon name="list" className="w-5 h-5 text-ink-600" />
-            Session history
+            {t('home.history')}
           </span>
           <span className="text-sm text-ink-600">
-            {sessionCount === 0 ? 'empty' : `${sessionCount} saved`}
+            {sessionCount === 0 ? t('home.historyEmpty') : t('home.historyCount', { count: sessionCount })}
           </span>
         </button>
 
@@ -480,7 +489,7 @@ function App() {
                 <Icon name="check" className="w-5 h-5 text-brand-600" strokeWidth={2.5} />
                 <span className="truncate">{auth.user.email}</span>
               </span>
-              <span className="text-xs text-ink-600 shrink-0">Account</span>
+              <span className="text-xs text-ink-600 shrink-0">{t('home.account')}</span>
             </button>
           ) : (
             <button
@@ -489,9 +498,9 @@ function App() {
             >
               <span className="flex items-center gap-2">
                 <Icon name="bell" className="w-5 h-5 text-ink-600" />
-                Sign in to sync across devices
+                {t('home.signInToSync')}
               </span>
-              <span className="text-xs text-ink-600">optional</span>
+              <span className="text-xs text-ink-600">{t('common.optional')}</span>
             </button>
           )
         )}
@@ -499,9 +508,9 @@ function App() {
         {!primaryActive && (
           <ol className="mt-10 space-y-4 self-stretch">
             {[
-              'Photo the sign → AI translates the rules',
-              'Photo your car → timestamped evidence record',
-              'Get a calendar reminder before parking expires',
+              t('home.steps.translate'),
+              t('home.steps.log'),
+              t('home.steps.remind'),
             ].map((text, i) => (
               <li key={i} className="flex gap-4 items-start">
                 <span className="font-display text-2xl font-extrabold text-brand-500 leading-none w-7 text-center shrink-0">
@@ -517,7 +526,7 @@ function App() {
           onClick={() => setView({ name: 'privacy' })}
           className="mt-8 text-xs text-ink-500 hover:text-ink-700 underline self-center"
         >
-          Privacy
+          {t('common.privacy')}
         </button>
       </section>
     </main>

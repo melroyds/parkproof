@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import type { AppealDraft, ParkingSession } from '../types'
 import { draftAppeal } from '../lib/claude'
 import { resizeImageFile } from '../lib/image'
@@ -17,12 +18,13 @@ type Stage =
   | { name: 'error'; message: string }
 
 const STRENGTH_LABEL = {
-  strong: { color: 'text-brand-700 bg-brand-50 border-brand-200', text: 'Strong evidence' },
-  moderate: { color: 'text-accent-700 bg-accent-50 border-accent-200', text: 'Moderate evidence' },
-  weak: { color: 'text-ink-700 bg-paper-200 border-paper-300', text: 'Weak evidence' },
+  strong: { color: 'text-brand-700 bg-brand-50 border-brand-200', textKey: 'appeal.strongEvidence' },
+  moderate: { color: 'text-accent-700 bg-accent-50 border-accent-200', textKey: 'appeal.moderateEvidence' },
+  weak: { color: 'text-ink-700 bg-paper-200 border-paper-300', textKey: 'appeal.weakEvidence' },
 } as const
 
 export default function AppealFlow({ session, onBack }: Props) {
+  const { t } = useTranslation()
   const [stage, setStage] = useState<Stage>({ name: 'capture' })
   const [editedLetter, setEditedLetter] = useState<string>('')
   const [copied, setCopied] = useState(false)
@@ -81,10 +83,10 @@ export default function AppealFlow({ session, onBack }: Props) {
       <main className="min-h-screen flex flex-col items-center justify-center p-6 text-center">
         <BrandMark className="w-20 h-20 mb-5 animate-pulse" />
         <h2 className="font-display text-2xl font-extrabold text-ink-900">
-          Reading the ticket…
+          {t('appeal.draftingHeader')}
         </h2>
         <p className="text-sm text-ink-600 mt-2">
-          Claude is cross-referencing it with your saved evidence.
+          {t('appeal.draftingSub')}
         </p>
       </main>
     )
@@ -94,20 +96,20 @@ export default function AppealFlow({ session, onBack }: Props) {
     return (
       <main className="min-h-screen flex flex-col p-6 max-w-md mx-auto w-full">
         <button onClick={onBack} className="self-start text-ink-600 hover:text-ink-900 text-sm mb-4">
-          ← Back
+          {t('common.back')}
         </button>
         <div className="w-16 h-16 rounded-full bg-accent-100 border-2 border-accent-500 text-accent-700 flex items-center justify-center mb-4 mx-auto">
           <Icon name="warning" className="w-8 h-8" />
         </div>
         <h2 className="font-display text-2xl font-extrabold text-ink-900 text-center">
-          Couldn't draft the appeal
+          {t('appeal.errorHeader')}
         </h2>
         <p className="text-sm text-ink-700 mt-3 mb-6 break-words text-center">{stage.message}</p>
         <button
           onClick={() => setStage({ name: 'capture' })}
           className="bg-brand-500 hover:bg-brand-600 text-white font-semibold py-3 rounded-2xl shadow-md"
         >
-          Try a different photo
+          {t('appeal.tryDifferentPhoto')}
         </button>
       </main>
     )
@@ -121,30 +123,30 @@ export default function AppealFlow({ session, onBack }: Props) {
           onClick={onBack}
           className="self-start text-ink-600 hover:text-ink-900 text-sm mb-4"
         >
-          ← Back to session
+          {t('common.backToSession')}
         </button>
 
         <h2 className="font-display text-3xl font-extrabold text-ink-900 mb-2">
-          Draft appeal
+          {t('appeal.reviewHeader')}
         </h2>
         <p className="text-sm text-ink-600 mb-6 leading-relaxed">{stage.draft.ticket_summary}</p>
 
         <span
           className={`text-xs font-semibold uppercase tracking-widest border rounded-full px-3 py-1 self-start mb-4 ${strength.color}`}
         >
-          {strength.text}
+          {t(strength.textKey)}
         </span>
 
         <section className="bg-white rounded-2xl border border-paper-300 p-5 mb-4">
           <h3 className="text-xs uppercase tracking-widest font-semibold text-ink-500 mb-2">
-            Strategy
+            {t('appeal.strategy')}
           </h3>
           <p className="text-sm text-ink-800 leading-relaxed">{stage.draft.notes}</p>
         </section>
 
         <section className="bg-white rounded-2xl border border-paper-300 p-5 mb-4">
           <h3 className="text-xs uppercase tracking-widest font-semibold text-ink-500 mb-2">
-            Subject line
+            {t('appeal.subjectLine')}
           </h3>
           <p className="font-display text-base font-bold text-ink-900">
             {stage.draft.appeal_subject}
@@ -154,13 +156,13 @@ export default function AppealFlow({ session, onBack }: Props) {
         <section className="bg-white rounded-2xl border border-paper-300 p-5 mb-6">
           <div className="flex items-baseline justify-between mb-2">
             <h3 className="text-xs uppercase tracking-widest font-semibold text-ink-500">
-              Letter (editable)
+              {t('appeal.letter')}
             </h3>
             <button
               onClick={() => setEditedLetter(stage.draft.appeal_letter)}
               className="text-xs text-ink-600 hover:text-ink-900 underline"
             >
-              Reset to AI draft
+              {t('appeal.resetDraft')}
             </button>
           </div>
           <textarea
@@ -176,29 +178,27 @@ export default function AppealFlow({ session, onBack }: Props) {
             onClick={handleCopy}
             className="bg-brand-500 hover:bg-brand-600 active:bg-brand-700 text-white font-semibold py-4 rounded-2xl shadow-lg shadow-brand-500/25 transition-colors"
           >
-            {copied ? 'Copied ✓' : 'Copy letter to clipboard'}
+            {copied ? t('appeal.copied') : t('appeal.copyToClipboard')}
           </button>
           <button
             onClick={handleDownloadPdf}
             disabled={pdfBusy}
             className="bg-white border border-paper-300 hover:border-ink-600 disabled:opacity-60 text-ink-900 font-medium py-3 rounded-2xl transition-colors"
           >
-            {pdfBusy ? 'Building PDF…' : 'Download as PDF'}
+            {pdfBusy ? t('appeal.downloadingPdf') : t('appeal.downloadPdf')}
           </button>
         </div>
         {pdfError && (
           <div className="mt-3 bg-accent-50 border-2 border-accent-400 rounded-xl p-3 text-sm">
             <p className="font-display font-bold text-ink-900 mb-1">
-              Couldn't build the PDF
+              {t('session.pdfErrorHeader')}
             </p>
             <p className="text-xs text-ink-700 leading-relaxed break-words">{pdfError}</p>
           </div>
         )}
 
         <p className="text-xs text-ink-500 mt-4 text-center leading-relaxed">
-          The AI draft is a starting point. Read carefully, edit the letter to match your voice
-          and circumstances, and verify every claim before sending. ParkProof doesn't lodge the
-          appeal for you.
+          {t('appeal.reviewDisclaimer')}
         </p>
       </div>
     )
@@ -211,16 +211,14 @@ export default function AppealFlow({ session, onBack }: Props) {
         onClick={onBack}
         className="self-start text-ink-600 hover:text-ink-900 text-sm mb-4 transition-colors"
       >
-        ← Back to session
+        {t('common.backToSession')}
       </button>
 
       <h2 className="font-display text-3xl font-extrabold text-ink-900 mb-1">
-        Draft an appeal letter
+        {t('appeal.captureHeader')}
       </h2>
       <p className="text-sm text-ink-600 mb-6 leading-relaxed">
-        Take a photo of the infringement notice you received. Claude will read it, cross-reference
-        with the evidence saved in this session, and draft a formal letter you can send to the
-        issuing council.
+        {t('appeal.captureIntro')}
       </p>
 
       <div className="flex flex-col gap-3">
@@ -229,16 +227,16 @@ export default function AppealFlow({ session, onBack }: Props) {
           className="border-2 border-dashed border-brand-300 hover:border-brand-500 hover:bg-brand-50/50 bg-white rounded-2xl py-8 px-4 flex flex-col items-center text-brand-600 transition-colors"
         >
           <Icon name="camera" className="w-10 h-10 mb-2" />
-          <span className="text-sm font-semibold text-ink-900">Take a photo</span>
-          <span className="text-xs text-ink-600 mt-1 text-center">Camera of the ticket</span>
+          <span className="text-sm font-semibold text-ink-900">{t('scanner.takePhoto')}</span>
+          <span className="text-xs text-ink-600 mt-1 text-center">{t('appeal.captureTakePhotoSub')}</span>
         </button>
         <button
           onClick={() => libraryInputRef.current?.click()}
           className="border-2 border-dashed border-accent-300 hover:border-accent-500 hover:bg-accent-50/50 bg-white rounded-2xl py-8 px-4 flex flex-col items-center text-accent-700 transition-colors"
         >
           <Icon name="gallery" className="w-10 h-10 mb-2" />
-          <span className="text-sm font-semibold text-ink-900">From library</span>
-          <span className="text-xs text-ink-600 mt-1 text-center">Photo / scan of the notice</span>
+          <span className="text-sm font-semibold text-ink-900">{t('scanner.fromLibrary')}</span>
+          <span className="text-xs text-ink-600 mt-1 text-center">{t('appeal.captureFromLibrarySub')}</span>
         </button>
       </div>
 
@@ -267,8 +265,7 @@ export default function AppealFlow({ session, onBack }: Props) {
       />
 
       <p className="text-xs text-ink-500 mt-6 text-center leading-relaxed">
-        The AI draft is a starting point, not legal advice. You're responsible for the final
-        letter you send.
+        {t('appeal.captureDisclaimer')}
       </p>
     </div>
   )

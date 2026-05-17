@@ -1,6 +1,7 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import type { ParkingSession } from '../types'
-import { formatRelative } from '../lib/time-format'
+import { formatRelativeLocalized } from '../lib/time-format'
 
 interface Props {
   session: ParkingSession
@@ -10,10 +11,11 @@ interface Props {
 }
 
 export default function ReuseCard({ session, distanceMeters, onReuse, onDismiss }: Props) {
+  const { t } = useTranslation()
   // Frozen at mount — "scanned 5 minutes ago" doesn't need live ticking; the
   // user is looking at the card for seconds, not minutes.
   const [age] = useState(() =>
-    formatRelative(Date.now() - new Date(session.arrived_at).getTime()),
+    formatRelativeLocalized(Date.now() - new Date(session.arrived_at).getTime(), t),
   )
   const bulletItems = session.observations.flatMap((g) => g.items).slice(0, 4)
 
@@ -21,10 +23,10 @@ export default function ReuseCard({ session, distanceMeters, onReuse, onDismiss 
     <section className="mb-6 bg-brand-50 border border-brand-200 rounded-2xl p-5 shadow-sm">
       <div className="flex items-baseline justify-between mb-3 gap-2">
         <h3 className="font-display font-bold text-ink-900 text-lg leading-tight">
-          You scanned here {age}
+          {t('reuse.scannedHere', { age })}
         </h3>
         <span className="text-[10px] uppercase tracking-widest font-semibold text-brand-700 shrink-0">
-          {Math.round(distanceMeters)}m away
+          {t('reuse.metersAway', { meters: Math.round(distanceMeters) })}
         </span>
       </div>
 
@@ -62,13 +64,13 @@ export default function ReuseCard({ session, distanceMeters, onReuse, onDismiss 
           onClick={onDismiss}
           className="flex-1 bg-white border border-paper-300 hover:border-ink-600 text-ink-900 font-medium py-2.5 rounded-xl transition-colors text-sm"
         >
-          No, scan fresh
+          {t('reuse.dismiss')}
         </button>
         <button
           onClick={onReuse}
           className="flex-1 bg-brand-500 hover:bg-brand-600 active:bg-brand-700 text-white font-semibold py-2.5 rounded-xl shadow-md shadow-brand-500/20 transition-colors text-sm"
         >
-          Reuse this reading
+          {t('reuse.useThisRead')}
         </button>
       </div>
     </section>

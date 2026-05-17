@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import type { Clarification, RuleVariant } from '../types'
 
 interface Props {
@@ -8,13 +9,14 @@ interface Props {
 }
 
 export default function Clarify({ signPhoto, clarification, onPick, onCancel }: Props) {
+  const { t } = useTranslation()
   return (
     <div className="min-h-screen flex flex-col p-6 max-w-md mx-auto w-full">
       <button
         onClick={onCancel}
         className="self-start text-ink-600 hover:text-ink-900 text-sm mb-4 transition-colors"
       >
-        ← Back
+        {t('common.back')}
       </button>
 
       <h2 className="font-display text-4xl font-extrabold text-ink-900 leading-tight">
@@ -23,7 +25,7 @@ export default function Clarify({ signPhoto, clarification, onPick, onCancel }: 
 
       <img
         src={signPhoto}
-        alt="Scanned sign"
+        alt={t('clarify.imageAlt')}
         className="w-full rounded-2xl mt-6 border border-paper-300 object-contain max-h-[32vh] bg-white"
       />
 

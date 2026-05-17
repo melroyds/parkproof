@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import {
   confirmForgotPassword,
   confirmSignUp,
@@ -24,6 +25,7 @@ type Stage =
   | { name: 'reset'; email: string }
 
 export default function AuthFlow({ onDone, onCancel }: Props) {
+  const { t } = useTranslation()
   const { refresh } = useAuth()
   const [stage, setStage] = useState<Stage>({ name: 'sign-in' })
   const [email, setEmail] = useState('')
@@ -58,7 +60,7 @@ export default function AuthFlow({ onDone, onCancel }: Props) {
       const msg = err instanceof Error ? err.message : String(err)
       if (/not confirmed|UserNotConfirmedException/i.test(msg)) {
         // Resume the verify flow if they signed up but never verified.
-        setInfo("You haven't verified your email yet — enter the code below.")
+        setInfo(t('auth.needVerifyFirst'))
         setStage({ name: 'verify', email: email.trim(), password })
       } else {
         setError(msg)
@@ -74,7 +76,7 @@ export default function AuthFlow({ onDone, onCancel }: Props) {
     setError(null)
     try {
       await signUp(email.trim(), password)
-      setInfo("Account created. We've emailed you a verification code.")
+      setInfo(t('auth.accountCreated'))
       setStage({ name: 'verify', email: email.trim(), password })
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err))
@@ -96,7 +98,7 @@ export default function AuthFlow({ onDone, onCancel }: Props) {
         await refresh()
         onDone()
       } else {
-        setInfo('Email verified — sign in to continue.')
+        setInfo(t('auth.emailVerified'))
         setStage({ name: 'sign-in' })
         setPassword('')
       }
@@ -113,7 +115,7 @@ export default function AuthFlow({ onDone, onCancel }: Props) {
     setError(null)
     try {
       await resendConfirmationCode(stage.email)
-      setInfo('Code re-sent. Check your inbox.')
+      setInfo(t('auth.codeResent'))
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err))
     } finally {
@@ -127,7 +129,7 @@ export default function AuthFlow({ onDone, onCancel }: Props) {
     setError(null)
     try {
       await forgotPassword(email.trim())
-      setInfo("We've emailed you a reset code.")
+      setInfo(t('auth.resetCodeSent'))
       setStage({ name: 'reset', email: email.trim() })
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err))
@@ -143,7 +145,7 @@ export default function AuthFlow({ onDone, onCancel }: Props) {
     setError(null)
     try {
       await confirmForgotPassword(stage.email, code.trim(), newPassword)
-      setInfo('Password reset. Sign in with your new password.')
+      setInfo(t('auth.passwordReset'))
       setStage({ name: 'sign-in' })
       setPassword('')
       setNewPassword('')
@@ -160,27 +162,25 @@ export default function AuthFlow({ onDone, onCancel }: Props) {
         onClick={onCancel}
         className="self-start text-ink-600 hover:text-ink-900 text-sm mb-4"
       >
-        ← Back
+        {t('common.back')}
       </button>
 
       <div className="flex items-center gap-3 mb-1">
         <BrandMark className="w-10 h-10" />
         <h2 className="font-display text-3xl font-extrabold text-ink-900">
-          {stage.name === 'sign-up' && 'Create account'}
-          {stage.name === 'sign-in' && 'Sign in'}
-          {stage.name === 'verify' && 'Verify your email'}
-          {stage.name === 'forgot' && 'Forgot password'}
-          {stage.name === 'reset' && 'Reset password'}
+          {stage.name === 'sign-up' && t('auth.signUpHeader')}
+          {stage.name === 'sign-in' && t('auth.signInHeader')}
+          {stage.name === 'verify' && t('auth.verifyHeader')}
+          {stage.name === 'forgot' && t('auth.forgotHeader')}
+          {stage.name === 'reset' && t('auth.resetHeader')}
         </h2>
       </div>
       <p className="text-sm text-ink-600 mb-6 leading-relaxed">
-        {stage.name === 'sign-up' &&
-          "Sync sessions across devices, recover them if you lose your phone, and keep evidence safe even after you uninstall."}
-        {stage.name === 'sign-in' && 'Welcome back — pick up where you left off.'}
-        {stage.name === 'verify' &&
-          `Enter the 6-digit code we emailed to ${stage.name === 'verify' && stage.email}.`}
-        {stage.name === 'forgot' && "Enter your email — we'll send a reset code."}
-        {stage.name === 'reset' && `Enter the code from your email + a new password.`}
+        {stage.name === 'sign-up' && t('auth.signUpIntro')}
+        {stage.name === 'sign-in' && t('auth.signInIntro')}
+        {stage.name === 'verify' && t('auth.verifyIntro', { email: stage.email })}
+        {stage.name === 'forgot' && t('auth.forgotIntro')}
+        {stage.name === 'reset' && t('auth.resetIntro')}
       </p>
 
       {info && (
@@ -202,18 +202,18 @@ export default function AuthFlow({ onDone, onCancel }: Props) {
             className="w-full bg-ink-900 hover:bg-ink-800 text-white font-semibold py-3 rounded-xl shadow-md transition-colors flex items-center justify-center gap-2"
           >
             <span aria-hidden></span>
-            Continue with Apple
+            {t('auth.continueWithApple')}
           </button>
           <button
             type="button"
             onClick={() => redirectToProvider('Google')}
             className="w-full bg-white hover:bg-paper-100 border border-paper-300 text-ink-900 font-semibold py-3 rounded-xl shadow-sm transition-colors flex items-center justify-center gap-2"
           >
-            Continue with Google
+            {t('auth.continueWithGoogle')}
           </button>
           <div className="flex items-center gap-3 my-2 text-xs text-ink-500">
             <div className="flex-1 h-px bg-paper-300" />
-            <span>OR</span>
+            <span>{t('auth.orDivider')}</span>
             <div className="flex-1 h-px bg-paper-300" />
           </div>
         </div>
@@ -225,7 +225,7 @@ export default function AuthFlow({ onDone, onCancel }: Props) {
           className="flex flex-col gap-3"
         >
           <label className="text-sm font-semibold text-ink-700">
-            Email
+            {t('auth.email')}
             <input
               type="email"
               autoComplete="email"
@@ -236,7 +236,7 @@ export default function AuthFlow({ onDone, onCancel }: Props) {
             />
           </label>
           <label className="text-sm font-semibold text-ink-700">
-            Password
+            {t('auth.password')}
             <input
               type="password"
               autoComplete={stage.name === 'sign-up' ? 'new-password' : 'current-password'}
@@ -248,7 +248,7 @@ export default function AuthFlow({ onDone, onCancel }: Props) {
             />
             {stage.name === 'sign-up' && (
               <span className="block mt-1 text-xs text-ink-500 font-normal">
-                At least 8 chars with a mix of upper, lower and a number.
+                {t('auth.passwordHelp')}
               </span>
             )}
           </label>
@@ -259,11 +259,11 @@ export default function AuthFlow({ onDone, onCancel }: Props) {
           >
             {busy
               ? stage.name === 'sign-in'
-                ? 'Signing in…'
-                : 'Creating account…'
+                ? t('auth.signingIn')
+                : t('auth.creatingAccount')
               : stage.name === 'sign-in'
-                ? 'Sign in'
-                : 'Create account'}
+                ? t('auth.signInBtn')
+                : t('auth.createAccountBtn')}
           </button>
         </form>
       )}
@@ -271,7 +271,7 @@ export default function AuthFlow({ onDone, onCancel }: Props) {
       {stage.name === 'verify' && (
         <form onSubmit={handleVerify} className="flex flex-col gap-3">
           <label className="text-sm font-semibold text-ink-700">
-            Verification code
+            {t('auth.verificationCode')}
             <input
               type="text"
               inputMode="numeric"
@@ -288,7 +288,7 @@ export default function AuthFlow({ onDone, onCancel }: Props) {
             disabled={busy}
             className="bg-brand-500 hover:bg-brand-600 disabled:bg-brand-300 text-white font-semibold py-3 rounded-xl shadow-md shadow-brand-500/20 transition-colors"
           >
-            {busy ? 'Verifying…' : 'Verify and sign in'}
+            {busy ? t('auth.verifying') : t('auth.verifyBtn')}
           </button>
           <button
             type="button"
@@ -296,7 +296,7 @@ export default function AuthFlow({ onDone, onCancel }: Props) {
             disabled={busy}
             className="text-sm text-brand-700 hover:text-brand-800 underline self-center mt-1"
           >
-            Re-send the code
+            {t('auth.resendCode')}
           </button>
         </form>
       )}
@@ -304,7 +304,7 @@ export default function AuthFlow({ onDone, onCancel }: Props) {
       {stage.name === 'forgot' && (
         <form onSubmit={handleForgot} className="flex flex-col gap-3">
           <label className="text-sm font-semibold text-ink-700">
-            Email
+            {t('auth.email')}
             <input
               type="email"
               autoComplete="email"
@@ -319,7 +319,7 @@ export default function AuthFlow({ onDone, onCancel }: Props) {
             disabled={busy}
             className="bg-brand-500 hover:bg-brand-600 disabled:bg-brand-300 text-white font-semibold py-3 rounded-xl shadow-md transition-colors"
           >
-            {busy ? 'Sending…' : 'Send reset code'}
+            {busy ? t('auth.sending') : t('auth.sendResetCode')}
           </button>
         </form>
       )}
@@ -327,7 +327,7 @@ export default function AuthFlow({ onDone, onCancel }: Props) {
       {stage.name === 'reset' && (
         <form onSubmit={handleReset} className="flex flex-col gap-3">
           <label className="text-sm font-semibold text-ink-700">
-            Code from email
+            {t('auth.codeFromEmail')}
             <input
               type="text"
               inputMode="numeric"
@@ -339,7 +339,7 @@ export default function AuthFlow({ onDone, onCancel }: Props) {
             />
           </label>
           <label className="text-sm font-semibold text-ink-700">
-            New password
+            {t('auth.newPassword')}
             <input
               type="password"
               autoComplete="new-password"
@@ -355,7 +355,7 @@ export default function AuthFlow({ onDone, onCancel }: Props) {
             disabled={busy}
             className="bg-brand-500 hover:bg-brand-600 disabled:bg-brand-300 text-white font-semibold py-3 rounded-xl shadow-md transition-colors"
           >
-            {busy ? 'Saving…' : 'Reset password'}
+            {busy ? t('auth.saving') : t('auth.resetPasswordBtn')}
           </button>
         </form>
       )}
@@ -365,29 +365,28 @@ export default function AuthFlow({ onDone, onCancel }: Props) {
         {stage.name === 'sign-in' && (
           <>
             <button onClick={() => goTo({ name: 'sign-up' })} className="text-brand-700 hover:text-brand-800 underline">
-              No account? Create one
+              {t('auth.noAccount')}
             </button>
             <span className="mx-2">·</span>
             <button onClick={() => goTo({ name: 'forgot' })} className="text-brand-700 hover:text-brand-800 underline">
-              Forgot password
+              {t('auth.forgotPasswordLink')}
             </button>
           </>
         )}
         {stage.name === 'sign-up' && (
           <button onClick={() => goTo({ name: 'sign-in' })} className="text-brand-700 hover:text-brand-800 underline">
-            Already have an account? Sign in
+            {t('auth.haveAccount')}
           </button>
         )}
         {(stage.name === 'forgot' || stage.name === 'reset' || stage.name === 'verify') && (
           <button onClick={() => goTo({ name: 'sign-in' })} className="text-brand-700 hover:text-brand-800 underline">
-            Back to sign in
+            {t('auth.backToSignIn')}
           </button>
         )}
       </div>
 
       <p className="mt-auto pt-8 text-xs text-ink-500 text-center leading-relaxed">
-        Cloud sync is optional. ParkProof works fully offline without an account —
-        your data lives on this device. Signing in just lets you see it on others.
+        {t('auth.footer')}
       </p>
     </div>
   )

@@ -1,19 +1,25 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import type { TFunction } from 'i18next'
 import type { ParkingSession } from '../types'
 import { loadSessions } from '../lib/storage'
 import { useNow } from '../lib/use-now'
-import { formatCountdown } from '../lib/countdown'
+import { formatCountdownLocalized } from '../lib/countdown'
 
 interface Props {
   onBack: () => void
   onOpen: (session: ParkingSession) => void
 }
 
-function statusFor(session: ParkingSession, now: number): { label: string; color: string } {
-  if (!session.expires_at) return { label: 'No expiry', color: 'text-ink-500' }
+function statusFor(
+  session: ParkingSession,
+  now: number,
+  t: TFunction,
+): { label: string; color: string } {
+  if (!session.expires_at) return { label: t('history.noExpiry'), color: 'text-ink-500' }
   const expiresMs = new Date(session.expires_at).getTime()
-  if (expiresMs < now) return { label: 'Expired', color: 'text-ink-500' }
-  const countdown = formatCountdown(expiresMs - now)
+  if (expiresMs < now) return { label: t('history.expired'), color: 'text-ink-500' }
+  const countdown = formatCountdownLocalized(expiresMs - now, t)
   const color =
     countdown.urgency === 'urgent' || countdown.urgency === 'expired'
       ? 'text-accent-700 font-bold'
@@ -24,6 +30,7 @@ function statusFor(session: ParkingSession, now: number): { label: string; color
 }
 
 export default function SessionHistory({ onBack, onOpen }: Props) {
+  const { t } = useTranslation()
   // Lazy init pulls the list from localStorage once at mount; no useEffect
   // needed (avoids the rules-of-hooks "setState inside effect" gripe).
   const [sessions] = useState<ParkingSession[]>(() => loadSessions())
@@ -35,13 +42,13 @@ export default function SessionHistory({ onBack, onOpen }: Props) {
         onClick={onBack}
         className="self-start text-ink-600 hover:text-ink-900 text-sm mb-4 transition-colors"
       >
-        ← Home
+        {t('common.backToHome')}
       </button>
 
-      <h2 className="font-display text-3xl font-extrabold text-ink-900 mb-1">Session history</h2>
-      <p className="text-sm text-ink-600 mb-6 leading-relaxed">
-        Every parking session you've logged. Tap one to view evidence or export a PDF.
-      </p>
+      <h2 className="font-display text-3xl font-extrabold text-ink-900 mb-1">
+        {t('history.header')}
+      </h2>
+      <p className="text-sm text-ink-600 mb-6 leading-relaxed">{t('history.intro')}</p>
 
       {sessions.length === 0 ? (
         <div className="bg-white rounded-2xl border border-paper-300 p-8 text-center">
@@ -51,15 +58,13 @@ export default function SessionHistory({ onBack, onOpen }: Props) {
             className="w-44 h-auto mx-auto mb-3 select-none pointer-events-none"
             aria-hidden
           />
-          <p className="text-ink-900 font-display font-bold">No sessions yet</p>
-          <p className="text-xs text-ink-600 mt-1 leading-relaxed">
-            Scan a sign and log a session — it'll appear here.
-          </p>
+          <p className="text-ink-900 font-display font-bold">{t('history.emptyTitle')}</p>
+          <p className="text-xs text-ink-600 mt-1 leading-relaxed">{t('history.emptyHelp')}</p>
         </div>
       ) : (
         <div className="flex flex-col gap-3">
           {sessions.map((s) => {
-            const status = statusFor(s, now)
+            const status = statusFor(s, now, t)
             const arrival = new Date(s.arrived_at)
             return (
               <button

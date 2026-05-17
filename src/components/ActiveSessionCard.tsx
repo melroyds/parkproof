@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import type { ParkingSession } from '../types'
 import { formatCountdown } from '../lib/countdown'
 import { useNow } from '../lib/use-now'
@@ -66,6 +67,7 @@ function useCurrentPosition(): { lat: number; lng: number } | null {
 }
 
 export default function ActiveSessionCard({ session, extraCount, onOpen }: Props) {
+  const { t } = useTranslation()
   // 30s tick is enough granularity for minute-level countdowns; the totalMinutes
   // value only ever shifts by ±1 per tick at the boundary, which matches what a
   // human glancing at the card cares about.
@@ -119,7 +121,7 @@ export default function ActiveSessionCard({ session, extraCount, onOpen }: Props
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-xs font-semibold uppercase tracking-widest text-white/80">
-              Currently parked
+              {t('active.currentlyParked')}
             </p>
             <p className="font-display text-base font-bold leading-tight truncate mt-0.5">
               {addressLine}
@@ -127,7 +129,7 @@ export default function ActiveSessionCard({ session, extraCount, onOpen }: Props
           </div>
           {extraCount > 0 && (
             <span className="text-[10px] font-semibold uppercase tracking-wider bg-white/20 rounded-full px-2 py-0.5 shrink-0">
-              +{extraCount} more
+              {t('active.morePill', { count: extraCount })}
             </span>
           )}
         </div>
@@ -137,7 +139,7 @@ export default function ActiveSessionCard({ session, extraCount, onOpen }: Props
             {countdown.label}
           </p>
           <p className="mt-1 text-sm text-white/90 font-semibold">
-            Move by {expiryLabel.combined}
+            {t('active.moveBy', { time: expiryLabel.combined })}
           </p>
         </div>
       </button>
@@ -151,21 +153,21 @@ export default function ActiveSessionCard({ session, extraCount, onOpen }: Props
             {walkBackVisible ? (
               <>
                 <p className="font-display text-lg font-bold leading-none">
-                  {walkBack!.distanceLabel} away
+                  {t('active.distanceAway', { distance: walkBack!.distanceLabel })}
                 </p>
                 <p className="text-xs text-white/85 mt-1">
-                  ≈ {walkBack!.minutesLabel}
+                  {t('active.walkMinutes', { count: walkBack!.minutes })}
                 </p>
               </>
             ) : (
               <>
                 <p className="font-display text-base font-bold leading-tight">
-                  Walk back to your car
+                  {t('active.walkBack')}
                 </p>
                 <p className="text-xs text-white/75 mt-0.5">
                   {walkBack
-                    ? "You're already there"
-                    : 'Opens in your maps app'}
+                    ? t('active.alreadyThere')
+                    : t('active.walkBackOpens')}
                 </p>
               </>
             )}
@@ -181,7 +183,7 @@ export default function ActiveSessionCard({ session, extraCount, onOpen }: Props
                 : 'Open walking directions to your car'
             }
           >
-            Walk back →
+            {t('active.walkBackButton')}
           </a>
         </div>
       )}

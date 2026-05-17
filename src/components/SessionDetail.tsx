@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import type { ParkingSession } from '../types'
 import { deleteSession, updateSession } from '../lib/storage'
 import Icon from './Icon'
@@ -31,6 +32,7 @@ function fmtLocal(iso: string, timeZone: string, full = false): string {
 }
 
 export default function SessionDetail({ session, onBack, onDeleted, onDraftAppeal }: Props) {
+  const { t } = useTranslation()
   const { user } = useAuth()
   const now = useNow()
   const expiresMs = session.expires_at ? new Date(session.expires_at).getTime() : null
@@ -76,7 +78,7 @@ export default function SessionDetail({ session, onBack, onDeleted, onDraftAppea
   }
 
   const handleDelete = () => {
-    if (!window.confirm('Delete this parking session? This cannot be undone.')) return
+    if (!window.confirm(t('session.deleteConfirm'))) return
     deleteSession(session.id)
     // Mirror the deletion to the cloud when signed in — fire-and-forget; the
     // local delete is authoritative for this device regardless of network.
@@ -132,18 +134,20 @@ export default function SessionDetail({ session, onBack, onDeleted, onDraftAppea
         onClick={onBack}
         className="self-start text-ink-600 hover:text-ink-900 text-sm mb-4 transition-colors"
       >
-        ← Back to history
+        {t('common.backToHistory')}
       </button>
 
-      <h2 className="font-display text-3xl font-extrabold text-ink-900 mb-1">Parking session</h2>
+      <h2 className="font-display text-3xl font-extrabold text-ink-900 mb-1">
+        {t('session.header')}
+      </h2>
       <p className="text-sm text-ink-600 mb-3 leading-relaxed">
-        Arrived {fmtLocal(session.arrived_at, timeZone, true)}
+        {t('session.arrived', { when: fmtLocal(session.arrived_at, timeZone, true) })}
       </p>
 
       {session.signature && (
         <div className="mb-6 inline-flex items-center gap-2 self-start bg-brand-50 border border-brand-200 text-brand-800 text-xs font-semibold px-3 py-1.5 rounded-full">
           <Icon name="check" className="w-4 h-4" strokeWidth={2.5} />
-          <span>Cryptographically signed</span>
+          <span>{t('session.cryptoSigned')}</span>
           <span className="text-brand-600 font-normal">·</span>
           <span className="text-brand-700 font-mono text-[10px]">
             {new Date(session.signature.signed_at).toLocaleString('en-AU', {
@@ -160,7 +164,7 @@ export default function SessionDetail({ session, onBack, onDeleted, onDraftAppea
         <dl className="space-y-4 text-sm">
           <div>
             <dt className="text-xs uppercase tracking-widest font-semibold text-ink-500">
-              Status
+              {t('session.status')}
             </dt>
             <dd
               className={`mt-1 font-display font-bold ${
@@ -169,8 +173,8 @@ export default function SessionDetail({ session, onBack, onDeleted, onDraftAppea
             >
               {session.expires_at
                 ? isExpired
-                  ? 'Expired'
-                  : `Active until ${fmtLocal(session.expires_at, timeZone)}`
+                  ? t('history.expired')
+                  : t('session.active', { when: fmtLocal(session.expires_at, timeZone) })
                 : 'No expiry recorded'}
             </dd>
             {countdown && (
@@ -189,14 +193,14 @@ export default function SessionDetail({ session, onBack, onDeleted, onDraftAppea
           </div>
           <div>
             <dt className="text-xs uppercase tracking-widest font-semibold text-ink-500">
-              Sign rules
+              {t('session.signRules')}
             </dt>
             <dd className="mt-1 text-ink-900">{session.rules}</dd>
           </div>
           {session.chosen_label && (
             <div>
               <dt className="text-xs uppercase tracking-widest font-semibold text-ink-500">
-                Side chosen
+                {t('session.sideChosen')}
               </dt>
               <dd className="mt-1 text-ink-900">{session.chosen_label}</dd>
             </div>
@@ -204,7 +208,7 @@ export default function SessionDetail({ session, onBack, onDeleted, onDraftAppea
           {session.location && (
             <div>
               <dt className="text-xs uppercase tracking-widest font-semibold text-ink-500">
-                Location
+                {t('session.locationLabel')}
               </dt>
               <dd className="mt-1">
                 <a
@@ -214,7 +218,7 @@ export default function SessionDetail({ session, onBack, onDeleted, onDraftAppea
                   rel="noreferrer"
                 >
                   <Icon name="pin" className="w-4 h-4" />
-                  {session.location.address ?? 'View on Google Maps'}
+                  {session.location.address ?? t('session.viewOnMaps')}
                 </a>
                 <p className="text-xs text-ink-500 font-mono mt-0.5">
                   ({session.location.lat.toFixed(5)}, {session.location.lng.toFixed(5)})
@@ -233,7 +237,7 @@ export default function SessionDetail({ session, onBack, onDeleted, onDraftAppea
                       className="mt-2 inline-flex items-center gap-1.5 bg-brand-50 hover:bg-brand-100 text-brand-800 border border-brand-200 text-xs font-semibold px-3 py-1.5 rounded-full transition-colors"
                     >
                       <Icon name="pin" className="w-3.5 h-3.5" />
-                      Walk back to the car
+                      {t('session.walkBackPill')}
                       <span aria-hidden>→</span>
                     </a>
                   )
@@ -243,7 +247,7 @@ export default function SessionDetail({ session, onBack, onDeleted, onDraftAppea
           )}
           <div>
             <dt className="text-xs uppercase tracking-widest font-semibold text-ink-500">
-              AI confidence
+              {t('session.aiConfidence')}
             </dt>
             <dd className="mt-1 text-ink-900 capitalize">{session.confidence}</dd>
           </div>
@@ -255,14 +259,14 @@ export default function SessionDetail({ session, onBack, onDeleted, onDraftAppea
       <section className="bg-white rounded-2xl border border-paper-300 p-5 mb-3">
         <div className="flex items-baseline justify-between mb-2">
           <h3 className="text-xs uppercase tracking-widest font-semibold text-ink-500">
-            Note
+            {t('session.noteLabel')}
           </h3>
           {!noteEditing && (
             <button
               onClick={startNoteEdit}
               className="text-xs font-medium text-brand-700 hover:text-brand-800 underline"
             >
-              {currentNote ? 'Edit' : 'Add note'}
+              {currentNote ? t('common.edit') : t('session.addNote')}
             </button>
           )}
         </div>
@@ -275,7 +279,7 @@ export default function SessionDetail({ session, onBack, onDeleted, onDraftAppea
               }
               rows={3}
               autoFocus
-              placeholder="Why you were here — e.g. 'Mum's chemo at the Royal', 'Saturday market on Lygon'. Used as context if you ever need to appeal a ticket."
+              placeholder={t('session.notePlaceholder')}
               className="w-full text-sm text-ink-900 bg-paper-50 border border-paper-300 rounded-xl p-3 leading-relaxed focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 resize-y"
             />
             <div className="flex items-center justify-between gap-2">
@@ -287,13 +291,13 @@ export default function SessionDetail({ session, onBack, onDeleted, onDraftAppea
                   onClick={cancelNoteEdit}
                   className="bg-paper-200 hover:bg-paper-300 text-ink-700 font-medium px-3 py-1.5 rounded-lg text-xs transition-colors"
                 >
-                  Cancel
+                  {t('common.cancel')}
                 </button>
                 <button
                   onClick={saveNote}
                   className="bg-brand-500 hover:bg-brand-600 text-white font-semibold px-3 py-1.5 rounded-lg text-xs transition-colors"
                 >
-                  Save note
+                  {t('session.saveNote')}
                 </button>
               </div>
             </div>
@@ -309,22 +313,21 @@ export default function SessionDetail({ session, onBack, onDeleted, onDraftAppea
           </p>
         ) : (
           <p className="text-xs text-ink-500 italic leading-relaxed">
-            No note added. Tap{' '}
+            {t('session.noNote')}{' '}
             <button
               onClick={startNoteEdit}
               className="underline font-medium text-brand-700"
             >
-              Add note
+              {t('session.addNote')}
             </button>{' '}
-            to record why you were here — softens a council review when the
-            context matters.
+            {t('session.noteHelp')}
           </p>
         )}
       </section>
 
       <section className="bg-white rounded-2xl border border-paper-300 p-5 mb-3">
         <h3 className="text-xs uppercase tracking-widest font-semibold text-ink-500 mb-2">
-          Sign photo
+          {t('session.signPhotoLabel')}
         </h3>
         <img
           src={session.sign_photo}
@@ -336,7 +339,7 @@ export default function SessionDetail({ session, onBack, onDeleted, onDraftAppea
       {session.car_photo && (
         <section className="bg-white rounded-2xl border border-paper-300 p-5 mb-3">
           <h3 className="text-xs uppercase tracking-widest font-semibold text-ink-500 mb-2">
-            Car at the spot
+            {t('session.carPhotoLabel')}
           </h3>
           <img
             src={session.car_photo}
@@ -352,19 +355,18 @@ export default function SessionDetail({ session, onBack, onDeleted, onDraftAppea
           disabled={pdfBusy}
           className="bg-brand-500 hover:bg-brand-600 active:bg-brand-700 disabled:bg-brand-300 text-white font-semibold py-4 rounded-2xl shadow-lg shadow-brand-500/25 transition-colors"
         >
-          {pdfBusy ? 'Building PDF…' : 'Export as PDF'}
+          {pdfBusy ? t('session.buildingPdf') : t('session.exportAsPdf')}
         </button>
         {pdfError && (
           <div className="bg-accent-50 border-2 border-accent-400 rounded-xl p-3 text-sm">
             <p className="font-display font-bold text-ink-900 mb-1">
-              Couldn't build the PDF
+              {t('session.pdfErrorHeader')}
             </p>
             <p className="text-xs text-ink-700 leading-relaxed break-words">
               {pdfError}
             </p>
             <p className="text-[10px] text-ink-500 mt-2">
-              The error has been logged to the browser console. If this keeps
-              happening, take a screenshot of the console output and share it.
+              {t('session.pdfErrorHelp')}
             </p>
           </div>
         )}
@@ -372,13 +374,13 @@ export default function SessionDetail({ session, onBack, onDeleted, onDraftAppea
           onClick={onDraftAppeal}
           className="bg-white border border-ink-700 hover:bg-ink-900 hover:text-white text-ink-900 font-semibold py-3 rounded-2xl transition-colors"
         >
-          Got a ticket? Draft an appeal letter
+          {t('session.draftAppeal')}
         </button>
         <button
           onClick={handleDelete}
           className="text-accent-600 hover:text-accent-700 font-medium py-3 transition-colors"
         >
-          Delete session
+          {t('session.deleteSession')}
         </button>
       </div>
     </div>

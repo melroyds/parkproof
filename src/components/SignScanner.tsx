@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { resizeImageFile } from '../lib/image'
 import { haversineMeters } from '../lib/geo'
 import { loadSessions } from '../lib/storage'
@@ -59,6 +60,7 @@ function loadRecentSessions(): ParkingSession[] {
 }
 
 export default function SignScanner({ onCapture, onReuseSession, onCancel }: Props) {
+  const { t } = useTranslation()
   const cameraInputRef = useRef<HTMLInputElement>(null)
   const libraryInputRef = useRef<HTMLInputElement>(null)
   const [preview, setPreview] = useState<string | null>(null)
@@ -168,14 +170,14 @@ export default function SignScanner({ onCapture, onReuseSession, onCancel }: Pro
         onClick={onCancel}
         className="self-start text-ink-600 hover:text-ink-900 text-sm mb-4 transition-colors"
       >
-        ← Back
+        {t('common.back')}
       </button>
 
       <h2 className="font-display text-3xl font-extrabold text-ink-900 mb-1">
-        Scan parking sign
+        {t('scanner.header')}
       </h2>
       <p className="text-sm text-ink-600 mb-6 leading-relaxed">
-        Take a clear photo of the sign(s). If signs are stacked, include them all in one shot.
+        {t('scanner.instructions')}
       </p>
 
       {showProximityCard && match && (
@@ -205,7 +207,7 @@ export default function SignScanner({ onCapture, onReuseSession, onCancel }: Pro
           {/* Pre-flight quality warning — doesn't block, just informs.
               Saves a wasted Claude call on obvious bad input AND helps the
               user understand why a result might be low-confidence. */}
-          {quality && quality.verdict !== 'ok' && quality.message && (
+          {quality && quality.verdict !== 'ok' && (
             <div className="mb-3 bg-amber-50 border-2 border-amber-400 rounded-xl p-3">
               <div className="flex items-start gap-2">
                 <Icon
@@ -214,10 +216,14 @@ export default function SignScanner({ onCapture, onReuseSession, onCancel }: Pro
                 />
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-display font-bold text-ink-900">
-                    Photo could be clearer
+                    {t('scanner.qualityHeader')}
                   </p>
                   <p className="text-xs text-ink-700 mt-0.5 leading-relaxed">
-                    {quality.message}
+                    {/* Verdict → translation key — keeps the quality lib pure
+                        (no React/i18n imports there). */}
+                    {t(
+                      `scanner.quality${quality.verdict.charAt(0).toUpperCase()}${quality.verdict.slice(1)}`,
+                    )}
                   </p>
                 </div>
               </div>
@@ -231,13 +237,13 @@ export default function SignScanner({ onCapture, onReuseSession, onCancel }: Pro
               }}
               className="flex-1 bg-paper-200 hover:bg-paper-300 text-ink-900 font-medium py-3 rounded-xl transition-colors"
             >
-              Retake
+              {t('scanner.retake')}
             </button>
             <button
               onClick={confirm}
               className="flex-1 bg-brand-500 hover:bg-brand-600 active:bg-brand-700 text-white font-semibold py-3 rounded-xl shadow-md shadow-brand-500/20 transition-colors"
             >
-              {quality && quality.verdict !== 'ok' ? 'Translate anyway' : 'Translate'}
+              {quality && quality.verdict !== 'ok' ? t('scanner.translateAnyway') : t('scanner.translate')}
             </button>
           </div>
         </>
@@ -248,16 +254,16 @@ export default function SignScanner({ onCapture, onReuseSession, onCancel }: Pro
             className="border-2 border-dashed border-brand-300 hover:border-brand-500 hover:bg-brand-50/50 bg-white rounded-2xl py-8 px-4 flex flex-col items-center text-brand-600 transition-colors"
           >
             <Icon name="camera" className="w-10 h-10 mb-2" />
-            <span className="text-sm font-semibold text-ink-900">Take a photo</span>
-            <span className="text-xs text-ink-600 mt-1 text-center">Live, with your camera</span>
+            <span className="text-sm font-semibold text-ink-900">{t('scanner.takePhoto')}</span>
+            <span className="text-xs text-ink-600 mt-1 text-center">{t('scanner.takePhotoSub')}</span>
           </button>
           <button
             onClick={() => libraryInputRef.current?.click()}
             className="border-2 border-dashed border-accent-300 hover:border-accent-500 hover:bg-accent-50/50 bg-white rounded-2xl py-8 px-4 flex flex-col items-center text-accent-700 transition-colors"
           >
             <Icon name="gallery" className="w-10 h-10 mb-2" />
-            <span className="text-sm font-semibold text-ink-900">From library</span>
-            <span className="text-xs text-ink-600 mt-1 text-center">Pick a saved image</span>
+            <span className="text-sm font-semibold text-ink-900">{t('scanner.fromLibrary')}</span>
+            <span className="text-xs text-ink-600 mt-1 text-center">{t('scanner.fromLibrarySub')}</span>
           </button>
         </div>
       )}

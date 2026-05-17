@@ -1,9 +1,13 @@
 import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import BrandMark from './BrandMark'
 
 interface Stage {
   ms: number
-  label: string
+  /** i18n key OR a literal English fallback for stages without locale keys. */
+  labelKey: string
+  /** When true, `labelKey` is a translation key; when false, it is the literal label. */
+  translated: boolean
 }
 
 // Stage timing matches observed Sonnet 4.6 + adaptive + effort:low timings from
@@ -11,15 +15,16 @@ interface Stage {
 // describe what the model is actually doing at that phase of inference, just
 // driven by a timer rather than real SSE because API Gateway HTTP API buffers.
 const STAGES: Stage[] = [
-  { ms: 0, label: 'Reading the text on the sign…' },
-  { ms: 3000, label: 'Identifying parking rules…' },
-  { ms: 6500, label: 'Computing when you can park…' },
-  { ms: 9500, label: 'Composing the answer…' },
-  { ms: 15000, label: 'Almost there — this sign is complex…' },
-  { ms: 22000, label: 'Still working — taking longer than usual…' },
+  { ms: 0, labelKey: 'loading.step1', translated: true },
+  { ms: 3000, labelKey: 'loading.step2', translated: true },
+  { ms: 6500, labelKey: 'loading.step3', translated: true },
+  { ms: 9500, labelKey: 'loading.step4', translated: true },
+  { ms: 15000, labelKey: 'Almost there — this sign is complex…', translated: false },
+  { ms: 22000, labelKey: 'Still working — taking longer than usual…', translated: false },
 ]
 
 export default function LoadingProgress() {
+  const { t } = useTranslation()
   const [stageIndex, setStageIndex] = useState(0)
 
   useEffect(() => {
@@ -46,7 +51,9 @@ export default function LoadingProgress() {
         key={stageIndex}
         className="font-display text-2xl font-extrabold text-ink-900 max-w-xs animate-[fade-in_300ms_ease-out]"
       >
-        {STAGES[stageIndex].label}
+        {STAGES[stageIndex].translated
+          ? t(STAGES[stageIndex].labelKey)
+          : STAGES[stageIndex].labelKey}
       </h2>
 
       <div className="w-64 mt-8 h-1.5 bg-paper-300 rounded-full overflow-hidden">

@@ -1,6 +1,11 @@
+import type { TFunction } from 'i18next'
+
 export type Urgency = 'normal' | 'warning' | 'urgent' | 'expired'
 
 export interface CountdownReadout {
+  /** English label — kept for backwards compatibility with callers that
+   *  haven't migrated to the i18n variant yet. New code should prefer
+   *  formatCountdownLocalized(). */
   label: string
   urgency: Urgency
   totalMinutes: number
@@ -47,4 +52,37 @@ export function formatCountdown(msUntil: number): CountdownReadout {
     urgency: 'normal',
     totalMinutes,
   }
+}
+
+/**
+ * Locale-aware version of formatCountdown — produces the same structured
+ * readout but the `label` is translated via i18next. Callers pass their own
+ * `t` (from useTranslation) so this library file stays React-agnostic.
+ *
+ * Translation keys consumed: time.moveNow, time.minLeft (plural),
+ * time.hourLeft (plural), time.hoursLeft (plural), time.hoursMinsLeft.
+ */
+export function formatCountdownLocalized(
+  msUntil: number,
+  t: TFunction,
+): CountdownReadout {
+  const raw = formatCountdown(msUntil)
+  let label: string
+  if (raw.urgency === 'expired') {
+    label = t('time.moveNow')
+  } else if (raw.totalMinutes < 60) {
+    label = t('time.minLeft', { count: raw.totalMinutes })
+  } else {
+    const hours = Math.floor(raw.totalMinutes / 60)
+    const mins = raw.totalMinutes % 60
+    if (mins === 0) {
+      label =
+        hours === 1
+          ? t('time.hourLeft', { count: hours })
+          : t('time.hoursLeft', { count: hours })
+    } else {
+      label = t('time.hoursMinsLeft', { hours, mins })
+    }
+  }
+  return { ...raw, label }
 }

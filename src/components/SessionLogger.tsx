@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import type { ParkingRules, ParkingSession } from '../types'
 import { forwardGeocode, reverseGeocode } from '../lib/geocode'
 import { resizeImageFile } from '../lib/image'
@@ -30,6 +31,7 @@ type GpsState =
   | { status: 'error'; message: string }
 
 export default function SessionLogger({ rules, signPhoto, onComplete, onCancel }: Props) {
+  const { t } = useTranslation()
   const [carPhoto, setCarPhoto] = useState<string | null>(null)
   // Initialise the GPS state synchronously based on API availability — avoids
   // setState-in-effect lint by deciding 'pending' vs 'error' here.
@@ -37,7 +39,7 @@ export default function SessionLogger({ rules, signPhoto, onComplete, onCancel }
     if (typeof navigator !== 'undefined' && 'geolocation' in navigator) {
       return { status: 'pending' }
     }
-    return { status: 'error', message: 'Geolocation is not supported by this browser.' }
+    return { status: 'error', message: t('logger.gpsErrorUnsupported') }
   })
   const [editMode, setEditMode] = useState(false)
   const [editValue, setEditValue] = useState('')
@@ -64,7 +66,7 @@ export default function SessionLogger({ rules, signPhoto, onComplete, onCancel }
   const submitEdit = async () => {
     const trimmed = editValue.trim()
     if (!trimmed) {
-      setEditError('Enter an address first.')
+      setEditError(t('logger.enterAddressFirst'))
       return
     }
     setEditStatus('pending')
@@ -72,7 +74,7 @@ export default function SessionLogger({ rules, signPhoto, onComplete, onCancel }
     const result = await forwardGeocode(trimmed)
     if (!result) {
       setEditStatus('idle')
-      setEditError("Couldn't find that address. Try adding a suburb or postcode.")
+      setEditError(t('logger.addressNotFound'))
       return
     }
     setGps({
@@ -89,7 +91,7 @@ export default function SessionLogger({ rules, signPhoto, onComplete, onCancel }
 
   const requestGps = () => {
     if (!('geolocation' in navigator)) {
-      setGps({ status: 'error', message: 'Geolocation is not supported by this browser.' })
+      setGps({ status: 'error', message: t('logger.gpsErrorUnsupported') })
       return
     }
     // Mark pending only when this is a retry (after an error) — the initial
@@ -119,14 +121,13 @@ export default function SessionLogger({ rules, signPhoto, onComplete, onCancel }
         }
       },
       (err) => {
-        let message = 'Could not read your GPS.'
+        let message = t('logger.gpsErrorDefault')
         if (err.code === err.PERMISSION_DENIED) {
-          message =
-            'You declined the location request. To attach GPS to this session, allow location for this site in your browser settings and tap Retry.'
+          message = t('logger.gpsErrorDenied')
         } else if (err.code === err.POSITION_UNAVAILABLE) {
-          message = 'Your device could not determine a location right now.'
+          message = t('logger.gpsErrorUnavailable')
         } else if (err.code === err.TIMEOUT) {
-          message = 'Location request timed out.'
+          message = t('logger.gpsErrorTimeout')
         }
         setGps({ status: 'error', message })
       },
@@ -184,30 +185,29 @@ export default function SessionLogger({ rules, signPhoto, onComplete, onCancel }
         onClick={onCancel}
         className="self-start text-ink-600 hover:text-ink-900 text-sm mb-4 transition-colors"
       >
-        ← Back
+        {t('common.back')}
       </button>
 
       <h2 className="font-display text-3xl font-extrabold text-ink-900 mb-1">
-        Log this parking session
+        {t('logger.header')}
       </h2>
       <p className="text-sm text-ink-600 mb-6 leading-relaxed">
-        We'll save a timestamped record with your photo and GPS — useful evidence if you ever
-        contest a wrongful ticket.
+        {t('logger.intro')}
       </p>
 
       {/* GPS card */}
       <section className="mb-3 bg-white rounded-2xl border border-paper-300 p-4">
         <div className="flex items-center justify-between">
-          <h3 className="font-semibold text-sm text-ink-900">Location</h3>
+          <h3 className="font-semibold text-sm text-ink-900">{t('logger.location')}</h3>
           {gps.status === 'pending' && (
-            <span className="text-xs text-ink-600">Acquiring GPS…</span>
+            <span className="text-xs text-ink-600">{t('logger.acquiringGps')}</span>
           )}
           {gps.status === 'ok' && (
-            <span className="text-xs text-brand-700 font-medium">Captured ✓</span>
+            <span className="text-xs text-brand-700 font-medium">{t('logger.captured')}</span>
           )}
           {gps.status === 'error' && (
             <button onClick={requestGps} className="text-xs text-accent-600 underline">
-              Retry
+              {t('common.retry')}
             </button>
           )}
         </div>
@@ -223,17 +223,12 @@ export default function SessionLogger({ rules, signPhoto, onComplete, onCancel }
                   <Icon name="warning" className="w-5 h-5 text-accent-700 shrink-0 mt-0.5" />
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-display font-bold text-ink-900">
-                      GPS is too imprecise to verify your spot
+                      {t('logger.gpsImprecise')}
                     </p>
                     <p className="text-xs text-ink-700 mt-0.5 leading-relaxed">
-                      Reading is{' '}
-                      <span className="font-mono font-semibold">
-                        {formatAccuracy(gps.accuracy)}
-                      </span>
                       {isDanger
-                        ? ' — could be the wrong suburb entirely (common on Starlink, VPN, or indoor GPS).'
-                        : ' — fine for finding a coffee shop, not for parking evidence.'}{' '}
-                      Enter the street address manually to keep this record reliable.
+                        ? t('logger.gpsImpreciseDanger', { accuracy: formatAccuracy(gps.accuracy) })
+                        : t('logger.gpsImpreciseCopy', { accuracy: formatAccuracy(gps.accuracy) })}
                     </p>
                   </div>
                 </div>
@@ -241,7 +236,7 @@ export default function SessionLogger({ rules, signPhoto, onComplete, onCancel }
                   onClick={startEdit}
                   className="w-full bg-accent-600 hover:bg-accent-700 text-white font-semibold py-2.5 rounded-lg text-sm shadow-md shadow-accent-500/20 transition-colors"
                 >
-                  Enter the address manually
+                  {t('logger.enterAddress')}
                 </button>
               </div>
             )
@@ -259,7 +254,7 @@ export default function SessionLogger({ rules, signPhoto, onComplete, onCancel }
                   </p>
                 ) : gps.addressLoading ? (
                   <p className="text-xs text-ink-600 font-mono">
-                    {gps.coords.lat.toFixed(5)}, {gps.coords.lng.toFixed(5)} · resolving address…
+                    {gps.coords.lat.toFixed(5)}, {gps.coords.lng.toFixed(5)} · {t('logger.resolvingAddress')}
                   </p>
                 ) : (
                   <p className="text-xs text-ink-600 font-mono">
@@ -268,15 +263,15 @@ export default function SessionLogger({ rules, signPhoto, onComplete, onCancel }
                 )}
                 <p className="text-[10px] text-ink-500 mt-0.5">
                   {gps.source === 'manual'
-                    ? 'Manually entered'
-                    : `${formatAccuracy(gps.accuracy)} accuracy`}
+                    ? t('logger.manuallyEntered')
+                    : t('logger.accuracyLabel', { accuracy: formatAccuracy(gps.accuracy) })}
                 </p>
               </div>
               <button
                 onClick={startEdit}
                 className="text-xs font-medium text-brand-700 hover:text-brand-800 underline shrink-0"
               >
-                Edit
+                {t('common.edit')}
               </button>
             </div>
           )
@@ -292,7 +287,7 @@ export default function SessionLogger({ rules, signPhoto, onComplete, onCancel }
                 if (e.key === 'Enter') submitEdit()
                 if (e.key === 'Escape') cancelEdit()
               }}
-              placeholder="Street, suburb, state"
+              placeholder={t('logger.addressPlaceholder')}
               autoFocus
               className="w-full border border-paper-300 rounded-lg px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
             />
@@ -303,14 +298,14 @@ export default function SessionLogger({ rules, signPhoto, onComplete, onCancel }
                 disabled={editStatus === 'pending'}
                 className="flex-1 bg-paper-200 hover:bg-paper-300 text-ink-700 font-medium py-2 rounded-lg text-sm transition-colors"
               >
-                Cancel
+                {t('common.cancel')}
               </button>
               <button
                 onClick={submitEdit}
                 disabled={editStatus === 'pending'}
                 className="flex-1 bg-brand-500 hover:bg-brand-600 disabled:bg-brand-300 text-white font-semibold py-2 rounded-lg text-sm transition-colors"
               >
-                {editStatus === 'pending' ? 'Looking up…' : 'Update'}
+                {editStatus === 'pending' ? t('logger.lookingUp') : t('logger.update')}
               </button>
             </div>
           </div>
@@ -318,26 +313,26 @@ export default function SessionLogger({ rules, signPhoto, onComplete, onCancel }
         {gps.status === 'error' && (
           <div className="mt-2 space-y-1">
             <p className="text-xs text-ink-700 leading-relaxed">{gps.message}</p>
-            <p className="text-xs text-ink-600">You can still save this session without GPS.</p>
+            <p className="text-xs text-ink-600">{t('logger.canSaveWithoutGps')}</p>
           </div>
         )}
       </section>
 
       {/* Car photo */}
       <section className="mb-6">
-        <h3 className="font-semibold text-sm text-ink-900 mb-2">Car at the spot</h3>
+        <h3 className="font-semibold text-sm text-ink-900 mb-2">{t('logger.carAtSpot')}</h3>
         {carPhoto ? (
           <>
             <img
               src={carPhoto}
-              alt="Your car"
+              alt={t('logger.carAtSpot')}
               className="w-full rounded-2xl border border-paper-300 object-contain max-h-[50vh] bg-white"
             />
             <button
               onClick={() => setCarPhoto(null)}
               className="text-sm text-brand-700 hover:text-brand-800 underline mt-2"
             >
-              Retake
+              {t('logger.carRetake')}
             </button>
           </>
         ) : (
@@ -347,21 +342,21 @@ export default function SessionLogger({ rules, signPhoto, onComplete, onCancel }
               className="border-2 border-dashed border-brand-300 hover:border-brand-500 hover:bg-brand-50/50 bg-white rounded-2xl py-8 px-4 flex flex-col items-center text-brand-600 transition-colors"
             >
               <Icon name="camera" className="w-10 h-10 mb-2" />
-              <span className="text-sm font-semibold text-ink-900">Take a photo</span>
-              <span className="text-xs text-ink-600 mt-1 text-center">Live, with your camera</span>
+              <span className="text-sm font-semibold text-ink-900">{t('scanner.takePhoto')}</span>
+              <span className="text-xs text-ink-600 mt-1 text-center">{t('scanner.takePhotoSub')}</span>
             </button>
             <button
               onClick={() => libraryInputRef.current?.click()}
               className="border-2 border-dashed border-accent-300 hover:border-accent-500 hover:bg-accent-50/50 bg-white rounded-2xl py-8 px-4 flex flex-col items-center text-accent-700 transition-colors"
             >
               <Icon name="gallery" className="w-10 h-10 mb-2" />
-              <span className="text-sm font-semibold text-ink-900">From library</span>
-              <span className="text-xs text-ink-600 mt-1 text-center">Pick a saved image</span>
+              <span className="text-sm font-semibold text-ink-900">{t('scanner.fromLibrary')}</span>
+              <span className="text-xs text-ink-600 mt-1 text-center">{t('scanner.fromLibrarySub')}</span>
             </button>
           </div>
         )}
         <p className="text-xs text-ink-500 mt-2 text-center">
-          Optional but strongly recommended for evidence
+          {t('logger.carOptionalHelp')}
         </p>
         <input
           ref={cameraInputRef}
@@ -393,13 +388,13 @@ export default function SessionLogger({ rules, signPhoto, onComplete, onCancel }
           onClick={saveSession}
           className="bg-brand-500 hover:bg-brand-600 active:bg-brand-700 text-white font-semibold py-4 rounded-2xl shadow-lg shadow-brand-500/25 transition-colors"
         >
-          Save session
+          {t('logger.saveSession')}
         </button>
         <button
           onClick={onCancel}
           className="text-ink-600 hover:text-ink-900 font-medium py-2 transition-colors"
         >
-          Cancel
+          {t('common.cancel')}
         </button>
       </div>
     </div>

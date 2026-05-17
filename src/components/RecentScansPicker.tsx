@@ -1,6 +1,7 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import type { ParkingSession } from '../types'
-import { formatRelative } from '../lib/time-format'
+import { formatRelativeLocalized } from '../lib/time-format'
 
 interface Props {
   sessions: ParkingSession[]
@@ -9,13 +10,14 @@ interface Props {
 }
 
 export default function RecentScansPicker({ sessions, onPick, onDismiss }: Props) {
+  const { t } = useTranslation()
   // Pre-compute ages at mount so the render-pass stays pure. The labels are
   // "5 minutes ago" coarse — fine to freeze them while the picker is open.
   const [agesById] = useState<Map<string, string>>(() => {
     const now = Date.now()
     const map = new Map<string, string>()
     for (const s of sessions) {
-      map.set(s.id, formatRelative(now - new Date(s.arrived_at).getTime()))
+      map.set(s.id, formatRelativeLocalized(now - new Date(s.arrived_at).getTime(), t))
     }
     return map
   })
@@ -26,18 +28,17 @@ export default function RecentScansPicker({ sessions, onPick, onDismiss }: Props
     <section className="mb-6">
       <div className="flex items-baseline justify-between mb-2">
         <h3 className="font-display font-bold text-ink-900 text-sm uppercase tracking-widest">
-          Reuse a recent scan
+          {t('reuse.pickerHeader')}
         </h3>
         <button
           onClick={onDismiss}
           className="text-xs text-ink-600 hover:text-ink-900 underline"
         >
-          Dismiss
+          {t('reuse.dismiss')}
         </button>
       </div>
       <p className="text-xs text-ink-600 mb-3">
-        We couldn't auto-detect your spot. If you're parking somewhere you scanned in the last
-        week, pick it here to skip the photo.
+        {t('reuse.pickerCopy')}
       </p>
       <div className="flex flex-col gap-2">
         {sessions.map((s) => {

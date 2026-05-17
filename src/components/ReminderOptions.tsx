@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import type { ParkingSession } from '../types'
 import { scheduleParkingReminders, type ScheduleResult } from '../lib/notifications'
 import { useNow } from '../lib/use-now'
@@ -32,11 +33,6 @@ interface OffsetInfo {
   isPast: boolean
 }
 
-function chipLabel(offset: Offset): string {
-  if (offset === 0) return 'At expiry'
-  return `${offset} min`
-}
-
 /** Pick sensible defaults given which offsets are fireable. */
 function pickDefaults(fireable: OffsetInfo[]): Set<Offset> {
   if (fireable.length === 0) return new Set()
@@ -50,31 +46,46 @@ function pickDefaults(fireable: OffsetInfo[]): Set<Offset> {
 }
 
 function NotifStatusLine({ result }: { result: ScheduleResult }) {
+  const { t } = useTranslation()
   switch (result.status) {
     case 'scheduled': {
       const skipped = result.totalSelected - result.scheduledCount
-      const base = `✓ ${result.scheduledCount} notification${result.scheduledCount === 1 ? '' : 's'} scheduled`
-      return <span>{skipped > 0 ? `${base} (${skipped} skipped — already past)` : base}</span>
+      return (
+        <span>
+          {skipped > 0
+            ? t('reminders.browserScheduledSkipped', {
+                count: result.scheduledCount,
+                skipped,
+              })
+            : t('reminders.browserScheduled', { count: result.scheduledCount })}
+        </span>
+      )
     }
     case 'denied':
-      return <span>Permission denied — use the calendar option instead</span>
+      return <span>{t('reminders.browserDenied')}</span>
     case 'unsupported':
-      return <span>Not supported on this browser</span>
+      return <span>{t('reminders.browserUnsupported')}</span>
     case 'no-expiry':
-      return <span>No expiry on this session</span>
+      return <span>{t('reminders.browserNoExpiry')}</span>
     case 'all-past':
-      return <span>All selected reminders are already in the past</span>
+      return <span>{t('reminders.browserAllPast')}</span>
     case 'all-too-far':
-      return <span>Expires in over 24h — use the calendar option instead</span>
+      return <span>{t('reminders.browserTooFar')}</span>
     case 'nothing-selected':
-      return <span>Pick at least one reminder above</span>
+      return <span>{t('reminders.browserNothingSelected')}</span>
   }
 }
 
 export default function ReminderOptions({ session, onDone }: Props) {
+  const { t } = useTranslation()
   const [icsState, setIcsState] = useState<'idle' | 'downloaded' | 'error' | 'empty'>('idle')
   const [notifResult, setNotifResult] = useState<ScheduleResult | null>(null)
   const [notifBusy, setNotifBusy] = useState(false)
+
+  const chipLabel = (offset: Offset): string =>
+    offset === 0
+      ? t('reminders.chipAtExpiry')
+      : t('reminders.chipMin', { count: offset })
 
   // Re-tick every 30s so chips that slide into the past auto-disable without
   // requiring the user to re-enter the screen. Matches SAFETY_MARGIN_MS exactly,
@@ -174,15 +185,15 @@ export default function ReminderOptions({ session, onDone }: Props) {
   if (!session.expires_at) {
     return (
       <div className="min-h-screen flex flex-col p-6 max-w-md mx-auto w-full">
-        <h2 className="font-display text-3xl font-extrabold text-ink-900 mb-2">Set reminders</h2>
+        <h2 className="font-display text-3xl font-extrabold text-ink-900 mb-2">{t('reminders.header')}</h2>
         <p className="text-sm text-ink-700 mb-6 leading-relaxed">
-          This session has no expiry time, so a timed reminder doesn't apply.
+          {t('reminders.noExpiry')}
         </p>
         <button
           onClick={onDone}
           className="mt-auto bg-ink-900 hover:bg-ink-800 text-white font-semibold py-4 rounded-2xl shadow-md transition-colors"
         >
-          Done
+          {t('common.done')}
         </button>
       </div>
     )
@@ -191,17 +202,15 @@ export default function ReminderOptions({ session, onDone }: Props) {
   if (!anyFireable) {
     return (
       <div className="min-h-screen flex flex-col p-6 max-w-md mx-auto w-full">
-        <h2 className="font-display text-3xl font-extrabold text-ink-900 mb-2">Set reminders</h2>
+        <h2 className="font-display text-3xl font-extrabold text-ink-900 mb-2">{t('reminders.header')}</h2>
         <p className="text-sm text-ink-700 mb-6 leading-relaxed">
-          Parking expired at{' '}
-          <span className="font-display font-bold text-ink-900">{expiresLabel}</span>. Too late for
-          a reminder — but your session is still saved as evidence if you need to dispute a ticket.
+          {t('reminders.expired', { when: expiresLabel })}
         </p>
         <button
           onClick={onDone}
           className="mt-auto bg-ink-900 hover:bg-ink-800 text-white font-semibold py-4 rounded-2xl shadow-md transition-colors"
         >
-          Done
+          {t('common.done')}
         </button>
       </div>
     )
@@ -210,11 +219,9 @@ export default function ReminderOptions({ session, onDone }: Props) {
   // === Main flow ===
   return (
     <div className="min-h-screen flex flex-col p-6 max-w-md mx-auto w-full">
-      <h2 className="font-display text-3xl font-extrabold text-ink-900 mb-1">Set reminders</h2>
+      <h2 className="font-display text-3xl font-extrabold text-ink-900 mb-1">{t('reminders.header')}</h2>
       <p className="text-sm text-ink-700 mb-6 leading-relaxed">
-        Parking expires at{' '}
-        <span className="font-display font-bold text-ink-900">{expiresLabel}</span>. Pick when you
-        want to be pinged — choose as many as you like.
+        {t('reminders.intro', { when: expiresLabel })}
       </p>
 
       {/* Chip selector */}
@@ -261,13 +268,10 @@ export default function ReminderOptions({ session, onDone }: Props) {
       {/* Live summary of selected fire-times */}
       <p className="text-xs text-ink-600 mb-6 leading-relaxed min-h-[2.25rem]">
         {selectedTimesLabel ? (
-          <>
-            You'll be pinged at{' '}
-            <span className="font-display font-semibold text-ink-900">{selectedTimesLabel}</span>.
-          </>
+          t('reminders.summaryWithSelections', { times: selectedTimesLabel })
         ) : (
           <span className="italic text-ink-500">
-            No reminders selected — pick at least one chip above.
+            {t('reminders.summaryEmpty')}
           </span>
         )}
       </p>
@@ -279,10 +283,9 @@ export default function ReminderOptions({ session, onDone }: Props) {
             <Icon name="calendar" className="w-6 h-6" />
           </div>
           <div>
-            <h3 className="font-display font-bold text-ink-900">Calendar reminder</h3>
+            <h3 className="font-display font-bold text-ink-900">{t('reminders.calendarHeader')}</h3>
             <p className="text-xs text-ink-600 mt-1 leading-relaxed">
-              Drops into the iPhone / Android / Outlook calendar with one alarm per chip. Survives
-              even if you close this app.
+              {t('reminders.calendarCopy')}
             </p>
           </div>
         </div>
@@ -292,12 +295,12 @@ export default function ReminderOptions({ session, onDone }: Props) {
           className="w-full bg-brand-500 hover:bg-brand-600 disabled:bg-brand-200 disabled:text-white/70 text-white font-semibold py-3 rounded-xl shadow-md shadow-brand-500/20 transition-colors"
         >
           {icsState === 'downloaded'
-            ? '✓ Downloaded — open the file to add it'
+            ? t('reminders.calendarDownloaded')
             : icsState === 'error'
-              ? 'Download failed — try again'
+              ? t('reminders.calendarError')
               : icsState === 'empty'
-                ? 'Pick at least one reminder above'
-                : `Download .ics with ${selectedList.length} alarm${selectedList.length === 1 ? '' : 's'}`}
+                ? t('reminders.calendarPickAtLeastOne')
+                : t('reminders.calendarCta', { count: selectedList.length })}
         </button>
       </section>
 
@@ -308,10 +311,9 @@ export default function ReminderOptions({ session, onDone }: Props) {
             <Icon name="bell" className="w-6 h-6" />
           </div>
           <div>
-            <h3 className="font-display font-bold text-ink-900">Browser notification</h3>
+            <h3 className="font-display font-bold text-ink-900">{t('reminders.browserHeader')}</h3>
             <p className="text-xs text-ink-600 mt-1 leading-relaxed">
-              Fires while this tab stays open. One notification per selected chip. Good as a backup
-              to the calendar option.
+              {t('reminders.browserCopy')}
             </p>
           </div>
         </div>
@@ -325,16 +327,13 @@ export default function ReminderOptions({ session, onDone }: Props) {
           className="w-full bg-accent-500 hover:bg-accent-600 disabled:opacity-60 text-white font-semibold py-3 rounded-xl shadow-md shadow-accent-500/20 transition-colors"
         >
           {notifBusy ? (
-            <span>Requesting permission…</span>
+            <span>{t('reminders.browserRequesting')}</span>
           ) : notifResult ? (
             <NotifStatusLine result={notifResult} />
           ) : selectedList.length === 0 ? (
-            <span>Pick at least one reminder above</span>
+            <span>{t('reminders.browserNothingSelected')}</span>
           ) : (
-            <span>
-              Enable {selectedList.length} browser notification
-              {selectedList.length === 1 ? '' : 's'}
-            </span>
+            <span>{t('reminders.browserCta', { count: selectedList.length })}</span>
           )}
         </button>
       </section>
@@ -343,7 +342,7 @@ export default function ReminderOptions({ session, onDone }: Props) {
         onClick={onDone}
         className="mt-auto bg-ink-900 hover:bg-ink-800 text-white font-semibold py-4 rounded-2xl shadow-md transition-colors"
       >
-        Done
+        {t('common.done')}
       </button>
     </div>
   )

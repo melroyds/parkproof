@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useAuth } from '../lib/use-auth'
 import { deleteAccount, exportCloudData } from '../lib/sync'
 import Icon from './Icon'
@@ -10,6 +11,7 @@ interface Props {
 }
 
 export default function AuthSettings({ onBack, onOpenPrivacy, onDeleted }: Props) {
+  const { t } = useTranslation()
   const { user, signOut } = useAuth()
   const [exportStatus, setExportStatus] = useState<'idle' | 'busy' | 'error'>('idle')
   const [exportError, setExportError] = useState<string | null>(null)
@@ -23,9 +25,9 @@ export default function AuthSettings({ onBack, onOpenPrivacy, onDeleted }: Props
     return (
       <div className="min-h-screen flex flex-col p-6 max-w-md mx-auto w-full">
         <button onClick={onBack} className="self-start text-ink-600 hover:text-ink-900 text-sm mb-4">
-          ← Back
+          {t('common.back')}
         </button>
-        <p className="text-ink-700">You're signed out.</p>
+        <p className="text-ink-700">{t('settings.youSignedOut')}</p>
       </div>
     )
   }
@@ -51,7 +53,7 @@ export default function AuthSettings({ onBack, onOpenPrivacy, onDeleted }: Props
 
   const handleDelete = async () => {
     if (deleteConfirmText !== 'DELETE') {
-      setDeleteError('Please type DELETE in capitals to confirm.')
+      setDeleteError(t('settings.deleteTypoError'))
       return
     }
     setDeleteStage('busy')
@@ -70,35 +72,33 @@ export default function AuthSettings({ onBack, onOpenPrivacy, onDeleted }: Props
   return (
     <div className="min-h-screen flex flex-col p-6 max-w-md mx-auto w-full">
       <button onClick={onBack} className="self-start text-ink-600 hover:text-ink-900 text-sm mb-4">
-        ← Back
+        {t('common.back')}
       </button>
 
-      <h2 className="font-display text-3xl font-extrabold text-ink-900 mb-1">Account</h2>
+      <h2 className="font-display text-3xl font-extrabold text-ink-900 mb-1">{t('settings.header')}</h2>
       <p className="text-sm text-ink-600 mb-6 leading-relaxed">
-        Manage cloud sync, export your data, or close your account.
+        {t('settings.intro')}
       </p>
 
       <section className="bg-white rounded-2xl border border-paper-300 p-5 mb-3">
         <h3 className="text-xs uppercase tracking-widest font-semibold text-ink-500 mb-2">
-          Signed in as
+          {t('settings.signedInAs')}
         </h3>
         <p className="text-ink-900 break-words">{user.email}</p>
         <p className="text-[10px] text-ink-500 font-mono mt-1 break-all">{user.userId}</p>
       </section>
 
       <section className="bg-white rounded-2xl border border-paper-300 p-5 mb-3">
-        <h3 className="font-display font-bold text-ink-900 mb-1">Export your data</h3>
+        <h3 className="font-display font-bold text-ink-900 mb-1">{t('settings.exportHeader')}</h3>
         <p className="text-xs text-ink-600 mb-3 leading-relaxed">
-          Downloads a PDF with every parking session you've stored in the
-          cloud — cover page summary plus a per-session detail block with
-          photos. Share-ready, print-ready, council-ready.
+          {t('settings.exportCopy')}
         </p>
         <button
           onClick={handleExport}
           disabled={exportStatus === 'busy'}
           className="w-full bg-brand-500 hover:bg-brand-600 disabled:bg-brand-300 text-white font-semibold py-3 rounded-xl shadow-md transition-colors"
         >
-          {exportStatus === 'busy' ? 'Building PDF…' : 'Download as PDF'}
+          {exportStatus === 'busy' ? t('settings.exportBuilding') : t('settings.exportCta')}
         </button>
         {exportError && (
           <p className="text-xs text-accent-700 mt-2 break-words">{exportError}</p>
@@ -106,22 +106,22 @@ export default function AuthSettings({ onBack, onOpenPrivacy, onDeleted }: Props
       </section>
 
       <section className="bg-white rounded-2xl border border-paper-300 p-5 mb-3">
-        <h3 className="font-display font-bold text-ink-900 mb-1">Privacy</h3>
+        <h3 className="font-display font-bold text-ink-900 mb-1">{t('settings.privacyHeader')}</h3>
         <p className="text-xs text-ink-600 mb-3 leading-relaxed">
-          What we collect, how long we keep it, who we share it with.
+          {t('settings.privacyCopy')}
         </p>
         <button
           onClick={onOpenPrivacy}
           className="w-full bg-white border border-ink-700 hover:bg-ink-900 hover:text-white text-ink-900 font-semibold py-3 rounded-xl transition-colors"
         >
-          Open privacy policy
+          {t('settings.privacyCta')}
         </button>
       </section>
 
       <section className="bg-white rounded-2xl border border-paper-300 p-5 mb-3">
-        <h3 className="font-display font-bold text-ink-900 mb-1">Sign out</h3>
+        <h3 className="font-display font-bold text-ink-900 mb-1">{t('settings.signOutHeader')}</h3>
         <p className="text-xs text-ink-600 mb-3 leading-relaxed">
-          Your local sessions stay on this device. You can sign back in any time.
+          {t('settings.signOutCopy')}
         </p>
         <button
           onClick={() => {
@@ -130,19 +130,17 @@ export default function AuthSettings({ onBack, onOpenPrivacy, onDeleted }: Props
           }}
           className="w-full bg-paper-200 hover:bg-paper-300 text-ink-900 font-semibold py-3 rounded-xl transition-colors"
         >
-          Sign out
+          {t('settings.signOutCta')}
         </button>
       </section>
 
       <section className="bg-accent-50 border-2 border-accent-300 rounded-2xl p-5 mt-3">
         <h3 className="font-display font-bold text-ink-900 mb-1 flex items-center gap-2">
           <Icon name="warning" className="w-5 h-5 text-accent-700" />
-          Delete account
+          {t('settings.deleteHeader')}
         </h3>
         <p className="text-xs text-ink-700 mb-3 leading-relaxed">
-          Removes your sign-in record, every cloud-stored session, and every
-          photo from S3. Irreversible. Local sessions on this device are also
-          cleared as part of the sign-out that follows.
+          {t('settings.deleteCopy')}
         </p>
         {deleteStage === 'idle' && (
           <button
@@ -153,13 +151,13 @@ export default function AuthSettings({ onBack, onOpenPrivacy, onDeleted }: Props
             }}
             className="w-full bg-white border border-accent-500 text-accent-700 font-semibold py-3 rounded-xl hover:bg-accent-100 transition-colors"
           >
-            I want to delete my account
+            {t('settings.deleteStart')}
           </button>
         )}
         {(deleteStage === 'confirm' || deleteStage === 'error' || deleteStage === 'busy') && (
           <div className="space-y-2">
             <label className="text-xs font-semibold text-ink-700 block">
-              Type <span className="font-mono text-accent-700">DELETE</span> to confirm
+              {t('settings.deleteConfirmLabel')}
               <input
                 type="text"
                 value={deleteConfirmText}
@@ -174,14 +172,14 @@ export default function AuthSettings({ onBack, onOpenPrivacy, onDeleted }: Props
                 disabled={deleteStage === 'busy'}
                 className="flex-1 bg-paper-200 hover:bg-paper-300 text-ink-700 font-medium py-2.5 rounded-lg text-sm"
               >
-                Cancel
+                {t('common.cancel')}
               </button>
               <button
                 onClick={handleDelete}
                 disabled={deleteStage === 'busy' || deleteConfirmText !== 'DELETE'}
                 className="flex-1 bg-accent-600 hover:bg-accent-700 disabled:opacity-60 text-white font-semibold py-2.5 rounded-lg text-sm"
               >
-                {deleteStage === 'busy' ? 'Deleting…' : 'Delete forever'}
+                {deleteStage === 'busy' ? t('settings.deleting') : t('settings.deleteForever')}
               </button>
             </div>
             {deleteError && (
