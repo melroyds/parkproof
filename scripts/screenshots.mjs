@@ -138,7 +138,7 @@ const MOCK_APPEAL_DRAFT = {
     '',
     'At the time of parking, my vehicle and the sign were both photographed. The 2P restriction printed on the sign applies only to weekdays 8am–6pm — the only restriction in force during my parking session was the overlapping "Permit Zone" notice, which I had verified did not apply.',
     '',
-    'I respectfully request the notice be withdrawn on the basis that the cited 2P restriction was not active at the time. The full cryptographically-signed evidence record is available on request — photographs and metadata are signed by an AWS KMS-managed key, with the public verification key published at https://d1jmpu2roekssu.cloudfront.net/parkproof-public-key.pem.',
+    'I respectfully request the notice be withdrawn on the basis that the cited 2P restriction was not active at the time. The full cryptographically-signed evidence record is available on request — photographs and metadata are signed by an AWS KMS-managed key, with the public verification key published at https://parkproof.dsouza.tech/parkproof-public-key.pem.',
     '',
     'Yours sincerely,',
     '[Your name]',

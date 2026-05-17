@@ -441,7 +441,7 @@ function drawSignatureAppendix(
       [t('pdf.signature.schema'), sig.schema],
       [
         t('pdf.signature.publicKeyUrl'),
-        'https://d1jmpu2roekssu.cloudfront.net/parkproof-public-key.pem',
+        'https://parkproof.dsouza.tech/parkproof-public-key.pem',
       ],
     ],
     styles: { fontSize: 9, cellPadding: 5, valign: 'top' },
@@ -509,7 +509,7 @@ function drawSignatureAppendix(
     t('pdf.signature.verifyStep1'),
     t('pdf.signature.verifyStep2'),
     t('pdf.signature.verifyStep3'),
-    '   curl -O https://d1jmpu2roekssu.cloudfront.net/parkproof-public-key.pem',
+    '   curl -O https://parkproof.dsouza.tech/parkproof-public-key.pem',
     t('pdf.signature.verifyStep4'),
     '   base64 -d sig.base64 > sig.bin',
     t('pdf.signature.verifyStep5'),

@@ -4,7 +4,7 @@
 
 A mobile-first, installable PWA with end-to-end AI: sign translation, evidence capture, departure reminders, and a court-friendly PDF export — all working against a real AWS backend.
 
-> **🚀 Try it live:** [https://d1jmpu2roekssu.cloudfront.net](https://d1jmpu2roekssu.cloudfront.net)
+> **🚀 Try it live:** [https://parkproof.dsouza.tech](https://parkproof.dsouza.tech)
 >
 > Best on a phone — tap your browser's share menu → **"Add to Home Screen"** and ParkProof installs like a native app (own icon, fullscreen, no browser chrome). Also works fine on desktop if you upload sign photos from your library.
 

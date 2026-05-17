@@ -6,7 +6,7 @@ Quick context for AI assistance on this codebase. Read this before touching thin
 
 Mobile-first installable PWA. Photograph an Australian parking sign → Claude vision answers "can I park now?" with structured JSON → optionally log a session (car photo + GPS + address) → get a `.ics` calendar reminder or in-tab browser notification → later, export the session as a PDF for an infringement dispute.
 
-Live: <https://d1jmpu2roekssu.cloudfront.net>. Hosted on AWS in `ap-southeast-2`.
+Live: <https://parkproof.dsouza.tech> (custom domain, CloudFront-fronted). Hosted on AWS in `ap-southeast-2`.
 
 See [`parkproof-spec.md`](parkproof-spec.md) for the original product brief and [`README.md`](README.md) for the user-facing version.
 
@@ -124,7 +124,7 @@ The state is a discriminated union in [`src/App.tsx`](src/App.tsx). When adding 
 | IAM execution role | `parkproof-lambda-role` |
 | API Gateway HTTP API | `parkproof-api` (id `tlsmpbft4f`), routes `POST /sign-translate` + `POST /feedback` |
 | S3 bucket | `parkproof-app-251800369612` (private; CloudFront OAC only) |
-| CloudFront distribution | `E33V8DMM3LQACG` → `d1jmpu2roekssu.cloudfront.net` |
+| CloudFront distribution | `E33V8DMM3LQACG` → `parkproof.dsouza.tech` (custom domain via ACM cert in us-east-1) / fallback `d1jmpu2roekssu.cloudfront.net` |
 | CloudFront Origin Access Control | `parkproof-oac` (id `E3JE1OX4WHEIWK`) |
 | AWS Budgets alarm | `parkproof-monthly` (\$10/mo threshold, emails moltensnake@gmail.com) |
 
