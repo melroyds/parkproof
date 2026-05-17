@@ -62,7 +62,7 @@ The full flow:
 - **Background signing retry.** If the tab closes mid-signing, the next app load sweeps for unsigned sessions and re-attempts (5-minute throttle, 3-attempt cap, 30-day horizon). Sessions self-heal.
 - **Stepped loading UX.** While the model thinks, the loading screen progresses through "Reading the sign… Identifying parking rules… Computing when you can park… Composing the answer…" with a real progress bar. Timings tuned from actual CloudWatch latency data.
 - **AI feedback loop (Layers 1 + 2).** After each result, "Yes, looks right" or "Retake photo" fires a structured event to CloudWatch with the model's confidence, the rules-shape, whether clarification fired, the local hour, and a 120-char rules excerpt. Lets you slice failure modes in Logs Insights — *"of all retake verdicts, what's the confidence distribution? Which sign patterns? Which hours-of-day?"* — without any PII. Verdict counts (Layer 1) tell you *whether* there's a problem; Layer 2's context tells you *which kind*.
-- **Multi-lingual UI — 5 languages.** Flag selector on the home screen swaps the entire interface between 🇦🇺 English (default), 🇨🇳 简体中文, 🇻🇳 Tiếng Việt, 🇮🇹 Italiano, 🇬🇷 Ελληνικά. Language list chosen from the top non-English languages spoken in the **City of Melbourne LGA** (2021 ABS Census). Powered by `react-i18next` with browser-language auto-detection + localStorage persistence. The Claude AI's sign-translation output stays in English (it reflects what's literally on the sign); the entire UI scaffolding around it translates.
+- **Multi-lingual UI — 7 languages.** Language picker on the home screen swaps the entire interface between 🇦🇺 English (default), 🇨🇳 简体中文, 🇻🇳 Tiếng Việt, 🇮🇹 Italiano, 🇬🇷 Ελληνικά, 🇮🇳 हिन्दी, and 🇮🇳 ਪੰਜਾਬੀ. Language list chosen from the top non-English languages spoken in the **City of Melbourne LGA** (2021 ABS Census). Powered by `react-i18next` with browser-language auto-detection + localStorage persistence. The Claude AI's sign-translation output stays in English (it reflects what's literally on the sign); the entire UI scaffolding around it — including the evidence PDF — translates.
 
 ### PWA
 Installable to the iPhone / Android home screen with a real app icon, theme colour, splash screen, and offline-capable service worker. Initial main bundle is ~360KB raw / ~100KB gzipped after the i18n libs landed; heavier libraries (jsPDF, ics, html2canvas, locale chunks for non-English languages) are lazy-loaded only when used.
@@ -90,12 +90,15 @@ flowchart LR
   end
 
   subgraph AWS["AWS (ap-southeast-2)"]
-    CF[CloudFront<br/>+ OAC]
-    S3[(S3 — private<br/>static hosting)]
-    APIGW[API Gateway HTTP API<br/>POST /sign-translate<br/>POST /sign-session<br/>POST /draft-appeal<br/>POST /feedback]
+    CF[CloudFront<br/>+ OAC<br/>parkproof.dsouza.tech]
+    S3App[(S3 — static hosting<br/>private, OAC-only)]
+    APIGW[API Gateway HTTP API<br/>10 routes — see below<br/>JWT authorizer for /sessions, /photos, /me]
     Lambda[Lambda<br/>parkproof-sign-translator]
+    Cog[Cognito User Pool<br/>+ Hosted UI<br/>Apple · Google federation]
+    DDB[(DynamoDB<br/>sessions table)]
+    S3Ev[(S3 — evidence<br/>per-user prefixes<br/>presigned upload URLs)]
     KMS[AWS KMS<br/>ECDSA P-256<br/>asymmetric signing key]
-    Logs[CloudWatch Logs<br/>feedback + timings]
+    Logs[CloudWatch Logs<br/>feedback Layers 1 + 2<br/>+ per-request timings]
   end
 
   subgraph External
@@ -104,15 +107,17 @@ flowchart LR
   end
 
   Cam --> UI
-  UI -- "GET /" --> CF --> S3
-  UI -- "POST /sign-translate<br/>(image, lat, lng)" --> APIGW --> Lambda
-  UI -- "POST /sign-translate<br/>(prior_rules, lat, lng)" --> APIGW
-  UI -- "POST /sign-session<br/>(metadata + photo SHA-256s)" --> APIGW
-  UI -- "POST /draft-appeal<br/>(ticket image + session)" --> APIGW
-  UI -- "POST /feedback<br/>(verdict)" --> APIGW
+  UI -- "GET /" --> CF --> S3App
+  UI -- "anon: /sign-translate · /draft-appeal<br/>/sign-session · /feedback" --> APIGW --> Lambda
+  UI -- "auth: /sessions/{upload,list,delete}<br/>/photos/presign · /me/{export,delete}" --> APIGW
+  UI -- "OAuth redirect / token exchange" --> Cog
+  Cog -- "JWT" --> APIGW
   Lambda -- "messages.create" --> Claude
   Claude -- "structured JSON" --> Lambda --> APIGW --> UI
-  Lambda -- "kms:Sign (DER signature)" --> KMS
+  Lambda -- "kms:Sign (DER)" --> KMS
+  Lambda -- "Put/Query/Delete" --> DDB
+  Lambda -- "presigned PUT URL" --> S3Ev
+  UI -- "direct PUT photo" --> S3Ev
   Lambda -- "[parkproof.feedback] ..." --> Logs
   UI <-- "reverse + forward geocode" --> Nom
   UI --> LS
@@ -121,7 +126,7 @@ flowchart LR
   UI --> Notif
 ```
 
-A single Lambda handler ([`lambda/index.js`](lambda/index.js)) is **reused as the local dev proxy** via a small Vite plugin in [`vite.config.ts`](vite.config.ts). One handler, two runtimes — no mocks during dev, no surprise differences on deploy. The handler dispatches by path: `/sign-translate` (vision read, or text-only refresh when `prior_rules` is supplied), `/draft-appeal` (vision read of the ticket + Claude letter draft), `/sign-session` (KMS-backed signature over the session metadata), and `/feedback` (CloudWatch verdict telemetry). All four routes share one Lambda function, one cold-start budget.
+A single Lambda handler ([`lambda/index.js`](lambda/index.js)) is **reused as the local dev proxy** via a small Vite plugin in [`vite.config.ts`](vite.config.ts). One handler, two runtimes — no mocks during dev, no surprise differences on deploy. The handler dispatches by path across ten routes — four anonymous (`/sign-translate`, `/draft-appeal`, `/sign-session`, `/feedback`) and six JWT-authenticated (`/sessions/upload`, `/sessions/list`, `/sessions/delete`, `/photos/presign`, `/me/export`, `/me/delete`). Auth-required routes go through API Gateway's Cognito JWT authorizer before the Lambda ever runs. All ten routes share one Lambda function and one cold-start budget.
 
 ---
 
@@ -251,13 +256,13 @@ ParkProof/
 │   │   ├── AuthFlow.tsx           ← sign-in / sign-up / verify / forgot / reset, with Apple + Google
 │   │   ├── AuthSettings.tsx       ← signed-in profile, PDF export, account deletion
 │   │   ├── PrivacyPolicy.tsx      ← in-app plain-English privacy policy (uses <Trans> for inline tags)
-│   │   ├── LanguageSelector.tsx   ← 5-flag strip (Australian English + zh-CN + VI + IT + EL)
+│   │   ├── LanguageSelector.tsx   ← 7-language dropdown (Australian English + zh-CN + VI + IT + EL + HI + PA)
 │   │   ├── ReuseCard.tsx          ← proximity-matched "scanned here recently" card
 │   │   ├── RecentScansPicker.tsx  ← desktop / no-GPS fallback for smart re-scan
 │   │   ├── BrandMark.tsx          ← inline SVG layered-P + clock logo
 │   │   ├── Icon.tsx               ← 8-icon stroke set (currentColor)
 │   │   └── LoadingProgress.tsx    ← stepped progress UI during the model call
-│   ├── locales/                   ← five-language UI translations (en, zh-CN, vi, it, el)
+│   ├── locales/                   ← seven-language UI translations (en, zh-CN, vi, it, el, hi, pa)
 │   └── lib/
 │       ├── claude.ts              ← translateSign + refreshInterpretation + draftAppeal
 │       ├── feedback.ts            ← fire-and-forget verdict submission
@@ -269,7 +274,7 @@ ParkProof/
 │       ├── auth-context-shape.ts  ← Context type + createContext (split to satisfy react-refresh)
 │       ├── use-auth.ts            ← useAuth hook
 │       ├── federated-auth.ts      ← hosted-UI redirect + callback handler (Apple / Google)
-│       ├── i18n.ts                ← react-i18next init + 5-language resource registry
+│       ├── i18n.ts                ← react-i18next init + 7-language resource registry
 │       ├── geocode.ts             ← Nominatim reverse + forward
 │       ├── geo.ts                 ← Haversine distance
 │       ├── walk-back.ts           ← walking ETA + maps deep-link routing (Apple / Google)

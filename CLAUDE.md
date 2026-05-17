@@ -20,19 +20,34 @@ npm run dev   # → http://localhost:5173
 
 ## How the backend works
 
-There is **one** Lambda function (`parkproof-sign-translator`) handling two HTTP routes via path dispatch in [`lambda/index.js`](lambda/index.js):
+There is **one** Lambda function (`parkproof-sign-translator`) handling ten HTTP routes via path dispatch in [`lambda/index.js`](lambda/index.js):
+
+**Anonymous routes** (no auth required):
 
 | Route | Handler | Purpose |
 |---|---|---|
-| `POST /sign-translate` | `handleSignTranslate` → `translateSign({...})` | Two modes, inferred from request body |
-| `POST /feedback` | `handleFeedback` | Layer-1 telemetry: logs `[parkproof.feedback]` events to CloudWatch |
+| `POST /sign-translate` | `handleSignTranslate` → `translateSign({...})` | Two modes, inferred from request body — see below |
+| `POST /draft-appeal` | `handleDraftAppeal` | Vision read of an infringement notice + Claude draft of a formal appeal letter |
+| `POST /sign-session` | `handleSignSession` | KMS-backed ECDSA P-256 signature over the canonical session metadata |
+| `POST /feedback` | `handleFeedback` | Layers 1 + 2 telemetry: logs `[parkproof.feedback]` events to CloudWatch with verdict + model context (confidence, sign-pattern, hour, etc.) |
+
+**JWT-authenticated routes** (Cognito-issued access token, verified by API Gateway authorizer before Lambda runs — see [`lambda/cloud-sync.js`](lambda/cloud-sync.js)):
+
+| Route | Handler | Purpose |
+|---|---|---|
+| `POST /sessions/upload` | `handleSessionsUpload` | Persist a session record to DynamoDB scoped to the JWT's `sub` claim |
+| `GET\|POST /sessions/list` | `handleSessionsList` | List the caller's sessions |
+| `POST /sessions/delete` | `handleSessionsDelete` | Delete one session (the caller's) by ID + cascade-delete its S3 photos |
+| `POST /photos/presign` | `handlePhotosPresign` | Mint a short-TTL presigned `PUT` URL into the user's prefix on the evidence bucket — browser uploads the photo directly |
+| `GET\|POST /me/export` | `handleMeExport` | Stream every session belonging to the caller as a single JSON export |
+| `POST /me/delete` | `handleMeDelete` | Wipe all of the caller's data: DDB rows, S3 photos, Cognito user record |
 
 `translateSign` itself has **two modes** controlled by what the body contains:
 
 1. **Fresh translate** — body has `image_base64`. Sends the image + current-time context to Claude vision. Returns full `ParkingRules` JSON.
 2. **Refresh** (smart re-scan) — body has `prior_rules` + `prior_observations` instead of `image_base64`. No vision call; pure text-only reasoning about whether the previously-read rules still allow parking right now. ~3× faster, ~4× cheaper. Triggered from the frontend when the user reuses a saved session.
 
-The Lambda is **reused as the local dev proxy** via a Vite plugin in [`vite.config.ts`](vite.config.ts) that intercepts `POST /api/sign-translate` and `POST /api/feedback`, dynamically imports `lambda/index.js`, and calls the same code paths. Same code in dev and prod — never call the Anthropic API from the browser, the key must stay server-side.
+The Lambda is **reused as the local dev proxy** via a Vite plugin in [`vite.config.ts`](vite.config.ts) that intercepts all ten `/api/*` routes, dynamically imports `lambda/index.js`, and calls the same code paths. Same code in dev and prod — never call the Anthropic API from the browser, the key must stay server-side.
 
 ## Claude API choices
 
@@ -114,18 +129,26 @@ The state is a discriminated union in [`src/App.tsx`](src/App.tsx). When adding 
 - File naming: `PascalCase.tsx` for components, `kebab-case.ts` (no, lowercase no-hyphen) for libs.
 - Async errors: `throw new Error('message')` with a user-facing string. The Lambda handler maps it to a JSON `{ error }` response. The frontend `claude.ts` re-throws so the App's `'error'` view can display it.
 - Storage: any new persisted shape goes in `src/types.ts` and gets a corresponding helper in `src/lib/storage.ts`. Bump the localStorage key (`parkproof.sessions.v1` → `v2`) if you change the saved shape incompatibly.
-- Anonymous-by-default. No user accounts, no email, no login. Sessions are device-local in `localStorage`. If you ever add user accounts, sessions need to migrate to a backend — but don't add the database without a real user-facing trigger.
+- **Anonymous-by-default, opt-in cloud.** No login wall — sessions are always device-local in `localStorage` first, and every feature works without an account. If the user *chooses* to sign in (Cognito email/password or Apple/Google federation), the same sessions opportunistically mirror to DynamoDB + S3 evidence bucket via the `/sessions/*` and `/photos/*` routes. The local copy stays the source of truth; cloud is durability + cross-device recovery. Never gate functionality behind sign-in.
 
 ## AWS resources
 
 | Resource | Name / ID |
 |---|---|
 | Lambda function | `parkproof-sign-translator` |
-| IAM execution role | `parkproof-lambda-role` |
-| API Gateway HTTP API | `parkproof-api` (id `tlsmpbft4f`), routes `POST /sign-translate` + `POST /feedback` |
-| S3 bucket | `parkproof-app-251800369612` (private; CloudFront OAC only) |
+| IAM execution role | `parkproof-lambda-role` (DDB + S3-evidence + KMS-sign + Cognito-admin permissions) |
+| API Gateway HTTP API | `parkproof-api` (id `tlsmpbft4f`); 10 routes — 4 anonymous + 6 JWT-gated |
+| API Gateway JWT authorizer | id `t1utm6`, issuer = Cognito User Pool |
+| Cognito User Pool | `ap-southeast-2_fBbsYa7VM` |
+| Cognito App Client | `5ldgcdf1qol1qje9h55inl9pq9` |
+| Cognito Hosted UI domain | `parkproof-251800369612.auth.ap-southeast-2.amazoncognito.com` (Apple + Google federation wired in) |
+| DynamoDB table | `parkproof-sessions` (PK = `userId`, SK = `sessionId`) |
+| S3 bucket — static hosting | `parkproof-app-251800369612` (private; CloudFront OAC only) |
+| S3 bucket — evidence photos | `parkproof-evidence-251800369612` (private; per-user `{sub}/` prefixes; presigned `PUT` only) |
+| KMS asymmetric key | alias `alias/parkproof-evidence-signing` (ECDSA P-256). Public key shipped at `/parkproof-public-key.pem` |
 | CloudFront distribution | `E33V8DMM3LQACG` → `parkproof.dsouza.tech` (custom domain via ACM cert in us-east-1) / fallback `d1jmpu2roekssu.cloudfront.net` |
 | CloudFront Origin Access Control | `parkproof-oac` (id `E3JE1OX4WHEIWK`) |
+| ACM certificate (us-east-1) | `parkproof.dsouza.tech` — DNS-validated CNAME on Network Solutions |
 | AWS Budgets alarm | `parkproof-monthly` (\$10/mo threshold, emails moltensnake@gmail.com) |
 
 Region: `ap-southeast-2` (Sydney). Account: `251800369612`.
@@ -136,10 +159,14 @@ All in `scripts/`. All idempotent. All re-runnable.
 
 | Script | What it does |
 |---|---|
-| `deploy.sh` | Builds Lambda zip, updates code + env, builds frontend with prod API URL, syncs to S3, invalidates CloudFront, ensures `/feedback` route exists |
-| `harden.sh` | One-time: locks API Gateway CORS to CloudFront origin, creates OAC, migrates S3 origin to private REST endpoint |
+| `deploy.sh` | Builds Lambda zip, updates code + env, builds frontend with prod API URL + Cognito IDs from `.aws-resources`, syncs to S3, invalidates CloudFront, ensures all 10 routes exist + JWT authorizer is attached where needed |
+| `setup-auth.sh` | One-time: creates Cognito User Pool + App Client + Hosted UI domain, DynamoDB sessions table, S3 evidence bucket (private + CORS for both `parkproof.dsouza.tech` and the legacy CloudFront origin), API Gateway JWT authorizer. Writes `scripts/.aws-resources` for `deploy.sh` to consume |
+| `setup-signing.sh` | One-time: creates the KMS ECDSA P-256 asymmetric key, attaches `kms:Sign` to the Lambda role, exports the public key to `public/parkproof-public-key.pem` for client-side verification |
+| `harden.sh` | One-time: locks API Gateway CORS to the allowed origins, creates OAC, migrates S3 origin to private REST endpoint |
 | `set-throttle.sh [burst] [rate]` | API Gateway rate limits (default 20 burst / 10 rate per sec) |
 | `billing-alarm.sh [email] [threshold]` | AWS Budgets monthly alarm |
+| `smoke-test-auth.mjs` | End-to-end test of the auth-gated paths: sign-up → upload → list → delete via the live API |
+| `screenshots.mjs` | Playwright harness — drives the local app through every screen, regenerates `docs/screenshots/*.png` for the README demo grid |
 | `teardown.sh [--confirm]` | Destroys everything (dry-run by default) |
 
 ## CloudWatch logs
@@ -280,23 +307,35 @@ scripts/teardown.sh                            ← destroy everything (dry-run b
 
 - ✅ Feature 1 — Sign translator
 - ✅ Clarification step for position-dependent signs (bonus UX)
+- ✅ Photo-quality pre-check — blur + brightness pre-flight before any token spend
+- ✅ Restriction-transition heads-up — banner when a rule change is within ~3 hours
 - ✅ Feature 2 — Session logger (GPS + reverse geocode + editable address + car photo)
-- ✅ Feature 3 — Reminders (`.ics` + browser notification)
-- ✅ Feature 4 — Evidence PDF export
+- ✅ Feature 3 — Reminders — multi-offset picker + `.ics` (multi-VALARM) + in-tab browser notification
+- ✅ Feature 4 — Evidence PDF export (caption overlay, signature appendix when present)
 - ✅ Feature 5 — Session history + detail + delete
+- ✅ Driver's note — 280-char free-text per session, rendered verbatim in PDF
+- ✅ Live "Currently parked" home — countdown card colour-coded by urgency
+- ✅ Walk-back navigation — distance + ETA + Apple/Google Maps deep-link
+- ✅ AI-drafted appeal letter — ticket photo → Claude draft → editable + PDF export
+- ✅ Cryptographic evidence signing — KMS ECDSA P-256 + openssl-verify walkthrough in PDF
+- ✅ Background signing retry — sessions self-heal if signing fails mid-flight
+- ✅ Cloud sync (opt-in) — Cognito + DynamoDB + S3 evidence bucket, anonymous-by-default still works without sign-in
+- ✅ Federated auth — Apple + Google via Cognito Hosted UI
+- ✅ Account export + delete — full data dump as PDF; full wipe of DDB rows + S3 photos + Cognito user
 - ✅ PWA — manifest + service worker + install icons in all sizes + Apple splash
 - ✅ AWS deploy — Lambda + API Gateway + S3 + CloudFront in `ap-southeast-2`
+- ✅ Custom domain — `parkproof.dsouza.tech` via ACM + CloudFront alternate name
 - ✅ Security hardening — CORS lockdown, OAC, private bucket, throttle, billing alarm
-- ✅ Code-split — jsPDF and ics lazy-loaded; main bundle ~225KB
-- ✅ Timezone-aware — derived from coords via `tz-lookup`
-- ✅ Photo resize — keeps localStorage under quota
+- ✅ Code-split — jsPDF, ics, html2canvas, and non-English locale chunks lazy-loaded; main bundle ~100KB gzipped
+- ✅ Timezone-aware — derived from coords via `tz-lookup` (display + PDF + .ics)
+- ✅ Photo resize + 3-phase quota auto-recovery — keeps localStorage under quota
 - ✅ Smart re-scan — proximity-matched card + desktop picker; refresh-mode API path
 - ✅ Stepped loading state
 - ✅ Brand identity — layered-P + clock, blue/navy/teal, Fraunces serif
-- ✅ AI feedback Layer 1 — verdict events to CloudWatch
-- ⏳ Web Push background notifications — needs service worker push subscription + scheduler + DB
-- ⏳ Database (DynamoDB + S3 photos) — deliberately deferred; no user-facing trigger yet
-- ⏳ AI feedback Layer 2 (diagnostic capture) + Layer 3 (training data)
-- ⏳ Cryptographic evidence signing
+- ✅ Multi-lingual UI — 7 languages (en, zh-CN, vi, it, el, hi, pa) including PDF strings
+- ✅ AI feedback Layers 1 + 2 — verdict events + model context (confidence, hour, sign-pattern) to CloudWatch
+- ⏳ True Web Push background notifications — needs service worker push subscription + server-side scheduler (EventBridge)
+- ⏳ AI feedback Layer 3 — opt-in photo capture for systematic failures, building a private training dataset
+- ⏳ Citywide parking heatmap — every scan captures the data; needs share-toggle, viewer, cold-start solved
 - ⏳ Voice confirmation (Web Speech API)
-- ⏳ Council-specific appeal deep-links
+- ⏳ Council-specific appeal deep-links (auto-submit) — blocked by council-side captchas + no public APIs
