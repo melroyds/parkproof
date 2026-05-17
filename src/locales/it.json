@@ -75,7 +75,11 @@
     "dismiss": "Ignora",
     "pickerHeader": "Riusa una scansione recente",
     "pickerCopy": "Non siamo riusciti a rilevare automaticamente il tuo posto. Se stai parcheggiando dove hai scansionato nell'ultima settimana, scegli qui per saltare la foto.",
-    "metersAway": "A {{meters}}m"
+    "metersAway": "A {{meters}}m",
+    "signPhotoAlt": "Il cartello che hai scansionato in precedenza",
+    "bulletsHeader": "Dettagli registrati",
+    "youParked": "Hai parcheggiato: <strong>{{side}}</strong>",
+    "matchCopy": "Il cartello davanti a te corrisponde a questo? Riusa per saltare la foto e ottenere una nuova risposta \"posso parcheggiare ora?\" in pochi secondi."
   },
   "clarify": {
     "imageAlt": "Cartello scansionato"

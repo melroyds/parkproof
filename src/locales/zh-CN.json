@@ -75,7 +75,11 @@
     "dismiss": "关闭",
     "pickerHeader": "重用最近的扫描",
     "pickerCopy": "我们无法自动检测您的位置。如果您要停车的地方上周扫描过,请在这里选择以跳过拍照。",
-    "metersAway": "距离 {{meters}} 米"
+    "metersAway": "距离 {{meters}} 米",
+    "signPhotoAlt": "您之前扫描的标志",
+    "bulletsHeader": "已记录的要点",
+    "youParked": "您停车的位置:<strong>{{side}}</strong>",
+    "matchCopy": "您面前的标志与此匹配吗?重用以跳过拍照,并在几秒内获得新的\"能否在此停车?\"答案。"
   },
   "clarify": {
     "imageAlt": "已扫描的标志"

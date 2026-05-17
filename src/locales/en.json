@@ -75,7 +75,11 @@
     "dismiss": "Dismiss",
     "pickerHeader": "Reuse a recent scan",
     "pickerCopy": "We couldn't auto-detect your spot. If you're parking somewhere you scanned in the last week, pick it here to skip the photo.",
-    "metersAway": "{{meters}}m away"
+    "metersAway": "{{meters}}m away",
+    "signPhotoAlt": "The sign you scanned previously",
+    "bulletsHeader": "Bullets we recorded",
+    "youParked": "You parked: <strong>{{side}}</strong>",
+    "matchCopy": "Does the sign in front of you match this? Reuse to skip the photo and get a fresh \"can I park now?\" answer in seconds."
   },
   "clarify": {
     "imageAlt": "Scanned sign"

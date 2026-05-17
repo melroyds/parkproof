@@ -75,7 +75,11 @@
     "dismiss": "Bỏ qua",
     "pickerHeader": "Dùng lại lần quét gần đây",
     "pickerCopy": "Chúng tôi không tự nhận diện được vị trí của bạn. Nếu bạn đang đỗ ở chỗ đã quét trong tuần qua, chọn ở đây để bỏ qua bước chụp ảnh.",
-    "metersAway": "Cách {{meters}}m"
+    "metersAway": "Cách {{meters}}m",
+    "signPhotoAlt": "Biển báo bạn đã quét trước đó",
+    "bulletsHeader": "Các điểm chính đã ghi nhận",
+    "youParked": "Bạn đã đỗ: <strong>{{side}}</strong>",
+    "matchCopy": "Biển báo trước mặt bạn có khớp với cái này không? Dùng lại để bỏ qua việc chụp ảnh và nhận câu trả lời mới \"có thể đỗ ở đây không?\" trong vài giây."
   },
   "clarify": {
     "imageAlt": "Biển báo đã quét"

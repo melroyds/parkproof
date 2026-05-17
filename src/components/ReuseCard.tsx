@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useTranslation } from 'react-i18next'
+import { Trans, useTranslation } from 'react-i18next'
 import type { ParkingSession } from '../types'
 import { formatRelativeLocalized } from '../lib/time-format'
 
@@ -32,12 +32,12 @@ export default function ReuseCard({ session, distanceMeters, onReuse, onDismiss 
 
       <img
         src={session.sign_photo}
-        alt="The sign you scanned previously"
+        alt={t('reuse.signPhotoAlt')}
         className="w-full h-32 object-contain rounded-xl mb-3 border border-paper-300 bg-white"
       />
 
       <p className="text-xs uppercase tracking-widest font-semibold text-ink-500 mb-2">
-        Bullets we recorded
+        {t('reuse.bulletsHeader')}
       </p>
       <ul className="space-y-1 mb-4">
         {bulletItems.map((item, i) => (
@@ -50,14 +50,15 @@ export default function ReuseCard({ session, distanceMeters, onReuse, onDismiss 
 
       {session.chosen_label && (
         <p className="text-xs text-ink-600 mb-3">
-          You parked: <span className="font-semibold text-ink-900">{session.chosen_label}</span>
+          <Trans
+            i18nKey="reuse.youParked"
+            values={{ side: session.chosen_label }}
+            components={{ strong: <span className="font-semibold text-ink-900" /> }}
+          />
         </p>
       )}
 
-      <p className="text-xs text-ink-700 mb-4">
-        Does the sign in front of you match this? Reuse to skip the photo and get a fresh
-        "can I park now?" answer in seconds.
-      </p>
+      <p className="text-xs text-ink-700 mb-4">{t('reuse.matchCopy')}</p>
 
       <div className="flex gap-2">
         <button
