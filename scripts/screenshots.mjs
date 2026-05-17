@@ -28,16 +28,115 @@ const APP_URL = `http://localhost:${PORT}`
 
 // ---------- Fixtures ----------
 
-/** Find the sign-photo fixture, falling back to og-image.png with a warning. */
-function findSignPhoto() {
-  for (const name of ['parking-sign.jpg', 'parking-sign.jpeg', 'parking-sign.png']) {
-    const p = join(FIXTURES_DIR, name)
+/** Look for a fixture with any of {jpg, jpeg, png}; return path or null. */
+function findFixture(stem) {
+  for (const ext of ['jpg', 'jpeg', 'png']) {
+    const p = join(FIXTURES_DIR, `${stem}.${ext}`)
     if (existsSync(p)) return p
   }
+  return null
+}
+
+/** Find the sign-photo fixture, falling back to og-image.png with a warning. */
+function findSignPhoto() {
+  const found = findFixture('parking-sign')
+  if (found) return found
   console.warn(
     '[screenshots] No parking-sign fixture found — using public/og-image.png as placeholder.',
   )
   return join(ROOT, 'public', 'og-image.png')
+}
+
+/** Optional car-photo fixture — falls back to the sign photo so existing screens still work. */
+function findCarPhoto(signFallback) {
+  const found = findFixture('car-photo')
+  if (found) return found
+  console.warn('[screenshots] No car-photo fixture — Session Logger will reuse the sign photo.')
+  return signFallback
+}
+
+/** Optional ticket fixture — falls back to the sign photo. */
+function findTicketPhoto(signFallback) {
+  const found = findFixture('ticket')
+  if (found) return found
+  console.warn('[screenshots] No ticket fixture — Appeal Flow will reuse the sign photo.')
+  return signFallback
+}
+
+/**
+ * Build a fake but locally-valid Cognito session and pre-seed it into
+ * localStorage so the "signed-in account" screen can be screenshotted
+ * without standing up a real user. amazon-cognito-identity-js validates
+ * tokens client-side only by decoding the payload and checking expiry —
+ * signature verification happens server-side, so any signature suffix
+ * works. All authed API calls are intercepted by Playwright routes anyway.
+ *
+ * Returns the localStorage payload as plain { key: value } so the caller
+ * can stamp it into the page via page.evaluate.
+ */
+function fakeCognitoSession({ clientId, email, sub }) {
+  // base64url encode without padding — what JWTs use
+  const b64url = (obj) =>
+    Buffer.from(JSON.stringify(obj))
+      .toString('base64')
+      .replace(/=+$/, '')
+      .replace(/\+/g, '-')
+      .replace(/\//g, '_')
+  const nowSec = Math.floor(Date.now() / 1000)
+  const expSec = nowSec + 60 * 60 * 24 * 30 // 30 days out
+  const header = b64url({ alg: 'RS256', kid: 'demo', typ: 'JWT' })
+  const idPayload = b64url({
+    sub,
+    email,
+    email_verified: true,
+    iss: `https://cognito-idp.ap-southeast-2.amazonaws.com/demo`,
+    aud: clientId,
+    token_use: 'id',
+    auth_time: nowSec,
+    iat: nowSec,
+    exp: expSec,
+  })
+  const accessPayload = b64url({
+    sub,
+    iss: `https://cognito-idp.ap-southeast-2.amazonaws.com/demo`,
+    client_id: clientId,
+    token_use: 'access',
+    scope: 'aws.cognito.signin.user.admin',
+    auth_time: nowSec,
+    iat: nowSec,
+    exp: expSec,
+    username: email,
+  })
+  const fakeSig = 'demoSignatureNotVerifiedClientSide' // any string the SDK accepts as opaque
+  const idToken = `${header}.${idPayload}.${fakeSig}`
+  const accessToken = `${header}.${accessPayload}.${fakeSig}`
+  const prefix = `CognitoIdentityServiceProvider.${clientId}`
+  return {
+    [`${prefix}.LastAuthUser`]: email,
+    [`${prefix}.${email}.idToken`]: idToken,
+    [`${prefix}.${email}.accessToken`]: accessToken,
+    [`${prefix}.${email}.refreshToken`]: 'demo-refresh-token',
+    [`${prefix}.${email}.clockDrift`]: '0',
+  }
+}
+
+/** Parse VITE_COGNITO_* values from scripts/.aws-resources if present, for forwarding to the dev server. */
+function readCognitoEnv() {
+  const f = join(ROOT, 'scripts', '.aws-resources')
+  if (!existsSync(f)) return {}
+  const text = readFileSync(f, 'utf8')
+  const get = (k) => {
+    const m = text.match(new RegExp(`^${k}=(.+)$`, 'm'))
+    return m ? m[1].trim() : null
+  }
+  const pool = get('COGNITO_USER_POOL_ID')
+  const client = get('COGNITO_APP_CLIENT_ID')
+  const hosted = get('COGNITO_HOSTED_UI_DOMAIN')
+  const out = {}
+  if (pool) out.VITE_COGNITO_USER_POOL_ID = pool
+  if (client) out.VITE_COGNITO_APP_CLIENT_ID = client
+  if (hosted) out.VITE_COGNITO_HOSTED_UI_DOMAIN = hosted
+  return out
 }
 
 /**
@@ -161,11 +260,16 @@ const STRIP_ANSI = /\x1B\[[0-9;]*[A-Za-z]/g
  * if the readiness check fails, the spawned proc must be killed.
  */
 function startDevServer() {
+  // Forward Cognito IDs from .aws-resources so the auth UI renders during the
+  // screenshot run. Without these, authConfigured() === false and the sign-in
+  // button on the home screen never mounts — so the auth-flow screenshots
+  // (#12 / #13) would have nothing to capture.
+  const cognitoEnv = readCognitoEnv()
   const proc = spawn('npx', ['vite', '--port', String(PORT), '--strictPort'], {
     cwd: ROOT,
     shell: process.platform === 'win32',
     stdio: ['ignore', 'pipe', 'pipe'],
-    env: { ...process.env, BROWSER: 'none' },
+    env: { ...process.env, ...cognitoEnv, BROWSER: 'none' },
   })
 
   const stop = () => {
@@ -205,7 +309,7 @@ function startDevServer() {
 
 // ---------- The flow ----------
 
-async function captureFlow({ page, signPhotoPath }) {
+async function captureFlow({ page, signPhotoPath, carPhotoPath, ticketPath }) {
   // === 01-scan: scan screen with the two dashed upload zones ===
   await page.goto(APP_URL, { waitUntil: 'networkidle' })
   await page.getByRole('button', { name: /Scan a parking sign/ }).click()
@@ -250,10 +354,11 @@ async function captureFlow({ page, signPhotoPath }) {
   await page.screenshot({ path: join(OUT_DIR, '04-logger.png'), animations: 'disabled', fullPage: true })
   console.log('[screenshots] ✓ 04-logger')
 
-  // Add a "car photo" (reuse the same fixture) so the saved session has both.
-  await page.locator('input[type=file]').first().setInputFiles(signPhotoPath)
-  // Wait until the car-photo preview is up before saving.
-  await page.getByAltText('Your car').waitFor()
+  // Add a real car photo so the saved session has both a sign and a car —
+  // referenced by Session Detail (#07) and the evidence PDF. The alt-text
+  // comes from t('logger.carAtSpot') = "Car at the spot".
+  await page.locator('input[type=file]').first().setInputFiles(carPhotoPath)
+  await page.getByAltText('Car at the spot').waitFor()
   await page.getByRole('button', { name: /^Save session$/ }).click()
 
   // === 05-remind: chip grid + calendar + notification cards ===
@@ -298,6 +403,13 @@ async function captureFlow({ page, signPhotoPath }) {
       const yesterday = new Date(Date.now() - 22 * 60 * 60 * 1000)
       const yesterdayExpired = new Date(yesterday.getTime() + 2 * 60 * 60 * 1000) // 2h after arrival
       const lastWeek = new Date(Date.now() - 5 * 24 * 60 * 60 * 1000)
+      // Carlton seed at the screenshot context's GPS (-37.7980, 144.9675).
+      // Drives the smart re-scan ReuseCard for capture #11 — "you parked here
+      // 6 hours ago, reuse the prior reading?" — without burning a second
+      // active session that would conflict with the live "Currently parked"
+      // home card in #09.
+      const sixHoursAgo = new Date(Date.now() - 6 * 60 * 60 * 1000)
+      const sixHoursAgoExpired = new Date(sixHoursAgo.getTime() + 2 * 60 * 60 * 1000) // expired 4h ago
       sessions.push(
         {
           id: 'fixture-yesterday',
@@ -353,6 +465,26 @@ async function captureFlow({ page, signPhotoPath }) {
           observations: [{ scope: 'Whole sign', items: ['No Standing', '7am-9am Mon-Fri'] }],
           confidence: 'medium',
         },
+        {
+          id: 'fixture-carlton',
+          arrived_at: sixHoursAgo.toISOString(),
+          expires_at: sixHoursAgoExpired.toISOString(),
+          location: {
+            lat: -37.798,
+            lng: 144.9675,
+            address: '175 Lygon Street, Carlton VIC 3053',
+            source: 'gps',
+            accuracy_meters: 10,
+          },
+          sign_photo: smallSignPhoto,
+          car_photo: null,
+          rules: '2P Mon-Fri 8am-6pm; Permit Zone Sat-Sun 8am-11pm',
+          observations: [
+            { scope: '↔ Both directions', items: ['2P (2 hours)', '8am-6pm Mon-Fri'] },
+          ],
+          chosen_label: 'Right side (2P)',
+          confidence: 'high',
+        },
       )
       localStorage.setItem(KEY, JSON.stringify(sessions))
     },
@@ -402,9 +534,10 @@ async function captureFlow({ page, signPhotoPath }) {
   await page.getByText('Parking session', { exact: true }).waitFor()
   await page.getByRole('button', { name: /Got a ticket/ }).click()
 
-  // AppealFlow capture stage — just upload a ticket photo (reuse fixture)
+  // AppealFlow capture stage — upload a real(-looking) infringement notice
+  // photo so the AI-drafted appeal screenshot shows the right artifact.
   await page.getByText('Draft an appeal letter').waitFor()
-  await page.locator('input[type=file]').first().setInputFiles(signPhotoPath)
+  await page.locator('input[type=file]').first().setInputFiles(ticketPath)
 
   // === 08-appeal: AI-drafted review screen ===
   // The mocked /api/draft-appeal returns "strong evidence" so the brand-blue
@@ -425,6 +558,189 @@ async function captureFlow({ page, signPhotoPath }) {
   await page.waitForTimeout(400)
   await page.screenshot({ path: join(OUT_DIR, '09-home-active.png'), animations: 'disabled', fullPage: true })
   console.log('[screenshots] ✓ 09-home-active')
+
+  // === 10-photo-quality-warning ===
+  // Generate a low-variance, dark photo in-browser (canvas → blob → File) and
+  // feed it through the SignScanner. The pre-flight (src/lib/photo-quality.ts)
+  // computes Laplacian-variance + mean luminance; a near-solid dark grey
+  // canvas trips the 'blurry' OR 'dark' verdict and the warning UI renders.
+  await page.getByRole('button', { name: /Scan another|Scan a parking sign/ }).click()
+  await page.getByText('Scan parking sign').waitFor()
+  // Dismiss the ReuseCard / picker if they popped — we want a clean upload zone.
+  const dismissReuse = page.getByRole('button', { name: /No, take a new photo/ })
+  if (await dismissReuse.isVisible().catch(() => false)) await dismissReuse.click()
+  const dismissPicker = page.getByRole('button', { name: /No, take a new photo/ })
+  if (await dismissPicker.isVisible().catch(() => false)) await dismissPicker.click()
+  await page.waitForTimeout(200)
+  // Build a deliberately-bad 800x600 photo in the page and inject it into the
+  // hidden file input. Using DataTransfer (not setInputFiles with a path)
+  // because the bad photo lives in memory, not on disk.
+  await page.evaluate(async () => {
+    const c = document.createElement('canvas')
+    c.width = 800
+    c.height = 600
+    const ctx = c.getContext('2d')
+    // Near-uniform dark grey + a sliver of noise — variance ~0, luminance ~30.
+    ctx.fillStyle = '#1c1c20'
+    ctx.fillRect(0, 0, 800, 600)
+    const imgData = ctx.getImageData(0, 0, 800, 600)
+    for (let i = 0; i < imgData.data.length; i += 4) {
+      const jitter = (Math.random() * 3) | 0
+      imgData.data[i] += jitter
+      imgData.data[i + 1] += jitter
+      imgData.data[i + 2] += jitter
+    }
+    ctx.putImageData(imgData, 0, 0)
+    const blob = await new Promise((res) => c.toBlob(res, 'image/png'))
+    const file = new File([blob], 'dark-blurry-sign.png', { type: 'image/png' })
+    const dt = new DataTransfer()
+    dt.items.add(file)
+    const input = document.querySelector('input[type=file]')
+    input.files = dt.files
+    input.dispatchEvent(new Event('change', { bubbles: true }))
+  })
+  // Wait for the quality verdict to render (regex matches all four warning
+  // messages: blurry / dark / overexposed / tiny).
+  await page
+    .getByText(/blurry|dark|overexposed|tiny|too small/i)
+    .waitFor({ timeout: 5_000 })
+  await page.waitForTimeout(300)
+  await page.screenshot({
+    path: join(OUT_DIR, '10-photo-quality-warning.png'),
+    animations: 'disabled',
+    fullPage: true,
+  })
+  console.log('[screenshots] ✓ 10-photo-quality-warning')
+
+  // === 11-reuse-card: smart re-scan proximity-matched suggestion ===
+  // The fixture-carlton seed (planted earlier in the localStorage block) sits
+  // 0m from the screenshot context's GPS, so ReuseCard should render at the
+  // top of the scan screen.
+  await page.goto(APP_URL, { waitUntil: 'networkidle' })
+  await page.getByRole('button', { name: /Scan another|Scan a parking sign/ }).click()
+  await page.getByText('Scan parking sign').waitFor()
+  await page
+    .getByText(/scanned this spot|reuse this reading|here before/i)
+    .waitFor({ timeout: 5_000 })
+    .catch(() => {
+      // Some i18n strings may not include those exact words — fall back to
+      // the ReuseCard's CTA text which is more stable.
+      return page.getByRole('button', { name: /Reuse this reading|Use this/i }).waitFor()
+    })
+  await page.waitForTimeout(300)
+  await page.screenshot({
+    path: join(OUT_DIR, '11-reuse-card.png'),
+    animations: 'disabled',
+    fullPage: true,
+  })
+  console.log('[screenshots] ✓ 11-reuse-card')
+
+  // === 12-signin: sign-in screen with federation buttons ===
+  // Only meaningful when auth is configured for the build. Skipped with a
+  // warning otherwise (the home button doesn't render in that case).
+  const authConfigured = await page.evaluate(() => {
+    return Boolean(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      window.localStorage // smoke test only — Vite injects env at build, not at runtime
+    )
+  })
+  // Navigate home, then tap "Sign in to sync"
+  await page.goto(APP_URL, { waitUntil: 'networkidle' })
+  const signInBtn = page.getByRole('button', { name: /Sign in to sync/i })
+  if ((await signInBtn.count()) === 0) {
+    console.warn(
+      '[screenshots] Skipping #12 / #13 — auth UI not configured (set VITE_COGNITO_* via scripts/.aws-resources).',
+    )
+  } else {
+    await signInBtn.click()
+    // Heading is uniquely "Sign in" — avoids the strict-mode trap of matching
+    // the h2 + paragraph + submit button (all three contain "Sign in").
+    await page.getByRole('heading', { name: 'Sign in' }).waitFor({ timeout: 5_000 })
+    await page.waitForTimeout(400)
+    await page.screenshot({
+      path: join(OUT_DIR, '12-signin.png'),
+      animations: 'disabled',
+      fullPage: true,
+    })
+    console.log('[screenshots] ✓ 12-signin')
+
+    // === 13-signed-in-account: account settings with fake Cognito session ===
+    // amazon-cognito-identity-js trusts whatever JWTs sit in localStorage as
+    // long as the payload is well-formed and exp is in the future. Pull the
+    // client ID from .aws-resources (same source the dev server gets it from).
+    const clientId = readCognitoEnv().VITE_COGNITO_APP_CLIENT_ID
+    if (!clientId) {
+      console.warn(
+        '[screenshots] Skipping #13 — VITE_COGNITO_APP_CLIENT_ID not on the script\'s env.',
+      )
+    } else {
+      const fakeStorage = fakeCognitoSession({
+        clientId,
+        email: 'demo@parkproof.example',
+        sub: '00000000-0000-0000-0000-000000000001',
+      })
+      await page.evaluate((entries) => {
+        for (const [k, v] of Object.entries(entries)) localStorage.setItem(k, v)
+      }, fakeStorage)
+      // Hard-reload so AuthProvider re-reads localStorage and picks up the
+      // fake session on mount.
+      await page.reload({ waitUntil: 'networkidle' })
+      // The home-screen "signed-in account" card shows the email.
+      await page.getByText('demo@parkproof.example').waitFor({ timeout: 5_000 })
+      await page.getByRole('button', { name: /demo@parkproof\.example/ }).click()
+      // The settings intro paragraph is uniquely worded — safer than matching
+      // the "Account" heading which collides with the home-screen "Account"
+      // right-label and any sub-section heading that might also say "Account".
+      await page
+        .getByText(/Manage cloud sync, export your data/i)
+        .waitFor({ timeout: 5_000 })
+      await page.waitForTimeout(400)
+      await page.screenshot({
+        path: join(OUT_DIR, '13-signed-in-account.png'),
+        animations: 'disabled',
+        fullPage: true,
+      })
+      console.log('[screenshots] ✓ 13-signed-in-account')
+
+      // Tear the fake session down so it doesn't leak into the language captures.
+      await page.evaluate((entries) => {
+        for (const k of Object.keys(entries)) localStorage.removeItem(k)
+      }, fakeStorage)
+    }
+  }
+
+  // === 14/15/16: i18n showcase — same home screen in EN, IT, HI ===
+  // Reads the LanguageSelector dropdown and clicks the target option for
+  // each. Captures full-page screenshots so the wrapping copy + button text
+  // are all visible in the right script.
+  for (const [code, file] of [
+    ['en', '14-home-en.png'],
+    ['it', '15-home-it.png'],
+    ['hi', '16-home-hi.png'],
+  ]) {
+    await page.goto(APP_URL, { waitUntil: 'networkidle' })
+    // The app overrides i18next-browser-languagedetector's default key to
+    // 'parkproof.language' (see src/lib/i18n.ts:60). Writing the i18nextLng
+    // default key has no effect.
+    await page.evaluate((langCode) => {
+      try {
+        window.localStorage.setItem('parkproof.language', langCode)
+      } catch {
+        // ignore quota
+      }
+    }, code)
+    await page.reload({ waitUntil: 'networkidle' })
+    // Wait for the language to take effect — the LanguageSelector trigger
+    // should show the picked language's native label. Probe by waiting for
+    // the language-specific home tagline text rather than time-based sleep.
+    await page.waitForTimeout(400)
+    await page.screenshot({
+      path: join(OUT_DIR, file),
+      animations: 'disabled',
+      fullPage: true,
+    })
+    console.log(`[screenshots] ✓ ${file.replace('.png', '')}`)
+  }
 }
 
 // ---------- Orchestrator ----------
@@ -432,7 +748,11 @@ async function captureFlow({ page, signPhotoPath }) {
 async function main() {
   await mkdir(OUT_DIR, { recursive: true })
   const signPhotoPath = findSignPhoto()
+  const carPhotoPath = findCarPhoto(signPhotoPath)
+  const ticketPath = findTicketPhoto(signPhotoPath)
   console.log(`[screenshots] Sign-photo fixture: ${signPhotoPath}`)
+  console.log(`[screenshots] Car-photo fixture:  ${carPhotoPath}`)
+  console.log(`[screenshots] Ticket fixture:     ${ticketPath}`)
   console.log(`[screenshots] Output directory:   ${OUT_DIR}`)
 
   console.log('[screenshots] Starting Vite dev server on :' + PORT + ' …')
@@ -498,9 +818,9 @@ async function main() {
       if (msg.type() === 'error') console.error('[page console]', msg.text())
     })
 
-    await captureFlow({ page, signPhotoPath })
+    await captureFlow({ page, signPhotoPath, carPhotoPath, ticketPath })
 
-    console.log('[screenshots] All six screenshots saved.')
+    console.log('[screenshots] All screenshots saved.')
   } finally {
     await browser?.close()
     dev.stop()
