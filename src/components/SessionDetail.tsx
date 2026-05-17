@@ -67,7 +67,7 @@ export default function SessionDetail({ session, onBack, onDeleted, onDraftAppea
       // fall back to a fresh dynamic import — slower on first click on a
       // cold cache, but at least it works.
       const mod = pdfModuleRef.current ?? (await import('../lib/pdf'))
-      mod.downloadPdf(session)
+      mod.downloadPdf(session, t)
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err)
       console.error('[pdf] export failed:', err)

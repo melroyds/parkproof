@@ -333,6 +333,93 @@
     "tryAgain": "重试",
     "backHome": "返回主页"
   },
+  "pdf": {
+    "common": {
+      "fieldHeader": "字段",
+      "valueHeader": "值",
+      "dash": "—",
+      "notCaptured": "未记录",
+      "imageEmbedFailed": "(图片无法嵌入)"
+    },
+    "evidence": {
+      "title": "ParkProof — 停车证据",
+      "sessionId": "会话 ID:{{id}}",
+      "generated": "PDF 生成时间:{{when}}",
+      "field": {
+        "arrivedAt": "到达时间",
+        "expiresAt": "到期时间",
+        "guidance": "ParkProof 建议",
+        "address": "地址",
+        "locationGps": "位置(GPS)",
+        "locationSource": "位置来源",
+        "mapLink": "地图链接",
+        "sideVariant": "所选方向 / 规则",
+        "signRules": "标志规则",
+        "aiConfidence": "AI 置信度"
+      },
+      "locationSourceValue": {
+        "manuallyEntered": "手动输入",
+        "gpsWithAccuracy": "GPS — {{accuracy}}",
+        "gpsLowAccuracy": "GPS — 精度偏低 {{accuracy}}(详见附录)",
+        "gps": "GPS",
+        "captured": "已记录",
+        "none": "—"
+      },
+      "signPhotoHeader": "标志照片",
+      "carPhotoHeader": "车辆在停车位",
+      "driverNoteHeader": "驾驶员备注",
+      "gpsNoticeTitle": "⚠ GPS 精度提示",
+      "gpsNoticeBody": "拍摄时的 GPS 读数为 {{accuracy}} — 比通常用作证据所需的精度更宽。上方坐标指向该半径范围内的一点,而非确切位置。常见原因:室内 / 多层停车场、Starlink 或 VPN 连接,或卫星信号较弱。审核人员应结合该半径范围审视所记录的地址。",
+      "statement": "本记录由 ParkProof 在停车时自动生成。到达时间戳、GPS 坐标、标志翻译和照片构成一份同期形成的证据记录,适用于提交至澳大利亚相关地方议会的停车罚单复核申请。",
+      "guidanceFree": "可停车。请在 {{when}} 前离开。",
+      "guidanceFreeNoExpiry": "可停车。标志上未显示到期时间。",
+      "guidanceExpired": "会话已于 {{when}} 到期。"
+    },
+    "signature": {
+      "title": "加密签名",
+      "intro": "本证据记录在保存时由 ParkProof 的 AWS KMS 托管私钥进行签名。任何第三方(议会、法院、保险公司)均可通过该签名验证下方的元数据和照片哈希自 signed_at 时间戳以来未被篡改。私钥从未离开 AWS;公钥已公开发布以供验证。",
+      "algorithm": "算法",
+      "keyAlias": "密钥别名",
+      "signedAt": "签名时间(UTC)",
+      "schema": "架构",
+      "publicKeyUrl": "公钥 URL",
+      "canonicalPayloadHeader": "规范化负载(被签名的确切字节):",
+      "signatureBlobHeader": "签名(DER,base64):",
+      "verifyHeader": "使用 openssl 验证(任意平台):",
+      "verifyStep1": "1. 将上方的规范化负载保存到文件:payload.txt(末尾不要有换行符)",
+      "verifyStep2": "2. 将上方的 base64 签名字符串保存到文件:sig.base64",
+      "verifyStep3": "3. 下载公钥:",
+      "verifyStep4": "4. 解码签名:",
+      "verifyStep5": "5. 验证:",
+      "verifyStep6": "6. 预期输出:\"Verified OK\""
+    },
+    "appeal": {
+      "drafted": "起草于 {{when}}",
+      "linkedSession": "关联的 ParkProof 会话:{{id}}",
+      "supportingEvidence": "佐证材料(来自 ParkProof)",
+      "fieldGps": "GPS",
+      "fieldSideSelected": "所选方向",
+      "ticketPhotoHeader": "违章通知书(照片)",
+      "signPhotoHeader": "停车时的停车标志",
+      "carPhotoHeader": "车辆在停车位"
+    },
+    "fullExport": {
+      "title": "ParkProof — 账户导出",
+      "account": "账户:{{email}}",
+      "userId": "用户 ID:{{id}}",
+      "exportedAt": "导出时间:{{when}}",
+      "sessionCount": "本次导出的会话数:{{count}}",
+      "intro": "本文档是该账户使用 ParkProof 记录的所有停车会话的完整同期记录。每次会话都在停车时通过 GPS、照片和 AI 翻译的停车标志解读进行了记录。若某次会话使用 ParkProof KMS 密钥进行了签名,该会话的徽章表示存在可验证的加密签名(请导出单次会话的 PDF 以获取完整的签名附录)。",
+      "emptyState": "该账户尚未保存任何停车会话。",
+      "summaryColIndex": "#",
+      "summaryColArrived": "到达",
+      "summaryColExpires": "到期",
+      "summaryColLocation": "位置",
+      "sessionHeader": "第 {{n}} / {{total}} 次会话",
+      "signedBadge": "已于 {{when}} 加密签名",
+      "driverNoteField": "驾驶员备注"
+    }
+  },
   "time": {
     "moveNow": "立即移车",
     "minLeft_one": "剩余 1 分钟",

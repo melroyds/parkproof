@@ -43,7 +43,10 @@ export default function AuthSettings({ onBack, onOpenPrivacy, onDeleted }: Props
       // The cloud /me/export response shape matches downloadFullExportPdf's
       // FullExportPayload exactly. Renders a multi-page PDF: cover with
       // summary table, then one detail block per session with photos.
-      pdfModule.downloadFullExportPdf(data as Parameters<typeof pdfModule.downloadFullExportPdf>[0])
+      pdfModule.downloadFullExportPdf(
+        data as Parameters<typeof pdfModule.downloadFullExportPdf>[0],
+        t,
+      )
       setExportStatus('idle')
     } catch (err) {
       setExportStatus('error')

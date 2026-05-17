@@ -333,6 +333,93 @@
     "tryAgain": "Try again",
     "backHome": "Back to home"
   },
+  "pdf": {
+    "common": {
+      "fieldHeader": "Field",
+      "valueHeader": "Value",
+      "dash": "—",
+      "notCaptured": "Not captured",
+      "imageEmbedFailed": "(Image could not be embedded)"
+    },
+    "evidence": {
+      "title": "ParkProof — Parking Evidence",
+      "sessionId": "Session ID: {{id}}",
+      "generated": "PDF generated: {{when}}",
+      "field": {
+        "arrivedAt": "Arrived at",
+        "expiresAt": "Expires at",
+        "guidance": "ParkProof Guidance",
+        "address": "Address",
+        "locationGps": "Location (GPS)",
+        "locationSource": "Location source",
+        "mapLink": "Map link",
+        "sideVariant": "Side / Variant selected",
+        "signRules": "Sign rules",
+        "aiConfidence": "AI confidence"
+      },
+      "locationSourceValue": {
+        "manuallyEntered": "Manually entered",
+        "gpsWithAccuracy": "GPS — {{accuracy}}",
+        "gpsLowAccuracy": "GPS — LOW ACCURACY {{accuracy}} (see appendix)",
+        "gps": "GPS",
+        "captured": "Captured",
+        "none": "—"
+      },
+      "signPhotoHeader": "Sign photo",
+      "carPhotoHeader": "Car at the spot",
+      "driverNoteHeader": "Driver's note",
+      "gpsNoticeTitle": "⚠ GPS accuracy notice",
+      "gpsNoticeBody": "The GPS reading at capture time was {{accuracy}} — wider than typical for evidence purposes. The coordinates above identify a point within that radius, not an exact spot. Common causes: indoor / multi-storey carparks, Starlink or VPN connections, or weak satellite signal. Reviewers should weight the captured address against this radius.",
+      "statement": "This record was generated automatically by ParkProof at the time of parking. The arrival timestamp, GPS coordinates, sign translation, and photographs constitute a contemporaneous evidence record suitable for attachment to a parking infringement review submission with the relevant Australian local council.",
+      "guidanceFree": "Free to park. Move by {{when}}.",
+      "guidanceFreeNoExpiry": "Free to park. No expiry shown on the sign.",
+      "guidanceExpired": "Session expired at {{when}}."
+    },
+    "signature": {
+      "title": "Cryptographic signature",
+      "intro": "This evidence record was signed by ParkProof's AWS KMS-managed private key at the time of saving. The signature lets any third party (council, court, insurer) verify that the metadata and photo hashes below have not been altered since the signed_at timestamp. The private key never leaves AWS; the public key is published openly for verification.",
+      "algorithm": "Algorithm",
+      "keyAlias": "Key alias",
+      "signedAt": "Signed at (UTC)",
+      "schema": "Schema",
+      "publicKeyUrl": "Public key URL",
+      "canonicalPayloadHeader": "Canonical payload (the exact bytes that were signed):",
+      "signatureBlobHeader": "Signature (DER, base64):",
+      "verifyHeader": "To verify with openssl (any platform):",
+      "verifyStep1": "1. Save the canonical payload above to a file: payload.txt (no trailing newline)",
+      "verifyStep2": "2. Save the signature base64 string above to a file: sig.base64",
+      "verifyStep3": "3. Download the public key:",
+      "verifyStep4": "4. Decode the signature:",
+      "verifyStep5": "5. Verify:",
+      "verifyStep6": "6. Expect output: \"Verified OK\""
+    },
+    "appeal": {
+      "drafted": "Drafted {{when}}",
+      "linkedSession": "Linked ParkProof session: {{id}}",
+      "supportingEvidence": "Supporting evidence (from ParkProof)",
+      "fieldGps": "GPS",
+      "fieldSideSelected": "Side selected",
+      "ticketPhotoHeader": "Infringement notice (photo)",
+      "signPhotoHeader": "Parking sign at the time of parking",
+      "carPhotoHeader": "Car at the spot"
+    },
+    "fullExport": {
+      "title": "ParkProof — Account Export",
+      "account": "Account: {{email}}",
+      "userId": "User ID: {{id}}",
+      "exportedAt": "Exported: {{when}}",
+      "sessionCount": "Sessions in this export: {{count}}",
+      "intro": "This document is a complete, contemporaneous record of every parking session this account has logged with ParkProof. Each session was captured at the moment of parking with GPS, photographs, and an AI-translated reading of the parking sign. Where a session was signed with the ParkProof KMS key, the badge on that section indicates a verifiable cryptographic signature exists (export the individual session PDF for the full signature appendix).",
+      "emptyState": "No parking sessions have been saved to this account yet.",
+      "summaryColIndex": "#",
+      "summaryColArrived": "Arrived",
+      "summaryColExpires": "Expires",
+      "summaryColLocation": "Location",
+      "sessionHeader": "Session {{n}} of {{total}}",
+      "signedBadge": "Cryptographically signed at {{when}}",
+      "driverNoteField": "Driver's note"
+    }
+  },
   "time": {
     "moveNow": "Move now",
     "minLeft_one": "1 min left",

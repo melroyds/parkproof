@@ -50,48 +50,115 @@ bounced into a Google consent screen and end up signed in to ParkProof.
 
 ## Apple ($99/year Apple Developer account required)
 
-1. Sign in at <https://developer.apple.com/account/resources/identifiers/list>.
-2. **Identifiers** → **+** → **Services IDs**.
-   - **Description**: ParkProof Web Sign-in
-   - **Identifier**: `tech.dsouza.parkproof.signin` (reverse-DNS; anything unique works)
-3. Edit the new Services ID → enable **Sign In with Apple** → Configure:
-   - **Primary App ID**: pick (or create) one — App IDs are siblings to Services IDs.
-   - **Domains and Subdomains**: `<your-hosted-ui-domain>` (no `https://`).
+Apple's identifier model has three pieces that all need to exist before the federation works:
+
+```
+App ID (the app's identity)              — created in Identifiers section
+  ↓
+Services ID (the OAuth client)            — created in Identifiers section, links to the App ID above
+  ↓
+Key (signs the OAuth tokens)              — created in the Keys section (separate top-level area)
+```
+
+The Apple Developer portal has FIVE top-level sections in its left sidebar: Certificates, **Identifiers**, Devices, Profiles, **Keys**. Keys is its own section, NOT a sub-page under Identifiers — that's where the `.p8` private key gets generated.
+
+### Step 1 — App ID (in Identifiers section)
+
+1. Sign in at <https://developer.apple.com/account/resources/identifiers/list>
+2. Top-right of the Identifiers list page, set the filter dropdown to **"App IDs"** (defaults to "Services IDs" which look almost identical and is the most common point of confusion).
+3. Click **+** → **App IDs** → **Continue** → **App** → **Continue**.
+4. Fill in:
+   - **Description**: `ParkProof`
+   - **Bundle ID** (Explicit, not Wildcard): `tech.dsouza.parkproof` (reverse-DNS using a domain you control)
+5. Scroll down to **Capabilities** and tick **Sign In with Apple**.
+6. **Continue** → **Register**.
+
+The Bundle ID can't be changed later — pick something durable. It's free to create as many App IDs as you want; no charge per identifier.
+
+### Step 2 — Services ID (in Identifiers section)
+
+1. Same Identifiers page, switch the filter back to **"Services IDs"**.
+2. Click **+** → **Services IDs** → **Continue**.
+3. Fill in:
+   - **Description**: `ParkProof Web Sign-in`
+   - **Identifier**: `tech.dsouza.parkproof.signin` (reverse-DNS; conventionally App-ID-suffixed with `.signin` but anything unique works)
+4. **Continue** → **Register**.
+5. Click into the new Services ID from the list. Tick **Sign In with Apple** → click **Configure** on the same row → in the modal:
+   - **Primary App ID**: select the App ID created in step 1 (`tech.dsouza.parkproof`).
+   - **Domains and Subdomains**: `<your-hosted-ui-domain>` (e.g. `parkproof-251800369612.auth.ap-southeast-2.amazoncognito.com`) — no `https://` prefix.
    - **Return URLs**: `https://<your-hosted-ui-domain>/oauth2/idpresponse`
-4. **Identifiers** → **+** → **Keys** → enable Sign In with Apple → Continue.
-   - Download the `.p8` private key — Apple shows it once.
-   - Note the **Key ID** and your **Team ID** (top-right corner of the developer portal).
-5. The `.p8` content is the private key in PEM form. Convert it to a single-line
-   string suitable for AWS CLI:
+   - **Save** → **Continue** → **Save**.
 
-   ```bash
-   awk 'NF {sub(/\r/, ""); printf "%s\\n",$0;}' AuthKey_XXXXX.p8
-   ```
+### Step 3 — Key (in the Keys section — separate top-level area)
 
-6. Tell Cognito about it:
+1. Go to <https://developer.apple.com/account/resources/authkeys/list> (or click **Keys** in the left sidebar of the developer portal).
+2. Click **+** to create a new key.
+3. **Key Name**: `ParkProof Sign In with Apple` (or any descriptive name — appears only in your Keys list, doesn't get sent anywhere).
+4. Tick **Sign in with Apple** in the capabilities list. A blue **Configure** button appears alongside it.
+5. Click **Configure** → in the modal, set **Primary App ID** to the App ID from step 1 → **Save**.
+6. **Continue** → **Register**.
 
-   ```bash
-   aws cognito-idp create-identity-provider \
-     --user-pool-id <COGNITO_USER_POOL_ID> \
-     --provider-name SignInWithApple \
-     --provider-type SignInWithApple \
-     --provider-details "client_id=<SERVICES_ID>,team_id=<TEAM_ID>,key_id=<KEY_ID>,private_key=<P8_AS_SINGLE_LINE>,authorize_scopes=email name" \
-     --attribute-mapping email=email,username=sub \
-     --region ap-southeast-2
-   ```
+> **CRITICAL — download the `.p8` file NOW.** The page after Register has a one-time download button. Apple shows the file *exactly once*. If you navigate away without downloading, you have to revoke the key and create a fresh one. Save the `.p8` somewhere you'll find it again (`Documents/parkproof-apple-key.p8` is fine).
 
-7. Update the Cognito App Client supported-identity-providers list to include Apple:
+7. Also note from this page:
+   - **Key ID** — a 10-character string like `ABC123DEF4`. Permanent; you can come back to view it any time on the key's detail page.
+   - **Team ID** — visible at the top-right of every page in the developer portal, next to your name. Also 10 characters.
 
-   ```bash
-   aws cognito-idp update-user-pool-client \
-     --user-pool-id <COGNITO_USER_POOL_ID> \
-     --client-id <COGNITO_APP_CLIENT_ID> \
-     --supported-identity-providers COGNITO Google SignInWithApple \
-     --region ap-southeast-2
-   ```
+### Step 4 — Flatten the `.p8` for AWS CLI
 
-Test: open the live app, click "Continue with Apple", you should land on
-Apple's sign-in page → consent → back to ParkProof signed in.
+The `.p8` is multi-line PEM:
+
+```
+-----BEGIN PRIVATE KEY-----
+MIGTAgEAMBMGByqGSM49AgEG...
+...
+-----END PRIVATE KEY-----
+```
+
+AWS CLI's `--provider-details` argument needs it as a single line with literal `\n` between rows. From the directory containing the `.p8` file:
+
+```bash
+awk 'NF {sub(/\r/, ""); printf "%s\\n",$0;}' AuthKey_XXXXX.p8
+```
+
+(Replace `XXXXX` with the actual key ID — Apple names the file after it.) Copy the output line; that's the value for `private_key` below.
+
+### Step 5 — Tell Cognito about Apple
+
+Register Apple as an identity provider on your User Pool:
+
+```bash
+aws cognito-idp create-identity-provider \
+  --user-pool-id <COGNITO_USER_POOL_ID> \
+  --provider-name SignInWithApple \
+  --provider-type SignInWithApple \
+  --provider-details "client_id=<SERVICES_ID>,team_id=<TEAM_ID>,key_id=<KEY_ID>,private_key=<P8_AS_SINGLE_LINE>,authorize_scopes=email name" \
+  --attribute-mapping email=email,username=sub \
+  --region ap-southeast-2
+```
+
+Substitute:
+- `<SERVICES_ID>` — the Services ID identifier from step 2 (e.g. `tech.dsouza.parkproof.signin`)
+- `<TEAM_ID>` — the 10-char team ID from the developer-portal top-right
+- `<KEY_ID>` — the 10-char key ID shown after step 3 registration
+- `<P8_AS_SINGLE_LINE>` — the output of the `awk` command from step 4
+
+### Step 6 — Enable Apple as a supported provider on the App Client
+
+```bash
+aws cognito-idp update-user-pool-client \
+  --user-pool-id <COGNITO_USER_POOL_ID> \
+  --client-id <COGNITO_APP_CLIENT_ID> \
+  --supported-identity-providers COGNITO Google SignInWithApple \
+  --region ap-southeast-2
+```
+
+(If you haven't enabled Google yet, drop it from the list — only ever pass providers that have a matching `create-identity-provider` already done.)
+
+### Test
+
+Open the live app, click "Continue with Apple", you should land on Apple's
+sign-in page → consent → back to ParkProof signed in.
 
 ## When it goes wrong
 

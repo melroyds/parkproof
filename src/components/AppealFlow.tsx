@@ -68,6 +68,7 @@ export default function AppealFlow({ session, onBack }: Props) {
         draft: stage.draft,
         editedLetter,
         ticketPhoto: stage.ticketPhoto,
+        t,
       })
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err)

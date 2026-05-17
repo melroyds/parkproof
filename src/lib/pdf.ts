@@ -1,5 +1,6 @@
 import { jsPDF } from 'jspdf'
 import autoTable from 'jspdf-autotable'
+import type { TFunction } from 'i18next'
 import type { AppealDraft, ParkingSession } from '../types'
 import { ACCURACY_USABLE_M, formatAccuracy } from './accuracy'
 import { sessionTimezone } from './timezone'
@@ -71,18 +72,22 @@ function splitRules(rules: string): string {
     .trim()
 }
 
-function buildGuidance(session: ParkingSession, timezone: string): string {
+function buildGuidance(session: ParkingSession, timezone: string, t: TFunction): string {
   if (!session.expires_at) {
-    return 'Free to park. No expiry shown on the sign.'
+    return t('pdf.evidence.guidanceFreeNoExpiry')
   }
   const expiresMs = new Date(session.expires_at).getTime()
   // If the PDF is exported AFTER expiry (typical for evidence-after-the-fact),
   // the "Move by …" copy reads as a contradiction. State the past tense honestly
   // — the evidence record is about what the session was at the time of parking.
   if (Number.isFinite(expiresMs) && expiresMs < Date.now()) {
-    return `Session expired at ${fmtLocalShort(session.expires_at, timezone)}.`
+    return t('pdf.evidence.guidanceExpired', {
+      when: fmtLocalShort(session.expires_at, timezone),
+    })
   }
-  return `Free to park. Move by ${fmtLocalShort(session.expires_at, timezone)}.`
+  return t('pdf.evidence.guidanceFree', {
+    when: fmtLocalShort(session.expires_at, timezone),
+  })
 }
 
 // ─── PDF layout helpers ─────────────────────────────────────────────────────
@@ -100,6 +105,7 @@ function addImageWithOverlayCaption(
   dataUrl: string,
   y: number,
   caption: string[],
+  t: TFunction,
   maxHeight = 300,
 ): number {
   const pageWidth = doc.internal.pageSize.getWidth()
@@ -149,12 +155,18 @@ function addImageWithOverlayCaption(
   } catch {
     doc.setFontSize(10)
     doc.setFont('helvetica', 'italic')
-    doc.text('(Image could not be embedded)', MARGIN, y + 14)
+    doc.text(t('pdf.common.imageEmbedFailed'), MARGIN, y + 14)
     return y + 20
   }
 }
 
-function addImageFitted(doc: jsPDF, dataUrl: string, y: number, maxHeight = 300): number {
+function addImageFitted(
+  doc: jsPDF,
+  dataUrl: string,
+  y: number,
+  t: TFunction,
+  maxHeight = 300,
+): number {
   const pageWidth = doc.internal.pageSize.getWidth()
   const maxWidth = pageWidth - 2 * MARGIN
   try {
@@ -167,13 +179,13 @@ function addImageFitted(doc: jsPDF, dataUrl: string, y: number, maxHeight = 300)
   } catch {
     doc.setFontSize(10)
     doc.setFont('helvetica', 'italic')
-    doc.text('(Image could not be embedded)', MARGIN, y + 14)
+    doc.text(t('pdf.common.imageEmbedFailed'), MARGIN, y + 14)
     return y + 20
   }
 }
 
 // ─── Main entry ─────────────────────────────────────────────────────────────
-export function downloadPdf(session: ParkingSession): void {
+export function downloadPdf(session: ParkingSession, t: TFunction): void {
   const doc = new jsPDF({ unit: 'pt', format: 'a4' })
   const timezone = timezoneFor(session)
   let y = MARGIN
@@ -182,64 +194,78 @@ export function downloadPdf(session: ParkingSession): void {
   doc.setFontSize(22)
   doc.setFont('helvetica', 'bold')
   doc.setTextColor(15, 23, 42)
-  doc.text('ParkProof — Parking Evidence', MARGIN, y)
+  doc.text(t('pdf.evidence.title'), MARGIN, y)
   y += 28
 
   doc.setFontSize(10)
   doc.setFont('helvetica', 'normal')
   doc.setTextColor(100)
-  doc.text(`Session ID: ${session.id}`, MARGIN, y)
+  doc.text(t('pdf.evidence.sessionId', { id: session.id }), MARGIN, y)
   y += 14
-  doc.text(`PDF generated: ${new Date().toLocaleString('en-AU')}`, MARGIN, y)
+  doc.text(
+    t('pdf.evidence.generated', { when: new Date().toLocaleString('en-AU') }),
+    MARGIN,
+    y,
+  )
   y += 22
 
   // Summary table
   doc.setTextColor(15, 23, 42)
   // Describe how the location was obtained — relevant for evidence reliability.
-  let locationSourceLabel = '—'
+  let locationSourceLabel = t('pdf.evidence.locationSourceValue.none')
   if (session.location) {
     if (session.location.source === 'manual') {
-      locationSourceLabel = 'Manually entered'
+      locationSourceLabel = t('pdf.evidence.locationSourceValue.manuallyEntered')
     } else if (session.location.source === 'gps') {
       const acc = session.location.accuracy_meters
       if (typeof acc === 'number') {
         locationSourceLabel =
           acc > ACCURACY_USABLE_M
-            ? `GPS — LOW ACCURACY ${formatAccuracy(acc)} (see appendix)`
-            : `GPS — ${formatAccuracy(acc)}`
+            ? t('pdf.evidence.locationSourceValue.gpsLowAccuracy', {
+                accuracy: formatAccuracy(acc),
+              })
+            : t('pdf.evidence.locationSourceValue.gpsWithAccuracy', {
+                accuracy: formatAccuracy(acc),
+              })
       } else {
-        locationSourceLabel = 'GPS'
+        locationSourceLabel = t('pdf.evidence.locationSourceValue.gps')
       }
     } else {
-      locationSourceLabel = 'Captured'
+      locationSourceLabel = t('pdf.evidence.locationSourceValue.captured')
     }
   }
 
+  const dash = t('pdf.common.dash')
+  const notCaptured = t('pdf.common.notCaptured')
+
   const body: [string, string][] = [
-    ['Arrived at', fmtLocal(session.arrived_at, timezone)],
-    ['Expires at', session.expires_at ? fmtLocal(session.expires_at, timezone) : '—'],
-    ['ParkProof Guidance', buildGuidance(session, timezone)],
-    ['Address', session.location?.address ?? '—'],
+    [t('pdf.evidence.field.arrivedAt'), fmtLocal(session.arrived_at, timezone)],
     [
-      'Location (GPS)',
+      t('pdf.evidence.field.expiresAt'),
+      session.expires_at ? fmtLocal(session.expires_at, timezone) : dash,
+    ],
+    [t('pdf.evidence.field.guidance'), buildGuidance(session, timezone, t)],
+    [t('pdf.evidence.field.address'), session.location?.address ?? dash],
+    [
+      t('pdf.evidence.field.locationGps'),
       session.location
         ? `${session.location.lat.toFixed(6)}, ${session.location.lng.toFixed(6)}`
-        : 'Not captured',
+        : notCaptured,
     ],
-    ['Location source', locationSourceLabel],
+    [t('pdf.evidence.field.locationSource'), locationSourceLabel],
     [
-      'Map link',
+      t('pdf.evidence.field.mapLink'),
       session.location
         ? `https://www.google.com/maps?q=${session.location.lat},${session.location.lng}`
-        : '—',
+        : dash,
     ],
-    ['Side / Variant selected', session.chosen_label || '—'],
-    ['Sign rules', splitRules(session.rules)],
-    ['AI confidence', session.confidence],
+    [t('pdf.evidence.field.sideVariant'), session.chosen_label || dash],
+    [t('pdf.evidence.field.signRules'), splitRules(session.rules)],
+    [t('pdf.evidence.field.aiConfidence'), session.confidence],
   ]
   autoTable(doc, {
     startY: y,
-    head: [['Field', 'Value']],
+    head: [[t('pdf.common.fieldHeader'), t('pdf.common.valueHeader')]],
     body,
     styles: { fontSize: 10, cellPadding: 6, valign: 'top' },
     headStyles: { fillColor: [15, 23, 42] },
@@ -253,16 +279,16 @@ export function downloadPdf(session: ParkingSession): void {
   y = ensureSpace(doc, y, 320)
   doc.setFontSize(13)
   doc.setFont('helvetica', 'bold')
-  doc.text('Sign photo', MARGIN, y)
+  doc.text(t('pdf.evidence.signPhotoHeader'), MARGIN, y)
   y += 14
-  y = addImageFitted(doc, session.sign_photo, y) + 18
+  y = addImageFitted(doc, session.sign_photo, y, t) + 18
 
   // Car photo with caption overlay
   if (session.car_photo) {
     y = ensureSpace(doc, y, 320)
     doc.setFontSize(13)
     doc.setFont('helvetica', 'bold')
-    doc.text('Car at the spot', MARGIN, y)
+    doc.text(t('pdf.evidence.carPhotoHeader'), MARGIN, y)
     y += 14
 
     const caption: string[] = []
@@ -275,7 +301,7 @@ export function downloadPdf(session: ParkingSession): void {
     }
     caption.push(fmtLocal(session.arrived_at, timezone))
 
-    y = addImageWithOverlayCaption(doc, session.car_photo, y, caption) + 18
+    y = addImageWithOverlayCaption(doc, session.car_photo, y, caption, t) + 18
   }
 
   // Low-accuracy GPS disclaimer (when relevant)
@@ -289,11 +315,11 @@ export function downloadPdf(session: ParkingSession): void {
     doc.setFontSize(10)
     doc.setFont('helvetica', 'bold')
     doc.setTextColor(142, 61, 39) // accent-700
-    doc.text('⚠ GPS accuracy notice', MARGIN + 12, y + 18)
+    doc.text(t('pdf.evidence.gpsNoticeTitle'), MARGIN + 12, y + 18)
     doc.setFont('helvetica', 'normal')
     doc.setFontSize(9)
     doc.setTextColor(45, 55, 79) // ink-700
-    const disclaimer = `The GPS reading at capture time was ${formatAccuracy(acc)} — wider than typical for evidence purposes. The coordinates above identify a point within that radius, not an exact spot. Common causes: indoor / multi-storey carparks, Starlink or VPN connections, or weak satellite signal. Reviewers should weight the captured address against this radius.`
+    const disclaimer = t('pdf.evidence.gpsNoticeBody', { accuracy: formatAccuracy(acc) })
     const wrapped = doc.splitTextToSize(
       disclaimer,
       doc.internal.pageSize.getWidth() - 2 * MARGIN - 24,
@@ -310,7 +336,7 @@ export function downloadPdf(session: ParkingSession): void {
     doc.setFontSize(13)
     doc.setFont('helvetica', 'bold')
     doc.setTextColor(15, 23, 42)
-    doc.text("Driver's note", MARGIN, y)
+    doc.text(t('pdf.evidence.driverNoteHeader'), MARGIN, y)
     y += 16
     doc.setFontSize(10)
     doc.setFont('helvetica', 'normal')
@@ -333,8 +359,7 @@ export function downloadPdf(session: ParkingSession): void {
   doc.setFontSize(10)
   doc.setFont('helvetica', 'italic')
   doc.setTextColor(80)
-  const statement =
-    'This record was generated automatically by ParkProof at the time of parking. The arrival timestamp, GPS coordinates, sign translation, and photographs constitute a contemporaneous evidence record suitable for attachment to a parking infringement review submission with the relevant Australian local council.'
+  const statement = t('pdf.evidence.statement')
   const pageWidth = doc.internal.pageSize.getWidth()
   const wrapped = doc.splitTextToSize(statement, pageWidth - 2 * MARGIN)
   doc.text(wrapped, MARGIN, y)
@@ -347,7 +372,7 @@ export function downloadPdf(session: ParkingSession): void {
   // (page 1) is the user's actual deliverable.
   if (isValidSignature(session.signature)) {
     try {
-      drawSignatureAppendix(doc, session.signature)
+      drawSignatureAppendix(doc, session.signature, t)
     } catch (err) {
       console.warn('[pdf] signature appendix failed, omitting:', err)
     }
@@ -381,7 +406,11 @@ function isValidSignature(
   return required.every((k) => typeof sig[k] === 'string' && sig[k].length > 0)
 }
 
-function drawSignatureAppendix(doc: jsPDF, sig: NonNullable<ParkingSession['signature']>): void {
+function drawSignatureAppendix(
+  doc: jsPDF,
+  sig: NonNullable<ParkingSession['signature']>,
+  t: TFunction,
+): void {
   doc.addPage()
   let y = MARGIN
   const pageWidth = doc.internal.pageSize.getWidth()
@@ -389,14 +418,13 @@ function drawSignatureAppendix(doc: jsPDF, sig: NonNullable<ParkingSession['sign
   doc.setFontSize(18)
   doc.setFont('helvetica', 'bold')
   doc.setTextColor(15, 23, 42)
-  doc.text('Cryptographic signature', MARGIN, y)
+  doc.text(t('pdf.signature.title'), MARGIN, y)
   y += 26
 
   doc.setFontSize(10)
   doc.setFont('helvetica', 'normal')
   doc.setTextColor(80)
-  const intro =
-    "This evidence record was signed by ParkProof's AWS KMS-managed private key at the time of saving. The signature lets any third party (council, court, insurer) verify that the metadata and photo hashes below have not been altered since the signed_at timestamp. The private key never leaves AWS; the public key is published openly for verification."
+  const intro = t('pdf.signature.intro')
   const introWrapped = doc.splitTextToSize(intro, pageWidth - 2 * MARGIN)
   doc.text(introWrapped, MARGIN, y)
   y += introWrapped.length * 12 + 10
@@ -405,14 +433,14 @@ function drawSignatureAppendix(doc: jsPDF, sig: NonNullable<ParkingSession['sign
   doc.setTextColor(15, 23, 42)
   autoTable(doc, {
     startY: y,
-    head: [['Field', 'Value']],
+    head: [[t('pdf.common.fieldHeader'), t('pdf.common.valueHeader')]],
     body: [
-      ['Algorithm', sig.algorithm],
-      ['Key alias', sig.key_alias],
-      ['Signed at (UTC)', sig.signed_at],
-      ['Schema', sig.schema],
+      [t('pdf.signature.algorithm'), sig.algorithm],
+      [t('pdf.signature.keyAlias'), sig.key_alias],
+      [t('pdf.signature.signedAt'), sig.signed_at],
+      [t('pdf.signature.schema'), sig.schema],
       [
-        'Public key URL',
+        t('pdf.signature.publicKeyUrl'),
         'https://d1jmpu2roekssu.cloudfront.net/parkproof-public-key.pem',
       ],
     ],
@@ -433,7 +461,7 @@ function drawSignatureAppendix(doc: jsPDF, sig: NonNullable<ParkingSession['sign
   doc.setFont('helvetica', 'bold')
   doc.setFontSize(10)
   doc.setTextColor(15, 23, 42)
-  doc.text('Canonical payload (the exact bytes that were signed):', MARGIN, y)
+  doc.text(t('pdf.signature.canonicalPayloadHeader'), MARGIN, y)
   y += 14
   doc.setFont('courier', 'normal')
   doc.setFontSize(7)
@@ -450,7 +478,7 @@ function drawSignatureAppendix(doc: jsPDF, sig: NonNullable<ParkingSession['sign
   doc.setFont('helvetica', 'bold')
   doc.setFontSize(10)
   doc.setTextColor(15, 23, 42)
-  doc.text('Signature (DER, base64):', MARGIN, y)
+  doc.text(t('pdf.signature.signatureBlobHeader'), MARGIN, y)
   y += 14
   doc.setFont('courier', 'normal')
   doc.setFontSize(7)
@@ -468,22 +496,26 @@ function drawSignatureAppendix(doc: jsPDF, sig: NonNullable<ParkingSession['sign
   doc.setFont('helvetica', 'bold')
   doc.setFontSize(10)
   doc.setTextColor(15, 23, 42)
-  doc.text('To verify with openssl (any platform):', MARGIN, y)
+  doc.text(t('pdf.signature.verifyHeader'), MARGIN, y)
   y += 14
   doc.setFont('courier', 'normal')
   doc.setFontSize(8)
   doc.setTextColor(40)
+  // The shell commands themselves are deliberately left in English / verbatim
+  // because they're literal command-line invocations — they must be typed
+  // exactly as shown. Only the descriptive text around each command is
+  // translated.
   const verifySteps = [
-    '1. Save the canonical payload above to a file: payload.txt (no trailing newline)',
-    '2. Save the signature base64 string above to a file: sig.base64',
-    '3. Download the public key:',
+    t('pdf.signature.verifyStep1'),
+    t('pdf.signature.verifyStep2'),
+    t('pdf.signature.verifyStep3'),
     '   curl -O https://d1jmpu2roekssu.cloudfront.net/parkproof-public-key.pem',
-    '4. Decode the signature:',
+    t('pdf.signature.verifyStep4'),
     '   base64 -d sig.base64 > sig.bin',
-    '5. Verify:',
+    t('pdf.signature.verifyStep5'),
     '   openssl dgst -sha256 -verify parkproof-public-key.pem \\',
     '     -signature sig.bin payload.txt',
-    '6. Expect output: "Verified OK"',
+    t('pdf.signature.verifyStep6'),
   ]
   for (const line of verifySteps) {
     y = ensureSpace(doc, y, 12)
@@ -498,8 +530,9 @@ export function downloadAppealPdf(params: {
   draft: AppealDraft
   editedLetter: string
   ticketPhoto: string
+  t: TFunction
 }): void {
-  const { session, draft, editedLetter, ticketPhoto } = params
+  const { session, draft, editedLetter, ticketPhoto, t } = params
   const doc = new jsPDF({ unit: 'pt', format: 'a4' })
   const timezone = timezoneFor(session)
   const pageWidth = doc.internal.pageSize.getWidth()
@@ -516,9 +549,13 @@ export function downloadAppealPdf(params: {
   doc.setFontSize(10)
   doc.setFont('helvetica', 'normal')
   doc.setTextColor(100)
-  doc.text(`Drafted ${new Date().toLocaleString('en-AU')}`, MARGIN, y)
+  doc.text(
+    t('pdf.appeal.drafted', { when: new Date().toLocaleString('en-AU') }),
+    MARGIN,
+    y,
+  )
   y += 14
-  doc.text(`Linked ParkProof session: ${session.id}`, MARGIN, y)
+  doc.text(t('pdf.appeal.linkedSession', { id: session.id }), MARGIN, y)
   y += 22
 
   // Letter body
@@ -537,34 +574,37 @@ export function downloadAppealPdf(params: {
   y = ensureSpace(doc, y, 200)
   doc.setFontSize(12)
   doc.setFont('helvetica', 'bold')
-  doc.text('Supporting evidence (from ParkProof)', MARGIN, y)
+  doc.text(t('pdf.appeal.supportingEvidence'), MARGIN, y)
   y += 16
 
+  const dash = t('pdf.common.dash')
+  const notCaptured = t('pdf.common.notCaptured')
+
   const body: [string, string][] = [
-    ['Arrived at', fmtLocal(session.arrived_at, timezone)],
+    [t('pdf.evidence.field.arrivedAt'), fmtLocal(session.arrived_at, timezone)],
     [
-      'Expires at',
-      session.expires_at ? fmtLocal(session.expires_at, timezone) : '—',
+      t('pdf.evidence.field.expiresAt'),
+      session.expires_at ? fmtLocal(session.expires_at, timezone) : dash,
     ],
-    ['Address', session.location?.address ?? '—'],
+    [t('pdf.evidence.field.address'), session.location?.address ?? dash],
     [
-      'GPS',
+      t('pdf.appeal.fieldGps'),
       session.location
         ? `${session.location.lat.toFixed(6)}, ${session.location.lng.toFixed(6)}`
-        : 'Not captured',
+        : notCaptured,
     ],
     [
-      'Map link',
+      t('pdf.evidence.field.mapLink'),
       session.location
         ? `https://www.google.com/maps?q=${session.location.lat},${session.location.lng}`
-        : '—',
+        : dash,
     ],
-    ['Side selected', session.chosen_label || '—'],
-    ['Sign rules', session.rules],
+    [t('pdf.appeal.fieldSideSelected'), session.chosen_label || dash],
+    [t('pdf.evidence.field.signRules'), session.rules],
   ]
   autoTable(doc, {
     startY: y,
-    head: [['Field', 'Value']],
+    head: [[t('pdf.common.fieldHeader'), t('pdf.common.valueHeader')]],
     body,
     styles: { fontSize: 9, cellPadding: 5, valign: 'top' },
     headStyles: { fillColor: [15, 23, 42] },
@@ -578,24 +618,24 @@ export function downloadAppealPdf(params: {
   y = ensureSpace(doc, y, 300)
   doc.setFontSize(11)
   doc.setFont('helvetica', 'bold')
-  doc.text('Infringement notice (photo)', MARGIN, y)
+  doc.text(t('pdf.appeal.ticketPhotoHeader'), MARGIN, y)
   y += 14
-  y = addImageFitted(doc, ticketPhoto, y, 260) + 18
+  y = addImageFitted(doc, ticketPhoto, y, t, 260) + 18
 
   // Sign photo
   y = ensureSpace(doc, y, 300)
   doc.setFontSize(11)
   doc.setFont('helvetica', 'bold')
-  doc.text('Parking sign at the time of parking', MARGIN, y)
+  doc.text(t('pdf.appeal.signPhotoHeader'), MARGIN, y)
   y += 14
-  y = addImageFitted(doc, session.sign_photo, y, 260) + 18
+  y = addImageFitted(doc, session.sign_photo, y, t, 260) + 18
 
   // Car photo (if any)
   if (session.car_photo) {
     y = ensureSpace(doc, y, 300)
     doc.setFontSize(11)
     doc.setFont('helvetica', 'bold')
-    doc.text('Car at the spot', MARGIN, y)
+    doc.text(t('pdf.appeal.carPhotoHeader'), MARGIN, y)
     y += 14
 
     const caption: string[] = []
@@ -608,7 +648,7 @@ export function downloadAppealPdf(params: {
     }
     caption.push(fmtLocal(session.arrived_at, timezone))
 
-    addImageWithOverlayCaption(doc, session.car_photo, y, caption, 260)
+    addImageWithOverlayCaption(doc, session.car_photo, y, caption, t, 260)
   }
 
   doc.save(`parkproof-appeal-${session.id.slice(0, 8)}.pdf`)
@@ -633,7 +673,7 @@ export interface FullExportPayload {
   notes?: string
 }
 
-export function downloadFullExportPdf(payload: FullExportPayload): void {
+export function downloadFullExportPdf(payload: FullExportPayload, t: TFunction): void {
   const doc = new jsPDF({ unit: 'pt', format: 'a4' })
   const pageWidth = doc.internal.pageSize.getWidth()
 
@@ -643,45 +683,49 @@ export function downloadFullExportPdf(payload: FullExportPayload): void {
   doc.setFontSize(24)
   doc.setFont('helvetica', 'bold')
   doc.setTextColor(15, 23, 42)
-  doc.text('ParkProof — Account Export', MARGIN, y)
+  doc.text(t('pdf.fullExport.title'), MARGIN, y)
   y += 30
 
   doc.setFontSize(11)
   doc.setFont('helvetica', 'normal')
   doc.setTextColor(80)
   if (payload.account.email) {
-    doc.text(`Account: ${payload.account.email}`, MARGIN, y)
+    doc.text(t('pdf.fullExport.account', { email: payload.account.email }), MARGIN, y)
     y += 14
   }
-  doc.text(`User ID: ${payload.account.user_id}`, MARGIN, y)
+  doc.text(t('pdf.fullExport.userId', { id: payload.account.user_id }), MARGIN, y)
   y += 14
   doc.text(
-    `Exported: ${new Date(payload.exported_at).toLocaleString('en-AU')}`,
+    t('pdf.fullExport.exportedAt', {
+      when: new Date(payload.exported_at).toLocaleString('en-AU'),
+    }),
     MARGIN,
     y,
   )
   y += 14
-  doc.text(`Sessions in this export: ${payload.sessions.length}`, MARGIN, y)
+  doc.text(
+    t('pdf.fullExport.sessionCount', { count: payload.sessions.length }),
+    MARGIN,
+    y,
+  )
   y += 22
 
   // Intro paragraph — sets reviewer expectations.
   doc.setFontSize(10)
   doc.setTextColor(100)
-  const intro =
-    'This document is a complete, contemporaneous record of every parking session this account '
-    + 'has logged with ParkProof. Each session was captured at the moment of parking with GPS, '
-    + 'photographs, and an AI-translated reading of the parking sign. Where a session was signed '
-    + 'with the ParkProof KMS key, the badge on that section indicates a verifiable cryptographic '
-    + 'signature exists (export the individual session PDF for the full signature appendix).'
+  const intro = t('pdf.fullExport.intro')
   const introLines = doc.splitTextToSize(intro, pageWidth - 2 * MARGIN)
   doc.text(introLines, MARGIN, y)
   y += introLines.length * 12 + 16
+
+  const dash = t('pdf.common.dash')
+  const notCaptured = t('pdf.common.notCaptured')
 
   if (payload.sessions.length === 0) {
     // No sessions — still produce a valid file the user can keep.
     doc.setFontSize(11)
     doc.setTextColor(15, 23, 42)
-    doc.text('No parking sessions have been saved to this account yet.', MARGIN, y)
+    doc.text(t('pdf.fullExport.emptyState'), MARGIN, y)
     doc.save(`parkproof-export-${new Date().toISOString().slice(0, 10)}.pdf`)
     return
   }
@@ -691,17 +735,22 @@ export function downloadFullExportPdf(payload: FullExportPayload): void {
   const summary: [string, string, string, string][] = payload.sessions.map((s, i) => {
     const tz = timezoneFor(s)
     const arrived = fmtLocalShort(s.arrived_at, tz)
-    const expires = s.expires_at ? fmtLocalShort(s.expires_at, tz) : '—'
+    const expires = s.expires_at ? fmtLocalShort(s.expires_at, tz) : dash
     const address =
       s.location?.address
       ?? (s.location
         ? `${s.location.lat.toFixed(4)}, ${s.location.lng.toFixed(4)}`
-        : '—')
+        : dash)
     return [String(i + 1), arrived, expires, address]
   })
   autoTable(doc, {
     startY: y,
-    head: [['#', 'Arrived', 'Expires', 'Location']],
+    head: [[
+      t('pdf.fullExport.summaryColIndex'),
+      t('pdf.fullExport.summaryColArrived'),
+      t('pdf.fullExport.summaryColExpires'),
+      t('pdf.fullExport.summaryColLocation'),
+    ]],
     body: summary,
     styles: { fontSize: 9, cellPadding: 5, valign: 'top' },
     headStyles: { fillColor: [15, 23, 42] },
@@ -725,7 +774,11 @@ export function downloadFullExportPdf(payload: FullExportPayload): void {
     doc.setFontSize(16)
     doc.setFont('helvetica', 'bold')
     doc.setTextColor(15, 23, 42)
-    doc.text(`Session ${i + 1} of ${payload.sessions.length}`, MARGIN, y)
+    doc.text(
+      t('pdf.fullExport.sessionHeader', { n: i + 1, total: payload.sessions.length }),
+      MARGIN,
+      y,
+    )
     y += 22
 
     // Signed badge (if applicable)
@@ -733,7 +786,9 @@ export function downloadFullExportPdf(payload: FullExportPayload): void {
       doc.setFillColor(232, 240, 254) // brand-50
       doc.setDrawColor(124, 156, 222) // brand-300
       doc.setLineWidth(0.5)
-      const badgeText = `Cryptographically signed at ${new Date(session.signature.signed_at).toLocaleString('en-AU')}`
+      const badgeText = t('pdf.fullExport.signedBadge', {
+        when: new Date(session.signature.signed_at).toLocaleString('en-AU'),
+      })
       const badgeTextWidth = doc.getTextWidth(badgeText)
       doc.roundedRect(MARGIN, y - 10, badgeTextWidth + 16, 16, 8, 8, 'FD')
       doc.setFontSize(8)
@@ -746,25 +801,28 @@ export function downloadFullExportPdf(payload: FullExportPayload): void {
     // Metadata table (compact)
     doc.setTextColor(15, 23, 42)
     const body: [string, string][] = [
-      ['Arrived at', fmtLocal(session.arrived_at, tz)],
-      ['Expires at', session.expires_at ? fmtLocal(session.expires_at, tz) : '—'],
-      ['Address', session.location?.address ?? '—'],
+      [t('pdf.evidence.field.arrivedAt'), fmtLocal(session.arrived_at, tz)],
       [
-        'Location (GPS)',
+        t('pdf.evidence.field.expiresAt'),
+        session.expires_at ? fmtLocal(session.expires_at, tz) : dash,
+      ],
+      [t('pdf.evidence.field.address'), session.location?.address ?? dash],
+      [
+        t('pdf.evidence.field.locationGps'),
         session.location
           ? `${session.location.lat.toFixed(6)}, ${session.location.lng.toFixed(6)}`
-          : 'Not captured',
+          : notCaptured,
       ],
-      ['Side / Variant selected', session.chosen_label || '—'],
-      ['Sign rules', splitRules(session.rules)],
-      ['AI confidence', session.confidence],
+      [t('pdf.evidence.field.sideVariant'), session.chosen_label || dash],
+      [t('pdf.evidence.field.signRules'), splitRules(session.rules)],
+      [t('pdf.evidence.field.aiConfidence'), session.confidence],
     ]
     if (session.note && session.note.trim()) {
-      body.push(['Driver’s note', session.note.trim()])
+      body.push([t('pdf.fullExport.driverNoteField'), session.note.trim()])
     }
     autoTable(doc, {
       startY: y,
-      head: [['Field', 'Value']],
+      head: [[t('pdf.common.fieldHeader'), t('pdf.common.valueHeader')]],
       body,
       styles: { fontSize: 9, cellPadding: 5, valign: 'top' },
       headStyles: { fillColor: [15, 23, 42] },
@@ -780,15 +838,15 @@ export function downloadFullExportPdf(payload: FullExportPayload): void {
       y = ensureSpace(doc, y, 220)
       doc.setFontSize(11)
       doc.setFont('helvetica', 'bold')
-      doc.text('Sign photo', MARGIN, y)
+      doc.text(t('pdf.evidence.signPhotoHeader'), MARGIN, y)
       y += 12
-      y = addImageFitted(doc, session.sign_photo, y, 200) + 14
+      y = addImageFitted(doc, session.sign_photo, y, t, 200) + 14
     }
     if (session.car_photo) {
       y = ensureSpace(doc, y, 220)
       doc.setFontSize(11)
       doc.setFont('helvetica', 'bold')
-      doc.text('Car at the spot', MARGIN, y)
+      doc.text(t('pdf.evidence.carPhotoHeader'), MARGIN, y)
       y += 12
       const caption: string[] = []
       if (session.location?.address) caption.push(session.location.address)
@@ -798,7 +856,7 @@ export function downloadFullExportPdf(payload: FullExportPayload): void {
         )
       }
       caption.push(fmtLocal(session.arrived_at, tz))
-      y = addImageWithOverlayCaption(doc, session.car_photo, y, caption, 200) + 14
+      y = addImageWithOverlayCaption(doc, session.car_photo, y, caption, t, 200) + 14
     }
   })
 

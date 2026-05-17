@@ -333,6 +333,93 @@
     "tryAgain": "Riprova",
     "backHome": "Torna alla home"
   },
+  "pdf": {
+    "common": {
+      "fieldHeader": "Campo",
+      "valueHeader": "Valore",
+      "dash": "—",
+      "notCaptured": "Non registrato",
+      "imageEmbedFailed": "(Immagine non incorporabile)"
+    },
+    "evidence": {
+      "title": "ParkProof — Prova di parcheggio",
+      "sessionId": "ID sessione: {{id}}",
+      "generated": "PDF generato: {{when}}",
+      "field": {
+        "arrivedAt": "Arrivato alle",
+        "expiresAt": "Scade alle",
+        "guidance": "Indicazioni ParkProof",
+        "address": "Indirizzo",
+        "locationGps": "Posizione (GPS)",
+        "locationSource": "Origine della posizione",
+        "mapLink": "Link mappa",
+        "sideVariant": "Lato / Variante selezionata",
+        "signRules": "Regole del cartello",
+        "aiConfidence": "Affidabilità AI"
+      },
+      "locationSourceValue": {
+        "manuallyEntered": "Inserito manualmente",
+        "gpsWithAccuracy": "GPS — {{accuracy}}",
+        "gpsLowAccuracy": "GPS — PRECISIONE BASSA {{accuracy}} (vedi appendice)",
+        "gps": "GPS",
+        "captured": "Registrato",
+        "none": "—"
+      },
+      "signPhotoHeader": "Foto del cartello",
+      "carPhotoHeader": "Auto nello stallo",
+      "driverNoteHeader": "Nota del conducente",
+      "gpsNoticeTitle": "⚠ Avviso sulla precisione GPS",
+      "gpsNoticeBody": "La lettura GPS al momento dell'acquisizione era {{accuracy}} — più ampia del consueto per scopi probatori. Le coordinate indicate identificano un punto all'interno di tale raggio, non un punto esatto. Cause comuni: parcheggi interni / multipiano, connessioni Starlink o VPN, o segnale satellitare debole. Chi valuta dovrebbe ponderare l'indirizzo registrato in base a questo raggio.",
+      "statement": "Questo documento è stato generato automaticamente da ParkProof al momento del parcheggio. L'orario di arrivo, le coordinate GPS, la traduzione del cartello e le fotografie costituiscono un registro probatorio contestuale, idoneo a essere allegato a una richiesta di revisione di una contravvenzione di sosta presso il comune australiano competente.",
+      "guidanceFree": "Parcheggio consentito. Sposta entro le {{when}}.",
+      "guidanceFreeNoExpiry": "Parcheggio consentito. Nessuna scadenza indicata sul cartello.",
+      "guidanceExpired": "Sessione scaduta alle {{when}}."
+    },
+    "signature": {
+      "title": "Firma crittografica",
+      "intro": "Questo documento probatorio è stato firmato dalla chiave privata gestita da AWS KMS di ParkProof al momento del salvataggio. La firma consente a qualsiasi terza parte (comune, tribunale, assicurazione) di verificare che i metadati e gli hash delle foto qui sotto non siano stati alterati dopo il timestamp signed_at. La chiave privata non lascia mai AWS; la chiave pubblica è pubblicata apertamente per consentire la verifica.",
+      "algorithm": "Algoritmo",
+      "keyAlias": "Alias della chiave",
+      "signedAt": "Firmato il (UTC)",
+      "schema": "Schema",
+      "publicKeyUrl": "URL chiave pubblica",
+      "canonicalPayloadHeader": "Payload canonico (i byte esatti che sono stati firmati):",
+      "signatureBlobHeader": "Firma (DER, base64):",
+      "verifyHeader": "Per verificare con openssl (qualsiasi piattaforma):",
+      "verifyStep1": "1. Salva il payload canonico qui sopra in un file: payload.txt (senza newline finale)",
+      "verifyStep2": "2. Salva la stringa base64 della firma qui sopra in un file: sig.base64",
+      "verifyStep3": "3. Scarica la chiave pubblica:",
+      "verifyStep4": "4. Decodifica la firma:",
+      "verifyStep5": "5. Verifica:",
+      "verifyStep6": "6. Output atteso: \"Verified OK\""
+    },
+    "appeal": {
+      "drafted": "Bozza del {{when}}",
+      "linkedSession": "Sessione ParkProof collegata: {{id}}",
+      "supportingEvidence": "Prove a supporto (da ParkProof)",
+      "fieldGps": "GPS",
+      "fieldSideSelected": "Lato selezionato",
+      "ticketPhotoHeader": "Verbale di contravvenzione (foto)",
+      "signPhotoHeader": "Cartello di sosta al momento del parcheggio",
+      "carPhotoHeader": "Auto nello stallo"
+    },
+    "fullExport": {
+      "title": "ParkProof — Esportazione account",
+      "account": "Account: {{email}}",
+      "userId": "ID utente: {{id}}",
+      "exportedAt": "Esportato il: {{when}}",
+      "sessionCount": "Sessioni in questa esportazione: {{count}}",
+      "intro": "Questo documento è una raccolta completa e contestuale di ogni sessione di parcheggio registrata da questo account con ParkProof. Ogni sessione è stata acquisita al momento del parcheggio con GPS, fotografie e una lettura del cartello tradotta dall'AI. Se una sessione è stata firmata con la chiave KMS di ParkProof, il distintivo in quella sezione indica che esiste una firma crittografica verificabile (esporta il PDF della singola sessione per l'appendice completa della firma).",
+      "emptyState": "Nessuna sessione di parcheggio è ancora stata salvata in questo account.",
+      "summaryColIndex": "#",
+      "summaryColArrived": "Arrivo",
+      "summaryColExpires": "Scadenza",
+      "summaryColLocation": "Posizione",
+      "sessionHeader": "Sessione {{n}} di {{total}}",
+      "signedBadge": "Firmato crittograficamente il {{when}}",
+      "driverNoteField": "Nota del conducente"
+    }
+  },
   "time": {
     "moveNow": "Sposta subito",
     "minLeft_one": "1 min rimanente",

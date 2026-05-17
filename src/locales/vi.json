@@ -333,6 +333,93 @@
     "tryAgain": "Thử lại",
     "backHome": "Quay về trang chủ"
   },
+  "pdf": {
+    "common": {
+      "fieldHeader": "Trường",
+      "valueHeader": "Giá trị",
+      "dash": "—",
+      "notCaptured": "Chưa ghi nhận",
+      "imageEmbedFailed": "(Không thể nhúng hình ảnh)"
+    },
+    "evidence": {
+      "title": "ParkProof — Bằng chứng đỗ xe",
+      "sessionId": "Mã phiên: {{id}}",
+      "generated": "PDF tạo lúc: {{when}}",
+      "field": {
+        "arrivedAt": "Giờ đến",
+        "expiresAt": "Giờ hết hạn",
+        "guidance": "Hướng dẫn ParkProof",
+        "address": "Địa chỉ",
+        "locationGps": "Vị trí (GPS)",
+        "locationSource": "Nguồn vị trí",
+        "mapLink": "Liên kết bản đồ",
+        "sideVariant": "Phía / Phương án đã chọn",
+        "signRules": "Quy tắc trên biển báo",
+        "aiConfidence": "Độ tin cậy AI"
+      },
+      "locationSourceValue": {
+        "manuallyEntered": "Nhập thủ công",
+        "gpsWithAccuracy": "GPS — {{accuracy}}",
+        "gpsLowAccuracy": "GPS — ĐỘ CHÍNH XÁC THẤP {{accuracy}} (xem phụ lục)",
+        "gps": "GPS",
+        "captured": "Đã ghi nhận",
+        "none": "—"
+      },
+      "signPhotoHeader": "Ảnh biển báo",
+      "carPhotoHeader": "Xe tại chỗ đỗ",
+      "driverNoteHeader": "Ghi chú của tài xế",
+      "gpsNoticeTitle": "⚠ Thông báo về độ chính xác GPS",
+      "gpsNoticeBody": "Tín hiệu GPS khi ghi nhận là {{accuracy}} — rộng hơn mức thông thường dùng làm bằng chứng. Tọa độ phía trên xác định một điểm trong bán kính đó, không phải vị trí chính xác. Nguyên nhân thường gặp: bãi đỗ trong nhà / nhiều tầng, kết nối Starlink hoặc VPN, hoặc tín hiệu vệ tinh yếu. Người xét duyệt nên cân nhắc địa chỉ ghi nhận trong phạm vi bán kính này.",
+      "statement": "Hồ sơ này được ParkProof tạo tự động tại thời điểm đỗ xe. Dấu thời gian đến nơi, tọa độ GPS, bản dịch biển báo và các ảnh chụp tạo thành một hồ sơ bằng chứng cùng thời điểm, phù hợp để đính kèm khi yêu cầu xem xét lại phiếu phạt đỗ xe gửi đến hội đồng địa phương Úc có thẩm quyền.",
+      "guidanceFree": "Được phép đỗ. Di chuyển trước {{when}}.",
+      "guidanceFreeNoExpiry": "Được phép đỗ. Biển báo không ghi giờ hết hạn.",
+      "guidanceExpired": "Phiên đã hết hạn lúc {{when}}."
+    },
+    "signature": {
+      "title": "Chữ ký mã hóa",
+      "intro": "Hồ sơ bằng chứng này được ký bằng khóa riêng do AWS KMS của ParkProof quản lý tại thời điểm lưu. Chữ ký cho phép bất kỳ bên thứ ba nào (hội đồng, tòa án, công ty bảo hiểm) xác minh rằng siêu dữ liệu và mã băm ảnh bên dưới chưa bị thay đổi kể từ dấu thời gian signed_at. Khóa riêng không bao giờ rời khỏi AWS; khóa công khai được công bố rộng rãi để xác minh.",
+      "algorithm": "Thuật toán",
+      "keyAlias": "Bí danh khóa",
+      "signedAt": "Ký lúc (UTC)",
+      "schema": "Lược đồ",
+      "publicKeyUrl": "URL khóa công khai",
+      "canonicalPayloadHeader": "Tải trọng chuẩn (chuỗi byte chính xác đã được ký):",
+      "signatureBlobHeader": "Chữ ký (DER, base64):",
+      "verifyHeader": "Xác minh bằng openssl (mọi nền tảng):",
+      "verifyStep1": "1. Lưu tải trọng chuẩn ở trên vào tệp: payload.txt (không có dòng mới ở cuối)",
+      "verifyStep2": "2. Lưu chuỗi base64 chữ ký ở trên vào tệp: sig.base64",
+      "verifyStep3": "3. Tải khóa công khai:",
+      "verifyStep4": "4. Giải mã chữ ký:",
+      "verifyStep5": "5. Xác minh:",
+      "verifyStep6": "6. Kết quả mong đợi: \"Verified OK\""
+    },
+    "appeal": {
+      "drafted": "Soạn thảo lúc {{when}}",
+      "linkedSession": "Phiên ParkProof liên kết: {{id}}",
+      "supportingEvidence": "Bằng chứng hỗ trợ (từ ParkProof)",
+      "fieldGps": "GPS",
+      "fieldSideSelected": "Phía đã chọn",
+      "ticketPhotoHeader": "Giấy phạt (ảnh)",
+      "signPhotoHeader": "Biển báo đỗ xe tại thời điểm đỗ",
+      "carPhotoHeader": "Xe tại chỗ đỗ"
+    },
+    "fullExport": {
+      "title": "ParkProof — Xuất tài khoản",
+      "account": "Tài khoản: {{email}}",
+      "userId": "Mã người dùng: {{id}}",
+      "exportedAt": "Xuất lúc: {{when}}",
+      "sessionCount": "Số phiên trong lần xuất này: {{count}}",
+      "intro": "Tài liệu này là hồ sơ đầy đủ, cùng thời điểm, của mọi phiên đỗ xe mà tài khoản này đã ghi lại với ParkProof. Mỗi phiên được ghi nhận ngay lúc đỗ xe kèm GPS, ảnh chụp và bản dịch biển báo do AI thực hiện. Nếu một phiên đã được ký bằng khóa KMS của ParkProof, huy hiệu trên mục đó cho biết có chữ ký mã hóa có thể xác minh (xuất PDF cho từng phiên để xem phụ lục chữ ký đầy đủ).",
+      "emptyState": "Tài khoản này chưa có phiên đỗ xe nào được lưu.",
+      "summaryColIndex": "#",
+      "summaryColArrived": "Giờ đến",
+      "summaryColExpires": "Hết hạn",
+      "summaryColLocation": "Vị trí",
+      "sessionHeader": "Phiên {{n}} trên {{total}}",
+      "signedBadge": "Đã ký mã hóa lúc {{when}}",
+      "driverNoteField": "Ghi chú của tài xế"
+    }
+  },
   "time": {
     "moveNow": "Di chuyển ngay",
     "minLeft_one": "Còn 1 phút",
