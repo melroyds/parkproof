@@ -19,12 +19,10 @@
     "yes": "Yes",
     "no": "No"
   },
-
   "language": {
     "title": "Language",
     "tooltipPrefix": "Switch app language to"
   },
-
   "home": {
     "tagline": "Aussie parking, decoded — with photo evidence in case of a wrongful ticket.",
     "scanCta": "Scan a parking sign",
@@ -42,7 +40,6 @@
       "remind": "Get a calendar reminder before parking expires"
     }
   },
-
   "active": {
     "currentlyParked": "CURRENTLY PARKED",
     "moveBy": "Move by {{time}}",
@@ -56,7 +53,6 @@
     "walkMinutes_other": "≈ {{count}} min walk",
     "morePill": "+{{count}} more"
   },
-
   "scanner": {
     "header": "Scan parking sign",
     "instructions": "Take a clear photo of the sign(s). If signs are stacked, include them all in one shot.",
@@ -73,7 +69,6 @@
     "qualityOverexposed": "Photo looks washed out — direct sunlight on the sign? Shade the lens with your hand and retake?",
     "qualityTiny": "Photo is very low resolution — the AI may miss details. Retake closer to the sign?"
   },
-
   "reuse": {
     "scannedHere": "You scanned here {{age}}",
     "useThisRead": "Use this read again",
@@ -82,11 +77,9 @@
     "pickerCopy": "We couldn't auto-detect your spot. If you're parking somewhere you scanned in the last week, pick it here to skip the photo.",
     "metersAway": "{{meters}}m away"
   },
-
   "clarify": {
     "imageAlt": "Scanned sign"
   },
-
   "result": {
     "canPark": "You can park here",
     "cantPark": "Don't park here",
@@ -102,7 +95,6 @@
     "scanAnother": "Scan another sign",
     "transitionHeadsUp": "Heads up — at {{when}}"
   },
-
   "logger": {
     "header": "Log this parking session",
     "intro": "We'll save a timestamped record with your photo and GPS — useful evidence if you ever contest a wrongful ticket.",
@@ -110,8 +102,8 @@
     "acquiringGps": "Acquiring GPS…",
     "captured": "Captured ✓",
     "gpsImprecise": "GPS is too imprecise to verify your spot",
-    "gpsImpreciseCopy": "Reading is {{accuracy}} — fine for finding a coffee shop, not for parking evidence. Enter the street address manually to keep this record reliable.",
-    "gpsImpreciseDanger": "Reading is {{accuracy}} — could be the wrong suburb entirely (common on Starlink, VPN, or indoor GPS). Enter the street address manually to keep this record reliable.",
+    "gpsImpreciseCopy": "Reading is <strong>{{accuracy}}</strong> — fine for finding a coffee shop, not for parking evidence. Enter the street address manually to keep this record reliable.",
+    "gpsImpreciseDanger": "Reading is <strong>{{accuracy}}</strong> — could be the wrong suburb entirely (common on Starlink, VPN, or indoor GPS). Enter the street address manually to keep this record reliable.",
     "enterAddress": "Enter the address manually",
     "manuallyEntered": "Manually entered",
     "accuracyLabel": "{{accuracy}} accuracy",
@@ -132,15 +124,14 @@
     "carOptionalHelp": "Optional but strongly recommended for evidence",
     "saveSession": "Save session"
   },
-
   "reminders": {
     "header": "Set reminders",
     "noExpiry": "This session has no expiry time, so a timed reminder doesn't apply.",
-    "expired": "Parking expired at {{when}}. Too late for a reminder — but your session is still saved as evidence if you need to dispute a ticket.",
-    "intro": "Parking expires at {{when}}. Pick when you want to be pinged — choose as many as you like.",
+    "expired": "Parking expired at <strong>{{when}}</strong>. Too late for a reminder — but your session is still saved as evidence if you need to dispute a ticket.",
+    "intro": "Parking expires at <strong>{{when}}</strong>. Pick when you want to be pinged — choose as many as you like.",
     "chipAtExpiry": "At expiry",
     "chipMin": "{{count}} min",
-    "summaryWithSelections": "You'll be pinged at {{times}}.",
+    "summaryWithSelections": "You'll be pinged at <strong>{{times}}</strong>.",
     "summaryEmpty": "No reminders selected — pick at least one chip above.",
     "calendarHeader": "Calendar reminder",
     "calendarCopy": "Drops into the iPhone / Android / Outlook calendar with one alarm per chip. Survives even if you close this app.",
@@ -164,7 +155,6 @@
     "browserTooFar": "Expires in over 24h — use the calendar option instead",
     "browserNothingSelected": "Pick at least one reminder above"
   },
-
   "history": {
     "header": "Session history",
     "intro": "Every parking session you've logged. Tap one to view evidence or export a PDF.",
@@ -173,7 +163,6 @@
     "expired": "Expired",
     "noExpiry": "No expiry"
   },
-
   "session": {
     "header": "Parking session",
     "arrived": "Arrived {{when}}",
@@ -202,7 +191,6 @@
     "deleteSession": "Delete session",
     "deleteConfirm": "Delete this parking session? This cannot be undone."
   },
-
   "appeal": {
     "captureHeader": "Draft an appeal letter",
     "captureIntro": "Take a photo of the infringement notice you received. Claude will read it, cross-reference with the evidence saved in this session, and draft a formal letter you can send to the issuing council.",
@@ -227,7 +215,6 @@
     "errorHeader": "Couldn't draft the appeal",
     "tryDifferentPhoto": "Try a different photo"
   },
-
   "auth": {
     "signInHeader": "Sign in",
     "signInIntro": "Welcome back — pick up where you left off.",
@@ -271,7 +258,6 @@
     "emailVerified": "Email verified — sign in to continue.",
     "passwordReset": "Password reset. Sign in with your new password."
   },
-
   "settings": {
     "header": "Account",
     "intro": "Manage cloud sync, export your data, or close your account.",
@@ -295,7 +281,6 @@
     "deleteTypoError": "Please type DELETE in capitals to confirm.",
     "youSignedOut": "You're signed out."
   },
-
   "privacy": {
     "header": "Privacy",
     "lastUpdated": "Last updated: {{date}}",
@@ -333,20 +318,17 @@
     "contactCopy": "For questions or to exercise your rights outside of the in-app controls, email <a>melroy@dsouza.tech</a>.",
     "complaintCopy": "Unhappy with our response? You can complain to the <a>Office of the Australian Information Commissioner (OAIC)</a>."
   },
-
   "loading": {
     "step1": "Reading the sign…",
     "step2": "Identifying parking rules…",
     "step3": "Computing when you can park…",
     "step4": "Composing the answer…"
   },
-
   "errors": {
     "somethingWrong": "Something went wrong",
     "tryAgain": "Try again",
     "backHome": "Back to home"
   },
-
   "time": {
     "moveNow": "Move now",
     "minLeft_one": "1 min left",

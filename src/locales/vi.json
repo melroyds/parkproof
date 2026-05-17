@@ -19,12 +19,10 @@
     "yes": "Có",
     "no": "Không"
   },
-
   "language": {
     "title": "Ngôn ngữ",
     "tooltipPrefix": "Chuyển ngôn ngữ ứng dụng sang"
   },
-
   "home": {
     "tagline": "Đỗ xe ở Úc, giải mã rõ ràng — kèm bằng chứng ảnh phòng khi bị phạt oan.",
     "scanCta": "Quét biển báo đỗ xe",
@@ -42,7 +40,6 @@
       "remind": "Nhận lời nhắc trên lịch trước khi hết giờ đỗ"
     }
   },
-
   "active": {
     "currentlyParked": "ĐANG ĐỖ XE",
     "moveBy": "Di chuyển trước {{time}}",
@@ -56,7 +53,6 @@
     "walkMinutes_other": "≈ {{count}} phút đi bộ",
     "morePill": "+{{count}} nữa"
   },
-
   "scanner": {
     "header": "Quét biển báo đỗ xe",
     "instructions": "Chụp ảnh rõ nét của (các) biển báo. Nếu các biển báo xếp chồng lên nhau, hãy bao gồm tất cả trong một ảnh.",
@@ -73,7 +69,6 @@
     "qualityOverexposed": "Ảnh trông quá sáng — nắng chiếu trực tiếp vào biển báo? Dùng tay che ống kính rồi chụp lại?",
     "qualityTiny": "Ảnh có độ phân giải rất thấp — AI có thể bỏ sót chi tiết. Chụp lại gần biển báo hơn?"
   },
-
   "reuse": {
     "scannedHere": "Bạn đã quét ở đây {{age}}",
     "useThisRead": "Dùng lại kết quả này",
@@ -82,11 +77,9 @@
     "pickerCopy": "Chúng tôi không tự nhận diện được vị trí của bạn. Nếu bạn đang đỗ ở chỗ đã quét trong tuần qua, chọn ở đây để bỏ qua bước chụp ảnh.",
     "metersAway": "Cách {{meters}}m"
   },
-
   "clarify": {
     "imageAlt": "Biển báo đã quét"
   },
-
   "result": {
     "canPark": "Bạn có thể đỗ xe ở đây",
     "cantPark": "Đừng đỗ ở đây",
@@ -102,7 +95,6 @@
     "scanAnother": "Quét biển báo khác",
     "transitionHeadsUp": "Lưu ý — vào lúc {{when}}"
   },
-
   "logger": {
     "header": "Ghi lại phiên đỗ xe này",
     "intro": "Chúng tôi sẽ lưu bản ghi có dấu thời gian kèm ảnh và GPS của bạn — bằng chứng hữu ích nếu bạn cần khiếu nại một vé phạt oan.",
@@ -110,8 +102,8 @@
     "acquiringGps": "Đang lấy GPS…",
     "captured": "Đã ghi nhận ✓",
     "gpsImprecise": "GPS quá thiếu chính xác để xác minh vị trí của bạn",
-    "gpsImpreciseCopy": "Sai số đo được là {{accuracy}} — đủ để tìm quán cà phê, nhưng chưa đủ làm bằng chứng đỗ xe. Nhập địa chỉ đường thủ công để bản ghi đáng tin cậy.",
-    "gpsImpreciseDanger": "Sai số đo được là {{accuracy}} — có thể lệch hẳn sang khu phố khác (thường xảy ra với Starlink, VPN hoặc GPS trong nhà). Nhập địa chỉ đường thủ công để bản ghi đáng tin cậy.",
+    "gpsImpreciseCopy": "Sai số đo được là <strong>{{accuracy}}</strong> — đủ để tìm quán cà phê, nhưng chưa đủ làm bằng chứng đỗ xe. Nhập địa chỉ đường thủ công để bản ghi đáng tin cậy.",
+    "gpsImpreciseDanger": "Sai số đo được là <strong>{{accuracy}}</strong> — có thể lệch hẳn sang khu phố khác (thường xảy ra với Starlink, VPN hoặc GPS trong nhà). Nhập địa chỉ đường thủ công để bản ghi đáng tin cậy.",
     "enterAddress": "Nhập địa chỉ thủ công",
     "manuallyEntered": "Đã nhập thủ công",
     "accuracyLabel": "Độ chính xác {{accuracy}}",
@@ -132,15 +124,14 @@
     "carOptionalHelp": "Tuỳ chọn nhưng rất khuyến khích để làm bằng chứng",
     "saveSession": "Lưu phiên"
   },
-
   "reminders": {
     "header": "Đặt nhắc nhở",
     "noExpiry": "Phiên này không có giờ hết hạn, nên nhắc nhở theo giờ không áp dụng.",
-    "expired": "Giờ đỗ xe đã hết vào {{when}}. Quá muộn để nhắc — nhưng phiên của bạn vẫn được lưu làm bằng chứng nếu bạn cần khiếu nại vé phạt.",
-    "intro": "Đỗ xe hết hạn vào {{when}}. Chọn lúc nào bạn muốn được nhắc — chọn bao nhiêu cũng được.",
+    "expired": "Giờ đỗ xe đã hết vào <strong>{{when}}</strong>. Quá muộn để nhắc — nhưng phiên của bạn vẫn được lưu làm bằng chứng nếu bạn cần khiếu nại vé phạt.",
+    "intro": "Đỗ xe hết hạn vào <strong>{{when}}</strong>. Chọn lúc nào bạn muốn được nhắc — chọn bao nhiêu cũng được.",
     "chipAtExpiry": "Lúc hết hạn",
     "chipMin": "{{count}} phút",
-    "summaryWithSelections": "Bạn sẽ được nhắc vào {{times}}.",
+    "summaryWithSelections": "Bạn sẽ được nhắc vào <strong>{{times}}</strong>.",
     "summaryEmpty": "Chưa chọn nhắc nhở nào — chọn ít nhất một mục ở trên.",
     "calendarHeader": "Nhắc nhở qua lịch",
     "calendarCopy": "Thêm vào lịch iPhone / Android / Outlook với một báo thức cho mỗi mục. Vẫn hoạt động kể cả khi bạn đóng ứng dụng này.",
@@ -164,7 +155,6 @@
     "browserTooFar": "Hết hạn sau hơn 24h — dùng phương án lịch thay thế",
     "browserNothingSelected": "Chọn ít nhất một nhắc nhở ở trên"
   },
-
   "history": {
     "header": "Lịch sử phiên",
     "intro": "Mọi phiên đỗ xe bạn đã ghi. Nhấn vào một phiên để xem bằng chứng hoặc xuất PDF.",
@@ -173,7 +163,6 @@
     "expired": "Đã hết hạn",
     "noExpiry": "Không có giờ hết hạn"
   },
-
   "session": {
     "header": "Phiên đỗ xe",
     "arrived": "Đến lúc {{when}}",
@@ -202,7 +191,6 @@
     "deleteSession": "Xoá phiên",
     "deleteConfirm": "Xoá phiên đỗ xe này? Không thể hoàn tác."
   },
-
   "appeal": {
     "captureHeader": "Soạn thư khiếu nại",
     "captureIntro": "Chụp ảnh thông báo vi phạm bạn nhận được. Claude sẽ đọc, đối chiếu với bằng chứng đã lưu trong phiên này, và soạn thư chính thức để bạn gửi cho hội đồng địa phương đã ra vé phạt.",
@@ -227,7 +215,6 @@
     "errorHeader": "Không soạn được khiếu nại",
     "tryDifferentPhoto": "Thử ảnh khác"
   },
-
   "auth": {
     "signInHeader": "Đăng nhập",
     "signInIntro": "Chào mừng quay lại — tiếp tục từ chỗ bạn đã dừng.",
@@ -271,7 +258,6 @@
     "emailVerified": "Email đã xác minh — đăng nhập để tiếp tục.",
     "passwordReset": "Đã đặt lại mật khẩu. Đăng nhập bằng mật khẩu mới."
   },
-
   "settings": {
     "header": "Tài khoản",
     "intro": "Quản lý đồng bộ đám mây, xuất dữ liệu, hoặc đóng tài khoản.",
@@ -295,7 +281,6 @@
     "deleteTypoError": "Vui lòng nhập DELETE bằng chữ in hoa để xác nhận.",
     "youSignedOut": "Bạn đã đăng xuất."
   },
-
   "privacy": {
     "header": "Quyền riêng tư",
     "lastUpdated": "Cập nhật lần cuối: {{date}}",
@@ -333,20 +318,17 @@
     "contactCopy": "Nếu có thắc mắc hoặc muốn thực thi quyền của bạn ngoài các điều khiển trong ứng dụng, gửi email tới <a>melroy@dsouza.tech</a>.",
     "complaintCopy": "Không hài lòng với phản hồi của chúng tôi? Bạn có thể khiếu nại lên <a>Văn phòng Uỷ viên Thông tin Úc (OAIC)</a>."
   },
-
   "loading": {
     "step1": "Đang đọc biển báo…",
     "step2": "Đang nhận diện quy tắc đỗ xe…",
     "step3": "Đang tính giờ bạn có thể đỗ…",
     "step4": "Đang soạn câu trả lời…"
   },
-
   "errors": {
     "somethingWrong": "Đã có lỗi xảy ra",
     "tryAgain": "Thử lại",
     "backHome": "Quay về trang chủ"
   },
-
   "time": {
     "moveNow": "Di chuyển ngay",
     "minLeft_one": "Còn 1 phút",

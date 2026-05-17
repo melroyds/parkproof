@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { useTranslation } from 'react-i18next'
+import { Trans, useTranslation } from 'react-i18next'
 import type { ParkingSession } from '../types'
 import { scheduleParkingReminders, type ScheduleResult } from '../lib/notifications'
 import { useNow } from '../lib/use-now'
@@ -204,7 +204,14 @@ export default function ReminderOptions({ session, onDone }: Props) {
       <div className="min-h-screen flex flex-col p-6 max-w-md mx-auto w-full">
         <h2 className="font-display text-3xl font-extrabold text-ink-900 mb-2">{t('reminders.header')}</h2>
         <p className="text-sm text-ink-700 mb-6 leading-relaxed">
-          {t('reminders.expired', { when: expiresLabel })}
+          {/* <Trans> renders the <strong> placeholder inside the JSON as a
+              real React element, so the expiry-time stays visually anchored
+              the way it was before i18n flattened everything. */}
+          <Trans
+            i18nKey="reminders.expired"
+            values={{ when: expiresLabel }}
+            components={{ strong: <span className="font-display font-bold text-ink-900" /> }}
+          />
         </p>
         <button
           onClick={onDone}
@@ -221,7 +228,11 @@ export default function ReminderOptions({ session, onDone }: Props) {
     <div className="min-h-screen flex flex-col p-6 max-w-md mx-auto w-full">
       <h2 className="font-display text-3xl font-extrabold text-ink-900 mb-1">{t('reminders.header')}</h2>
       <p className="text-sm text-ink-700 mb-6 leading-relaxed">
-        {t('reminders.intro', { when: expiresLabel })}
+        <Trans
+          i18nKey="reminders.intro"
+          values={{ when: expiresLabel }}
+          components={{ strong: <span className="font-display font-bold text-ink-900" /> }}
+        />
       </p>
 
       {/* Chip selector */}
@@ -268,7 +279,11 @@ export default function ReminderOptions({ session, onDone }: Props) {
       {/* Live summary of selected fire-times */}
       <p className="text-xs text-ink-600 mb-6 leading-relaxed min-h-[2.25rem]">
         {selectedTimesLabel ? (
-          t('reminders.summaryWithSelections', { times: selectedTimesLabel })
+          <Trans
+            i18nKey="reminders.summaryWithSelections"
+            values={{ times: selectedTimesLabel }}
+            components={{ strong: <span className="font-display font-semibold text-ink-900" /> }}
+          />
         ) : (
           <span className="italic text-ink-500">
             {t('reminders.summaryEmpty')}

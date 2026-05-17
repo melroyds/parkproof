@@ -19,12 +19,10 @@
     "yes": "是",
     "no": "否"
   },
-
   "language": {
     "title": "语言",
     "tooltipPrefix": "切换应用语言为"
   },
-
   "home": {
     "tagline": "澳洲停车,一目了然——还能拍照存证以防被错误开罚单。",
     "scanCta": "扫描停车标志",
@@ -42,7 +40,6 @@
       "remind": "停车到期前获得日历提醒"
     }
   },
-
   "active": {
     "currentlyParked": "正在停车",
     "moveBy": "{{time}} 前移车",
@@ -56,7 +53,6 @@
     "walkMinutes_other": "≈ 步行 {{count}} 分钟",
     "morePill": "+ 另 {{count}} 个"
   },
-
   "scanner": {
     "header": "扫描停车标志",
     "instructions": "拍一张清晰的标志照片。如果有多个堆叠的标志,请把它们都拍进一张照片里。",
@@ -73,7 +69,6 @@
     "qualityOverexposed": "照片曝光过度——阳光直射标志了吗?用手遮挡镜头后重拍?",
     "qualityTiny": "照片分辨率过低——AI 可能漏掉细节。靠近标志重拍?"
   },
-
   "reuse": {
     "scannedHere": "您 {{age}} 在此扫描过",
     "useThisRead": "再次使用此读取",
@@ -82,11 +77,9 @@
     "pickerCopy": "我们无法自动检测您的位置。如果您要停车的地方上周扫描过,请在这里选择以跳过拍照。",
     "metersAway": "距离 {{meters}} 米"
   },
-
   "clarify": {
     "imageAlt": "已扫描的标志"
   },
-
   "result": {
     "canPark": "可以在此停车",
     "cantPark": "不能在此停车",
@@ -102,7 +95,6 @@
     "scanAnother": "扫描另一个标志",
     "transitionHeadsUp": "注意 — 于 {{when}}"
   },
-
   "logger": {
     "header": "记录此次停车",
     "intro": "我们将保存带时间戳的记录,包括照片和 GPS——如果您将来需要对错误罚单提出异议,这是有用的证据。",
@@ -110,8 +102,8 @@
     "acquiringGps": "正在获取 GPS…",
     "captured": "已捕获 ✓",
     "gpsImprecise": "GPS 精度不足,无法验证您的位置",
-    "gpsImpreciseCopy": "读取精度为 {{accuracy}}——足够找咖啡店,但不足以作为停车证据。请手动输入街道地址以保持记录可靠。",
-    "gpsImpreciseDanger": "读取精度为 {{accuracy}}——可能完全是错误的郊区(常见于 Starlink、VPN 或室内 GPS)。请手动输入街道地址以保持记录可靠。",
+    "gpsImpreciseCopy": "读取精度为 <strong>{{accuracy}}</strong>——足够找咖啡店,但不足以作为停车证据。请手动输入街道地址以保持记录可靠。",
+    "gpsImpreciseDanger": "读取精度为 <strong>{{accuracy}}</strong>——可能完全是错误的郊区(常见于 Starlink、VPN 或室内 GPS)。请手动输入街道地址以保持记录可靠。",
     "enterAddress": "手动输入地址",
     "manuallyEntered": "手动输入",
     "accuracyLabel": "{{accuracy}} 精度",
@@ -132,15 +124,14 @@
     "carOptionalHelp": "可选,但强烈建议作为证据",
     "saveSession": "保存会话"
   },
-
   "reminders": {
     "header": "设置提醒",
     "noExpiry": "此会话没有到期时间,因此不适用定时提醒。",
-    "expired": "停车已于 {{when}} 到期。提醒已经太迟——但您的会话仍作为证据保存,可在需要对罚单提出异议时使用。",
-    "intro": "停车于 {{when}} 到期。选择您希望何时被提醒——可任选多个。",
+    "expired": "停车已于 <strong>{{when}}</strong> 到期。提醒已经太迟——但您的会话仍作为证据保存,可在需要对罚单提出异议时使用。",
+    "intro": "停车于 <strong>{{when}}</strong> 到期。选择您希望何时被提醒——可任选多个。",
     "chipAtExpiry": "到期时",
     "chipMin": "{{count}} 分钟",
-    "summaryWithSelections": "您将在 {{times}} 被提醒。",
+    "summaryWithSelections": "您将在 <strong>{{times}}</strong> 被提醒。",
     "summaryEmpty": "未选择提醒——请在上方至少选择一个。",
     "calendarHeader": "日历提醒",
     "calendarCopy": "导入 iPhone / Android / Outlook 日历,每个选项一个提醒。即使您关闭此应用也能生效。",
@@ -164,7 +155,6 @@
     "browserTooFar": "到期超过 24 小时——请改用日历选项",
     "browserNothingSelected": "请在上方至少选择一个提醒"
   },
-
   "history": {
     "header": "停车记录",
     "intro": "您记录的所有停车会话。点击任一项查看证据或导出 PDF。",
@@ -173,7 +163,6 @@
     "expired": "已过期",
     "noExpiry": "无到期时间"
   },
-
   "session": {
     "header": "停车会话",
     "arrived": "到达时间 {{when}}",
@@ -202,7 +191,6 @@
     "deleteSession": "删除会话",
     "deleteConfirm": "删除此停车会话?此操作无法撤销。"
   },
-
   "appeal": {
     "captureHeader": "起草申诉信",
     "captureIntro": "为您收到的违规通知拍一张照片。Claude 将读取通知,与此会话保存的证据交叉对比,并起草一封可发送给开具市政府的正式信件。",
@@ -227,7 +215,6 @@
     "errorHeader": "无法起草申诉",
     "tryDifferentPhoto": "尝试另一张照片"
   },
-
   "auth": {
     "signInHeader": "登录",
     "signInIntro": "欢迎回来——从中断处继续。",
@@ -271,7 +258,6 @@
     "emailVerified": "邮箱已验证——请登录继续。",
     "passwordReset": "密码已重置。请使用新密码登录。"
   },
-
   "settings": {
     "header": "账户",
     "intro": "管理云同步、导出数据或关闭账户。",
@@ -295,7 +281,6 @@
     "deleteTypoError": "请用大写字母输入 DELETE 以确认。",
     "youSignedOut": "您已退出登录。"
   },
-
   "privacy": {
     "header": "隐私",
     "lastUpdated": "最后更新:{{date}}",
@@ -333,20 +318,17 @@
     "contactCopy": "对于应用内控制之外的问题或行使权利,请发邮件至 <a>melroy@dsouza.tech</a>。",
     "complaintCopy": "对我们的回复不满意?您可以向 <a>澳大利亚信息专员办公室(OAIC)</a> 投诉。"
   },
-
   "loading": {
     "step1": "正在读取标志…",
     "step2": "正在识别停车规则…",
     "step3": "正在计算可停车时间…",
     "step4": "正在生成答案…"
   },
-
   "errors": {
     "somethingWrong": "出错了",
     "tryAgain": "重试",
     "backHome": "返回主页"
   },
-
   "time": {
     "moveNow": "立即移车",
     "minLeft_one": "剩余 1 分钟",

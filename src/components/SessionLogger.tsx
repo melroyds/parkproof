@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { useTranslation } from 'react-i18next'
+import { Trans, useTranslation } from 'react-i18next'
 import type { ParkingRules, ParkingSession } from '../types'
 import { forwardGeocode, reverseGeocode } from '../lib/geocode'
 import { resizeImageFile } from '../lib/image'
@@ -226,9 +226,14 @@ export default function SessionLogger({ rules, signPhoto, onComplete, onCancel }
                       {t('logger.gpsImprecise')}
                     </p>
                     <p className="text-xs text-ink-700 mt-0.5 leading-relaxed">
-                      {isDanger
-                        ? t('logger.gpsImpreciseDanger', { accuracy: formatAccuracy(gps.accuracy) })
-                        : t('logger.gpsImpreciseCopy', { accuracy: formatAccuracy(gps.accuracy) })}
+                      {/* <strong> in the JSON is rendered as a monospace span here —
+                          measurement reads as data, not prose, which mirrors the
+                          pre-i18n styling. */}
+                      <Trans
+                        i18nKey={isDanger ? 'logger.gpsImpreciseDanger' : 'logger.gpsImpreciseCopy'}
+                        values={{ accuracy: formatAccuracy(gps.accuracy) }}
+                        components={{ strong: <span className="font-mono font-semibold" /> }}
+                      />
                     </p>
                   </div>
                 </div>

@@ -19,12 +19,10 @@
     "yes": "Sì",
     "no": "No"
   },
-
   "language": {
     "title": "Lingua",
     "tooltipPrefix": "Cambia lingua dell'app in"
   },
-
   "home": {
     "tagline": "Parcheggi australiani, decifrati — con foto come prova in caso di multa ingiusta.",
     "scanCta": "Scansiona un cartello di parcheggio",
@@ -42,7 +40,6 @@
       "remind": "Ricevi un promemoria nel calendario prima della scadenza"
     }
   },
-
   "active": {
     "currentlyParked": "ATTUALMENTE PARCHEGGIATO",
     "moveBy": "Sposta entro le {{time}}",
@@ -56,7 +53,6 @@
     "walkMinutes_other": "≈ {{count}} min a piedi",
     "morePill": "+{{count}} altro"
   },
-
   "scanner": {
     "header": "Scansiona cartello di parcheggio",
     "instructions": "Scatta una foto nitida del cartello (o dei cartelli). Se i cartelli sono impilati, includili tutti in un solo scatto.",
@@ -73,7 +69,6 @@
     "qualityOverexposed": "La foto sembra sovraesposta — sole diretto sul cartello? Schermare l'obiettivo con la mano e rifare?",
     "qualityTiny": "La foto ha una risoluzione molto bassa — l'AI potrebbe perdere dettagli. Rifai più vicino al cartello?"
   },
-
   "reuse": {
     "scannedHere": "Hai scansionato qui {{age}}",
     "useThisRead": "Usa di nuovo questa lettura",
@@ -82,11 +77,9 @@
     "pickerCopy": "Non siamo riusciti a rilevare automaticamente il tuo posto. Se stai parcheggiando dove hai scansionato nell'ultima settimana, scegli qui per saltare la foto.",
     "metersAway": "A {{meters}}m"
   },
-
   "clarify": {
     "imageAlt": "Cartello scansionato"
   },
-
   "result": {
     "canPark": "Puoi parcheggiare qui",
     "cantPark": "Non parcheggiare qui",
@@ -102,7 +95,6 @@
     "scanAnother": "Scansiona un altro cartello",
     "transitionHeadsUp": "Attenzione — alle {{when}}"
   },
-
   "logger": {
     "header": "Registra questa sessione di parcheggio",
     "intro": "Salviamo un registro con timestamp insieme alla tua foto e GPS — prova utile se mai contesti una multa ingiusta.",
@@ -110,8 +102,8 @@
     "acquiringGps": "Acquisizione GPS…",
     "captured": "Acquisita ✓",
     "gpsImprecise": "Il GPS è troppo impreciso per verificare il tuo posto",
-    "gpsImpreciseCopy": "La precisione è {{accuracy}} — basta per trovare un caffè, non per una prova di parcheggio. Inserisci l'indirizzo manualmente per mantenere affidabile il registro.",
-    "gpsImpreciseDanger": "La precisione è {{accuracy}} — potrebbe essere il quartiere completamente sbagliato (comune con Starlink, VPN o GPS al chiuso). Inserisci l'indirizzo manualmente per mantenere affidabile il registro.",
+    "gpsImpreciseCopy": "La precisione è <strong>{{accuracy}}</strong> — basta per trovare un caffè, non per una prova di parcheggio. Inserisci l'indirizzo manualmente per mantenere affidabile il registro.",
+    "gpsImpreciseDanger": "La precisione è <strong>{{accuracy}}</strong> — potrebbe essere il quartiere completamente sbagliato (comune con Starlink, VPN o GPS al chiuso). Inserisci l'indirizzo manualmente per mantenere affidabile il registro.",
     "enterAddress": "Inserisci l'indirizzo manualmente",
     "manuallyEntered": "Inserito manualmente",
     "accuracyLabel": "Precisione {{accuracy}}",
@@ -132,15 +124,14 @@
     "carOptionalHelp": "Facoltativa ma fortemente consigliata come prova",
     "saveSession": "Salva sessione"
   },
-
   "reminders": {
     "header": "Imposta promemoria",
     "noExpiry": "Questa sessione non ha scadenza, quindi un promemoria temporizzato non si applica.",
-    "expired": "Il parcheggio è scaduto alle {{when}}. Troppo tardi per un promemoria — ma la tua sessione è comunque salvata come prova se devi contestare una multa.",
-    "intro": "Il parcheggio scade alle {{when}}. Scegli quando vuoi essere avvisato — quante volte vuoi.",
+    "expired": "Il parcheggio è scaduto alle <strong>{{when}}</strong>. Troppo tardi per un promemoria — ma la tua sessione è comunque salvata come prova se devi contestare una multa.",
+    "intro": "Il parcheggio scade alle <strong>{{when}}</strong>. Scegli quando vuoi essere avvisato — quante volte vuoi.",
     "chipAtExpiry": "Alla scadenza",
     "chipMin": "{{count}} min",
-    "summaryWithSelections": "Sarai avvisato alle {{times}}.",
+    "summaryWithSelections": "Sarai avvisato alle <strong>{{times}}</strong>.",
     "summaryEmpty": "Nessun promemoria selezionato — scegli almeno un'opzione qui sopra.",
     "calendarHeader": "Promemoria nel calendario",
     "calendarCopy": "Si aggiunge al calendario iPhone / Android / Outlook con una sveglia per ogni opzione. Funziona anche se chiudi questa app.",
@@ -164,7 +155,6 @@
     "browserTooFar": "Scade tra oltre 24h — usa invece l'opzione calendario",
     "browserNothingSelected": "Scegli almeno un promemoria qui sopra"
   },
-
   "history": {
     "header": "Cronologia sessioni",
     "intro": "Ogni sessione di parcheggio che hai registrato. Toccane una per vedere la prova o esportare un PDF.",
@@ -173,7 +163,6 @@
     "expired": "Scaduta",
     "noExpiry": "Senza scadenza"
   },
-
   "session": {
     "header": "Sessione di parcheggio",
     "arrived": "Arrivato {{when}}",
@@ -202,7 +191,6 @@
     "deleteSession": "Elimina sessione",
     "deleteConfirm": "Eliminare questa sessione di parcheggio? Non è annullabile."
   },
-
   "appeal": {
     "captureHeader": "Redigi una lettera di ricorso",
     "captureIntro": "Scatta una foto della notifica di multa che hai ricevuto. Claude la leggerà, la incrocerà con la prova salvata in questa sessione, e redigerà una lettera formale che potrai inviare al comune che ha emesso la multa.",
@@ -227,7 +215,6 @@
     "errorHeader": "Impossibile redigere il ricorso",
     "tryDifferentPhoto": "Prova un'altra foto"
   },
-
   "auth": {
     "signInHeader": "Accedi",
     "signInIntro": "Bentornato — riprendi da dove avevi lasciato.",
@@ -271,7 +258,6 @@
     "emailVerified": "Email verificata — accedi per continuare.",
     "passwordReset": "Password reimpostata. Accedi con la nuova password."
   },
-
   "settings": {
     "header": "Account",
     "intro": "Gestisci la sincronizzazione cloud, esporta i tuoi dati o chiudi l'account.",
@@ -295,7 +281,6 @@
     "deleteTypoError": "Digita DELETE in maiuscolo per confermare.",
     "youSignedOut": "Sei uscito."
   },
-
   "privacy": {
     "header": "Privacy",
     "lastUpdated": "Ultimo aggiornamento: {{date}}",
@@ -333,20 +318,17 @@
     "contactCopy": "Per domande o per esercitare i tuoi diritti al di fuori dei controlli in-app, scrivi a <a>melroy@dsouza.tech</a>.",
     "complaintCopy": "Insoddisfatto della nostra risposta? Puoi presentare reclamo all'<a>Office of the Australian Information Commissioner (OAIC)</a>."
   },
-
   "loading": {
     "step1": "Lettura del cartello…",
     "step2": "Identificazione delle regole di parcheggio…",
     "step3": "Calcolo di quando puoi parcheggiare…",
     "step4": "Composizione della risposta…"
   },
-
   "errors": {
     "somethingWrong": "Qualcosa è andato storto",
     "tryAgain": "Riprova",
     "backHome": "Torna alla home"
   },
-
   "time": {
     "moveNow": "Sposta subito",
     "minLeft_one": "1 min rimanente",
