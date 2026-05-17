@@ -62,9 +62,10 @@ The full flow:
 - **Background signing retry.** If the tab closes mid-signing, the next app load sweeps for unsigned sessions and re-attempts (5-minute throttle, 3-attempt cap, 30-day horizon). Sessions self-heal.
 - **Stepped loading UX.** While the model thinks, the loading screen progresses through "Reading the sign… Identifying parking rules… Computing when you can park… Composing the answer…" with a real progress bar. Timings tuned from actual CloudWatch latency data.
 - **AI feedback loop.** After each result, "Yes, looks right" or "Retake photo" fires a structured event to CloudWatch — turning user verdicts into a queryable signal that informs prompt iteration.
+- **Multi-lingual UI — 5 languages.** Flag selector on the home screen swaps the entire interface between 🇦🇺 English (default), 🇨🇳 简体中文, 🇻🇳 Tiếng Việt, 🇮🇹 Italiano, 🇬🇷 Ελληνικά. Language list chosen from the top non-English languages spoken in the **City of Melbourne LGA** (2021 ABS Census). Powered by `react-i18next` with browser-language auto-detection + localStorage persistence. The Claude AI's sign-translation output stays in English (it reflects what's literally on the sign); the entire UI scaffolding around it translates.
 
 ### PWA
-Installable to the iPhone / Android home screen with a real app icon, theme colour, splash screen, and offline-capable service worker. Initial main bundle is ~256KB raw / ~77KB gzipped; heavier libraries (jsPDF, ics, html2canvas) are lazy-loaded only when used.
+Installable to the iPhone / Android home screen with a real app icon, theme colour, splash screen, and offline-capable service worker. Initial main bundle is ~360KB raw / ~100KB gzipped after the i18n libs landed; heavier libraries (jsPDF, ics, html2canvas, locale chunks for non-English languages) are lazy-loaded only when used.
 
 ---
 
@@ -141,6 +142,9 @@ A single Lambda handler ([`lambda/index.js`](lambda/index.js)) is **reused as th
 | Calendar | [`ics`](https://www.npmjs.com/package/ics) | RFC 5545 compliant `.ics` with `GEO` field; lazy-loaded |
 | PDF | [`jsPDF`](https://www.npmjs.com/package/jspdf) + [`jspdf-autotable`](https://www.npmjs.com/package/jspdf-autotable) | Multi-page evidence doc with embedded photos and a caption-overlay on the car photo; lazy-loaded |
 | PWA | [`vite-plugin-pwa`](https://www.npmjs.com/package/vite-plugin-pwa) | Manifest + service worker + auto-generated icons in all sizes |
+| i18n | [`react-i18next`](https://react.i18next.com/) + [`country-flag-icons`](https://www.npmjs.com/package/country-flag-icons) | Five-locale support (EN-AU / zh-CN / VI / IT / EL), with browser-language auto-detection + localStorage persistence. SVG flag icons (not emoji) for consistent rendering. |
+| Auth (opt-in) | AWS Cognito User Pools + [`amazon-cognito-identity-js`](https://www.npmjs.com/package/amazon-cognito-identity-js) | Email/password + Google federation (Apple ready, pending dev account). Free below 50k MAU; in-bundle SDK, no Amplify. |
+| Cloud sync (opt-in) | AWS DynamoDB (pay-per-request) + S3 (private, OAC) | Mirrors localStorage to the cloud when signed in; localStorage stays canonical. Photos go via presigned PUT URLs. |
 | Telemetry | CloudWatch Logs Insights | Free at this scale; structured log events for feedback aggregation |
 
 ---
@@ -184,14 +188,18 @@ You'll need a Claude API key from <https://console.anthropic.com/settings/keys>.
 
 ## Deploying
 
-The deploy is fully automated by five idempotent scripts in [`scripts/`](scripts/):
+The deploy is fully automated by idempotent scripts in [`scripts/`](scripts/):
 
 | Script | What it does | Frequency |
 |---|---|---|
-| [`scripts/deploy.sh`](scripts/deploy.sh) | Day-to-day deploy: rebuilds Lambda zip, updates function code + env, builds the frontend with the prod API URL baked in, syncs `dist/` to S3, invalidates CloudFront. Also ensures `POST /feedback` route exists on every run. | Every code change |
-| [`scripts/harden.sh`](scripts/harden.sh) | One-time security pass: locks API Gateway CORS to the CloudFront origin only, creates a CloudFront Origin Access Control, migrates the S3 origin from public website-endpoint to private REST-endpoint + OAC. | Once after initial deploy |
+| [`scripts/deploy.sh`](scripts/deploy.sh) | Day-to-day deploy: rebuilds Lambda zip, updates function code + env (Cognito + DDB + S3 vars merged in), builds the frontend with prod API URL + Cognito IDs baked in, syncs `dist/` to S3, invalidates CloudFront. Ensures all 11 API routes exist on every run. | Every code change |
+| [`scripts/harden.sh`](scripts/harden.sh) | One-time security pass: locks API Gateway CORS to the CloudFront origin (with `Authorization` + `GET` allowed for the auth routes), creates a CloudFront Origin Access Control, migrates the S3 origin from public website-endpoint to private REST-endpoint + OAC. | Once after initial deploy |
+| [`scripts/setup-signing.sh`](scripts/setup-signing.sh) | One-time: creates a KMS asymmetric key (ECDSA P-256), attaches `kms:Sign` IAM policy to the Lambda role, exports the public key to `public/parkproof-public-key.pem`. | Once; re-run to rotate |
+| [`scripts/setup-auth.sh`](scripts/setup-auth.sh) | One-time: creates the Cognito User Pool + App Client + hosted-UI domain + DynamoDB sessions table + S3 evidence bucket + JWT authorizer on API Gateway. Writes resource IDs to `scripts/.aws-resources` (gitignored) for `deploy.sh` to consume. | Once; re-run after IAM/scheme changes |
 | [`scripts/set-throttle.sh`](scripts/set-throttle.sh) | Sets API Gateway request rate limits (default 20 burst / 10 rate per second). Bot protection without WAF cost. | Once; re-run to retune |
 | [`scripts/billing-alarm.sh`](scripts/billing-alarm.sh) | Creates an AWS Budgets monthly alarm — emails you at 80% actual and 100% forecasted of a USD threshold. | Once; re-run with different threshold/email |
+| [`scripts/smoke-test-auth.mjs`](scripts/smoke-test-auth.mjs) | End-to-end auth + cloud-sync test: throwaway sign-up → confirm → sign-in → upload session → list → presign photo → delete → nuke account. Asserts each step, cleans up on failure. | Run after any auth-touching change |
+| [`scripts/screenshots.mjs`](scripts/screenshots.mjs) | Playwright harness — boots Vite, drives the app through every screen with mocked API calls, regenerates the README demo-grid PNGs. | After any visual change |
 | [`scripts/teardown.sh`](scripts/teardown.sh) | Destroys every AWS resource the deploy created. Dry-run by default; pass `--confirm` to actually delete. Handles the CloudFront disable + wait + delete dance. | Only when walking away |
 
 Stack: AWS Lambda (Node.js 20) + API Gateway HTTP API + S3 (private) + CloudFront. Hosted in `ap-southeast-2` (Sydney) — closest region to the primary use case.
@@ -241,16 +249,28 @@ ParkProof/
 │   │   ├── SessionHistory.tsx     ← list of saved sessions
 │   │   ├── SessionDetail.tsx      ← single session + editable note + walk-back + PDF + appeal + delete
 │   │   ├── AppealFlow.tsx         ← ticket photo capture → AI draft → editable letter → PDF
+│   │   ├── AuthFlow.tsx           ← sign-in / sign-up / verify / forgot / reset, with Apple + Google
+│   │   ├── AuthSettings.tsx       ← signed-in profile, PDF export, account deletion
+│   │   ├── PrivacyPolicy.tsx      ← in-app plain-English privacy policy (uses <Trans> for inline tags)
+│   │   ├── LanguageSelector.tsx   ← 5-flag strip (Australian English + zh-CN + VI + IT + EL)
 │   │   ├── ReuseCard.tsx          ← proximity-matched "scanned here recently" card
 │   │   ├── RecentScansPicker.tsx  ← desktop / no-GPS fallback for smart re-scan
 │   │   ├── BrandMark.tsx          ← inline SVG layered-P + clock logo
 │   │   ├── Icon.tsx               ← 8-icon stroke set (currentColor)
 │   │   └── LoadingProgress.tsx    ← stepped progress UI during the model call
+│   ├── locales/                   ← five-language UI translations (en, zh-CN, vi, it, el)
 │   └── lib/
 │       ├── claude.ts              ← translateSign + refreshInterpretation + draftAppeal
 │       ├── feedback.ts            ← fire-and-forget verdict submission
 │       ├── signing.ts             ← signSession (KMS) + retryUnsignedSessions (background sweep)
 │       ├── storage.ts             ← localStorage CRUD + 3-phase quota auto-recovery
+│       ├── sync.ts                ← localStorage ↔ cloud mirror (upload, list, delete, export)
+│       ├── auth.ts                ← amazon-cognito-identity-js wrapper (sign-in / up / verify / reset)
+│       ├── auth-context.tsx       ← AuthProvider — reads Cognito session into React state
+│       ├── auth-context-shape.ts  ← Context type + createContext (split to satisfy react-refresh)
+│       ├── use-auth.ts            ← useAuth hook
+│       ├── federated-auth.ts      ← hosted-UI redirect + callback handler (Apple / Google)
+│       ├── i18n.ts                ← react-i18next init + 5-language resource registry
 │       ├── geocode.ts             ← Nominatim reverse + forward
 │       ├── geo.ts                 ← Haversine distance
 │       ├── walk-back.ts           ← walking ETA + maps deep-link routing (Apple / Google)
@@ -258,16 +278,17 @@ ParkProof/
 │       ├── image.ts               ← canvas-based resize + JPEG re-encode
 │       ├── ics.ts                 ← calendar event generator (multi-VALARM)
 │       ├── notifications.ts       ← Notification API multi-offset scheduler
-│       ├── pdf.ts                 ← evidence PDF + appeal PDF (with caption overlay + signature appendix)
-│       ├── time-format.ts         ← relative + date-aware absolute time helpers
+│       ├── pdf.ts                 ← evidence PDF + appeal PDF + account-export PDF (signature appendix)
+│       ├── time-format.ts         ← relative + date-aware absolute time helpers (+ localized variants)
 │       ├── timezone.ts            ← sessionTimezone + timezoneForCoords (tz-lookup wrapper)
 │       ├── accuracy.ts            ← GPS-accuracy formatting + usability thresholds
-│       ├── countdown.ts           ← time-until-expiry → urgency level + label
+│       ├── countdown.ts           ← time-until-expiry → urgency level + label (+ localized variant)
 │       └── use-now.ts             ← interval-tick hook for live countdowns
 ├── lambda/
-│   ├── index.js                   ← translateSign (vision + refresh) + draftAppeal + handleSignSession + handleFeedback
+│   ├── index.js                   ← path dispatcher: translateSign + draftAppeal + signSession + feedback + cloud-sync routes
+│   ├── cloud-sync.js              ← sessions/upload, sessions/list, sessions/delete, photos/presign, me/export, me/delete
 │   ├── index.d.ts                 ← types for the local-dev import
-│   └── package.json               ← deploy-zip dependencies (@anthropic-ai/sdk, @aws-sdk/client-kms, tz-lookup)
+│   └── package.json               ← deploy-zip deps (@anthropic-ai/sdk, @aws-sdk/* DDB / S3 / KMS / Cognito, tz-lookup)
 ├── public/
 │   ├── parkproof-icon.svg         ← layered-P + clock app icon
 │   ├── parkproof-wordmark.svg     ← horizontal logo lockup
@@ -283,6 +304,7 @@ ParkProof/
 ├── archive/old-melbourne-civic/   ← archived first-round assets (Melbourne Civic direction)
 ├── docs/
 │   ├── asset-brief.md             ← historical brief for asset generation
+│   ├── federation-setup.md        ← step-by-step for wiring Apple + Google OAuth into Cognito
 │   └── screenshots/               ← README demo-grid PNGs, regenerated by npm run screenshots
 ├── scripts/
 │   ├── deploy.sh                  ← day-to-day deploy
@@ -290,10 +312,12 @@ ParkProof/
 │   ├── set-throttle.sh            ← API rate limits
 │   ├── billing-alarm.sh           ← AWS Budgets alarm
 │   ├── setup-signing.sh           ← one-time: create KMS key, attach IAM policy, export public key
+│   ├── setup-auth.sh              ← one-time: Cognito User Pool + DynamoDB table + S3 evidence bucket + JWT authorizer
+│   ├── smoke-test-auth.mjs        ← end-to-end test: sign-up → upload → list → delete via live API
 │   ├── screenshots.mjs            ← Playwright harness — drives the app, regenerates demo PNGs
 │   ├── screenshots-fixtures/      ← inputs consumed by the screenshot harness
 │   └── teardown.sh                ← destroy everything (dry-run by default)
-├── vite.config.ts                 ← API middleware (4 routes) + .env loader + PWA
+├── vite.config.ts                 ← API middleware (all 8 routes) + .env loader + Node-global polyfills + PWA
 ├── parkproof-spec.md              ← PM-style product brief (problem, scope, success metrics)
 ├── CLAUDE.md                      ← engineering notes for future AI sessions
 └── README.md                      ← this file
