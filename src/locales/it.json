@@ -51,7 +51,13 @@
     "distanceAway": "A {{distance}}",
     "walkMinutes_one": "≈ 1 min a piedi",
     "walkMinutes_other": "≈ {{count}} min a piedi",
-    "morePill": "+{{count}} altro"
+    "morePill": "+{{count}} altro",
+    "morePillAria_one": "Visualizza {{count}} altra sessione attiva",
+    "morePillAria_other": "Visualizza {{count}} altre sessioni attive",
+    "allActiveHeader": "Attualmente parcheggiato",
+    "allActiveIntro_one": "{{count}} sessione attiva. Tocca per aprire il record delle prove.",
+    "allActiveIntro_other": "{{count}} sessioni attive. Tocca una qualsiasi per aprire il record delle prove.",
+    "lastLoggedSpot": "Ultimo posto registrato"
   },
   "scanner": {
     "header": "Scansiona cartello di parcheggio",

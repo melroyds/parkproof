@@ -51,7 +51,13 @@
     "distanceAway": "{{distance}} away",
     "walkMinutes_one": "≈ 1 min walk",
     "walkMinutes_other": "≈ {{count}} min walk",
-    "morePill": "+{{count}} more"
+    "morePill": "+{{count}} more",
+    "morePillAria_one": "View {{count}} more active parking session",
+    "morePillAria_other": "View {{count}} more active parking sessions",
+    "allActiveHeader": "Currently parked",
+    "allActiveIntro_one": "{{count}} active parking session. Tap to open its evidence record.",
+    "allActiveIntro_other": "{{count}} active parking sessions. Tap any one to open its evidence record.",
+    "lastLoggedSpot": "Last logged spot"
   },
   "scanner": {
     "header": "Scan parking sign",

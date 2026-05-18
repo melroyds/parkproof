@@ -10,6 +10,7 @@ import SessionHistory from './components/SessionHistory'
 import SessionDetail from './components/SessionDetail'
 import AppealFlow from './components/AppealFlow'
 import ActiveSessionCard from './components/ActiveSessionCard'
+import ActiveSessionsList from './components/ActiveSessionsList'
 import AuthFlow from './components/AuthFlow'
 import AuthSettings from './components/AuthSettings'
 import PrivacyPolicy from './components/PrivacyPolicy'
@@ -39,6 +40,7 @@ type View =
   | { name: 'logging'; result: ParkingRules; signPhoto: string; coords: Coords }
   | { name: 'remind'; session: ParkingSession }
   | { name: 'history' }
+  | { name: 'actives' }
   | { name: 'session'; session: ParkingSession }
   | { name: 'appeal'; session: ParkingSession }
   | { name: 'signin' }
@@ -341,6 +343,21 @@ function App() {
     )
   }
 
+  if (view.name === 'actives') {
+    // The home-screen "+N more" affordance lands here when the user has more
+    // than one active parking session simultaneously (e.g. parked two cars
+    // back-to-back). Lists every active session, soonest-expiring first.
+    return (
+      <main className="min-h-screen">
+        <ActiveSessionsList
+          sessions={activeSessions}
+          onBack={() => setView({ name: 'home' })}
+          onOpen={(session) => setView({ name: 'session', session })}
+        />
+      </main>
+    )
+  }
+
   if (view.name === 'session') {
     return (
       <main className="min-h-screen">
@@ -444,6 +461,7 @@ function App() {
               session={primaryActive}
               extraCount={activeSessions.length - 1}
               onOpen={(s) => setView({ name: 'session', session: s })}
+              onShowMore={() => setView({ name: 'actives' })}
             />
           </div>
         )}

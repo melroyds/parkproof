@@ -13,6 +13,12 @@ interface Props {
   /** How many *additional* active sessions exist beyond this one. 0 hides the pill. */
   extraCount: number
   onOpen: (session: ParkingSession) => void
+  /**
+   * Tapped when the "+N more" pill is clicked. Required when `extraCount > 0`;
+   * without it the pill renders as a non-interactive badge (still informative,
+   * but no longer a UX lie pretending to be a tap target).
+   */
+  onShowMore?: () => void
 }
 
 /**
@@ -66,7 +72,7 @@ function useCurrentPosition(): { lat: number; lng: number } | null {
   return coords
 }
 
-export default function ActiveSessionCard({ session, extraCount, onOpen }: Props) {
+export default function ActiveSessionCard({ session, extraCount, onOpen, onShowMore }: Props) {
   const { t } = useTranslation()
   // 30s tick is enough granularity for minute-level countdowns; the totalMinutes
   // value only ever shifts by ±1 per tick at the boundary, which matches what a
@@ -102,11 +108,40 @@ export default function ActiveSessionCard({ session, extraCount, onOpen }: Props
   const walkBackVisible = walkBack && walkBack.distanceMeters > 30
   const mapsUrl = navigationUrl(session)
 
+  // The `+N more` affordance has to live OUTSIDE the outer "open details" button —
+  // a button-inside-button is invalid HTML AND silently makes the pill un-clickable
+  // (the outer button swallows the event). Absolute-positioning over the top-right
+  // gives us the same visual layout while keeping the two tap targets independent.
+  const morePill =
+    extraCount > 0 ? (
+      onShowMore ? (
+        <button
+          type="button"
+          onClick={onShowMore}
+          aria-label={t('active.morePillAria', { count: extraCount, defaultValue: 'View {{count}} more active session' })}
+          className="absolute top-5 right-5 text-[10px] font-semibold uppercase tracking-wider bg-white/20 hover:bg-white/30 active:bg-white/25 rounded-full px-2.5 py-1 transition-colors shrink-0"
+        >
+          {t('active.morePill', { count: extraCount })}
+        </button>
+      ) : (
+        // Render as a non-interactive badge when no handler is wired in — keeps
+        // the count visible without pretending to be tappable.
+        <span
+          aria-hidden
+          className="absolute top-5 right-5 text-[10px] font-semibold uppercase tracking-wider bg-white/20 rounded-full px-2.5 py-1 shrink-0"
+        >
+          {t('active.morePill', { count: extraCount })}
+        </span>
+      )
+    ) : null
+
   return (
     <div
-      className={`w-full rounded-3xl p-5 text-white shadow-xl ${style.surface}`}
+      className={`w-full rounded-3xl p-5 text-white shadow-xl relative ${style.surface}`}
     >
-      {/* Top region — primary tap target = view session details */}
+      {morePill}
+      {/* Top region — primary tap target = view session details. Right-pad
+          the heading text when the pill is present so they don't collide. */}
       <button
         type="button"
         onClick={() => onOpen(session)}
@@ -119,7 +154,7 @@ export default function ActiveSessionCard({ session, extraCount, onOpen }: Props
           >
             <Icon name="pin" className="w-6 h-6" strokeWidth={2.25} />
           </div>
-          <div className="flex-1 min-w-0">
+          <div className={`flex-1 min-w-0 ${extraCount > 0 ? 'pr-16' : ''}`}>
             <p className="text-xs font-semibold uppercase tracking-widest text-white/80">
               {t('active.currentlyParked')}
             </p>
@@ -127,11 +162,6 @@ export default function ActiveSessionCard({ session, extraCount, onOpen }: Props
               {addressLine}
             </p>
           </div>
-          {extraCount > 0 && (
-            <span className="text-[10px] font-semibold uppercase tracking-wider bg-white/20 rounded-full px-2 py-0.5 shrink-0">
-              {t('active.morePill', { count: extraCount })}
-            </span>
-          )}
         </div>
 
         <div className="mt-4">
