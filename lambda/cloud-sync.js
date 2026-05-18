@@ -23,6 +23,8 @@ import {
 import {
   S3Client,
   DeleteObjectsCommand,
+  GetObjectCommand,
+  HeadObjectCommand,
   ListObjectsV2Command,
   PutObjectCommand,
 } from '@aws-sdk/client-s3'
@@ -138,9 +140,81 @@ export async function handleSessionsList(event) {
       ScanIndexForward: false,
     }),
   )
-  // Strip internal keys before returning — the client gets clean ParkingSession objects.
-  const sessions = (result.Items ?? []).map(stripInternalKeys)
-  return { sessions }
+  const rawSessions = (result.Items ?? []).map(stripInternalKeys)
+
+  // Hydrate photos. The DDB row stores `sign_photo: null` / `car_photo: null`
+  // (we strip data URLs on the upload path to stay under the 400KB item limit).
+  // The actual photo bytes live at `{userId}/{sessionId}/{role}.jpg` in the
+  // evidence S3 bucket. Mint short-TTL presigned GET URLs here so the client
+  // can drop them straight into <img src=...>.
+  //
+  // We HEAD each object first to avoid handing the client a URL that 404s —
+  // sessions saved on devices that never made it past upload (or older rows
+  // from before this code shipped) won't have photos in S3 yet.
+  if (EVIDENCE_BUCKET) {
+    await Promise.all(
+      rawSessions.map((session) =>
+        hydrateSessionPhotos(session, userId).catch((err) => {
+          // Best-effort — don't fail the whole list response if S3 is flaky.
+          console.warn(
+            `[cloud-sync] photo hydrate failed for ${session.id}:`,
+            err?.message ?? err,
+          )
+        }),
+      ),
+    )
+  }
+
+  return { sessions: rawSessions }
+}
+
+/**
+ * Best-effort: for each photo role, check S3 has an object at the canonical
+ * key. If present, mutate the session in place so `session.sign_photo` /
+ * `session.car_photo` becomes a short-TTL presigned GET URL the browser can
+ * fetch directly.
+ *
+ * Why HEAD before presign: the SDK happily signs any URL regardless of
+ * whether the object exists. Handing the client a 404-returning URL works
+ * but is wasteful — the <img> still tries to fetch, the browser logs a
+ * network error, and the user sees a broken-image icon for a frame. The
+ * extra HEAD is one round-trip per session, well under the list-route's
+ * existing latency budget.
+ */
+async function hydrateSessionPhotos(session, userId) {
+  for (const role of ['sign', 'car']) {
+    const field = `${role}_photo`
+    // If the cloud row already carries something (an external URL, or — in
+    // future — a still-fresh presigned URL the upload path stamped on),
+    // don't overwrite it.
+    if (session[field]) continue
+    const key = `${userId}/${session.id}/${role}.jpg`
+    const exists = await objectExists(key)
+    if (!exists) continue
+    session[field] = await getSignedUrl(
+      s3(),
+      new GetObjectCommand({ Bucket: EVIDENCE_BUCKET, Key: key }),
+      // 1 hour — comfortably longer than a typical user's app session, and
+      // re-running /sessions/list re-mints fresh URLs anyway.
+      { expiresIn: 3600 },
+    )
+  }
+}
+
+async function objectExists(key) {
+  try {
+    await s3().send(new HeadObjectCommand({ Bucket: EVIDENCE_BUCKET, Key: key }))
+    return true
+  } catch (err) {
+    // S3 returns 404 NoSuchKey via $metadata.httpStatusCode on HEAD.
+    if (err?.$metadata?.httpStatusCode === 404 || err?.name === 'NotFound') {
+      return false
+    }
+    // Any other error (perms, throttle) — log and treat as absent. Better to
+    // hide the image than show a broken one.
+    console.warn(`[cloud-sync] HEAD ${key} failed:`, err?.message ?? err)
+    return false
+  }
 }
 
 // ─── /sessions/delete ─────────────────────────────────────────────────────

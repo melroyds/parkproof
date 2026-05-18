@@ -57,8 +57,88 @@ async function expectJson<T>(res: Response): Promise<T> {
 
 // ─── Operations ──────────────────────────────────────────────────────────
 
-/** Upload one session to the cloud (DDB write — does NOT carry the photo blobs). */
+interface PresignResponse {
+  url: string
+  key: string
+  bucket: string
+}
+
+/**
+ * Mint a presigned PUT URL for one photo, then upload the bytes directly to
+ * S3 from the browser. Lambda never sees the photo — keeps the request small
+ * and sidesteps API Gateway's 6MB payload limit.
+ */
+async function uploadPhoto(
+  sessionId: string,
+  role: 'sign' | 'car',
+  dataUrl: string,
+): Promise<void> {
+  // Decode the data URL → Blob. Splits 'data:image/jpeg;base64,XYZ' into the
+  // media type and the base64 payload, then atob → Uint8Array → Blob.
+  const match = dataUrl.match(/^data:([^;]+);base64,(.+)$/)
+  if (!match) {
+    throw new Error(`photo for role "${role}" is not a base64 data URL`)
+  }
+  const [, contentType, b64] = match
+  const binary = atob(b64)
+  const bytes = new Uint8Array(binary.length)
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i)
+  const blob = new Blob([bytes], { type: contentType })
+
+  // Get the presigned URL.
+  const presignRes = await authFetch('/photos/presign', {
+    method: 'POST',
+    body: JSON.stringify({
+      session_id: sessionId,
+      role,
+      content_type: contentType,
+    }),
+  })
+  const { url } = await expectJson<PresignResponse>(presignRes)
+
+  // PUT the blob directly to S3 — no auth header needed because the
+  // presigned URL itself carries the signed authorization.
+  const putRes = await fetch(url, {
+    method: 'PUT',
+    body: blob,
+    headers: { 'Content-Type': contentType },
+  })
+  if (!putRes.ok) {
+    throw new Error(`S3 PUT failed (${putRes.status}): ${await putRes.text()}`)
+  }
+}
+
+/**
+ * Upload one session to the cloud. Photos go to S3 first (direct browser PUT
+ * via presigned URLs), then the metadata-only record goes to DynamoDB via
+ * /sessions/upload. The Lambda strips any leftover data URLs server-side as
+ * a defence in depth — even if a photo upload failed, the DDB write succeeds
+ * with the photo field nulled, and the next /sessions/list will simply omit
+ * the missing image without breaking the rest of the session.
+ *
+ * Photo upload errors are warned-and-swallowed: the metadata is the
+ * minimum-viable record (timestamp, GPS, sign rules, signature). Losing a
+ * photo is worse than losing the whole session.
+ */
 export async function uploadSession(session: ParkingSession): Promise<void> {
+  // Pre-flight: upload photos in parallel. Both can fail independently
+  // without aborting the metadata upload.
+  await Promise.all(
+    (['sign', 'car'] as const).map(async (role) => {
+      const field = `${role}_photo` as 'sign_photo' | 'car_photo'
+      const photo = session[field]
+      if (!photo || !photo.startsWith('data:')) return
+      try {
+        await uploadPhoto(session.id, role, photo)
+      } catch (err) {
+        console.warn(
+          `[sync] photo upload (${role}) for ${session.id} failed:`,
+          err,
+        )
+      }
+    }),
+  )
+
   const res = await authFetch('/sessions/upload', {
     method: 'POST',
     body: JSON.stringify({ session }),
@@ -124,10 +204,7 @@ export async function performInitialSync(): Promise<InitialSyncResult> {
 
   // Local-only → upload to cloud.
   for (const session of localSessions) {
-    if (cloudById.has(session.id)) {
-      result.alreadyInSync++
-      continue
-    }
+    if (cloudById.has(session.id)) continue
     try {
       await uploadSession(session)
       result.uploaded++
@@ -136,15 +213,43 @@ export async function performInitialSync(): Promise<InitialSyncResult> {
     }
   }
 
-  // Cloud-only → merge into local storage. Photos won't be present on the
-  // cloud row (we strip them server-side) — that's intentional. The user
-  // sees the metadata + visits a "download photos" affordance later if they
-  // want the bytes back on this device.
+  // Sessions present on both sides — refresh the photo URLs from the cloud
+  // copy ONLY if the local copy doesn't already have a base64 data URL.
+  // Logic:
+  //   - data URL locally → keep it (self-contained, works offline)
+  //   - HTTPS URL locally (older presigned URL, possibly expired) → replace
+  //     with the freshly-minted URL from the cloud (1h TTL)
+  //   - missing locally → replace from cloud
+  // This guarantees a signed-in user always has working <img src> values
+  // within an hour of any /sessions/list call.
+  for (const cloudSession of cloudSessions) {
+    const local = localById.get(cloudSession.id)
+    if (!local) continue
+    const patch: Partial<ParkingSession> = {}
+    for (const field of ['sign_photo', 'car_photo'] as const) {
+      const localValue = local[field]
+      const cloudValue = cloudSession[field]
+      const localIsDataUrl = typeof localValue === 'string' && localValue.startsWith('data:')
+      if (localIsDataUrl) continue
+      if (cloudValue && cloudValue !== localValue) {
+        patch[field] = cloudValue
+      }
+    }
+    if (Object.keys(patch).length > 0) {
+      updateSession(cloudSession.id, patch)
+    }
+    result.alreadyInSync++
+  }
+
+  // Cloud-only → merge into local storage. The cloud row's `sign_photo` /
+  // `car_photo` fields arrive as short-TTL presigned S3 GET URLs (the Lambda
+  // mints them in /sessions/list — see hydrateSessionPhotos in cloud-sync.js).
+  // Components consume them as <img src> directly; both data URLs and HTTPS
+  // URLs work. The URL expires in 1h, but re-running listCloudSessions on the
+  // next app load mints fresh ones (handled in the alreadyInSync branch above).
   for (const session of cloudSessions) {
     if (localById.has(session.id)) continue
     try {
-      // Use updateSession to insert: if the id doesn't exist, it no-ops, so
-      // we fall through to a raw localStorage write.
       writeNewLocalSession(session)
       result.pulled++
     } catch (err) {
