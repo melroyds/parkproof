@@ -1,6 +1,6 @@
 # ParkProof — a PM case study
 
-*Mobile-first PWA. Photograph an Australian parking sign → plain-English answer + timestamped, GPS-tagged evidence. Built solo over [N] weeks; ~$5/month to run; zero real users.*
+*Mobile-first PWA. Photograph an Australian parking sign → plain-English answer + timestamped, GPS-tagged evidence. Built solo in one week; ~$5/month to run; zero real users.*
 
 [Live demo →](https://parkproof.dsouza.tech) · [Source →](https://github.com/melroyds/parkproof)
 
@@ -172,7 +172,7 @@ That's the part of the job I think most PMs underweight. It's easy to ship featu
 
 ## Stack & cost summary
 
-**Frontend:** React 18 + TypeScript (strict) + Tailwind v4 + Vite + PWA service worker. Main bundle ~225KB gzipped.
+**Frontend:** React 19 + TypeScript (strict) + Tailwind v4 + Vite + PWA service worker. Main bundle ~225KB gzipped.
 
 **Backend:** Single AWS Lambda function (`parkproof-sign-translator`) handling 10 routes via path dispatch, fronted by API Gateway HTTP API with a Cognito JWT authorizer on the cloud-sync routes. The same Lambda is reused as the local dev proxy via a Vite plugin — one handler, two runtimes, no mocks.
 
@@ -190,4 +190,4 @@ That's the part of the job I think most PMs underweight. It's easy to ship featu
 
 ---
 
-*If you've read this far and you'd like to talk product — about ParkProof, AI-feedback design, or just the discipline of deferring features — I'm at [your email] / [your LinkedIn].*
+*If you've read this far and you'd like to talk product — about ParkProof, AI-feedback design, or just the discipline of deferring features — I'm at moltensnake@gmail.com and on [LinkedIn](https://www.linkedin.com/in/melroyds).*

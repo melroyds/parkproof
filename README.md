@@ -182,7 +182,7 @@ A single Lambda handler ([`lambda/index.js`](lambda/index.js)) is **reused as th
 | Calendar | [`ics`](https://www.npmjs.com/package/ics) | RFC 5545 compliant `.ics` with `GEO` field; lazy-loaded |
 | PDF | [`jsPDF`](https://www.npmjs.com/package/jspdf) + [`jspdf-autotable`](https://www.npmjs.com/package/jspdf-autotable) | Multi-page evidence doc with embedded photos and a caption-overlay on the car photo; lazy-loaded |
 | PWA | [`vite-plugin-pwa`](https://www.npmjs.com/package/vite-plugin-pwa) | Manifest + service worker + auto-generated icons in all sizes |
-| i18n | [`react-i18next`](https://react.i18next.com/) + [`country-flag-icons`](https://www.npmjs.com/package/country-flag-icons) | Five-locale support (EN-AU / zh-CN / VI / IT / EL), with browser-language auto-detection + localStorage persistence. SVG flag icons (not emoji) for consistent rendering. |
+| i18n | [`react-i18next`](https://react.i18next.com/) + [`country-flag-icons`](https://www.npmjs.com/package/country-flag-icons) | Seven-locale support (EN-AU / zh-CN / VI / IT / EL / HI / PA), chosen from the top non-English languages spoken in the City of Melbourne LGA (2021 ABS Census). Browser-language auto-detection + localStorage persistence. SVG flag icons (not emoji) for consistent rendering. |
 | Auth (opt-in) | AWS Cognito User Pools + [`amazon-cognito-identity-js`](https://www.npmjs.com/package/amazon-cognito-identity-js) | Email/password + federated **Google** + federated **Sign in with Apple** (hosted-UI redirect). Free below 50k MAU; in-bundle SDK, no Amplify. |
 | Cloud sync (opt-in) | AWS DynamoDB (pay-per-request) + S3 (private, OAC) | Mirrors localStorage to the cloud when signed in; localStorage stays canonical. Photos go via presigned PUT URLs. |
 | Telemetry | CloudWatch Logs Insights | Free at this scale; structured log events for feedback aggregation |
@@ -232,7 +232,7 @@ The deploy is fully automated by idempotent scripts in [`scripts/`](scripts/):
 
 | Script | What it does | Frequency |
 |---|---|---|
-| [`scripts/deploy.sh`](scripts/deploy.sh) | Day-to-day deploy: rebuilds Lambda zip, updates function code + env (Cognito + DDB + S3 vars merged in), builds the frontend with prod API URL + Cognito IDs baked in, syncs `dist/` to S3, invalidates CloudFront. Ensures all 11 API routes exist on every run. | Every code change |
+| [`scripts/deploy.sh`](scripts/deploy.sh) | Day-to-day deploy: rebuilds Lambda zip, updates function code + env (Cognito + DDB + S3 vars merged in), builds the frontend with prod API URL + Cognito IDs baked in, syncs `dist/` to S3, invalidates CloudFront. Ensures all 10 API routes exist on every run. | Every code change |
 | [`scripts/harden.sh`](scripts/harden.sh) | One-time security pass: locks API Gateway CORS to the CloudFront origin (with `Authorization` + `GET` allowed for the auth routes), creates a CloudFront Origin Access Control, migrates the S3 origin from public website-endpoint to private REST-endpoint + OAC. | Once after initial deploy |
 | [`scripts/setup-signing.sh`](scripts/setup-signing.sh) | One-time: creates a KMS asymmetric key (ECDSA P-256), attaches `kms:Sign` IAM policy to the Lambda role, exports the public key to `public/parkproof-public-key.pem`. | Once; re-run to rotate |
 | [`scripts/setup-auth.sh`](scripts/setup-auth.sh) | One-time: creates the Cognito User Pool + App Client + hosted-UI domain + DynamoDB sessions table + S3 evidence bucket + JWT authorizer on API Gateway. Writes resource IDs to `scripts/.aws-resources` (gitignored) for `deploy.sh` to consume. | Once; re-run after IAM/scheme changes |
@@ -356,7 +356,7 @@ ParkProof/
 │   ├── screenshots.mjs            ← Playwright harness — drives the app, regenerates demo PNGs
 │   ├── screenshots-fixtures/      ← inputs consumed by the screenshot harness
 │   └── teardown.sh                ← destroy everything (dry-run by default)
-├── vite.config.ts                 ← API middleware (all 8 routes) + .env loader + Node-global polyfills + PWA
+├── vite.config.ts                 ← API middleware (all 10 routes) + .env loader + Node-global polyfills + PWA
 ├── parkproof-spec.md              ← PM-style product brief (problem, scope, success metrics)
 ├── CLAUDE.md                      ← engineering notes for future AI sessions
 └── README.md                      ← this file
