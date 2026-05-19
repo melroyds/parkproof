@@ -38,6 +38,12 @@ type View =
   | { name: 'clarify'; result: ParkingRules; signPhoto: string; coords: Coords }
   | { name: 'result'; result: ParkingRules; signPhoto: string; coords: Coords }
   | { name: 'logging'; result: ParkingRules; signPhoto: string; coords: Coords }
+  /**
+   * "No sign here" flow — user parked at a spot with no signage and wants a
+   * GPS + time evidence record without the AI translation. The ambient photo
+   * (optional, opt-in) demonstrates absence of signs.
+   */
+  | { name: 'logNoSign'; coords: Coords; ambientPhoto: string | null }
   | { name: 'remind'; session: ParkingSession }
   | { name: 'history' }
   | { name: 'actives' }
@@ -177,6 +183,10 @@ function App() {
       const reusedCoords: Coords = session.location
         ? { lat: session.location.lat, lng: session.location.lng }
         : null
+      // No-sign sessions are filtered out of the smart-rescan match list,
+      // so in practice sign_photo is always non-null here. Runtime guard
+      // for TS narrowness + as a defensive backstop.
+      if (!session.sign_photo) return
       setView({ name: 'result', result, signPhoto: session.sign_photo, coords: reusedCoords })
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err)
@@ -196,7 +206,10 @@ function App() {
           `[storage] freed space for this session — stripped photos from ${report.trimmedPhotosFrom}, evicted ${report.evicted} old session(s).`,
         )
       }
-      setView({ name: 'remind', session })
+      // No-sign sessions skip the reminder step — there's no expiry to remind
+      // about. They go straight back to the home screen, where the saved
+      // session is visible in History.
+      setView(session.no_sign ? { name: 'home' } : { name: 'remind', session })
       // Mirror to cloud immediately when signed in. Fire-and-forget — local
       // is the source of truth, the cloud is a best-effort backup.
       if (auth.user) {
@@ -231,6 +244,25 @@ function App() {
         <SignScanner
           onCapture={handleCapture}
           onReuseSession={handleReuseSession}
+          onNoSignScan={(coords, ambientPhoto) =>
+            setView({ name: 'logNoSign', coords, ambientPhoto })
+          }
+          onCancel={() => setView({ name: 'home' })}
+        />
+      </main>
+    )
+  }
+
+  if (view.name === 'logNoSign') {
+    return (
+      <main className="min-h-screen">
+        <SessionLogger
+          mode="no-sign"
+          rules={null}
+          signPhoto={null}
+          ambientPhoto={view.ambientPhoto}
+          coords={view.coords}
+          onComplete={handleSessionSaved}
           onCancel={() => setView({ name: 'home' })}
         />
       </main>

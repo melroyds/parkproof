@@ -260,8 +260,16 @@ export function downloadPdf(session: ParkingSession, t: TFunction): void {
         : dash,
     ],
     [t('pdf.evidence.field.sideVariant'), session.chosen_label || dash],
-    [t('pdf.evidence.field.signRules'), splitRules(session.rules)],
-    [t('pdf.evidence.field.aiConfidence'), session.confidence],
+    [
+      t('pdf.evidence.field.signRules'),
+      session.no_sign ? t('pdf.evidence.noSignRules') : splitRules(session.rules),
+    ],
+    // AI confidence is meaningless on no-sign sessions; surface that explicitly
+    // instead of writing "low" (which is the data default but reads as wrong).
+    [
+      t('pdf.evidence.field.aiConfidence'),
+      session.no_sign ? t('pdf.evidence.noSignConfidence') : session.confidence,
+    ],
   ]
   autoTable(doc, {
     startY: y,
@@ -275,13 +283,42 @@ export function downloadPdf(session: ParkingSession, t: TFunction): void {
   const lastTable = (doc as unknown as { lastAutoTable?: { finalY: number } }).lastAutoTable
   y = (lastTable?.finalY ?? y) + 24
 
-  // Sign photo — sits on page 1 directly after the summary table
-  y = ensureSpace(doc, y, 320)
-  doc.setFontSize(13)
-  doc.setFont('helvetica', 'bold')
-  doc.text(t('pdf.evidence.signPhotoHeader'), MARGIN, y)
-  y += 14
-  y = addImageFitted(doc, session.sign_photo, y, t) + 18
+  // Sign photo (translated sessions) OR ambient surroundings photo (no-sign
+  // sessions). Both serve the same evidentiary role — visual substantiation
+  // of what was at the spot at the time of parking.
+  if (session.no_sign) {
+    if (session.ambient_photo) {
+      y = ensureSpace(doc, y, 320)
+      doc.setFontSize(13)
+      doc.setFont('helvetica', 'bold')
+      doc.text(t('pdf.evidence.ambientPhotoHeader'), MARGIN, y)
+      y += 14
+      y = addImageFitted(doc, session.ambient_photo, y, t) + 6
+      doc.setFontSize(9)
+      doc.setFont('helvetica', 'italic')
+      doc.setTextColor(80)
+      doc.text(t('pdf.evidence.ambientPhotoCaption'), MARGIN, y, { maxWidth: doc.internal.pageSize.getWidth() - 2 * MARGIN })
+      doc.setTextColor(20)
+      y += 18
+    } else {
+      // No ambient photo captured. Stamp an explicit "no visual evidence"
+      // line so the absence is documented rather than ambiguous.
+      y = ensureSpace(doc, y, 60)
+      doc.setFontSize(11)
+      doc.setFont('helvetica', 'italic')
+      doc.setTextColor(80)
+      doc.text(t('pdf.evidence.noAmbientCaptured'), MARGIN, y, { maxWidth: doc.internal.pageSize.getWidth() - 2 * MARGIN })
+      doc.setTextColor(20)
+      y += 26
+    }
+  } else if (session.sign_photo) {
+    y = ensureSpace(doc, y, 320)
+    doc.setFontSize(13)
+    doc.setFont('helvetica', 'bold')
+    doc.text(t('pdf.evidence.signPhotoHeader'), MARGIN, y)
+    y += 14
+    y = addImageFitted(doc, session.sign_photo, y, t) + 18
+  }
 
   // Car photo with caption overlay
   if (session.car_photo) {
@@ -622,13 +659,17 @@ export function downloadAppealPdf(params: {
   y += 14
   y = addImageFitted(doc, ticketPhoto, y, t, 260) + 18
 
-  // Sign photo
-  y = ensureSpace(doc, y, 300)
-  doc.setFontSize(11)
-  doc.setFont('helvetica', 'bold')
-  doc.text(t('pdf.appeal.signPhotoHeader'), MARGIN, y)
-  y += 14
-  y = addImageFitted(doc, session.sign_photo, y, t, 260) + 18
+  // Sign photo (appeal PDFs are usually generated from translated sessions —
+  // a no-sign session has no rules to appeal against — but guard for the
+  // edge case where someone drafts an appeal from a no-sign session anyway.)
+  if (session.sign_photo) {
+    y = ensureSpace(doc, y, 300)
+    doc.setFontSize(11)
+    doc.setFont('helvetica', 'bold')
+    doc.text(t('pdf.appeal.signPhotoHeader'), MARGIN, y)
+    y += 14
+    y = addImageFitted(doc, session.sign_photo, y, t, 260) + 18
+  }
 
   // Car photo (if any)
   if (session.car_photo) {
@@ -814,8 +855,14 @@ export function downloadFullExportPdf(payload: FullExportPayload, t: TFunction):
           : notCaptured,
       ],
       [t('pdf.evidence.field.sideVariant'), session.chosen_label || dash],
-      [t('pdf.evidence.field.signRules'), splitRules(session.rules)],
-      [t('pdf.evidence.field.aiConfidence'), session.confidence],
+      [
+        t('pdf.evidence.field.signRules'),
+        session.no_sign ? t('pdf.evidence.noSignRules') : splitRules(session.rules),
+      ],
+      [
+        t('pdf.evidence.field.aiConfidence'),
+        session.no_sign ? t('pdf.evidence.noSignConfidence') : session.confidence,
+      ],
     ]
     if (session.note && session.note.trim()) {
       body.push([t('pdf.fullExport.driverNoteField'), session.note.trim()])
@@ -834,7 +881,16 @@ export function downloadFullExportPdf(payload: FullExportPayload, t: TFunction):
     y = (lastTable?.finalY ?? y) + 14
 
     // Photos — compact at 200pt max-height each so a typical session fits one page.
-    if (session.sign_photo) {
+    // No-sign sessions show the ambient (surroundings) photo here in place of
+    // the sign photo; the field labels above already tell the reader why.
+    if (session.no_sign && session.ambient_photo) {
+      y = ensureSpace(doc, y, 220)
+      doc.setFontSize(11)
+      doc.setFont('helvetica', 'bold')
+      doc.text(t('pdf.evidence.ambientPhotoHeader'), MARGIN, y)
+      y += 12
+      y = addImageFitted(doc, session.ambient_photo, y, t, 200) + 14
+    } else if (!session.no_sign && session.sign_photo) {
       y = ensureSpace(doc, y, 220)
       doc.setFontSize(11)
       doc.setFont('helvetica', 'bold')

@@ -73,7 +73,17 @@
     "qualityBlurry": "La foto sembra sfocata — tocca il cartello per mettere a fuoco e rifare lo scatto per una lettura più affidabile?",
     "qualityDark": "La foto sembra scura — l'AI potrebbe leggerla male. Avvicinati a una luce o rifai con il flash?",
     "qualityOverexposed": "La foto sembra sovraesposta — sole diretto sul cartello? Schermare l'obiettivo con la mano e rifare?",
-    "qualityTiny": "La foto ha una risoluzione molto bassa — l'AI potrebbe perdere dettagli. Rifai più vicino al cartello?"
+    "qualityTiny": "La foto ha una risoluzione molto bassa — l'AI potrebbe perdere dettagli. Rifai più vicino al cartello?",
+    "noSignHere": "Nessun cartello qui? Registra solo il mio parcheggio →",
+    "noSignChooseHeader": "Registrare un posto senza cartelli",
+    "noSignChooseCopy": "Facoltativamente fotografa l'area per dimostrare che non c'erano cartelli visibili. Rafforza la tua prova in caso di contestazione.",
+    "noSignTakeAmbient": "Foto dell'area",
+    "noSignTakeAmbientSub": "Mostra che non ci sono cartelli",
+    "noSignFromLibrary": "Scegli dalla libreria",
+    "noSignSkip": "Salta — salva solo GPS + ora",
+    "noSignAmbientAlt": "Area circostante — nessun cartello visibile",
+    "noSignAmbientCaption": "Catturata per dimostrare l'assenza di cartelli in questo posto.",
+    "noSignContinue": "Continua la registrazione"
   },
   "reuse": {
     "scannedHere": "Hai scansionato qui {{age}}",
@@ -103,7 +113,17 @@
     "viewPhoto": "Vedi la foto",
     "logCta": "Registra questa sessione di parcheggio",
     "scanAnother": "Scansiona un altro cartello",
-    "transitionHeadsUp": "Attenzione — alle {{when}}"
+    "transitionHeadsUp": "Attenzione — alle {{when}}",
+    "logCtaBlocked": "Conferma il pagamento per salvare",
+    "payRequired": {
+      "kicker": "PAGAMENTO RICHIESTO",
+      "header": "Devi pagare per parcheggiare qui",
+      "copy": "Questa è una zona a pagamento. Acquista un ticket dal parchimetro più vicino o paga tramite PayStay / EasyPark prima di allontanarti.",
+      "openPaystay": "Apri PayStay",
+      "openEasypark": "Apri EasyPark",
+      "meterHint": "Acquista un ticket dal parchimetro o dalla biglietteria più vicina — di solito entro 30m dal cartello.",
+      "ack": "Ho pagato (o pagherò prima di andarmene)"
+    }
   },
   "logger": {
     "header": "Registra questa sessione di parcheggio",
@@ -132,7 +152,13 @@
     "carAtSpot": "Auto sul posto",
     "carRetake": "Rifai",
     "carOptionalHelp": "Facoltativa ma fortemente consigliata come prova",
-    "saveSession": "Salva sessione"
+    "saveSession": "Salva sessione",
+    "noSignHeader": "Registra un parcheggio senza cartelli",
+    "noSignIntro": "Salveremo una registrazione GPS con timestamp. Nessuna traduzione AI — non c'è nessun cartello da tradurre.",
+    "noSignKicker": "NOTA SULLA PROVA",
+    "noSignBanner": "Stai registrando che non c'erano cartelli visibili in questo posto. La firma crittografica copre quando e dove, non se i cartelli erano veramente assenti — sii onesto, questa è la tua prova.",
+    "ambientHeader": "Area circostante",
+    "ambientCaption": "Catturata per dimostrare l'assenza di cartelli affissi."
   },
   "reminders": {
     "header": "Imposta promemoria",
@@ -171,7 +197,8 @@
     "emptyTitle": "Nessuna sessione ancora",
     "emptyHelp": "Scansiona un cartello e registra una sessione — apparirà qui.",
     "expired": "Scaduta",
-    "noExpiry": "Senza scadenza"
+    "noExpiry": "Senza scadenza",
+    "noSignBadge": "Nessuna restrizione affissa registrata"
   },
   "session": {
     "header": "Sessione di parcheggio",
@@ -199,7 +226,13 @@
     "pdfErrorHelp": "L'errore è stato registrato nella console del browser. Se continua a succedere, fai uno screenshot dell'output della console e condividilo.",
     "draftAppeal": "Hai preso una multa? Redigi una lettera di ricorso",
     "deleteSession": "Elimina sessione",
-    "deleteConfirm": "Eliminare questa sessione di parcheggio? Non è annullabile."
+    "deleteConfirm": "Eliminare questa sessione di parcheggio? Non è annullabile.",
+    "noSignLabel": "NESSUNA RESTRIZIONE AFFISSA",
+    "noSignDescription": "Questa sessione è stata registrata in un posto senza cartelli di parcheggio. Nessuna traduzione AI è stata eseguita.",
+    "ambientPhotoLabel": "Area circostante",
+    "ambientPhotoCaption": "Catturata al momento del parcheggio per attestare l'assenza di cartelli.",
+    "noAmbientCaptured": "Nessuna foto dell'area è stata catturata.",
+    "noSignBadgeLong": "Nessuna restrizione affissa registrata. Registrato come posto senza cartelli."
   },
   "appeal": {
     "captureHeader": "Redigi una lettera di ricorso",
@@ -379,7 +412,12 @@
       "statement": "Questo documento è stato generato automaticamente da ParkProof al momento del parcheggio. L'orario di arrivo, le coordinate GPS, la traduzione del cartello e le fotografie costituiscono un registro probatorio contestuale, idoneo a essere allegato a una richiesta di revisione di una contravvenzione di sosta presso il comune australiano competente.",
       "guidanceFree": "Parcheggio consentito. Sposta entro le {{when}}.",
       "guidanceFreeNoExpiry": "Parcheggio consentito. Nessuna scadenza indicata sul cartello.",
-      "guidanceExpired": "Sessione scaduta alle {{when}}."
+      "guidanceExpired": "Sessione scaduta alle {{when}}.",
+      "ambientPhotoHeader": "Foto dell'area circostante",
+      "ambientPhotoCaption": "Catturata dal conducente al momento del parcheggio per dimostrare l'assenza di cartelli visibili.",
+      "noAmbientCaptured": "Nessuna foto dell'area è stata catturata per questa sessione.",
+      "noSignRules": "Nessuna restrizione affissa registrata. Il conducente afferma che non c'erano cartelli.",
+      "noSignConfidence": "Non applicabile (nessun cartello letto)"
     },
     "signature": {
       "title": "Firma crittografica",

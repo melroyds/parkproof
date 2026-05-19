@@ -166,12 +166,14 @@ Analyze the sign(s) and return a JSON object with these fields:
 - until: ISO 8601 timestamp or null — when the current parking window closes (in Melbourne local time, with timezone offset). null if can_park_now is false.
 - duration_minutes: number or null — how many minutes from now the car can stay. null if can_park_now is false.
 - confidence: "low" | "medium" | "high" — how confident you are in the reading
+- requires_ticket: boolean — TRUE only when the parker must pay for parking RIGHT NOW (sign indicates Ticket / Meter / Pay & Display / Pay-by-Plate / Pay-by-app like PayStay/EasyPark/Wilson/Care Park AND the current time is INSIDE the paid window). FALSE when the sign is free, when it's outside paid hours (e.g. Sunday on a Mon–Fri Ticket sign), or when can_park_now is already false.
+- payment_methods: array of strings or null — when requires_ticket is TRUE, list the payment methods visible on the sign in lowercase short form. Allowed values: "meter", "ticket machine", "paystay", "easypark", "wilson", "carepark", "pay-by-plate". Use null when requires_ticket is FALSE, OR when requires_ticket is TRUE but the method isn't specified on the sign.
 - clarification: object or null — fill this when the rule depends on WHERE the driver is parked relative to the sign (left vs right arrows, side-specific labels, numbered bays, accessibility/EV/loading bays). Shape: { question: string, options: array of { label, rules, observations, can_park_now, until, duration_minutes } }. Each option must reflect the rule for that specific position. The question should be short and direct, e.g. "Where are you parked?". Labels MUST be 1–3 words naming only the position. NO parentheticals, NO arrow symbols, NO duration info in the label. Good labels: "Left side", "Right side", "Bay 12", "Accessibility bay". Bad labels: "Right side (→ arrow)", "Left (15-min)", "Bay 12 (EV only)". Set clarification to null when there is no positional ambiguity.
 
 Interpretation rules:
 - If multiple signs are stacked, interpret them together. The most restrictive rule wins UNLESS the rules apply to different positions (arrows, side markers, bay numbers) — in that case populate 'clarification'.
 - Arrows ("←", "→", "↑", "↓") on parking signs indicate the rule applies in that direction from the sign. If two signs have arrows pointing different ways, that is positional ambiguity → use clarification.
-- "Ticket" signs (e.g. "2P Ticket Mon-Fri 8:30-18:30") mean paid parking — treat as parkable within the window but note the ticket requirement in 'rules'.
+- "Ticket" signs (e.g. "2P Ticket Mon-Fri 8:30-18:30"), "Meter", "Pay & Display", "Pay-by-Plate", "PayStay/EasyPark/Wilson/Care Park" zones, and coin-meter icons all mean paid parking. Inside the paid window: parking is permitted but payment is required, so set requires_ticket=true AND populate payment_methods. Outside the paid window (e.g. Sunday on a Mon–Fri Ticket sign): parking is free, requires_ticket=false.
 - "No Stopping", "No Standing", "Loading Zone", "Clearway", "Bus Zone", "Taxi Zone" → can_park_now is false during the listed hours.
 - "1P", "2P", "4P" = 1, 2, 4 hour limits. "1/4P" = 15-minute limit.
 - If the sign is unclear, blurry, or you can't read it, set confidence to "low" and explain in the rules field. Default can_park_now to false when in doubt.
@@ -276,6 +278,15 @@ const RESPONSE_SCHEMA = {
     until: { anyOf: [{ type: 'string' }, { type: 'null' }] },
     duration_minutes: { anyOf: [{ type: 'number' }, { type: 'null' }] },
     confidence: { type: 'string', enum: ['low', 'medium', 'high'] },
+    /** True when the parker must buy a ticket / pay-by-app before parking is legal RIGHT NOW. */
+    requires_ticket: { type: 'boolean' },
+    /** Detected payment options ("meter", "PayStay", "EasyPark", "ticket machine", etc.). null when the sign is paid but the method isn't specified. */
+    payment_methods: {
+      anyOf: [
+        { type: 'null' },
+        { type: 'array', items: { type: 'string' } },
+      ],
+    },
     next_transition: NEXT_TRANSITION_SCHEMA,
     clarification: {
       anyOf: [
@@ -302,6 +313,8 @@ const RESPONSE_SCHEMA = {
     'until',
     'duration_minutes',
     'confidence',
+    'requires_ticket',
+    'payment_methods',
     'next_transition',
     'clarification',
   ],
@@ -527,7 +540,9 @@ async function handleSignSession(event) {
     rules,
     chosen_label,
     confidence,
+    no_sign,
     sign_photo_sha256,
+    ambient_photo_sha256,
     car_photo_sha256,
   } = body
 
@@ -535,8 +550,20 @@ async function handleSignSession(event) {
   if (typeof arrived_at !== 'string' || !arrived_at) throw new Error('arrived_at required')
   if (typeof rules !== 'string') throw new Error('rules required')
   if (typeof confidence !== 'string') throw new Error('confidence required')
-  if (typeof sign_photo_sha256 !== 'string' || sign_photo_sha256.length !== 64) {
-    throw new Error('sign_photo_sha256 must be 64-char hex')
+  // No-sign sessions have a null sign_photo_sha256 — that's fine, the
+  // (optional) ambient hash + car hash + signed metadata still constitute a
+  // tamper-evident bundle. Only enforce the 64-char hex shape when present.
+  if (sign_photo_sha256 !== null && sign_photo_sha256 !== undefined) {
+    if (typeof sign_photo_sha256 !== 'string' || sign_photo_sha256.length !== 64) {
+      throw new Error('sign_photo_sha256 must be 64-char hex or null')
+    }
+  } else if (!no_sign) {
+    throw new Error('sign_photo_sha256 required for translated sessions')
+  }
+  if (ambient_photo_sha256 !== null && ambient_photo_sha256 !== undefined) {
+    if (typeof ambient_photo_sha256 !== 'string' || ambient_photo_sha256.length !== 64) {
+      throw new Error('ambient_photo_sha256 must be 64-char hex or null')
+    }
   }
   if (car_photo_sha256 !== null && car_photo_sha256 !== undefined) {
     if (typeof car_photo_sha256 !== 'string' || car_photo_sha256.length !== 64) {
@@ -555,7 +582,12 @@ async function handleSignSession(event) {
     rules,
     chosen_label: chosen_label || null,
     confidence,
-    sign_photo_sha256,
+    // no_sign flag stays in the signed payload so the bundle is self-describing
+    // — verifiers reading the canonical JSON can see whether this is a
+    // translated session or a no-sign assertion at a glance.
+    no_sign: !!no_sign,
+    sign_photo_sha256: sign_photo_sha256 || null,
+    ambient_photo_sha256: ambient_photo_sha256 || null,
     car_photo_sha256: car_photo_sha256 || null,
     signed_at,
   }
@@ -642,6 +674,18 @@ async function handleFeedback(event) {
         ? ctx.scanned_hour_local
         : undefined,
     is_refresh: typeof ctx.is_refresh === 'boolean' ? ctx.is_refresh : undefined,
+    // Layer 2 cont. — paid-parking signal. Lets us slice retake rate by paid
+    // vs free signs: "is the ticket-acknowledgment gate helping or annoying?"
+    requires_ticket:
+      typeof ctx.requires_ticket === 'boolean' ? ctx.requires_ticket : undefined,
+    // Whether the user actually acknowledged the pay requirement before saving
+    // (only meaningful when requires_ticket=true). Tells us if the gate is
+    // friction worth keeping.
+    ticket_acknowledged:
+      typeof ctx.ticket_acknowledged === 'boolean' ? ctx.ticket_acknowledged : undefined,
+    // For the no-sign flow (Feature 1) — distinguishes scan-based sessions
+    // from "I parked at an unsigned spot" sessions.
+    no_sign: typeof ctx.no_sign === 'boolean' ? ctx.no_sign : undefined,
   }
 
   console.log(

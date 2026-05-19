@@ -38,6 +38,18 @@ export interface ParkingRules {
   clarification: Clarification | null
   /** Optional heads-up — set when a meaningful rule change is approaching. */
   next_transition?: NextTransition | null
+  /**
+   * True when the sign indicates paid parking AND the current time is inside
+   * the paid window. The frontend gates the "Save session" button on an
+   * explicit user acknowledgement when this is true.
+   */
+  requires_ticket?: boolean
+  /**
+   * Lowercase short-form payment methods detected on the sign (e.g.
+   * `["paystay", "meter"]`). null when the sign is free OR when paid but the
+   * method isn't specified. Drives the deep-link buttons on the result card.
+   */
+  payment_methods?: string[] | null
   /** Frontend-only — set when the user picked a variant from a clarification step. */
   chosen_label?: string
   /** Frontend-only — variants the user did NOT pick. Carried through for PDF context. */
@@ -73,12 +85,33 @@ export interface ParkingSession {
     /** GPS accuracy at capture time, in metres. Only meaningful when source='gps'. */
     accuracy_meters?: number
   } | null
-  sign_photo: string
+  /**
+   * Data URL of the parking-sign photo. null only on no-sign sessions
+   * (the user logged a park where no sign was present).
+   */
+  sign_photo: string | null
   car_photo: string | null
+  /**
+   * Free-text rules description from the AI read. Empty string on no-sign
+   * sessions (nothing to translate).
+   */
   rules: string
   observations: ObservationGroup[]
   expires_at: string | null
   confidence: Confidence
+  /**
+   * True when the session was logged WITHOUT an AI sign read — the user
+   * parked at an unsigned spot and just wanted a GPS + time evidence record.
+   * Renderers (history, detail, PDF) downgrade to "no posted restrictions"
+   * messaging when this is true.
+   */
+  no_sign?: boolean
+  /**
+   * Optional photo of the spot's surroundings, captured on no-sign sessions
+   * to evidence that no signs were visible at the time of parking. Data URL,
+   * same encoding as sign_photo / car_photo.
+   */
+  ambient_photo?: string | null
   chosen_label?: string
   /** Variants the user did NOT pick — used in the PDF to show full sign context. */
   alternate_variants?: RuleVariant[]

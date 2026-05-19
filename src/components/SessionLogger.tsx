@@ -11,8 +11,33 @@ import {
 import Icon from './Icon'
 
 interface Props {
-  rules: ParkingRules
-  signPhoto: string
+  /**
+   * Sign-translation result. `null` only when `mode === 'no-sign'` — the user
+   * is logging an unsigned spot and there's nothing for the AI to have
+   * returned.
+   */
+  rules: ParkingRules | null
+  /**
+   * Sign photo. `null` only when `mode === 'no-sign'`.
+   */
+  signPhoto: string | null
+  /**
+   * Surroundings photo for no-sign sessions, demonstrating that no signs
+   * were visible. Opt-in by the user on the scan screen.
+   */
+  ambientPhoto?: string | null
+  /**
+   * Pre-seeded coords from a prior screen. When null, SessionLogger fetches
+   * GPS itself. Currently unused — geolocation requests cache anyway, so
+   * re-fetching is fast — but kept here for the future no-sign deeplink case.
+   */
+  coords?: { lat: number; lng: number } | null
+  /**
+   * Drives the rendering differences:
+   *  - 'sign'    → normal flow (header copy, rules summary at top, reminder next)
+   *  - 'no-sign' → simplified flow (no rules, ambient-photo evidence, save → home)
+   */
+  mode?: 'sign' | 'no-sign'
   onComplete: (session: ParkingSession) => void
   onCancel: () => void
 }
@@ -30,7 +55,15 @@ type GpsState =
     }
   | { status: 'error'; message: string }
 
-export default function SessionLogger({ rules, signPhoto, onComplete, onCancel }: Props) {
+export default function SessionLogger({
+  rules,
+  signPhoto,
+  ambientPhoto = null,
+  mode = 'sign',
+  onComplete,
+  onCancel,
+}: Props) {
+  const isNoSign = mode === 'no-sign'
   const { t } = useTranslation()
   const [carPhoto, setCarPhoto] = useState<string | null>(null)
   // Initialise the GPS state synchronously based on API availability — avoids
@@ -163,19 +196,36 @@ export default function SessionLogger({ rules, signPhoto, onComplete, onCancel }
             accuracy_meters: gps.source === 'gps' ? gps.accuracy : undefined,
           }
         : null
-    const session: ParkingSession = {
-      id: crypto.randomUUID(),
-      arrived_at: new Date().toISOString(),
-      location,
-      sign_photo: signPhoto,
-      car_photo: carPhoto,
-      rules: rules.rules,
-      observations: rules.observations,
-      expires_at: rules.until,
-      confidence: rules.confidence,
-      chosen_label: rules.chosen_label,
-      alternate_variants: rules.alternate_variants,
-    }
+    const session: ParkingSession = isNoSign
+      ? {
+          // No-sign session — minimal evidence record. No rules, no expiry,
+          // no countdown. The cryptographic signature still covers what's
+          // here: location + time + optional ambient + optional car photo.
+          id: crypto.randomUUID(),
+          arrived_at: new Date().toISOString(),
+          location,
+          sign_photo: null,
+          car_photo: carPhoto,
+          rules: '',
+          observations: [],
+          expires_at: null,
+          confidence: 'low',
+          no_sign: true,
+          ambient_photo: ambientPhoto,
+        }
+      : {
+          id: crypto.randomUUID(),
+          arrived_at: new Date().toISOString(),
+          location,
+          sign_photo: signPhoto,
+          car_photo: carPhoto,
+          rules: rules!.rules,
+          observations: rules!.observations,
+          expires_at: rules!.until,
+          confidence: rules!.confidence,
+          chosen_label: rules!.chosen_label,
+          alternate_variants: rules!.alternate_variants,
+        }
     onComplete(session)
   }
 
@@ -189,11 +239,54 @@ export default function SessionLogger({ rules, signPhoto, onComplete, onCancel }
       </button>
 
       <h2 className="font-display text-3xl font-extrabold text-ink-900 mb-1">
-        {t('logger.header')}
+        {isNoSign ? t('logger.noSignHeader') : t('logger.header')}
       </h2>
       <p className="text-sm text-ink-600 mb-6 leading-relaxed">
-        {t('logger.intro')}
+        {isNoSign ? t('logger.noSignIntro') : t('logger.intro')}
       </p>
+
+      {/* No-sign banner — makes the evidentiary framing explicit. The user
+          is asserting the spot had no signs; the cryptographic signature
+          covers "this record existed at this moment", not the underlying
+          claim. Helpful to spell out so the user understands what they're
+          actually capturing. */}
+      {isNoSign && (
+        <div className="mb-3 bg-brand-50 border border-brand-200 rounded-2xl p-4">
+          <div className="flex items-start gap-3">
+            <div className="w-8 h-8 rounded-full bg-brand-500 text-white flex items-center justify-center shrink-0 mt-0.5">
+              <Icon name="warning" className="w-4 h-4" strokeWidth={2.5} />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-semibold uppercase tracking-wider text-brand-700">
+                {t('logger.noSignKicker')}
+              </p>
+              <p className="text-sm text-ink-900 mt-1 leading-relaxed">
+                {t('logger.noSignBanner')}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Ambient photo of surroundings — already captured on the scan screen
+          when the user opted into "show no signs were visible". Shown here
+          as part of the evidence summary, with a clear caption so it's not
+          mistaken for the (absent) sign photo. */}
+      {isNoSign && ambientPhoto && (
+        <section className="mb-3 bg-white rounded-2xl border border-paper-300 p-4">
+          <h3 className="font-semibold text-sm text-ink-900 mb-2">
+            {t('logger.ambientHeader')}
+          </h3>
+          <img
+            src={ambientPhoto}
+            alt={t('logger.ambientHeader')}
+            className="w-full rounded-xl border border-paper-300 object-contain max-h-[40vh] bg-paper-50"
+          />
+          <p className="text-xs text-ink-500 mt-2">
+            {t('logger.ambientCaption')}
+          </p>
+        </section>
+      )}
 
       {/* GPS card */}
       <section className="mb-3 bg-white rounded-2xl border border-paper-300 p-4">

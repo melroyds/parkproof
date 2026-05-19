@@ -67,7 +67,17 @@
     "qualityBlurry": "照片看起来模糊——点击对焦标志后重拍以获得更可靠的读取?",
     "qualityDark": "照片偏暗——AI 可能误读。靠近灯光或开闪光灯重拍?",
     "qualityOverexposed": "照片曝光过度——阳光直射标志了吗?用手遮挡镜头后重拍?",
-    "qualityTiny": "照片分辨率过低——AI 可能漏掉细节。靠近标志重拍?"
+    "qualityTiny": "照片分辨率过低——AI 可能漏掉细节。靠近标志重拍?",
+    "noSignHere": "此处没有标志？仅记录我的停车 →",
+    "noSignChooseHeader": "记录无标志的停车位",
+    "noSignChooseCopy": "可选拍摄周围环境以证明没有可见的标志。这将加强您在争议中的证据记录。",
+    "noSignTakeAmbient": "拍摄周围环境照片",
+    "noSignTakeAmbientSub": "显示无标志可见",
+    "noSignFromLibrary": "从相册中选择",
+    "noSignSkip": "跳过 — 仅保存 GPS 和时间",
+    "noSignAmbientAlt": "周围环境 — 无标志可见",
+    "noSignAmbientCaption": "已拍摄以证明此处无任何标志。",
+    "noSignContinue": "继续记录"
   },
   "reuse": {
     "scannedHere": "您 {{age}} 在此扫描过",
@@ -97,7 +107,17 @@
     "viewPhoto": "查看照片",
     "logCta": "记录此次停车",
     "scanAnother": "扫描另一个标志",
-    "transitionHeadsUp": "注意 — 于 {{when}}"
+    "transitionHeadsUp": "注意 — 于 {{when}}",
+    "logCtaBlocked": "确认付款后再保存",
+    "payRequired": {
+      "kicker": "需要付费",
+      "header": "此处停车需要付费",
+      "copy": "这是付费停车区。请在离开前使用最近的停车计时器或通过 PayStay / EasyPark 付款。",
+      "openPaystay": "打开 PayStay",
+      "openEasypark": "打开 EasyPark",
+      "meterHint": "在最近的停车计时器或售票机购买停车票 — 通常在标志 30 米范围内。",
+      "ack": "我已付款（或我会在离开前付款）"
+    }
   },
   "logger": {
     "header": "记录此次停车",
@@ -126,7 +146,13 @@
     "carAtSpot": "停车位上的车",
     "carRetake": "重拍",
     "carOptionalHelp": "可选,但强烈建议作为证据",
-    "saveSession": "保存会话"
+    "saveSession": "保存会话",
+    "noSignHeader": "记录无标志的停车",
+    "noSignIntro": "我们将保存带时间戳的 GPS 记录。无需 AI 翻译 — 因为没有标志可供翻译。",
+    "noSignKicker": "证据说明",
+    "noSignBanner": "您正在记录此处无可见标志。加密签名涵盖时间和地点，但不涵盖标志是否真的不存在 — 请诚实，这是您的证据。",
+    "ambientHeader": "周围环境",
+    "ambientCaption": "已拍摄以证明无标志在此处。"
   },
   "reminders": {
     "header": "设置提醒",
@@ -165,7 +191,8 @@
     "emptyTitle": "暂无记录",
     "emptyHelp": "扫描一个标志并记录会话——它将出现在这里。",
     "expired": "已过期",
-    "noExpiry": "无到期时间"
+    "noExpiry": "无到期时间",
+    "noSignBadge": "未记录已张贴的限制"
   },
   "session": {
     "header": "停车会话",
@@ -193,7 +220,13 @@
     "pdfErrorHelp": "错误已记录到浏览器控制台。如果一直出现,请截图控制台输出并分享。",
     "draftAppeal": "收到罚单?起草申诉信",
     "deleteSession": "删除会话",
-    "deleteConfirm": "删除此停车会话?此操作无法撤销。"
+    "deleteConfirm": "删除此停车会话?此操作无法撤销。",
+    "noSignLabel": "无已张贴的限制",
+    "noSignDescription": "此次记录在无停车标志的地点。未进行 AI 翻译。",
+    "ambientPhotoLabel": "周围环境",
+    "ambientPhotoCaption": "在停车时拍摄以证明无标志存在。",
+    "noAmbientCaptured": "未拍摄周围环境照片。",
+    "noSignBadgeLong": "未记录已张贴的限制。此处为无标志停车位。"
   },
   "appeal": {
     "captureHeader": "起草申诉信",
@@ -373,7 +406,12 @@
       "statement": "本记录由 ParkProof 在停车时自动生成。到达时间戳、GPS 坐标、标志翻译和照片构成一份同期形成的证据记录,适用于提交至澳大利亚相关地方议会的停车罚单复核申请。",
       "guidanceFree": "可停车。请在 {{when}} 前离开。",
       "guidanceFreeNoExpiry": "可停车。标志上未显示到期时间。",
-      "guidanceExpired": "会话已于 {{when}} 到期。"
+      "guidanceExpired": "会话已于 {{when}} 到期。",
+      "ambientPhotoHeader": "周围环境照片",
+      "ambientPhotoCaption": "由司机在停车时拍摄,以证明没有可见的标志。",
+      "noAmbientCaptured": "此次未拍摄周围环境照片。",
+      "noSignRules": "未记录已张贴的限制。司机声称此处无标志。",
+      "noSignConfidence": "不适用（未读取标志）"
     },
     "signature": {
       "title": "加密签名",

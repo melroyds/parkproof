@@ -31,7 +31,7 @@ export default function ReuseCard({ session, distanceMeters, onReuse, onDismiss 
       </div>
 
       <img
-        src={session.sign_photo}
+        src={session.sign_photo ?? undefined}
         alt={t('reuse.signPhotoAlt')}
         className="w-full h-32 object-contain rounded-xl mb-3 border border-paper-300 bg-white"
       />

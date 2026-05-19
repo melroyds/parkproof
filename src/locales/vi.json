@@ -67,7 +67,17 @@
     "qualityBlurry": "Ảnh trông bị mờ — nhấn vào biển báo để lấy nét rồi chụp lại để có kết quả tin cậy hơn?",
     "qualityDark": "Ảnh trông tối — AI có thể đọc sai. Đến gần nguồn sáng hơn hoặc chụp lại có đèn flash?",
     "qualityOverexposed": "Ảnh trông quá sáng — nắng chiếu trực tiếp vào biển báo? Dùng tay che ống kính rồi chụp lại?",
-    "qualityTiny": "Ảnh có độ phân giải rất thấp — AI có thể bỏ sót chi tiết. Chụp lại gần biển báo hơn?"
+    "qualityTiny": "Ảnh có độ phân giải rất thấp — AI có thể bỏ sót chi tiết. Chụp lại gần biển báo hơn?",
+    "noSignHere": "Không có biển báo ở đây? Chỉ cần ghi nhận vị trí đỗ →",
+    "noSignChooseHeader": "Ghi nhận vị trí không có biển báo",
+    "noSignChooseCopy": "Tùy chọn chụp ảnh xung quanh để chứng minh không có biển báo nào. Điều này củng cố hồ sơ bằng chứng của bạn.",
+    "noSignTakeAmbient": "Chụp ảnh xung quanh",
+    "noSignTakeAmbientSub": "Cho thấy không có biển báo",
+    "noSignFromLibrary": "Chọn từ thư viện",
+    "noSignSkip": "Bỏ qua — chỉ lưu GPS + thời gian",
+    "noSignAmbientAlt": "Xung quanh — không có biển báo",
+    "noSignAmbientCaption": "Chụp để chứng minh không có biển báo tại vị trí này.",
+    "noSignContinue": "Tiếp tục ghi nhận"
   },
   "reuse": {
     "scannedHere": "Bạn đã quét ở đây {{age}}",
@@ -97,7 +107,17 @@
     "viewPhoto": "Xem ảnh",
     "logCta": "Ghi lại phiên đỗ xe này",
     "scanAnother": "Quét biển báo khác",
-    "transitionHeadsUp": "Lưu ý — vào lúc {{when}}"
+    "transitionHeadsUp": "Lưu ý — vào lúc {{when}}",
+    "logCtaBlocked": "Xác nhận thanh toán để lưu",
+    "payRequired": {
+      "kicker": "CẦN TRẢ PHÍ",
+      "header": "Bạn cần trả phí đỗ xe tại đây",
+      "copy": "Đây là khu vực đỗ xe trả phí. Hãy mua vé từ đồng hồ tính phí gần nhất hoặc thanh toán qua PayStay / EasyPark trước khi rời đi.",
+      "openPaystay": "Mở PayStay",
+      "openEasypark": "Mở EasyPark",
+      "meterHint": "Mua vé từ đồng hồ tính phí hoặc máy bán vé gần nhất — thường trong vòng 30m từ biển báo.",
+      "ack": "Tôi đã trả phí (hoặc sẽ trả trước khi rời đi)"
+    }
   },
   "logger": {
     "header": "Ghi lại phiên đỗ xe này",
@@ -126,7 +146,13 @@
     "carAtSpot": "Xe tại chỗ đỗ",
     "carRetake": "Chụp lại",
     "carOptionalHelp": "Tuỳ chọn nhưng rất khuyến khích để làm bằng chứng",
-    "saveSession": "Lưu phiên"
+    "saveSession": "Lưu phiên",
+    "noSignHeader": "Ghi nhận đỗ xe không biển báo",
+    "noSignIntro": "Chúng tôi sẽ lưu bản ghi GPS có dấu thời gian. Không cần dịch AI — không có biển báo để dịch.",
+    "noSignKicker": "GHI CHÚ BẰNG CHỨNG",
+    "noSignBanner": "Bạn đang ghi nhận rằng không có biển báo nào tại vị trí này. Chữ ký mật mã bảo vệ khi nào và ở đâu, không phải việc biển báo có thực sự vắng mặt hay không — hãy trung thực, đây là bằng chứng của bạn.",
+    "ambientHeader": "Xung quanh",
+    "ambientCaption": "Chụp để chứng minh không có biển báo."
   },
   "reminders": {
     "header": "Đặt nhắc nhở",
@@ -165,7 +191,8 @@
     "emptyTitle": "Chưa có phiên nào",
     "emptyHelp": "Quét một biển báo và ghi lại phiên — phiên sẽ hiện ở đây.",
     "expired": "Đã hết hạn",
-    "noExpiry": "Không có giờ hết hạn"
+    "noExpiry": "Không có giờ hết hạn",
+    "noSignBadge": "Không có hạn chế nào được ghi nhận"
   },
   "session": {
     "header": "Phiên đỗ xe",
@@ -193,7 +220,13 @@
     "pdfErrorHelp": "Lỗi đã được ghi vào console của trình duyệt. Nếu chuyện này lặp lại, chụp màn hình output console và chia sẻ với chúng tôi.",
     "draftAppeal": "Bị phạt? Soạn thư khiếu nại",
     "deleteSession": "Xoá phiên",
-    "deleteConfirm": "Xoá phiên đỗ xe này? Không thể hoàn tác."
+    "deleteConfirm": "Xoá phiên đỗ xe này? Không thể hoàn tác.",
+    "noSignLabel": "KHÔNG CÓ HẠN CHẾ ĐƯỢC ĐĂNG",
+    "noSignDescription": "Phiên này được ghi nhận tại vị trí không có biển báo đỗ xe. Không thực hiện dịch AI.",
+    "ambientPhotoLabel": "Xung quanh",
+    "ambientPhotoCaption": "Chụp tại thời điểm đỗ xe để chứng minh không có biển báo.",
+    "noAmbientCaptured": "Không có ảnh xung quanh nào được chụp.",
+    "noSignBadgeLong": "Không có hạn chế nào được ghi nhận. Phiên này được ghi nhận tại vị trí không có biển báo."
   },
   "appeal": {
     "captureHeader": "Soạn thư khiếu nại",
@@ -373,7 +406,12 @@
       "statement": "Hồ sơ này được ParkProof tạo tự động tại thời điểm đỗ xe. Dấu thời gian đến nơi, tọa độ GPS, bản dịch biển báo và các ảnh chụp tạo thành một hồ sơ bằng chứng cùng thời điểm, phù hợp để đính kèm khi yêu cầu xem xét lại phiếu phạt đỗ xe gửi đến hội đồng địa phương Úc có thẩm quyền.",
       "guidanceFree": "Được phép đỗ. Di chuyển trước {{when}}.",
       "guidanceFreeNoExpiry": "Được phép đỗ. Biển báo không ghi giờ hết hạn.",
-      "guidanceExpired": "Phiên đã hết hạn lúc {{when}}."
+      "guidanceExpired": "Phiên đã hết hạn lúc {{when}}.",
+      "ambientPhotoHeader": "Ảnh xung quanh",
+      "ambientPhotoCaption": "Người lái xe chụp tại thời điểm đỗ xe để chứng minh không có biển báo nào.",
+      "noAmbientCaptured": "Không có ảnh xung quanh nào được chụp cho phiên này.",
+      "noSignRules": "Không có hạn chế nào được ghi nhận. Người lái xe khẳng định không có biển báo.",
+      "noSignConfidence": "Không áp dụng (không đọc biển báo)"
     },
     "signature": {
       "title": "Chữ ký mã hóa",

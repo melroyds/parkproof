@@ -195,7 +195,15 @@ export default function SessionDetail({ session, onBack, onDeleted, onDraftAppea
             <dt className="text-xs uppercase tracking-widest font-semibold text-ink-500">
               {t('session.signRules')}
             </dt>
-            <dd className="mt-1 text-ink-900">{session.rules}</dd>
+            <dd className="mt-1 text-ink-900">
+              {session.no_sign ? (
+                <span className="italic text-ink-600">
+                  {t('session.noSignBadgeLong')}
+                </span>
+              ) : (
+                session.rules
+              )}
+            </dd>
           </div>
           {session.chosen_label && (
             <div>
@@ -245,12 +253,17 @@ export default function SessionDetail({ session, onBack, onDeleted, onDraftAppea
               </dd>
             </div>
           )}
-          <div>
-            <dt className="text-xs uppercase tracking-widest font-semibold text-ink-500">
-              {t('session.aiConfidence')}
-            </dt>
-            <dd className="mt-1 text-ink-900 capitalize">{session.confidence}</dd>
-          </div>
+          {/* AI confidence is meaningless for no-sign sessions (the AI never
+              looked at anything). Hide the row entirely rather than render
+              a misleading "low" value. */}
+          {!session.no_sign && (
+            <div>
+              <dt className="text-xs uppercase tracking-widest font-semibold text-ink-500">
+                {t('session.aiConfidence')}
+              </dt>
+              <dd className="mt-1 text-ink-900 capitalize">{session.confidence}</dd>
+            </div>
+          )}
         </dl>
       </section>
 
@@ -325,16 +338,50 @@ export default function SessionDetail({ session, onBack, onDeleted, onDraftAppea
         )}
       </section>
 
-      <section className="bg-white rounded-2xl border border-paper-300 p-5 mb-3">
-        <h3 className="text-xs uppercase tracking-widest font-semibold text-ink-500 mb-2">
-          {t('session.signPhotoLabel')}
-        </h3>
-        <img
-          src={session.sign_photo}
-          alt="Sign"
-          className="w-full rounded-xl border border-paper-300"
-        />
-      </section>
+      {/* Sign photo — only rendered for sign-translated sessions. No-sign
+          sessions drop straight to the ambient/car photos below. */}
+      {session.sign_photo && (
+        <section className="bg-white rounded-2xl border border-paper-300 p-5 mb-3">
+          <h3 className="text-xs uppercase tracking-widest font-semibold text-ink-500 mb-2">
+            {t('session.signPhotoLabel')}
+          </h3>
+          <img
+            src={session.sign_photo}
+            alt="Sign"
+            className="w-full rounded-xl border border-paper-300"
+          />
+        </section>
+      )}
+
+      {/* No-sign sessions: show the "no posted restrictions" banner and the
+          optional ambient (surroundings) photo, which substitutes for the
+          sign photo as the user-supplied visual evidence. */}
+      {session.no_sign && (
+        <section className="bg-white rounded-2xl border border-paper-300 p-5 mb-3">
+          <h3 className="text-xs uppercase tracking-widest font-semibold text-ink-500 mb-2">
+            {t('session.noSignLabel')}
+          </h3>
+          <p className="text-sm text-ink-700 leading-relaxed mb-3">
+            {t('session.noSignDescription')}
+          </p>
+          {session.ambient_photo ? (
+            <>
+              <img
+                src={session.ambient_photo}
+                alt={t('session.ambientPhotoLabel')}
+                className="w-full rounded-xl border border-paper-300"
+              />
+              <p className="text-xs text-ink-500 mt-2">
+                {t('session.ambientPhotoCaption')}
+              </p>
+            </>
+          ) : (
+            <p className="text-xs text-ink-500 italic">
+              {t('session.noAmbientCaptured')}
+            </p>
+          )}
+        </section>
+      )}
 
       {session.car_photo && (
         <section className="bg-white rounded-2xl border border-paper-300 p-5 mb-3">

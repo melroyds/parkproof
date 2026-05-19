@@ -68,7 +68,15 @@ async function hashDataUrlImage(dataUrl: string): Promise<string> {
  */
 export async function signSession(session: ParkingSession): Promise<SignatureBundle | null> {
   try {
-    const sign_photo_sha256 = await hashDataUrlImage(session.sign_photo)
+    // No-sign sessions don't have a sign photo to hash. The signed payload
+    // still covers location + time + (optional) ambient + car hashes, which
+    // is the same evidentiary surface the no-sign UX promises.
+    const sign_photo_sha256 = session.sign_photo
+      ? await hashDataUrlImage(session.sign_photo)
+      : null
+    const ambient_photo_sha256 = session.ambient_photo
+      ? await hashDataUrlImage(session.ambient_photo)
+      : null
     const car_photo_sha256 = session.car_photo
       ? await hashDataUrlImage(session.car_photo)
       : null
@@ -81,7 +89,9 @@ export async function signSession(session: ParkingSession): Promise<SignatureBun
       rules: session.rules,
       chosen_label: session.chosen_label ?? null,
       confidence: session.confidence,
+      no_sign: !!session.no_sign,
       sign_photo_sha256,
+      ambient_photo_sha256,
       car_photo_sha256,
     }
 

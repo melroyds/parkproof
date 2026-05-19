@@ -47,7 +47,7 @@ const CONFIDENCE_DOT = {
  * the sign read itself. Kept as a pure function (no useMemo / hooks) so it
  * runs only when the user actually taps the verify buttons.
  */
-function buildFeedbackContext(result: ParkingRules) {
+function buildFeedbackContext(result: ParkingRules, ticketAcknowledged: boolean) {
   return {
     confidence: result.confidence,
     had_clarification:
@@ -64,8 +64,43 @@ function buildFeedbackContext(result: ParkingRules) {
     // Refresh-mode results have a marker rule prefix; cheaper than threading
     // the mode down from App.tsx and good enough for telemetry purposes.
     is_refresh: false,
+    // Paid-parking signals — lets us slice retake rate by paid vs free signs
+    // and see whether the acknowledgement gate is real friction or just noise.
+    requires_ticket: !!result.requires_ticket,
+    ticket_acknowledged: !!result.requires_ticket && ticketAcknowledged,
   }
 }
+
+/**
+ * Map a model-emitted payment_methods array into the deep-link / hint shape
+ * the UI consumes. Falls back to "show both apps as options" when paid is
+ * detected but no specific method is named, on the assumption it's better to
+ * offer the user something than nothing.
+ */
+function resolvePaymentActions(methods: string[] | null | undefined, requiresTicket: boolean) {
+  const list = (methods ?? []).map((m) => m.toLowerCase())
+  const has = (s: string) => list.includes(s)
+  // "Unspecified" = paid required but the AI didn't pick out which method.
+  const unspecified = requiresTicket && list.length === 0
+  return {
+    paystay: has('paystay') || unspecified,
+    easypark: has('easypark') || unspecified,
+    // Wilson / Care Park aren't ubiquitous enough to warrant top-level buttons,
+    // but the meter / ticket-machine hint is the right fallback when only
+    // physical methods are detected.
+    meterOnly:
+      !has('paystay') &&
+      !has('easypark') &&
+      (has('meter') || has('ticket machine') || has('pay-by-plate')),
+  }
+}
+
+// Universal links — if the user has the app installed iOS/Android intercepts
+// and opens it directly; otherwise the user lands on the marketing site.
+// Easier to maintain than per-platform custom schemes (`paystay://`) that
+// silently fail when the app isn't installed.
+const PAYSTAY_URL = 'https://paystay.com.au/'
+const EASYPARK_URL = 'https://easypark.net/'
 
 const CONFIDENCE_KEY = {
   low: 'common.lowConfidence',
@@ -83,12 +118,29 @@ export default function ParkingResult({
 }: Props) {
   const { t } = useTranslation()
   const [verified, setVerified] = useState(false)
+  // Paid-parking acknowledgement — gates the "Save session" button when the
+  // sign requires payment. Defaults false so the user has to deliberately
+  // confirm; "yes I paid (or will pay before walking away)".
+  const [ticketAcknowledged, setTicketAcknowledged] = useState(false)
   // One id per rendering of the result — used to dedupe feedback events server-side
   // without storing anything identifiable.
   const [feedbackId] = useState(() => crypto.randomUUID())
   const now = useNow()
-  const { observations, can_park_now, until, confidence, chosen_label, next_transition } =
-    result
+  const {
+    observations,
+    can_park_now,
+    until,
+    confidence,
+    chosen_label,
+    next_transition,
+    requires_ticket,
+    payment_methods,
+  } = result
+  // Gate the Save button until the user acknowledges payment. Only meaningful
+  // when can_park_now is true (we don't show Save at all when it's false).
+  const mustPay = !!requires_ticket && can_park_now
+  const blockedByPayGate = mustPay && !ticketAcknowledged
+  const paymentActions = resolvePaymentActions(payment_methods, mustPay)
   const timeZone = timezoneForCoords(coords?.lat, coords?.lng)
   const untilLabel = formatUntil(until, timeZone)
   const countdown =
@@ -218,7 +270,7 @@ export default function ParkingResult({
                 submitFeedback({
                   verdict: 'correct',
                   feedback_id: feedbackId,
-                  context: buildFeedbackContext(result),
+                  context: buildFeedbackContext(result, ticketAcknowledged),
                 })
                 setVerified(true)
               }}
@@ -231,7 +283,7 @@ export default function ParkingResult({
                 submitFeedback({
                   verdict: 'retake',
                   feedback_id: feedbackId,
-                  context: buildFeedbackContext(result),
+                  context: buildFeedbackContext(result, ticketAcknowledged),
                 })
                 onRetake()
               }}
@@ -251,13 +303,82 @@ export default function ParkingResult({
         <img src={signPhoto} alt={t('clarify.imageAlt')} className="w-full border-t border-paper-200" />
       </details>
 
+      {/* Pay-required gate — surfaces when the AI detected paid parking AND
+          the current time is inside the paid window. Two jobs: (1) make the
+          requirement impossible to miss, (2) actively help the user pay it.
+          The Save button below is disabled until the checkbox is ticked. */}
+      {mustPay && (
+        <section className="mt-4 bg-amber-50 border-2 border-amber-400 rounded-2xl p-5">
+          <div className="flex items-start gap-3">
+            <div className="w-8 h-8 rounded-full bg-amber-500 text-white flex items-center justify-center shrink-0 mt-0.5">
+              <Icon name="warning" className="w-4 h-4" strokeWidth={2.5} />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-semibold uppercase tracking-wider text-amber-800">
+                {t('result.payRequired.kicker')}
+              </p>
+              <h3 className="font-display font-bold text-ink-900 mt-1">
+                {t('result.payRequired.header')}
+              </h3>
+              <p className="text-sm text-ink-700 mt-1 leading-relaxed">
+                {t('result.payRequired.copy')}
+              </p>
+            </div>
+          </div>
+
+          {(paymentActions.paystay || paymentActions.easypark) && (
+            <div className="mt-4 flex gap-2">
+              {paymentActions.paystay && (
+                <a
+                  href={PAYSTAY_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex-1 inline-flex items-center justify-center gap-2 bg-white border-2 border-amber-400 hover:bg-amber-100 text-ink-900 font-semibold py-2.5 rounded-xl transition-colors text-sm"
+                >
+                  {t('result.payRequired.openPaystay')}
+                </a>
+              )}
+              {paymentActions.easypark && (
+                <a
+                  href={EASYPARK_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex-1 inline-flex items-center justify-center gap-2 bg-white border-2 border-amber-400 hover:bg-amber-100 text-ink-900 font-semibold py-2.5 rounded-xl transition-colors text-sm"
+                >
+                  {t('result.payRequired.openEasypark')}
+                </a>
+              )}
+            </div>
+          )}
+
+          {paymentActions.meterOnly && (
+            <p className="mt-3 text-sm text-ink-700 leading-relaxed">
+              {t('result.payRequired.meterHint')}
+            </p>
+          )}
+
+          <label className="mt-4 flex items-start gap-2.5 cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={ticketAcknowledged}
+              onChange={(e) => setTicketAcknowledged(e.target.checked)}
+              className="mt-0.5 w-5 h-5 rounded border-2 border-amber-500 accent-amber-600 cursor-pointer shrink-0"
+            />
+            <span className="text-sm font-medium text-ink-900 leading-tight">
+              {t('result.payRequired.ack')}
+            </span>
+          </label>
+        </section>
+      )}
+
       <div className="mt-6 flex flex-col gap-2">
         {can_park_now && (
           <button
             onClick={onLogSession}
-            className="bg-brand-500 hover:bg-brand-600 active:bg-brand-700 text-white font-semibold py-4 rounded-2xl shadow-lg shadow-brand-500/25 transition-colors"
+            disabled={blockedByPayGate}
+            className="bg-brand-500 hover:bg-brand-600 active:bg-brand-700 disabled:bg-brand-300 disabled:cursor-not-allowed text-white font-semibold py-4 rounded-2xl shadow-lg shadow-brand-500/25 disabled:shadow-none transition-colors"
           >
-            {t('result.logCta')}
+            {blockedByPayGate ? t('result.logCtaBlocked') : t('result.logCta')}
           </button>
         )}
         <button

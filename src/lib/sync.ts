@@ -70,7 +70,7 @@ interface PresignResponse {
  */
 async function uploadPhoto(
   sessionId: string,
-  role: 'sign' | 'car',
+  role: 'sign' | 'car' | 'ambient',
   dataUrl: string,
 ): Promise<void> {
   // Decode the data URL → Blob. Splits 'data:image/jpeg;base64,XYZ' into the
@@ -121,11 +121,13 @@ async function uploadPhoto(
  * photo is worse than losing the whole session.
  */
 export async function uploadSession(session: ParkingSession): Promise<void> {
-  // Pre-flight: upload photos in parallel. Both can fail independently
-  // without aborting the metadata upload.
+  // Pre-flight: upload photos in parallel. All three roles fail independently
+  // without aborting the metadata upload — see comment block above.
+  // 'ambient' role added for the no-sign flow (surroundings photo showing
+  // absence of signs).
   await Promise.all(
-    (['sign', 'car'] as const).map(async (role) => {
-      const field = `${role}_photo` as 'sign_photo' | 'car_photo'
+    (['sign', 'car', 'ambient'] as const).map(async (role) => {
+      const field = `${role}_photo` as 'sign_photo' | 'car_photo' | 'ambient_photo'
       const photo = session[field]
       if (!photo || !photo.startsWith('data:')) return
       try {
@@ -226,7 +228,7 @@ export async function performInitialSync(): Promise<InitialSyncResult> {
     const local = localById.get(cloudSession.id)
     if (!local) continue
     const patch: Partial<ParkingSession> = {}
-    for (const field of ['sign_photo', 'car_photo'] as const) {
+    for (const field of ['sign_photo', 'car_photo', 'ambient_photo'] as const) {
       const localValue = local[field]
       const cloudValue = cloudSession[field]
       const localIsDataUrl = typeof localValue === 'string' && localValue.startsWith('data:')

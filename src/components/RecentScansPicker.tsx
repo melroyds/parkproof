@@ -51,7 +51,7 @@ export default function RecentScansPicker({ sessions, onPick, onDismiss }: Props
               className="bg-white hover:bg-paper-50 border border-paper-300 hover:border-brand-300 rounded-2xl p-3 text-left flex items-center gap-3 transition-colors"
             >
               <img
-                src={s.sign_photo}
+                src={s.sign_photo ?? undefined}
                 alt=""
                 className="w-14 h-14 object-cover rounded-lg border border-paper-300 flex-none bg-white"
               />

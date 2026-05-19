@@ -5,6 +5,7 @@ import type { ParkingSession } from '../types'
 import { loadSessions } from '../lib/storage'
 import { useNow } from '../lib/use-now'
 import { formatCountdownLocalized } from '../lib/countdown'
+import Icon from './Icon'
 
 interface Props {
   onBack: () => void
@@ -73,11 +74,20 @@ export default function SessionHistory({ onBack, onOpen }: Props) {
                 className="text-left bg-white hover:bg-paper-50 border border-paper-300 hover:border-brand-300 rounded-2xl p-4 transition-colors"
               >
                 <div className="flex items-start gap-3">
-                  <img
-                    src={s.sign_photo}
-                    alt=""
-                    className="w-16 h-16 object-cover rounded-lg border border-paper-300 flex-none"
-                  />
+                  {/* Thumbnail priority for the row: sign_photo (translated
+                      sessions) → ambient_photo (no-sign with surroundings) →
+                      car_photo → placeholder square (no images at all). */}
+                  {s.sign_photo || s.ambient_photo || s.car_photo ? (
+                    <img
+                      src={(s.sign_photo || s.ambient_photo || s.car_photo) ?? undefined}
+                      alt=""
+                      className="w-16 h-16 object-cover rounded-lg border border-paper-300 flex-none"
+                    />
+                  ) : (
+                    <div className="w-16 h-16 rounded-lg border border-paper-300 bg-paper-100 flex items-center justify-center flex-none">
+                      <Icon name="pin" className="w-7 h-7 text-ink-400" />
+                    </div>
+                  )}
                   <div className="flex-1 min-w-0">
                     <p className="font-medium text-ink-900 truncate">
                       {arrival.toLocaleDateString('en-AU', {
@@ -94,7 +104,9 @@ export default function SessionHistory({ onBack, onOpen }: Props) {
                     {s.location?.address && (
                       <p className="text-xs text-ink-700 mt-0.5 truncate">{s.location.address}</p>
                     )}
-                    <p className="text-xs text-ink-600 mt-0.5 line-clamp-2">{s.rules}</p>
+                    <p className="text-xs text-ink-600 mt-0.5 line-clamp-2">
+                      {s.no_sign ? t('history.noSignBadge') : s.rules}
+                    </p>
                     <p className={`text-xs font-semibold mt-1 ${status.color}`}>{status.label}</p>
                   </div>
                 </div>

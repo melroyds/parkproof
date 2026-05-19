@@ -101,7 +101,7 @@ export async function handleSessionsUpload(event) {
   // belong in S3, with the DDB row carrying only the S3 keys. Frontend is
   // expected to upload photos separately via /photos/presign.
   const photosMissing = []
-  for (const field of ['sign_photo', 'car_photo']) {
+  for (const field of ['sign_photo', 'car_photo', 'ambient_photo']) {
     if (session[field] && session[field].startsWith('data:')) {
       photosMissing.push(field)
       session[field] = null // store nothing; client should re-upload separately
@@ -182,7 +182,7 @@ export async function handleSessionsList(event) {
  * existing latency budget.
  */
 async function hydrateSessionPhotos(session, userId) {
-  for (const role of ['sign', 'car']) {
+  for (const role of ['sign', 'car', 'ambient']) {
     const field = `${role}_photo`
     // If the cloud row already carries something (an external URL, or — in
     // future — a still-fresh presigned URL the upload path stamped on),
@@ -253,10 +253,10 @@ export async function handlePhotosPresign(event) {
   }
   const body = parseBody(event)
   const sessionId = body?.session_id
-  const role = body?.role // 'sign' | 'car'
+  const role = body?.role // 'sign' | 'car' | 'ambient'
   const contentType = body?.content_type || 'image/jpeg'
-  if (!sessionId || (role !== 'sign' && role !== 'car')) {
-    throw badRequest('session_id + role ("sign" or "car") are required')
+  if (!sessionId || (role !== 'sign' && role !== 'car' && role !== 'ambient')) {
+    throw badRequest('session_id + role ("sign", "car", or "ambient") are required')
   }
 
   const key = `${userId}/${sessionId}/${role}.jpg`

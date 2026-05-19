@@ -16,6 +16,18 @@ interface Props {
     coords: { lat: number; lng: number } | null,
   ) => void
   onReuseSession: (session: ParkingSession) => void
+  /**
+   * Triggered when the user picks "No sign here" instead of the camera/
+   * library path. Skips Claude entirely and routes the App.tsx state machine
+   * straight to the SessionLogger in `no-sign` mode.
+   *
+   * `ambientPhoto` is optional — null when the user explicitly chose to
+   * skip the surroundings photo.
+   */
+  onNoSignScan: (
+    coords: { lat: number; lng: number } | null,
+    ambientPhoto: string | null,
+  ) => void
   onCancel: () => void
 }
 
@@ -39,6 +51,9 @@ function findRecentMatch(
   let best: ProximityMatch | null = null
   for (const s of sessions) {
     if (!s.location) continue
+    // No-sign sessions have no rules to refresh — offering "reuse this read"
+    // for them would be a UX lie. Skip.
+    if (s.no_sign) continue
     if (now - new Date(s.arrived_at).getTime() > FRESHNESS_MS) continue
     const distance = haversineMeters(coords, s.location)
     if (distance > PROXIMITY_METERS) continue
@@ -52,17 +67,31 @@ function findRecentMatch(
 function loadRecentSessions(): ParkingSession[] {
   const now = Date.now()
   return loadSessions()
-    .filter((s) => now - new Date(s.arrived_at).getTime() <= FRESHNESS_MS)
+    // Same filter as the proximity match — picker offers "reuse a recent
+    // scan", and there's nothing to reuse from a no-sign session.
+    .filter((s) => !s.no_sign && now - new Date(s.arrived_at).getTime() <= FRESHNESS_MS)
     .sort(
       (a, b) => new Date(b.arrived_at).getTime() - new Date(a.arrived_at).getTime(),
     )
     .slice(0, PICKER_LIMIT)
 }
 
-export default function SignScanner({ onCapture, onReuseSession, onCancel }: Props) {
+export default function SignScanner({ onCapture, onReuseSession, onNoSignScan, onCancel }: Props) {
   const { t } = useTranslation()
   const cameraInputRef = useRef<HTMLInputElement>(null)
   const libraryInputRef = useRef<HTMLInputElement>(null)
+  // Hidden file inputs for the "no sign here" ambient-photo capture path.
+  // Separate refs from the sign-photo inputs so the two flows can't bleed
+  // into each other via stale state.
+  const ambientCameraRef = useRef<HTMLInputElement>(null)
+  const ambientLibraryRef = useRef<HTMLInputElement>(null)
+  // Drives the inline panel that asks "want to photograph the surroundings?"
+  // after the user picks "No sign here". 'idle' = panel hidden; 'choosing' =
+  // shown; 'captured' = ambient photo taken, preview shown with Save Now
+  // button. Keeping it in component state (not a separate view) keeps the
+  // SignScanner the single source of truth for the scan screen UX.
+  const [noSignStage, setNoSignStage] = useState<'idle' | 'choosing' | 'captured'>('idle')
+  const [ambientPhoto, setAmbientPhoto] = useState<string | null>(null)
   const [preview, setPreview] = useState<string | null>(null)
   const [mediaType, setMediaType] = useState<string>('image/jpeg')
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null)
@@ -164,6 +193,37 @@ export default function SignScanner({ onCapture, onReuseSession, onCancel }: Pro
     if (preview) onCapture(preview, mediaType, coords)
   }
 
+  // ── No-sign flow handlers ─────────────────────────────────────────────
+  // The user has pressed "No sign here" — open the inline confirmation
+  // panel so they can choose between (a) taking an ambient photo of the
+  // surroundings, or (b) skipping the photo and saving GPS+time only.
+  const handleNoSignStart = () => {
+    setNoSignStage('choosing')
+  }
+
+  // Used by both the camera and library inputs to ingest a file as an
+  // ambient (surroundings) photo. Runs the same resize pipeline as the
+  // sign-photo path so storage stays under the 5MB localStorage ceiling.
+  const handleAmbientFile = async (file: File) => {
+    const { dataUrl } = await resizeImageFile(file)
+    setAmbientPhoto(dataUrl)
+    setNoSignStage('captured')
+  }
+
+  // User chose to skip the ambient photo. Hand off straight to SessionLogger
+  // with no ambient evidence — only GPS + time. The user is asserting "no
+  // signs were here" without visual backup; that's a valid evidence record,
+  // just a weaker one in a dispute scenario.
+  const handleNoSignSkip = () => {
+    onNoSignScan(coords, null)
+  }
+
+  // User captured an ambient photo and is ready to save. Hand off both the
+  // coords and the photo to SessionLogger.
+  const handleNoSignSave = () => {
+    onNoSignScan(coords, ambientPhoto)
+  }
+
   return (
     <div className="min-h-screen flex flex-col p-6 max-w-md mx-auto w-full">
       <button
@@ -247,26 +307,144 @@ export default function SignScanner({ onCapture, onReuseSession, onCancel }: Pro
             </button>
           </div>
         </>
-      ) : (
-        <div className="flex flex-col gap-3">
+      ) : noSignStage === 'idle' ? (
+        <>
+          <div className="flex flex-col gap-3">
+            <button
+              onClick={() => cameraInputRef.current?.click()}
+              className="border-2 border-dashed border-brand-300 hover:border-brand-500 hover:bg-brand-50/50 bg-white rounded-2xl py-8 px-4 flex flex-col items-center text-brand-600 transition-colors"
+            >
+              <Icon name="camera" className="w-10 h-10 mb-2" />
+              <span className="text-sm font-semibold text-ink-900">{t('scanner.takePhoto')}</span>
+              <span className="text-xs text-ink-600 mt-1 text-center">{t('scanner.takePhotoSub')}</span>
+            </button>
+            <button
+              onClick={() => libraryInputRef.current?.click()}
+              className="border-2 border-dashed border-accent-300 hover:border-accent-500 hover:bg-accent-50/50 bg-white rounded-2xl py-8 px-4 flex flex-col items-center text-accent-700 transition-colors"
+            >
+              <Icon name="gallery" className="w-10 h-10 mb-2" />
+              <span className="text-sm font-semibold text-ink-900">{t('scanner.fromLibrary')}</span>
+              <span className="text-xs text-ink-600 mt-1 text-center">{t('scanner.fromLibrarySub')}</span>
+            </button>
+          </div>
+          {/* "No sign here" affordance — secondary in visual weight (text
+              link, not a button) so it doesn't compete with the primary
+              scan CTAs above. The user who lands here knows what they're
+              looking for. */}
           <button
-            onClick={() => cameraInputRef.current?.click()}
-            className="border-2 border-dashed border-brand-300 hover:border-brand-500 hover:bg-brand-50/50 bg-white rounded-2xl py-8 px-4 flex flex-col items-center text-brand-600 transition-colors"
+            onClick={handleNoSignStart}
+            className="mt-6 text-sm text-ink-600 hover:text-ink-900 underline self-center transition-colors"
           >
-            <Icon name="camera" className="w-10 h-10 mb-2" />
-            <span className="text-sm font-semibold text-ink-900">{t('scanner.takePhoto')}</span>
-            <span className="text-xs text-ink-600 mt-1 text-center">{t('scanner.takePhotoSub')}</span>
+            {t('scanner.noSignHere')}
+          </button>
+        </>
+      ) : noSignStage === 'choosing' ? (
+        // Inline panel: ask the user whether to strengthen the evidence with
+        // a surroundings photo. Either path commits — the choice is purely
+        // about evidence weight, not whether the session gets saved.
+        <div className="flex flex-col gap-3">
+          <div className="bg-brand-50 border border-brand-200 rounded-2xl p-5">
+            <h3 className="font-display font-bold text-ink-900 mb-1">
+              {t('scanner.noSignChooseHeader')}
+            </h3>
+            <p className="text-sm text-ink-700 leading-relaxed">
+              {t('scanner.noSignChooseCopy')}
+            </p>
+          </div>
+          <button
+            onClick={() => ambientCameraRef.current?.click()}
+            className="border-2 border-dashed border-brand-300 hover:border-brand-500 hover:bg-brand-50/50 bg-white rounded-2xl py-6 px-4 flex flex-col items-center text-brand-600 transition-colors"
+          >
+            <Icon name="camera" className="w-8 h-8 mb-2" />
+            <span className="text-sm font-semibold text-ink-900">
+              {t('scanner.noSignTakeAmbient')}
+            </span>
+            <span className="text-xs text-ink-600 mt-1 text-center">
+              {t('scanner.noSignTakeAmbientSub')}
+            </span>
           </button>
           <button
-            onClick={() => libraryInputRef.current?.click()}
-            className="border-2 border-dashed border-accent-300 hover:border-accent-500 hover:bg-accent-50/50 bg-white rounded-2xl py-8 px-4 flex flex-col items-center text-accent-700 transition-colors"
+            onClick={() => ambientLibraryRef.current?.click()}
+            className="border-2 border-dashed border-accent-300 hover:border-accent-500 hover:bg-accent-50/50 bg-white rounded-2xl py-6 px-4 flex flex-col items-center text-accent-700 transition-colors"
           >
-            <Icon name="gallery" className="w-10 h-10 mb-2" />
-            <span className="text-sm font-semibold text-ink-900">{t('scanner.fromLibrary')}</span>
-            <span className="text-xs text-ink-600 mt-1 text-center">{t('scanner.fromLibrarySub')}</span>
+            <Icon name="gallery" className="w-8 h-8 mb-2" />
+            <span className="text-sm font-semibold text-ink-900">
+              {t('scanner.noSignFromLibrary')}
+            </span>
+          </button>
+          <button
+            onClick={handleNoSignSkip}
+            className="mt-1 bg-paper-200 hover:bg-paper-300 text-ink-900 font-medium py-3 rounded-2xl transition-colors"
+          >
+            {t('scanner.noSignSkip')}
+          </button>
+          <button
+            onClick={() => setNoSignStage('idle')}
+            className="text-sm text-ink-600 hover:text-ink-900 underline self-center transition-colors"
+          >
+            {t('common.back')}
           </button>
         </div>
+      ) : (
+        // 'captured' — ambient photo taken, show preview + save button.
+        <div className="flex flex-col gap-3">
+          {ambientPhoto && (
+            <img
+              src={ambientPhoto}
+              alt={t('scanner.noSignAmbientAlt')}
+              className="w-full rounded-2xl border border-paper-300 object-contain max-h-[55vh] bg-white"
+            />
+          )}
+          <p className="text-xs text-ink-600 text-center">
+            {t('scanner.noSignAmbientCaption')}
+          </p>
+          <div className="flex gap-2">
+            <button
+              onClick={() => {
+                setAmbientPhoto(null)
+                setNoSignStage('choosing')
+              }}
+              className="flex-1 bg-paper-200 hover:bg-paper-300 text-ink-900 font-medium py-3 rounded-xl transition-colors"
+            >
+              {t('scanner.retake')}
+            </button>
+            <button
+              onClick={handleNoSignSave}
+              className="flex-1 bg-brand-500 hover:bg-brand-600 active:bg-brand-700 text-white font-semibold py-3 rounded-xl shadow-md shadow-brand-500/20 transition-colors"
+            >
+              {t('scanner.noSignContinue')}
+            </button>
+          </div>
+        </div>
       )}
+
+      {/* Ambient-photo hidden inputs — separate from the sign-photo inputs
+          so the no-sign and translate flows can't accidentally share a file
+          handle via stale state. */}
+      <input
+        ref={ambientCameraRef}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        className="hidden"
+        onChange={(e) => {
+          const file = e.target.files?.[0]
+          if (file) void handleAmbientFile(file)
+          e.target.value = ''
+        }}
+      />
+      <input
+        ref={ambientLibraryRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={(e) => {
+          const file = e.target.files?.[0]
+          if (file) void handleAmbientFile(file)
+          e.target.value = ''
+        }}
+      />
+
 
       <input
         ref={cameraInputRef}

@@ -73,7 +73,17 @@
     "qualityBlurry": "Photo looks blurry — tap to focus on the sign and retake for a more reliable read?",
     "qualityDark": "Photo looks dark — the AI may misread it. Move closer to a light or retake with flash?",
     "qualityOverexposed": "Photo looks washed out — direct sunlight on the sign? Shade the lens with your hand and retake?",
-    "qualityTiny": "Photo is very low resolution — the AI may miss details. Retake closer to the sign?"
+    "qualityTiny": "Photo is very low resolution — the AI may miss details. Retake closer to the sign?",
+    "noSignHere": "No sign here? Just log my park →",
+    "noSignChooseHeader": "Logging a spot with no signs",
+    "noSignChooseCopy": "Optionally photograph the surroundings to demonstrate no signs were visible. This strengthens your evidence record in a dispute.",
+    "noSignTakeAmbient": "Take photo of surroundings",
+    "noSignTakeAmbientSub": "Show no signs were visible",
+    "noSignFromLibrary": "Choose from library",
+    "noSignSkip": "Skip — just save GPS + time",
+    "noSignAmbientAlt": "Surroundings — no signs visible",
+    "noSignAmbientCaption": "Captured to demonstrate no signs were posted at this spot.",
+    "noSignContinue": "Continue to log"
   },
   "reuse": {
     "scannedHere": "You scanned here {{age}}",
@@ -102,8 +112,18 @@
     "verifyConfirmed": "You confirmed the reading",
     "viewPhoto": "View the photo",
     "logCta": "Log this parking session",
+    "logCtaBlocked": "Confirm payment to save",
     "scanAnother": "Scan another sign",
-    "transitionHeadsUp": "Heads up — at {{when}}"
+    "transitionHeadsUp": "Heads up — at {{when}}",
+    "payRequired": {
+      "kicker": "PAY REQUIRED",
+      "header": "You need to pay for parking here",
+      "copy": "This is a paid zone. Buy a ticket from the nearest meter or pay via PayStay / EasyPark before you walk away.",
+      "openPaystay": "Open PayStay",
+      "openEasypark": "Open EasyPark",
+      "meterHint": "Buy a ticket from the nearest meter or ticket machine — usually within 30m of the sign.",
+      "ack": "I've paid (or will pay before walking away)"
+    }
   },
   "logger": {
     "header": "Log this parking session",
@@ -132,7 +152,13 @@
     "carAtSpot": "Car at the spot",
     "carRetake": "Retake",
     "carOptionalHelp": "Optional but strongly recommended for evidence",
-    "saveSession": "Save session"
+    "saveSession": "Save session",
+    "noSignHeader": "Log an unsigned park",
+    "noSignIntro": "We'll save a timestamped GPS record. No AI translation — there's no sign to translate.",
+    "noSignKicker": "EVIDENCE NOTE",
+    "noSignBanner": "You're recording that no signs were visible at this spot. The cryptographic signature covers when and where, not whether signs were truly absent — be honest, this is your evidence.",
+    "ambientHeader": "Surroundings",
+    "ambientCaption": "Captured to demonstrate no signs were posted."
   },
   "reminders": {
     "header": "Set reminders",
@@ -171,7 +197,8 @@
     "emptyTitle": "No sessions yet",
     "emptyHelp": "Scan a sign and log a session — it'll appear here.",
     "expired": "Expired",
-    "noExpiry": "No expiry"
+    "noExpiry": "No expiry",
+    "noSignBadge": "No posted restrictions captured"
   },
   "session": {
     "header": "Parking session",
@@ -193,6 +220,12 @@
     "saveNote": "Save note",
     "signPhotoLabel": "SIGN PHOTO",
     "carPhotoLabel": "CAR AT THE SPOT",
+    "noSignLabel": "NO POSTED RESTRICTIONS",
+    "noSignDescription": "This session was logged at a spot with no parking signs. No AI translation was performed.",
+    "ambientPhotoLabel": "Surroundings",
+    "ambientPhotoCaption": "Captured at the time of parking to evidence absence of signs.",
+    "noAmbientCaptured": "No surroundings photo was captured.",
+    "noSignBadgeLong": "No posted restrictions captured. This was logged as an unsigned spot.",
     "exportAsPdf": "Export as PDF",
     "buildingPdf": "Building PDF…",
     "pdfErrorHeader": "Couldn't build the PDF",
@@ -373,6 +406,11 @@
       },
       "signPhotoHeader": "Sign photo",
       "carPhotoHeader": "Car at the spot",
+      "ambientPhotoHeader": "Surroundings photo",
+      "ambientPhotoCaption": "Captured by the driver at the time of parking to demonstrate no signs were visible.",
+      "noAmbientCaptured": "No surroundings photo was captured for this session.",
+      "noSignRules": "No posted restrictions captured. This session was logged at a spot the driver asserted had no signs.",
+      "noSignConfidence": "Not applicable (no sign was read)",
       "driverNoteHeader": "Driver's note",
       "gpsNoticeTitle": "⚠ GPS accuracy notice",
       "gpsNoticeBody": "The GPS reading at capture time was {{accuracy}} — wider than typical for evidence purposes. The coordinates above identify a point within that radius, not an exact spot. Common causes: indoor / multi-storey carparks, Starlink or VPN connections, or weak satellite signal. Reviewers should weight the captured address against this radius.",
