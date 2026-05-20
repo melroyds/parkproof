@@ -1,35 +1,44 @@
 /**
  * Endpoint routing + retry layer.
  *
- * All routes go through the API Gateway HTTP API (VITE_API_URL). In dev,
- * VITE_API_URL is unset and everything falls through to the Vite middleware
- * at /api/*.
+ * Two front-doors:
  *
- * Architectural note: I attempted to add a second front-door — a Lambda
- * Function URL — for the slow anonymous routes (sign-translate, draft-appeal)
- * to bypass API Gateway's 30-second hard timeout on HTTP APIs. The Function
- * URL was created successfully and signed (SigV4 / AWS_IAM) invocations
- * returned the expected 204. BUT unauthenticated invocations (AuthType:NONE
- * with a Principal:"*" resource policy) consistently returned 403, despite
- * no SCPs / RCPs / public-access-block at the account or org level. AWS
- * forum threads describe the same symptom without a documented fix. Reverted
- * to the API Gateway-only approach.
+ *  1. **CloudFront → Lambda Function URL (OAC, sigv4-signed)** for the SLOW
+ *     anonymous routes (sign-translate, draft-appeal, sign-session, feedback).
+ *     CloudFront sits at the same origin as the SPA, so requests to
+ *     `parkproof.dsouza.tech/api/*` are same-origin (no CORS), and CloudFront
+ *     forwards them sigv4-signed via OAC to a Lambda Function URL with
+ *     AuthType=AWS_IAM. The CloudFront origin-response timeout is 60 seconds,
+ *     bypassing API Gateway's hard 30-second cap — which is what was breaking
+ *     complex multi-variant signs that took the model 30–50s to read. The
+ *     Lambda's own 60s timeout is now the effective ceiling.
  *
- * `postJsonWithRetry` bolts a single retry-on-503/504 onto every request so
- * transient gateway hiccups don't bubble up as "Service Unavailable" to the
- * user. Two attempts × ~30s ≈ 60s worst case. After the second failure we
- * surface a friendly, action-oriented error rather than the raw HTTP status
- * — important for genuinely-too-complex signs that AWS will never fit inside
- * the 30s window.
+ *  2. **API Gateway HTTP API (VITE_API_URL)** still fronts the 6 JWT-gated
+ *     routes (`/sessions/*`, `/photos/*`, `/me/*`). 30s timeout is fine here
+ *     — those calls are DDB queries + presigned-URL minting, all fast. The
+ *     gateway also gives us the Cognito JWT authorizer for free, which
+ *     CloudFront would require Lambda@Edge to replicate.
+ *
+ * In dev, both front-doors fall through to the Vite middleware at /api/*.
+ *
+ * `postJsonWithRetry` retains the single retry-on-5xx layer so any transient
+ * gateway hiccup still produces a friendly localised message rather than the
+ * raw HTTP detail. The new architecture should make 5xx essentially extinct
+ * on the slow routes, but the safety net costs nothing.
+ *
+ * Earlier attempt note: I tried Lambda Function URL with AuthType=NONE +
+ * a Principal:"*" resource policy. Persistent 403 in this account despite
+ * no SCPs/RCPs/PAB visible — known AWS quirk. CloudFront OAC sidesteps it
+ * entirely by signing requests server-side.
  */
 
 const API_GATEWAY_URL = import.meta.env.VITE_API_URL as string | undefined
 
 /**
- * Resolve the correct base+path for a given endpoint.
+ * Resolve the correct URL for a given endpoint.
  *
- * - VITE_API_URL set → API Gateway, with the last URL segment swapped for the
- *   target path (the env var is baked per-route by deploy.sh).
+ * - VITE_API_URL set → API Gateway, with the last URL segment swapped for
+ *   the target path (the env var is baked per-route by deploy.sh).
  * - VITE_API_URL unset → /api/<path> for the dev middleware.
  */
 export function endpointUrl(path: string): string {
@@ -58,11 +67,14 @@ export class ApiError extends Error {
 }
 
 /**
- * Status codes that indicate the request didn't really fail — the backend
- * either timed out (504), the gateway upstream wasn't ready (503), or some
- * transient infrastructure hiccup happened. We retry these once.
+ * Status codes that indicate the request didn't really fail in a way the
+ * user could fix. Any 5xx falls in here — we retry once and surface a
+ * friendly message rather than the raw HTTP detail. AWS API Gateway has
+ * been observed returning 500 with body `{"message":"Service Unavailable"}`
+ * when Lambda is slow OR when an integration upstream times out, so we
+ * treat the whole 5xx range as transient.
  */
-const TRANSIENT_STATUSES = new Set([502, 503, 504])
+const TRANSIENT_STATUSES = new Set([500, 502, 503, 504, 529])
 
 /** POST JSON with one automatic retry on transient failures. */
 export async function postJsonWithRetry<T>(
@@ -116,6 +128,72 @@ export async function postJsonWithRetry<T>(
     }
   }
   throw lastErr instanceof Error ? lastErr : new Error('Unreachable')
+}
+
+/**
+ * Async-polling helper. Some endpoints (sign-translate, draft-appeal) take
+ * 30–50s on complex inputs — past API Gateway's hard 30s HTTP timeout. The
+ * Lambda enqueues a job and returns 202 + job_id; we then poll the status
+ * endpoint until the job finishes.
+ *
+ * Polling interval is intentionally aggressive (1500ms) because Claude
+ * returns in a fairly tight window and a snappier user experience matters
+ * more than the few extra DDB reads (cents per million).
+ */
+export async function postJsonAndPoll<T>(
+  path: string,
+  body: unknown,
+): Promise<T> {
+  // Step 1: enqueue the job. Returns 202 with { job_id }.
+  type EnqueueResp = { job_id: string; status: string }
+  const enqueueResp = await postJsonWithRetry<EnqueueResp>(path, body)
+  if (!enqueueResp.job_id) {
+    // If the server happened to return the result synchronously (e.g., the
+    // refresh-mode path on /sign-translate), it isn't shaped like an enqueue
+    // response — return as-is. The caller cast handles the type.
+    return enqueueResp as unknown as T
+  }
+
+  // Step 2: poll the status endpoint until status is 'done' or 'error'.
+  // Cap at ~70 seconds total (Lambda's own timeout is 60s) to avoid infinite
+  // polling if the work somehow goes missing.
+  const POLL_INTERVAL_MS = 1500
+  const MAX_POLLS = 50 // 50 × 1500ms = 75s ceiling
+
+  for (let attempt = 0; attempt < MAX_POLLS; attempt++) {
+    await sleep(POLL_INTERVAL_MS)
+    const statusUrl = `${endpointUrl(path)}/status/${enqueueResp.job_id}`
+    const resp = await fetch(statusUrl, { method: 'GET' })
+    if (!resp.ok) {
+      if (TRANSIENT_STATUSES.has(resp.status)) {
+        // Status endpoint is also fronted by API Gateway; a transient blip
+        // on a poll shouldn't fail the whole flow. Keep trying.
+        continue
+      }
+      throw new ApiError(
+        await safeReadDetail(resp) || `Status check failed (${resp.status})`,
+        resp.status,
+        false,
+      )
+    }
+    const payload = (await resp.json()) as {
+      status: 'pending' | 'done' | 'error'
+      result: T | null
+      error: string | null
+    }
+    if (payload.status === 'done' && payload.result) {
+      return payload.result
+    }
+    if (payload.status === 'error') {
+      throw new ApiError(
+        payload.error || 'Background job failed',
+        500,
+        false,
+      )
+    }
+    // 'pending' — keep polling
+  }
+  throw new ApiError(complexSignMessage(), 504, true)
 }
 
 async function safeReadDetail(resp: Response): Promise<string> {

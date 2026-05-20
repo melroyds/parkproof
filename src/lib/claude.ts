@@ -1,6 +1,12 @@
 import type { AppealDraft, ObservationGroup, ParkingRules, ParkingSession } from '../types'
-import { postJsonWithRetry } from './api'
+import { postJsonAndPoll } from './api'
 
+/**
+ * Fresh sign translate from an image. Server-side this enqueues a job and
+ * polls — see src/lib/api.ts for the async-job flow. Takes ~7-20s on
+ * normal signs, up to ~50s on monstrous multi-variant signs (the kind
+ * that previously hit API Gateway's 30s ceiling and 503'd).
+ */
 export async function translateSign(
   imageBase64: string,
   mediaType = 'image/jpeg',
@@ -14,7 +20,7 @@ export async function translateSign(
     body.lat = coords.lat
     body.lng = coords.lng
   }
-  return postJsonWithRetry<ParkingRules>('/sign-translate', body)
+  return postJsonAndPoll<ParkingRules>('/sign-translate', body)
 }
 
 /**
@@ -22,6 +28,11 @@ export async function translateSign(
  * previously-read sign rules to Claude and asks it to compute current-time
  * fields (can_park_now / until / duration_minutes) only. Roughly 3× faster
  * and 3–4× cheaper per scan vs the full translate path.
+ *
+ * Server-side this branches inside /sign-translate: if `prior_rules` is
+ * present the Lambda runs it synchronously (fast enough to fit the 30s
+ * gateway window), so the 202+poll flow degrades gracefully into a
+ * normal sync response. `postJsonAndPoll` handles both shapes.
  */
 export async function refreshInterpretation(
   prior: {
@@ -40,7 +51,7 @@ export async function refreshInterpretation(
     body.lat = coords.lat
     body.lng = coords.lng
   }
-  return postJsonWithRetry<ParkingRules>('/sign-translate', body)
+  return postJsonAndPoll<ParkingRules>('/sign-translate', body)
 }
 
 export async function draftAppeal(
@@ -61,5 +72,5 @@ export async function draftAppeal(
       confidence: session.confidence,
     },
   }
-  return postJsonWithRetry<AppealDraft>('/draft-appeal', body)
+  return postJsonAndPoll<AppealDraft>('/draft-appeal', body)
 }
