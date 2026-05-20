@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { ParkingSession } from '../types'
-import { deleteSession, updateSession } from '../lib/storage'
+import { deleteSession, endSession, updateSession } from '../lib/storage'
 import Icon from './Icon'
 import { useNow } from '../lib/use-now'
 import { formatCountdown } from '../lib/countdown'
@@ -17,6 +17,13 @@ interface Props {
   onBack: () => void
   onDeleted: () => void
   onDraftAppeal: () => void
+  /**
+   * Called when the user signals "I've left" via the End session button.
+   * App.tsx mirrors the change to cloud (when signed in) and updates the
+   * activeSessions memo. The session itself stays in history with ended_at
+   * set, so this is non-destructive.
+   */
+  onEndSession?: (session: ParkingSession) => void
 }
 
 function fmtLocal(iso: string, timeZone: string, full = false): string {
@@ -31,14 +38,27 @@ function fmtLocal(iso: string, timeZone: string, full = false): string {
   })
 }
 
-export default function SessionDetail({ session, onBack, onDeleted, onDraftAppeal }: Props) {
+export default function SessionDetail({
+  session,
+  onBack,
+  onDeleted,
+  onDraftAppeal,
+  onEndSession,
+}: Props) {
   const { t } = useTranslation()
   const { user } = useAuth()
   const now = useNow()
   const expiresMs = session.expires_at ? new Date(session.expires_at).getTime() : null
   const isExpired = expiresMs !== null && expiresMs < now
+  const isEnded = !!session.ended_at
   const countdown =
-    expiresMs !== null && !isExpired ? formatCountdown(expiresMs - now) : null
+    expiresMs !== null && !isExpired && !isEnded ? formatCountdown(expiresMs - now) : null
+  // Active means the user can still take the "End session" action. Two cases:
+  //   - no expiry (no-sign session) and not yet ended
+  //   - has expiry, still in the future, and not yet ended (leaving early)
+  const canEnd =
+    !isEnded &&
+    (session.expires_at == null || (expiresMs !== null && expiresMs > now))
   const timeZone = useMemo(() => sessionTimezone(session.location), [session.location])
 
   // Pre-import the PDF chunk so the click → save chain stays inside the
@@ -88,6 +108,16 @@ export default function SessionDetail({ session, onBack, onDeleted, onDraftAppea
       })
     }
     onDeleted()
+  }
+
+  const handleEnd = () => {
+    if (!window.confirm(t('session.endConfirm'))) return
+    endSession(session.id)
+    if (user) mirrorSessionUpdateToCloud(session.id)
+    // Notify parent so the home-screen active card can re-derive. We DON'T
+    // navigate away — staying on the detail view lets the user immediately
+    // see the "Ended {{when}}" status row.
+    onEndSession?.({ ...session, ended_at: new Date().toISOString() })
   }
 
   // Editable note — persists to localStorage on save. The committed value lives
@@ -168,14 +198,20 @@ export default function SessionDetail({ session, onBack, onDeleted, onDraftAppea
             </dt>
             <dd
               className={`mt-1 font-display font-bold ${
-                isExpired ? 'text-ink-500' : 'text-brand-700'
+                isEnded || isExpired ? 'text-ink-500' : 'text-brand-700'
               }`}
             >
-              {session.expires_at
-                ? isExpired
-                  ? t('history.expired')
-                  : t('session.active', { when: fmtLocal(session.expires_at, timeZone) })
-                : 'No expiry recorded'}
+              {isEnded
+                ? t('session.endedAt', {
+                    when: fmtLocal(session.ended_at as string, timeZone),
+                  })
+                : session.expires_at
+                  ? isExpired
+                    ? t('history.expired')
+                    : t('session.active', {
+                        when: fmtLocal(session.expires_at, timeZone),
+                      })
+                  : t('session.noExpiryRecorded')}
             </dd>
             {countdown && (
               <dd
@@ -423,6 +459,17 @@ export default function SessionDetail({ session, onBack, onDeleted, onDraftAppea
         >
           {t('session.draftAppeal')}
         </button>
+        {/* End session — only shown for sessions the user can still terminate.
+            Visually distinct from Delete (which destroys the record): this
+            keeps the evidence intact and just stamps an ended_at timestamp. */}
+        {canEnd && (
+          <button
+            onClick={handleEnd}
+            className="bg-white border border-brand-500 hover:bg-brand-50 active:bg-brand-100 text-brand-700 font-semibold py-3 rounded-2xl transition-colors"
+          >
+            {t('session.endSession')}
+          </button>
+        )}
         <button
           onClick={handleDelete}
           className="text-accent-600 hover:text-accent-700 font-medium py-3 transition-colors"

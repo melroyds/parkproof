@@ -86,3 +86,39 @@ export function formatCountdownLocalized(
   }
   return { ...raw, label }
 }
+
+/**
+ * Format "ms-since-arrival" into a human label for open-ended (no-sign)
+ * sessions. These have no expiry, so there's no urgency — the value is just
+ * a "how long you've been parked" indicator. Always returns urgency: 'normal'.
+ *
+ * Translation keys consumed: time.parkedForMin (plural), time.parkedForHour
+ * (plural), time.parkedForHours (plural), time.parkedForHoursMins.
+ */
+export function formatElapsedLocalized(
+  msSince: number,
+  t: TFunction,
+): { label: string; totalMinutes: number } {
+  const totalMinutes = Math.max(0, Math.floor(msSince / 60_000))
+  if (totalMinutes < 60) {
+    return {
+      label: t('time.parkedForMin', { count: totalMinutes }),
+      totalMinutes,
+    }
+  }
+  const hours = Math.floor(totalMinutes / 60)
+  const mins = totalMinutes % 60
+  if (mins === 0) {
+    return {
+      label:
+        hours === 1
+          ? t('time.parkedForHour', { count: hours })
+          : t('time.parkedForHours', { count: hours }),
+      totalMinutes,
+    }
+  }
+  return {
+    label: t('time.parkedForHoursMins', { hours, mins }),
+    totalMinutes,
+  }
+}

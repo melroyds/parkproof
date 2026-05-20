@@ -51,7 +51,11 @@
     "distanceAway": "距离 {{distance}}",
     "walkMinutes_one": "≈ 步行 1 分钟",
     "walkMinutes_other": "≈ 步行 {{count}} 分钟",
-    "morePill": "+ 另 {{count}} 个"
+    "morePill": "+ 另 {{count}} 个",
+    "noPostedRestrictions": "无标牌限制",
+    "iveLeft": "我已离开",
+    "iveLeftAria": "标记您已离开此停车位",
+    "iveLeftConfirm": "现在结束此停车记录?会移至历史并记录离开时间。"
   },
   "scanner": {
     "header": "扫描停车标志",
@@ -233,7 +237,11 @@
     "ambientPhotoLabel": "周围环境",
     "ambientPhotoCaption": "在停车时拍摄以证明无标志存在。",
     "noAmbientCaptured": "未拍摄周围环境照片。",
-    "noSignBadgeLong": "未记录已张贴的限制。此处为无标志停车位。"
+    "noSignBadgeLong": "未记录已张贴的限制。此处为无标志停车位。",
+    "endSession": "结束停车",
+    "endConfirm": "现在结束此停车记录?证据记录将保留在历史中,并记录您的离开时间。",
+    "endedAt": "已结束 {{when}}",
+    "noExpiryRecorded": "未记录到期时间"
   },
   "appeal": {
     "captureHeader": "起草申诉信",
@@ -396,7 +404,9 @@
         "mapLink": "地图链接",
         "sideVariant": "所选方向 / 规则",
         "signRules": "标志规则",
-        "aiConfidence": "AI 置信度"
+        "aiConfidence": "AI 置信度",
+        "endedAt": "驾驶员标记的离开时间",
+        "actualDuration": "实际停车时长"
       },
       "locationSourceValue": {
         "manuallyEntered": "手动输入",
@@ -464,6 +474,13 @@
       "sessionHeader": "第 {{n}} / {{total}} 次会话",
       "signedBadge": "已于 {{when}} 加密签名",
       "driverNoteField": "驾驶员备注"
+    },
+    "duration": {
+      "minOnly_one": "1 分钟",
+      "minOnly_other": "{{count}} 分钟",
+      "hourOnly_one": "1 小时",
+      "hoursOnly_other": "{{count}} 小时",
+      "hoursAndMins": "{{hours}} 小时 {{mins}} 分钟"
     }
   },
   "time": {
@@ -479,6 +496,11 @@
     "hourAgo_one": "1 小时前",
     "hoursAgo_other": "{{count}} 小时前",
     "yesterday": "昨天",
-    "daysAgo_other": "{{count}} 天前"
+    "daysAgo_other": "{{count}} 天前",
+    "parkedForMin_one": "已停 1 分钟",
+    "parkedForMin_other": "已停 {{count}} 分钟",
+    "parkedForHour_one": "已停 1 小时",
+    "parkedForHours_other": "已停 {{count}} 小时",
+    "parkedForHoursMins": "已停 {{hours}} 小时 {{mins}} 分钟"
   }
 }

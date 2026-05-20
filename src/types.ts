@@ -139,4 +139,15 @@ export interface ParkingSession {
    * when the context matters.
    */
   note?: string
+  /**
+   * ISO 8601 timestamp the user explicitly signalled "I've left". Set via the
+   * "End session" action on the active card / session detail. When present,
+   * the session is treated as complete regardless of `expires_at` — it falls
+   * out of the home "Currently parked" surface and shows an ended-at row in
+   * detail. Primary purpose: no-sign sessions have no natural expiry, so
+   * without an explicit end they'd hang around forever. Also useful on
+   * expiry-bearing sessions when the user leaves early and wants the evidence
+   * record to reflect actual duration.
+   */
+  ended_at?: string
 }

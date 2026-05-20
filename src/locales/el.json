@@ -51,7 +51,11 @@
     "distanceAway": "{{distance}} μακριά",
     "walkMinutes_one": "≈ 1 λεπτό περπάτημα",
     "walkMinutes_other": "≈ {{count}} λεπτά περπάτημα",
-    "morePill": "+{{count}} ακόμα"
+    "morePill": "+{{count}} ακόμα",
+    "noPostedRestrictions": "Καμία αναγραμμένη απαγόρευση",
+    "iveLeft": "Έφυγα",
+    "iveLeftAria": "Δηλώστε ότι φύγατε από αυτή τη θέση στάθμευσης",
+    "iveLeftConfirm": "Τερματισμός αυτής της στάθμευσης τώρα; Θα μεταφερθεί στο ιστορικό με καταγεγραμμένη την ώρα αναχώρησης."
   },
   "scanner": {
     "header": "Σάρωση πινακίδας στάθμευσης",
@@ -233,7 +237,11 @@
     "ambientPhotoLabel": "Περιβάλλον",
     "ambientPhotoCaption": "Καταγράφηκε κατά τη στιγμή της στάθμευσης ως απόδειξη απουσίας πινακίδων.",
     "noAmbientCaptured": "Δεν καταγράφηκε φωτογραφία περιβάλλοντος.",
-    "noSignBadgeLong": "Δεν καταγράφηκαν αναρτημένοι περιορισμοί. Καταγράφηκε ως θέση χωρίς πινακίδες."
+    "noSignBadgeLong": "Δεν καταγράφηκαν αναρτημένοι περιορισμοί. Καταγράφηκε ως θέση χωρίς πινακίδες.",
+    "endSession": "Τερματισμός στάθμευσης",
+    "endConfirm": "Τερματισμός αυτής της στάθμευσης τώρα; Το αποδεικτικό παραμένει στο ιστορικό με καταγεγραμμένη την ώρα αναχώρησης.",
+    "endedAt": "Έληξε {{when}}",
+    "noExpiryRecorded": "Δεν έχει καταγραφεί λήξη"
   },
   "appeal": {
     "captureHeader": "Σύνταξη επιστολής ένστασης",
@@ -396,7 +404,9 @@
         "mapLink": "Σύνδεσμος χάρτη",
         "sideVariant": "Πλευρά / Επιλεγμένη παραλλαγή",
         "signRules": "Κανόνες πινακίδας",
-        "aiConfidence": "Βεβαιότητα AI"
+        "aiConfidence": "Βεβαιότητα AI",
+        "endedAt": "Αποχώρηση (δήλωση οδηγού)",
+        "actualDuration": "Πραγματική διάρκεια"
       },
       "locationSourceValue": {
         "manuallyEntered": "Εισήχθη χειροκίνητα",
@@ -464,6 +474,13 @@
       "sessionHeader": "Συνεδρία {{n}} από {{total}}",
       "signedBadge": "Υπογράφηκε κρυπτογραφικά στις {{when}}",
       "driverNoteField": "Σημείωση οδηγού"
+    },
+    "duration": {
+      "minOnly_one": "1 λεπτό",
+      "minOnly_other": "{{count}} λεπτά",
+      "hourOnly_one": "1 ώρα",
+      "hoursOnly_other": "{{count}} ώρες",
+      "hoursAndMins": "{{hours}}ω {{mins}}λ"
     }
   },
   "time": {
@@ -479,6 +496,11 @@
     "hourAgo_one": "1 ώρα πριν",
     "hoursAgo_other": "{{count}} ώρες πριν",
     "yesterday": "χθες",
-    "daysAgo_other": "{{count}} ημέρες πριν"
+    "daysAgo_other": "{{count}} ημέρες πριν",
+    "parkedForMin_one": "Στάθμευση για 1 λεπτό",
+    "parkedForMin_other": "Στάθμευση για {{count}} λεπτά",
+    "parkedForHour_one": "Στάθμευση για 1 ώρα",
+    "parkedForHours_other": "Στάθμευση για {{count}} ώρες",
+    "parkedForHoursMins": "Στάθμευση για {{hours}}ω {{mins}}λ"
   }
 }

@@ -58,18 +58,24 @@ function persistWithQuotaRecovery(
   }
 
   // Build an oldest-first list of expired sessions to victim-select from.
+  // "Expired" = either expires_at is in the past OR ended_at is set (the
+  // user explicitly signalled they've left). Sort key falls back to
+  // arrived_at when neither timestamp is available, so the oldest record
+  // always victim-selects first.
+  const tombstoneTime = (s: ParkingSession): number => {
+    if (s.ended_at) return new Date(s.ended_at).getTime()
+    if (s.expires_at) return new Date(s.expires_at).getTime()
+    return new Date(s.arrived_at).getTime()
+  }
   const expiredOldestFirst = sessions
     .map((s, idx) => ({ s, idx }))
     .filter(({ s }) => {
+      if (s.ended_at) return true
       if (!s.expires_at) return false
       const ms = new Date(s.expires_at).getTime()
       return Number.isFinite(ms) && ms < now
     })
-    .sort(
-      (a, b) =>
-        new Date(a.s.expires_at as string).getTime() -
-        new Date(b.s.expires_at as string).getTime(),
-    )
+    .sort((a, b) => tombstoneTime(a.s) - tombstoneTime(b.s))
 
   // Phase 1: strip car_photo (the user-supplied second photo).
   for (const { idx } of expiredOldestFirst) {
@@ -150,16 +156,18 @@ export function getSession(id: string): ParkingSession | undefined {
 }
 
 /**
- * Sessions that are currently in progress — `expires_at` is set and still in
- * the future. Sorted soonest-expiring first so the home-screen card surfaces
- * the most urgent one when (rarely) multiple are open at once.
+ * Sessions that are currently in progress. Three flavours, in priority order:
+ *   1. Sessions with `expires_at` still in the future (sorted soonest-first)
+ *   2. No-sign sessions with no `ended_at` (open-ended — sorted most-recent
+ *      arrival first, placed after expiry-bearing ones)
  *
- * Pure derivation off `expires_at` — no extra schema field — which means a
- * session naturally moves from "active" to "past" the moment its timer
- * elapses, with zero extra bookkeeping.
+ * In both cases, an explicit `ended_at` excludes the session — the user has
+ * signalled they've left. That's the only way to remove a no-sign session
+ * from this list; for expiry-bearing sessions, hitting expires_at also works.
  */
 export function loadActiveSessions(now: number = Date.now()): ParkingSession[] {
-  return loadSessions()
+  const all = loadSessions().filter((s) => !s.ended_at)
+  const withExpiry = all
     .filter((s) => {
       if (!s.expires_at) return false
       const ms = new Date(s.expires_at).getTime()
@@ -170,4 +178,21 @@ export function loadActiveSessions(now: number = Date.now()): ParkingSession[] {
         new Date(a.expires_at as string).getTime() -
         new Date(b.expires_at as string).getTime(),
     )
+  const openEnded = all
+    .filter((s) => !s.expires_at && s.no_sign)
+    .sort(
+      (a, b) =>
+        new Date(b.arrived_at).getTime() - new Date(a.arrived_at).getTime(),
+    )
+  return [...withExpiry, ...openEnded]
+}
+
+/**
+ * Mark a session as ended. Sets `ended_at` to the supplied timestamp (default
+ * now) and persists. Returns the same QuotaRecoveryReport shape as
+ * `updateSession` since this is a thin wrapper over it — quota errors are
+ * extremely unlikely here (a 24-byte field) but the report is uniform.
+ */
+export function endSession(id: string, when: Date = new Date()): QuotaRecoveryReport {
+  return updateSession(id, { ended_at: when.toISOString() })
 }

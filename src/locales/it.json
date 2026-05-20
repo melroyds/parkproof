@@ -57,7 +57,11 @@
     "allActiveHeader": "Attualmente parcheggiato",
     "allActiveIntro_one": "{{count}} sessione attiva. Tocca per aprire il record delle prove.",
     "allActiveIntro_other": "{{count}} sessioni attive. Tocca una qualsiasi per aprire il record delle prove.",
-    "lastLoggedSpot": "Ultimo posto registrato"
+    "lastLoggedSpot": "Ultimo posto registrato",
+    "noPostedRestrictions": "Nessuna restrizione segnalata",
+    "iveLeft": "Sono andato",
+    "iveLeftAria": "Segnala che hai lasciato questo parcheggio",
+    "iveLeftConfirm": "Terminare questa sessione di parcheggio ora? Verrà spostata nella cronologia con l'ora di partenza registrata."
   },
   "scanner": {
     "header": "Scansiona cartello di parcheggio",
@@ -239,7 +243,11 @@
     "ambientPhotoLabel": "Area circostante",
     "ambientPhotoCaption": "Catturata al momento del parcheggio per attestare l'assenza di cartelli.",
     "noAmbientCaptured": "Nessuna foto dell'area è stata catturata.",
-    "noSignBadgeLong": "Nessuna restrizione affissa registrata. Registrato come posto senza cartelli."
+    "noSignBadgeLong": "Nessuna restrizione affissa registrata. Registrato come posto senza cartelli.",
+    "endSession": "Termina sessione",
+    "endConfirm": "Terminare questa sessione ora? Il record di prova resta nella cronologia con l'ora di partenza registrata.",
+    "endedAt": "Terminata {{when}}",
+    "noExpiryRecorded": "Nessuna scadenza registrata"
   },
   "appeal": {
     "captureHeader": "Redigi una lettera di ricorso",
@@ -402,7 +410,9 @@
         "mapLink": "Link mappa",
         "sideVariant": "Lato / Variante selezionata",
         "signRules": "Regole del cartello",
-        "aiConfidence": "Affidabilità AI"
+        "aiConfidence": "Affidabilità AI",
+        "endedAt": "Uscita (segnalata dal conducente)",
+        "actualDuration": "Durata effettiva"
       },
       "locationSourceValue": {
         "manuallyEntered": "Inserito manualmente",
@@ -470,6 +480,13 @@
       "sessionHeader": "Sessione {{n}} di {{total}}",
       "signedBadge": "Firmato crittograficamente il {{when}}",
       "driverNoteField": "Nota del conducente"
+    },
+    "duration": {
+      "minOnly_one": "1 min",
+      "minOnly_other": "{{count}} min",
+      "hourOnly_one": "1 ora",
+      "hoursOnly_other": "{{count}} ore",
+      "hoursAndMins": "{{hours}}h {{mins}}m"
     }
   },
   "time": {
@@ -485,6 +502,11 @@
     "hourAgo_one": "1 ora fa",
     "hoursAgo_other": "{{count}} ore fa",
     "yesterday": "ieri",
-    "daysAgo_other": "{{count}} giorni fa"
+    "daysAgo_other": "{{count}} giorni fa",
+    "parkedForMin_one": "Parcheggiato da 1 min",
+    "parkedForMin_other": "Parcheggiato da {{count}} min",
+    "parkedForHour_one": "Parcheggiato da 1 ora",
+    "parkedForHours_other": "Parcheggiato da {{count}} ore",
+    "parkedForHoursMins": "Parcheggiato da {{hours}}h {{mins}}m"
   }
 }

@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import type { ParkingSession } from '../types'
-import { formatCountdown } from '../lib/countdown'
+import { formatCountdown, formatElapsedLocalized } from '../lib/countdown'
 import { useNow } from '../lib/use-now'
 import { formatExpiryAbsolute } from '../lib/time-format'
 import { sessionTimezone } from '../lib/timezone'
@@ -62,15 +62,27 @@ export default function ActiveSessionsList({ sessions, onBack, onOpen }: Props) 
 
       <ul className="space-y-3">
         {sessions.map((session) => {
-          if (!session.expires_at) return null
-          const expiresMs = new Date(session.expires_at).getTime()
-          const countdown = formatCountdown(expiresMs - now)
-          const style = URGENCY_STYLES[countdown.urgency]
+          // Branch on whether the session has an expiry. Open-ended (no-sign)
+          // sessions render in the neutral 'normal' palette with elapsed-time
+          // copy; expiry-bearing ones get the urgency colour grammar.
+          const hasExpiry = !!session.expires_at
+          const expiresMs = hasExpiry
+            ? new Date(session.expires_at as string).getTime()
+            : null
+          const countdown = hasExpiry
+            ? formatCountdown((expiresMs as number) - now)
+            : null
+          const elapsed = !hasExpiry
+            ? formatElapsedLocalized(now - new Date(session.arrived_at).getTime(), t)
+            : null
+          const style = URGENCY_STYLES[countdown?.urgency ?? 'normal']
           const timeZone = sessionTimezone(session.location)
-          const expiryLabel = formatExpiryAbsolute(session.expires_at, {
-            now: new Date(now),
-            timeZone,
-          })
+          const expiryLabel = hasExpiry
+            ? formatExpiryAbsolute(session.expires_at as string, {
+                now: new Date(now),
+                timeZone,
+              })
+            : null
           const addressLine =
             session.location?.address ??
             (session.location
@@ -82,7 +94,9 @@ export default function ActiveSessionsList({ sessions, onBack, onOpen }: Props) 
               <button
                 onClick={() => onOpen(session)}
                 className={`w-full text-left rounded-2xl border border-paper-300 ${style.tint} hover:brightness-95 active:brightness-90 transition-all overflow-hidden flex items-stretch`}
-                aria-label={`Open parking session at ${addressLine}, ${countdown.label}`}
+                aria-label={`Open parking session at ${addressLine}, ${
+                  hasExpiry ? countdown!.label : elapsed!.label
+                }`}
               >
                 {/* Coloured urgency stripe — at-a-glance grammar matches the home card */}
                 <div className={`${style.stripe} w-1.5 shrink-0`} aria-hidden />
@@ -97,10 +111,12 @@ export default function ActiveSessionsList({ sessions, onBack, onOpen }: Props) 
                       {addressLine}
                     </p>
                     <p className={`text-sm font-semibold mt-0.5 ${style.text}`}>
-                      {countdown.label}
+                      {hasExpiry ? countdown!.label : elapsed!.label}
                     </p>
                     <p className="text-xs text-ink-600 mt-0.5">
-                      {t('active.moveBy', { time: expiryLabel.combined })}
+                      {hasExpiry
+                        ? t('active.moveBy', { time: expiryLabel!.combined })
+                        : t('active.noPostedRestrictions')}
                     </p>
                   </div>
                   <Icon

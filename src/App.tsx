@@ -18,7 +18,13 @@ import LanguageSelector from './components/LanguageSelector'
 import Icon from './components/Icon'
 import LoadingProgress from './components/LoadingProgress'
 import { refreshInterpretation, translateSign } from './lib/claude'
-import { loadActiveSessions, loadSessions, saveSession, updateSession } from './lib/storage'
+import {
+  endSession,
+  loadActiveSessions,
+  loadSessions,
+  saveSession,
+  updateSession,
+} from './lib/storage'
 import { retryUnsignedSessions, signSession } from './lib/signing'
 import { useAuth } from './lib/use-auth'
 import {
@@ -67,7 +73,17 @@ function App() {
   // view-name early-returns. The home view consumes them; non-home views
   // pay a negligible cost (one localStorage read + a 30s interval).
   const now = useNow(30_000)
-  const activeSessions = useMemo(() => loadActiveSessions(now), [now])
+  // `activesVersion` lets us force a re-derive of the active-sessions list
+  // when something happens that touches the underlying localStorage data
+  // (end-session, new save) but doesn't otherwise change `now`. Without it,
+  // the home-screen card can linger for up to 30 seconds after the user
+  // taps "I've left".
+  const [activesVersion, setActivesVersion] = useState(0)
+  const activeSessions = useMemo(
+    () => loadActiveSessions(now),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [now, activesVersion],
+  )
 
   // On app start, sweep localStorage for sessions that landed unsigned (tab
   // closed mid-signing) and retry them in the background. Throttled per
@@ -215,6 +231,10 @@ function App() {
       // about. They go straight back to the home screen, where the saved
       // session is visible in History.
       setView(session.no_sign ? { name: 'home' } : { name: 'remind', session })
+      // Bump the actives memo so the home card surfaces the new session
+      // immediately rather than waiting for the next 30s tick. Mostly
+      // relevant for no-sign sessions that route straight back to home.
+      setActivesVersion((v) => v + 1)
       // Mirror to cloud immediately when signed in. Fire-and-forget — local
       // is the source of truth, the cloud is a best-effort backup.
       if (auth.user) {
@@ -240,6 +260,24 @@ function App() {
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err)
       setView({ name: 'error', message })
+    }
+  }
+
+  /**
+   * User signalled "I've left". Stamps ended_at on the session, mirrors the
+   * change to cloud when signed in, and bumps the actives memo so the home
+   * card disappears immediately rather than lingering for up to 30s.
+   *
+   * Non-destructive — the session stays in history with the ended-at stamp
+   * preserved for the evidence record.
+   */
+  const handleEndSession = (session: ParkingSession) => {
+    try {
+      endSession(session.id)
+      setActivesVersion((v) => v + 1)
+      if (auth.user) mirrorSessionUpdateToCloud(session.id)
+    } catch (err) {
+      console.warn('[storage] could not end session:', err)
     }
   }
 
@@ -403,6 +441,13 @@ function App() {
           onBack={() => setView({ name: 'history' })}
           onDeleted={() => setView({ name: 'history' })}
           onDraftAppeal={() => setView({ name: 'appeal', session: view.session })}
+          onEndSession={(updated) => {
+            handleEndSession(updated)
+            // Patch the view's session so the detail screen re-renders with
+            // ended_at set — surfaces the "Ended {{when}}" row immediately
+            // and hides the End-session button.
+            setView({ name: 'session', session: updated })
+          }}
         />
       </main>
     )
@@ -499,6 +544,7 @@ function App() {
               extraCount={activeSessions.length - 1}
               onOpen={(s) => setView({ name: 'session', session: s })}
               onShowMore={() => setView({ name: 'actives' })}
+              onEndSession={handleEndSession}
             />
           </div>
         )}

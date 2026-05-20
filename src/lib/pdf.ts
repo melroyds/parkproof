@@ -72,6 +72,52 @@ function splitRules(rules: string): string {
     .trim()
 }
 
+/**
+ * Build the two ended_at-conditional rows for the evidence table — only
+ * included when the driver explicitly signalled "I've left" on this session.
+ * Shared across all three PDF generators (single-session evidence, appeal
+ * attachment, full account export) so the duration math stays consistent.
+ *
+ * Returns an empty array when no ended_at is set; callers just spread the
+ * result inline.
+ */
+function endedRows(
+  session: ParkingSession,
+  timezone: string,
+  t: TFunction,
+): [string, string][] {
+  if (!session.ended_at) return []
+  const rows: [string, string][] = [
+    [t('pdf.evidence.field.endedAt'), fmtLocal(session.ended_at, timezone)],
+  ]
+  // Duration: arrived → ended. Only emit when both timestamps parse and the
+  // result is non-negative (defensive — a clock skew could in theory produce
+  // a negative). Show as "Xh Ym" with i18n-aware phrasing.
+  const arrivedMs = new Date(session.arrived_at).getTime()
+  const endedMs = new Date(session.ended_at).getTime()
+  if (Number.isFinite(arrivedMs) && Number.isFinite(endedMs) && endedMs >= arrivedMs) {
+    const totalMins = Math.max(0, Math.round((endedMs - arrivedMs) / 60_000))
+    const hours = Math.floor(totalMins / 60)
+    const mins = totalMins % 60
+    // Dedicated bare-duration keys (pdf.duration.*) — same plural-aware pattern
+    // as time.parkedFor* but without the "Parked for " prefix, which doesn't
+    // fit the table-cell context (the row label already says "Actual duration").
+    let durationLabel: string
+    if (hours === 0) {
+      durationLabel = t('pdf.duration.minOnly', { count: mins })
+    } else if (mins === 0) {
+      durationLabel =
+        hours === 1
+          ? t('pdf.duration.hourOnly', { count: hours })
+          : t('pdf.duration.hoursOnly', { count: hours })
+    } else {
+      durationLabel = t('pdf.duration.hoursAndMins', { hours, mins })
+    }
+    rows.push([t('pdf.evidence.field.actualDuration'), durationLabel])
+  }
+  return rows
+}
+
 function buildGuidance(session: ParkingSession, timezone: string, t: TFunction): string {
   if (!session.expires_at) {
     return t('pdf.evidence.guidanceFreeNoExpiry')
@@ -244,6 +290,11 @@ export function downloadPdf(session: ParkingSession, t: TFunction): void {
       t('pdf.evidence.field.expiresAt'),
       session.expires_at ? fmtLocal(session.expires_at, timezone) : dash,
     ],
+    // ended_at + actual-duration rows are appended only when the driver
+    // explicitly signalled "I've left" — empty array otherwise so the
+    // shape of the evidence record matches sessions saved before the
+    // feature shipped.
+    ...endedRows(session, timezone, t),
     [t('pdf.evidence.field.guidance'), buildGuidance(session, timezone, t)],
     [t('pdf.evidence.field.address'), session.location?.address ?? dash],
     [
@@ -623,6 +674,10 @@ export function downloadAppealPdf(params: {
       t('pdf.evidence.field.expiresAt'),
       session.expires_at ? fmtLocal(session.expires_at, timezone) : dash,
     ],
+    // Driver-signalled end-of-session — empty when the user never tapped
+    // "I've left". Useful in appeal context: shows actual time on-site,
+    // not just the sign's posted limit.
+    ...endedRows(session, timezone, t),
     [t('pdf.evidence.field.address'), session.location?.address ?? dash],
     [
       t('pdf.appeal.fieldGps'),
@@ -847,6 +902,7 @@ export function downloadFullExportPdf(payload: FullExportPayload, t: TFunction):
         t('pdf.evidence.field.expiresAt'),
         session.expires_at ? fmtLocal(session.expires_at, tz) : dash,
       ],
+      ...endedRows(session, tz, t),
       [t('pdf.evidence.field.address'), session.location?.address ?? dash],
       [
         t('pdf.evidence.field.locationGps'),

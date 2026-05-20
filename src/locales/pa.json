@@ -51,7 +51,11 @@
     "distanceAway": "{{distance}} ਦੂਰ",
     "walkMinutes_one": "≈ 1 ਮਿੰਟ ਪੈਦਲ",
     "walkMinutes_other": "≈ {{count}} ਮਿੰਟ ਪੈਦਲ",
-    "morePill": "+{{count}} ਹੋਰ"
+    "morePill": "+{{count}} ਹੋਰ",
+    "noPostedRestrictions": "ਕੋਈ ਪਾਬੰਦੀ ਦਰਜ ਨਹੀਂ",
+    "iveLeft": "ਮੈਂ ਚਲਾ/ਚਲੀ ਗਿਆ/ਗਈ ਹਾਂ",
+    "iveLeftAria": "ਸੰਕੇਤ ਦਿਓ ਕਿ ਤੁਸੀਂ ਇਸ ਪਾਰਕਿੰਗ ਥਾਂ ਤੋਂ ਚਲੇ ਗਏ ਹੋ",
+    "iveLeftConfirm": "ਹੁਣ ਇਸ ਪਾਰਕਿੰਗ ਸੈਸ਼ਨ ਨੂੰ ਖ਼ਤਮ ਕਰੋ? ਇਹ ਜਾਣ ਦੇ ਸਮੇਂ ਨਾਲ ਇਤਿਹਾਸ ਵਿੱਚ ਚਲਾ ਜਾਵੇਗਾ।"
   },
   "scanner": {
     "header": "ਪਾਰਕਿੰਗ ਚਿੰਨ੍ਹ ਸਕੈਨ ਕਰੋ",
@@ -233,7 +237,11 @@
     "ambientPhotoLabel": "ਆਲੇ-ਦੁਆਲੇ",
     "ambientPhotoCaption": "ਪਾਰਕਿੰਗ ਦੇ ਸਮੇਂ ਸਾਈਨ ਦੀ ਗੈਰ-ਹਾਜ਼ਰੀ ਸਾਬਤ ਕਰਨ ਲਈ ਲਈ ਗਈ।",
     "noAmbientCaptured": "ਕੋਈ ਆਲੇ-ਦੁਆਲੇ ਦੀ ਫੋਟੋ ਨਹੀਂ ਲਈ ਗਈ।",
-    "noSignBadgeLong": "ਕੋਈ ਲਗਾਈ ਗਈ ਪਾਬੰਦੀ ਦਰਜ ਨਹੀਂ। ਬਿਨਾਂ ਸਾਈਨ ਵਾਲੀ ਥਾਂ ਵਜੋਂ ਦਰਜ ਕੀਤੀ ਗਈ।"
+    "noSignBadgeLong": "ਕੋਈ ਲਗਾਈ ਗਈ ਪਾਬੰਦੀ ਦਰਜ ਨਹੀਂ। ਬਿਨਾਂ ਸਾਈਨ ਵਾਲੀ ਥਾਂ ਵਜੋਂ ਦਰਜ ਕੀਤੀ ਗਈ।",
+    "endSession": "ਸੈਸ਼ਨ ਖ਼ਤਮ ਕਰੋ",
+    "endConfirm": "ਹੁਣ ਇਸ ਪਾਰਕਿੰਗ ਸੈਸ਼ਨ ਨੂੰ ਖ਼ਤਮ ਕਰੋ? ਸਬੂਤ ਰਿਕਾਰਡ ਤੁਹਾਡੇ ਜਾਣ ਦੇ ਸਮੇਂ ਨਾਲ ਇਤਿਹਾਸ ਵਿੱਚ ਰਹੇਗਾ।",
+    "endedAt": "{{when}} ਨੂੰ ਖ਼ਤਮ",
+    "noExpiryRecorded": "ਕੋਈ ਮਿਆਦ ਦਰਜ ਨਹੀਂ"
   },
   "appeal": {
     "captureHeader": "ਅਪੀਲ ਪੱਤਰ ਦਾ ਖਰੜਾ ਤਿਆਰ ਕਰੋ",
@@ -396,7 +404,9 @@
         "mapLink": "ਨਕਸ਼ੇ ਦਾ ਲਿੰਕ",
         "sideVariant": "ਚੁਣਿਆ ਪਾਸਾ / ਵਿਕਲਪ",
         "signRules": "ਚਿੰਨ੍ਹ ਦੇ ਨਿਯਮ",
-        "aiConfidence": "AI ਭਰੋਸਾ"
+        "aiConfidence": "AI ਭਰੋਸਾ",
+        "endedAt": "ਜਾਣ ਦਾ ਸਮਾਂ (ਡਰਾਈਵਰ ਵੱਲੋਂ ਦਰਜ)",
+        "actualDuration": "ਅਸਲ ਸਮਾਂ-ਮਿਆਦ"
       },
       "locationSourceValue": {
         "manuallyEntered": "ਆਪ ਭਰਿਆ ਗਿਆ",
@@ -464,6 +474,13 @@
       "sessionHeader": "ਸੈਸ਼ਨ {{total}} ਵਿੱਚੋਂ {{n}}",
       "signedBadge": "{{when}} ਨੂੰ ਕ੍ਰਿਪਟੋਗ੍ਰਾਫਿਕ ਤੌਰ 'ਤੇ ਹਸਤਾਖਰਿਤ",
       "driverNoteField": "ਡਰਾਈਵਰ ਦਾ ਨੋਟ"
+    },
+    "duration": {
+      "minOnly_one": "1 ਮਿੰਟ",
+      "minOnly_other": "{{count}} ਮਿੰਟ",
+      "hourOnly_one": "1 ਘੰਟਾ",
+      "hoursOnly_other": "{{count}} ਘੰਟੇ",
+      "hoursAndMins": "{{hours}} ਘੰਟੇ {{mins}} ਮਿੰਟ"
     }
   },
   "time": {
@@ -479,6 +496,11 @@
     "hourAgo_one": "1 ਘੰਟਾ ਪਹਿਲਾਂ",
     "hoursAgo_other": "{{count}} ਘੰਟੇ ਪਹਿਲਾਂ",
     "yesterday": "ਕੱਲ੍ਹ",
-    "daysAgo_other": "{{count}} ਦਿਨ ਪਹਿਲਾਂ"
+    "daysAgo_other": "{{count}} ਦਿਨ ਪਹਿਲਾਂ",
+    "parkedForMin_one": "1 ਮਿੰਟ ਤੋਂ ਪਾਰਕ ਹੈ",
+    "parkedForMin_other": "{{count}} ਮਿੰਟ ਤੋਂ ਪਾਰਕ ਹੈ",
+    "parkedForHour_one": "1 ਘੰਟੇ ਤੋਂ ਪਾਰਕ ਹੈ",
+    "parkedForHours_other": "{{count}} ਘੰਟੇ ਤੋਂ ਪਾਰਕ ਹੈ",
+    "parkedForHoursMins": "{{hours}} ਘੰਟੇ {{mins}} ਮਿੰਟ ਤੋਂ ਪਾਰਕ ਹੈ"
   }
 }

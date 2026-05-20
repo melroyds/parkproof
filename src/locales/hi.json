@@ -51,7 +51,11 @@
     "distanceAway": "{{distance}} दूर",
     "walkMinutes_one": "≈ 1 मिनट पैदल",
     "walkMinutes_other": "≈ {{count}} मिनट पैदल",
-    "morePill": "+{{count}} और"
+    "morePill": "+{{count}} और",
+    "noPostedRestrictions": "कोई प्रतिबंध नहीं लगा",
+    "iveLeft": "मैं जा चुका/चुकी हूं",
+    "iveLeftAria": "संकेत दें कि आप इस पार्किंग स्थान से जा चुके हैं",
+    "iveLeftConfirm": "अभी इस पार्किंग सत्र को समाप्त करें? यह आपके जाने के समय के साथ इतिहास में चला जाएगा।"
   },
   "scanner": {
     "header": "पार्किंग साइन स्कैन करें",
@@ -233,7 +237,11 @@
     "ambientPhotoLabel": "आसपास",
     "ambientPhotoCaption": "पार्किंग के समय साइन की अनुपस्थिति साबित करने के लिए लिया गया।",
     "noAmbientCaptured": "कोई आसपास की तस्वीर नहीं ली गई।",
-    "noSignBadgeLong": "कोई पोस्टेड प्रतिबंध दर्ज नहीं। बिना साइन वाली जगह के रूप में दर्ज।"
+    "noSignBadgeLong": "कोई पोस्टेड प्रतिबंध दर्ज नहीं। बिना साइन वाली जगह के रूप में दर्ज।",
+    "endSession": "सत्र समाप्त करें",
+    "endConfirm": "अभी इस पार्किंग सत्र को समाप्त करें? साक्ष्य रिकॉर्ड आपके जाने के समय के साथ इतिहास में बना रहेगा।",
+    "endedAt": "{{when}} पर समाप्त",
+    "noExpiryRecorded": "कोई समाप्ति समय दर्ज नहीं"
   },
   "appeal": {
     "captureHeader": "अपील पत्र का मसौदा तैयार करें",
@@ -396,7 +404,9 @@
         "mapLink": "मानचित्र लिंक",
         "sideVariant": "चुना गया पक्ष / विकल्प",
         "signRules": "साइन के नियम",
-        "aiConfidence": "AI विश्वसनीयता"
+        "aiConfidence": "AI विश्वसनीयता",
+        "endedAt": "जाने का समय (चालक-द्वारा दर्ज)",
+        "actualDuration": "वास्तविक अवधि"
       },
       "locationSourceValue": {
         "manuallyEntered": "मैन्युअल रूप से दर्ज",
@@ -464,6 +474,13 @@
       "sessionHeader": "सेशन {{total}} में से {{n}}",
       "signedBadge": "{{when}} को क्रिप्टोग्राफ़िक रूप से हस्ताक्षरित",
       "driverNoteField": "चालक का नोट"
+    },
+    "duration": {
+      "minOnly_one": "1 मिनट",
+      "minOnly_other": "{{count}} मिनट",
+      "hourOnly_one": "1 घंटा",
+      "hoursOnly_other": "{{count}} घंटे",
+      "hoursAndMins": "{{hours}} घंटे {{mins}} मिनट"
     }
   },
   "time": {
@@ -479,6 +496,11 @@
     "hourAgo_one": "1 घंटा पहले",
     "hoursAgo_other": "{{count}} घंटे पहले",
     "yesterday": "कल",
-    "daysAgo_other": "{{count}} दिन पहले"
+    "daysAgo_other": "{{count}} दिन पहले",
+    "parkedForMin_one": "1 मिनट से पार्क है",
+    "parkedForMin_other": "{{count}} मिनट से पार्क है",
+    "parkedForHour_one": "1 घंटे से पार्क है",
+    "parkedForHours_other": "{{count}} घंटे से पार्क है",
+    "parkedForHoursMins": "{{hours}} घंटे {{mins}} मिनट से पार्क है"
   }
 }

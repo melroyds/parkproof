@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { ParkingSession } from '../types'
-import { formatCountdown } from '../lib/countdown'
+import { formatCountdown, formatElapsedLocalized } from '../lib/countdown'
 import { useNow } from '../lib/use-now'
 import { formatExpiryAbsolute } from '../lib/time-format'
 import { sessionTimezone } from '../lib/timezone'
@@ -19,6 +19,12 @@ interface Props {
    * but no longer a UX lie pretending to be a tap target).
    */
   onShowMore?: () => void
+  /**
+   * Tapped when the user signals "I've left". The card calls this with the
+   * session ID; App.tsx handles the actual storage + cloud mirror so the
+   * card stays pure-presentation.
+   */
+  onEndSession?: (session: ParkingSession) => void
 }
 
 /**
@@ -72,7 +78,13 @@ function useCurrentPosition(): { lat: number; lng: number } | null {
   return coords
 }
 
-export default function ActiveSessionCard({ session, extraCount, onOpen, onShowMore }: Props) {
+export default function ActiveSessionCard({
+  session,
+  extraCount,
+  onOpen,
+  onShowMore,
+  onEndSession,
+}: Props) {
   const { t } = useTranslation()
   // 30s tick is enough granularity for minute-level countdowns; the totalMinutes
   // value only ever shifts by ±1 per tick at the boundary, which matches what a
@@ -80,17 +92,24 @@ export default function ActiveSessionCard({ session, extraCount, onOpen, onShowM
   const now = useNow(30_000)
   const currentPosition = useCurrentPosition()
 
-  if (!session.expires_at) return null
-  const expiresMs = new Date(session.expires_at).getTime()
-  const countdown = formatCountdown(expiresMs - now)
-  const style = URGENCY_STYLES[countdown.urgency]
-  // Date-aware: same day → "Move by 3:45 pm"; multi-day → "Move by 10:00 am, Mon 18/05/2026"
-  // TZ pinned to the parking spot's location, not the user's current device locale.
+  // Two flavours of active session:
+  //  - expiry-bearing: countdown + "Move by" line, traditional urgency colours
+  //  - open-ended (no-sign, no expires_at): elapsed time + "no posted restrictions",
+  //    always rendered in the neutral 'normal' colour because there's no urgency
+  const hasExpiry = !!session.expires_at
+  const expiresMs = hasExpiry ? new Date(session.expires_at as string).getTime() : null
+  const countdown = hasExpiry ? formatCountdown((expiresMs as number) - now) : null
+  const elapsed = !hasExpiry
+    ? formatElapsedLocalized(now - new Date(session.arrived_at).getTime(), t)
+    : null
+  const style = URGENCY_STYLES[countdown?.urgency ?? 'normal']
   const timeZone = sessionTimezone(session.location)
-  const expiryLabel = formatExpiryAbsolute(session.expires_at, {
-    now: new Date(now),
-    timeZone,
-  })
+  const expiryLabel = hasExpiry
+    ? formatExpiryAbsolute(session.expires_at as string, {
+        now: new Date(now),
+        timeZone,
+      })
+    : null
 
   const addressLine =
     session.location?.address ??
@@ -146,7 +165,7 @@ export default function ActiveSessionCard({ session, extraCount, onOpen, onShowM
         type="button"
         onClick={() => onOpen(session)}
         className="w-full text-left rounded-xl -m-1 p-1 transition-transform active:scale-[0.99]"
-        aria-label={`Active parking session at ${addressLine}, ${countdown.label}. Tap for details.`}
+        aria-label={`Active parking session at ${addressLine}, ${hasExpiry ? countdown!.label : elapsed!.label}. Tap for details.`}
       >
         <div className="flex items-start gap-3">
           <div
@@ -166,10 +185,12 @@ export default function ActiveSessionCard({ session, extraCount, onOpen, onShowM
 
         <div className="mt-4">
           <p className="font-display text-3xl font-extrabold tracking-tight">
-            {countdown.label}
+            {hasExpiry ? countdown!.label : elapsed!.label}
           </p>
           <p className="mt-1 text-sm text-white/90 font-semibold">
-            {t('active.moveBy', { time: expiryLabel.combined })}
+            {hasExpiry
+              ? t('active.moveBy', { time: expiryLabel!.combined })
+              : t('active.noPostedRestrictions')}
           </p>
         </div>
       </button>
@@ -215,6 +236,35 @@ export default function ActiveSessionCard({ session, extraCount, onOpen, onShowM
           >
             {t('active.walkBackButton')}
           </a>
+        </div>
+      )}
+
+      {/* "I've left" — explicit end-of-session affordance. Required for
+          no-sign sessions (they have no natural expiry) but useful on
+          expiry-bearing sessions too when the user leaves early. Sits below
+          walk-back so it's discoverable without competing with the more-
+          frequent "find my car" intent. confirm() rather than a full modal
+          because the action is undoable (the session record stays in
+          history, just with ended_at set). */}
+      {onEndSession && (
+        <div
+          className={`flex justify-end ${
+            mapsUrl ? 'mt-3 pt-3 border-t border-white/20' : 'mt-4 pt-4 border-t border-white/20'
+          }`}
+        >
+          <button
+            type="button"
+            onClick={() => {
+              if (window.confirm(t('active.iveLeftConfirm'))) {
+                onEndSession(session)
+              }
+            }}
+            className="text-white/90 hover:text-white text-xs font-semibold uppercase tracking-wider px-3 py-2 rounded-lg bg-white/10 hover:bg-white/20 active:bg-white/15 transition-colors inline-flex items-center gap-1.5"
+            aria-label={t('active.iveLeftAria')}
+          >
+            <Icon name="check" className="w-3.5 h-3.5" strokeWidth={2.5} />
+            {t('active.iveLeft')}
+          </button>
         </div>
       )}
     </div>

@@ -57,7 +57,11 @@
     "allActiveHeader": "Currently parked",
     "allActiveIntro_one": "{{count}} active parking session. Tap to open its evidence record.",
     "allActiveIntro_other": "{{count}} active parking sessions. Tap any one to open its evidence record.",
-    "lastLoggedSpot": "Last logged spot"
+    "lastLoggedSpot": "Last logged spot",
+    "noPostedRestrictions": "No posted restrictions",
+    "iveLeft": "I've left",
+    "iveLeftAria": "Signal that you've left this parking spot",
+    "iveLeftConfirm": "End this parking session now? It'll move to history with the time you left recorded."
   },
   "scanner": {
     "header": "Scan parking sign",
@@ -238,6 +242,10 @@
     "pdfErrorHeader": "Couldn't build the PDF",
     "pdfErrorHelp": "The error has been logged to the browser console. If this keeps happening, take a screenshot of the console output and share it.",
     "draftAppeal": "Got a ticket? Draft an appeal letter",
+    "endSession": "End session",
+    "endConfirm": "End this parking session now? The evidence record stays in history with the time you left recorded.",
+    "endedAt": "Ended {{when}}",
+    "noExpiryRecorded": "No expiry recorded",
     "deleteSession": "Delete session",
     "deleteConfirm": "Delete this parking session? This cannot be undone."
   },
@@ -388,6 +396,13 @@
       "notCaptured": "Not captured",
       "imageEmbedFailed": "(Image could not be embedded)"
     },
+    "duration": {
+      "minOnly_one": "1 min",
+      "minOnly_other": "{{count}} min",
+      "hourOnly_one": "1 hour",
+      "hoursOnly_other": "{{count}} hours",
+      "hoursAndMins": "{{hours}}h {{mins}}m"
+    },
     "evidence": {
       "title": "ParkProof — Parking Evidence",
       "sessionId": "Session ID: {{id}}",
@@ -395,6 +410,8 @@
       "field": {
         "arrivedAt": "Arrived at",
         "expiresAt": "Expires at",
+        "endedAt": "Ended at (driver-signalled)",
+        "actualDuration": "Actual duration",
         "guidance": "ParkProof Guidance",
         "address": "Address",
         "locationGps": "Location (GPS)",
@@ -479,6 +496,11 @@
     "hourLeft_one": "1 hour left",
     "hoursLeft_other": "{{count}} hours left",
     "hoursMinsLeft": "{{hours}}h {{mins}}m left",
+    "parkedForMin_one": "Parked for 1 min",
+    "parkedForMin_other": "Parked for {{count}} min",
+    "parkedForHour_one": "Parked for 1 hour",
+    "parkedForHours_other": "Parked for {{count}} hours",
+    "parkedForHoursMins": "Parked for {{hours}}h {{mins}}m",
     "justNow": "just now",
     "minAgo_one": "1 min ago",
     "minAgo_other": "{{count}} min ago",

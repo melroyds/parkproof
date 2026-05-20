@@ -51,7 +51,11 @@
     "distanceAway": "Cách {{distance}}",
     "walkMinutes_one": "≈ 1 phút đi bộ",
     "walkMinutes_other": "≈ {{count}} phút đi bộ",
-    "morePill": "+{{count}} nữa"
+    "morePill": "+{{count}} nữa",
+    "noPostedRestrictions": "Không có biển cấm",
+    "iveLeft": "Tôi đã đi",
+    "iveLeftAria": "Báo hiệu bạn đã rời khỏi chỗ đậu xe này",
+    "iveLeftConfirm": "Kết thúc phiên đậu xe này ngay? Phiên sẽ chuyển sang lịch sử với thời gian rời được ghi lại."
   },
   "scanner": {
     "header": "Quét biển báo đỗ xe",
@@ -233,7 +237,11 @@
     "ambientPhotoLabel": "Xung quanh",
     "ambientPhotoCaption": "Chụp tại thời điểm đỗ xe để chứng minh không có biển báo.",
     "noAmbientCaptured": "Không có ảnh xung quanh nào được chụp.",
-    "noSignBadgeLong": "Không có hạn chế nào được ghi nhận. Phiên này được ghi nhận tại vị trí không có biển báo."
+    "noSignBadgeLong": "Không có hạn chế nào được ghi nhận. Phiên này được ghi nhận tại vị trí không có biển báo.",
+    "endSession": "Kết thúc phiên",
+    "endConfirm": "Kết thúc phiên đậu xe này ngay? Bản ghi bằng chứng vẫn được lưu trong lịch sử với thời gian bạn rời đi.",
+    "endedAt": "Đã kết thúc {{when}}",
+    "noExpiryRecorded": "Chưa ghi nhận thời hạn"
   },
   "appeal": {
     "captureHeader": "Soạn thư khiếu nại",
@@ -396,7 +404,9 @@
         "mapLink": "Liên kết bản đồ",
         "sideVariant": "Phía / Phương án đã chọn",
         "signRules": "Quy tắc trên biển báo",
-        "aiConfidence": "Độ tin cậy AI"
+        "aiConfidence": "Độ tin cậy AI",
+        "endedAt": "Đã rời (do tài xế xác nhận)",
+        "actualDuration": "Thời gian đậu thực tế"
       },
       "locationSourceValue": {
         "manuallyEntered": "Nhập thủ công",
@@ -464,6 +474,13 @@
       "sessionHeader": "Phiên {{n}} trên {{total}}",
       "signedBadge": "Đã ký mã hóa lúc {{when}}",
       "driverNoteField": "Ghi chú của tài xế"
+    },
+    "duration": {
+      "minOnly_one": "1 phút",
+      "minOnly_other": "{{count}} phút",
+      "hourOnly_one": "1 giờ",
+      "hoursOnly_other": "{{count}} giờ",
+      "hoursAndMins": "{{hours}} giờ {{mins}} phút"
     }
   },
   "time": {
@@ -479,6 +496,11 @@
     "hourAgo_one": "1 giờ trước",
     "hoursAgo_other": "{{count}} giờ trước",
     "yesterday": "hôm qua",
-    "daysAgo_other": "{{count}} ngày trước"
+    "daysAgo_other": "{{count}} ngày trước",
+    "parkedForMin_one": "Đã đậu 1 phút",
+    "parkedForMin_other": "Đã đậu {{count}} phút",
+    "parkedForHour_one": "Đã đậu 1 giờ",
+    "parkedForHours_other": "Đã đậu {{count}} giờ",
+    "parkedForHoursMins": "Đã đậu {{hours}} giờ {{mins}} phút"
   }
 }
