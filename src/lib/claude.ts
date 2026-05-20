@@ -1,9 +1,5 @@
 import type { AppealDraft, ObservationGroup, ParkingRules, ParkingSession } from '../types'
-
-// In dev, falls through to the Vite middleware. In prod, baked in at build time
-// via `VITE_API_URL=https://...execute-api... npm run build`.
-const API_URL: string =
-  (import.meta.env.VITE_API_URL as string | undefined) ?? '/api/sign-translate'
+import { postJsonWithRetry } from './api'
 
 export async function translateSign(
   imageBase64: string,
@@ -18,7 +14,7 @@ export async function translateSign(
     body.lat = coords.lat
     body.lng = coords.lng
   }
-  return postJson(body)
+  return postJsonWithRetry<ParkingRules>('/sign-translate', body)
 }
 
 /**
@@ -44,15 +40,7 @@ export async function refreshInterpretation(
     body.lat = coords.lat
     body.lng = coords.lng
   }
-  return postJson(body)
-}
-
-function appealUrl(): string {
-  const apiUrl = import.meta.env.VITE_API_URL as string | undefined
-  if (apiUrl) {
-    return apiUrl.replace(/\/[^/]*$/, '/draft-appeal')
-  }
-  return '/api/draft-appeal'
+  return postJsonWithRetry<ParkingRules>('/sign-translate', body)
 }
 
 export async function draftAppeal(
@@ -73,40 +61,5 @@ export async function draftAppeal(
       confidence: session.confidence,
     },
   }
-  const resp = await fetch(appealUrl(), {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-  })
-  if (!resp.ok) {
-    let detail: string
-    try {
-      detail = (await resp.json()).error
-    } catch {
-      detail = await resp.text()
-    }
-    throw new Error(detail || `Appeal draft failed (${resp.status})`)
-  }
-  return resp.json()
-}
-
-async function postJson(body: Record<string, unknown>): Promise<ParkingRules> {
-  const resp = await fetch(API_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-  })
-
-  if (!resp.ok) {
-    let detail: string
-    try {
-      const parsed = await resp.json()
-      detail = parsed.error || JSON.stringify(parsed)
-    } catch {
-      detail = await resp.text()
-    }
-    throw new Error(detail || `Request failed (${resp.status})`)
-  }
-
-  return resp.json()
+  return postJsonWithRetry<AppealDraft>('/draft-appeal', body)
 }

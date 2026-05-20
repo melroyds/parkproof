@@ -137,7 +137,7 @@ The state is a discriminated union in [`src/App.tsx`](src/App.tsx). When adding 
 |---|---|
 | Lambda function | `parkproof-sign-translator` |
 | IAM execution role | `parkproof-lambda-role` (DDB + S3-evidence + KMS-sign + Cognito-admin permissions) |
-| API Gateway HTTP API | `parkproof-api` (id `tlsmpbft4f`); 10 routes — 4 anonymous + 6 JWT-gated |
+| API Gateway HTTP API | `parkproof-api` (id `tlsmpbft4f`); 10 routes — 4 anonymous + 6 JWT-gated. Hard 30s timeout per HTTP API; complex multi-variant signs occasionally hit this — `src/lib/api.ts` catches 502/503/504 and shows a friendly "try a clearer / cropped photo" message after one auto-retry. |
 | API Gateway JWT authorizer | id `t1utm6`, issuer = Cognito User Pool |
 | Cognito User Pool | `ap-southeast-2_fBbsYa7VM` |
 | Cognito App Client | `5ldgcdf1qol1qje9h55inl9pq9` |

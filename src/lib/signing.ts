@@ -1,7 +1,6 @@
 import type { ParkingSession, SignatureBundle } from '../types'
 import { loadSessions, updateSession } from './storage'
-
-const SIGN_TRANSLATE_PATH = '/sign-translate'
+import { endpointUrl } from './api'
 
 /** Throttle so we don't bang the Lambda repeatedly on app mount. */
 const RETRY_THROTTLE_MS = 5 * 60_000 // 5 min
@@ -35,16 +34,8 @@ function saveRetryLog(log: RetryLog): void {
   }
 }
 
-function signSessionUrl(): string {
-  const apiUrl = import.meta.env.VITE_API_URL as string | undefined
-  if (apiUrl) {
-    if (apiUrl.endsWith(SIGN_TRANSLATE_PATH)) {
-      return apiUrl.slice(0, -SIGN_TRANSLATE_PATH.length) + '/sign-session'
-    }
-    return apiUrl.replace(/\/[^/]*$/, '/sign-session')
-  }
-  return '/api/sign-session'
-}
+// signSessionUrl removed — endpointUrl('/sign-session') resolves correctly
+// for both API Gateway (legacy) and Function URL (new) callers.
 
 /**
  * SHA-256 of a data-URL image's raw bytes (not the data-URL string itself).
@@ -95,7 +86,7 @@ export async function signSession(session: ParkingSession): Promise<SignatureBun
       car_photo_sha256,
     }
 
-    const resp = await fetch(signSessionUrl(), {
+    const resp = await fetch(endpointUrl('/sign-session'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),

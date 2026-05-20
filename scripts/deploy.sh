@@ -319,6 +319,15 @@ fi
 API_URL="https://$API_ID.execute-api.$REGION.amazonaws.com/sign-translate"
 echo "  • endpoint: $API_URL"
 
+# Note on Lambda Function URLs: I tried adding one here as a second front-door
+# for the slow anonymous routes (sign-translate, draft-appeal can exceed API
+# Gateway's 30s timeout on complex multi-variant signs). The Function URL was
+# created cleanly and signed (AWS_IAM) invocations worked, but unauthenticated
+# invocations (AuthType:NONE with a Principal:"*" resource policy) consistently
+# returned 403 despite no SCPs, RCPs, or public-access block at the org /
+# account level. Reverted. src/lib/api.ts handles the 30s timeout gracefully
+# on the client with a retry-with-friendly-error layer instead.
+
 # ───── [4/6] Build frontend ─────────────────────────────────────────────────
 echo "▶ [4/6] Building frontend"
 # Bake the Cognito identifiers + API URL into the bundle. These are public

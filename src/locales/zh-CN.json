@@ -371,7 +371,8 @@
   "errors": {
     "somethingWrong": "出错了",
     "tryAgain": "重试",
-    "backHome": "返回主页"
+    "backHome": "返回主页",
+    "complexSignTimeout": "此停车标志处理时间过长 — 通常意味着它有很多层叠的规则。请尝试拍摄更清晰的照片,或裁剪到您停车位置适用的规则部分。"
   },
   "pdf": {
     "common": {

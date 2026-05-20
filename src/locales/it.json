@@ -377,7 +377,8 @@
   "errors": {
     "somethingWrong": "Qualcosa è andato storto",
     "tryAgain": "Riprova",
-    "backHome": "Torna alla home"
+    "backHome": "Torna alla home",
+    "complexSignTimeout": "Questo cartello ha richiesto troppo tempo per essere elaborato — di solito significa che ha molte regole sovrapposte. Prova una foto più chiara, o ritaglia solo le regole che si applicano dove sei parcheggiato."
   },
   "pdf": {
     "common": {

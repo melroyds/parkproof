@@ -377,7 +377,8 @@
   "errors": {
     "somethingWrong": "Something went wrong",
     "tryAgain": "Try again",
-    "backHome": "Back to home"
+    "backHome": "Back to home",
+    "complexSignTimeout": "This sign took too long to process — usually means it has lots of stacked rules. Try a clearer photo, or crop in to just the rules that apply where you're parked."
   },
   "pdf": {
     "common": {

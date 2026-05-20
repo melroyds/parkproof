@@ -62,4 +62,12 @@ void i18n
     returnNull: false,
   })
 
+// Expose the i18n instance on globalThis so non-React modules (e.g.
+// src/lib/api.ts, which builds error messages from the fetch layer outside
+// any component tree) can pull localised strings without importing React or
+// useTranslation. Kept narrow: only the .t() function and language code are
+// stable across i18next versions, so callers should only rely on those.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+;(globalThis as any).__parkproof_i18n = i18n
+
 export default i18n

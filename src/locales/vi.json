@@ -371,7 +371,8 @@
   "errors": {
     "somethingWrong": "Đã có lỗi xảy ra",
     "tryAgain": "Thử lại",
-    "backHome": "Quay về trang chủ"
+    "backHome": "Quay về trang chủ",
+    "complexSignTimeout": "Biển báo này mất quá nhiều thời gian để xử lý — thường có nghĩa là nó có nhiều quy tắc xếp chồng. Hãy thử ảnh rõ hơn, hoặc cắt vào chỉ phần quy tắc áp dụng ở chỗ bạn đỗ xe."
   },
   "pdf": {
     "common": {
