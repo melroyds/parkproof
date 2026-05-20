@@ -148,6 +148,11 @@ function App() {
       // Variant carries its own transition awareness — use it in preference
       // to the top-level one (which describes the unmerged combined rule).
       next_transition: variant.next_transition ?? base.next_transition ?? null,
+      // Disability-permit requirement is per-variant on multi-arrow signs
+      // (left = general, right = ♿ only). Carry the chosen variant's flag
+      // up to the top-level result so the ParkingResult gate fires only
+      // when the side the user actually picked is permit-restricted.
+      requires_disabled_permit: variant.requires_disabled_permit ?? false,
       clarification: null,
       chosen_label: variant.label,
       alternate_variants: alternates,

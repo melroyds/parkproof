@@ -123,6 +123,13 @@
       "openEasypark": "Apri EasyPark",
       "meterHint": "Acquista un ticket dal parchimetro o dalla biglietteria più vicina — di solito entro 30m dal cartello.",
       "ack": "Ho pagato (o pagherò prima di andarmene)"
+    },
+    "logCtaBlockedPermit": "Conferma il permesso esposto per salvare",
+    "permitRequired": {
+      "kicker": "PERMESSO DISABILI RICHIESTO",
+      "header": "Questo posto è riservato ai titolari di permesso",
+      "copy": "Parcheggiare qui senza un permesso disabili valido chiaramente esposto è un'infrazione. In Victoria la multa è di oltre $400 e il costo sociale — togliere un posto a chi ne ha bisogno — è reale. Se non ne hai uno, scansiona un altro posto.",
+      "ack": "Ho un permesso disabili valido chiaramente esposto nel mio veicolo"
     }
   },
   "logger": {

@@ -113,6 +113,7 @@
     "viewPhoto": "View the photo",
     "logCta": "Log this parking session",
     "logCtaBlocked": "Confirm payment to save",
+    "logCtaBlockedPermit": "Confirm permit displayed to save",
     "scanAnother": "Scan another sign",
     "transitionHeadsUp": "Heads up — at {{when}}",
     "payRequired": {
@@ -123,6 +124,12 @@
       "openEasypark": "Open EasyPark",
       "meterHint": "Buy a ticket from the nearest meter or ticket machine — usually within 30m of the sign.",
       "ack": "I've paid (or will pay before walking away)"
+    },
+    "permitRequired": {
+      "kicker": "ACCESSIBILITY PERMIT REQUIRED",
+      "header": "This bay is reserved for permit holders",
+      "copy": "Parking here without a valid disability permit clearly displayed is an offence. In Victoria the fine is $400+ and the social cost — taking a bay from someone who needs it — is real. If you don't have one, scan a different spot.",
+      "ack": "I have a valid disability permit clearly displayed in my vehicle"
     }
   },
   "logger": {

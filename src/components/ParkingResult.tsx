@@ -47,7 +47,11 @@ const CONFIDENCE_DOT = {
  * the sign read itself. Kept as a pure function (no useMemo / hooks) so it
  * runs only when the user actually taps the verify buttons.
  */
-function buildFeedbackContext(result: ParkingRules, ticketAcknowledged: boolean) {
+function buildFeedbackContext(
+  result: ParkingRules,
+  ticketAcknowledged: boolean,
+  disabledAcknowledged: boolean,
+) {
   return {
     confidence: result.confidence,
     had_clarification:
@@ -68,6 +72,12 @@ function buildFeedbackContext(result: ParkingRules, ticketAcknowledged: boolean)
     // and see whether the acknowledgement gate is real friction or just noise.
     requires_ticket: !!result.requires_ticket,
     ticket_acknowledged: !!result.requires_ticket && ticketAcknowledged,
+    // Disability-permit signals — same shape. Slice on retake rate by
+    // "did the ♿ gate fire" to catch false positives (e.g. wheelchair
+    // symbol on an unrelated adjacent sign mis-attributed).
+    requires_disabled_permit: !!result.requires_disabled_permit,
+    disabled_permit_acknowledged:
+      !!result.requires_disabled_permit && disabledAcknowledged,
   }
 }
 
@@ -122,6 +132,13 @@ export default function ParkingResult({
   // sign requires payment. Defaults false so the user has to deliberately
   // confirm; "yes I paid (or will pay before walking away)".
   const [ticketAcknowledged, setTicketAcknowledged] = useState(false)
+  // Disability-permit acknowledgement — same gate pattern, separate state so
+  // a sign that needs BOTH (paid bay AND disabled-only — yes, these exist:
+  // some councils mark accessible bays with paid parking on the general
+  // side) gates Save on both being ticked. Red-styled callout vs the yellow
+  // paid-parking one because the cost of getting this wrong is materially
+  // higher ($400+ fine + the social cost of taking a needed bay).
+  const [disabledAcknowledged, setDisabledAcknowledged] = useState(false)
   // One id per rendering of the result — used to dedupe feedback events server-side
   // without storing anything identifiable.
   const [feedbackId] = useState(() => crypto.randomUUID())
@@ -135,11 +152,15 @@ export default function ParkingResult({
     next_transition,
     requires_ticket,
     payment_methods,
+    requires_disabled_permit,
   } = result
   // Gate the Save button until the user acknowledges payment. Only meaningful
   // when can_park_now is true (we don't show Save at all when it's false).
   const mustPay = !!requires_ticket && can_park_now
+  const mustHavePermit = !!requires_disabled_permit && can_park_now
   const blockedByPayGate = mustPay && !ticketAcknowledged
+  const blockedByPermitGate = mustHavePermit && !disabledAcknowledged
+  const saveBlocked = blockedByPayGate || blockedByPermitGate
   const paymentActions = resolvePaymentActions(payment_methods, mustPay)
   const timeZone = timezoneForCoords(coords?.lat, coords?.lng)
   const untilLabel = formatUntil(until, timeZone)
@@ -270,7 +291,7 @@ export default function ParkingResult({
                 submitFeedback({
                   verdict: 'correct',
                   feedback_id: feedbackId,
-                  context: buildFeedbackContext(result, ticketAcknowledged),
+                  context: buildFeedbackContext(result, ticketAcknowledged, disabledAcknowledged),
                 })
                 setVerified(true)
               }}
@@ -283,7 +304,7 @@ export default function ParkingResult({
                 submitFeedback({
                   verdict: 'retake',
                   feedback_id: feedbackId,
-                  context: buildFeedbackContext(result, ticketAcknowledged),
+                  context: buildFeedbackContext(result, ticketAcknowledged, disabledAcknowledged),
                 })
                 onRetake()
               }}
@@ -302,6 +323,54 @@ export default function ParkingResult({
         </summary>
         <img src={signPhoto} alt={t('clarify.imageAlt')} className="w-full border-t border-paper-200" />
       </details>
+
+      {/* Accessibility-permit gate — same architectural pattern as the
+          paid-parking gate below but RED instead of YELLOW. Sits above the
+          paid-parking gate because the cost of getting it wrong is higher
+          ($400+ fine and the social cost of taking a needed bay) and the
+          user should see this first if both are present (some bays are
+          both ♿ AND metered). */}
+      {mustHavePermit && (
+        <section className="mt-4 bg-red-50 border-2 border-red-500 rounded-2xl p-5">
+          <div className="flex items-start gap-3">
+            <div className="w-9 h-9 rounded-full bg-red-600 text-white flex items-center justify-center shrink-0 mt-0.5">
+              {/* Wheelchair-style accessibility glyph — drawn inline rather
+                  than via an Icon font to guarantee it renders consistently
+                  across locales and platforms. */}
+              <svg viewBox="0 0 24 24" className="w-5 h-5" aria-hidden>
+                <circle cx="11" cy="5.5" r="2" fill="currentColor" />
+                <path
+                  d="M9 9.5h2.5L13 14h3.5l1.5 5h-2l-1-3.5h-4L9.5 12V21h-2v-9.5l-3 1V19h-1.5v-9l4.5-1.5z"
+                  fill="currentColor"
+                />
+              </svg>
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-semibold uppercase tracking-wider text-red-700">
+                {t('result.permitRequired.kicker')}
+              </p>
+              <h3 className="font-display font-bold text-ink-900 mt-1">
+                {t('result.permitRequired.header')}
+              </h3>
+              <p className="text-sm text-ink-700 mt-1 leading-relaxed">
+                {t('result.permitRequired.copy')}
+              </p>
+            </div>
+          </div>
+
+          <label className="mt-4 flex items-start gap-2.5 cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={disabledAcknowledged}
+              onChange={(e) => setDisabledAcknowledged(e.target.checked)}
+              className="mt-0.5 w-5 h-5 rounded border-2 border-red-500 accent-red-600 cursor-pointer shrink-0"
+            />
+            <span className="text-sm font-medium text-ink-900 leading-tight">
+              {t('result.permitRequired.ack')}
+            </span>
+          </label>
+        </section>
+      )}
 
       {/* Pay-required gate — surfaces when the AI detected paid parking AND
           the current time is inside the paid window. Two jobs: (1) make the
@@ -375,10 +444,14 @@ export default function ParkingResult({
         {can_park_now && (
           <button
             onClick={onLogSession}
-            disabled={blockedByPayGate}
+            disabled={saveBlocked}
             className="bg-brand-500 hover:bg-brand-600 active:bg-brand-700 disabled:bg-brand-300 disabled:cursor-not-allowed text-white font-semibold py-4 rounded-2xl shadow-lg shadow-brand-500/25 disabled:shadow-none transition-colors"
           >
-            {blockedByPayGate ? t('result.logCtaBlocked') : t('result.logCta')}
+            {blockedByPermitGate
+              ? t('result.logCtaBlockedPermit')
+              : blockedByPayGate
+                ? t('result.logCtaBlocked')
+                : t('result.logCta')}
           </button>
         )}
         <button

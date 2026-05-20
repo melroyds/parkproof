@@ -19,6 +19,13 @@ export interface RuleVariant {
   can_park_now: boolean
   until: string | null
   duration_minutes: number | null
+  /**
+   * Per-variant disability-permit flag. Set true when this side / bay is
+   * reserved for vehicles displaying a valid permit. Critical for the
+   * multi-arrow case where the user's chosen variant determines whether
+   * the gate fires.
+   */
+  requires_disabled_permit?: boolean
   /** Optional heads-up — set when a meaningful rule change is approaching. */
   next_transition?: NextTransition | null
 }
@@ -50,6 +57,14 @@ export interface ParkingRules {
    * method isn't specified. Drives the deep-link buttons on the result card.
    */
   payment_methods?: string[] | null
+  /**
+   * True when the bay is restricted to vehicles displaying a valid disability
+   * parking permit (ACROD / Mobility Pass). For multi-variant signs use the
+   * per-variant RuleVariant.requires_disabled_permit field — the chosen
+   * variant's value gets merged onto the top-level result by App.tsx after
+   * the user picks a side.
+   */
+  requires_disabled_permit?: boolean
   /** Frontend-only — set when the user picked a variant from a clarification step. */
   chosen_label?: string
   /** Frontend-only — variants the user did NOT pick. Carried through for PDF context. */

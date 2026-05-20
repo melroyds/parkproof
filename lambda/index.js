@@ -168,6 +168,12 @@ Analyze the sign(s) and return a JSON object with these fields:
 - confidence: "low" | "medium" | "high" — how confident you are in the reading
 - requires_ticket: boolean — TRUE only when the parker must pay for parking RIGHT NOW (sign indicates Ticket / Meter / Pay & Display / Pay-by-Plate / Pay-by-app like PayStay/EasyPark/Wilson/Care Park AND the current time is INSIDE the paid window). FALSE when the sign is free, when it's outside paid hours (e.g. Sunday on a Mon–Fri Ticket sign), or when can_park_now is already false.
 - payment_methods: array of strings or null — when requires_ticket is TRUE, list the payment methods visible on the sign in lowercase short form. Allowed values: "meter", "ticket machine", "paystay", "easypark", "wilson", "carepark", "pay-by-plate". Use null when requires_ticket is FALSE, OR when requires_ticket is TRUE but the method isn't specified on the sign.
+- requires_disabled_permit: boolean — TRUE only when the bay is reserved for vehicles displaying a valid disability parking permit. Triggers include:
+  • The wheelchair / accessibility pictogram (♿ or similar blue-square-with-wheelchair symbol)
+  • Text: "DISABLED", "DISABLED ONLY", "PERMIT HOLDERS ONLY", "ACCESSIBLE PARKING", "ACROD" (WA disability permit), "MOBILITY PASS"
+  Set TRUE only when the restriction applies to the bay you're answering about RIGHT NOW (i.e. inside any time window the sign specifies — "ALL OTHER TIMES ♿ ONLY" means the restriction is in force now if the current time falls outside other windows).
+  When the disability restriction lives on ONE SIDE of a multi-variant sign (e.g. left side = general, right side = ♿ ONLY), set this flag at the variant level too (each variant has its own requires_disabled_permit field) so the user's chosen variant carries the correct permit requirement.
+  At the top level: when there is a clarification, set requires_disabled_permit to FALSE — defer to the per-variant flags. Otherwise set it to the actual restriction state for the whole sign.
 - clarification: object or null — fill this when the rule depends on WHERE the driver is parked relative to the sign (left vs right arrows, side-specific labels, numbered bays, accessibility/EV/loading bays). Shape: { question: string, options: array of { label, rules, observations, can_park_now, until, duration_minutes } }. Each option must reflect the rule for that specific position. The question should be short and direct, e.g. "Where are you parked?". Labels MUST be 1–3 words naming only the position. NO parentheticals, NO arrow symbols, NO duration info in the label. Good labels: "Left side", "Right side", "Bay 12", "Accessibility bay". Bad labels: "Right side (→ arrow)", "Left (15-min)", "Bay 12 (EV only)". Set clarification to null when there is no positional ambiguity.
 
 Interpretation rules:
@@ -255,6 +261,13 @@ const RULE_VARIANT_SCHEMA = {
     can_park_now: { type: 'boolean' },
     until: { anyOf: [{ type: 'string' }, { type: 'null' }] },
     duration_minutes: { anyOf: [{ type: 'number' }, { type: 'null' }] },
+    /**
+     * Per-variant disability-permit flag. Critical for multi-arrow signs
+     * where one side is general parking and another is restricted to
+     * permit holders — without this, the chosen-variant flag wouldn't flow
+     * through to the result UI.
+     */
+    requires_disabled_permit: { type: 'boolean' },
     next_transition: NEXT_TRANSITION_SCHEMA,
   },
   required: [
@@ -264,6 +277,7 @@ const RULE_VARIANT_SCHEMA = {
     'can_park_now',
     'until',
     'duration_minutes',
+    'requires_disabled_permit',
     'next_transition',
   ],
   additionalProperties: false,
@@ -287,6 +301,13 @@ const RESPONSE_SCHEMA = {
         { type: 'array', items: { type: 'string' } },
       ],
     },
+    /**
+     * True when the bay is restricted to vehicles displaying a valid disability
+     * parking permit (ACROD / Mobility Pass / disability permit). At the top
+     * level this reflects the whole-sign / non-variant case. For multi-variant
+     * signs use the per-variant flag instead.
+     */
+    requires_disabled_permit: { type: 'boolean' },
     next_transition: NEXT_TRANSITION_SCHEMA,
     clarification: {
       anyOf: [
@@ -315,6 +336,7 @@ const RESPONSE_SCHEMA = {
     'confidence',
     'requires_ticket',
     'payment_methods',
+    'requires_disabled_permit',
     'next_transition',
     'clarification',
   ],
@@ -686,6 +708,18 @@ async function handleFeedback(event) {
     // For the no-sign flow (Feature 1) — distinguishes scan-based sessions
     // from "I parked at an unsigned spot" sessions.
     no_sign: typeof ctx.no_sign === 'boolean' ? ctx.no_sign : undefined,
+    // Disability-permit gate. Same shape as the paid-parking gate: did we
+    // detect it, did the user acknowledge it. Slice retake rate by these to
+    // spot false-positive ♿ detection (e.g. AI reading a wheelchair symbol
+    // on an adjacent unrelated sign as part of THIS bay's rules).
+    requires_disabled_permit:
+      typeof ctx.requires_disabled_permit === 'boolean'
+        ? ctx.requires_disabled_permit
+        : undefined,
+    disabled_permit_acknowledged:
+      typeof ctx.disabled_permit_acknowledged === 'boolean'
+        ? ctx.disabled_permit_acknowledged
+        : undefined,
   }
 
   console.log(

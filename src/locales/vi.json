@@ -117,6 +117,13 @@
       "openEasypark": "Mở EasyPark",
       "meterHint": "Mua vé từ đồng hồ tính phí hoặc máy bán vé gần nhất — thường trong vòng 30m từ biển báo.",
       "ack": "Tôi đã trả phí (hoặc sẽ trả trước khi rời đi)"
+    },
+    "logCtaBlockedPermit": "Xác nhận giấy phép được hiển thị để lưu",
+    "permitRequired": {
+      "kicker": "CẦN GIẤY PHÉP NGƯỜI KHUYẾT TẬT",
+      "header": "Chỗ đỗ xe này dành riêng cho người có giấy phép",
+      "copy": "Đỗ xe ở đây mà không có giấy phép người khuyết tật hợp lệ được hiển thị rõ ràng là vi phạm. Tại Victoria, mức phạt là hơn $400 và chi phí xã hội — lấy đi chỗ đỗ xe của người thực sự cần — là có thật. Nếu bạn không có giấy phép, hãy quét một chỗ khác.",
+      "ack": "Tôi có giấy phép người khuyết tật hợp lệ được hiển thị rõ ràng trên xe"
     }
   },
   "logger": {
