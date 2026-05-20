@@ -1,5 +1,12 @@
 import Anthropic from '@anthropic-ai/sdk'
 import { KMSClient, SignCommand } from '@aws-sdk/client-kms'
+import { LambdaClient, InvokeCommand } from '@aws-sdk/client-lambda'
+import { DynamoDBClient } from '@aws-sdk/client-dynamodb'
+import {
+  DynamoDBDocumentClient,
+  GetCommand,
+  PutCommand,
+} from '@aws-sdk/lib-dynamodb'
 import crypto from 'node:crypto'
 import tzlookup from 'tz-lookup'
 import {
@@ -13,6 +20,81 @@ import {
 
 const MODEL = 'claude-sonnet-4-6'
 const DEFAULT_TIMEZONE = 'Australia/Melbourne'
+const REGION = process.env.AWS_REGION || 'ap-southeast-2'
+const JOBS_TABLE = process.env.JOBS_TABLE || 'parkproof-jobs'
+const SELF_FUNCTION_NAME =
+  process.env.AWS_LAMBDA_FUNCTION_NAME || 'parkproof-sign-translator'
+
+// ─── Async-job plumbing ───────────────────────────────────────────────────
+// API Gateway HTTP APIs cap at 30 seconds. Claude vision on stacked
+// multi-variant Melbourne signs can take 30–50s. Rather than block the
+// HTTP request for that long, the slow handlers (sign-translate /
+// draft-appeal) now use a fire-and-poll pattern:
+//
+//   1. POST /sign-translate  →  generate job_id, write DDB row
+//                              (status=pending), async-invoke self with
+//                              the work payload, return 202 + job_id
+//   2. (background)          →  Lambda invocation runs Claude, writes
+//                              the result back to DDB
+//   3. GET /sign-translate/status/{id}  →  read DDB row, return
+//                              {status, result?, error?}
+//   4. Client polls #3 every 1.5s until status != 'pending'
+//
+// DynamoDB TTL purges rows 10 minutes after creation, so the table never
+// grows. The polling endpoint is fast (single GetItem ≈ 50ms) — overhead
+// vs a synchronous call is negligible.
+let _lambdaClient = null
+function lambdaClient() {
+  if (!_lambdaClient) _lambdaClient = new LambdaClient({ region: REGION })
+  return _lambdaClient
+}
+
+let _jobsDdb = null
+function jobsDdb() {
+  if (!_jobsDdb) {
+    _jobsDdb = DynamoDBDocumentClient.from(new DynamoDBClient({ region: REGION }), {
+      marshallOptions: { removeUndefinedValues: true },
+    })
+  }
+  return _jobsDdb
+}
+
+const JOB_TTL_SECONDS = 600 // 10 minutes
+
+async function putJob(job_id, fields) {
+  await jobsDdb().send(
+    new PutCommand({
+      TableName: JOBS_TABLE,
+      Item: {
+        job_id,
+        ttl: Math.floor(Date.now() / 1000) + JOB_TTL_SECONDS,
+        ...fields,
+      },
+    }),
+  )
+}
+
+async function getJob(job_id) {
+  const resp = await jobsDdb().send(
+    new GetCommand({ TableName: JOBS_TABLE, Key: { job_id } }),
+  )
+  return resp.Item || null
+}
+
+/**
+ * Async-invoke ourselves with the given internal payload. The payload's
+ * `_async_kind` marker is what the handler uses to recognise the call as
+ * "do the work + write to DDB" instead of "respond to an HTTP request."
+ */
+async function asyncSelfInvoke(payload) {
+  await lambdaClient().send(
+    new InvokeCommand({
+      FunctionName: SELF_FUNCTION_NAME,
+      InvocationType: 'Event', // fire-and-forget; Lambda returns immediately
+      Payload: Buffer.from(JSON.stringify(payload)),
+    }),
+  )
+}
 
 // ─── Appeal-letter drafter ────────────────────────────────────────────────
 const APPEAL_SYSTEM_PROMPT = `You are an Australian parking-law assistant. The user received a parking infringement notice and wants a draft appeal letter to send to the issuing council.
@@ -195,11 +277,11 @@ For each rule, compute its leave-by time:
 
 'until' = MIN(leave-by for every rule on the sign).
 
-Worked examples:
-1. Sign: "2P Mon–Fri 8am–6pm". Now: Wed 10pm. Next 2P window opens Thu 8am → leave-by = Thu 10am. 'until' = Thu 10am (~12 hours away).
-2. Sign has "2P Mon–Fri 8am–6pm" AND "Permit Zone Sat–Sun 8am–11pm". Now: Wed 10pm. Leave-by candidates: Thu 10am (from 2P), Sat 8am (from Permit Zone). Earliest = Thu 10am. 'until' = Thu 10am.
-3. Sign: "No Stopping Mon–Fri 7am–9am". Now: Sun 2pm. Next prohibition: Mon 7am. 'until' = Mon 7am.
-4. Sign: "1/4P Mon–Fri 8am–6pm". Now: Thu 9am. Inside the window. leave-by = 9:15am (capped by end-of-window 6pm, but duration wins). 'until' = Thu 9:15am.
+Quick reminders:
+- "2P Mon–Fri 8am–6pm" + currently Wed 10pm → next window opens Thu 8am, leave-by = Thu 10am.
+- "2P Mon–Fri" + "Permit Zone Sat–Sun" → take the earliest leave-by across both, not the latest.
+- "No Stopping Mon–Fri 7am–9am" + currently Sun 2pm → 'until' = Mon 7am (start of next prohibition).
+- "1/4P Mon–Fri 8am–6pm" + currently inside the window → leave-by = now + 15 min, capped at end of window.
 
 Sanity check before returning: if your computed 'until' is more than ~24 hours away on a weekday, you have probably missed an earlier restriction — recheck.
 
@@ -465,13 +547,25 @@ export async function translateSign({
 
   const response = await client.messages.create({
     model: MODEL,
-    max_tokens: 16384,
+    // max_tokens is shared between thinking + output for adaptive-thinking
+    // calls. 8192 is comfortable headroom for the biggest multi-variant
+    // signs we've seen (output up to ~2.5k tokens, plus thinking) while
+    // capping the worst-case wall-clock to keep complex signs inside the
+    // API Gateway 30s window. Raise if stop_reason=max_tokens starts
+    // appearing in CloudWatch.
+    max_tokens: 8192,
     // Adaptive thinking is required for the multi-rule "compute leave-by per
     // rule, take the earliest" reasoning. Haiku 4.5 doesn't support any form
     // of thinking and produced wrong answers on stacked signs. effort=low
     // keeps Sonnet's reasoning depth tight so we don't burn 15-30s per call.
     thinking: { type: 'adaptive' },
-    system: SYSTEM_PROMPT,
+    // System prompt as a list with cache_control so once the cache is warm
+    // (after the first request crosses Anthropic's 2048-token minimum), every
+    // subsequent call within 5 minutes reads from cache and skips most of the
+    // input compute. Worth a couple of seconds per call once it kicks in.
+    system: [
+      { type: 'text', text: SYSTEM_PROMPT, cache_control: { type: 'ephemeral' } },
+    ],
     output_config: {
       format: { type: 'json_schema', schema: RESPONSE_SCHEMA },
       effort: 'low',
@@ -739,30 +833,141 @@ async function handleFeedback(event) {
 async function handleSignTranslate(event) {
   try {
     const body = typeof event.body === 'string' ? JSON.parse(event.body) : event.body
-    const result = await translateSign(body)
+
+    // Refresh mode (prior_rules supplied, no image) is a ~3-second text-only
+    // call — well under the 30s gateway window, so we keep it synchronous.
+    // No DDB roundtrip, no polling overhead.
+    if (body && body.prior_rules) {
+      const result = await translateSign(body)
+      return {
+        statusCode: 200,
+        headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
+        body: JSON.stringify(result),
+      }
+    }
+
+    // Fresh translate mode (image present). Could take 30–50s on complex
+    // multi-variant signs → exceeds API Gateway's 30s cap. Enqueue a job,
+    // async-invoke ourselves with the work, return 202 + job_id. The client
+    // polls /sign-translate/status/{job_id} until the work completes.
+    const job_id = crypto.randomUUID()
+    await putJob(job_id, { status: 'pending', kind: 'sign-translate' })
+    await asyncSelfInvoke({ _async_kind: 'sign-translate', job_id, body })
     return {
-      statusCode: 200,
+      statusCode: 202,
       headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
-      body: JSON.stringify(result),
+      body: JSON.stringify({ job_id, status: 'pending' }),
     }
   } catch (err) {
-    console.error('translateSign error:', err)
-    const status = err instanceof Anthropic.APIError ? err.status || 502 : 500
+    console.error('translateSign enqueue error:', err)
     return {
-      statusCode: status,
+      statusCode: 500,
       headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
       body: JSON.stringify({ error: err?.message || String(err) }),
     }
   }
 }
 
+// ─── /sign-translate/status/{job_id} handler ─────────────────────────────
+async function handleJobStatus(event) {
+  // Extract job_id from the path. API Gateway HTTP API exposes it via
+  // pathParameters, but we also support a manual parse so dev (no API GW)
+  // works through the same handler.
+  let job_id = event.pathParameters?.job_id
+  if (!job_id) {
+    const path = event.requestContext?.http?.path || event.rawPath || ''
+    const match = path.match(/\/status\/([^/]+)$/)
+    job_id = match ? match[1] : null
+  }
+  if (!job_id) {
+    return {
+      statusCode: 400,
+      headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ error: 'job_id required in path' }),
+    }
+  }
+  const job = await getJob(job_id)
+  if (!job) {
+    // Either invalid id or the TTL purged it. Either way, can't proceed.
+    return {
+      statusCode: 404,
+      headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ error: 'job not found or expired' }),
+    }
+  }
+  return {
+    statusCode: 200,
+    headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      job_id: job.job_id,
+      status: job.status,
+      result: job.result ?? null,
+      error: job.error ?? null,
+    }),
+  }
+}
+
+// ─── Async-work entry point ──────────────────────────────────────────────
+// Triggered when the dispatcher sees `_async_kind` on the event payload —
+// meaning we were invoked by ourselves (asyncSelfInvoke). Runs the actual
+// Claude call and writes result/error back to DDB.
+async function handleAsyncWork(event) {
+  const { _async_kind, job_id, body } = event
+  try {
+    let result
+    if (_async_kind === 'sign-translate') {
+      result = await translateSign(body)
+    } else if (_async_kind === 'draft-appeal') {
+      // For draft-appeal we recreate the event shape the handler expects.
+      result = await handleDraftAppeal({ body: JSON.stringify(body) })
+    } else {
+      throw new Error(`unknown async kind: ${_async_kind}`)
+    }
+    await putJob(job_id, { status: 'done', kind: _async_kind, result })
+    console.log(`[parkproof.job] ${job_id} done (${_async_kind})`)
+  } catch (err) {
+    console.error(`[parkproof.job] ${job_id} error:`, err)
+    await putJob(job_id, {
+      status: 'error',
+      kind: _async_kind,
+      error: err?.message || String(err),
+    })
+  }
+  // Lambda async invocations don't see the return value — write to DDB is
+  // the only sink that matters. Return undefined for cleanliness.
+  return
+}
+
 // ─── Top-level dispatcher ─────────────────────────────────────────────────
 export async function handler(event) {
+  // First check: was this an async self-invocation? Those events have a
+  // `_async_kind` marker put there by asyncSelfInvoke. They bypass the
+  // HTTP-style routing entirely and just do the work.
+  if (event && event._async_kind) {
+    return await handleAsyncWork(event)
+  }
+
   const method = event.requestContext?.http?.method || event.httpMethod
   const path = event.requestContext?.http?.path || event.rawPath || ''
 
   if (method === 'OPTIONS') {
     return { statusCode: 204, headers: CORS_HEADERS, body: '' }
+  }
+
+  // Status polling endpoint. Shared between /sign-translate/status/{id} and
+  // /draft-appeal/status/{id} — they both write into the same jobs table
+  // so a single read endpoint serves both.
+  if (path.includes('/status/')) {
+    try {
+      return await handleJobStatus(event)
+    } catch (err) {
+      console.error('job-status handler error:', err)
+      return {
+        statusCode: 500,
+        headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ error: err?.message || String(err) }),
+      }
+    }
   }
 
   if (path.endsWith('/feedback')) {
@@ -779,18 +984,24 @@ export async function handler(event) {
   }
 
   if (path.endsWith('/draft-appeal')) {
+    // Same async-polling pattern as /sign-translate. Appeal drafting is
+    // vision + thinking + ~700-2000 output tokens; routinely 15-25s, can
+    // exceed 30s on edge cases (long infringement notice + complex
+    // session context).
     try {
-      const result = await handleDraftAppeal(event)
+      const body = typeof event.body === 'string' ? JSON.parse(event.body) : event.body
+      const job_id = crypto.randomUUID()
+      await putJob(job_id, { status: 'pending', kind: 'draft-appeal' })
+      await asyncSelfInvoke({ _async_kind: 'draft-appeal', job_id, body })
       return {
-        statusCode: 200,
+        statusCode: 202,
         headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
-        body: JSON.stringify(result),
+        body: JSON.stringify({ job_id, status: 'pending' }),
       }
     } catch (err) {
-      console.error('draft-appeal handler error:', err)
-      const status = err instanceof Anthropic.APIError ? err.status || 502 : 500
+      console.error('draft-appeal enqueue error:', err)
       return {
-        statusCode: status,
+        statusCode: 500,
         headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
         body: JSON.stringify({ error: err?.message || String(err) }),
       }

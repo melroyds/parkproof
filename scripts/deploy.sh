@@ -316,6 +316,53 @@ if [[ -n "${COGNITO_AUTHORIZER_ID:-}" ]]; then
   ensure_get_route "me/export"
 fi
 
+# Anonymous GET routes for the async-polling endpoints. The frontend POSTs
+# to /sign-translate, gets back a job_id, then polls these /status/{id}
+# endpoints until status != 'pending'. Polling needs no auth — job_id IS
+# the bearer token, and DDB TTL purges rows after 10 min.
+ensure_get_anon_route() {
+  local route_key="GET $1"
+  local source_arn_path="${1#/}"
+  # Wildcard ANY {placeholder} segment for the Lambda source-arn pattern.
+  # `${x//\{/*}` only replaces the opening brace — we need the whole
+  # `{job_id}` chunk replaced with `*` or API Gateway's actual invocation
+  # ARN won't match the permission and Lambda returns AccessDenied → 500.
+  local source_arn_wild
+  source_arn_wild=$(echo "$source_arn_path" | sed -E 's/\{[^}]+\}/*/g')
+  local existing
+  existing=$(aws apigatewayv2 get-routes \
+    --api-id "$API_ID" \
+    --region "$REGION" \
+    --query "Items[?RouteKey=='$route_key'].RouteId | [0]" \
+    --output text 2>/dev/null || echo "")
+  if [[ -n "$existing" && "$existing" != "None" ]]; then
+    echo "  • $route_key route exists"
+    return
+  fi
+  local int_id
+  int_id=$(aws apigatewayv2 get-integrations \
+    --api-id "$API_ID" --region "$REGION" \
+    --query 'Items[0].IntegrationId' --output text)
+  echo "  • adding $route_key"
+  aws apigatewayv2 create-route \
+    --api-id "$API_ID" \
+    --route-key "$route_key" \
+    --target "integrations/$int_id" \
+    --region "$REGION" \
+    >/dev/null
+  aws lambda add-permission \
+    --function-name "$LAMBDA_NAME" \
+    --statement-id "apigateway-invoke-GET-${1//[\/\{\}]/-}-$(date +%s)" \
+    --action lambda:InvokeFunction \
+    --principal apigateway.amazonaws.com \
+    --source-arn "arn:aws:execute-api:$REGION:$ACCOUNT_ID:$API_ID/*/*/$source_arn_wild" \
+    --region "$REGION" \
+    >/dev/null 2>&1 || true
+}
+
+ensure_get_anon_route "/sign-translate/status/{job_id}"
+ensure_get_anon_route "/draft-appeal/status/{job_id}"
+
 API_URL="https://$API_ID.execute-api.$REGION.amazonaws.com/sign-translate"
 echo "  • endpoint: $API_URL"
 

@@ -20,14 +20,16 @@ npm run dev   # → http://localhost:5173
 
 ## How the backend works
 
-There is **one** Lambda function (`parkproof-sign-translator`) handling ten HTTP routes via path dispatch in [`lambda/index.js`](lambda/index.js):
+There is **one** Lambda function (`parkproof-sign-translator`) handling twelve HTTP routes via path dispatch in [`lambda/index.js`](lambda/index.js):
 
 **Anonymous routes** (no auth required):
 
 | Route | Handler | Purpose |
 |---|---|---|
-| `POST /sign-translate` | `handleSignTranslate` → `translateSign({...})` | Two modes, inferred from request body — see below |
-| `POST /draft-appeal` | `handleDraftAppeal` | Vision read of an infringement notice + Claude draft of a formal appeal letter |
+| `POST /sign-translate` | `handleSignTranslate` → `translateSign({...})` | Two modes, inferred from request body — see below. Fresh-image mode is **async** (returns 202 + `job_id`) |
+| `GET /sign-translate/status/{job_id}` | `handleJobStatus` | Poll target for the async sign-translate job — returns `{status, result, error}` |
+| `POST /draft-appeal` | `handleDraftAppeal` | Vision read of an infringement notice + Claude draft of a formal appeal letter. **Async** (returns 202 + `job_id`) |
+| `GET /draft-appeal/status/{job_id}` | `handleJobStatus` | Poll target for the async draft-appeal job |
 | `POST /sign-session` | `handleSignSession` | KMS-backed ECDSA P-256 signature over the canonical session metadata |
 | `POST /feedback` | `handleFeedback` | Layers 1 + 2 telemetry: logs `[parkproof.feedback]` events to CloudWatch with verdict + model context (confidence, sign-pattern, hour, etc.) |
 
@@ -44,10 +46,21 @@ There is **one** Lambda function (`parkproof-sign-translator`) handling ten HTTP
 
 `translateSign` itself has **two modes** controlled by what the body contains:
 
-1. **Fresh translate** — body has `image_base64`. Sends the image + current-time context to Claude vision. Returns full `ParkingRules` JSON.
-2. **Refresh** (smart re-scan) — body has `prior_rules` + `prior_observations` instead of `image_base64`. No vision call; pure text-only reasoning about whether the previously-read rules still allow parking right now. ~3× faster, ~4× cheaper. Triggered from the frontend when the user reuses a saved session.
+1. **Fresh translate** — body has `image_base64`. Sends the image + current-time context to Claude vision. Returns full `ParkingRules` JSON. **Async-only**: enqueues a job and returns 202 + `job_id` immediately. The slow Claude call runs in a self-invoked Lambda; the client polls `/sign-translate/status/{job_id}`.
+2. **Refresh** (smart re-scan) — body has `prior_rules` + `prior_observations` instead of `image_base64`. No vision call; pure text-only reasoning about whether the previously-read rules still allow parking right now. ~3× faster, ~4× cheaper. **Synchronous** — fast enough to fit the API Gateway 30s window, so it just returns the result inline (the `postJsonAndPoll` helper transparently handles both shapes). Triggered from the frontend when the user reuses a saved session.
 
-The Lambda is **reused as the local dev proxy** via a Vite plugin in [`vite.config.ts`](vite.config.ts) that intercepts all ten `/api/*` routes, dynamically imports `lambda/index.js`, and calls the same code paths. Same code in dev and prod — never call the Anthropic API from the browser, the key must stay server-side.
+**Async-polling architecture** (`POST /sign-translate` + `POST /draft-appeal`):
+
+Stacked Melbourne signs (Clearway + multi-arrow + accessibility + meter) take Claude 30–50s to read carefully. API Gateway HTTP API has a hard 30s timeout — the live site was returning `{"message":"Service Unavailable"}` on complex signs. Pivoted to async polling rather than fighting the gateway:
+
+1. Client `POST`s body → Lambda writes a `pending` row to `parkproof-jobs` (DDB, TTL 600s), self-invokes asynchronously with `InvocationType: 'Event'`, returns `202 { job_id, status: 'pending' }` in <1s.
+2. Worker invocation runs the actual Claude call. On finish (success or error) it updates the DDB row to `done` / `error` with the result/error.
+3. Client polls `GET /sign-translate/status/{job_id}` every 1.5s. Each poll is a single DDB `GetItem` (sub-second), well within the gateway window.
+4. On `status: 'done'` the client treats the `result` field exactly as if it had been the original sync response. The legacy retry-on-5xx layer in `postJsonWithRetry` still wraps the enqueue call.
+
+Job rows are scoped by random UUID — `job_id` itself is the bearer credential for the status endpoint, so no auth is needed. DDB TTL (`expires_at`) sweeps rows 10 minutes after creation. The dispatcher in `handler()` routes on `event._async_kind` (worker invocation) → `path.includes('/status/')` (status read) → normal route lookup.
+
+The Lambda is **reused as the local dev proxy** via a Vite plugin in [`vite.config.ts`](vite.config.ts) that intercepts all `/api/*` routes, dynamically imports `lambda/index.js`, and calls the same code paths. Same code in dev and prod — never call the Anthropic API from the browser, the key must stay server-side.
 
 ## Claude API choices
 
@@ -137,7 +150,8 @@ The state is a discriminated union in [`src/App.tsx`](src/App.tsx). When adding 
 |---|---|
 | Lambda function | `parkproof-sign-translator` |
 | IAM execution role | `parkproof-lambda-role` (DDB + S3-evidence + KMS-sign + Cognito-admin permissions) |
-| API Gateway HTTP API | `parkproof-api` (id `tlsmpbft4f`); 10 routes — 4 anonymous + 6 JWT-gated. Hard 30s timeout per HTTP API; complex multi-variant signs occasionally hit this — `src/lib/api.ts` catches 502/503/504 and shows a friendly "try a clearer / cropped photo" message after one auto-retry. |
+| API Gateway HTTP API | `parkproof-api` (id `tlsmpbft4f`); 12 routes — 6 anonymous (incl. 2 async-job status GETs) + 6 JWT-gated. Hard 30s timeout per HTTP API; the slow Claude routes (`/sign-translate`, `/draft-appeal`) bypass it via async polling (see "Async-polling architecture" above). `src/lib/api.ts` still catches transient 5xx with one auto-retry and a friendly "complex sign" message as the final fallback. |
+| DynamoDB table — async jobs | `parkproof-jobs` (PK = `job_id`); TTL on `expires_at` (10-min sweep). Holds the `pending` / `done` / `error` status + `result` payload for every fresh `sign-translate` / `draft-appeal` request. |
 | API Gateway JWT authorizer | id `t1utm6`, issuer = Cognito User Pool |
 | Cognito User Pool | `ap-southeast-2_fBbsYa7VM` |
 | Cognito App Client | `5ldgcdf1qol1qje9h55inl9pq9` |
