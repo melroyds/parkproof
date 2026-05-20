@@ -2,6 +2,47 @@ import type { AppealDraft, ObservationGroup, ParkingRules, ParkingSession } from
 import { postJsonAndPoll } from './api'
 
 /**
+ * Read a `dev_time` URL parameter and return it as an ISO 8601 string the
+ * Lambda's `current_datetime` field will accept. Lets the user spoof "what
+ * time is it?" for testing — e.g. visiting parkproof.dsouza.tech/?dev_time=
+ * 2026-05-21T10:30 lets a meter-zone scan run as if it were Thursday morning,
+ * even when the real wall-clock time is well outside any paid window.
+ *
+ * Returns undefined when no dev_time is set OR the value doesn't parse — the
+ * Lambda then falls back to its own `new Date()`. The check is intentionally
+ * loose; this is a debug shim, not a security boundary.
+ *
+ * Accepts:
+ *   ?dev_time=2026-05-21T10:30          → assumed +10:00 / +11:00 (spot tz)
+ *   ?dev_time=2026-05-21T10:30:00+10:00 → passed through as-is
+ */
+function readDevTimeFromUrl(): string | undefined {
+  if (typeof window === 'undefined') return undefined
+  try {
+    const raw = new URLSearchParams(window.location.search).get('dev_time')
+    if (!raw) return undefined
+    // If the user already supplied a timezone offset, pass through verbatim.
+    if (/[+-]\d{2}:?\d{2}$/.test(raw) || raw.endsWith('Z')) return raw
+    // Otherwise normalise common short forms to a parseable shape. The Lambda
+    // resolves the proper offset from lat/lng anyway — supplying a naive
+    // local time is fine and arguably more honest (the model uses it as
+    // "what time it currently is in the parking spot's local timezone").
+    const m = raw.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2}))?$/)
+    if (m) {
+      const [, y, mo, d, h, mi, s = '00'] = m
+      // Append seconds + a placeholder offset; Lambda treats current_datetime
+      // as a string label, not a Date — the offset is decorative for the
+      // model. Use +10:00 (Melbourne winter / Brisbane year-round) as the
+      // pragmatic default for an AU-focused app.
+      return `${y}-${mo}-${d}T${h}:${mi}:${s}+10:00`
+    }
+    return raw // last-ditch: let the model parse whatever the user typed
+  } catch {
+    return undefined
+  }
+}
+
+/**
  * Fresh sign translate from an image. Server-side this enqueues a job and
  * polls — see src/lib/api.ts for the async-job flow. Takes ~7-20s on
  * normal signs, up to ~50s on monstrous multi-variant signs (the kind
@@ -20,6 +61,8 @@ export async function translateSign(
     body.lat = coords.lat
     body.lng = coords.lng
   }
+  const devTime = readDevTimeFromUrl()
+  if (devTime) body.current_datetime = devTime
   return postJsonAndPoll<ParkingRules>('/sign-translate', body)
 }
 
@@ -51,6 +94,8 @@ export async function refreshInterpretation(
     body.lat = coords.lat
     body.lng = coords.lng
   }
+  const devTime = readDevTimeFromUrl()
+  if (devTime) body.current_datetime = devTime
   return postJsonAndPoll<ParkingRules>('/sign-translate', body)
 }
 
