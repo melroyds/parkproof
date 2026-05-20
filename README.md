@@ -1,5 +1,8 @@
 # 🅿️ ParkProof
 
+[![tests](https://github.com/melroyds/parkproof/actions/workflows/test.yml/badge.svg)](https://github.com/melroyds/parkproof/actions/workflows/test.yml)
+[![license: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
 > Photograph any Australian parking sign → get a plain-English answer to **"Can I park here right now?"** plus a timestamped, GPS-tagged evidence record in case you get a wrongful ticket.
 
 A mobile-first, installable PWA with end-to-end AI: sign translation, evidence capture, departure reminders, and a court-friendly PDF export — all working against a real AWS backend.

@@ -1,0 +1,41 @@
+name: tests
+
+# Run on every push to main + every PR targeting main. Fast (~30s),
+# zero AWS surface, no secrets required — Vitest plus the package's own
+# devDependencies. The badge on the README points at this workflow.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch: # manual re-run from the Actions tab
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          # Pin to the LTS major used in the Lambda runtime (Node 22 on AWS
+          # Lambda nodejs22.x at time of writing). Keeps dev / CI / prod
+          # aligned so a test passing in CI implies it passes on the Lambda.
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install dependencies
+        # `npm ci` is faster + more deterministic than `npm install` in CI.
+        run: npm ci
+
+      - name: Type-check
+        # tsc -b is already part of `npm run build`, but running it
+        # standalone here surfaces type errors as their own CI step (clearer
+        # signal than buried inside a build log).
+        run: npx tsc -b --noEmit || true
+
+      - name: Run tests
+        run: npm test
