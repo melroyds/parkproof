@@ -800,6 +800,16 @@ async function handleFeedback(event) {
     // friction worth keeping.
     ticket_acknowledged:
       typeof ctx.ticket_acknowledged === 'boolean' ? ctx.ticket_acknowledged : undefined,
+    // The model's detected payment methods array (e.g. ["meter"], or
+    // ["meter","easypark"]). Logged unconditionally — including on
+    // requires_ticket=false scans of metered bays scanned after-hours —
+    // so we can verify the EasyPark/meter detection prompt is biting.
+    // Array gets serialised as JSON inline; null is preserved.
+    payment_methods: Array.isArray(ctx.payment_methods)
+      ? ctx.payment_methods
+      : ctx.payment_methods === null
+        ? null
+        : undefined,
     // For the no-sign flow (Feature 1) — distinguishes scan-based sessions
     // from "I parked at an unsigned spot" sessions.
     no_sign: typeof ctx.no_sign === 'boolean' ? ctx.no_sign : undefined,

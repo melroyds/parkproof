@@ -72,6 +72,12 @@ function buildFeedbackContext(
     // and see whether the acknowledgement gate is real friction or just noise.
     requires_ticket: !!result.requires_ticket,
     ticket_acknowledged: !!result.requires_ticket && ticketAcknowledged,
+    // The model's detected payment methods — surfaced ALWAYS, not just when
+    // requires_ticket is true. Without this, we can't see from CloudWatch
+    // whether the prompt is correctly identifying "meter" / "easypark" on a
+    // bay that's currently outside its paid window. The field is a few bytes
+    // and additive — old clients without it still log everything else.
+    payment_methods: result.payment_methods ?? null,
     // Disability-permit signals — same shape. Slice on retake rate by
     // "did the ♿ gate fire" to catch false positives (e.g. wheelchair
     // symbol on an unrelated adjacent sign mis-attributed).

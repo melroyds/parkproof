@@ -35,6 +35,14 @@ export interface FeedbackContext {
   scanned_hour_local?: number
   /** Whether the result came from the text-only refresh path vs a fresh vision read. */
   is_refresh?: boolean
+  /**
+   * The model's `payment_methods` array from the result — captured even when
+   * requires_ticket is false (a metered bay scanned after-hours still
+   * surfaces "meter" here). Lets Logs Insights answer "is the EasyPark
+   * detection prompt fix actually biting?" — without it we can't tell a
+   * working prompt from a regression.
+   */
+  payment_methods?: string[] | null
 }
 
 export function submitFeedback(payload: {
