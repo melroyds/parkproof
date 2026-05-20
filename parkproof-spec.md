@@ -97,6 +97,14 @@ The build was scoped tight: a weekend POC, then ~2 weeks of iteration. P0/P1 are
 - Reverse-geocode to a human address (Nominatim); user can edit if wrong, forward-geocode replaces the coords
 - Optional car photo (camera or library, downsized to ≤1200px for storage quota)
 - Save to `localStorage` — device-local by deliberate choice
+- **End-of-session signal** — when the driver leaves, an "I've left" action stamps an `ended_at` timestamp on the record. **Mandatory** for no-sign sessions (no posted expiry to fall off naturally). **Optional shortcut** for sign-translated sessions when the driver leaves early — the evidence PDF then surfaces both the sign's posted expiry *and* the actual driver-signalled departure time + computed duration.
+
+### 2b. No-Sign Mode
+- Entry-point on the scan screen: "No sign here? Just log my park →"
+- Captures an *ambient surroundings* photo (substitutes for the missing sign photo as visual evidence of "no posted restrictions at the time of parking") plus the same GPS + address chain
+- No AI call — no token spend, no sign translation; the record's `rules` is empty and `confidence` is N/A
+- Open-ended on the home "Currently parked" card: elapsed-time copy ("Parked for 2h 14m") and a neutral palette in place of the urgency colour grammar; ends only on the driver's explicit "I've left"
+- Use case: open carparks, quiet residentials, apartment laneways — and the defensive case where a council later puts up a sign claiming the spot was restricted all along
 
 ### 3. Departure Reminder (both options offered)
 - **`.ics` calendar event** — RFC 5545 compliant with `GEO` field; works on iPhone, Android, Outlook even with ParkProof closed. The primary reminder mechanism.

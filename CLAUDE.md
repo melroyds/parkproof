@@ -141,7 +141,8 @@ The state is a discriminated union in [`src/App.tsx`](src/App.tsx). When adding 
 - Fonts: Fraunces 700/800 for headings + brand, Inter 400–700 for body.
 - File naming: `PascalCase.tsx` for components, `kebab-case.ts` (no, lowercase no-hyphen) for libs.
 - Async errors: `throw new Error('message')` with a user-facing string. The Lambda handler maps it to a JSON `{ error }` response. The frontend `claude.ts` re-throws so the App's `'error'` view can display it.
-- Storage: any new persisted shape goes in `src/types.ts` and gets a corresponding helper in `src/lib/storage.ts`. Bump the localStorage key (`parkproof.sessions.v1` → `v2`) if you change the saved shape incompatibly.
+- Storage: any new persisted shape goes in `src/types.ts` and gets a corresponding helper in `src/lib/storage.ts`. Bump the localStorage key (`parkproof.sessions.v1` → `v2`) if you change the saved shape incompatibly. **Additive** fields (e.g. the recent `ended_at` driver-signalled end-of-session timestamp) are forward-compatible and don't require a key bump — old saved sessions just lack the field, which all readers handle as "session has not been explicitly ended".
+- Active-session derivation lives in `loadActiveSessions(now)` in `storage.ts` — three states feed it: `ended_at` ⇒ never active (regardless of expiry); `expires_at > now` ⇒ active (sorted soonest first); `no_sign` with no `ended_at` ⇒ open-ended-active (sorted most-recent first, placed after expiry-bearing sessions). The home `ActiveSessionCard` + the per-session `SessionDetail` both expose an "I've left" action that stamps `ended_at = now()` via the `endSession(id)` helper and mirrors to cloud when signed in.
 - **Anonymous-by-default, opt-in cloud.** No login wall — sessions are always device-local in `localStorage` first, and every feature works without an account. If the user *chooses* to sign in (Cognito email/password or Apple/Google federation), the same sessions opportunistically mirror to DynamoDB + S3 evidence bucket via the `/sessions/*` and `/photos/*` routes. The local copy stays the source of truth; cloud is durability + cross-device recovery. Never gate functionality behind sign-in.
 
 ## AWS resources
@@ -328,7 +329,8 @@ scripts/teardown.sh                            ← destroy everything (dry-run b
 - ✅ Feature 4 — Evidence PDF export (caption overlay, signature appendix when present)
 - ✅ Feature 5 — Session history + detail + delete
 - ✅ Driver's note — 280-char free-text per session, rendered verbatim in PDF
-- ✅ Live "Currently parked" home — countdown card colour-coded by urgency
+- ✅ Live "Currently parked" home — countdown card colour-coded by urgency; explicit "I've left" affordance ends the session and stamps `ended_at`
+- ✅ No-sign open-ended sessions — sessions logged without a sign stay active on home until the driver signals "I've left" (mandatory there; optional shortcut on expiry-bearing sessions when leaving early)
 - ✅ Walk-back navigation — distance + ETA + Apple/Google Maps deep-link
 - ✅ AI-drafted appeal letter — ticket photo → Claude draft → editable + PDF export
 - ✅ Cryptographic evidence signing — KMS ECDSA P-256 + openssl-verify walkthrough in PDF
