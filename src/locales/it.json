@@ -527,5 +527,15 @@
     "error": {
       "generic": "Invio non riuscito — riprova tra poco."
     }
+  },
+  "landing": {
+    "feature": {
+      "translateTitle": "Risposte in italiano semplice",
+      "translateDesc": "Fotografa qualsiasi cartello di parcheggio australiano — verdetto 'posso parcheggiare?' in 10 secondi.",
+      "evidenceTitle": "Prove difendibili",
+      "evidenceDesc": "Ogni parcheggio ottiene un timestamp firmato crittograficamente, GPS e foto.",
+      "appealTitle": "Lettere di ricorso AI",
+      "appealDesc": "Multa ingiusta? Fotografala e prepariamo un ricorso formale."
+    }
   }
 }

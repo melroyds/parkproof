@@ -15,6 +15,7 @@ import AuthFlow from './components/AuthFlow'
 import AuthSettings from './components/AuthSettings'
 import PrivacyPolicy from './components/PrivacyPolicy'
 import FeedbackModal from './components/FeedbackModal'
+import LandingFeatures from './components/LandingFeatures'
 import LanguageSelector from './components/LanguageSelector'
 import Icon from './components/Icon'
 import LoadingProgress from './components/LoadingProgress'
@@ -550,6 +551,13 @@ function App() {
             />
           </div>
         )}
+
+        {/* Landing feature cards — first-time visitors only.
+            Conditional on (no active session) AND (no saved sessions) so
+            returning users see the original tight layout, and so the cards
+            don't compete with the "Currently parked" status card for
+            visual space when there's something more useful to show. */}
+        {!primaryActive && sessionCount === 0 && <LandingFeatures />}
 
         <button
           onClick={() => setView({ name: 'scan' })}

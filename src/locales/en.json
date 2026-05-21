@@ -25,6 +25,16 @@
     "title": "Language",
     "tooltipPrefix": "Switch app language to"
   },
+  "landing": {
+    "feature": {
+      "translateTitle": "Plain-English answers",
+      "translateDesc": "Photograph any Aussie parking sign — get a 'can I park now?' verdict in 10 seconds.",
+      "evidenceTitle": "Defensible evidence",
+      "evidenceDesc": "Every park gets a cryptographically-signed timestamp, GPS, and photo record.",
+      "appealTitle": "AI appeal letters",
+      "appealDesc": "Got a wrongful ticket? Photograph it and we'll draft a formal dispute."
+    }
+  },
   "home": {
     "tagline": "Aussie parking, decoded — with photo evidence in case of a wrongful ticket.",
     "scanCta": "Scan a parking sign",

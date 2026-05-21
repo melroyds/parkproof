@@ -521,5 +521,15 @@
     "error": {
       "generic": "无法发送 — 请稍后再试。"
     }
+  },
+  "landing": {
+    "feature": {
+      "translateTitle": "通俗的解读",
+      "translateDesc": "拍下任何澳洲停车标志 — 10 秒内告诉你\"现在能不能停\"。",
+      "evidenceTitle": "可作证据",
+      "evidenceDesc": "每次停车都有加密签名的时间戳、GPS 和照片记录。",
+      "appealTitle": "AI 申诉信",
+      "appealDesc": "收到不合理的罚单？拍下来，我们帮你起草正式申诉。"
+    }
   }
 }
