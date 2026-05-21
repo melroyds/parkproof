@@ -2,13 +2,20 @@
 # ParkProof — set API Gateway HTTP API throttle limits.
 #
 # Usage:
-#   bash scripts/set-throttle.sh                # uses defaults (20 burst / 10 rate)
+#   bash scripts/set-throttle.sh                # uses defaults (100 burst / 25 rate)
 #   bash scripts/set-throttle.sh 50 20          # override: 50 burst / 20 rate
 #
 # Throttle limits cap how many requests/sec your API will accept before returning
-# 429 Too Many Requests. Sized to be far above legitimate use but tight enough
-# that a runaway bot can't burn through Anthropic credits faster than the billing
-# alarm can catch it.
+# 429 Too Many Requests. Sized for "good Reddit day" traffic — absorbs an initial
+# click-spike of ~100 simultaneous requests then handles ~30 concurrent scanners
+# at the 25 req/s rate (each scan generates ~25 requests over 30s as the client
+# polls the async-job status endpoint). The Lambda account-level concurrency
+# ceiling (default 10 on a new AWS account) is the actual cost ceiling — at
+# 30s per scan that bounds throughput to ~$24/hr worst case.
+#
+# To go lower for cost protection: bash scripts/set-throttle.sh 40 10
+# To go higher for a planned launch: bash scripts/set-throttle.sh 200 50  (and
+# also file a Lambda concurrency quota increase 24h ahead via the AWS console).
 
 set -euo pipefail
 
@@ -16,8 +23,8 @@ PROJECT=parkproof
 REGION=ap-southeast-2
 API_NAME=$PROJECT-api
 
-BURST="${1:-20}"
-RATE="${2:-10}"
+BURST="${1:-100}"
+RATE="${2:-25}"
 
 cd "$(dirname "$0")/.."
 

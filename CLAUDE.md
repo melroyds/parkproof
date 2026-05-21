@@ -168,7 +168,7 @@ The state is a discriminated union in [`src/App.tsx`](src/App.tsx). When adding 
 | ACM certificate (us-east-1) | `www.parkproof.com.au` + `parkproof.com.au` (`8257fd02-fcc0-4958-a092-7e5a3d07fa57`) DNS-validated CNAMEs on Cloudflare. Legacy cert for `parkproof.dsouza.tech` (`3442f3b7-aa80-40ec-b580-331487b7b0cd`) still issued for the 7-day fallback window. |
 | DNS hosting | Cloudflare (`jake.ns.cloudflare.com` + `nova.ns.cloudflare.com` for `parkproof.com.au`; `kenia.ns.cloudflare.com` + `woz.ns.cloudflare.com` for `parkproof.au`). Page Rules handle apex → www redirect (`.com.au`) and both apex + www → canonical (`.au`). Crazy Domains registrar only — DNS migrated off them to dodge their $26/yr URL-forwarding upcharge. |
 | Email | Titan (`melroy@parkproof.com.au`) — Free Trial expires 20 Jun 2026. MX/SPF/DKIM TXT records in Cloudflare. |
-| AWS Budgets alarm | `parkproof-monthly` (\$10/mo threshold, emails moltensnake@gmail.com) |
+| AWS Budgets alarm | `parkproof-monthly` (\$25/mo threshold, emails moltensnake@gmail.com — raised from \$10 to allow Reddit-day spike without false-alarm noise) |
 
 Region: `ap-southeast-2` (Sydney). Account: `251800369612`.
 
@@ -182,7 +182,7 @@ All in `scripts/`. All idempotent. All re-runnable.
 | `setup-auth.sh` | One-time: creates Cognito User Pool + App Client + Hosted UI domain, DynamoDB sessions table, S3 evidence bucket (private + CORS for both `parkproof.dsouza.tech` and the legacy CloudFront origin), API Gateway JWT authorizer. Writes `scripts/.aws-resources` for `deploy.sh` to consume |
 | `setup-signing.sh` | One-time: creates the KMS ECDSA P-256 asymmetric key, attaches `kms:Sign` to the Lambda role, exports the public key to `public/parkproof-public-key.pem` for client-side verification |
 | `harden.sh` | One-time: locks API Gateway CORS to the allowed origins, creates OAC, migrates S3 origin to private REST endpoint |
-| `set-throttle.sh [burst] [rate]` | API Gateway rate limits (default 20 burst / 10 rate per sec) |
+| `set-throttle.sh [burst] [rate]` | API Gateway rate limits (default 100 burst / 25 rate per sec — sized for a Reddit launch day; Lambda's account-level concurrency cap of 10 is the actual cost ceiling) |
 | `billing-alarm.sh [email] [threshold]` | AWS Budgets monthly alarm |
 | `smoke-test-auth.mjs` | End-to-end test of the auth-gated paths: sign-up → upload → list → delete via the live API |
 | `screenshots.mjs` | Playwright harness — drives the local app through every screen, regenerates `docs/screenshots/*.png` for the README demo grid |
