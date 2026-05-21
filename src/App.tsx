@@ -16,6 +16,7 @@ import AuthSettings from './components/AuthSettings'
 import PrivacyPolicy from './components/PrivacyPolicy'
 import FeedbackModal from './components/FeedbackModal'
 import LandingFeatures from './components/LandingFeatures'
+import AboutFeatures from './components/AboutFeatures'
 import LanguageSelector from './components/LanguageSelector'
 import Icon from './components/Icon'
 import LoadingProgress from './components/LoadingProgress'
@@ -60,6 +61,7 @@ type View =
   | { name: 'signin' }
   | { name: 'settings' }
   | { name: 'privacy' }
+  | { name: 'about' }
   | { name: 'error'; message: string }
 
 function stripDataUrlPrefix(dataUrl: string): string {
@@ -498,6 +500,17 @@ function App() {
     )
   }
 
+  if (view.name === 'about') {
+    return (
+      <main className="min-h-screen">
+        <AboutFeatures
+          onBack={() => setView({ name: 'home' })}
+          onTryIt={() => setView({ name: 'scan' })}
+        />
+      </main>
+    )
+  }
+
   // The useNow tick at the top of the function drives:
   //  (a) the active-session card's countdown stays live without manual refresh
   //  (b) when an active session crosses its expiry, it falls out of the
@@ -557,7 +570,17 @@ function App() {
             returning users see the original tight layout, and so the cards
             don't compete with the "Currently parked" status card for
             visual space when there's something more useful to show. */}
-        {!primaryActive && sessionCount === 0 && <LandingFeatures />}
+        {!primaryActive && sessionCount === 0 && (
+          <>
+            <LandingFeatures />
+            <button
+              onClick={() => setView({ name: 'about' })}
+              className="self-end -mt-3 mb-4 text-xs text-brand-600 hover:text-brand-700 underline"
+            >
+              {t('home.seeEverything')}
+            </button>
+          </>
+        )}
 
         <button
           onClick={() => setView({ name: 'scan' })}
@@ -637,7 +660,13 @@ function App() {
           </ol>
         )}
 
-        <div className="mt-8 flex items-center justify-center gap-6 self-center">
+        <div className="mt-8 flex items-center justify-center gap-6 self-center flex-wrap">
+          <button
+            onClick={() => setView({ name: 'about' })}
+            className="text-xs text-ink-500 hover:text-ink-700 underline"
+          >
+            {t('common.about')}
+          </button>
           <button
             onClick={() => setView({ name: 'privacy' })}
             className="text-xs text-ink-500 hover:text-ink-700 underline"

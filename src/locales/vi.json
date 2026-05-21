@@ -19,7 +19,8 @@
     "yes": "Có",
     "no": "Không",
     "close": "Đóng",
-    "sendFeedback": "Gửi phản hồi"
+    "sendFeedback": "Gửi phản hồi",
+    "about": "Ứng dụng làm gì"
   },
   "language": {
     "title": "Ngôn ngữ",
@@ -40,7 +41,8 @@
       "translate": "Chụp biển báo → AI dịch các quy tắc",
       "log": "Chụp xe của bạn → bằng chứng có dấu thời gian",
       "remind": "Nhận lời nhắc trên lịch trước khi hết giờ đỗ"
-    }
+    },
+    "seeEverything": "Xem tất cả những gì ParkProof có thể làm →"
   },
   "active": {
     "currentlyParked": "ĐANG ĐỖ XE",

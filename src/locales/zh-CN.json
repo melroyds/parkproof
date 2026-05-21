@@ -19,7 +19,8 @@
     "yes": "是",
     "no": "否",
     "close": "关闭",
-    "sendFeedback": "发送反馈"
+    "sendFeedback": "发送反馈",
+    "about": "它能做什么"
   },
   "language": {
     "title": "语言",
@@ -40,7 +41,8 @@
       "translate": "拍摄标志 → AI 翻译规则",
       "log": "拍摄您的车辆 → 带时间戳的证据记录",
       "remind": "停车到期前获得日历提醒"
-    }
+    },
+    "seeEverything": "查看 ParkProof 的所有功能 →"
   },
   "active": {
     "currentlyParked": "正在停车",

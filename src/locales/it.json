@@ -19,7 +19,8 @@
     "yes": "Sì",
     "no": "No",
     "close": "Chiudi",
-    "sendFeedback": "Invia feedback"
+    "sendFeedback": "Invia feedback",
+    "about": "Cosa fa"
   },
   "language": {
     "title": "Lingua",
@@ -40,7 +41,8 @@
       "translate": "Fotografa il cartello → l'AI traduce le regole",
       "log": "Fotografa la tua auto → prova con timestamp",
       "remind": "Ricevi un promemoria nel calendario prima della scadenza"
-    }
+    },
+    "seeEverything": "Scopri tutto quello che fa ParkProof →"
   },
   "active": {
     "currentlyParked": "ATTUALMENTE PARCHEGGIATO",

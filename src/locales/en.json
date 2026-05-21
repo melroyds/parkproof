@@ -11,6 +11,7 @@
     "edit": "Edit",
     "retry": "Retry",
     "close": "Close",
+    "about": "What it does",
     "privacy": "Privacy",
     "sendFeedback": "Send feedback",
     "loading": "Loading…",
@@ -46,6 +47,7 @@
     "historyCount_other": "{{count}} saved",
     "signInToSync": "Sign in to sync across devices",
     "account": "Account",
+    "seeEverything": "See everything ParkProof does →",
     "steps": {
       "translate": "Photo the sign → AI translates the rules",
       "log": "Photo your car → timestamped evidence record",
