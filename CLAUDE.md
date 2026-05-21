@@ -6,7 +6,7 @@ Quick context for AI assistance on this codebase. Read this before touching thin
 
 Mobile-first installable PWA. Photograph an Australian parking sign → Claude vision answers "can I park now?" with structured JSON → optionally log a session (car photo + GPS + address) → get a `.ics` calendar reminder or in-tab browser notification → later, export the session as a PDF for an infringement dispute.
 
-Live: <https://parkproof.dsouza.tech> (custom domain, CloudFront-fronted). Hosted on AWS in `ap-southeast-2`.
+Live: <https://www.parkproof.com.au> (custom domain on Cloudflare DNS, CloudFront-fronted). Apex `parkproof.com.au` and both forms of `parkproof.au` 301-redirect to the canonical via Cloudflare Page Rules. Old domain `parkproof.dsouza.tech` kept as fallback for ~7 days post-cutover. Hosted on AWS in `ap-southeast-2`.
 
 See [`parkproof-spec.md`](parkproof-spec.md) for the original product brief and [`README.md`](README.md) for the user-facing version.
 
@@ -161,9 +161,11 @@ The state is a discriminated union in [`src/App.tsx`](src/App.tsx). When adding 
 | S3 bucket — static hosting | `parkproof-app-251800369612` (private; CloudFront OAC only) |
 | S3 bucket — evidence photos | `parkproof-evidence-251800369612` (private; per-user `{sub}/` prefixes; presigned `PUT` only) |
 | KMS asymmetric key | alias `alias/parkproof-evidence-signing` (ECDSA P-256). Public key shipped at `/parkproof-public-key.pem` |
-| CloudFront distribution | `E33V8DMM3LQACG` → `parkproof.dsouza.tech` (custom domain via ACM cert in us-east-1) / fallback `d1jmpu2roekssu.cloudfront.net` |
+| CloudFront distribution | `E33V8DMM3LQACG` → `www.parkproof.com.au` + legacy `parkproof.dsouza.tech` (both as alt-names) / fallback `d1jmpu2roekssu.cloudfront.net` |
 | CloudFront Origin Access Control | `parkproof-oac` (id `E3JE1OX4WHEIWK`) |
-| ACM certificate (us-east-1) | `parkproof.dsouza.tech` — DNS-validated CNAME on Network Solutions |
+| ACM certificate (us-east-1) | `www.parkproof.com.au` + `parkproof.com.au` (`8257fd02-fcc0-4958-a092-7e5a3d07fa57`) DNS-validated CNAMEs on Cloudflare. Legacy cert for `parkproof.dsouza.tech` (`3442f3b7-aa80-40ec-b580-331487b7b0cd`) still issued for the 7-day fallback window. |
+| DNS hosting | Cloudflare (`jake.ns.cloudflare.com` + `nova.ns.cloudflare.com` for `parkproof.com.au`; `kenia.ns.cloudflare.com` + `woz.ns.cloudflare.com` for `parkproof.au`). Page Rules handle apex → www redirect (`.com.au`) and both apex + www → canonical (`.au`). Crazy Domains registrar only — DNS migrated off them to dodge their $26/yr URL-forwarding upcharge. |
+| Email | Titan (`melroy@parkproof.com.au`) — Free Trial expires 20 Jun 2026. MX/SPF/DKIM TXT records in Cloudflare. |
 | AWS Budgets alarm | `parkproof-monthly` (\$10/mo threshold, emails moltensnake@gmail.com) |
 
 Region: `ap-southeast-2` (Sydney). Account: `251800369612`.

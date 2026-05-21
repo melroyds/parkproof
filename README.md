@@ -7,7 +7,7 @@
 
 A mobile-first, installable PWA with end-to-end AI: sign translation, evidence capture, departure reminders, and a court-friendly PDF export — all working against a real AWS backend.
 
-> **🚀 Try it live:** [https://parkproof.dsouza.tech](https://parkproof.dsouza.tech)
+> **🚀 Try it live:** [https://www.parkproof.com.au](https://www.parkproof.com.au)
 >
 > Best on a phone — tap your browser's share menu → **"Add to Home Screen"** and ParkProof installs like a native app (own icon, fullscreen, no browser chrome). Also works fine on desktop if you upload sign photos from your library.
 
@@ -129,7 +129,7 @@ flowchart LR
   end
 
   subgraph AWS["AWS (ap-southeast-2)"]
-    CF[CloudFront<br/>+ OAC<br/>parkproof.dsouza.tech]
+    CF[CloudFront<br/>+ OAC<br/>www.parkproof.com.au]
     S3App[(S3 — static hosting<br/>private, OAC-only)]
     APIGW[API Gateway HTTP API<br/>10 routes — see below<br/>JWT authorizer for /sessions, /photos, /me]
     Lambda[Lambda<br/>parkproof-sign-translator]

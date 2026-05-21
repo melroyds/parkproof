@@ -2,7 +2,7 @@
 
 *Mobile-first PWA. Photograph an Australian parking sign → plain-English answer + timestamped, GPS-tagged evidence. Built solo in one week; ~$5/month to run; zero real users.*
 
-[Live demo →](https://parkproof.dsouza.tech) · [Source →](https://github.com/melroyds/parkproof)
+[Live demo →](https://www.parkproof.com.au) · [Source →](https://github.com/melroyds/parkproof)
 
 ---
 
