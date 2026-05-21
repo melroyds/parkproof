@@ -11,13 +11,16 @@ Fonts:
   Inter — uses the system install on Windows; falls back to Arial otherwise.
 """
 from __future__ import annotations
+import io
 import os
 from pathlib import Path
 from PIL import Image, ImageDraw, ImageFont
+import resvg_py
 
 ROOT = Path(__file__).resolve().parent.parent
 FONTS = ROOT / "scripts" / ".fonts"
 OUTPUT = ROOT / "public" / "og-image.png"
+ICON_SVG = ROOT / "public" / "parkproof-icon.svg"
 
 # ─── Brand tokens (matches src/index.css @theme) ──────────────────────────
 BRAND_BLUE = (39, 91, 255)        # #275BFF
@@ -95,51 +98,34 @@ def _draw_subtle_pattern(draw: ImageDraw.ImageDraw) -> None:
         )
 
 
-def _draw_logo_mark(draw: ImageDraw.ImageDraw, x: int, y: int, size: int = 56) -> None:
-    """Layered-P + clock mark, simplified. The clock-face hands point to ~10:30
-    (a friendly mid-morning), echoing the actual app's brand mark in
-    public/parkproof-icon.svg.
+def _rasterize_icon(size: int) -> Image.Image:
+    """Render the brand-canonical SVG (public/parkproof-icon.svg) to a PIL
+    image at the requested square size. Uses resvg (Rust-based, no native
+    Cairo dependency). This preserves the layered-P + alarm-clock design
+    exactly as it appears everywhere else in the app (favicon, PWA tile,
+    splash, inline BrandMark component) — no fork between OG-card branding
+    and product branding.
 
-    Rendered as primitives (no SVG dependency) so this script stays portable.
+    Renders at 3× the target then downscales with LANCZOS for crisp edges
+    at small thumbnail sizes (LinkedIn shows OG cards at ~600px wide, so
+    the logo mark renders at ~30px there — anti-aliasing matters).
     """
-    # Rounded-rectangle P background — brand-blue.
-    pad = size // 8
-    rect = (x, y, x + size, y + size)
-    draw.rounded_rectangle(rect, radius=size // 5, fill=BRAND_BLUE)
+    super_size = size * 3
+    with open(ICON_SVG, "r", encoding="utf-8") as f:
+        svg_string = f.read()
+    png_bytes = resvg_py.svg_to_bytes(
+        svg_string=svg_string,
+        width=super_size,
+        height=super_size,
+    )
+    img = Image.open(io.BytesIO(png_bytes)).convert("RGBA")
+    return img.resize((size, size), Image.LANCZOS)
 
-    # Inner "P" — a stroked partial rect with a hole forming the bowl.
-    inner_x = x + size // 3
-    inner_y = y + size // 5
-    draw.rounded_rectangle(
-        (inner_x, inner_y, inner_x + size // 3, inner_y + size // 3),
-        radius=size // 8,
-        outline=WHITE,
-        width=max(2, size // 14),
-    )
 
-    # Clock face overlay — small accent-teal circle in the top-right corner.
-    clock_d = size // 2
-    clock_x = x + size - clock_d - pad // 2
-    clock_y = y - clock_d // 3
-    draw.ellipse(
-        (clock_x, clock_y, clock_x + clock_d, clock_y + clock_d),
-        fill=ACCENT_TEAL,
-        outline=WHITE,
-        width=2,
-    )
-    # Clock hands — hour (short) + minute (long) pointing at ~10:30.
-    cx = clock_x + clock_d // 2
-    cy = clock_y + clock_d // 2
-    draw.line(
-        (cx, cy, cx - clock_d // 4, cy - clock_d // 8),  # hour, ~10
-        fill=WHITE,
-        width=2,
-    )
-    draw.line(
-        (cx, cy, cx, cy + clock_d // 3),  # minute, ~30
-        fill=WHITE,
-        width=2,
-    )
+def _paste_logo(canvas: Image.Image, x: int, y: int, size: int = 80) -> None:
+    """Place the real brand mark on the OG canvas at the given top-left."""
+    logo = _rasterize_icon(size)
+    canvas.paste(logo, (x, y), mask=logo)
 
 
 def build() -> None:
@@ -149,10 +135,17 @@ def build() -> None:
     _draw_subtle_pattern(draw)
 
     # ─── Wordmark band ────────────────────────────────────────────────────
-    _draw_logo_mark(draw, PADDING, PADDING - 4, size=56)
-    word_font = _load_inter(36, "Bold")
-    word_x = PADDING + 56 + 18
-    word_y = PADDING - 2
+    # Use the real layered-P + clock mark from parkproof-icon.svg, NOT a
+    # Pillow primitive approximation. Logo is 80px tall to read clearly at
+    # LinkedIn's ~600px-wide thumbnail.
+    LOGO_SIZE = 80
+    _paste_logo(img, PADDING, PADDING - 10, size=LOGO_SIZE)
+    # Wordmark text — Fraunces ExtraBold (variable, wght=800) to match the
+    # actual SVG wordmark's serif treatment. The hero tagline below uses the
+    # same Fraunces; the wordmark is smaller + tighter tracking.
+    word_font = _load_fraunces(48)
+    word_x = PADDING + LOGO_SIZE + 18
+    word_y = PADDING + 12
     draw.text((word_x, word_y), "ParkProof", font=word_font, fill=INK_NAVY)
 
     # ─── Hero tagline (two lines) ─────────────────────────────────────────
