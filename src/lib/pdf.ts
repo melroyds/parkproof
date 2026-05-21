@@ -529,7 +529,7 @@ function drawSignatureAppendix(
       [t('pdf.signature.schema'), sig.schema],
       [
         t('pdf.signature.publicKeyUrl'),
-        'https://parkproof.dsouza.tech/parkproof-public-key.pem',
+        'https://www.parkproof.com.au/parkproof-public-key.pem',
       ],
     ],
     styles: { fontSize: 9, cellPadding: 5, valign: 'top' },
@@ -597,7 +597,7 @@ function drawSignatureAppendix(
     t('pdf.signature.verifyStep1'),
     t('pdf.signature.verifyStep2'),
     t('pdf.signature.verifyStep3'),
-    '   curl -O https://parkproof.dsouza.tech/parkproof-public-key.pem',
+    '   curl -O https://www.parkproof.com.au/parkproof-public-key.pem',
     t('pdf.signature.verifyStep4'),
     '   base64 -d sig.base64 > sig.bin',
     t('pdf.signature.verifyStep5'),

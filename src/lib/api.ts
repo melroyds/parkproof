@@ -6,7 +6,7 @@
  *  1. **CloudFront → Lambda Function URL (OAC, sigv4-signed)** for the SLOW
  *     anonymous routes (sign-translate, draft-appeal, sign-session, feedback).
  *     CloudFront sits at the same origin as the SPA, so requests to
- *     `parkproof.dsouza.tech/api/*` are same-origin (no CORS), and CloudFront
+ *     `www.parkproof.com.au/api/*` are same-origin (no CORS), and CloudFront
  *     forwards them sigv4-signed via OAC to a Lambda Function URL with
  *     AuthType=AWS_IAM. The CloudFront origin-response timeout is 60 seconds,
  *     bypassing API Gateway's hard 30-second cap — which is what was breaking

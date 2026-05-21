@@ -4,7 +4,7 @@ import { postJsonAndPoll } from './api'
 /**
  * Read a `dev_time` URL parameter and return it as an ISO 8601 string the
  * Lambda's `current_datetime` field will accept. Lets the user spoof "what
- * time is it?" for testing — e.g. visiting parkproof.dsouza.tech/?dev_time=
+ * time is it?" for testing — e.g. visiting www.parkproof.com.au/?dev_time=
  * 2026-05-21T10:30 lets a meter-zone scan run as if it were Thursday morning,
  * even when the real wall-clock time is well outside any paid window.
  *
