@@ -31,6 +31,17 @@ jobs:
         # `npm ci` is faster + more deterministic than `npm install` in CI.
         run: npm ci
 
+      - name: Install lambda dependencies
+        # lambda/refresh.test.js imports lambda/index.js, which imports
+        # several AWS SDK packages declared in lambda/package.json (NOT in
+        # the root). Without this step those imports fail to resolve and
+        # the entire test file errors before a single test runs.
+        # Locally these are installed by the various scripts/setup-*.sh
+        # AWS-provisioning steps, but CI only operates at the root, so we
+        # install them explicitly here.
+        run: npm ci
+        working-directory: lambda
+
       - name: Type-check
         # tsc -b is already part of `npm run build`, but running it
         # standalone here surfaces type errors as their own CI step (clearer
