@@ -1,5 +1,11 @@
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import Icon from './Icon'
+import {
+  getPushPermissionState,
+  subscribeToPush,
+  getDeviceId,
+} from '../lib/push'
 
 interface Props {
   onBack: () => void
@@ -26,6 +32,35 @@ interface Props {
  */
 export default function AboutFeatures({ onBack, onTryIt }: Props) {
   const { t } = useTranslation()
+  const [pushStatus, setPushStatus] = useState<
+    'idle' | 'requesting' | 'subscribed' | 'denied' | 'unsupported' | 'error'
+  >(() => {
+    // Initial state — reflects existing browser permission. Lets a return
+    // visitor see "subscribed" without re-clicking.
+    const state = getPushPermissionState()
+    if (state === 'unsupported') return 'unsupported'
+    if (state === 'granted') return 'subscribed'
+    if (state === 'denied') return 'denied'
+    return 'idle'
+  })
+
+  async function handleEnablePush() {
+    setPushStatus('requesting')
+    const result = await subscribeToPush()
+    if (result.ok) {
+      setPushStatus('subscribed')
+      // Convenience: log the device id so it's easy to copy into a test
+      // push call. Removed once the dispatch layer ships.
+      // eslint-disable-next-line no-console
+      console.log('[ParkProof] push device_id:', getDeviceId())
+    } else if (result.reason === 'denied') {
+      setPushStatus('denied')
+    } else if (result.reason === 'unsupported') {
+      setPushStatus('unsupported')
+    } else {
+      setPushStatus('error')
+    }
+  }
 
   // Section ids — order matters (it's the visible order on the page).
   // Each id maps to `about.<id>.title`, `about.<id>.lead`, `about.<id>.items`
@@ -69,6 +104,52 @@ export default function AboutFeatures({ onBack, onTryIt }: Props) {
           }
         />
       ))}
+
+      {/* Web Push preview — foundation only tonight. Subscription happens
+          on click; backend stores the subscription; no auto-firing of
+          notifications yet (scheduling layer ships next session). Until
+          that lands, this button mainly proves the subscribe pipe works.
+          Quietly placed in the About footer rather than promoted — opt-in
+          discovery for testers without confusing regular users. */}
+      {pushStatus !== 'unsupported' && (
+        <div className="mb-6 pt-4 border-t border-paper-300">
+          <p className="text-xs font-semibold text-ink-700 mb-1">
+            🔔 Notifications (preview)
+          </p>
+          <p className="text-xs text-ink-500 leading-relaxed mb-3">
+            We're wiring up push notifications so reminders work even when
+            ParkProof isn't open. Tap to enable on this device — the auto-firing
+            schedule arrives in the next update.
+          </p>
+          {pushStatus === 'subscribed' ? (
+            <p className="text-xs text-emerald-700 font-medium">
+              ✓ This device is subscribed. You'll get a test push once we send one.
+            </p>
+          ) : pushStatus === 'denied' ? (
+            <p className="text-xs text-ink-500">
+              You've blocked notifications for this site. To enable, change the
+              permission in your browser's site settings.
+            </p>
+          ) : pushStatus === 'error' ? (
+            <button
+              onClick={handleEnablePush}
+              className="text-xs bg-paper-100 hover:bg-paper-200 text-ink-800 px-3 py-1.5 rounded-lg border border-paper-300"
+            >
+              Something went wrong — try again
+            </button>
+          ) : (
+            <button
+              onClick={handleEnablePush}
+              disabled={pushStatus === 'requesting'}
+              className="text-xs bg-brand-50 hover:bg-brand-100 text-brand-700 px-3 py-1.5 rounded-lg border border-brand-200 disabled:opacity-50"
+            >
+              {pushStatus === 'requesting'
+                ? 'Asking your browser…'
+                : 'Enable notifications on this device'}
+            </button>
+          )}
+        </div>
+      )}
 
       {/* Build-in-the-open footer — minimal, friendly. Single GitHub link
           (open-source credibility); LinkedIn intentionally NOT linked from

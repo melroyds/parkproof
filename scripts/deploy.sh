@@ -131,13 +131,17 @@ MERGED_ENV=$(
   COGNITO_USER_POOL_ID="${COGNITO_USER_POOL_ID:-}" \
   COGNITO_APP_CLIENT_ID="${COGNITO_APP_CLIENT_ID:-}" \
   DYNAMODB_TABLE_SESSIONS="${DYNAMODB_TABLE_SESSIONS:-}" \
+  DYNAMODB_TABLE_PUSH="${DYNAMODB_TABLE_PUSH:-}" \
   S3_BUCKET_EVIDENCE="${S3_BUCKET_EVIDENCE:-}" \
   S3_BUCKET_USER_FEEDBACK="${S3_BUCKET_USER_FEEDBACK:-}" \
+  VAPID_PUBLIC_KEY="${VAPID_PUBLIC_KEY:-}" \
+  VAPID_PRIVATE_KEY="${VAPID_PRIVATE_KEY:-}" \
+  VAPID_SUBJECT="${VAPID_SUBJECT:-}" \
   echo "$EXISTING_ENV" | node -e "
   const data = require('fs').readFileSync(0, 'utf8');
   const incoming = JSON.parse(data || '{}') || {};
   incoming.ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
-  for (const key of ['COGNITO_USER_POOL_ID', 'COGNITO_APP_CLIENT_ID', 'DYNAMODB_TABLE_SESSIONS', 'S3_BUCKET_EVIDENCE', 'S3_BUCKET_USER_FEEDBACK']) {
+  for (const key of ['COGNITO_USER_POOL_ID', 'COGNITO_APP_CLIENT_ID', 'DYNAMODB_TABLE_SESSIONS', 'DYNAMODB_TABLE_PUSH', 'S3_BUCKET_EVIDENCE', 'S3_BUCKET_USER_FEEDBACK', 'VAPID_PUBLIC_KEY', 'VAPID_PRIVATE_KEY', 'VAPID_SUBJECT']) {
     if (process.env[key]) incoming[key] = process.env[key];
   }
   process.stdout.write(JSON.stringify({ Variables: incoming }));
@@ -266,6 +270,7 @@ ensure_route() {
 
 ensure_route "feedback"
 ensure_route "user-feedback"
+ensure_route "push/subscribe"
 ensure_route "draft-appeal"
 ensure_route "sign-session"
 
@@ -380,13 +385,15 @@ echo "  • endpoint: $API_URL"
 
 # ───── [4/6] Build frontend ─────────────────────────────────────────────────
 echo "▶ [4/6] Building frontend"
-# Bake the Cognito identifiers + API URL into the bundle. These are public
-# values (anyone inspecting the JS bundle can see them); not secrets.
+# Bake the Cognito identifiers + API URL + VAPID public key into the
+# bundle. These are public values (anyone inspecting the JS bundle can see
+# them); not secrets. The VAPID PRIVATE key stays Lambda-side only.
 VITE_API_URL="$API_URL" \
 VITE_COGNITO_USER_POOL_ID="${COGNITO_USER_POOL_ID:-}" \
 VITE_COGNITO_APP_CLIENT_ID="${COGNITO_APP_CLIENT_ID:-}" \
 VITE_COGNITO_REGION="${COGNITO_REGION:-ap-southeast-2}" \
 VITE_COGNITO_HOSTED_UI_DOMAIN="${COGNITO_HOSTED_UI_DOMAIN:-}" \
+VITE_VAPID_PUBLIC_KEY="${VAPID_PUBLIC_KEY:-}" \
   npm run build --silent
 
 # ───── [5/6] S3 bucket + upload ─────────────────────────────────────────────

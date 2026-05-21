@@ -246,6 +246,39 @@ function signTranslateApi(): Plugin {
         })
       }
 
+      // Dev proxy for /api/push/subscribe — just log + 204, no real DDB write.
+      server.middlewares.use('/api/push/subscribe', async (req, res) => {
+        if (req.method === 'OPTIONS') {
+          res.statusCode = 204
+          res.end()
+          return
+        }
+        if (req.method !== 'POST') {
+          res.statusCode = 405
+          res.end()
+          return
+        }
+        try {
+          const chunks: Buffer[] = []
+          for await (const chunk of req) chunks.push(chunk as Buffer)
+          const body = JSON.parse(Buffer.concat(chunks).toString('utf8')) as {
+            device_id?: string
+            subscription?: { endpoint?: string }
+          }
+          console.log(
+            `[parkproof.push.subscribe] device=${body.device_id?.slice(0, 8)}… endpoint_host=${
+              body.subscription?.endpoint ? new URL(body.subscription.endpoint).host : '?'
+            }`,
+          )
+          res.statusCode = 204
+          res.end()
+        } catch (err) {
+          console.error('[/api/push/subscribe]', err)
+          res.statusCode = 500
+          res.end()
+        }
+      })
+
       // Dev proxy for /api/user-feedback — must register BEFORE /api/feedback
       // so the more-specific path wins (Vite's middleware matches by prefix).
       server.middlewares.use('/api/user-feedback', async (req, res) => {

@@ -945,6 +945,103 @@ async function handleUserFeedback(event) {
   return { statusCode: 204, headers: CORS_HEADERS, body: '' }
 }
 
+// ─── /push/subscribe handler ──────────────────────────────────────────────
+// Persists a Web Push subscription so we can later send notifications when
+// a user's parking reminder fires. Anonymous: keyed by device_id (a UUID
+// the frontend generates and stashes in localStorage), not by signed-in
+// user — same anonymous-by-default posture as the rest of the app.
+//
+// FOUNDATION ONLY tonight: this just persists. The dispatch layer (which
+// actually fires a push at the right time) ships next session. Documented
+// caveat in CLAUDE.md.
+const PUSH_TABLE = process.env.DYNAMODB_TABLE_PUSH || 'parkproof-push-subscriptions'
+const PUSH_TTL_DAYS = 90
+
+async function handlePushSubscribe(event) {
+  const body = typeof event.body === 'string' ? JSON.parse(event.body) : event.body || {}
+
+  // device_id: a UUID generated client-side and persisted in localStorage.
+  // Keeps subscriptions tied to a browser, not an account — works for
+  // anonymous and signed-in users uniformly.
+  const device_id = typeof body.device_id === 'string' ? body.device_id.trim() : ''
+  if (!device_id || device_id.length > 64 || !/^[a-f0-9-]+$/i.test(device_id)) {
+    return {
+      statusCode: 400,
+      headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ error: 'device_id is required (UUID format, ≤64 chars)' }),
+    }
+  }
+
+  // subscription: { endpoint, keys: { p256dh, auth } }
+  const sub = body.subscription
+  if (!sub || typeof sub !== 'object') {
+    return {
+      statusCode: 400,
+      headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ error: 'subscription object required' }),
+    }
+  }
+  if (typeof sub.endpoint !== 'string' || !sub.endpoint.startsWith('https://')) {
+    return {
+      statusCode: 400,
+      headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ error: 'subscription.endpoint must be an https URL' }),
+    }
+  }
+  if (
+    !sub.keys ||
+    typeof sub.keys !== 'object' ||
+    typeof sub.keys.p256dh !== 'string' ||
+    typeof sub.keys.auth !== 'string'
+  ) {
+    return {
+      statusCode: 400,
+      headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ error: 'subscription.keys.p256dh and .auth required' }),
+    }
+  }
+
+  const now = Math.floor(Date.now() / 1000)
+  const item = {
+    device_id,
+    endpoint: sub.endpoint,
+    p256dh: sub.keys.p256dh,
+    auth: sub.keys.auth,
+    created_at: now,
+    last_seen_at: now,
+    // TTL — DDB auto-deletes stale subscriptions after PUSH_TTL_DAYS days.
+    // Active devices re-subscribe on app open (frontend logic), refreshing
+    // this timestamp. Browsers rotate push endpoints periodically anyway;
+    // stale subs hang around taking up rows otherwise.
+    expires_at: now + PUSH_TTL_DAYS * 24 * 60 * 60,
+  }
+
+  try {
+    await jobsDdb().send(
+      new PutCommand({
+        TableName: PUSH_TABLE,
+        Item: item,
+      }),
+    )
+  } catch (err) {
+    console.error(`[parkproof.push.subscribe.error] ${err?.message || err}`)
+    return {
+      statusCode: 500,
+      headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ error: 'Failed to persist subscription' }),
+    }
+  }
+
+  console.log(
+    `[parkproof.push.subscribe] ${JSON.stringify({
+      device_id,
+      endpoint_host: new URL(sub.endpoint).host,
+      timestamp: new Date().toISOString(),
+    })}`,
+  )
+  return { statusCode: 204, headers: CORS_HEADERS, body: '' }
+}
+
 // ─── /sign-translate handler ──────────────────────────────────────────────
 async function handleSignTranslate(event) {
   try {
@@ -1078,6 +1175,19 @@ export async function handler(event) {
       return await handleJobStatus(event)
     } catch (err) {
       console.error('job-status handler error:', err)
+      return {
+        statusCode: 500,
+        headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ error: err?.message || String(err) }),
+      }
+    }
+  }
+
+  if (path.endsWith('/push/subscribe')) {
+    try {
+      return await handlePushSubscribe(event)
+    } catch (err) {
+      console.error('push/subscribe handler error:', err)
       return {
         statusCode: 500,
         headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
