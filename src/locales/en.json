@@ -93,8 +93,7 @@
         "One tap to download every record. One tap to delete every record and your account, if you change your mind."
       ]
     },
-    "footerNote": "ParkProof is open source — every line of code is public. Built in Melbourne.",
-    "sourceOnGitHub": "Source on GitHub →",
+    "footerNote": "Built in Melbourne.",
     "cta": "Try it — scan a sign"
   },
   "landing": {
@@ -285,7 +284,11 @@
     "browserNoExpiry": "No expiry on this session",
     "browserAllPast": "All selected reminders are already in the past",
     "browserTooFar": "Expires in over 24h — use the calendar option instead",
-    "browserNothingSelected": "Pick at least one reminder above"
+    "browserNothingSelected": "Pick at least one reminder above",
+    "pushTitleFallback": "Parking reminder",
+    "pushBodyAtExpiry": "Your parking expires now.",
+    "pushBodyBefore_one": "1 min until your parking expires.",
+    "pushBodyBefore_other": "{{count}} min until your parking expires."
   },
   "history": {
     "header": "Session history",
@@ -458,7 +461,7 @@
     "signingHeader": "Cryptographic signing",
     "signingCopy": "When you sign in (or stay anonymous — both work), each session is signed by an AWS KMS-managed ECDSA P-256 key. The private key never leaves AWS. The public key is published at <a>/parkproof-public-key.pem</a> for anyone (a council, court, insurer) to verify the evidence chain using <code>openssl dgst</code> — see the appendix in any exported PDF for the step-by-step.",
     "contactHeader": "Contact + complaints",
-    "contactCopy": "For questions or to exercise your rights outside of the in-app controls, email <a>melroy@dsouza.tech</a>.",
+    "contactCopy": "For questions or to exercise your rights outside of the in-app controls, email <a>hello@parkproof.com.au</a>.",
     "complaintCopy": "Unhappy with our response? You can complain to the <a>Office of the Australian Information Commissioner (OAIC)</a>."
   },
   "loading": {

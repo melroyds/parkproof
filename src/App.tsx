@@ -36,6 +36,7 @@ import {
   performInitialSync,
 } from './lib/sync'
 import { handleCallback as handleFederatedCallback } from './lib/federated-auth'
+import { cancelPushReminders } from './lib/push'
 import type { ParkingRules, ParkingSession, RuleVariant } from './types'
 
 type Coords = { lat: number; lng: number } | null
@@ -281,6 +282,13 @@ function App() {
       endSession(session.id)
       setActivesVersion((v) => v + 1)
       if (auth.user) mirrorSessionUpdateToCloud(session.id)
+      // Fire-and-forget: cancel any pending Web Push reminders for this
+      // session server-side. Without this, EventBridge would keep firing
+      // pushes ("30 min until parking expires") after the user has already
+      // left — annoying and undermines trust in the reminders. Best-effort:
+      // the local ended_at stamp is the source of truth; if the cancel
+      // network call fails, the worst case is a stale push fires later.
+      void cancelPushReminders(session.id)
     } catch (err) {
       console.warn('[storage] could not end session:', err)
     }

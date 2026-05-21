@@ -176,3 +176,96 @@ export async function subscribeToPush(): Promise<SubscribeResult> {
 export function getDeviceId(): string {
   return getOrCreateDeviceId()
 }
+
+export interface ScheduledReminder {
+  /** ISO timestamp (with offset or Z) — when to fire the push. */
+  fire_at: string
+  /** Notification title. Defaults server-side to "ParkProof". */
+  title?: string
+  /** Notification body — the user-facing message. */
+  body: string
+  /** Path to navigate to on notification click. Defaults to "/". */
+  url?: string
+}
+
+/**
+ * Cancel every scheduled push notification for a parking session.
+ *
+ * Called when the user signals "I've left" before parking expires — pushes
+ * for that session would otherwise still fire at their scheduled times,
+ * which would be annoying ("30 min until your parking expires" arriving
+ * after the car's already gone).
+ *
+ * Best-effort: silent failure if push isn't supported or the backend errors.
+ * Caller can ignore the return value. The local "ended_at" mutation is the
+ * source of truth — server cancel is just user-experience polish.
+ *
+ * NOTE: not gated by `hasActiveSubscription()` — even if the user's
+ * subscription has rotated/expired since they scheduled, the schedules
+ * themselves still exist server-side and we want them gone.
+ */
+export async function cancelPushReminders(
+  session_id: string,
+): Promise<{ deleted: number } | null> {
+  if (typeof fetch === 'undefined') return null
+  try {
+    const resp = await fetch(endpointUrl('/push/cancel'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ session_id }),
+    })
+    if (!resp.ok) {
+      console.error('[push] cancel failed:', resp.status)
+      return null
+    }
+    const result = (await resp.json()) as { deleted: unknown }
+    return {
+      deleted: typeof result.deleted === 'number' ? result.deleted : 0,
+    }
+  } catch (err) {
+    console.error('[push] cancel threw:', err)
+    return null
+  }
+}
+
+/**
+ * Schedule a batch of push notifications for a saved session. Best-effort:
+ * if push isn't subscribed, the call is skipped silently (the .ics +
+ * in-tab paths still fire). Caller doesn't await this — fire and continue.
+ */
+export async function schedulePushReminders(
+  session_id: string,
+  reminders: ScheduledReminder[],
+): Promise<{ created: number; skipped: number } | null> {
+  if (!isPushSupported()) return null
+  const subscribed = await hasActiveSubscription()
+  if (!subscribed) return null
+  if (reminders.length === 0) return { created: 0, skipped: 0 }
+
+  try {
+    const resp = await fetch(endpointUrl('/push/schedule'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        device_id: getOrCreateDeviceId(),
+        session_id,
+        reminders,
+      }),
+    })
+    if (!resp.ok) {
+      console.error('[push] schedule failed:', resp.status)
+      return null
+    }
+    const result = (await resp.json()) as {
+      created: unknown[]
+      skipped: unknown[]
+    }
+    return {
+      created: Array.isArray(result.created) ? result.created.length : 0,
+      skipped: Array.isArray(result.skipped) ? result.skipped.length : 0,
+    }
+  } catch (err) {
+    console.error('[push] schedule threw:', err)
+    return null
+  }
+}

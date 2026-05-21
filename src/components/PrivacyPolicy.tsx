@@ -126,7 +126,7 @@ export default function PrivacyPolicy({ onBack }: Props) {
             <Trans
               i18nKey="privacy.contactCopy"
               components={{
-                a: <a href="mailto:melroy@dsouza.tech" className="text-brand-700 underline" />,
+                a: <a href="mailto:hello@parkproof.com.au" className="text-brand-700 underline" />,
               }}
             />
           </p>

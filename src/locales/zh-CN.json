@@ -198,7 +198,11 @@
     "browserNoExpiry": "此会话无到期时间",
     "browserAllPast": "所有选定的提醒都已过去",
     "browserTooFar": "到期超过 24 小时——请改用日历选项",
-    "browserNothingSelected": "请在上方至少选择一个提醒"
+    "browserNothingSelected": "请在上方至少选择一个提醒",
+    "pushTitleFallback": "停车提醒",
+    "pushBodyAtExpiry": "您的停车时间已到。",
+    "pushBodyBefore_one": "距停车到期还剩 1 分钟。",
+    "pushBodyBefore_other": "距停车到期还剩 {{count}} 分钟。"
   },
   "history": {
     "header": "停车记录",
@@ -371,7 +375,7 @@
     "signingHeader": "加密签名",
     "signingCopy": "无论您登录还是保持匿名(两者都有效),每个会话都由 AWS KMS 管理的 ECDSA P-256 密钥签名。私钥从不离开 AWS。公钥在 <a>/parkproof-public-key.pem</a> 公开发布,任何人(市政府、法院、保险公司)都可以使用 <code>openssl dgst</code> 验证证据链——任何导出的 PDF 中的附录都有分步说明。",
     "contactHeader": "联系 + 投诉",
-    "contactCopy": "对于应用内控制之外的问题或行使权利,请发邮件至 <a>melroy@dsouza.tech</a>。",
+    "contactCopy": "对于应用内控制之外的问题或行使权利,请发邮件至 <a>hello@parkproof.com.au</a>。",
     "complaintCopy": "对我们的回复不满意?您可以向 <a>澳大利亚信息专员办公室(OAIC)</a> 投诉。"
   },
   "loading": {
@@ -537,8 +541,7 @@
   "about": {
     "title": "ParkProof 的全部功能",
     "lead": "你大概以为它只是一个停车标志翻译器。它确实是这个。但同时，我们还顺便帮你保存停车证据，以防遇到不公正的罚单。如果真的收到罚单，它还能帮你写申诉信，并在停车时间到期前提醒你挪车。下面是友好的功能介绍。",
-    "footerNote": "ParkProof 是开源项目 — 每一行代码都是公开的。墨尔本制造。",
-    "sourceOnGitHub": "在 GitHub 上查看源代码 →",
+    "footerNote": "在墨尔本制作。",
     "cta": "马上试试 — 扫描一个停车标志",
     "scan": {
       "title": "拍下标志，得到答案",

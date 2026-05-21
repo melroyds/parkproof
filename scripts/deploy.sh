@@ -137,11 +137,13 @@ MERGED_ENV=$(
   VAPID_PUBLIC_KEY="${VAPID_PUBLIC_KEY:-}" \
   VAPID_PRIVATE_KEY="${VAPID_PRIVATE_KEY:-}" \
   VAPID_SUBJECT="${VAPID_SUBJECT:-}" \
+  PUSH_SCHEDULER_ROLE_ARN="${PUSH_SCHEDULER_ROLE_ARN:-}" \
+  PUSH_DISPATCH_LAMBDA_ARN="${PUSH_DISPATCH_LAMBDA_ARN:-}" \
   echo "$EXISTING_ENV" | node -e "
   const data = require('fs').readFileSync(0, 'utf8');
   const incoming = JSON.parse(data || '{}') || {};
   incoming.ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
-  for (const key of ['COGNITO_USER_POOL_ID', 'COGNITO_APP_CLIENT_ID', 'DYNAMODB_TABLE_SESSIONS', 'DYNAMODB_TABLE_PUSH', 'S3_BUCKET_EVIDENCE', 'S3_BUCKET_USER_FEEDBACK', 'VAPID_PUBLIC_KEY', 'VAPID_PRIVATE_KEY', 'VAPID_SUBJECT']) {
+  for (const key of ['COGNITO_USER_POOL_ID', 'COGNITO_APP_CLIENT_ID', 'DYNAMODB_TABLE_SESSIONS', 'DYNAMODB_TABLE_PUSH', 'S3_BUCKET_EVIDENCE', 'S3_BUCKET_USER_FEEDBACK', 'VAPID_PUBLIC_KEY', 'VAPID_PRIVATE_KEY', 'VAPID_SUBJECT', 'PUSH_SCHEDULER_ROLE_ARN', 'PUSH_DISPATCH_LAMBDA_ARN']) {
     if (process.env[key]) incoming[key] = process.env[key];
   }
   process.stdout.write(JSON.stringify({ Variables: incoming }));
@@ -271,6 +273,8 @@ ensure_route() {
 ensure_route "feedback"
 ensure_route "user-feedback"
 ensure_route "push/subscribe"
+ensure_route "push/schedule"
+ensure_route "push/cancel"
 ensure_route "draft-appeal"
 ensure_route "sign-session"
 

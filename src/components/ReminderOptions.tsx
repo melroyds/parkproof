@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { Trans, useTranslation } from 'react-i18next'
 import type { ParkingSession } from '../types'
 import { scheduleParkingReminders, type ScheduleResult } from '../lib/notifications'
+import { schedulePushReminders, type ScheduledReminder } from '../lib/push'
 import { useNow } from '../lib/use-now'
 import { formatExpiryAbsolute, formatReminderTimesLine } from '../lib/time-format'
 import { sessionTimezone } from '../lib/timezone'
@@ -179,6 +180,38 @@ export default function ReminderOptions({ session, onDone }: Props) {
     const result = await scheduleParkingReminders(session, selectedList)
     setNotifResult(result)
     setNotifBusy(false)
+
+    // Fire-and-forget: also schedule server-side Web Push reminders via the
+    // backend (EventBridge Scheduler → /push/dispatch). This is the only path
+    // that fires when the tab is closed or the browser isn't running. The
+    // in-tab scheduler above is a redundant best-effort for users who keep
+    // the tab open. If push isn't supported / subscribed, schedulePushReminders
+    // returns null silently — we don't pop a UI error because in-tab worked.
+    //
+    // Title = the address (most useful thing the OS surfaces on the lockscreen;
+    // concrete location beats a generic "ParkProof reminder"). Falls back to
+    // the localized generic when no address was captured (e.g., no-sign
+    // sessions or geocode failure). Body = just the time-left, since the
+    // title already carries the where.
+    const title = session.location?.address
+      ? session.location.address
+      : t('reminders.pushTitleFallback')
+    const reminders: ScheduledReminder[] = selectedFireAtList.map((fireAt, i) => {
+      const offset = selectedList[i]
+      const body =
+        offset === 0
+          ? t('reminders.pushBodyAtExpiry')
+          : t('reminders.pushBodyBefore', { count: offset })
+      return {
+        fire_at: fireAt.toISOString(),
+        title,
+        body,
+        url: `/?session=${session.id}`,
+      }
+    })
+    if (reminders.length > 0) {
+      void schedulePushReminders(session.id, reminders)
+    }
   }
 
   // === Empty states ===

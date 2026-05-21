@@ -56,7 +56,7 @@ def draw_footer(canvas, doc):
     # Left: attribution
     canvas.setFont("Helvetica", 8)
     canvas.setFillColor(INK_MUTED)
-    canvas.drawString(2 * cm, 1.1 * cm, "ParkProof — built by Melroy D'Souza, 2026")
+    canvas.drawString(2 * cm, 1.1 * cm, "ParkProof — 2026")
 
     # Right: page number
     page_num = canvas.getPageNumber()
@@ -284,7 +284,7 @@ def draw_cover(canvas, doc):
     canvas.setFillColor(INK_MUTED)
     canvas.setFont("Helvetica", 9)
     canvas.drawString(
-        2.5 * cm, 2.5 * cm, "ParkProof — built by Melroy D'Souza, 2026"
+        2.5 * cm, 2.5 * cm, "ParkProof — 2026"
     )
 
     canvas.restoreState()
@@ -300,7 +300,7 @@ def build():
         topMargin=2.5 * cm,
         bottomMargin=2.5 * cm,
         title="How ParkProof was built",
-        author="Melroy D'Souza",
+        author="ParkProof",
     )
 
     # The cover page has no flow — just custom paint.

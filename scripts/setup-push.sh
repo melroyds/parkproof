@@ -37,7 +37,7 @@ else
   {
     echo "VAPID_PUBLIC_KEY=$PUB"
     echo "VAPID_PRIVATE_KEY=$PRIV"
-    echo "VAPID_SUBJECT=mailto:melroy@parkproof.com.au"
+    echo "VAPID_SUBJECT=mailto:hello@parkproof.com.au"
   } >> "$RESOURCES_FILE"
   echo "    public key:  $PUB"
   echo "    (private key written to $RESOURCES_FILE)"

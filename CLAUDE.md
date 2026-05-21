@@ -8,7 +8,7 @@ Mobile-first installable PWA. Photograph an Australian parking sign → Claude v
 
 Live: <https://www.parkproof.com.au> (custom domain on Cloudflare DNS, CloudFront-fronted). Apex `parkproof.com.au` and both forms of `parkproof.au` 301-redirect to the canonical via Cloudflare Page Rules. Old domain `parkproof.dsouza.tech` kept as fallback for ~7 days post-cutover. Hosted on AWS in `ap-southeast-2`.
 
-See [`parkproof-spec.md`](parkproof-spec.md) for the original product brief, [`README.md`](README.md) for the user-facing version, and [`docs/lessons-for-next-project.md`](docs/lessons-for-next-project.md) for the portable takeaways doc — what 8-day-Melroy learned that the *next* project should carry forward.
+See [`parkproof-spec.md`](parkproof-spec.md) for the original product brief, [`README.md`](README.md) for the user-facing version, and [`docs/lessons-for-next-project.md`](docs/lessons-for-next-project.md) for the portable takeaways doc — what 8-day-me learned that the *next* project should carry forward.
 
 ## Run it
 
@@ -152,7 +152,7 @@ The state is a discriminated union in [`src/App.tsx`](src/App.tsx). When adding 
 |---|---|
 | Lambda function | `parkproof-sign-translator` |
 | IAM execution role | `parkproof-lambda-role` (DDB + S3-evidence + KMS-sign + Cognito-admin permissions) |
-| API Gateway HTTP API | `parkproof-api` (id `tlsmpbft4f`); 12 routes — 6 anonymous (incl. 2 async-job status GETs) + 6 JWT-gated. Hard 30s timeout per HTTP API; the slow Claude routes (`/sign-translate`, `/draft-appeal`) bypass it via async polling (see "Async-polling architecture" above). `src/lib/api.ts` still catches transient 5xx with one auto-retry and a friendly "complex sign" message as the final fallback. |
+| API Gateway HTTP API | `parkproof-api` (id `tlsmpbft4f`); 18 routes — 10 anonymous (incl. 2 async-job status GETs + `/push/{subscribe,schedule,cancel}`) + 8 JWT-gated (GET + POST variants on `/sessions/list` and `/me/export`). Hard 30s timeout per HTTP API; the slow Claude routes (`/sign-translate`, `/draft-appeal`) bypass it via async polling (see "Async-polling architecture" above). `src/lib/api.ts` still catches transient 5xx with one auto-retry and a friendly "complex sign" message as the final fallback. |
 | DynamoDB table — async jobs | `parkproof-jobs` (PK = `job_id`); TTL on `expires_at` (10-min sweep). Holds the `pending` / `done` / `error` status + `result` payload for every fresh `sign-translate` / `draft-appeal` request. |
 | API Gateway JWT authorizer | id `t1utm6`, issuer = Cognito User Pool |
 | Cognito User Pool | `ap-southeast-2_fBbsYa7VM` |
@@ -167,7 +167,7 @@ The state is a discriminated union in [`src/App.tsx`](src/App.tsx). When adding 
 | CloudFront Origin Access Control | `parkproof-oac` (id `E3JE1OX4WHEIWK`) |
 | ACM certificate (us-east-1) | `www.parkproof.com.au` + `parkproof.com.au` (`8257fd02-fcc0-4958-a092-7e5a3d07fa57`) DNS-validated CNAMEs on Cloudflare. Legacy cert for `parkproof.dsouza.tech` (`3442f3b7-aa80-40ec-b580-331487b7b0cd`) still issued for the 7-day fallback window. |
 | DNS hosting | Cloudflare (`jake.ns.cloudflare.com` + `nova.ns.cloudflare.com` for `parkproof.com.au`; `kenia.ns.cloudflare.com` + `woz.ns.cloudflare.com` for `parkproof.au`). Page Rules handle apex → www redirect (`.com.au`) and both apex + www → canonical (`.au`). Crazy Domains registrar only — DNS migrated off them to dodge their $26/yr URL-forwarding upcharge. |
-| Email | Titan (`melroy@parkproof.com.au`) — Free Trial expires 20 Jun 2026. MX/SPF/DKIM TXT records in Cloudflare. |
+| Email | Titan (`hello@parkproof.com.au`) — Free Trial expires 20 Jun 2026. MX/SPF/DKIM TXT records in Cloudflare. The role-style alias replaced the original `melroy@…` mailbox so the user-facing surface (Privacy Policy contact, case-study, VAPID subject) carries no personal identity. |
 | AWS Budgets alarm | `parkproof-monthly` (\$25/mo threshold, emails moltensnake@gmail.com — raised from \$10 to allow Reddit-day spike without false-alarm noise) |
 
 Region: `ap-southeast-2` (Sydney). Account: `251800369612`.
@@ -178,7 +178,7 @@ All in `scripts/`. All idempotent. All re-runnable.
 
 | Script | What it does |
 |---|---|
-| `deploy.sh` | Builds Lambda zip, updates code + env, builds frontend with prod API URL + Cognito IDs from `.aws-resources`, syncs to S3, invalidates CloudFront, ensures all 10 routes exist + JWT authorizer is attached where needed |
+| `deploy.sh` | Builds Lambda zip, updates code + env, builds frontend with prod API URL + Cognito IDs from `.aws-resources`, syncs to S3, invalidates CloudFront, ensures every API route exists + JWT authorizer is attached where needed |
 | `setup-auth.sh` | One-time: creates Cognito User Pool + App Client + Hosted UI domain, DynamoDB sessions table, S3 evidence bucket (private + CORS for both `parkproof.dsouza.tech` and the legacy CloudFront origin), API Gateway JWT authorizer. Writes `scripts/.aws-resources` for `deploy.sh` to consume |
 | `setup-signing.sh` | One-time: creates the KMS ECDSA P-256 asymmetric key, attaches `kms:Sign` to the Lambda role, exports the public key to `public/parkproof-public-key.pem` for client-side verification |
 | `harden.sh` | One-time: locks API Gateway CORS to the allowed origins, creates OAC, migrates S3 origin to private REST endpoint |

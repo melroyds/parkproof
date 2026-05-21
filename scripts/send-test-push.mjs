@@ -34,7 +34,7 @@ const resources = Object.fromEntries(
 )
 const VAPID_PUBLIC = resources.VAPID_PUBLIC_KEY
 const VAPID_PRIVATE = resources.VAPID_PRIVATE_KEY
-const VAPID_SUBJECT = resources.VAPID_SUBJECT || 'mailto:melroy@parkproof.com.au'
+const VAPID_SUBJECT = resources.VAPID_SUBJECT || 'mailto:hello@parkproof.com.au'
 const TABLE = resources.DYNAMODB_TABLE_PUSH || 'parkproof-push-subscriptions'
 const REGION = process.env.AWS_REGION || 'ap-southeast-2'
 

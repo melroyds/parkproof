@@ -6,8 +6,15 @@ import {
   DynamoDBDocumentClient,
   GetCommand,
   PutCommand,
+  DeleteCommand,
 } from '@aws-sdk/lib-dynamodb'
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3'
+import {
+  SchedulerClient,
+  CreateScheduleCommand,
+  DeleteScheduleCommand,
+} from '@aws-sdk/client-scheduler'
+import webpush from 'web-push'
 import crypto from 'node:crypto'
 import tzlookup from 'tz-lookup'
 import {
@@ -1042,6 +1049,336 @@ async function handlePushSubscribe(event) {
   return { statusCode: 204, headers: CORS_HEADERS, body: '' }
 }
 
+// ─── /push/schedule + EventBridge Scheduler wiring ──────────────────────────
+// When a user picks reminder offsets on a parking session, the frontend
+// posts the resulting fire-at timestamps to /push/schedule. We create one
+// EventBridge one-time schedule per reminder, configured to invoke this
+// same Lambda's dispatch path with the push payload baked in.
+//
+// EventBridge Scheduler quotas: 1M schedules per account is the soft limit
+// (way more than enough). Schedules accept "at(YYYY-MM-DDTHH:MM:SS)" UTC
+// timestamps with no timezone marker — convert before passing.
+const PUSH_SCHEDULER_ROLE_ARN = process.env.PUSH_SCHEDULER_ROLE_ARN
+const PUSH_DISPATCH_LAMBDA_ARN = process.env.PUSH_DISPATCH_LAMBDA_ARN
+
+let _scheduler
+function scheduler() {
+  if (!_scheduler) _scheduler = new SchedulerClient({ region: REGION })
+  return _scheduler
+}
+
+/**
+ * EventBridge Scheduler accepts only `at(2026-05-22T15:30:00)` style
+ * expressions in UTC with NO trailing offset or Z. Convert from any ISO
+ * date string into that exact shape.
+ */
+function toSchedulerAtExpr(iso) {
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) throw new Error('invalid fire_at')
+  const pad = (n) => String(n).padStart(2, '0')
+  const y = d.getUTCFullYear()
+  const mo = pad(d.getUTCMonth() + 1)
+  const da = pad(d.getUTCDate())
+  const h = pad(d.getUTCHours())
+  const mi = pad(d.getUTCMinutes())
+  const s = pad(d.getUTCSeconds())
+  return `at(${y}-${mo}-${da}T${h}:${mi}:${s})`
+}
+
+// Max reminders per session — matches the chip picker (30/15/10/5/2/0).
+// Also bounds the delete-by-prefix cancel path so it's a fixed-cost 6 calls.
+const PUSH_MAX_REMINDERS_PER_SESSION = 6
+
+// Validate a session_id for use inside an EventBridge schedule name.
+// Allowed chars: [0-9a-zA-Z-_.] (EventBridge rule), max length tuned so the
+// composed `parkproof-push-{session_id}-{i}` name stays under the 64-char
+// EventBridge limit (15 prefix + sid + 2 suffix ≤ 64 → sid ≤ 47).
+function isSafeSessionId(s) {
+  return typeof s === 'string' && /^[a-zA-Z0-9._-]{1,47}$/.test(s)
+}
+
+/**
+ * Defensively delete any existing schedules for this session. Used both at
+ * cancel-time (user ended session early) AND at re-schedule time (user picks
+ * different offsets for the same session), since CreateSchedule throws
+ * ConflictException on a name collision. Idempotent — silently swallows
+ * ResourceNotFoundException for slots that were never created or have
+ * already fired.
+ *
+ * Returns the count of schedules actually deleted (excludes not-found).
+ */
+async function deletePushSchedulesForSession(session_id) {
+  if (!isSafeSessionId(session_id)) return 0
+  let deleted = 0
+  await Promise.all(
+    Array.from({ length: PUSH_MAX_REMINDERS_PER_SESSION }, (_, i) =>
+      scheduler()
+        .send(new DeleteScheduleCommand({ Name: `parkproof-push-${session_id}-${i}` }))
+        .then(() => {
+          deleted += 1
+        })
+        .catch((err) => {
+          // Not-found is the happy path — slot was never used or already fired.
+          if (err?.name === 'ResourceNotFoundException') return
+          console.error(
+            `[parkproof.push.cancel.slot_error] session=${session_id} slot=${i} ${err?.message || err}`,
+          )
+        }),
+    ),
+  )
+  return deleted
+}
+
+async function handlePushSchedule(event) {
+  if (!PUSH_SCHEDULER_ROLE_ARN || !PUSH_DISPATCH_LAMBDA_ARN) {
+    return {
+      statusCode: 500,
+      headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        error: 'Scheduler not configured — PUSH_SCHEDULER_ROLE_ARN / PUSH_DISPATCH_LAMBDA_ARN env missing',
+      }),
+    }
+  }
+
+  const body = typeof event.body === 'string' ? JSON.parse(event.body) : event.body || {}
+  const device_id = typeof body.device_id === 'string' ? body.device_id.trim() : ''
+  const session_id = typeof body.session_id === 'string' ? body.session_id.trim() : ''
+  if (!device_id || !/^[a-f0-9-]+$/i.test(device_id) || device_id.length > 64) {
+    return {
+      statusCode: 400,
+      headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ error: 'device_id is required (UUID, ≤64 chars)' }),
+    }
+  }
+  // session_id is now embedded in the schedule name (so we can find + cancel
+  // schedules later when the user ends the session early). Tight validation —
+  // bad chars would yield invalid EventBridge ARNs and our IAM policy scopes
+  // create/delete to `parkproof-push-*`.
+  if (!isSafeSessionId(session_id)) {
+    return {
+      statusCode: 400,
+      headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        error: 'session_id is required (≤47 chars, [a-zA-Z0-9._-])',
+      }),
+    }
+  }
+  if (!Array.isArray(body.reminders) || body.reminders.length === 0) {
+    return {
+      statusCode: 400,
+      headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ error: 'reminders[] is required' }),
+    }
+  }
+  if (body.reminders.length > PUSH_MAX_REMINDERS_PER_SESSION) {
+    // Multi-offset picker maxes at 6 — guard server-side too.
+    return {
+      statusCode: 400,
+      headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        error: `max ${PUSH_MAX_REMINDERS_PER_SESSION} reminders per session`,
+      }),
+    }
+  }
+
+  // Reschedule support: defensively wipe any prior schedules for this session
+  // before creating new ones. CreateSchedule throws ConflictException on a
+  // name collision, so this is mandatory whenever the user re-picks offsets
+  // for the same session_id. No-op for first-time scheduling.
+  await deletePushSchedulesForSession(session_id)
+
+  const now = Date.now()
+  const created = []
+  const skipped = []
+
+  // We iterate with an index so the schedule slot number is stable. Slots
+  // that get skipped (past times, etc.) leave gaps — that's fine, the cancel
+  // path just tries-and-ignores every slot 0..5.
+  for (let i = 0; i < body.reminders.length; i++) {
+    const r = body.reminders[i]
+    if (typeof r.fire_at !== 'string') {
+      skipped.push({ reason: 'missing fire_at', reminder: r })
+      continue
+    }
+    const fire_ms = new Date(r.fire_at).getTime()
+    // Skip past times — EventBridge would reject anyway, and the user
+    // doesn't want a stale push fired immediately.
+    if (!Number.isFinite(fire_ms) || fire_ms - now < 30_000) {
+      skipped.push({ reason: 'in past or too soon (<30s)', fire_at: r.fire_at })
+      continue
+    }
+    const title = (typeof r.title === 'string' ? r.title : 'ParkProof').slice(0, 120)
+    const body_text = (typeof r.body === 'string' ? r.body : '').slice(0, 240)
+    const url = (typeof r.url === 'string' ? r.url : '/').slice(0, 256)
+
+    // Deterministic name encodes the session_id + slot index. The
+    // "parkproof-push-" prefix matches the IAM scope in
+    // setup-push-scheduler.sh — Lambda can only create/delete schedules
+    // with this prefix.
+    const name = `parkproof-push-${session_id}-${i}`
+
+    try {
+      await scheduler().send(
+        new CreateScheduleCommand({
+          Name: name,
+          ScheduleExpression: toSchedulerAtExpr(r.fire_at),
+          // EventBridge defaults to UTC for at() expressions. Be explicit
+          // anyway — saves a year of confused debugging when someone sees
+          // a schedule fire an hour late after DST shifts.
+          ScheduleExpressionTimezone: 'UTC',
+          // FlexibleTimeWindow REQUIRED. OFF = fire at the exact time.
+          FlexibleTimeWindow: { Mode: 'OFF' },
+          // After firing, EventBridge auto-deletes the schedule. Keeps the
+          // schedule list clean without us writing cleanup code.
+          ActionAfterCompletion: 'DELETE',
+          Target: {
+            Arn: PUSH_DISPATCH_LAMBDA_ARN,
+            RoleArn: PUSH_SCHEDULER_ROLE_ARN,
+            // The Input is what EventBridge passes to the Lambda when it
+            // fires. The Lambda's handler() looks for _async_kind to
+            // route to the dispatch path.
+            Input: JSON.stringify({
+              _async_kind: 'push-dispatch',
+              device_id,
+              session_id,
+              title,
+              body: body_text,
+              url,
+              tag: session_id || 'parkproof',
+            }),
+          },
+        }),
+      )
+      created.push({ name, fire_at: r.fire_at })
+    } catch (err) {
+      console.error(`[parkproof.push.schedule.error] ${err?.message || err}`)
+      skipped.push({ reason: 'scheduler error', error: err?.message || String(err) })
+    }
+  }
+
+  console.log(
+    `[parkproof.push.schedule] ${JSON.stringify({
+      device_id,
+      session_id,
+      created: created.length,
+      skipped: skipped.length,
+    })}`,
+  )
+
+  return {
+    statusCode: 200,
+    headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ created, skipped }),
+  }
+}
+
+/**
+ * POST /push/cancel — `{ session_id }`. Deletes all pending push schedules
+ * for a session. Called by the frontend when the user signals "I've left"
+ * before parking expires — pushes for that session should no longer fire.
+ *
+ * Anonymous, like /push/schedule. session_id is the only thing tying the
+ * caller to the schedules; if you don't know it, you can't cancel — which
+ * matches the existing privacy model (no auth on the push paths).
+ */
+async function handlePushCancel(event) {
+  const body = typeof event.body === 'string' ? JSON.parse(event.body) : event.body || {}
+  const session_id = typeof body.session_id === 'string' ? body.session_id.trim() : ''
+  if (!isSafeSessionId(session_id)) {
+    return {
+      statusCode: 400,
+      headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        error: 'session_id is required (≤47 chars, [a-zA-Z0-9._-])',
+      }),
+    }
+  }
+  const deleted = await deletePushSchedulesForSession(session_id)
+  console.log(
+    `[parkproof.push.cancel] ${JSON.stringify({ session_id, deleted })}`,
+  )
+  return {
+    statusCode: 200,
+    headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ deleted }),
+  }
+}
+
+// ─── push-dispatch (invoked by EventBridge Scheduler, not API Gateway) ──
+// Sends a Web Push to the device's stored subscription. Routed via the
+// top-level handler dispatcher when event._async_kind === 'push-dispatch'.
+// No HTTP response shape — EventBridge ignores it.
+async function handlePushDispatch(event) {
+  const { device_id, title, body, url, tag } = event
+  if (!device_id) {
+    console.error('[parkproof.push.dispatch] no device_id in payload')
+    return { ok: false }
+  }
+
+  // Look up the subscription.
+  let item
+  try {
+    const got = await jobsDdb().send(
+      new GetCommand({ TableName: PUSH_TABLE, Key: { device_id } }),
+    )
+    item = got.Item
+  } catch (err) {
+    console.error(`[parkproof.push.dispatch.lookup_failed] ${err?.message || err}`)
+    return { ok: false }
+  }
+  if (!item) {
+    console.log(`[parkproof.push.dispatch] no subscription for device_id ${device_id}`)
+    return { ok: false }
+  }
+
+  // Configure web-push with VAPID keys lazily (don't pay this cost on
+  // every Lambda cold start that doesn't dispatch).
+  webpush.setVapidDetails(
+    process.env.VAPID_SUBJECT || 'mailto:hello@parkproof.com.au',
+    process.env.VAPID_PUBLIC_KEY,
+    process.env.VAPID_PRIVATE_KEY,
+  )
+
+  const subscription = {
+    endpoint: item.endpoint,
+    keys: { p256dh: item.p256dh, auth: item.auth },
+  }
+
+  try {
+    await webpush.sendNotification(
+      subscription,
+      JSON.stringify({
+        title: title || 'ParkProof',
+        body: body || '',
+        url: url || '/',
+        tag: tag || 'parkproof',
+      }),
+    )
+    console.log(
+      `[parkproof.push.dispatch.ok] ${JSON.stringify({
+        device_id,
+        endpoint_host: new URL(item.endpoint).host,
+      })}`,
+    )
+    return { ok: true }
+  } catch (err) {
+    const status = err?.statusCode
+    console.error(`[parkproof.push.dispatch.failed] status=${status} ${err?.message || err}`)
+    // 410 Gone or 404 Not Found = browser rotated endpoint; clean up.
+    if (status === 410 || status === 404) {
+      try {
+        await jobsDdb().send(
+          new DeleteCommand({ TableName: PUSH_TABLE, Key: { device_id } }),
+        )
+        console.log(`[parkproof.push.dispatch.cleaned_stale] ${device_id}`)
+      } catch {
+        /* ignore */
+      }
+    }
+    return { ok: false }
+  }
+}
+
 // ─── /sign-translate handler ──────────────────────────────────────────────
 async function handleSignTranslate(event) {
   try {
@@ -1154,9 +1491,17 @@ async function handleAsyncWork(event) {
 // ─── Top-level dispatcher ─────────────────────────────────────────────────
 export async function handler(event) {
   // First check: was this an async self-invocation? Those events have a
-  // `_async_kind` marker put there by asyncSelfInvoke. They bypass the
-  // HTTP-style routing entirely and just do the work.
+  // `_async_kind` marker put there by asyncSelfInvoke OR by EventBridge
+  // Scheduler firing a push-dispatch event. They bypass the HTTP-style
+  // routing entirely and just do the work.
+  //
+  // push-dispatch is special — no job_id, no DDB status flow. It's
+  // EventBridge → Lambda directly, not the async-polling pattern the
+  // other kinds use, so route it to its own handler.
   if (event && event._async_kind) {
+    if (event._async_kind === 'push-dispatch') {
+      return await handlePushDispatch(event)
+    }
     return await handleAsyncWork(event)
   }
 
@@ -1188,6 +1533,32 @@ export async function handler(event) {
       return await handlePushSubscribe(event)
     } catch (err) {
       console.error('push/subscribe handler error:', err)
+      return {
+        statusCode: 500,
+        headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ error: err?.message || String(err) }),
+      }
+    }
+  }
+
+  if (path.endsWith('/push/schedule')) {
+    try {
+      return await handlePushSchedule(event)
+    } catch (err) {
+      console.error('push/schedule handler error:', err)
+      return {
+        statusCode: 500,
+        headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ error: err?.message || String(err) }),
+      }
+    }
+  }
+
+  if (path.endsWith('/push/cancel')) {
+    try {
+      return await handlePushCancel(event)
+    } catch (err) {
+      console.error('push/cancel handler error:', err)
       return {
         statusCode: 500,
         headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },

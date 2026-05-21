@@ -1,6 +1,6 @@
 # Lessons from ParkProof — for the next project
 
-A self-contained takeaways doc. Carry into the next portfolio piece (or real product) so you don't relearn what 8-day-Melroy already paid for.
+A self-contained takeaways doc. Carry into the next portfolio piece (or real product) so you don't relearn what 8-day-me already paid for.
 
 Skim the table of contents, jump to the bit you need.
 
@@ -314,7 +314,7 @@ This isn't documentation about ParkProof. It's lessons EXTRACTED from ParkProof,
 
 When you start the next project, read this on Day 0, refer back to it on Day 3 when you hit the first hard infra question, and again on Day 6 when something breaks in a way that feels familiar.
 
-The point isn't to follow it religiously. The point is to *not have to rediscover what 8-day-Melroy already paid for*.
+The point isn't to follow it religiously. The point is to *not have to rediscover what 8-day-me already paid for*.
 
 Good luck with the next one.
 

@@ -85,7 +85,7 @@ def _on_page(canvas, doc):
     canvas.setFont(_FONT_BODY, 8)
     canvas.setFillColor(INK_LIGHT)
     canvas.drawString(
-        20 * mm, 12 * mm, "ParkProof — Build Journal · Melroy D'Souza · 16-20 May 2026"
+        20 * mm, 12 * mm, "ParkProof — Build Journal · 16-20 May 2026"
     )
     canvas.drawRightString(width - 20 * mm, 12 * mm, f"{doc.page}")
     canvas.restoreState()
@@ -1166,7 +1166,7 @@ def build():
         topMargin=20 * mm,
         bottomMargin=22 * mm,
         title="ParkProof — Build Journal",
-        author="Melroy D'Souza",
+        author="ParkProof",
         subject="5-day build retrospective with decision-tree branches at every pivot",
     )
     doc.build(story, onFirstPage=_on_page, onLaterPages=_on_page)

@@ -204,7 +204,11 @@
     "browserNoExpiry": "Nessuna scadenza per questa sessione",
     "browserAllPast": "Tutti i promemoria selezionati sono già passati",
     "browserTooFar": "Scade tra oltre 24h — usa invece l'opzione calendario",
-    "browserNothingSelected": "Scegli almeno un promemoria qui sopra"
+    "browserNothingSelected": "Scegli almeno un promemoria qui sopra",
+    "pushTitleFallback": "Promemoria parcheggio",
+    "pushBodyAtExpiry": "Il tuo parcheggio sta scadendo ora.",
+    "pushBodyBefore_one": "1 minuto alla scadenza del parcheggio.",
+    "pushBodyBefore_other": "{{count}} minuti alla scadenza del parcheggio."
   },
   "history": {
     "header": "Cronologia sessioni",
@@ -377,7 +381,7 @@
     "signingHeader": "Firma crittografica",
     "signingCopy": "Quando accedi (o resti anonimo — entrambi funzionano), ogni sessione viene firmata da una chiave ECDSA P-256 gestita da AWS KMS. La chiave privata non lascia mai AWS. La chiave pubblica è pubblicata su <a>/parkproof-public-key.pem</a> affinché chiunque (un comune, un tribunale, un assicuratore) possa verificare la catena di prove con <code>openssl dgst</code> — vedi l'appendice in qualunque PDF esportato per la procedura passo-passo.",
     "contactHeader": "Contatti + reclami",
-    "contactCopy": "Per domande o per esercitare i tuoi diritti al di fuori dei controlli in-app, scrivi a <a>melroy@dsouza.tech</a>.",
+    "contactCopy": "Per domande o per esercitare i tuoi diritti al di fuori dei controlli in-app, scrivi a <a>hello@parkproof.com.au</a>.",
     "complaintCopy": "Insoddisfatto della nostra risposta? Puoi presentare reclamo all'<a>Office of the Australian Information Commissioner (OAIC)</a>."
   },
   "loading": {
@@ -543,8 +547,7 @@
   "about": {
     "title": "Tutto quello che fa ParkProof",
     "lead": "Probabilmente sei qui pensando ah, legge i cartelli di parcheggio. È vero. Ma già che c'eravamo, abbiamo deciso di salvare anche le prove nel caso tu prenda una multa ingiusta, scriverti la lettera di ricorso se serve, e ricordarti di spostare la macchina prima che scada il tempo. Ecco il tour amichevole.",
-    "footerNote": "ParkProof è open source — ogni riga di codice è pubblica. Realizzato a Melbourne.",
-    "sourceOnGitHub": "Codice sorgente su GitHub →",
+    "footerNote": "Realizzato a Melbourne.",
     "cta": "Provalo — scansiona un cartello",
     "scan": {
       "title": "Fotografa un cartello, ottieni una risposta",

@@ -9,6 +9,7 @@ import { sessionTimezone } from '../lib/timezone'
 import { navigationUrl } from '../lib/walk-back'
 import { useAuth } from '../lib/use-auth'
 import { deleteCloudSession, mirrorSessionUpdateToCloud } from '../lib/sync'
+import { cancelPushReminders } from '../lib/push'
 
 const NOTE_MAX_LENGTH = 280
 
@@ -107,6 +108,10 @@ export default function SessionDetail({
         console.warn('[sync] cloud delete failed:', err)
       })
     }
+    // Cancel any pending Web Push reminders for the deleted session — same
+    // rationale as the end-session path: stale pushes for a session the user
+    // has thrown away would be jarring. Best-effort.
+    void cancelPushReminders(session.id)
     onDeleted()
   }
 
@@ -114,6 +119,11 @@ export default function SessionDetail({
     if (!window.confirm(t('session.endConfirm'))) return
     endSession(session.id)
     if (user) mirrorSessionUpdateToCloud(session.id)
+    // Fire-and-forget: clean up any pending Web Push reminders so they
+    // don't fire after the user has already left. See App.handleEndSession
+    // for the rationale; same call from both paths keeps behaviour consistent
+    // whether the user ends via the home card or the detail screen.
+    void cancelPushReminders(session.id)
     // Notify parent so the home-screen active card can re-derive. We DON'T
     // navigate away — staying on the detail view lets the user immediately
     // see the "Ended {{when}}" status row.

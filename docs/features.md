@@ -39,8 +39,11 @@ Live at **[https://www.parkproof.com.au](https://www.parkproof.com.au)** · Sour
 > **Know when to leave. Get back to your car. Never get a ticket from forgetting.**
 
 - **Multi-offset reminder picker** — 30 / 15 / 10 / 5 / 2 / 0 minutes before expiry. Pick any combination
-- **One `.ics` calendar event** with multiple `VALARM` blocks — honoured natively on macOS, iOS, and Google Calendar
-- **In-tab browser notifications** as backup, honestly labeled (fires only while the tab is open)
+- **Three reminder rails fired in parallel from one tap:**
+  - **`.ics` calendar event** with multiple `VALARM` blocks — honoured natively on macOS, iOS, and Google Calendar
+  - **In-tab browser notification** — fires while the tab is open, labelled honestly so the user knows the limit
+  - **Server-side Web Push via AWS EventBridge Scheduler** — fires on the device's OS even when the tab is closed, browser quit, or screen asleep. Title is the parking-spot address; body is the time-left, localized into all 7 languages
+- **Auto-cancel on early end** — hit "I've left" before the timer expires and every pending push for that session is deleted server-side, so stale "30 min until your parking expires" pings don't arrive after you've already gone
 - **Live "Currently parked" home card** — countdown colour-coded by urgency: green > 1h, amber 15-60min, red < 15min
 - **Walk-back navigation** — distance + estimated walking time to your car, plus a deep-link straight into Apple Maps (iOS) or Google Maps (everywhere else) with walking-mode forced
 - **Restriction-transition heads-up banner** — when a meaningful rule change is approaching within ~3 hours ("Permit Zone ends — anyone can park free until 8am"), shown under the answer card
@@ -56,6 +59,7 @@ Live at **[https://www.parkproof.com.au](https://www.parkproof.com.au)** · Sour
 - **3-phase quota auto-recovery** — when `localStorage` hits its 5MB ceiling, strips car-photos → sign-photos → whole expired sessions in order. Active sessions never touched
 - **Stepped loading UX** — "Reading the sign… → Identifying parking rules… → Computing when you can park… → Composing the answer…" — with a real progress bar, timings tuned from actual CloudWatch latency
 - **Async-polling architecture** — slow Claude calls (30-50s on complex signs) bypass API Gateway's 30s timeout cleanly via 202 + DDB-backed job polling
+- **Push schedule cleanup is part of the data lifecycle** — server-side EventBridge schedules use deterministic names (`parkproof-push-{session_id}-{i}`), so ending or deleting a session can fan-out 6 parallel `DeleteSchedule` calls with no list step. Idempotent on re-pick too: changing reminder offsets wipes-then-recreates without conflict-handling code
 
 ## ⚠️ Safety gates
 
@@ -101,7 +105,7 @@ Live at **[https://www.parkproof.com.au](https://www.parkproof.com.au)** · Sour
 
 > **The engineering rigor that's invisible until something breaks.**
 
-- **One Lambda, 13 routes** via path dispatch — same code in dev (Vite middleware) and prod. Zero parity drift
+- **One Lambda, 18 API Gateway routes + 2 internal invocation modes** (self-invoked async worker, EventBridge Scheduler target) — same code in dev (Vite middleware) and prod. Zero parity drift
 - **AI feedback Layers 1 + 2** — every "Yes, looks right" / "Retake photo" event fires to CloudWatch with verdict + model context (confidence, sign-pattern, hour-of-day, payment methods detected). Layer 2 slicing tells you *which kind* of failure, not just *whether*
 - **Free user-feedback channel** — in-app modal → CloudWatch (queryable) + S3 mirror (2-year retention). No email firehose
 - **`?dev_time=` URL spoofing** for testing time-dependent behaviour outside wall-clock hours
@@ -120,9 +124,10 @@ Live at **[https://www.parkproof.com.au](https://www.parkproof.com.au)** · Sour
 |---|---|
 | Live URL | https://www.parkproof.com.au |
 | Source | github.com/melroyds/parkproof |
-| Build duration | 6 active build days (16-21 May 2026) |
-| Commits on `main` | 50+ |
-| Lambda routes | 13 (6 anonymous + 7 JWT-gated) |
+| Build duration | 7 active build days (16-22 May 2026) |
+| Commits on `main` | 60+ |
+| Lambda routes | 18 (10 anonymous + 8 JWT-gated) |
+| Lambda invocation modes | 3 (HTTP handler · self-invoked worker · EventBridge target) |
 | Languages | 7 |
 | Tests passing on CI | 112 |
 | Monthly running cost | ~$5-7 AUD |
@@ -134,11 +139,12 @@ Live at **[https://www.parkproof.com.au](https://www.parkproof.com.au)** · Sour
 
 Honest about gaps:
 
-- **True Web Push background notifications** — needs service-worker push-subscription + server-side scheduler (EventBridge). The in-tab notification is honest about its limitation.
 - **AI feedback Layer 3** — opt-in photo capture for systematic failures, building a private training dataset. Reserved for when there are real users.
 - **Citywide parking heatmap** — every scan captures the data; needs a share-toggle, viewer, and cold-start solved.
 - **Voice confirmation** (Web Speech API).
 - **Council-specific appeal deep-links** (auto-submit) — blocked by council-side captchas + no public APIs.
+
+*Recently moved off this list: **Web Push** (full VAPID + EventBridge Scheduler pipeline now shipped, including auto-cancel on early session end).*
 
 ---
 
@@ -156,4 +162,4 @@ Honest about gaps:
 
 ---
 
-*Last updated: 21 May 2026 (Day 6). When you ship a new feature, add it to the relevant section.*
+*Last updated: 22 May 2026 (Day 7). When you ship a new feature, add it to the relevant section.*

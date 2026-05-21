@@ -77,7 +77,7 @@ Language list chosen from the top non-English languages spoken in the **City of 
 3. **Clarify step.** When the model detects position-dependent rules (different arrows, side-specific bays, EV-only spots), it surfaces a chooser before answering, so the time-math matches your actual spot.
 4. **Restriction-transition heads-up.** When a meaningful rule change is approaching within ~3 hours (e.g. "Permit Zone ends — anyone can park free until 8am"), a brand-blue banner appears under the answer card. Helps the user decide *should I park now or wait five minutes*.
 5. **Session Logger.** Capture the moment of parking: GPS coords + reverse-geocoded street address (editable if wrong) + optional car photo. Saved to the device's local storage.
-6. **Multi-reminder picker.** Pick any combination of 30 / 15 / 10 / 5 / 2 / 0 minutes before expiry. One `.ics` event with multiple `VALARM` blocks (honoured natively on macOS, iOS, and Google Calendar) AND one in-tab browser notification per selected offset. Past offsets are line-through and auto-disabled as the clock ticks.
+6. **Multi-reminder picker.** Pick any combination of 30 / 15 / 10 / 5 / 2 / 0 minutes before expiry. Each selected offset becomes **three independent reminders** — a `VALARM` inside an `.ics` calendar event (honoured natively on macOS, iOS, and Google Calendar), an in-tab browser notification, and a **server-side Web Push** scheduled via EventBridge Scheduler that fires even when the tab is closed and the device is asleep. The OS notification title is the parking-spot address; the body is the time-left. Hitting "I've left" before the timer expires cancels every pending push so stale "30 min until your parking expires" pings don't arrive after you've already gone. Past offsets are line-through and auto-disabled as the clock ticks.
 7. **Live "Currently parked" home.** When at least one session is still in the future, the home screen swaps its hero illustration for a live countdown card colour-coded by urgency (green > 1h, amber 15–60min, red <15min). One tap takes you into the evidence record. **No-sign sessions** (logged at unsigned spots — see #14) stay on the card with elapsed-time ("Parked for 2h 14m") and a "No posted restrictions" caption; the driver ends them explicitly via the inline **"I've left"** button, which stamps an `ended_at` timestamp on the evidence record and removes the card from home. The same end-session affordance is available in any session's detail screen, useful for **leaving an expiry-bearing session early** so the PDF reflects actual time on-site instead of the sign's posted limit.
 8. **Walk-back navigation.** The active-session card shows distance + estimated walking time to your car, plus a "Walk back →" button that deep-links straight into Apple Maps (iOS) or Google Maps (everywhere else) with walking mode forced.
 9. **Evidence Export.** Multi-page PDF with arrival time in the parker's local timezone, address, GPS, ParkProof Guidance one-liner, sign photo, the user's optional note, and car photo with **address + timestamp burnt into the bottom corner** as caption overlay. Optional signature appendix when the session was cryptographically signed (see below).
@@ -95,6 +95,8 @@ Language list chosen from the top non-English languages spoken in the **City of 
 - **Quota auto-recovery.** When `localStorage` hits its ~5MB ceiling, a 3-phase reclamation runs against expired sessions only (strip car photo, then sign photo, then evict whole session) before anything fails. Active sessions are never touched.
 - **Background signing retry.** If the tab closes mid-signing, the next app load sweeps for unsigned sessions and re-attempts (5-minute throttle, 3-attempt cap, 30-day horizon). Sessions self-heal.
 - **Stepped loading UX.** While the model thinks, the loading screen progresses through "Reading the sign… Identifying parking rules… Computing when you can park… Composing the answer…" with a real progress bar. Timings tuned from actual CloudWatch latency data.
+- **Async-polling architecture for slow Claude calls.** Stacked Melbourne signs (Clearway + multi-arrow + accessibility + meter) take Sonnet 30–50s to read carefully — past the API Gateway HTTP API's hard 30s timeout. Rather than fight the gateway, the slow routes (`/sign-translate`, `/draft-appeal`) write a `pending` row to a DDB jobs table, self-invoke the Lambda asynchronously, return `202 { job_id }` in <1s, then let the client poll `/sign-translate/status/{job_id}` (sub-second DDB GetItem per poll). TTL sweeps the rows 10 minutes after creation. One pattern, two long-running endpoints.
+- **Background Web Push via EventBridge Scheduler.** Selected reminder offsets become server-side EventBridge schedules with deterministic names (`parkproof-push-{session_id}-{i}`), each targeting the Lambda's push-dispatch path. At fire time the Lambda looks up the device's VAPID subscription, sends the notification, and the schedule auto-deletes. Hitting "I've left" before expiry deletes all pending schedules for the session. Stale endpoints (HTTP 410 / 404) are reaped from the subscriptions table automatically.
 - **AI feedback loop (Layers 1 + 2).** After each result, "Yes, looks right" or "Retake photo" fires a structured event to CloudWatch with the model's confidence, the rules-shape, whether clarification fired, the local hour, and a 120-char rules excerpt. Lets you slice failure modes in Logs Insights — *"of all retake verdicts, what's the confidence distribution? Which sign patterns? Which hours-of-day?"* — without any PII. Verdict counts (Layer 1) tell you *whether* there's a problem; Layer 2's context tells you *which kind*.
 - **Multi-lingual UI — 7 languages.** Language picker on the home screen swaps the entire interface between 🇦🇺 English (default), 🇨🇳 简体中文, 🇻🇳 Tiếng Việt, 🇮🇹 Italiano, 🇬🇷 Ελληνικά, 🇮🇳 हिन्दी, and 🇮🇳 ਪੰਜਾਬੀ. Language list chosen from the top non-English languages spoken in the **City of Melbourne LGA** (2021 ABS Census). Powered by `react-i18next` with browser-language auto-detection + localStorage persistence. The Claude AI's sign-translation output stays in English (it reflects what's literally on the sign); the entire UI scaffolding around it — including the evidence PDF — translates.
 
@@ -121,7 +123,7 @@ flowchart LR
   subgraph Browser
     Cam[Camera input]
     UI[React UI]
-    SW[Service Worker<br/>offline + push]
+    SW[Service Worker<br/>offline cache + push receiver]
     LS[(localStorage)]
     PDF[jsPDF<br/>evidence export]
     ICS[ics<br/>calendar event]
@@ -131,11 +133,13 @@ flowchart LR
   subgraph AWS["AWS (ap-southeast-2)"]
     CF[CloudFront<br/>+ OAC<br/>www.parkproof.com.au]
     S3App[(S3 — static hosting<br/>private, OAC-only)]
-    APIGW[API Gateway HTTP API<br/>10 routes — see below<br/>JWT authorizer for /sessions, /photos, /me]
-    Lambda[Lambda<br/>parkproof-sign-translator]
+    APIGW[API Gateway HTTP API<br/>18 routes — 10 anon + 8 JWT-gated<br/>JWT authorizer on /sessions, /photos, /me]
+    Lambda[Lambda<br/>parkproof-sign-translator<br/>HTTP handler + self-invoked worker<br/>+ push-dispatch target]
+    Sched[EventBridge Scheduler<br/>one-shot push schedules<br/>parkproof-push-&lt;session&gt;-&lt;i&gt;]
     Cog[Cognito User Pool<br/>+ Hosted UI<br/>Apple · Google federation]
-    DDB[(DynamoDB<br/>sessions table)]
+    DDB[(DynamoDB<br/>sessions · async jobs<br/>· push subscriptions)]
     S3Ev[(S3 — evidence<br/>per-user prefixes<br/>presigned upload URLs)]
+    S3Fb[(S3 — user feedback<br/>2-year retention)]
     KMS[AWS KMS<br/>ECDSA P-256<br/>asymmetric signing key]
     Logs[CloudWatch Logs<br/>feedback Layers 1 + 2<br/>+ per-request timings]
   end
@@ -143,21 +147,28 @@ flowchart LR
   subgraph External
     Claude[Anthropic API<br/>claude-sonnet-4-6<br/>vision · JSON schema · adaptive thinking]
     Nom[OpenStreetMap<br/>Nominatim]
+    WebPush[Browser push endpoints<br/>FCM · APNs · Mozilla autopush]
   end
 
   Cam --> UI
   UI -- "GET /" --> CF --> S3App
-  UI -- "anon: /sign-translate · /draft-appeal<br/>/sign-session · /feedback" --> APIGW --> Lambda
+  UI -- "anon: /sign-translate · /draft-appeal<br/>/sign-session · /feedback · /user-feedback<br/>/push/{subscribe,schedule,cancel}" --> APIGW --> Lambda
   UI -- "auth: /sessions/{upload,list,delete}<br/>/photos/presign · /me/{export,delete}" --> APIGW
   UI -- "OAuth redirect / token exchange" --> Cog
   Cog -- "JWT" --> APIGW
   Lambda -- "messages.create" --> Claude
   Claude -- "structured JSON" --> Lambda --> APIGW --> UI
   Lambda -- "kms:Sign (DER)" --> KMS
-  Lambda -- "Put/Query/Delete" --> DDB
+  Lambda -- "Put / Query / Get / Delete" --> DDB
   Lambda -- "presigned PUT URL" --> S3Ev
   UI -- "direct PUT photo" --> S3Ev
-  Lambda -- "[parkproof.feedback] ..." --> Logs
+  Lambda -- "PutObject (JSON)" --> S3Fb
+  Lambda -- "CreateSchedule · DeleteSchedule" --> Sched
+  Sched -- "at(UTC) → invoke" --> Lambda
+  Lambda -- "web-push (VAPID-signed)" --> WebPush
+  WebPush -- "push event" --> SW
+  SW --> Notif
+  Lambda -- "[parkproof.*] structured logs" --> Logs
   UI <-- "reverse + forward geocode" --> Nom
   UI --> LS
   UI --> PDF
@@ -165,7 +176,7 @@ flowchart LR
   UI --> Notif
 ```
 
-A single Lambda handler ([`lambda/index.js`](lambda/index.js)) is **reused as the local dev proxy** via a small Vite plugin in [`vite.config.ts`](vite.config.ts). One handler, two runtimes — no mocks during dev, no surprise differences on deploy. The handler dispatches by path across ten routes — four anonymous (`/sign-translate`, `/draft-appeal`, `/sign-session`, `/feedback`) and six JWT-authenticated (`/sessions/upload`, `/sessions/list`, `/sessions/delete`, `/photos/presign`, `/me/export`, `/me/delete`). Auth-required routes go through API Gateway's Cognito JWT authorizer before the Lambda ever runs. All ten routes share one Lambda function and one cold-start budget.
+A single Lambda handler ([`lambda/index.js`](lambda/index.js)) is **reused as the local dev proxy** via a small Vite plugin in [`vite.config.ts`](vite.config.ts). One handler, two runtimes — no mocks during dev, no surprise differences on deploy. The handler dispatches by path across **18 API Gateway routes** — ten anonymous (sign translation + async-job status polls + appeal drafting + KMS signing + AI verdict feedback + free-text user feedback + push subscribe / schedule / cancel) and eight JWT-authenticated covering cloud sync (`/sessions/upload`, GET + POST `/sessions/list`, `/sessions/delete`), evidence-photo presigning (`/photos/presign`), and account management (GET + POST `/me/export`, `/me/delete`). Auth-required routes go through API Gateway's Cognito JWT authorizer before the Lambda ever runs. The same Lambda is also the **EventBridge Scheduler target** for one-shot push dispatch and the **self-invoked worker** for async-polled `/sign-translate` and `/draft-appeal` calls that exceed the API Gateway 30s timeout. One Lambda function, one cold-start budget, three invocation modes.
 
 ---
 
@@ -264,11 +275,12 @@ Anonymous-by-default, opt-in cloud — same code path either way. No login wall,
 
 ## What's not built yet
 
-- **True background push notifications** via the Web Push protocol. The current `.ics` calendar event covers the real "you'll be reminded even with the app closed" need. A proper Web Push pipeline would need a service worker push subscription, server-side scheduler (Lambda + EventBridge), and a session-store database — out of scope for the POC.
 - **Citywide parking heatmap.** Every scan captures the raw data needed (translated rules + GPS) for a crowdsourced map of parking rules across Melbourne. Would be a genuine moat — council parking data is fragmented; nobody else has the AI-translation pipeline. The opt-in cloud-sync plumbing is now in place (DynamoDB + S3 + Cognito), but a heatmap also needs: (a) a "share my scans to improve the map" toggle distinct from the private cloud-sync sign-in, (b) the cold-start problem solved (a map with five scans is useless), (c) a Mapbox/Leaflet viewer. Build trigger: a few hundred consistent users *or* a council partnership offer.
 - **Auto-submit infringement appeals.** The current flow drafts the letter and exports it as a PDF the user submits manually. Auto-submit would pre-fill a council's online dispute form with the session ID and a public PDF link — blocked by council-side captchas, login walls, and the absence of public APIs across Australian councils. Realistic version is deep-linking to the form with the metadata pre-encoded.
 - **Voice confirmation.** "Hey ParkProof, when does parking expire?" — Web Speech API + simple intent matching, or an iOS Shortcut routing to a `parkproof://countdown` URL handler. ~half day. Limited by browser support in PWA-installed mode on iOS.
 - **AI feedback Layer 3.** Layers 1 (verdict counts) and 2 (verdict + model context — confidence, sign-pattern, time-of-day) are both live. Layer 3 would add opt-in photo capture for systematic failures, building a private training dataset. Blocked on (a) the opt-in toggle UI, (b) an S3 bucket scoped to "failure samples only", (c) a privacy-policy line item. Sensible build trigger: Layer 2 surfaces a specific failure mode that's worth investing photo storage in.
+
+*Recently shipped (was on this list, no longer): true background Web Push via EventBridge Scheduler + VAPID-signed `web-push`, full subscribe / schedule / cancel pipeline with per-session cleanup on "I've left".*
 
 ---
 
@@ -360,7 +372,7 @@ ParkProof/
 │   ├── screenshots.mjs            ← Playwright harness — drives the app, regenerates demo PNGs
 │   ├── screenshots-fixtures/      ← inputs consumed by the screenshot harness
 │   └── teardown.sh                ← destroy everything (dry-run by default)
-├── vite.config.ts                 ← API middleware (all 10 routes) + .env loader + Node-global polyfills + PWA
+├── vite.config.ts                 ← API middleware (all 18 routes — same Lambda as prod) + .env loader + Node-global polyfills + PWA
 ├── parkproof-spec.md              ← PM-style product brief (problem, scope, success metrics)
 ├── CLAUDE.md                      ← engineering notes for future AI sessions
 └── README.md                      ← this file
@@ -378,4 +390,4 @@ ParkProof/
 
 ## Credits
 
-Built with [Claude Code](https://claude.com/claude-code). Spec by Melroy D'Souza.
+Built with [Claude Code](https://claude.com/claude-code).

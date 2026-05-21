@@ -1,6 +1,6 @@
 # ParkProof — a PM case study
 
-*Mobile-first PWA. Photograph an Australian parking sign → plain-English answer + timestamped, GPS-tagged evidence. Built solo in one week; ~$5/month to run; zero real users.*
+*Mobile-first PWA. Photograph an Australian parking sign → plain-English answer + timestamped, GPS-tagged evidence. Built solo across seven active days (16-22 May 2026); ~$5/month to run; zero real users.*
 
 [Live demo →](https://www.parkproof.com.au) · [Source →](https://github.com/melroyds/parkproof)
 
@@ -68,7 +68,9 @@ What I deliberately cut from v1:
 - **User accounts, cloud storage, cross-device.** All sessions are device-local in `localStorage`. I deferred building a database until there was a user-facing trigger that demanded one — eventually that became "what if the user loses their phone before disputing a ticket?", and I added optional cloud sync. But not on day one.
 - **Auto-submit appeals.** Tempting, but blocked by council-side captchas, login walls, and the absence of public APIs across Australian councils. A realistic version is deep-linking the user into the council's existing form with metadata pre-encoded, which is on the *next* roadmap, not v1.
 - **A citywide heatmap of parking rules.** Genuine moat — every scan captures data that could feed it — but heatmaps with five data points are worse than no map at all. Build trigger: a few hundred consistent users, or a council partnership offer.
-- **Web Push background notifications.** The `.ics` calendar event covers the actual "you'll be reminded with the app closed" need on iOS/Android/macOS. Real Web Push needs a service worker push subscription, server-side scheduler, and a session-store database — meaningful infrastructure to maintain for a 5% UX gain. Deferred.
+
+What I cut from v1 but came back to (and finished) by day 7:
+- **Web Push background notifications.** Originally deferred — the `.ics` calendar event covers the "you'll be reminded with the app closed" need on iOS/Android/macOS for users who keep a connected calendar, and I assumed that was good enough for v1. It mostly was. But after using my own app for a few days I noticed I kept *not* opening the calendar notification, and the in-tab notification only fired if I happened to have the tab open. So I went back and built the full pipeline: VAPID-signed `web-push` from the Lambda, push subscriptions persisted to DynamoDB, one-shot **EventBridge Scheduler** schedules created per selected reminder offset, dispatch routed back through the same Lambda. The interesting trade-off was the schedule-naming scheme: I picked deterministic names (`parkproof-push-{session_id}-{i}`) over random UUIDs specifically so that ending a session early could fan-out 6 parallel `DeleteSchedule` calls without ever calling `ListSchedules` — no extra IAM permission, idempotent on re-pick. The path mattered more than the destination.
 
 ---
 
@@ -140,8 +142,7 @@ In rough priority order:
 1. **Council-specific appeal deep-links.** Right now the appeal flow drafts the letter and exports it as a PDF the user submits manually. The next version deep-links to the council's online dispute form with metadata pre-encoded (session ID, photo URLs, infringement number). Blocked by per-council research; the system architecture is ready.
 2. **Citywide heatmap.** Cloud sync is already in place, which means the data pipeline exists. The missing pieces are (a) a "share my scans to improve the map" opt-in toggle distinct from cloud-sync sign-in, (b) Mapbox/Leaflet viewer, (c) the cold-start problem (a map with five scans is useless). Build trigger: enough consistent users, or a council partnership.
 3. **AI feedback Layer 3.** Opt-in photo capture for systematic failure modes surfaced by Layer 2. Builds a private training dataset for prompt tuning.
-4. **True Web Push background notifications.** The `.ics` covers the real need; Web Push is for the 5% who don't have a connected calendar.
-5. **Voice confirmation.** "Hey ParkProof, when does parking expire?" — Web Speech API, ~half a day of work, limited by iOS PWA support.
+4. **Voice confirmation.** "Hey ParkProof, when does parking expire?" — Web Speech API, ~half a day of work, limited by iOS PWA support.
 
 What I'd *deprioritise* even though it's tempting:
 
@@ -174,7 +175,7 @@ That's the part of the job I think most PMs underweight. It's easy to ship featu
 
 **Frontend:** React 19 + TypeScript (strict) + Tailwind v4 + Vite + PWA service worker. Main bundle ~225KB gzipped.
 
-**Backend:** Single AWS Lambda function (`parkproof-sign-translator`) handling 10 routes via path dispatch, fronted by API Gateway HTTP API with a Cognito JWT authorizer on the cloud-sync routes. The same Lambda is reused as the local dev proxy via a Vite plugin — one handler, two runtimes, no mocks.
+**Backend:** Single AWS Lambda function (`parkproof-sign-translator`) handling 18 API Gateway routes via path dispatch, fronted by API Gateway HTTP API with a Cognito JWT authorizer on the cloud-sync routes. The same Lambda is also the EventBridge Scheduler target for one-shot push dispatch and the self-invoked worker for async-polled Claude calls that exceed the 30s API Gateway timeout — three invocation modes, one cold-start budget. Reused as the local dev proxy via a Vite plugin — one handler, two runtimes, no mocks.
 
 **AI:** Anthropic Claude Sonnet 4.6 with adaptive thinking and native JSON-schema-enforced output. ~$0.05 per sign-translate.
 
@@ -190,4 +191,4 @@ That's the part of the job I think most PMs underweight. It's easy to ship featu
 
 ---
 
-*If you've read this far and you'd like to talk product — about ParkProof, AI-feedback design, or just the discipline of deferring features — I'm at moltensnake@gmail.com and on [LinkedIn](https://www.linkedin.com/in/melroyds).*
+*If you've read this far and you'd like to talk product — about ParkProof, AI-feedback design, or just the discipline of deferring features — drop a line at hello@parkproof.com.au.*

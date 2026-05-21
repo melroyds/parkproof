@@ -170,23 +170,15 @@ export default function AboutFeatures({ onBack, onTryIt }: Props) {
         </div>
       )}
 
-      {/* Build-in-the-open footer — minimal, friendly. Single GitHub link
-          (open-source credibility); LinkedIn intentionally NOT linked from
-          here — keeps the in-app surface free of personal identity for the
-          regular-user audience. People who care to find the maker can still
-          do so via the README on GitHub. */}
+      {/* Build-in-the-open footer — minimal, no personal identity. GitHub
+          link intentionally removed: the linked profile/repo carries name +
+          photo, and ParkProof's surface should stay free of that for the
+          regular-user audience. People who want to reach the maker can use
+          the in-app Feedback form or the listed support email. */}
       <div className="mb-8 pt-4 border-t border-paper-300">
-        <p className="text-xs text-ink-500 leading-relaxed mb-3">
+        <p className="text-xs text-ink-500 leading-relaxed">
           {t('about.footerNote')}
         </p>
-        <a
-          href="https://github.com/melroyds/parkproof"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-xs text-brand-600 hover:text-brand-700 underline"
-        >
-          {t('about.sourceOnGitHub')}
-        </a>
       </div>
 
       <button
