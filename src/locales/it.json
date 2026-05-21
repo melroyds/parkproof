@@ -539,5 +539,77 @@
       "appealTitle": "Lettere di ricorso AI",
       "appealDesc": "Multa ingiusta? Fotografala e prepariamo un ricorso formale."
     }
+  },
+  "about": {
+    "title": "Tutto quello che fa ParkProof",
+    "lead": "Probabilmente sei qui pensando ah, legge i cartelli di parcheggio. È vero. Ma già che c'eravamo, abbiamo deciso di salvare anche le prove nel caso tu prenda una multa ingiusta, scriverti la lettera di ricorso se serve, e ricordarti di spostare la macchina prima che scada il tempo. Ecco il tour amichevole.",
+    "footerNote": "ParkProof è open source — ogni riga di codice è pubblica. Realizzato a Melbourne da Melroy D'Souza.",
+    "sourceOnGitHub": "Codice sorgente su GitHub →",
+    "connectOnLinkedIn": "Collegati su LinkedIn →",
+    "cta": "Provalo — scansiona un cartello",
+    "scan": {
+      "title": "Fotografa un cartello, ottieni una risposta",
+      "lead": "Punta il telefono su qualsiasi cartello di parcheggio — anche quelli incasinati con frecce e zone di rimozione.",
+      "items": [
+        "Ricevi un sì o no chiaro in circa 10 secondi.",
+        "Se il cartello ha regole diverse per i due lati della strada, ti chiediamo semplicemente da che parte sei.",
+        "Controlliamo se la foto è troppo sfocata o scura prima ancora di chiamare l'AI — ti risparmiamo un tentativo sprecato."
+      ]
+    },
+    "evidence": {
+      "title": "Una ricevuta per il tuo parcheggio",
+      "lead": "Ogni parcheggio che registri salva l'orario, il GPS, l'indirizzo, e (se vuoi) una foto della tua auto sul posto.",
+      "items": [
+        "Scarica tutto come PDF ordinato — comodo se mai dovrai contestare una multa.",
+        "È firmato con un sigillo digitale, quindi nessuno può sostenere che sia stato modificato dopo — nemmeno noi.",
+        "Aggiungi una nota sul perché hai parcheggiato lì (mamma in ospedale, mercato del sabato) — i comuni considerano il contesto."
+      ]
+    },
+    "reminders": {
+      "title": "Un promemoria prima che scada il tempo",
+      "lead": "Scegli quando vuoi essere avvisato — 30 minuti prima, 15, 5, come ti senti meglio.",
+      "items": [
+        "Aggiunge un evento al calendario del telefono, così il promemoria suona anche se ParkProof non è aperto.",
+        "Mostra un conto alla rovescia in tempo reale nella schermata principale — verde quando hai tempo, ambra quando ti stai avvicinando, rosso quando devi davvero muoverti.",
+        "Hai dimenticato dove hai parcheggiato? Tocca Torna all'auto e l'app mappe ti mostra la strada."
+      ]
+    },
+    "gates": {
+      "title": "Un gentile aspetta un attimo",
+      "lead": "I piccoli controlli che ti evitano una multa che non avresti previsto.",
+      "items": [
+        "Se lo stallo richiede pagamento (parchimetro, EasyPark, PayStay), ti chiediamo di confermare il pagamento prima di salvare.",
+        "Se lo stallo è riservato ai permessi disabili, mostriamo un avviso rosso ben visibile.",
+        "Hai parcheggiato dove non ci sono cartelli? Puoi comunque registrarlo — con una foto dell'ambiente circostante a dimostrare che davvero non ce n'erano."
+      ]
+    },
+    "appeal": {
+      "title": "Hai preso una multa lo stesso?",
+      "lead": "Non scrivere il ricorso da solo. Lo scriviamo noi per te.",
+      "items": [
+        "Fotografa la multa. La incroceremo con quello che abbiamo salvato quando hai parcheggiato.",
+        "Ricevi una bozza di lettera al comune, più una valutazione onesta di quanto sia forte il tuo caso.",
+        "Modifica quello che vuoi, poi scarica come PDF con il registro di parcheggio allegato. Stampa e spedisci, o invia via email."
+      ]
+    },
+    "kindnesses": {
+      "title": "Qualche piccola gentilezza",
+      "lead": "Le cose a cui non dovresti dover pensare, e a cui abbiamo pensato per te.",
+      "items": [
+        "Gratis. Niente app store. Aggiungilo alla schermata principale e funziona come una normale app — anche offline.",
+        "Disponibile in 7 lingue tra cui 中文, Tiếng Việt, Italiano, Ελληνικά, हिन्दी e ਪੰਜਾਬੀ.",
+        "L'ora corrisponde sempre al luogo di parcheggio — scansiona a Sydney mentre sei in viaggio, vedi l'ora di Sydney. Non quella del tuo telefono.",
+        "Non devi accedere per usare nessuna di queste funzioni. L'anonimo va benissimo."
+      ]
+    },
+    "signIn": {
+      "title": "Accedi se vuoi",
+      "lead": "Opzionale. Se lo fai, i tuoi dati ti seguono tra i dispositivi.",
+      "items": [
+        "Accedi con email, il tuo ID Apple, o il tuo account Google.",
+        "Ogni parcheggio che salvi viene rispecchiato sul cloud — se il telefono si rompe, le prove sono ancora lì.",
+        "Un tocco per scaricare ogni registro. Un tocco per cancellare ogni registro e il tuo account, se cambi idea."
+      ]
+    }
   }
 }
