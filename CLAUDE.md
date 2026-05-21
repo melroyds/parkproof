@@ -8,7 +8,7 @@ Mobile-first installable PWA. Photograph an Australian parking sign → Claude v
 
 Live: <https://www.parkproof.com.au> (custom domain on Cloudflare DNS, CloudFront-fronted). Apex `parkproof.com.au` and both forms of `parkproof.au` 301-redirect to the canonical via Cloudflare Page Rules. Old domain `parkproof.dsouza.tech` kept as fallback for ~7 days post-cutover. Hosted on AWS in `ap-southeast-2`.
 
-See [`parkproof-spec.md`](parkproof-spec.md) for the original product brief and [`README.md`](README.md) for the user-facing version.
+See [`parkproof-spec.md`](parkproof-spec.md) for the original product brief, [`README.md`](README.md) for the user-facing version, and [`docs/lessons-for-next-project.md`](docs/lessons-for-next-project.md) for the portable takeaways doc — what 8-day-Melroy learned that the *next* project should carry forward.
 
 ## Run it
 
@@ -288,6 +288,12 @@ fields @timestamp, @message
 - **CloudFront update propagation takes 3–10 min** but the old origin keeps serving. Bucket policy + BlockPublicAccess changes are immediate. Plan the order so the live site doesn't break during a migration.
 - **Social platforms (iMessage, LinkedIn, Slack) cache OG images aggressively.** After updating `og-image.png`, force refresh via each platform's debugger or share with `?v=N` to bust the cache.
 - **Sonnet 4.6's `prompt-caching` minimum is 2048 tokens.** Our system prompt is currently ~1700 tokens — below threshold, so caching never activates. If you grow the prompt past 2048, caching will kick in for free and shave ~0.5–1s per warm call.
+- **CI installs root deps only — `lambda/node_modules` doesn't exist by default.** `lambda/refresh.test.js` imports `lambda/index.js` which transitively pulls in `@aws-sdk/client-{kms,dynamodb,s3,lambda}` etc — those packages live in `lambda/package.json`, NOT root. Without an explicit `npm ci` in `lambda/` during CI, every AWS SDK import fails to resolve before any test runs. The `.github/workflows/test.yml` has an explicit "Install lambda dependencies" step for this. If you add another subdirectory with its own `package.json` (e.g. a future `worker/` or `infra/`), it needs the same treatment.
+- **happy-dom wraps `localStorage` in a Proxy that defeats `vi.spyOn`.** Spies installed via `vi.spyOn(localStorage, 'setItem')` don't reliably restore between tests (the previous test's quota-throw mock leaks into the next test's `localStorage.setItem(...)` seed). Direct assignment (`localStorage.setItem = fn`) is also blocked by the Proxy's set trap. `src/lib/storage.test.ts` works around this by swapping in a custom `Storage`-shaped object via `Object.defineProperty(globalThis, 'localStorage', ...)` for the test file's lifetime. Use that pattern whenever you need to simulate quota errors or other Storage misbehaviour.
+- **`vi.mock` with arrow-fn constructors fails.** Anthropic SDK does `new Anthropic(...)` — if your mock factory returns `vi.fn().mockImplementation(() => ({...}))` with an arrow function inside, Node throws `is not a constructor`. Use a real class form (`class MockAnthropic { constructor() { this.messages = {...} } }`) instead. See `lambda/refresh.test.js`.
+- **Cloudflare's auto-DNS-import skips underscore-prefixed records.** When migrating DNS from another provider, the ACM cert validation CNAMEs (which always start with `_`) won't carry over — you have to manually add them in Cloudflare before flipping nameservers, or the cert silently fails to auto-renew in 12 months.
+- **Crazy Domains' CNAME validator rejects trailing dots and is strict about underscores.** Paste CNAME values WITHOUT the trailing `.` and the underscore-prefixed records (ACM validation, etc.) will go through. Their DNS panel batches writes — needs an explicit "Update Status" click to publish "Pending" records to their authoritative nameservers.
+- **Crazy Domains charges $26/yr per domain for URL forwarding.** Cloudflare's free tier provides equivalent 301 redirects via Page Rules + Redirect Rules. The migration is ~30-60 min nameserver propagation; saves ~$52/yr on the two-domain setup. Plus you get apex CNAME flattening for free if you ever want `https://parkproof.com.au` (no www) as canonical.
 
 ## Where things are
 

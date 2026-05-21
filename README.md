@@ -368,6 +368,13 @@ ParkProof/
 
 ---
 
+## Further reading
+
+- [`docs/case-study.md`](docs/case-study.md) — PM-craft narrative: how the project was scoped, sequenced, and traded off
+- [`docs/parkproof-build-journal.pdf`](docs/parkproof-build-journal.pdf) — chronological build journal with decision-tree branches at every pivot (6 days, 44 commits, the failed architectures preserved)
+- [`docs/how-parkproof-was-built.pdf`](docs/how-parkproof-was-built.pdf) — ELI15 explainer of the stack + architecture
+- [`docs/lessons-for-next-project.md`](docs/lessons-for-next-project.md) — portable takeaways: what to do (and not do) on the next portfolio project, distilled from ParkProof
+
 ## Credits
 
 Built with [Claude Code](https://claude.com/claude-code). Spec by Melroy D'Souza.
