@@ -217,6 +217,8 @@ A single Lambda handler ([`lambda/index.js`](lambda/index.js)) is **reused as th
 - **Timezone derived from coords.** The `until` time is computed in the user's actual local timezone, resolved from GPS via `tz-lookup`. Falls back to `Australia/Melbourne` when no coords are sent. Works correctly for anyone scanning anywhere — not just the home market.
 - **Stepped loading state driven by real timings.** The 6–12s wait shows "Reading the sign… → Identifying parking rules… → Computing when you can park… → Composing the answer…" with a progress bar. Stages aren't real streaming (API Gateway HTTP API buffers responses), but the timing was tuned from CloudWatch latency data so it stays in sync with what the model is actually doing.
 - **Anonymous-by-default, opt-in cloud.** Out of the box, no login, no email, no user accounts — localStorage holds the user's data on-device, the Lambda is stateless, and the privacy story stays trivial. Cross-device sync is available as an *opt-in upgrade*: sign in with email/password (or Apple/Google via federation, see [`docs/federation-setup.md`](docs/federation-setup.md)) and sessions mirror to a DynamoDB + S3 cloud store keyed to your Cognito user ID. localStorage stays the canonical source of truth even when signed in — the cloud is a mirror, not a replacement.
+- **Async polling for slow Claude calls.** Stacked signs can take Sonnet 30–50s to read carefully — past API Gateway HTTP API's hard 30s timeout. Rather than fight the gateway, `/sign-translate` and `/draft-appeal` write a `pending` row to a TTL'd DDB jobs table, self-invoke the Lambda with `InvocationType: 'Event'`, and return `202 { job_id }` in <1s. The client polls a sub-second DDB `GetItem` until `done` or `error`. One pattern, two long-running endpoints, and the existing retry-on-5xx layer in `src/lib/api.ts` still wraps the enqueue call as a final fallback.
+- **Background push by deterministic schedule name.** When the user picks reminder offsets, we create one EventBridge schedule per offset with the name `parkproof-push-{session_id}-{i}` instead of a random UUID. That naming choice does two things: rescheduling for the same session collapses to a wipe-then-create with no conflict-handling code, and cancelling on "I've left" fan-outs to 6 parallel `DeleteSchedule` calls (with `ResourceNotFoundException` ignored). Net effect: no `scheduler:ListSchedules` permission needed in the IAM policy — the blast radius stays scoped to `parkproof-push-*`. The exact same Lambda is the dispatch target (`_async_kind: 'push-dispatch'`), so EventBridge fires through to `webpush.sendNotification` with no separate worker.
 - **AI feedback loop.** "Yes, looks right" / "Retake photo" verdicts fire structured events to CloudWatch via `POST /feedback`. Logs Insights aggregates verdict counts and rates without a database — gives a real measured signal for prompt iteration. No PII captured (just verdict + random per-render UUID + timestamp).
 
 ---
@@ -247,13 +249,17 @@ The deploy is fully automated by idempotent scripts in [`scripts/`](scripts/):
 
 | Script | What it does | Frequency |
 |---|---|---|
-| [`scripts/deploy.sh`](scripts/deploy.sh) | Day-to-day deploy: rebuilds Lambda zip, updates function code + env (Cognito + DDB + S3 vars merged in), builds the frontend with prod API URL + Cognito IDs baked in, syncs `dist/` to S3, invalidates CloudFront. Ensures all 10 API routes exist on every run. | Every code change |
+| [`scripts/deploy.sh`](scripts/deploy.sh) | Day-to-day deploy: rebuilds Lambda zip, updates function code + env (Cognito + DDB + S3 + VAPID + scheduler ARNs merged in), builds the frontend with prod API URL + Cognito IDs + VAPID public key baked in, syncs `dist/` to S3, invalidates CloudFront. Ensures all 18 API Gateway routes exist on every run. | Every code change |
 | [`scripts/harden.sh`](scripts/harden.sh) | One-time security pass: locks API Gateway CORS to the CloudFront origin (with `Authorization` + `GET` allowed for the auth routes), creates a CloudFront Origin Access Control, migrates the S3 origin from public website-endpoint to private REST-endpoint + OAC. | Once after initial deploy |
 | [`scripts/setup-signing.sh`](scripts/setup-signing.sh) | One-time: creates a KMS asymmetric key (ECDSA P-256), attaches `kms:Sign` IAM policy to the Lambda role, exports the public key to `public/parkproof-public-key.pem`. | Once; re-run to rotate |
 | [`scripts/setup-auth.sh`](scripts/setup-auth.sh) | One-time: creates the Cognito User Pool + App Client + hosted-UI domain + DynamoDB sessions table + S3 evidence bucket + JWT authorizer on API Gateway. Writes resource IDs to `scripts/.aws-resources` (gitignored) for `deploy.sh` to consume. | Once; re-run after IAM/scheme changes |
-| [`scripts/set-throttle.sh`](scripts/set-throttle.sh) | Sets API Gateway request rate limits (default 20 burst / 10 rate per second). Bot protection without WAF cost. | Once; re-run to retune |
+| [`scripts/setup-feedback-bucket.sh`](scripts/setup-feedback-bucket.sh) | One-time: creates the `parkproof-user-feedback-*` S3 bucket (private, AES256 SSE, 2-year lifecycle expiry) + attaches `s3:PutObject` to the Lambda role. Backs the `/user-feedback` route. | Once; re-run if bucket policy needs updating |
+| [`scripts/setup-push.sh`](scripts/setup-push.sh) | One-time: generates VAPID keypair, creates the `parkproof-push-subscriptions` DynamoDB table (PK = `device_id`, TTL = 90 days), attaches DDB read/write IAM to the Lambda role. Stamps the VAPID keys + table name into `scripts/.aws-resources`. | Once; never re-run unless you want to rotate VAPID (would re-prompt every existing subscriber) |
+| [`scripts/setup-push-scheduler.sh`](scripts/setup-push-scheduler.sh) | One-time: creates the `parkproof-push-scheduler-role` IAM role (trust = `scheduler.amazonaws.com`, inline policy = invoke-our-Lambda-only), attaches `scheduler:CreateSchedule/DeleteSchedule` + `iam:PassRole` to the Lambda role. Stamps the role ARN into `scripts/.aws-resources`. | Once; re-run after IAM changes |
+| [`scripts/set-throttle.sh`](scripts/set-throttle.sh) | Sets API Gateway request rate limits (default 100 burst / 25 rate per second — sized for a Reddit launch). Bot protection without WAF cost. | Once; re-run to retune |
 | [`scripts/billing-alarm.sh`](scripts/billing-alarm.sh) | Creates an AWS Budgets monthly alarm — emails you at 80% actual and 100% forecasted of a USD threshold. | Once; re-run with different threshold/email |
 | [`scripts/smoke-test-auth.mjs`](scripts/smoke-test-auth.mjs) | End-to-end auth + cloud-sync test: throwaway sign-up → confirm → sign-in → upload session → list → presign photo → delete → nuke account. Asserts each step, cleans up on failure. | Run after any auth-touching change |
+| [`scripts/send-test-push.mjs`](scripts/send-test-push.mjs) | CLI tool: reads the most-recently-subscribed `device_id` from the push subscriptions table and fires a real push to the corresponding browser. Useful for verifying the dispatch path end-to-end without waiting for an EventBridge schedule. | Run after any push-pipeline change |
 | [`scripts/screenshots.mjs`](scripts/screenshots.mjs) | Playwright harness — boots Vite, drives the app through every screen with mocked API calls, regenerates the README demo-grid PNGs. | After any visual change |
 | [`scripts/teardown.sh`](scripts/teardown.sh) | Destroys every AWS resource the deploy created. Dry-run by default; pass `--confirm` to actually delete. Handles the CloudFront disable + wait + delete dance. | Only when walking away |
 
@@ -300,7 +306,11 @@ ParkProof/
 │   │   ├── Clarify.tsx            ← position chooser when the sign has arrows
 │   │   ├── ParkingResult.tsx      ← green/red answer + transition banner + observations + verify + feedback
 │   │   ├── SessionLogger.tsx      ← GPS + reverse-geocode + editable address + car photo
-│   │   ├── ReminderOptions.tsx    ← multi-chip reminder picker + .ics + browser notification
+│   │   ├── ReminderOptions.tsx    ← multi-chip reminder picker + .ics + in-tab notification + server-side Web Push schedule
+│   │   ├── AboutFeatures.tsx      ← /about feature showcase + push-permission preview (Reddit-launch entry point)
+│   │   ├── ActiveSessionsList.tsx ← multi-session active list (used when 2+ sessions are running)
+│   │   ├── LandingFeatures.tsx    ← three feature cards above the scan button for first-time visitors
+│   │   ├── FeedbackModal.tsx      ← free-text user-feedback channel → /user-feedback (CloudWatch + S3 mirror)
 │   │   ├── SessionHistory.tsx     ← list of saved sessions
 │   │   ├── SessionDetail.tsx      ← single session + editable note + walk-back + PDF + appeal + delete
 │   │   ├── AppealFlow.tsx         ← ticket photo capture → AI draft → editable letter → PDF
@@ -314,9 +324,13 @@ ParkProof/
 │   │   ├── Icon.tsx               ← 8-icon stroke set (currentColor)
 │   │   └── LoadingProgress.tsx    ← stepped progress UI during the model call
 │   ├── locales/                   ← seven-language UI translations (en, zh-CN, vi, it, el, hi, pa)
+│   ├── service-worker.ts          ← custom SW (injectManifest mode) — precaching + Web Push receiver + notification click handler
 │   └── lib/
-│       ├── claude.ts              ← translateSign + refreshInterpretation + draftAppeal
-│       ├── feedback.ts            ← fire-and-forget verdict submission
+│       ├── api.ts                 ← endpointUrl() — single helper that resolves /api/* in dev and the API Gateway URL in prod
+│       ├── claude.ts              ← translateSign + refreshInterpretation + draftAppeal (async job + status polling)
+│       ├── feedback.ts            ← fire-and-forget AI-verdict submission
+│       ├── user-feedback.ts       ← free-text user feedback → /user-feedback endpoint
+│       ├── push.ts                ← subscribeToPush + schedulePushReminders + cancelPushReminders + hasActiveSubscription
 │       ├── signing.ts             ← signSession (KMS) + retryUnsignedSessions (background sweep)
 │       ├── storage.ts             ← localStorage CRUD + 3-phase quota auto-recovery
 │       ├── sync.ts                ← localStorage ↔ cloud mirror (upload, list, delete, export)
@@ -340,10 +354,12 @@ ParkProof/
 │       ├── countdown.ts           ← time-until-expiry → urgency level + label (+ localized variant)
 │       └── use-now.ts             ← interval-tick hook for live countdowns
 ├── lambda/
-│   ├── index.js                   ← path dispatcher: translateSign + draftAppeal + signSession + feedback + cloud-sync routes
+│   ├── index.js                   ← path dispatcher: 18 routes (sign-translate ↔ async polling, draft-appeal ↔ async polling,
+│   │                                sign-session KMS, /feedback, /user-feedback, /push/{subscribe,schedule,cancel},
+│   │                                /sessions/*, /photos/presign, /me/*) + EventBridge push-dispatch target + self-invoke worker
 │   ├── cloud-sync.js              ← sessions/upload, sessions/list, sessions/delete, photos/presign, me/export, me/delete
 │   ├── index.d.ts                 ← types for the local-dev import
-│   └── package.json               ← deploy-zip deps (@anthropic-ai/sdk, @aws-sdk/* DDB / S3 / KMS / Cognito, tz-lookup)
+│   └── package.json               ← deploy-zip deps (@anthropic-ai/sdk, @aws-sdk/* DDB / S3 / KMS / Cognito / Scheduler / Lambda, web-push, tz-lookup)
 ├── public/
 │   ├── parkproof-icon.svg         ← layered-P + clock app icon
 │   ├── parkproof-wordmark.svg     ← horizontal logo lockup
@@ -360,6 +376,12 @@ ParkProof/
 ├── docs/
 │   ├── asset-brief.md             ← historical brief for asset generation
 │   ├── federation-setup.md        ← step-by-step for wiring Apple + Google OAuth into Cognito
+│   ├── features.md                ← canonical feature showcase (the cheat-sheet for Reddit / LinkedIn / interview)
+│   ├── case-study.md              ← PM-craft narrative
+│   ├── testing.md                 ← test strategy + how to run the suites
+│   ├── lessons-for-next-project.md ← portable takeaways for the next portfolio piece
+│   ├── parkproof-build-journal.pdf ← chronological build journal
+│   ├── how-parkproof-was-built.pdf ← ELI15 explainer
 │   └── screenshots/               ← README demo-grid PNGs, regenerated by npm run screenshots
 ├── scripts/
 │   ├── deploy.sh                  ← day-to-day deploy
@@ -367,6 +389,10 @@ ParkProof/
 │   ├── set-throttle.sh            ← API rate limits
 │   ├── billing-alarm.sh           ← AWS Budgets alarm
 │   ├── setup-signing.sh           ← one-time: create KMS key, attach IAM policy, export public key
+│   ├── setup-feedback-bucket.sh   ← one-time: S3 bucket for /user-feedback mirroring + IAM
+│   ├── setup-push.sh              ← one-time: VAPID keypair + push-subscriptions DDB table + IAM
+│   ├── setup-push-scheduler.sh    ← one-time: EventBridge Scheduler IAM role + Lambda passrole permission
+│   ├── send-test-push.mjs         ← CLI: fire a real push to the latest subscribed device (skips EventBridge)
 │   ├── setup-auth.sh              ← one-time: Cognito User Pool + DynamoDB table + S3 evidence bucket + JWT authorizer
 │   ├── smoke-test-auth.mjs        ← end-to-end test: sign-up → upload → list → delete via live API
 │   ├── screenshots.mjs            ← Playwright harness — drives the app, regenerates demo PNGs
