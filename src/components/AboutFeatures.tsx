@@ -7,17 +7,22 @@ interface Props {
 }
 
 /**
- * In-app feature showcase. Solves the "users think this is just a sign
- * translator" problem — surfaces the full breadth (evidence chain, appeal
- * letters, safety gates, 7-lang i18n, opt-in sync) in one scrollable view.
+ * In-app feature showcase, in plain English. Audience: a Melburnian who
+ * just landed on the app and is wondering what's in here. NOT a Reddit
+ * tech-bro and NOT a hiring manager — that audience has docs/features.md
+ * for the technical inventory.
  *
- * Content kept in English even on non-English locales — the showcase is
- * primarily for Reddit / HN / portfolio-link visitors landing in English.
- * The product's user-facing strings stay localised everywhere else; this
- * is one specific page with a deliberately English-only audience.
+ * Style guide:
+ *   - Sentence case headings, second person ("you / your")
+ *   - One short sentence per bullet — read it aloud, if you stumble, shorten
+ *   - Benefits, not features ("get a receipt for your parking spot",
+ *     not "cryptographic evidence chain")
+ *   - Zero acronyms (no AWS / KMS / API / JSON / etc.)
+ *   - One emoji per section, used as a visual anchor, not decoration
  *
- * The headings + nav copy ARE localised so that a translated app doesn't
- * suddenly hit an English-only nav crumb.
+ * Headings + nav copy ARE localised (so the entry crumb makes sense in
+ * each language); body content stays English — see commit message of
+ * b112d9c for the reasoning.
  */
 export default function AboutFeatures({ onBack, onTryIt }: Props) {
   const { t } = useTranslation()
@@ -31,165 +36,146 @@ export default function AboutFeatures({ onBack, onTryIt }: Props) {
         {t('common.back')}
       </button>
 
-      {/* Hero */}
-      <header className="mb-8">
+      {/* Hero — warm, low-jargon, one paragraph */}
+      <header className="mb-10">
         <h1 className="font-display text-4xl font-extrabold text-ink-900 leading-tight mb-3">
           Everything ParkProof does
         </h1>
-        <p className="text-base text-ink-600 leading-relaxed max-w-prose">
-          You probably came here thinking it's just a parking-sign translator.
-          That's the headline feature — but there's a full evidence chain, an
-          AI appeal-letter writer, and a few thoughtful safety gates underneath.
-          Here's the full picture.
+        <p className="text-base text-ink-700 leading-relaxed max-w-prose">
+          You probably came here thinking{' '}
+          <em>oh, it reads parking signs</em>. It does. But while it's at it,
+          we figured we'd also save the evidence in case you get a wrongful
+          ticket, write the dispute letter for you if you do, and remind you
+          to move your car before time runs out. Here's the friendly tour.
         </p>
       </header>
 
       <Section
         icon="camera"
-        title="The core moment"
-        lead="Photograph any Australian parking sign — get a plain-English verdict in 10 seconds."
+        emoji="📸"
+        title="Snap a sign, get an answer"
+        lead="Point your phone at any parking sign — even the messy stacked ones with arrows and clearways."
         items={[
-          'AI vision via Claude Sonnet 4.6 with adaptive thinking — handles stacked Melbourne CBD signs that take humans 30 seconds to parse',
-          'JSON-schema-enforced output — the model literally cannot return malformed JSON',
-          'Multi-rule reasoning — overlapping windows resolved correctly (earliest leave-by, never the latest)',
-          'Smart clarification for position-dependent rules (arrows, side-specific bays, EV-only spots)',
-          'Photo-quality pre-check — blur + brightness checks before any token spend',
+          "You get a clear yes or no in about 10 seconds.",
+          "If the sign has different rules for different sides of the road, we'll just ask which side you're on.",
+          "We check if your photo is too blurry or dark before we even ask the AI — saves you a wasted try.",
         ]}
       />
 
       <Section
         icon="pin"
-        title="Defensible evidence"
-        lead="Every park you log gets a court-grade record — not just a screenshot."
+        emoji="🧾"
+        title="A receipt for your parking spot"
+        lead="Every park you log saves the time, the GPS, the address, and (if you want) a photo of your car at the spot."
         items={[
-          'GPS + reverse-geocoded address + optional car photo + arrival timestamp on every session',
-          'Cryptographic signing via AWS KMS ECDSA P-256 — private key never leaves AWS',
-          'Public key shipped at /parkproof-public-key.pem; verify offline with one openssl command (walkthrough in every PDF)',
-          'Caption-burnt photos — address + timestamp permanently rendered into the image',
-          "Driver's note — 280-char free-text per session for the why (renders verbatim in the PDF)",
-          'Background signing retry — sessions self-heal if signing fails mid-flight',
-        ]}
-      />
-
-      <Section
-        icon="calendar"
-        title="Reminders & live status"
-        lead="Know when to leave. Get back to your car. Never get a ticket from forgetting."
-        items={[
-          'Multi-offset reminder picker — 30 / 15 / 10 / 5 / 2 / 0 minutes before expiry, any combination',
-          'One .ics calendar event with multiple VALARM blocks — native iOS, macOS, Google Calendar support',
-          'In-tab browser notifications as backup (honestly labeled — fires only while the tab is open)',
-          'Live "Currently parked" home card — countdown colour-coded by urgency',
-          'Walk-back navigation — distance + ETA + deep-link to Apple Maps / Google Maps with walking mode',
-          'Restriction-transition heads-up banner when a rule change is within ~3 hours',
-        ]}
-      />
-
-      <Section
-        icon="warning"
-        title="Safety gates"
-        lead="The are-you-sure checks that protect against wrongful-feeling tickets."
-        items={[
-          'Paid-parking gate — explicit acknowledgement required when the bay is currently in a paid window',
-          'EasyPark / PayStay / Wilson / Care Park detection — recognises app-payment stickers separately from the main sign',
-          'Accessibility-permit gate — RED banner + acknowledgement when the sign requires a disability permit (♿ / ACROD / Mobility Pass)',
-          'No-sign mode — log a park at an unsigned spot with an ambient surroundings photo as defensible evidence',
-          "Driver-signalled end-of-session — explicit \"I've left\" stamps a timestamp on the record for actual on-site duration",
-        ]}
-      />
-
-      <Section
-        icon="list"
-        title="AI appeal letters"
-        lead="You got a ticket. ParkProof writes the dispute."
-        items={[
-          'Photograph the infringement notice — Claude reads it, cross-references your saved session',
-          'Drafts a formal letter to the issuing council, ready to send',
-          'Evidence-strength rating (strong / moderate / weak) with a one-paragraph strategy note',
-          'Editable in-app, exports as a polished PDF with the supporting evidence attached',
-        ]}
-      />
-
-      <Section
-        icon="check"
-        title="Smart polish"
-        lead="The small touches that separate an MVP from something actually-built-by-someone-who-cares."
-        items={[
-          'Smart re-scan — repeat spots within 40m / 7 days reuse the prior reading. ~3× faster, ~4× cheaper',
-          'Timezone-aware everywhere — every time is in the parking spot\'s zone, resolved from GPS via tz-lookup',
-          'Date-aware time labels — "Until 10:00 am, Mon 18/05/2026" so a long-window expiry never looks like today',
-          'Photo resize — every photo downscaled to ≤1200px @ 0.82 JPEG before storage',
-          '3-phase quota auto-recovery — strips car-photos → sign-photos → whole expired sessions before failing',
-          'Stepped loading UX — real progress bar with copy tuned from CloudWatch latency data',
-          'Async-polling architecture — slow Claude calls (30-50s) bypass the API Gateway 30s timeout cleanly',
+          'Download the whole thing as a tidy PDF — handy if you ever need to dispute a ticket.',
+          "It's signed with a digital seal so nobody can argue it was edited after the fact — not even us.",
+          "Add a note about why you parked there (mum's hospital visit, Saturday market) — councils take context seriously.",
         ]}
       />
 
       <Section
         icon="bell"
-        title="Inclusion & access"
-        lead="Free, no app required, every Melbourne language."
+        emoji="⏰"
+        title="A nudge before time runs out"
+        lead="Pick when you want to be reminded — 30 minutes before, 15, 5, whatever feels right."
         items={[
-          'PWA — installable to phone / desktop home screen, real app icon, splash, offline-capable. No app store gatekeeping',
-          '7 languages: English, 简体中文, Tiếng Việt, Italiano, Ελληνικά, हिन्दी, ਪੰਜਾਬੀ',
-          'Language list sourced from City of Melbourne LGA 2021 ABS Census — matches actual user demographics, not a generic global list',
-          'UI scaffolding AND the evidence PDF translate; the AI\'s sign translation stays in English (reflects what\'s literally on the sign)',
-          'Anonymous-by-default — every feature works without a login wall. Sign-in is opt-in for cloud sync',
-          'Mobile-first — built for standing next to a pole, not a desktop',
+          "Drops a calendar event onto your phone so the reminder fires even if ParkProof isn't open.",
+          "Shows a live countdown on the home screen — green when you've got time, amber when you're getting close, red when you really need to move.",
+          'Forgot where you parked? Tap "Walk back" and your maps app shows you the way.',
+        ]}
+      />
+
+      <Section
+        icon="warning"
+        emoji="🛑"
+        title='A gentle "wait a second"'
+        lead="The little checks that stop you from getting a ticket you didn't see coming."
+        items={[
+          "If the bay needs paying (a meter, EasyPark, PayStay), we'll ask you to tick that you've paid before saving.",
+          'If the bay is reserved for disability permits, we show a clear red warning.',
+          "Parked somewhere with no signs at all? You can still log it — with a photo of the surroundings to show there really weren't any.",
+        ]}
+      />
+
+      <Section
+        icon="list"
+        emoji="✉️"
+        title="Got a ticket anyway?"
+        lead="Don't write the dispute letter yourself. We'll do it for you."
+        items={[
+          "Photograph the ticket. We'll cross-check it against what we saved when you parked.",
+          'You get a draft letter to the council, plus an honest rating of how strong your case looks.',
+          'Edit anything you want, then download it as a PDF with the parking record attached. Print and post, or email.',
+        ]}
+      />
+
+      <Section
+        icon="check"
+        emoji="🌏"
+        title="A few small kindnesses"
+        lead="The things you shouldn't have to think about, that we've thought about for you."
+        items={[
+          "Free. No app store. Add it to your home screen and it works like a normal app — even when you're offline.",
+          'Available in 7 languages including 中文, Tiếng Việt, Italiano, Ελληνικά, हिन्दी, and ਪੰਜਾਬੀ.',
+          "Times always match the parking spot — scan in Sydney while travelling, you see Sydney times. Not your phone's home zone.",
+          "You don't have to sign in to use any of this. Anonymous works fine.",
         ]}
       />
 
       <Section
         icon="gallery"
-        title="Cloud sync (opt-in)"
-        lead="Choose to sign in — your evidence follows you across devices."
+        emoji="☁️"
+        title="Sign in if you want to"
+        lead="Optional. If you do, your records follow you across devices."
         items={[
-          'Email + password sign-in via Cognito Hosted UI',
-          'Apple federation — single tap with your iCloud account',
-          'Google federation — single tap with your Gmail',
-          'Cloud mirror — saved sessions opportunistically mirror to DynamoDB (metadata) + S3 (photos, per-user prefixes)',
-          'Cross-device recovery — save on phone, view on laptop',
-          'Account export — one tap dumps every saved session as a single PDF',
-          'Account delete — wipes everything: DDB rows, S3 photos, Cognito user record. No retention, no soft-delete',
+          'Sign in with email, your Apple ID, or your Google account.',
+          'Every park you save mirrors to the cloud — so if your phone dies, your evidence is still there.',
+          'One tap to download every record. One tap to delete every record and your account, if you change your mind.',
         ]}
       />
 
-      {/* Open-source / built-right callout */}
-      <div className="mt-4 mb-8 bg-paper-100 border border-paper-300 rounded-2xl p-5">
-        <h3 className="font-display text-base font-extrabold text-ink-900 mb-1">
-          Built in the open, MIT-licensed
-        </h3>
-        <p className="text-sm text-ink-700 leading-relaxed">
-          One AWS Lambda handling 13 routes, 112 tests on CI, ~$5-7 AUD/month to run.
-          The full architecture, build journal, lessons learned, and case study live at{' '}
+      {/* Closing notes — softer than "Not shipped yet" */}
+      <div className="mb-8">
+        <h2 className="font-display text-xl font-extrabold text-ink-900 mb-2">
+          A few things still on the way
+        </h2>
+        <p className="text-sm text-ink-600 leading-relaxed mb-3">
+          ParkProof is a work in progress. The next things we're building:
+        </p>
+        <ul className="space-y-1.5 text-sm text-ink-700">
+          <li>• Reminders that wake your phone even when ParkProof is closed</li>
+          <li>• A heatmap of which Melbourne streets are easiest to park on</li>
+          <li>
+            • Submitting the appeal letter directly to councils (some are blocking us — we're working on it)
+          </li>
+        </ul>
+      </div>
+
+      {/* Build-in-the-open footer note — small, casual */}
+      <div className="mb-10 pt-4 border-t border-paper-300">
+        <p className="text-xs text-ink-500 leading-relaxed">
+          ParkProof is open source — every line of code is public. If you're
+          curious about how it works under the hood, have a look at{' '}
           <a
             href="https://github.com/melroyds/parkproof"
             target="_blank"
             rel="noopener noreferrer"
-            className="text-brand-600 hover:text-brand-700 underline font-medium"
+            className="text-brand-600 hover:text-brand-700 underline"
           >
-            github.com/melroyds/parkproof
+            the GitHub repo
+          </a>
+          . Built in Melbourne by{' '}
+          <a
+            href="https://www.linkedin.com/in/melroyds/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-brand-600 hover:text-brand-700 underline"
+          >
+            Melroy D'Souza
           </a>
           .
         </p>
-      </div>
-
-      {/* Honest gaps */}
-      <div className="mb-10">
-        <h2 className="font-display text-xl font-extrabold text-ink-900 mb-2">
-          Not shipped yet
-        </h2>
-        <p className="text-sm text-ink-600 leading-relaxed mb-3">
-          Honest about gaps — what you'd ask for is on the list.
-        </p>
-        <ul className="space-y-1.5 text-sm text-ink-700">
-          <li>• Web Push background notifications (server-side scheduler in progress)</li>
-          <li>• Citywide parking heatmap (data captured, viewer + cold-start solved next)</li>
-          <li>• Voice confirmation via Web Speech API</li>
-          <li>
-            • Council-specific appeal auto-submission (blocked on council captchas + no public APIs)
-          </li>
-        </ul>
       </div>
 
       {/* CTA back into the app */}
@@ -206,17 +192,21 @@ export default function AboutFeatures({ onBack, onTryIt }: Props) {
 
 interface SectionProps {
   icon: IconName
+  emoji: string
   title: string
   lead: string
   items: string[]
 }
 
-function Section({ icon, title, lead, items }: SectionProps) {
+function Section({ icon, emoji, title, lead, items }: SectionProps) {
   return (
-    <section className="mb-8">
-      <header className="flex items-start gap-3 mb-2">
-        <div className="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-brand-50 text-brand-600 shrink-0 mt-0.5">
-          <Icon name={icon} className="w-5 h-5" strokeWidth={2.25} />
+    <section className="mb-10">
+      <header className="flex items-start gap-3 mb-3">
+        <div className="inline-flex items-center justify-center w-11 h-11 rounded-2xl bg-brand-50 text-brand-600 shrink-0 mt-0.5 text-xl">
+          <span aria-hidden>{emoji}</span>
+          <span className="sr-only">
+            <Icon name={icon} className="w-5 h-5" />
+          </span>
         </div>
         <div className="flex-1 min-w-0">
           <h2 className="font-display text-xl font-extrabold text-ink-900 leading-tight">
@@ -225,10 +215,15 @@ function Section({ icon, title, lead, items }: SectionProps) {
           <p className="text-sm text-ink-600 leading-relaxed mt-1">{lead}</p>
         </div>
       </header>
-      <ul className="space-y-2 mt-3 ml-13 pl-0">
+      <ul className="space-y-2 mt-3">
         {items.map((item) => (
-          <li key={item} className="flex items-start gap-2 text-sm text-ink-700 leading-relaxed">
-            <span className="text-brand-500 shrink-0 mt-0.5">✓</span>
+          <li
+            key={item}
+            className="flex items-start gap-2 text-sm text-ink-700 leading-relaxed"
+          >
+            <span className="text-brand-500 shrink-0 mt-0.5" aria-hidden>
+              ✓
+            </span>
             <span>{item}</span>
           </li>
         ))}
