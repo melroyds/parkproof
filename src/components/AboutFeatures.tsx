@@ -1,10 +1,11 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import Icon from './Icon'
 import {
   getPushPermissionState,
   subscribeToPush,
   getDeviceId,
+  hasActiveSubscription,
 } from '../lib/push'
 
 interface Props {
@@ -35,14 +36,32 @@ export default function AboutFeatures({ onBack, onTryIt }: Props) {
   const [pushStatus, setPushStatus] = useState<
     'idle' | 'requesting' | 'subscribed' | 'denied' | 'unsupported' | 'error'
   >(() => {
-    // Initial state — reflects existing browser permission. Lets a return
-    // visitor see "subscribed" without re-clicking.
+    // Initial sync state — only the cheaply-knowable things. We deliberately
+    // do NOT shortcut to 'subscribed' based on Notification.permission alone,
+    // because that permission survives "Clear site data" while the actual
+    // PushSubscription doesn't — showing "subscribed" when there's no real
+    // subscription leaves users stuck with no way to re-enrol.
     const state = getPushPermissionState()
     if (state === 'unsupported') return 'unsupported'
-    if (state === 'granted') return 'subscribed'
     if (state === 'denied') return 'denied'
     return 'idle'
   })
+
+  // On mount, async-check whether an actual push subscription exists. Only
+  // flip to "subscribed" if BOTH permission is granted AND the SW has a
+  // real subscription object. This survives "Clear site data" honestly —
+  // permission stays granted, but the missing subscription keeps the
+  // Enable button visible so the user can re-enrol.
+  useEffect(() => {
+    let cancelled = false
+    hasActiveSubscription().then((has) => {
+      if (cancelled) return
+      if (has) setPushStatus('subscribed')
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   async function handleEnablePush() {
     setPushStatus('requesting')

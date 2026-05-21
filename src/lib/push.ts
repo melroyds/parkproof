@@ -36,6 +36,29 @@ export function getPushPermissionState(): NotificationPermission | 'unsupported'
   return Notification.permission
 }
 
+/**
+ * Does this browser actually have a live push subscription?
+ *
+ * Distinct from `getPushPermissionState() === 'granted'` — permission is
+ * a long-lived browser grant that survives "Clear site data" + SW
+ * unregistration. The subscription itself is a separate object held by
+ * the SW registration; it can be gone while permission remains granted.
+ *
+ * Returns false (not throws) on any error — safe to call from a useEffect
+ * that just wants to gate UI on "real subscribed state".
+ */
+export async function hasActiveSubscription(): Promise<boolean> {
+  if (!isPushSupported()) return false
+  if (Notification.permission !== 'granted') return false
+  try {
+    const reg = await navigator.serviceWorker.ready
+    const sub = await reg.pushManager.getSubscription()
+    return sub !== null
+  } catch {
+    return false
+  }
+}
+
 /** Generate or fetch a stable device id (UUID) per browser. Persisted in
  *  localStorage. Used as the partition key for the push-subscriptions
  *  table — keeps the data anonymous (no Cognito sub required). */
