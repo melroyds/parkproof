@@ -543,9 +543,8 @@
   "about": {
     "title": "Tutto quello che fa ParkProof",
     "lead": "Probabilmente sei qui pensando ah, legge i cartelli di parcheggio. È vero. Ma già che c'eravamo, abbiamo deciso di salvare anche le prove nel caso tu prenda una multa ingiusta, scriverti la lettera di ricorso se serve, e ricordarti di spostare la macchina prima che scada il tempo. Ecco il tour amichevole.",
-    "footerNote": "ParkProof è open source — ogni riga di codice è pubblica. Realizzato a Melbourne da Melroy D'Souza.",
+    "footerNote": "ParkProof è open source — ogni riga di codice è pubblica. Realizzato a Melbourne.",
     "sourceOnGitHub": "Codice sorgente su GitHub →",
-    "connectOnLinkedIn": "Collegati su LinkedIn →",
     "cta": "Provalo — scansiona un cartello",
     "scan": {
       "title": "Fotografa un cartello, ottieni una risposta",

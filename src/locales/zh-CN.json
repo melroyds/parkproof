@@ -537,9 +537,8 @@
   "about": {
     "title": "ParkProof 的全部功能",
     "lead": "你大概以为它只是一个停车标志翻译器。它确实是这个。但同时，我们还顺便帮你保存停车证据，以防遇到不公正的罚单。如果真的收到罚单，它还能帮你写申诉信，并在停车时间到期前提醒你挪车。下面是友好的功能介绍。",
-    "footerNote": "ParkProof 是开源项目 — 每一行代码都是公开的。墨尔本 Melroy D'Souza 出品。",
+    "footerNote": "ParkProof 是开源项目 — 每一行代码都是公开的。墨尔本制造。",
     "sourceOnGitHub": "在 GitHub 上查看源代码 →",
-    "connectOnLinkedIn": "在 LinkedIn 上联系 →",
     "cta": "马上试试 — 扫描一个停车标志",
     "scan": {
       "title": "拍下标志，得到答案",

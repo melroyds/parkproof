@@ -93,9 +93,8 @@
         "One tap to download every record. One tap to delete every record and your account, if you change your mind."
       ]
     },
-    "footerNote": "ParkProof is open source — every line of code is public. Built in Melbourne by Melroy D'Souza.",
+    "footerNote": "ParkProof is open source — every line of code is public. Built in Melbourne.",
     "sourceOnGitHub": "Source on GitHub →",
-    "connectOnLinkedIn": "Connect on LinkedIn →",
     "cta": "Try it — scan a sign"
   },
   "landing": {

@@ -70,29 +70,23 @@ export default function AboutFeatures({ onBack, onTryIt }: Props) {
         />
       ))}
 
-      {/* Build-in-the-open footer — minimal, friendly */}
+      {/* Build-in-the-open footer — minimal, friendly. Single GitHub link
+          (open-source credibility); LinkedIn intentionally NOT linked from
+          here — keeps the in-app surface free of personal identity for the
+          regular-user audience. People who care to find the maker can still
+          do so via the README on GitHub. */}
       <div className="mb-8 pt-4 border-t border-paper-300">
         <p className="text-xs text-ink-500 leading-relaxed mb-3">
           {t('about.footerNote')}
         </p>
-        <div className="flex flex-wrap gap-3">
-          <a
-            href="https://github.com/melroyds/parkproof"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-xs text-brand-600 hover:text-brand-700 underline"
-          >
-            {t('about.sourceOnGitHub')}
-          </a>
-          <a
-            href="https://www.linkedin.com/in/melroyds/"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-xs text-brand-600 hover:text-brand-700 underline"
-          >
-            {t('about.connectOnLinkedIn')}
-          </a>
-        </div>
+        <a
+          href="https://github.com/melroyds/parkproof"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-xs text-brand-600 hover:text-brand-700 underline"
+        >
+          {t('about.sourceOnGitHub')}
+        </a>
       </div>
 
       <button

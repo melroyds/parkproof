@@ -537,9 +537,8 @@
   "about": {
     "title": "Mọi thứ ParkProof có thể làm",
     "lead": "Bạn có lẽ đến đây với suy nghĩ ồ, nó đọc biển báo đỗ xe. Đúng là nó làm vậy. Nhưng nhân tiện, chúng tôi cũng lưu lại bằng chứng phòng khi bạn bị phạt oan, viết thư khiếu nại giúp bạn nếu cần, và nhắc bạn dời xe trước khi hết giờ. Đây là tour giới thiệu thân thiện.",
-    "footerNote": "ParkProof là mã nguồn mở — mọi dòng code đều công khai. Được xây dựng tại Melbourne bởi Melroy D'Souza.",
+    "footerNote": "ParkProof là mã nguồn mở — mọi dòng code đều công khai. Được xây dựng tại Melbourne.",
     "sourceOnGitHub": "Mã nguồn trên GitHub →",
-    "connectOnLinkedIn": "Kết nối trên LinkedIn →",
     "cta": "Thử ngay — quét một biển báo",
     "scan": {
       "title": "Chụp biển báo, nhận câu trả lời",
