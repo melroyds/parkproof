@@ -7,6 +7,7 @@ import {
   GetCommand,
   PutCommand,
 } from '@aws-sdk/lib-dynamodb'
+import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3'
 import crypto from 'node:crypto'
 import tzlookup from 'tz-lookup'
 import {
@@ -841,6 +842,109 @@ async function handleFeedback(event) {
   return { statusCode: 204, headers: CORS_HEADERS, body: '' }
 }
 
+// ─── /user-feedback handler ───────────────────────────────────────────────
+// Free-text user feedback. Distinct from /feedback (which is AI-verdict
+// telemetry). This one captures "the app broke when I tried to scan a
+// faded Clearway sign" / "I love the appeal letter feature" / etc.
+//
+// Storage: CloudWatch (primary, queryable via Logs Insights) + S3 mirror
+// (durable, long-term). No email forwarding — deliberately. Volume from a
+// Reddit launch could be 50-200 in a day; an email firehose fatigues fast.
+// SES integration is a ~10-line addition when wanted.
+const USER_FEEDBACK_BUCKET = process.env.S3_BUCKET_USER_FEEDBACK
+let _s3UserFeedback
+function s3UserFeedback() {
+  if (!_s3UserFeedback) _s3UserFeedback = new S3Client({ region: REGION })
+  return _s3UserFeedback
+}
+
+async function handleUserFeedback(event) {
+  const body = typeof event.body === 'string' ? JSON.parse(event.body) : event.body || {}
+
+  // message is required, max 5000 chars (matches the frontend textarea limit)
+  const message = typeof body.message === 'string' ? body.message.trim() : ''
+  if (!message) {
+    return {
+      statusCode: 400,
+      headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ error: 'message is required' }),
+    }
+  }
+  if (message.length > 5000) {
+    return {
+      statusCode: 400,
+      headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ error: 'message must be 5000 characters or fewer' }),
+    }
+  }
+
+  // Optional email. Capped at RFC 5321 max length (254 chars). Soft-validate
+  // shape — we're not gating delivery on a perfect regex, just stopping
+  // obvious garbage.
+  const rawEmail = typeof body.email === 'string' ? body.email.trim() : ''
+  const email =
+    rawEmail.length > 0 && rawEmail.length <= 254 && rawEmail.includes('@')
+      ? rawEmail.slice(0, 254)
+      : null
+
+  // Optional context — page, UA, app version, locale, sessions_count. All
+  // truncated defensively. No PII beyond what the user voluntarily provides.
+  const ctx = body.context && typeof body.context === 'object' ? body.context : {}
+  const safeCtx = {
+    page: typeof ctx.page === 'string' ? ctx.page.slice(0, 100) : undefined,
+    user_agent:
+      typeof ctx.user_agent === 'string' ? ctx.user_agent.slice(0, 300) : undefined,
+    app_version:
+      typeof ctx.app_version === 'string' ? ctx.app_version.slice(0, 30) : undefined,
+    locale: typeof ctx.locale === 'string' ? ctx.locale.slice(0, 10) : undefined,
+    sessions_count:
+      typeof ctx.sessions_count === 'number' && Number.isFinite(ctx.sessions_count)
+        ? ctx.sessions_count
+        : undefined,
+    is_signed_in:
+      typeof ctx.is_signed_in === 'boolean' ? ctx.is_signed_in : undefined,
+  }
+
+  const id = crypto.randomUUID()
+  const timestamp = new Date().toISOString()
+  const record = {
+    id,
+    timestamp,
+    message,
+    email,
+    ...safeCtx,
+  }
+
+  // CloudWatch — primary store, queryable from Logs Insights immediately.
+  console.log(`[parkproof.user_feedback] ${JSON.stringify(record)}`)
+
+  // S3 — durable mirror. Best-effort: if it fails (transient S3 error, IAM
+  // misconfig, bucket env var unset) the CloudWatch entry still lands.
+  if (USER_FEEDBACK_BUCKET) {
+    try {
+      const date = timestamp.slice(0, 10) // YYYY-MM-DD
+      const key = `${date}/${id}.json`
+      await s3UserFeedback().send(
+        new PutObjectCommand({
+          Bucket: USER_FEEDBACK_BUCKET,
+          Key: key,
+          Body: JSON.stringify(record, null, 2),
+          ContentType: 'application/json',
+          // Short-circuit Glacier-style automatic transitions; lifecycle policy
+          // on the bucket handles long-term retention strategy.
+          StorageClass: 'STANDARD',
+        }),
+      )
+    } catch (err) {
+      console.error(
+        `[parkproof.user_feedback.s3_error] ${err?.message || String(err)} (id=${id})`,
+      )
+    }
+  }
+
+  return { statusCode: 204, headers: CORS_HEADERS, body: '' }
+}
+
 // ─── /sign-translate handler ──────────────────────────────────────────────
 async function handleSignTranslate(event) {
   try {
@@ -974,6 +1078,22 @@ export async function handler(event) {
       return await handleJobStatus(event)
     } catch (err) {
       console.error('job-status handler error:', err)
+      return {
+        statusCode: 500,
+        headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ error: err?.message || String(err) }),
+      }
+    }
+  }
+
+  // /user-feedback must be matched BEFORE /feedback — endsWith('/feedback')
+  // would match both otherwise, dispatching free-text feedback to the AI
+  // verdict handler. Order-sensitive.
+  if (path.endsWith('/user-feedback')) {
+    try {
+      return await handleUserFeedback(event)
+    } catch (err) {
+      console.error('user-feedback handler error:', err)
       return {
         statusCode: 500,
         headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },

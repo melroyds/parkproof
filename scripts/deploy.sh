@@ -45,6 +45,7 @@ if [[ -f scripts/.aws-resources ]]; then
   echo "    Cognito User Pool: ${COGNITO_USER_POOL_ID:-(unset)}"
   echo "    DDB sessions:      ${DYNAMODB_TABLE_SESSIONS:-(unset)}"
   echo "    S3 evidence:       ${S3_BUCKET_EVIDENCE:-(unset)}"
+  echo "    S3 user-feedback:  ${S3_BUCKET_USER_FEEDBACK:-(unset)}"
 fi
 
 ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
@@ -131,11 +132,12 @@ MERGED_ENV=$(
   COGNITO_APP_CLIENT_ID="${COGNITO_APP_CLIENT_ID:-}" \
   DYNAMODB_TABLE_SESSIONS="${DYNAMODB_TABLE_SESSIONS:-}" \
   S3_BUCKET_EVIDENCE="${S3_BUCKET_EVIDENCE:-}" \
+  S3_BUCKET_USER_FEEDBACK="${S3_BUCKET_USER_FEEDBACK:-}" \
   echo "$EXISTING_ENV" | node -e "
   const data = require('fs').readFileSync(0, 'utf8');
   const incoming = JSON.parse(data || '{}') || {};
   incoming.ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
-  for (const key of ['COGNITO_USER_POOL_ID', 'COGNITO_APP_CLIENT_ID', 'DYNAMODB_TABLE_SESSIONS', 'S3_BUCKET_EVIDENCE']) {
+  for (const key of ['COGNITO_USER_POOL_ID', 'COGNITO_APP_CLIENT_ID', 'DYNAMODB_TABLE_SESSIONS', 'S3_BUCKET_EVIDENCE', 'S3_BUCKET_USER_FEEDBACK']) {
     if (process.env[key]) incoming[key] = process.env[key];
   }
   process.stdout.write(JSON.stringify({ Variables: incoming }));
@@ -263,6 +265,7 @@ ensure_route() {
 }
 
 ensure_route "feedback"
+ensure_route "user-feedback"
 ensure_route "draft-appeal"
 ensure_route "sign-session"
 

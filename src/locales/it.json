@@ -17,7 +17,9 @@
     "mediumConfidence": "Media affidabilità",
     "lowConfidence": "Bassa affidabilità",
     "yes": "Sì",
-    "no": "No"
+    "no": "No",
+    "close": "Chiudi",
+    "sendFeedback": "Invia feedback"
   },
   "language": {
     "title": "Lingua",
@@ -508,5 +510,22 @@
     "parkedForHour_one": "Parcheggiato da 1 ora",
     "parkedForHours_other": "Parcheggiato da {{count}} ore",
     "parkedForHoursMins": "Parcheggiato da {{hours}}h {{mins}}m"
+  },
+  "feedback": {
+    "title": "Invia feedback",
+    "intro": "Dicci cosa ha funzionato, cosa si è rotto, o cosa vorresti che ParkProof facesse. Leggiamo ogni messaggio.",
+    "messageLabel": "Il tuo messaggio",
+    "messagePlaceholder": "Hai trovato un bug, hai un'idea, o vuoi solo salutare? Scrivici qui…",
+    "emailLabel": "Email",
+    "emailOptional": "(opzionale)",
+    "emailPlaceholder": "tu@esempio.com",
+    "emailHelp": "Usata solo se dobbiamo risponderti. Lascia vuoto per inviare in modo anonimo.",
+    "send": "Invia",
+    "sending": "Invio…",
+    "successTitle": "Grazie!",
+    "successBody": "Il tuo feedback è arrivato. Lo leggeremo appena torniamo alla tastiera.",
+    "error": {
+      "generic": "Invio non riuscito — riprova tra poco."
+    }
   }
 }

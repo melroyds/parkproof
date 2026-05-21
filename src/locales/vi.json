@@ -17,7 +17,9 @@
     "mediumConfidence": "Độ tin cậy trung bình",
     "lowConfidence": "Độ tin cậy thấp",
     "yes": "Có",
-    "no": "Không"
+    "no": "Không",
+    "close": "Đóng",
+    "sendFeedback": "Gửi phản hồi"
   },
   "language": {
     "title": "Ngôn ngữ",
@@ -502,5 +504,22 @@
     "parkedForHour_one": "Đã đậu 1 giờ",
     "parkedForHours_other": "Đã đậu {{count}} giờ",
     "parkedForHoursMins": "Đã đậu {{hours}} giờ {{mins}} phút"
+  },
+  "feedback": {
+    "title": "Gửi phản hồi",
+    "intro": "Hãy cho chúng tôi biết điều gì hoạt động tốt, điều gì hỏng, hoặc bạn mong ParkProof làm được gì. Chúng tôi đọc mọi tin nhắn.",
+    "messageLabel": "Tin nhắn của bạn",
+    "messagePlaceholder": "Phát hiện lỗi, có ý tưởng, hay chỉ muốn chào? Cho chúng tôi biết tại đây…",
+    "emailLabel": "Email",
+    "emailOptional": "(tùy chọn)",
+    "emailPlaceholder": "you@example.com",
+    "emailHelp": "Chỉ dùng nếu chúng tôi cần liên hệ lại. Để trống để gửi ẩn danh.",
+    "send": "Gửi",
+    "sending": "Đang gửi…",
+    "successTitle": "Cảm ơn!",
+    "successBody": "Phản hồi của bạn đã được nhận. Chúng tôi sẽ đọc ngay khi trở lại bàn phím.",
+    "error": {
+      "generic": "Không thể gửi — vui lòng thử lại sau."
+    }
   }
 }

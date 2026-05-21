@@ -17,7 +17,9 @@
     "mediumConfidence": "ਮੱਧਮ ਭਰੋਸਾ",
     "lowConfidence": "ਘੱਟ ਭਰੋਸਾ",
     "yes": "ਹਾਂ",
-    "no": "ਨਹੀਂ"
+    "no": "ਨਹੀਂ",
+    "close": "ਬੰਦ ਕਰੋ",
+    "sendFeedback": "ਫੀਡਬੈਕ ਭੇਜੋ"
   },
   "language": {
     "title": "ਭਾਸ਼ਾ",
@@ -502,5 +504,22 @@
     "parkedForHour_one": "1 ਘੰਟੇ ਤੋਂ ਪਾਰਕ ਹੈ",
     "parkedForHours_other": "{{count}} ਘੰਟੇ ਤੋਂ ਪਾਰਕ ਹੈ",
     "parkedForHoursMins": "{{hours}} ਘੰਟੇ {{mins}} ਮਿੰਟ ਤੋਂ ਪਾਰਕ ਹੈ"
+  },
+  "feedback": {
+    "title": "ਫੀਡਬੈਕ ਭੇਜੋ",
+    "intro": "ਸਾਨੂੰ ਦੱਸੋ ਕੀ ਕੰਮ ਕੀਤਾ, ਕੀ ਟੁੱਟਿਆ, ਜਾਂ ਤੁਸੀਂ ParkProof ਤੋਂ ਕੀ ਚਾਹੁੰਦੇ ਹੋ। ਅਸੀਂ ਹਰ ਸੁਨੇਹਾ ਪੜ੍ਹਦੇ ਹਾਂ।",
+    "messageLabel": "ਤੁਹਾਡਾ ਸੁਨੇਹਾ",
+    "messagePlaceholder": "ਕੋਈ ਬੱਗ ਮਿਲਿਆ, ਕੋਈ ਵਿਚਾਰ ਹੈ, ਜਾਂ ਬੱਸ ਹੈਲੋ ਕਹਿਣਾ ਹੈ? ਇੱਥੇ ਦੱਸੋ…",
+    "emailLabel": "ਈਮੇਲ",
+    "emailOptional": "(ਚੋਣਵੀਂ)",
+    "emailPlaceholder": "tuhada@misal.com",
+    "emailHelp": "ਸਿਰਫ਼ ਉਦੋਂ ਵਰਤੀ ਜਾਵੇਗੀ ਜਦੋਂ ਸਾਨੂੰ ਜਵਾਬ ਦੇਣ ਦੀ ਲੋੜ ਹੋਵੇ। ਗੁਮਨਾਮ ਭੇਜਣ ਲਈ ਖਾਲੀ ਛੱਡੋ।",
+    "send": "ਭੇਜੋ",
+    "sending": "ਭੇਜ ਰਹੇ ਹਾਂ…",
+    "successTitle": "ਧੰਨਵਾਦ!",
+    "successBody": "ਤੁਹਾਡਾ ਫੀਡਬੈਕ ਮਿਲ ਗਿਆ। ਅਸੀਂ ਜਿਵੇਂ ਹੀ ਕੀਬੋਰਡ 'ਤੇ ਵਾਪਸ ਆਉਂਦੇ ਹਾਂ, ਪੜ੍ਹਾਂਗੇ।",
+    "error": {
+      "generic": "ਭੇਜਿਆ ਨਹੀਂ ਜਾ ਸਕਿਆ — ਕਿਰਪਾ ਕਰਕੇ ਥੋੜੀ ਦੇਰ ਬਾਅਦ ਦੁਬਾਰਾ ਕੋਸ਼ਿਸ਼ ਕਰੋ।"
+    }
   }
 }

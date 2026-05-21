@@ -10,7 +10,9 @@
     "delete": "Delete",
     "edit": "Edit",
     "retry": "Retry",
+    "close": "Close",
     "privacy": "Privacy",
+    "sendFeedback": "Send feedback",
     "loading": "Loading…",
     "optional": "optional",
     "highConfidence": "High confidence",
@@ -381,6 +383,23 @@
     "step2": "Identifying parking rules…",
     "step3": "Computing when you can park…",
     "step4": "Composing the answer…"
+  },
+  "feedback": {
+    "title": "Send feedback",
+    "intro": "Tell us what worked, what broke, or what you wish ParkProof did. We read every message.",
+    "messageLabel": "Your message",
+    "messagePlaceholder": "Found a bug, have an idea, or just want to say hi? Tell us here…",
+    "emailLabel": "Email",
+    "emailOptional": "(optional)",
+    "emailPlaceholder": "you@example.com",
+    "emailHelp": "Only used if we need to follow up. Leave blank to submit anonymously.",
+    "send": "Send",
+    "sending": "Sending…",
+    "successTitle": "Thanks!",
+    "successBody": "Your feedback landed. We'll read it as soon as we're back at the keyboard.",
+    "error": {
+      "generic": "Couldn't send — please try again in a moment."
+    }
   },
   "errors": {
     "somethingWrong": "Something went wrong",

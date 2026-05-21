@@ -20,7 +20,7 @@ npm run dev   # → http://localhost:5173
 
 ## How the backend works
 
-There is **one** Lambda function (`parkproof-sign-translator`) handling twelve HTTP routes via path dispatch in [`lambda/index.js`](lambda/index.js):
+There is **one** Lambda function (`parkproof-sign-translator`) handling thirteen HTTP routes via path dispatch in [`lambda/index.js`](lambda/index.js):
 
 **Anonymous routes** (no auth required):
 
@@ -32,6 +32,7 @@ There is **one** Lambda function (`parkproof-sign-translator`) handling twelve H
 | `GET /draft-appeal/status/{job_id}` | `handleJobStatus` | Poll target for the async draft-appeal job |
 | `POST /sign-session` | `handleSignSession` | KMS-backed ECDSA P-256 signature over the canonical session metadata |
 | `POST /feedback` | `handleFeedback` | Layers 1 + 2 telemetry: logs `[parkproof.feedback]` events to CloudWatch with verdict + model context (confidence, sign-pattern, hour, etc.) |
+| `POST /user-feedback` | `handleUserFeedback` | Free-text user feedback (distinct from AI-verdict above). Logs `[parkproof.user_feedback]` to CloudWatch + mirrors record to S3 bucket `parkproof-user-feedback-*` at `YYYY-MM-DD/{uuid}.json`. Anonymous; no JWT. |
 
 **JWT-authenticated routes** (Cognito-issued access token, verified by API Gateway authorizer before Lambda runs — see [`lambda/cloud-sync.js`](lambda/cloud-sync.js)):
 
@@ -160,6 +161,7 @@ The state is a discriminated union in [`src/App.tsx`](src/App.tsx). When adding 
 | DynamoDB table | `parkproof-sessions` (PK = `userId`, SK = `sessionId`) |
 | S3 bucket — static hosting | `parkproof-app-251800369612` (private; CloudFront OAC only) |
 | S3 bucket — evidence photos | `parkproof-evidence-251800369612` (private; per-user `{sub}/` prefixes; presigned `PUT` only) |
+| S3 bucket — user feedback | `parkproof-user-feedback-251800369612` (private; date-partitioned `YYYY-MM-DD/{uuid}.json`; 2-year lifecycle expiry; AES256 SSE; Lambda has `s3:PutObject` only). Provisioned via `scripts/setup-feedback-bucket.sh`. |
 | KMS asymmetric key | alias `alias/parkproof-evidence-signing` (ECDSA P-256). Public key shipped at `/parkproof-public-key.pem` |
 | CloudFront distribution | `E33V8DMM3LQACG` → `www.parkproof.com.au` + legacy `parkproof.dsouza.tech` (both as alt-names) / fallback `d1jmpu2roekssu.cloudfront.net` |
 | CloudFront Origin Access Control | `parkproof-oac` (id `E3JE1OX4WHEIWK`) |
@@ -192,8 +194,24 @@ Two structured log prefixes worth knowing:
 
 - `[parkproof]` — per-request timing: `preflight=Nms model=X tz=Y image_b64_len=Z mode=translate|refresh`, then `anthropic_call=Nms stop=... usage={...}`, then `parse=Nms total=Nms`.
 - `[parkproof.feedback]` — Feedback events. Layer 1 fields: `{verdict, feedback_id, timestamp}`. Layer 2 (additive — old clients still work without these): `{confidence, had_clarification, chosen_label, duration_minutes, observations_count, rules_excerpt, scanned_hour_local, is_refresh}`.
+- `[parkproof.user_feedback]` — Free-text user feedback (distinct from AI-verdict telemetry above). Fields: `{id, timestamp, message, email, page, user_agent, app_version, locale, sessions_count, is_signed_in}`. Also mirrored to S3 bucket `parkproof-user-feedback-{accountId}` at `YYYY-MM-DD/{uuid}.json` for 2-year retention. See `scripts/setup-feedback-bucket.sh` for bucket provisioning (lifecycle, encryption, IAM).
+- `[parkproof.user_feedback.s3_error]` — Rare: indicates the S3 mirror failed (IAM, transient, or bucket env var unset). CloudWatch still has the record. Fix the IAM if you see these.
 
 **Useful Logs Insights queries** (log group `/aws/lambda/parkproof-sign-translator`):
+
+```
+# Free-text user feedback — read the actual messages
+# Most useful query during a launch window. Sort newest first; truncate
+# message to ~200 chars for the dashboard view.
+fields @timestamp, @message
+| filter @message like "[parkproof.user_feedback]"
+| parse @message /"message":"(?<msg>[^"]+)"/
+| parse @message /"email":"(?<email>[^"]+)"/
+| parse @message /"page":"(?<page>[^"]+)"/
+| sort @timestamp desc
+| display @timestamp, page, email, msg
+| limit 50
+```
 
 ```
 # Layer 1 — Verdict counts (overall accept rate)

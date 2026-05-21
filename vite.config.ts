@@ -2,6 +2,7 @@ import dotenv from 'dotenv'
 import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
 import { existsSync } from 'node:fs'
+import crypto from 'node:crypto'
 import { defineConfig } from 'vite'
 import type { Plugin } from 'vite'
 import react from '@vitejs/plugin-react'
@@ -244,6 +245,53 @@ function signTranslateApi(): Plugin {
           }
         })
       }
+
+      // Dev proxy for /api/user-feedback — must register BEFORE /api/feedback
+      // so the more-specific path wins (Vite's middleware matches by prefix).
+      server.middlewares.use('/api/user-feedback', async (req, res) => {
+        if (req.method === 'OPTIONS') {
+          res.statusCode = 204
+          res.end()
+          return
+        }
+        if (req.method !== 'POST') {
+          res.statusCode = 405
+          res.end()
+          return
+        }
+        try {
+          const chunks: Buffer[] = []
+          for await (const chunk of req) {
+            chunks.push(chunk as Buffer)
+          }
+          const body = JSON.parse(Buffer.concat(chunks).toString('utf8'))
+          const { message } = body as { message?: string; email?: string }
+          if (typeof message !== 'string' || !message.trim()) {
+            res.statusCode = 400
+            res.setHeader('Content-Type', 'application/json')
+            res.end(JSON.stringify({ error: 'message is required' }))
+            return
+          }
+          // Dev — log it, skip S3. Production lambda mirrors to S3; dev just
+          // prints so you can see the payload while developing the modal.
+          console.log(
+            `[parkproof.user_feedback] ${JSON.stringify({
+              id: crypto.randomUUID(),
+              timestamp: new Date().toISOString(),
+              message: message.slice(0, 200) + (message.length > 200 ? '…' : ''),
+              email: body.email || null,
+              context: body.context,
+            })}`,
+          )
+          res.statusCode = 204
+          res.end()
+        } catch (err) {
+          console.error('[/api/user-feedback]', err)
+          res.statusCode = 500
+          res.setHeader('Content-Type', 'application/json')
+          res.end(JSON.stringify({ error: String(err) }))
+        }
+      })
 
       server.middlewares.use('/api/feedback', async (req, res) => {
         if (req.method === 'OPTIONS') {

@@ -17,7 +17,9 @@
     "mediumConfidence": "中等置信度",
     "lowConfidence": "低置信度",
     "yes": "是",
-    "no": "否"
+    "no": "否",
+    "close": "关闭",
+    "sendFeedback": "发送反馈"
   },
   "language": {
     "title": "语言",
@@ -502,5 +504,22 @@
     "parkedForHour_one": "已停 1 小时",
     "parkedForHours_other": "已停 {{count}} 小时",
     "parkedForHoursMins": "已停 {{hours}} 小时 {{mins}} 分钟"
+  },
+  "feedback": {
+    "title": "发送反馈",
+    "intro": "告诉我们什么有效、什么有问题，或您希望 ParkProof 能做什么。我们会阅读每条消息。",
+    "messageLabel": "您的留言",
+    "messagePlaceholder": "发现 bug、有想法，或只是想打个招呼？请在这里告诉我们……",
+    "emailLabel": "电子邮件",
+    "emailOptional": "（可选）",
+    "emailPlaceholder": "you@example.com",
+    "emailHelp": "仅在我们需要回复时使用。留空即可匿名提交。",
+    "send": "发送",
+    "sending": "发送中……",
+    "successTitle": "谢谢！",
+    "successBody": "您的反馈已送达。我们回到键盘前会立即阅读。",
+    "error": {
+      "generic": "无法发送 — 请稍后再试。"
+    }
   }
 }

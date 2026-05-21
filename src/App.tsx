@@ -14,6 +14,7 @@ import ActiveSessionsList from './components/ActiveSessionsList'
 import AuthFlow from './components/AuthFlow'
 import AuthSettings from './components/AuthSettings'
 import PrivacyPolicy from './components/PrivacyPolicy'
+import FeedbackModal from './components/FeedbackModal'
 import LanguageSelector from './components/LanguageSelector'
 import Icon from './components/Icon'
 import LoadingProgress from './components/LoadingProgress'
@@ -66,6 +67,7 @@ function stripDataUrlPrefix(dataUrl: string): string {
 
 function App() {
   const [view, setView] = useState<View>({ name: 'home' })
+  const [feedbackOpen, setFeedbackOpen] = useState(false)
   const auth = useAuth()
   const { t } = useTranslation()
 
@@ -627,13 +629,32 @@ function App() {
           </ol>
         )}
 
-        <button
-          onClick={() => setView({ name: 'privacy' })}
-          className="mt-8 text-xs text-ink-500 hover:text-ink-700 underline self-center"
-        >
-          {t('common.privacy')}
-        </button>
+        <div className="mt-8 flex items-center justify-center gap-6 self-center">
+          <button
+            onClick={() => setView({ name: 'privacy' })}
+            className="text-xs text-ink-500 hover:text-ink-700 underline"
+          >
+            {t('common.privacy')}
+          </button>
+          <button
+            onClick={() => setFeedbackOpen(true)}
+            className="text-xs text-ink-500 hover:text-ink-700 underline"
+          >
+            {t('common.sendFeedback')}
+          </button>
+        </div>
       </section>
+
+      <FeedbackModal
+        open={feedbackOpen}
+        onClose={() => setFeedbackOpen(false)}
+        context={{
+          page: 'home',
+          app_version: import.meta.env.VITE_APP_VERSION as string | undefined,
+          sessions_count: sessionCount,
+          is_signed_in: !!auth.user,
+        }}
+      />
     </main>
   )
 }

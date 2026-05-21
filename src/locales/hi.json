@@ -17,7 +17,9 @@
     "mediumConfidence": "मध्यम विश्वास",
     "lowConfidence": "कम विश्वास",
     "yes": "हाँ",
-    "no": "नहीं"
+    "no": "नहीं",
+    "close": "बंद करें",
+    "sendFeedback": "फीडबैक भेजें"
   },
   "language": {
     "title": "भाषा",
@@ -502,5 +504,22 @@
     "parkedForHour_one": "1 घंटे से पार्क है",
     "parkedForHours_other": "{{count}} घंटे से पार्क है",
     "parkedForHoursMins": "{{hours}} घंटे {{mins}} मिनट से पार्क है"
+  },
+  "feedback": {
+    "title": "फीडबैक भेजें",
+    "intro": "हमें बताएं क्या काम किया, क्या टूटा, या आप ParkProof से क्या चाहते हैं। हम हर संदेश पढ़ते हैं।",
+    "messageLabel": "आपका संदेश",
+    "messagePlaceholder": "कोई बग मिला, कोई विचार है, या बस नमस्ते कहना है? यहां बताएं…",
+    "emailLabel": "ईमेल",
+    "emailOptional": "(वैकल्पिक)",
+    "emailPlaceholder": "aap@udaharan.com",
+    "emailHelp": "केवल तभी उपयोग किया जाएगा जब हमें जवाब देने की आवश्यकता हो। गुमनाम भेजने के लिए खाली छोड़ें।",
+    "send": "भेजें",
+    "sending": "भेज रहे हैं…",
+    "successTitle": "धन्यवाद!",
+    "successBody": "आपका फीडबैक मिल गया। हम कीबोर्ड पर वापस आते ही पढ़ेंगे।",
+    "error": {
+      "generic": "भेजा नहीं जा सका — कृपया कुछ देर में पुनः प्रयास करें।"
+    }
   }
 }
