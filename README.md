@@ -370,8 +370,9 @@ ParkProof/
 
 ## Further reading
 
+- [`docs/features.md`](docs/features.md) — **canonical feature showcase**: every cool thing ParkProof does, grouped thematically, with copy-paste-ready bullets for Reddit / LinkedIn / interview use
 - [`docs/case-study.md`](docs/case-study.md) — PM-craft narrative: how the project was scoped, sequenced, and traded off
-- [`docs/parkproof-build-journal.pdf`](docs/parkproof-build-journal.pdf) — chronological build journal with decision-tree branches at every pivot (6 days, 44 commits, the failed architectures preserved)
+- [`docs/parkproof-build-journal.pdf`](docs/parkproof-build-journal.pdf) — chronological build journal with decision-tree branches at every pivot (6 days, 50+ commits, the failed architectures preserved)
 - [`docs/how-parkproof-was-built.pdf`](docs/how-parkproof-was-built.pdf) — ELI15 explainer of the stack + architecture
 - [`docs/lessons-for-next-project.md`](docs/lessons-for-next-project.md) — portable takeaways: what to do (and not do) on the next portfolio project, distilled from ParkProof
 
