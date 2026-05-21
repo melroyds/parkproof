@@ -321,9 +321,13 @@ async function captureFlow({ page, signPhotoPath, carPhotoPath, ticketPath }) {
   await page.screenshot({ path: join(OUT_DIR, '01-scan.png'), animations: 'disabled', fullPage: true })
   console.log('[screenshots] ✓ 01-scan')
 
-  // Upload the fixture sign. Both file inputs are hidden but setInputFiles
-  // works regardless of visibility.
-  await page.locator('input[type=file]').first().setInputFiles(signPhotoPath)
+  // Upload the fixture sign. There are FOUR hidden file inputs on this
+  // screen — in render order:
+  //   0,1: ambient camera + library (the "no posted restrictions" flow)
+  //   2,3: sign camera + library (the translate flow)
+  // We want the sign camera, so nth(2). If SignScanner.tsx ever reorders
+  // these, update the index here. setInputFiles bypasses visibility.
+  await page.locator('input[type=file]').nth(2).setInputFiles(signPhotoPath)
   // resizeImageFile() runs async on the change event — wait for the preview
   // image and Translate button to render before clicking.
   // Button reads "Translate" when the photo-quality pre-check is happy and
@@ -595,7 +599,12 @@ async function captureFlow({ page, signPhotoPath, carPhotoPath, ticketPath }) {
     const file = new File([blob], 'dark-blurry-sign.png', { type: 'image/png' })
     const dt = new DataTransfer()
     dt.items.add(file)
-    const input = document.querySelector('input[type=file]')
+    // Same input ordering caveat as line 330 — index 2 is the sign-camera
+    // input (0,1 are the ambient/no-sign inputs). Targeting the wrong one
+    // sends us through handleAmbientFile and skips the quality pre-check
+    // entirely, so the warning UI never renders.
+    const inputs = document.querySelectorAll('input[type=file]')
+    const input = inputs[2] || inputs[0]
     input.files = dt.files
     input.dispatchEvent(new Event('change', { bubbles: true }))
   })
