@@ -397,6 +397,16 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'apple-touch-icon-180x180.png'],
+      // injectManifest mode — we provide a custom service-worker.ts that
+      // handles push + notificationclick events (in addition to precaching).
+      // Workbox's auto-generated SW in generateSW mode doesn't expose those
+      // hooks. Required for Web Push to actually render a notification.
+      strategies: 'injectManifest',
+      srcDir: 'src',
+      filename: 'service-worker.ts',
+      injectManifest: {
+        globPatterns: ['**/*.{js,css,html,svg,png,ico,woff2}'],
+      },
       manifest: {
         name: 'ParkProof',
         short_name: 'ParkProof',
@@ -419,11 +429,6 @@ export default defineConfig({
             purpose: 'maskable',
           },
         ],
-      },
-      workbox: {
-        // Don't cache API responses — the sign translator should always hit Lambda live.
-        navigateFallbackDenylist: [/^\/sign-translate/, /^\/api\//],
-        globPatterns: ['**/*.{js,css,html,svg,png,ico,woff2}'],
       },
     }),
   ],
