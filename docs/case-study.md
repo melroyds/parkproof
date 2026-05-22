@@ -109,7 +109,7 @@ The argument *against* it: nobody has ever used a ParkProof PDF in a real counci
 
 I built it anyway, for one reason: **the cost is small once and the value compounds.** $1/month for the KMS key. The `openssl dgst -verify` walkthrough in the PDF is one paragraph. And the day a real user actually submits a ParkProof PDF to a council, it'll be the differentiator. I'd rather have it sitting unused than scramble to add it under deadline pressure.
 
-### 4. 7 languages, picked from Melbourne LGA census data
+### 4. 9 languages, picked from Melbourne LGA census data
 
 The temptation in i18n is to support "all the major world languages" — Spanish, French, German, Japanese. None of those move the needle for a Melbourne parking app.
 

@@ -9,11 +9,21 @@ import it from '../locales/it.json'
 import el from '../locales/el.json'
 import hi from '../locales/hi.json'
 import pa from '../locales/pa.json'
+import id from '../locales/id.json'
+import ko from '../locales/ko.json'
 
 /**
  * Supported languages — the source of truth that the LanguageSelector
  * iterates over and that i18next initialises resources for. Adding a new
  * language is: drop the locale JSON, append the entry here, done.
+ *
+ * Picks based on the 2021 ABS Census for the City of Melbourne LGA, top
+ * non-English languages spoken at home:
+ *   Mandarin (#1) · Cantonese (#2) · Indonesian (#3) · Vietnamese (#4) ·
+ *   Hindi (#5) · Korean (#6) · Thai · Spanish · Arabic · Malay …
+ * Italian + Greek + Punjabi are kept for Melbourne cultural identity
+ * (Lygon St, the Greek community, the outer-Melbourne Punjabi community)
+ * even though they're further down the LGA-specific stats.
  *
  * Note on the flag for Hindi + Punjabi: both use the India flag. Hindi is
  * written in Devanagari, Punjabi (in India) in Gurmukhi — they look very
@@ -24,6 +34,8 @@ export const SUPPORTED_LANGUAGES = [
   { code: 'en', label: 'English', native: 'English', country: 'AU' },
   { code: 'zh-CN', label: 'Chinese (Simplified)', native: '简体中文', country: 'CN' },
   { code: 'vi', label: 'Vietnamese', native: 'Tiếng Việt', country: 'VN' },
+  { code: 'id', label: 'Indonesian', native: 'Bahasa Indonesia', country: 'ID' },
+  { code: 'ko', label: 'Korean', native: '한국어', country: 'KR' },
   { code: 'it', label: 'Italian', native: 'Italiano', country: 'IT' },
   { code: 'el', label: 'Greek', native: 'Ελληνικά', country: 'GR' },
   { code: 'hi', label: 'Hindi', native: 'हिन्दी', country: 'IN' },
@@ -40,6 +52,8 @@ void i18n
       en: { translation: en },
       'zh-CN': { translation: zhCN },
       vi: { translation: vi },
+      id: { translation: id },
+      ko: { translation: ko },
       it: { translation: it },
       el: { translation: el },
       hi: { translation: hi },

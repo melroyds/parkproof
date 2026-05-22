@@ -63,7 +63,7 @@ Sign-in is never required — the app works fully anonymous. When you do choose 
 |---|---|
 | ![signin](docs/screenshots/12-signin.png) | ![account](docs/screenshots/13-signed-in-account.png) |
 
-### Multilingual UI — 7 languages
+### Multilingual UI — 9 languages
 
 Language list chosen from the top non-English languages spoken in the **City of Melbourne LGA** (2021 ABS Census). Same home screen in three of the seven scripts:
 
@@ -203,7 +203,7 @@ A single Lambda handler ([`lambda/index.js`](lambda/index.js)) is **reused as th
 | Calendar | [`ics`](https://www.npmjs.com/package/ics) | RFC 5545 compliant `.ics` with `GEO` field; lazy-loaded |
 | PDF | [`jsPDF`](https://www.npmjs.com/package/jspdf) + [`jspdf-autotable`](https://www.npmjs.com/package/jspdf-autotable) | Multi-page evidence doc with embedded photos and a caption-overlay on the car photo; lazy-loaded |
 | PWA | [`vite-plugin-pwa`](https://www.npmjs.com/package/vite-plugin-pwa) | Manifest + service worker + auto-generated icons in all sizes |
-| i18n | [`react-i18next`](https://react.i18next.com/) + [`country-flag-icons`](https://www.npmjs.com/package/country-flag-icons) | Seven-locale support (EN-AU / zh-CN / VI / IT / EL / HI / PA), chosen from the top non-English languages spoken in the City of Melbourne LGA (2021 ABS Census). Browser-language auto-detection + localStorage persistence. SVG flag icons (not emoji) for consistent rendering. |
+| i18n | [`react-i18next`](https://react.i18next.com/) + [`country-flag-icons`](https://www.npmjs.com/package/country-flag-icons) | Nine-locale support (EN-AU / zh-CN / VI / ID / KO / IT / EL / HI / PA), chosen from the top non-English languages spoken in the City of Melbourne LGA (2021 ABS Census). Browser-language auto-detection + localStorage persistence. SVG flag icons (not emoji) for consistent rendering. |
 | Auth (opt-in) | AWS Cognito User Pools + [`amazon-cognito-identity-js`](https://www.npmjs.com/package/amazon-cognito-identity-js) | Email/password + federated **Google** + federated **Sign in with Apple** (hosted-UI redirect). Free below 50k MAU; in-bundle SDK, no Amplify. |
 | Cloud sync (opt-in) | AWS DynamoDB (pay-per-request) + S3 (private, OAC) | Mirrors localStorage to the cloud when signed in; localStorage stays canonical. Photos go via presigned PUT URLs. |
 | Telemetry | CloudWatch Logs Insights | Free at this scale; structured log events for feedback aggregation |
@@ -329,7 +329,7 @@ ParkProof/
 │   │   ├── BrandMark.tsx          ← inline SVG layered-P + clock logo
 │   │   ├── Icon.tsx               ← 8-icon stroke set (currentColor)
 │   │   └── LoadingProgress.tsx    ← stepped progress UI during the model call
-│   ├── locales/                   ← seven-language UI translations (en, zh-CN, vi, it, el, hi, pa)
+│   ├── locales/                   ← nine-language UI translations (en, zh-CN, vi, id, ko, it, el, hi, pa)
 │   ├── service-worker.ts          ← custom SW (injectManifest mode) — precaching + Web Push receiver + notification click handler
 │   └── lib/
 │       ├── api.ts                 ← endpointUrl() — single helper that resolves /api/* in dev and the API Gateway URL in prod

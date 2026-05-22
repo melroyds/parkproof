@@ -376,7 +376,7 @@ scripts/teardown.sh                            ← destroy everything (dry-run b
 - ✅ Smart re-scan — proximity-matched card + desktop picker; refresh-mode API path
 - ✅ Stepped loading state
 - ✅ Brand identity — layered-P + clock, blue/navy/teal, Fraunces serif
-- ✅ Multi-lingual UI — 7 languages (en, zh-CN, vi, it, el, hi, pa) including PDF strings
+- ✅ Multi-lingual UI — 9 languages (en, zh-CN, vi, id, ko, it, el, hi, pa) including PDF strings
 - ✅ AI feedback Layers 1 + 2 — verdict events + model context (confidence, hour, sign-pattern) to CloudWatch
 - ⏳ True Web Push background notifications — needs service worker push subscription + server-side scheduler (EventBridge)
 - ⏳ AI feedback Layer 3 — opt-in photo capture for systematic failures, building a private training dataset

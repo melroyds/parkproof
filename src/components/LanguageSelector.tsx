@@ -3,6 +3,8 @@ import { useTranslation } from 'react-i18next'
 import AU from 'country-flag-icons/react/3x2/AU'
 import CN from 'country-flag-icons/react/3x2/CN'
 import VN from 'country-flag-icons/react/3x2/VN'
+import ID from 'country-flag-icons/react/3x2/ID'
+import KR from 'country-flag-icons/react/3x2/KR'
 import IT from 'country-flag-icons/react/3x2/IT'
 import GR from 'country-flag-icons/react/3x2/GR'
 import IN from 'country-flag-icons/react/3x2/IN'
@@ -17,6 +19,8 @@ const FLAG_COMPONENTS: Record<string, typeof AU> = {
   AU,
   CN,
   VN,
+  ID,
+  KR,
   IT,
   GR,
   IN,

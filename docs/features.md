@@ -42,7 +42,7 @@ Live at **[https://www.parkproof.com.au](https://www.parkproof.com.au)** · Sour
 - **Three reminder rails fired in parallel from one tap:**
   - **`.ics` calendar event** with multiple `VALARM` blocks — honoured natively on macOS, iOS, and Google Calendar
   - **In-tab browser notification** — fires while the tab is open, labelled honestly so the user knows the limit
-  - **Server-side Web Push via AWS EventBridge Scheduler** — fires on the device's OS even when the tab is closed, browser quit, or screen asleep. Title is the parking-spot address; body is the time-left, localized into all 7 languages
+  - **Server-side Web Push via AWS EventBridge Scheduler** — fires on the device's OS even when the tab is closed, browser quit, or screen asleep. Title is the parking-spot address; body is the time-left, localized into all 9 languages
 - **Auto-cancel on early end** — hit "I've left" before the timer expires and every pending push for that session is deleted server-side, so stale "30 min until your parking expires" pings don't arrive after you've already gone
 - **Live "Currently parked" home card** — countdown colour-coded by urgency: green > 1h, amber 15-60min, red < 15min
 - **Walk-back navigation** — distance + estimated walking time to your car, plus a deep-link straight into Apple Maps (iOS) or Google Maps (everywhere else) with walking-mode forced
@@ -85,7 +85,7 @@ Live at **[https://www.parkproof.com.au](https://www.parkproof.com.au)** · Sour
 > **Free, no app required, every Melbourne language.**
 
 - **PWA** — installable to iPhone / Android / desktop home screen. Real app icon, theme colour, splash screen, offline-capable service worker. No App Store gatekeeping
-- **7 languages** — English, 简体中文, Tiếng Việt, Italiano, Ελληνικά, हिन्दी, ਪੰਜਾਬੀ. Sourced from the **top non-English languages spoken in the City of Melbourne LGA** (2021 ABS Census). The UI scaffolding *and* the evidence PDF translate; the AI's sign translation stays in English (it reflects what's literally on the sign)
+- **9 languages** — English, 简体中文, Tiếng Việt, Bahasa Indonesia, 한국어, Italiano, Ελληνικά, हिन्दी, ਪੰਜਾਬੀ. Sourced from the **top non-English languages spoken in the City of Melbourne LGA** (2021 ABS Census). The UI scaffolding *and* the evidence PDF translate; the AI's sign translation stays in English (it reflects what's literally on the sign)
 - **Anonymous-by-default** — every feature works without a login wall. Sign-in is opt-in for cloud sync. Local-first; cloud is durability, not gatekeeping
 - **Mobile-first design** — built for the moment you're standing next to a pole on the street, not a desktop
 
