@@ -97,6 +97,32 @@
     "cta": "Try it — scan a sign"
   },
   "landing": {
+    "heroTitle1": "Parking",
+    "heroTitle2": "made",
+    "heroTitle3": "simple.",
+    "heroSubhead": "Take a photo of any Aussie parking sign and get a clear, plain-English answer in ",
+    "heroSubheadAccent": "10 seconds",
+    "heroSubheadTail": ".",
+    "bullet": {
+      "plainEnglish": "Plain-English answers",
+      "photoEvidence": "Photo evidence saved",
+      "defensible": "Defensible if you're ticketed"
+    },
+    "cta": "Check a parking sign",
+    "builtFor": "Built for Aussie drivers",
+    "howItWorks": {
+      "heading": "How it works",
+      "snapTitle": "Snap",
+      "snapDesc": "Take a photo of any parking sign.",
+      "analyseTitle": "We analyse",
+      "analyseDesc": "Our AI decodes the sign in seconds.",
+      "answerTitle": "Get your answer",
+      "answerDesc": "Plain-English verdict you can rely on."
+    },
+    "evidenceCallout": {
+      "title": "Defensible evidence, when it matters.",
+      "body": "Every check gets a cryptographically signed timestamp, GPS, and photo record."
+    },
     "feature": {
       "translateTitle": "Plain-English answers",
       "translateDesc": "Photograph any Aussie parking sign — get a 'can I park now?' verdict in 10 seconds.",

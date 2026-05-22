@@ -545,6 +545,32 @@
     }
   },
   "landing": {
+    "heroTitle1": "Parcheggiare",
+    "heroTitle2": "è",
+    "heroTitle3": "semplice.",
+    "heroSubhead": "Fotografa qualsiasi cartello di parcheggio australiano e ricevi una risposta chiara in ",
+    "heroSubheadAccent": "10 secondi",
+    "heroSubheadTail": ".",
+    "bullet": {
+      "plainEnglish": "Risposte in linguaggio chiaro",
+      "photoEvidence": "Prove fotografiche salvate",
+      "defensible": "Difendibili in caso di multa"
+    },
+    "cta": "Controlla un cartello",
+    "builtFor": "Pensato per i conducenti in Australia",
+    "howItWorks": {
+      "heading": "Come funziona",
+      "snapTitle": "Scatta",
+      "snapDesc": "Fotografa qualsiasi cartello di parcheggio.",
+      "analyseTitle": "Analizziamo",
+      "analyseDesc": "L'AI decodifica il cartello in pochi secondi.",
+      "answerTitle": "Ricevi la risposta",
+      "answerDesc": "Un verdetto chiaro su cui contare."
+    },
+    "evidenceCallout": {
+      "title": "Prove difendibili, quando contano.",
+      "body": "Ogni controllo riceve un timestamp, GPS e fotografie firmati crittograficamente."
+    },
     "feature": {
       "translateTitle": "Risposte in italiano semplice",
       "translateDesc": "Fotografa qualsiasi cartello di parcheggio australiano — verdetto 'posso parcheggiare?' in 10 secondi.",

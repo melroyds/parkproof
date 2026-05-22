@@ -539,6 +539,32 @@
     }
   },
   "landing": {
+    "heroTitle1": "Đỗ xe",
+    "heroTitle2": "trở nên",
+    "heroTitle3": "đơn giản.",
+    "heroSubhead": "Chụp ảnh biển báo đỗ xe bất kỳ ở Úc và nhận câu trả lời rõ ràng trong ",
+    "heroSubheadAccent": "10 giây",
+    "heroSubheadTail": ".",
+    "bullet": {
+      "plainEnglish": "Câu trả lời dễ hiểu",
+      "photoEvidence": "Bằng chứng ảnh được lưu",
+      "defensible": "Có thể bảo vệ nếu bị phạt"
+    },
+    "cta": "Kiểm tra biển báo",
+    "builtFor": "Dành cho tài xế Úc",
+    "howItWorks": {
+      "heading": "Cách hoạt động",
+      "snapTitle": "Chụp",
+      "snapDesc": "Chụp ảnh biển báo đỗ xe bất kỳ.",
+      "analyseTitle": "Chúng tôi phân tích",
+      "analyseDesc": "AI giải mã biển báo trong vài giây.",
+      "answerTitle": "Nhận câu trả lời",
+      "answerDesc": "Câu trả lời rõ ràng bạn có thể tin tưởng."
+    },
+    "evidenceCallout": {
+      "title": "Bằng chứng có thể bảo vệ, khi cần.",
+      "body": "Mỗi lần kiểm tra đều có dấu thời gian, GPS và ảnh được ký mật mã."
+    },
     "feature": {
       "translateTitle": "Câu trả lời rõ ràng",
       "translateDesc": "Chụp ảnh bất kỳ biển đỗ xe nào của Úc — nhận câu trả lời \"có thể đỗ không?\" trong 10 giây.",

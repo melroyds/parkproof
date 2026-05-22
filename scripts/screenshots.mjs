@@ -310,9 +310,28 @@ function startDevServer() {
 // ---------- The flow ----------
 
 async function captureFlow({ page, signPhotoPath, carPhotoPath, ticketPath }) {
-  // === 01-scan: scan screen with the two dashed upload zones ===
+  // === 00-landing: first-time visitor experience (LandingFeatures) ===
+  // Capture BEFORE any session seeding so the App.tsx empty-state branch
+  // renders — that's the only path that mounts <LandingFeatures> with its
+  // full hero, value bullets, gradient CTA, How-it-works grid, and the
+  // Defensible-evidence callout. This is the visual that Reddit visitors
+  // land on, so it gets pride of place in the README demo grid.
   await page.goto(APP_URL, { waitUntil: 'networkidle' })
-  await page.getByRole('button', { name: /Scan a parking sign/ }).click()
+  // Wait for the landing's headline accent — "simple." (the brand-blue
+  // third line). The selector tolerates the localized variants because
+  // every locale's heroTitle3 ends with "." (period). Safer wait than
+  // a fixed timeout — once this text is on screen, the rest of the
+  // landing has flushed.
+  await page.getByRole('heading', { level: 1 }).waitFor()
+  await page.waitForTimeout(400)
+  await page.screenshot({ path: join(OUT_DIR, '00-landing.png'), animations: 'disabled', fullPage: true })
+  console.log('[screenshots] ✓ 00-landing')
+
+  // === 01-scan: scan screen with the two dashed upload zones ===
+  // The CTA text changed in the visual-pop refresh — first-time visitors
+  // see "Check a parking sign", returning users see "Scan a parking sign".
+  // Match either via regex.
+  await page.getByRole('button', { name: /(Check|Scan) a parking sign/ }).click()
   await page.getByText('Scan parking sign').waitFor()
   // Let the optional ReuseCard / RecentScansPicker settle (they wait on GPS
   // permission state — none in fresh context, so they shouldn't render, but

@@ -534,7 +534,14 @@ function App() {
   return (
     <main className="min-h-screen flex flex-col relative">
       <header className="px-6 pt-6 pb-2 text-center">
-        {primaryActive ? (
+        {/* First-time visitors get LandingFeatures with its own hero block,
+            so skip the default "ParkProof + hero illustration + tagline"
+            header — otherwise the page reads as two stacked heroes. */}
+        {!primaryActive && sessionCount === 0 ? (
+          <div className="flex justify-end">
+            <LanguageSelector />
+          </div>
+        ) : primaryActive ? (
           // Replace the decorative hero with the live status when there's an
           // active session — it's the most useful information on the screen
           // at that moment, and competes for the same visual real estate.
@@ -557,12 +564,15 @@ function App() {
             </p>
           </>
         )}
-        {/* Language selector — always present on the home header. Tiny
-            footprint above the rest of the content; the active flag's
-            highlight makes the current choice obvious without explanation. */}
-        <div className="mt-4">
-          <LanguageSelector />
-        </div>
+        {/* Language selector — for the active-session and returning-user
+            paths, centred under the hero header. First-time visitors get
+            theirs rendered in the right-aligned strip above (see the
+            sessionCount === 0 branch at the top of the header). */}
+        {!(!primaryActive && sessionCount === 0) && (
+          <div className="mt-4">
+            <LanguageSelector />
+          </div>
+        )}
       </header>
 
       <section className="flex-1 px-6 pb-8 flex flex-col items-center justify-center max-w-md mx-auto w-full">
@@ -578,59 +588,61 @@ function App() {
           </div>
         )}
 
-        {/* Landing feature cards — first-time visitors only.
-            Conditional on (no active session) AND (no saved sessions) so
-            returning users see the original tight layout, and so the cards
-            don't compete with the "Currently parked" status card for
-            visual space when there's something more useful to show. */}
-        {!primaryActive && sessionCount === 0 && (
+        {/* Landing experience — first-time visitors only.
+            Conditional on (no active session) AND (no saved sessions).
+            This component owns the full hero (split-colour headline,
+            three value bullets, gradient CTA, How-it-works, evidence
+            callout). It includes its own scan-button CTA, so we DON'T
+            render the standard scan button below for first-time visitors. */}
+        {!primaryActive && sessionCount === 0 ? (
+          <LandingFeatures onScanCta={() => setView({ name: 'scan' })} />
+        ) : (
           <>
-            <LandingFeatures />
             <button
-              onClick={() => setView({ name: 'about' })}
-              className="self-end -mt-3 mb-4 text-xs text-brand-600 hover:text-brand-700 underline"
+              onClick={() => setView({ name: 'scan' })}
+              className="w-full bg-brand-500 hover:bg-brand-600 active:bg-brand-700 text-white text-lg font-semibold py-5 rounded-2xl shadow-lg shadow-brand-500/25 flex items-center justify-center gap-3 transition-colors"
             >
-              {t('home.seeEverything')}
+              <Icon name="camera" className="w-6 h-6" />
+              {primaryActive ? t('home.scanAnother') : t('home.scanCta')}
             </button>
+
+            {!primaryActive && (
+              <p className="text-xs text-ink-600/80 mt-4 text-center">
+                {t('home.scanHelp')}
+              </p>
+            )}
           </>
-        )}
-
-        <button
-          onClick={() => setView({ name: 'scan' })}
-          className="w-full bg-brand-500 hover:bg-brand-600 active:bg-brand-700 text-white text-lg font-semibold py-5 rounded-2xl shadow-lg shadow-brand-500/25 flex items-center justify-center gap-3 transition-colors"
-        >
-          <Icon name="camera" className="w-6 h-6" />
-          {primaryActive ? t('home.scanAnother') : t('home.scanCta')}
-        </button>
-
-        {!primaryActive && (
-          <p className="text-xs text-ink-600/80 mt-4 text-center">
-            {t('home.scanHelp')}
-          </p>
         )}
 
         {/* Long translations (Italian / Hindi / Punjabi) wrap to two lines.
             Use items-start + flex-1 min-w-0 so the icon anchors to the first
             line and the right-side label sits flush with it, instead of all
             three drifting to the vertical centre of the 2-line text block. */}
-        <button
-          onClick={() => setView({ name: 'history' })}
-          className="mt-8 w-full bg-white hover:bg-paper-50 border border-paper-300 text-ink-900 font-medium py-3 rounded-2xl flex items-start justify-between gap-3 px-5 transition-colors"
-        >
-          <span className="flex items-start gap-2 min-w-0 flex-1">
-            <Icon name="list" className="w-5 h-5 text-ink-600 shrink-0 mt-px" />
-            <span className="leading-snug text-left">{t('home.history')}</span>
-          </span>
-          <span className="text-sm text-ink-600 shrink-0 mt-px">
-            {sessionCount === 0 ? t('home.historyEmpty') : t('home.historyCount', { count: sessionCount })}
-          </span>
-        </button>
+        {/* Session-history affordance — hidden for first-time visitors
+            (sessionCount === 0 AND no active session): the empty "Session
+            history (empty)" row is just clutter under the new LandingFeatures
+            and competes for visual attention with the gradient CTA above. */}
+        {!(sessionCount === 0 && !primaryActive) && (
+          <button
+            onClick={() => setView({ name: 'history' })}
+            className="mt-8 w-full bg-white hover:bg-paper-50 border border-paper-300 text-ink-900 font-medium py-3 rounded-2xl flex items-start justify-between gap-3 px-5 transition-colors"
+          >
+            <span className="flex items-start gap-2 min-w-0 flex-1">
+              <Icon name="list" className="w-5 h-5 text-ink-600 shrink-0 mt-px" />
+              <span className="leading-snug text-left">{t('home.history')}</span>
+            </span>
+            <span className="text-sm text-ink-600 shrink-0 mt-px">
+              {sessionCount === 0 ? t('home.historyEmpty') : t('home.historyCount', { count: sessionCount })}
+            </span>
+          </button>
+        )}
 
-        {/* Auth affordance — only renders when Cognito is wired in. Anonymous
-            users see a "Sign in to sync" CTA; signed-in users see their email
-            + a cog icon that opens settings. Skipped entirely on builds
-            without auth credentials (open-source / first-time clones). */}
-        {auth.configured && (
+        {/* Auth affordance — only renders when Cognito is wired in AND the
+            user isn't a brand-new visitor. Anonymous returning users see a
+            "Sign in to sync" CTA; signed-in users see their email + a cog
+            icon that opens settings. Hidden for first-time visitors so the
+            new landing's gradient CTA owns the primary action. */}
+        {auth.configured && !(sessionCount === 0 && !primaryActive) && (
           auth.user ? (
             <button
               onClick={() => setView({ name: 'settings' })}
@@ -656,7 +668,11 @@ function App() {
           )
         )}
 
-        {!primaryActive && (
+        {/* The 3-step "Photo the sign → log → reminder" list. Shown to
+            returning users with no active session as a quick re-orientation,
+            but hidden for first-time visitors — LandingFeatures' "How it
+            works" grid already covers the same ground with better visuals. */}
+        {!primaryActive && sessionCount > 0 && (
           <ol className="mt-10 space-y-4 self-stretch">
             {[
               t('home.steps.translate'),

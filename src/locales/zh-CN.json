@@ -539,6 +539,32 @@
     }
   },
   "landing": {
+    "heroTitle1": "停车",
+    "heroTitle2": "变简单",
+    "heroTitle3": "了。",
+    "heroSubhead": "拍下任意澳大利亚停车标志,",
+    "heroSubheadAccent": "10 秒",
+    "heroSubheadTail": "内得到清晰的中文回答。",
+    "bullet": {
+      "plainEnglish": "通俗易懂的解读",
+      "photoEvidence": "自动保存照片证据",
+      "defensible": "罚单出现时可用于申诉"
+    },
+    "cta": "扫描停车标志",
+    "builtFor": "为澳大利亚司机打造",
+    "howItWorks": {
+      "heading": "如何使用",
+      "snapTitle": "拍照",
+      "snapDesc": "拍下任意停车标志。",
+      "analyseTitle": "我们分析",
+      "analyseDesc": "AI 几秒内解读标志。",
+      "answerTitle": "获取答案",
+      "answerDesc": "你可以信赖的明确答案。"
+    },
+    "evidenceCallout": {
+      "title": "需要时,可信的证据。",
+      "body": "每次检查都附带加密签名的时间戳、GPS 和照片记录。"
+    },
     "feature": {
       "translateTitle": "通俗的解读",
       "translateDesc": "拍下任何澳洲停车标志 — 10 秒内告诉你\"现在能不能停\"。",
