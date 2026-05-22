@@ -369,7 +369,7 @@ def build():
         Paragraph(
             "A chronological record of how ParkProof went from an empty repo on 16 May 2026 "
             "to a live, custom-domain, internationalised, cloud-synced PWA on 20 May 2026 — "
-            "44 commits across 6 active build days. Each day gets a narrative, the commits that "
+            "70+ commits across 7 active build days. Each day gets a narrative, the commits that "
             "landed, and a decision-tree block at every pivot where a chosen path replaced one "
             "I'd ruled out.",
             style_body,
@@ -400,7 +400,7 @@ def build():
     story.append(Paragraph("The arc, at a glance", style_h3))
     arc = [
         ("16 May", "Foundation",         "Initial commit + reminders + screenshot harness + PDF fixes"),
-        ("17 May", "The Big Push",       "Live countdown · Cognito + DDB + S3 cloud sync · 5-language i18n → 7 langs · Layer 2 telemetry"),
+        ("17 May", "The Big Push",       "Live countdown · Cognito + DDB + S3 cloud sync · 5-language i18n → 9 langs · Layer 2 telemetry"),
         ("18 May", "Polish + Launch",    "Custom domain · 16-screenshot pipeline · case study · UX bug-fix sweep"),
         ("19 May", "Safety Gates",       "Pre-launch audit · paid-parking acknowledgement · no-sign-here flow"),
         ("20 May", "Crisis + Pivot",     "Accessibility gate · 30s timeout crisis → async-polling architecture · end-of-session feature"),

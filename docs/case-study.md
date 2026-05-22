@@ -113,9 +113,9 @@ I built it anyway, for one reason: **the cost is small once and the value compou
 
 The temptation in i18n is to support "all the major world languages" — Spanish, French, German, Japanese. None of those move the needle for a Melbourne parking app.
 
-I went to the 2021 ABS Census for the City of Melbourne LGA and looked at the top non-English languages spoken at home. The list (Mandarin, Vietnamese, Italian, Greek, Hindi, Punjabi) gave me the seven supported languages including English. Punjabi and Hindi both use the India flag in the language picker, so I show native names (हिन्दी / ਪੰਜਾਬੀ) to disambiguate.
+I went to the 2021 ABS Census for the City of Melbourne LGA and looked at the top non-English languages spoken at home. The first six picks (Mandarin, Vietnamese, Italian, Greek, Hindi, Punjabi) gave me a starting list, plus English. After a sanity-check pass on the actual LGA ranking I added Indonesian (#3) and Korean (#6) — both top non-English languages in the LGA that the first pass had missed — for nine supported languages total. Punjabi and Hindi both use the India flag in the language picker, so I show native names (हिन्दी / ਪੰਜਾਬੀ) to disambiguate.
 
-This is a small detail but it's exactly the kind of decision where you can tell a PM is doing the work vs. defaulting to a generic "translate all the things." The cost was the same as supporting any other seven languages; the *signal* of "I picked these because of the actual user data" is what differentiated.
+This is a small detail but it's exactly the kind of decision where you can tell a PM is doing the work vs. defaulting to a generic "translate all the things." The cost was the same as supporting any other nine languages; the *signal* of "I picked these because of the actual user data" is what differentiated.
 
 ---
 

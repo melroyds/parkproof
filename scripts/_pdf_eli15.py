@@ -1015,10 +1015,10 @@ def build():
             "silently break."
         )
     )
-    story.append(h2("i18n - 7 languages"))
+    story.append(h2("i18n - 9 languages"))
     story.append(
         p(
-            "The whole UI is internationalised via <code>react-i18next</code>, with 7 language "
+            "The whole UI is internationalised via <code>react-i18next</code>, with 9 language"
             "packs: English, Mandarin, Vietnamese, Italian, Greek, Hindi, Punjabi. The list "
             "wasn't arbitrary — it's the top non-English languages spoken at home in the City "
             "of Melbourne LGA per the 2021 Census. The model output (the rules text) stays in "

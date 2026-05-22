@@ -19,7 +19,7 @@ interface Props {
  * Reddit tech-bro and NOT a hiring manager — that audience has
  * docs/features.md for the technical inventory.
  *
- * Style guide (preserved across all 7 locales):
+ * Style guide (preserved across all 9 locales):
  *   - Sentence case headings, second person ("you / your")
  *   - One short sentence per bullet — read aloud, if you stumble, shorten
  *   - Benefits, not features ("get a receipt for your parking spot",

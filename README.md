@@ -65,7 +65,7 @@ Sign-in is never required — the app works fully anonymous. When you do choose 
 
 ### Multilingual UI — 9 languages
 
-Language list chosen from the top non-English languages spoken in the **City of Melbourne LGA** (2021 ABS Census). Same home screen in three of the seven scripts:
+Language list chosen from the top non-English languages spoken in the **City of Melbourne LGA** (2021 ABS Census). Same home screen in three of the nine scripts:
 
 | 🇦🇺 English | 🇮🇹 Italiano | 🇮🇳 हिन्दी |
 |---|---|---|
@@ -323,7 +323,7 @@ ParkProof/
 │   │   ├── AuthFlow.tsx           ← sign-in / sign-up / verify / forgot / reset, with Apple + Google
 │   │   ├── AuthSettings.tsx       ← signed-in profile, PDF export, account deletion
 │   │   ├── PrivacyPolicy.tsx      ← in-app plain-English privacy policy (uses <Trans> for inline tags)
-│   │   ├── LanguageSelector.tsx   ← 7-language dropdown (Australian English + zh-CN + VI + IT + EL + HI + PA)
+│   │   ├── LanguageSelector.tsx   ← 9-language dropdown (Australian English + zh-CN + VI + ID + KO + IT + EL + HI + PA)
 │   │   ├── ReuseCard.tsx          ← proximity-matched "scanned here recently" card
 │   │   ├── RecentScansPicker.tsx  ← desktop / no-GPS fallback for smart re-scan
 │   │   ├── BrandMark.tsx          ← inline SVG layered-P + clock logo
@@ -345,7 +345,7 @@ ParkProof/
 │       ├── auth-context-shape.ts  ← Context type + createContext (split to satisfy react-refresh)
 │       ├── use-auth.ts            ← useAuth hook
 │       ├── federated-auth.ts      ← hosted-UI redirect + callback handler (Apple / Google)
-│       ├── i18n.ts                ← react-i18next init + 7-language resource registry
+│       ├── i18n.ts                ← react-i18next init + 9-language resource registry
 │       ├── geocode.ts             ← Nominatim reverse + forward
 │       ├── geo.ts                 ← Haversine distance
 │       ├── walk-back.ts           ← walking ETA + maps deep-link routing (Apple / Google)
@@ -416,7 +416,7 @@ ParkProof/
 
 - [`docs/features.md`](docs/features.md) — **canonical feature showcase**: every cool thing ParkProof does, grouped thematically, with copy-paste-ready bullets for Reddit / LinkedIn / interview use
 - [`docs/case-study.md`](docs/case-study.md) — PM-craft narrative: how the project was scoped, sequenced, and traded off
-- [`docs/parkproof-build-journal.pdf`](docs/parkproof-build-journal.pdf) — chronological build journal with decision-tree branches at every pivot (6 days, 50+ commits, the failed architectures preserved)
+- [`docs/parkproof-build-journal.pdf`](docs/parkproof-build-journal.pdf) — chronological build journal with decision-tree branches at every pivot (7 days, 70+ commits, the failed architectures preserved)
 - [`docs/how-parkproof-was-built.pdf`](docs/how-parkproof-was-built.pdf) — ELI15 explainer of the stack + architecture
 - [`docs/lessons-for-next-project.md`](docs/lessons-for-next-project.md) — portable takeaways: what to do (and not do) on the next portfolio project, distilled from ParkProof
 
