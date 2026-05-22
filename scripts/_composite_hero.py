@@ -29,13 +29,21 @@ PHOTO_PATH = ROOT / "public" / "hero-photo-candidate.png"
 ICON_PATH = ROOT / "public" / "parkproof-icon.svg"
 OUTPUT_PATH = ROOT / "public" / "hero-illustration.png"
 
-# Sign bbox in the 640x516 source photo (eyeballed from the saved crop).
-# Brand mark gets centred inside this rectangle with a small inset so it
-# doesn't crowd the painted sign border.
-SIGN_X1, SIGN_Y1 = 100, 88
-SIGN_X2, SIGN_Y2 = 222, 218
-# Inset proportional to the sign size so the mark "breathes" inside the sign.
-INSET = 12
+# Sign bbox in the 640x516 source photo. Detected by scanning each row in
+# the upper-left third for the longest contiguous run of near-pure-white
+# pixels (R, G, B all > 235 AND max-min < 8 — tight enough to exclude the
+# bluish sky). The first bake of this script used an eyeballed bbox that
+# was ~63px too far left and dropped the brand mark off the sign onto the
+# pole/sky background — visible at any non-thumbnail size. If the source
+# photo ever changes, re-run the detection from scripts/_composite_hero.py's
+# git history (the per-row scan) and update these constants.
+SIGN_X1, SIGN_Y1 = 175, 75
+SIGN_X2, SIGN_Y2 = 268, 174
+# Inset proportional to the sign size so the mark "breathes" inside the
+# painted sign border without crowding it. 6px is ~6% of the sign side
+# length — enough to leave a clear margin but big enough that the mark
+# reads at small display sizes (140px wide in the LandingFeatures layout).
+INSET = 6
 
 # ── Step 1: build a tile-less brand mark SVG ──────────────────────────
 svg_src = ICON_PATH.read_text(encoding="utf-8")
