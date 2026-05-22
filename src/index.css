@@ -71,14 +71,15 @@ body {
   background-repeat:
     no-repeat,
     repeat;
-  /* Aurora @ 1000x1000 (2× the SVG's native 500x500). The 1× original
-     read as a too-tight corner spot — under-committed. 4× went the
-     other way and tinted the entire hero, swallowing the sage
-     personality. 2× is the sweet spot: glow reaches halfway down the
-     page, frames the page header, but leaves the lower half cleanly
-     sage. */
+  /* Aurora @ 1500x1500 (3× the SVG's native 500x500). Goldilocks
+     point arrived at by dialling: 1× = under-committed corner spot,
+     4× = blue wash that swallowed the sage personality, 2× = right
+     direction but slightly shy. 3× lets the glow reach about
+     two-thirds down the page, frames the hero + headline + bullets,
+     but the "How it works" grid and Defensible-evidence callout
+     still sit on cleanly sage. */
   background-size:
-    1000px 1000px,
+    1500px 1500px,
     600px 600px;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
