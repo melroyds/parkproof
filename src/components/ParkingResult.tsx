@@ -4,7 +4,7 @@ import type { ParkingRules } from '../types'
 import Icon from './Icon'
 import { submitFeedback } from '../lib/feedback'
 import { useNow } from '../lib/use-now'
-import { formatCountdown } from '../lib/countdown'
+import { formatCountdownLocalized } from '../lib/countdown'
 import { formatExpiryAbsolute } from '../lib/time-format'
 import { timezoneForCoords } from '../lib/timezone'
 
@@ -190,8 +190,12 @@ export default function ParkingResult({
   const paymentActions = resolvePaymentActions(payment_methods, mustPay)
   const timeZone = timezoneForCoords(coords?.lat, coords?.lng)
   const untilLabel = formatUntil(until, timeZone)
+  // Localized countdown so the "X min left" / "Xh Ym left" label translates
+  // along with the rest of the result card. Was previously the English-only
+  // formatCountdown which left the word "left" untranslated for every
+  // non-English user.
   const countdown =
-    can_park_now && until ? formatCountdown(new Date(until).getTime() - now) : null
+    can_park_now && until ? formatCountdownLocalized(new Date(until).getTime() - now, t) : null
   const confidenceDot = CONFIDENCE_DOT[confidence] ?? CONFIDENCE_DOT.low
   const confidenceText = t(CONFIDENCE_KEY[confidence] ?? CONFIDENCE_KEY.low)
 

@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import type { ParkingSession } from '../types'
-import { formatCountdown, formatElapsedLocalized } from '../lib/countdown'
+import { formatCountdownLocalized, formatElapsedLocalized } from '../lib/countdown'
 import { useNow } from '../lib/use-now'
 import { formatExpiryAbsolute } from '../lib/time-format'
 import { sessionTimezone } from '../lib/timezone'
@@ -70,7 +70,7 @@ export default function ActiveSessionsList({ sessions, onBack, onOpen }: Props) 
             ? new Date(session.expires_at as string).getTime()
             : null
           const countdown = hasExpiry
-            ? formatCountdown((expiresMs as number) - now)
+            ? formatCountdownLocalized((expiresMs as number) - now, t)
             : null
           const elapsed = !hasExpiry
             ? formatElapsedLocalized(now - new Date(session.arrived_at).getTime(), t)

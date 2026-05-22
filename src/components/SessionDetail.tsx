@@ -4,7 +4,7 @@ import type { ParkingSession } from '../types'
 import { deleteSession, endSession, updateSession } from '../lib/storage'
 import Icon from './Icon'
 import { useNow } from '../lib/use-now'
-import { formatCountdown } from '../lib/countdown'
+import { formatCountdownLocalized } from '../lib/countdown'
 import { sessionTimezone } from '../lib/timezone'
 import { navigationUrl } from '../lib/walk-back'
 import { useAuth } from '../lib/use-auth'
@@ -52,8 +52,13 @@ export default function SessionDetail({
   const expiresMs = session.expires_at ? new Date(session.expires_at).getTime() : null
   const isExpired = expiresMs !== null && expiresMs < now
   const isEnded = !!session.ended_at
+  // Localized so the "X min left" / "Xh Ym left" label translates with
+  // the rest of the detail-view UI. Previously the English-only
+  // formatCountdown left the word "left" untranslated.
   const countdown =
-    expiresMs !== null && !isExpired && !isEnded ? formatCountdown(expiresMs - now) : null
+    expiresMs !== null && !isExpired && !isEnded
+      ? formatCountdownLocalized(expiresMs - now, t)
+      : null
   // Active means the user can still take the "End session" action. Two cases:
   //   - no expiry (no-sign session) and not yet ended
   //   - has expiry, still in the future, and not yet ended (leaving early)
