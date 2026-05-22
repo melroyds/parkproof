@@ -47,11 +47,15 @@
 body {
   font-family: var(--font-sans);
   color: var(--color-ink-900);
-  background-color: var(--color-paper-100);
-  /* Subtle dot grid — replaces the original stylised-cars cavalcade so the
-     new poppy landing CTA and How-it-works cards don't compete with a
-     busy background. 32px tile @ ~5–8% brand-blue opacity reads as quiet
-     graph-paper texture rather than literal pattern. */
+  /* Warm-paper background (#FAF6EE) instead of the cool tech-grey
+     paper-100 token. Picks up the Fraunces serif's editorial / civic
+     personality — reads as "premium printed page" rather than "default
+     SaaS panel". The brand-blue dot-grid on top of cream gives a
+     slightly more present texture than blue-on-grey because of the
+     warm/cool contrast, without becoming busy. The card / chip
+     backgrounds still use bg-paper-* utilities, so this only affects
+     the underlying page surface. */
+  background-color: #FAF6EE;
   background-image: url("/dot-grid-pattern.svg");
   background-repeat: repeat;
   background-size: 32px 32px;
