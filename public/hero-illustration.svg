@@ -1,45 +1,213 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300" viewBox="0 0 400 300" role="img" aria-labelledby="title desc">
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="320" viewBox="0 0 400 320" role="img" aria-labelledby="title desc">
   <title id="title">ParkProof hero illustration</title>
-  <desc id="desc">Minimal Melbourne laneway parking illustration with sign pole, tram wires and parked car.</desc>
-  <defs><style>.serif { font-family: Fraunces, Georgia, 'Times New Roman', serif; font-weight: 800; }</style></defs>
-  <rect width="400" height="300" fill="none"/>
-  <path d="M110 28 C170 36 227 48 390 21" fill="none" stroke="#275BFF" stroke-width="0.8" opacity="0.65"/>
-  <path d="M150 60 C220 38 287 45 400 58" fill="none" stroke="#275BFF" stroke-width="0.8" opacity="0.55"/>
-  <path d="M254 0 L254 78" fill="none" stroke="#275BFF" stroke-width="0.8" opacity="0.45"/>
-  <circle cx="235" cy="43" r="2" fill="#275BFF" opacity="0.65"/><circle cx="305" cy="47" r="2" fill="#275BFF" opacity="0.55"/>
-  <path d="M18 102 L66 82 M18 250 L67 221 M67 82 L67 221" fill="none" stroke="#1A2233" stroke-width="1.3" stroke-linecap="round" opacity="0.75"/>
-  <path d="M8 116 H52 M8 126 H52 M8 136 H52 M8 146 H52" fill="none" stroke="#1A2233" stroke-width="0.8" opacity="0.55"/>
-  <path d="M72 173 C86 160 99 156 116 154" fill="none" stroke="#275BFF" stroke-width="0.9" opacity="0.5"/>
-  <path d="M85 204 C105 198 126 198 147 203" fill="none" stroke="#275BFF" stroke-width="0.8" opacity="0.35"/>
-  <path d="M62 198 C77 187 90 180 106 175" fill="none" stroke="#20C4C7" stroke-width="1.2" opacity="0.65"/>
-  <path d="M166 89 L166 276" fill="none" stroke="#1A2233" stroke-width="2"/><path d="M174 89 L174 276" fill="none" stroke="#1A2233" stroke-width="1.2" opacity="0.75"/>
-  <rect x="160" y="276" width="20" height="7" rx="1" fill="none" stroke="#1A2233" stroke-width="1.2"/>
-  <rect x="126" y="39" width="88" height="88" rx="12" fill="#F2F4F7" stroke="#1A2233" stroke-width="1.4"/>
-  <path d="M214 48 L222 43 L222 118 L214 127Z" fill="#20C4C7" opacity="0.9"/>
-  
-  <g transform="translate(121 33) scale(0.19)">
+  <desc id="desc">Dimensional illustration of a parking sign with the ParkProof layered-P + clock monogram, beside a stylised blue car on a quiet street.</desc>
+
+  <defs>
+    <!-- Sky: warm-paper cream at top → soft brand-blue tint at horizon. Echoes the
+         warm-paper body background so the hero feels embedded rather than pasted in. -->
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#FAF6EE"/>
+      <stop offset="60%" stop-color="#EFF2FB"/>
+      <stop offset="100%" stop-color="#E1E7F7"/>
+    </linearGradient>
+
+    <!-- Ground plane: subtle warm-grey gradient with a lighter horizon so the
+         scene reads as receding rather than flat. -->
+    <linearGradient id="ground" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#E5E0D5"/>
+      <stop offset="100%" stop-color="#CFC9BD"/>
+    </linearGradient>
+
+    <!-- Sign-pole cylinder: light edge on the left, dark on the right, with a
+         hairline highlight running down the middle. Cheap pseudo-3D for a vector
+         cylinder. -->
+    <linearGradient id="pole" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#A6ACBF"/>
+      <stop offset="40%" stop-color="#E4E7EE"/>
+      <stop offset="55%" stop-color="#C7CBD6"/>
+      <stop offset="100%" stop-color="#6B7388"/>
+    </linearGradient>
+
+    <!-- Sign face: gentle radial highlight so it looks lit-from-above rather than
+         a flat white rectangle. -->
+    <radialGradient id="signFace" cx="50%" cy="35%" r="80%">
+      <stop offset="0%" stop-color="#FFFFFF"/>
+      <stop offset="100%" stop-color="#E8EBF1"/>
+    </radialGradient>
+
+    <!-- Car body: brand-blue with a deeper shade on the lower half for a "lit
+         from above" look. -->
+    <linearGradient id="carBody" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#4870FF"/>
+      <stop offset="55%" stop-color="#275BFF"/>
+      <stop offset="100%" stop-color="#173EB3"/>
+    </linearGradient>
+
+    <!-- Car window glass — subtle vertical tint with a darker bottom edge for the
+         "tinted-glass" feel. -->
+    <linearGradient id="carGlass" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#1A2233"/>
+      <stop offset="100%" stop-color="#404B66"/>
+    </linearGradient>
+
+    <!-- Soft cast shadow filter for the sign + car. Cheap drop-shadow that
+         renders the same across every browser. -->
+    <filter id="softShadow" x="-20%" y="-20%" width="140%" height="160%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="2.5"/>
+      <feOffset dx="0" dy="3" result="offset"/>
+      <feComponentTransfer><feFuncA type="linear" slope="0.35"/></feComponentTransfer>
+      <feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+
+    <!-- Tighter ground shadow under the car wheels. -->
+    <radialGradient id="wheelShadow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#1A2233" stop-opacity="0.45"/>
+      <stop offset="100%" stop-color="#1A2233" stop-opacity="0"/>
+    </radialGradient>
+
+    <style>.serif { font-family: Fraunces, Georgia, 'Times New Roman', serif; font-weight: 800; }</style>
+  </defs>
+
+  <!-- ─── Background layers ──────────────────────────────────────────── -->
+  <!-- Sky gradient fills the upper ~75% of the canvas. -->
+  <rect width="400" height="320" fill="url(#sky)"/>
+
+  <!-- Distant city silhouette — extremely subtle, sets depth without competing. -->
+  <g opacity="0.18" fill="#404B66">
+    <path d="M0 215 L20 215 L20 200 L34 200 L34 210 L52 210 L52 188 L60 188 L60 198 L78 198 L78 205 L96 205 L96 192 L108 192 L108 210 L124 210 L124 195 L140 195 L140 215 Z"/>
+    <path d="M260 215 L274 215 L274 198 L286 198 L286 207 L302 207 L302 185 L312 185 L312 200 L330 200 L330 192 L346 192 L346 210 L360 210 L360 188 L374 188 L374 205 L392 205 L392 215 L400 215 L400 215 Z"/>
+  </g>
+
+  <!-- Subtle clouds — three soft ellipses at low opacity. -->
+  <g fill="#FFFFFF" opacity="0.65">
+    <ellipse cx="64" cy="58" rx="34" ry="6"/>
+    <ellipse cx="84" cy="62" rx="22" ry="4"/>
+    <ellipse cx="290" cy="48" rx="40" ry="5"/>
+    <ellipse cx="318" cy="52" rx="24" ry="3.5"/>
+  </g>
+
+  <!-- Ground plane — starts at y≈215, fills to bottom. -->
+  <rect x="0" y="215" width="400" height="105" fill="url(#ground)"/>
+
+  <!-- Soft horizon line glow — a single thin lighter band where ground meets sky. -->
+  <rect x="0" y="213" width="400" height="3" fill="#FAF6EE" opacity="0.55"/>
+
+  <!-- Tree silhouette behind the sign on the left — adds organic context. -->
+  <g opacity="0.55">
+    <ellipse cx="48" cy="180" rx="34" ry="38" fill="#1F4CD9" opacity="0.25"/>
+    <ellipse cx="38" cy="170" rx="22" ry="28" fill="#0B2466" opacity="0.22"/>
+    <rect x="46" y="200" width="4" height="22" fill="#404B66" opacity="0.5"/>
+  </g>
+
+  <!-- ─── Sign pole + sign ───────────────────────────────────────────── -->
+  <!-- Cast shadow on the ground under the pole. -->
+  <ellipse cx="170" cy="278" rx="22" ry="3" fill="#1A2233" opacity="0.18"/>
+
+  <!-- Pole: tall cylinder via vertical rectangle filled with the pole gradient. -->
+  <rect x="166" y="118" width="8" height="160" rx="2" fill="url(#pole)"/>
+  <!-- Pole base — flat foot. -->
+  <rect x="159" y="276" width="22" height="6" rx="1.5" fill="#5C6680"/>
+
+  <!-- Sign face — a slightly inset card with a soft drop shadow. -->
+  <g filter="url(#softShadow)">
+    <rect x="120" y="38" width="100" height="100" rx="14" fill="url(#signFace)" stroke="#1A2233" stroke-width="1.6"/>
+    <!-- Inner hairline border — gives a "real sign" depth. -->
+    <rect x="124" y="42" width="92" height="92" rx="11" fill="none" stroke="#FAF6EE" stroke-width="1"/>
+  </g>
+
+  <!-- Brand mark inside the sign — layered Ps + integrated alarm clock, preserved
+       exactly from public/parkproof-icon.svg, just scaled and positioned. -->
+  <g transform="translate(115 32) scale(0.21)">
     <text class="serif" x="154" y="394" font-size="330" fill="#1A2233">P</text>
     <text class="serif" x="106" y="344" font-size="330" fill="#275BFF">P</text>
     <g transform="translate(252 185)">
+      <!-- bells -->
       <path d="M-70,-50 C-94,-44 -102,-22 -94,-4 L-48,-18 C-49,-35 -57,-45 -70,-50Z" fill="#F2F4F7"/>
       <path d="M70,-50 C94,-44 102,-22 94,-4 L48,-18 C49,-35 57,-45 70,-50Z" fill="#F2F4F7"/>
       <circle cx="-82" cy="-57" r="5" fill="#F2F4F7"/>
       <circle cx="82" cy="-57" r="5" fill="#F2F4F7"/>
+      <!-- face -->
       <circle cx="0" cy="0" r="76" fill="#F2F4F7"/>
       <circle cx="0" cy="0" r="68" fill="none" stroke="#275BFF" stroke-width="10"/>
       <circle cx="0" cy="0" r="84" fill="none" stroke="#F2F4F7" stroke-width="8"/>
+      <!-- hands -->
       <line x1="0" y1="0" x2="-38" y2="-28" stroke="#1A2233" stroke-width="12" stroke-linecap="round"/>
       <line x1="0" y1="0" x2="45" y2="-34" stroke="#1A2233" stroke-width="12" stroke-linecap="round"/>
       <circle cx="0" cy="0" r="12" fill="#1A2233"/>
     </g>
   </g>
-  <path d="M245 183 C270 166 323 159 398 164" fill="none" stroke="#1A2233" stroke-width="1.5" stroke-linecap="round"/>
-  <path d="M233 209 L321 209 C344 209 374 214 400 225" fill="none" stroke="#1A2233" stroke-width="1.1"/>
-  <path d="M250 209 L243 232 L374 232" fill="none" stroke="#1A2233" stroke-width="1.1"/>
-  <path d="M321 172 C337 178 349 191 352 209" fill="none" stroke="#1A2233" stroke-width="1" opacity="0.75"/>
-  <circle cx="304" cy="238" r="25" fill="none" stroke="#1A2233" stroke-width="1.3"/>
-  <circle cx="304" cy="238" r="14" fill="none" stroke="#275BFF" stroke-width="0.8" opacity="0.7"/>
-  <path d="M280 238 H328 M304 214 V262 M287 221 L321 255 M321 221 L287 255" stroke="#1A2233" stroke-width="0.7" opacity="0.55"/>
-  <path d="M377 203 H400" stroke="#275BFF" stroke-width="1.2"/><path d="M314 197 H335" stroke="#20C4C7" stroke-width="1.4" opacity="0.75"/>
-  <path d="M35 276 H212 M234 276 H382" fill="none" stroke="#275BFF" stroke-width="0.8" opacity="0.45"/><path d="M119 281 H146" stroke="#20C4C7" stroke-width="1.1" opacity="0.8"/>
+
+  <!-- Brand-mark "sign-mounting" bracket — a small accent attaching sign to pole. -->
+  <path d="M214 80 L222 76 L222 110 L214 114 Z" fill="#20C4C7" opacity="0.85"/>
+
+  <!-- ─── Car ────────────────────────────────────────────────────────── -->
+  <!-- Soft ground shadow under the whole car. -->
+  <ellipse cx="318" cy="278" rx="68" ry="6" fill="#1A2233" opacity="0.22"/>
+
+  <!-- Car body — proper silhouette with cabin, hood, trunk, wheel arches.
+       Drawn as a single path so the gradient flows naturally. The shape reads
+       as a hatchback / mid-size sedan in 3/4 rear view. -->
+  <g filter="url(#softShadow)">
+    <!-- Lower body (sill, fenders, wheel arches) -->
+    <path
+      d="M260 268
+         C 260 258 263 252 270 250
+         L 277 250
+         C 279 240 286 234 297 234
+         L 343 234
+         C 354 234 361 240 363 250
+         L 370 250
+         C 377 252 380 258 380 268
+         L 380 272
+         C 380 274 378 276 376 276
+         L 264 276
+         C 262 276 260 274 260 272 Z"
+      fill="url(#carBody)"/>
+    <!-- Cabin / roof — slightly inset from the body. -->
+    <path
+      d="M286 250
+         C 286 242 290 236 297 236
+         L 343 236
+         C 350 236 354 242 354 250
+         Z"
+      fill="url(#carBody)" opacity="0.92"/>
+    <!-- Window glass — sits inside the cabin shape with a slim white pillar split. -->
+    <path
+      d="M290 250
+         C 290 244 293 240 298 240
+         L 318 240
+         L 318 250 Z"
+      fill="url(#carGlass)"/>
+    <path
+      d="M322 240
+         L 342 240
+         C 347 240 350 244 350 250
+         L 322 250 Z"
+      fill="url(#carGlass)"/>
+    <!-- Roof highlight — a thin lighter line along the top of the cabin. -->
+    <path d="M289 248 C 292 240 298 237 320 237 C 342 237 348 240 351 248"
+          fill="none" stroke="#9FB6FF" stroke-width="1.2" stroke-linecap="round" opacity="0.85"/>
+    <!-- Belt-line highlight — narrow lighter strip along the body crease. -->
+    <line x1="265" y1="262" x2="376" y2="262" stroke="#6F8FFF" stroke-width="1" opacity="0.7"/>
+    <!-- Headlight on the visible side — small warm pill. -->
+    <ellipse cx="372" cy="259" rx="3.5" ry="2" fill="#FAF6EE" opacity="0.95"/>
+  </g>
+
+  <!-- Wheels — placed AFTER the body so they sit on top of the wheel arches.
+       Each wheel has: outer tyre, rim, hubcap, and a soft ground shadow. -->
+  <g>
+    <ellipse cx="282" cy="280" rx="9" ry="2.5" fill="url(#wheelShadow)"/>
+    <circle cx="282" cy="274" r="8" fill="#1A2233"/>
+    <circle cx="282" cy="274" r="5" fill="#404B66"/>
+    <circle cx="282" cy="274" r="2" fill="#C7CBD6"/>
+
+    <ellipse cx="358" cy="280" rx="9" ry="2.5" fill="url(#wheelShadow)"/>
+    <circle cx="358" cy="274" r="8" fill="#1A2233"/>
+    <circle cx="358" cy="274" r="5" fill="#404B66"/>
+    <circle cx="358" cy="274" r="2" fill="#C7CBD6"/>
+  </g>
+
+  <!-- ─── Foreground curb stripe ─────────────────────────────────────── -->
+  <!-- A subtle dashed kerb line near the bottom suggests "this is a street". -->
+  <path d="M0 296 H400" stroke="#404B66" stroke-width="0.8" stroke-dasharray="8 6" opacity="0.35"/>
 </svg>
