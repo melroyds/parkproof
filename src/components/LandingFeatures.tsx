@@ -65,13 +65,18 @@ export default function LandingFeatures({ onScanCta }: { onScanCta: () => void }
             {t('landing.heroSubheadTail')}
           </p>
         </div>
-        {/* Hero illustration — kept inline-right for the visual rhythm of
-            the mockup. Decorative; alt="" is intentional. */}
+        {/* Hero photo — AI-generated photoreal scene of a Melbourne street
+            sign post + parked hatchback, with the layered-P + clock brand
+            mark composited onto the otherwise-blank sign face. Generated
+            via Nano Banana (Gemini Flash image gen) then baked through
+            scripts/_composite_hero.py. The SVG fallback at
+            hero-illustration.svg is kept in git history if you ever want
+            to revert (commit d1a30af). Decorative; alt="" is intentional. */}
         <img
-          src="/hero-illustration.svg"
+          src="/hero-illustration.png"
           alt=""
           aria-hidden
-          className="w-[140px] sm:w-[180px] shrink-0 select-none pointer-events-none"
+          className="w-[140px] sm:w-[180px] shrink-0 select-none pointer-events-none rounded-xl"
         />
       </div>
 
