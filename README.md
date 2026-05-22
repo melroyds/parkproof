@@ -371,7 +371,7 @@ ParkProof/
 │   ├── parkproof-wordmark.svg     ← horizontal logo lockup
 │   ├── parkproof-icon-mono.svg    ← single-colour variant
 │   ├── parkproof-splash.svg       ← portrait splash for PWA install
-│   ├── hero-illustration.svg      ← home-screen scene
+│   ├── hero-illustration.png      ← AI-generated photoreal hero with brand mark composited on the sign face (see scripts/_composite_hero.py)
 │   ├── empty-history.svg          ← parking-bay empty state
 │   ├── cavalcade-pattern.svg      ← repeating background of stylised cars
 │   ├── og-image.png               ← social share card (1200×630)

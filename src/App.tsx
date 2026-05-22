@@ -556,7 +556,7 @@ function App() {
         ) : (
           <>
             <img
-              src="/hero-illustration.svg"
+              src="/hero-illustration.png"
               alt=""
               className="w-full max-w-[360px] mx-auto mb-2 select-none pointer-events-none"
               aria-hidden

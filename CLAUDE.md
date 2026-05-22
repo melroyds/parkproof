@@ -333,7 +333,7 @@ public/parkproof-icon.svg                      ← source for all generated PWA 
 public/parkproof-wordmark.svg                  ← horizontal lockup
 public/parkproof-icon-mono.svg                 ← single-colour variant
 public/parkproof-splash.svg                    ← portrait splash for PWA install
-public/hero-illustration.svg                   ← home-screen scene
+public/hero-illustration.png                   ← AI-generated photoreal hero (Nano Banana) with brand mark composited on the sign face via scripts/_composite_hero.py
 public/empty-history.svg                       ← parking-bay empty state
 public/cavalcade-pattern.svg                   ← repeating background pattern (body bg)
 public/og-image.png                            ← social share card (1200×630)
