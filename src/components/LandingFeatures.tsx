@@ -48,36 +48,40 @@ export default function LandingFeatures({ onScanCta }: { onScanCta: () => void }
 
   return (
     <div className="w-full">
-      {/* ── Hero ─────────────────────────────────────────────────────── */}
-      <div className="flex flex-row items-center gap-3 mb-10">
-        <div className="flex-1 min-w-0">
-          {/* Split-colour headline. Three explicit lines so the brand-blue
-              "simple." sits below the navy "Parking / made" — the visual
-              rhythm of the mockup depends on this exact line break. */}
-          <h1 className="font-display text-5xl sm:text-6xl font-extrabold text-ink-900 tracking-tight leading-[0.95]">
-            <span className="block">{t('landing.heroTitle1')}</span>
-            <span className="block">{t('landing.heroTitle2')}</span>
-            <span className="block text-brand-500">{t('landing.heroTitle3')}</span>
-          </h1>
-          <p className="text-sm text-ink-700 mt-4 leading-relaxed max-w-[20rem]">
-            {t('landing.heroSubhead')}{' '}
-            <span className="text-brand-600 font-bold">{t('landing.heroSubheadAccent')}</span>
-            {t('landing.heroSubheadTail')}
-          </p>
-        </div>
-        {/* Hero photo — AI-generated photoreal scene of a Melbourne street
-            sign post + parked hatchback, with the layered-P + clock brand
-            mark composited onto the otherwise-blank sign face. Generated
-            via Nano Banana (Gemini Flash image gen) then baked through
-            scripts/_composite_hero.py. The SVG fallback at
-            hero-illustration.svg is kept in git history if you ever want
-            to revert (commit d1a30af). Decorative; alt="" is intentional. */}
+      {/* ── Hero photo — full-bleed at the TOP, ahead of the headline.
+          Earlier this lived in a small 140-180px side-column, which made
+          it read as decorative. The user feedback was unambiguous: the
+          photo IS the brand statement, headline supports it. Now it's a
+          generous full-width image with a slight shadow + rounded corners
+          so it reads as a hero shot, not a thumbnail. object-cover on a
+          fixed aspect ratio keeps the composition tight on tall phones.
+          AI-generated (Nano Banana / Gemini Flash) with the layered-P +
+          clock brand mark composited onto the otherwise-blank sign face
+          via scripts/_composite_hero.py. */}
+      <div className="w-full mb-8 -mx-2">
         <img
           src="/hero-illustration.png"
           alt=""
           aria-hidden
-          className="w-[140px] sm:w-[180px] shrink-0 select-none pointer-events-none rounded-xl"
+          className="w-full aspect-[5/4] object-cover rounded-3xl shadow-xl shadow-ink-900/15 select-none pointer-events-none"
         />
+      </div>
+
+      {/* ── Headline + value bullets, now BELOW the hero ─────────────── */}
+      <div className="mb-6">
+        {/* Split-colour headline. Three explicit lines so the brand-blue
+            "simple." sits below the navy "Parking / made" — the visual
+            rhythm of the mockup depends on this exact line break. */}
+        <h1 className="font-display text-5xl sm:text-6xl font-extrabold text-ink-900 tracking-tight leading-[0.95]">
+          <span className="block">{t('landing.heroTitle1')}</span>
+          <span className="block">{t('landing.heroTitle2')}</span>
+          <span className="block text-brand-500">{t('landing.heroTitle3')}</span>
+        </h1>
+        <p className="text-sm text-ink-700 mt-4 leading-relaxed max-w-[22rem]">
+          {t('landing.heroSubhead')}{' '}
+          <span className="text-brand-600 font-bold">{t('landing.heroSubheadAccent')}</span>
+          {t('landing.heroSubheadTail')}
+        </p>
       </div>
 
       {/* ── Three checkmark value props ─────────────────────────────── */}
