@@ -397,8 +397,18 @@ async function captureFlow({ page, signPhotoPath, carPhotoPath, ticketPath }) {
   // sign photo, expired status, and a complete cryptographic signature so
   // the "Signed" badge renders and the PDF appendix path exercises.
   const SIGN_FIXTURE_DATAURL = `data:image/png;base64,${readFileSync(signPhotoPath).toString('base64')}`
+  // The car-photo fixture is read separately so the seeded fixture-yesterday
+  // session can have a DIFFERENT image in its "Car at the spot" slot — not
+  // the sign photo (which looked like a bug in screenshot #07). Use the
+  // file's actual mime type so JPEG fixtures don't get a misleading
+  // `image/png` data-URL prefix.
+  const CAR_FIXTURE_DATAURL = (() => {
+    const ext = carPhotoPath.split('.').pop().toLowerCase()
+    const mime = ext === 'jpg' || ext === 'jpeg' ? 'image/jpeg' : 'image/png'
+    return `data:${mime};base64,${readFileSync(carPhotoPath).toString('base64')}`
+  })()
   await page.evaluate(
-    async ({ signPhotoDataUrl }) => {
+    async ({ signPhotoDataUrl, carPhotoDataUrl }) => {
       // localStorage caps at ~5MB per origin; the raw og-image fixture is
       // ~2.5MB base64 per photo, so resize via canvas before storing —
       // mirrors src/lib/image.ts behaviour for real user uploads.
@@ -420,6 +430,9 @@ async function captureFlow({ page, signPhotoPath, carPhotoPath, ticketPath }) {
         return c.toDataURL('image/jpeg', 0.7)
       }
       const smallSignPhoto = await downscaledJpeg(signPhotoDataUrl)
+      // Same resize pipeline for the car fixture so storage sizes match
+      // what real user uploads land at (≤800px, JPEG @ 0.7).
+      const smallCarPhoto = await downscaledJpeg(carPhotoDataUrl)
 
       const KEY = 'parkproof.sessions.v1'
       const sessions = JSON.parse(localStorage.getItem(KEY) || '[]')
@@ -446,7 +459,7 @@ async function captureFlow({ page, signPhotoPath, carPhotoPath, ticketPath }) {
             accuracy_meters: 12,
           },
           sign_photo: smallSignPhoto,
-          car_photo: smallSignPhoto,
+          car_photo: smallCarPhoto,
           rules: '2P Mon-Fri 8am-6pm; Permit Zone Sat-Sun 8am-11pm',
           observations: [
             { scope: '↔ Both directions', items: ['2P (2 hours)', '8am-6pm Mon-Fri'] },
@@ -511,7 +524,7 @@ async function captureFlow({ page, signPhotoPath, carPhotoPath, ticketPath }) {
       )
       localStorage.setItem(KEY, JSON.stringify(sessions))
     },
-    { signPhotoDataUrl: SIGN_FIXTURE_DATAURL },
+    { signPhotoDataUrl: SIGN_FIXTURE_DATAURL, carPhotoDataUrl: CAR_FIXTURE_DATAURL },
   )
 
   await page.getByRole('button', { name: /^Done$/ }).click()
