@@ -212,7 +212,16 @@
     "pushTitleFallback": "停车提醒",
     "pushBodyAtExpiry": "您的停车时间已到。",
     "pushBodyBefore_one": "距停车到期还剩 1 分钟。",
-    "pushBodyBefore_other": "距停车到期还剩 {{count}} 分钟。"
+    "pushBodyBefore_other": "距停车到期还剩 {{count}} 分钟。",
+    "pushBodyCheckOn": "是时候去看看你的车了。",
+    "noSign": {
+      "intro": "此处没有标志规定的到期时间,但您仍可设置一个查看提醒。选择从现在起多久之后提醒,可多选。",
+      "chipMin": "{{count}} 分钟",
+      "chipHour_one": "1 小时",
+      "chipHour_other": "{{count}} 小时",
+      "calendarCopy": "添加到 iPhone / Android / Outlook 日历,每个时间一个闹钟。即使关闭此应用也会触发。",
+      "browserCopy": "在每个所选时间触发通知,标签页内 + 设备系统级(如支持)。"
+    }
   },
   "history": {
     "header": "停车记录",

@@ -212,7 +212,16 @@
     "pushTitleFallback": "ਪਾਰਕਿੰਗ ਯਾਦ-ਪੱਤਰ",
     "pushBodyAtExpiry": "ਤੁਹਾਡੀ ਪਾਰਕਿੰਗ ਹੁਣ ਖ਼ਤਮ ਹੋ ਰਹੀ ਹੈ।",
     "pushBodyBefore_one": "ਪਾਰਕਿੰਗ ਖ਼ਤਮ ਹੋਣ ਵਿੱਚ 1 ਮਿੰਟ ਬਾਕੀ।",
-    "pushBodyBefore_other": "ਪਾਰਕਿੰਗ ਖ਼ਤਮ ਹੋਣ ਵਿੱਚ {{count}} ਮਿੰਟ ਬਾਕੀ।"
+    "pushBodyBefore_other": "ਪਾਰਕਿੰਗ ਖ਼ਤਮ ਹੋਣ ਵਿੱਚ {{count}} ਮਿੰਟ ਬਾਕੀ।",
+    "pushBodyCheckOn": "ਹੁਣ ਆਪਣੀ ਕਾਰ ਵੇਖਣ ਦਾ ਸਮਾਂ ਹੈ।",
+    "noSign": {
+      "intro": "ਇੱਥੇ ਕੋਈ ਸਮਾਪਤੀ ਸਮਾਂ ਨਹੀਂ, ਪਰ ਫੇਰ ਵੀ ਤੁਸੀਂ ਜਾਂਚ ਲਈ ਯਾਦ-ਪੱਤਰ ਲਾ ਸਕਦੇ ਹੋ। ਹੁਣ ਤੋਂ ਕਿੰਨੀ ਦੇਰ ਬਾਅਦ ਚੁਣੋ — ਜਿੰਨੇ ਚਾਹੋ।",
+      "chipMin": "{{count}} ਮਿੰਟ",
+      "chipHour_one": "1 ਘੰਟਾ",
+      "chipHour_other": "{{count}} ਘੰਟੇ",
+      "calendarCopy": "iPhone / Android / Outlook ਕੈਲੰਡਰ ਵਿੱਚ ਜੋੜੋ, ਹਰ ਚੋਣ ਲਈ ਇੱਕ ਅਲਾਰਮ। ਐਪ ਬੰਦ ਹੋਣ 'ਤੇ ਵੀ ਕੰਮ ਕਰਦਾ ਹੈ।",
+      "browserCopy": "ਹਰ ਚੁਣੇ ਸਮੇਂ 'ਤੇ ਸੂਚਨਾ — ਟੈਬ ਵਿੱਚ ਅਤੇ ਜਿੱਥੇ ਉਪਲਬਧ ਹੋਵੇ ਡਿਵਾਈਸ ਦੇ OS 'ਤੇ।"
+    }
   },
   "history": {
     "header": "ਸੈਸ਼ਨ ਇਤਿਹਾਸ",

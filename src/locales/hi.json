@@ -212,7 +212,16 @@
     "pushTitleFallback": "पार्किंग रिमाइंडर",
     "pushBodyAtExpiry": "आपकी पार्किंग अब खत्म हो रही है।",
     "pushBodyBefore_one": "पार्किंग खत्म होने में 1 मिनट बाकी।",
-    "pushBodyBefore_other": "पार्किंग खत्म होने में {{count}} मिनट बाकी।"
+    "pushBodyBefore_other": "पार्किंग खत्म होने में {{count}} मिनट बाकी।",
+    "pushBodyCheckOn": "अब अपनी गाड़ी देखने का समय है।",
+    "noSign": {
+      "intro": "यहां कोई समाप्ति समय नहीं है, फिर भी आप जांच के लिए एक रिमाइंडर सेट कर सकते हैं। अभी से कितने समय बाद चुनें — जितने चाहें उतने।",
+      "chipMin": "{{count}} मिनट",
+      "chipHour_one": "1 घंटा",
+      "chipHour_other": "{{count}} घंटे",
+      "calendarCopy": "iPhone / Android / Outlook कैलेंडर में जुड़ता है, हर चयन पर एक अलार्म। ऐप बंद होने पर भी काम करता है।",
+      "browserCopy": "हर चुने हुए समय पर अधिसूचना — टैब में और सहायक डिवाइस के OS पर।"
+    }
   },
   "history": {
     "header": "सत्र इतिहास",

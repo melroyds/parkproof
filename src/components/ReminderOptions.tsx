@@ -1,7 +1,11 @@
 import { useMemo, useState } from 'react'
 import { Trans, useTranslation } from 'react-i18next'
 import type { ParkingSession } from '../types'
-import { scheduleParkingReminders, type ScheduleResult } from '../lib/notifications'
+import {
+  scheduleAbsoluteReminders,
+  scheduleParkingReminders,
+  type ScheduleResult,
+} from '../lib/notifications'
 import { schedulePushReminders, type ScheduledReminder } from '../lib/push'
 import { useNow } from '../lib/use-now'
 import { formatExpiryAbsolute, formatReminderTimesLine } from '../lib/time-format'
@@ -216,20 +220,9 @@ export default function ReminderOptions({ session, onDone }: Props) {
 
   // === Empty states ===
   if (!session.expires_at) {
-    return (
-      <div className="min-h-screen flex flex-col p-6 max-w-md mx-auto w-full">
-        <h2 className="font-display text-3xl font-extrabold text-ink-900 mb-2">{t('reminders.header')}</h2>
-        <p className="text-sm text-ink-700 mb-6 leading-relaxed">
-          {t('reminders.noExpiry')}
-        </p>
-        <button
-          onClick={onDone}
-          className="mt-auto bg-ink-900 hover:bg-ink-800 text-white font-semibold py-4 rounded-2xl shadow-md transition-colors"
-        >
-          {t('common.done')}
-        </button>
-      </div>
-    )
+    // No expiry = no-sign / free-park session. Different picker shape:
+    // "remind me in N hours from now" instead of "X min before expiry".
+    return <NoSignReminderPicker session={session} onDone={onDone} />
   }
 
   if (!anyFireable) {
@@ -362,6 +355,225 @@ export default function ReminderOptions({ session, onDone }: Props) {
             <h3 className="font-display font-bold text-ink-900">{t('reminders.browserHeader')}</h3>
             <p className="text-xs text-ink-600 mt-1 leading-relaxed">
               {t('reminders.browserCopy')}
+            </p>
+          </div>
+        </div>
+        <button
+          onClick={handleNotify}
+          disabled={
+            notifBusy ||
+            notifResult?.status === 'scheduled' ||
+            selectedList.length === 0
+          }
+          className="w-full bg-accent-500 hover:bg-accent-600 disabled:opacity-60 text-white font-semibold py-3 rounded-xl shadow-md shadow-accent-500/20 transition-colors"
+        >
+          {notifBusy ? (
+            <span>{t('reminders.browserRequesting')}</span>
+          ) : notifResult ? (
+            <NotifStatusLine result={notifResult} />
+          ) : selectedList.length === 0 ? (
+            <span>{t('reminders.browserNothingSelected')}</span>
+          ) : (
+            <span>{t('reminders.browserCta', { count: selectedList.length })}</span>
+          )}
+        </button>
+      </section>
+
+      <button
+        onClick={onDone}
+        className="mt-auto bg-ink-900 hover:bg-ink-800 text-white font-semibold py-4 rounded-2xl shadow-md transition-colors"
+      >
+        {t('common.done')}
+      </button>
+    </div>
+  )
+}
+
+/**
+ * Picker for OPEN-ENDED sessions — the no-sign / free-park case where
+ * there's no posted expiry. Different chips: instead of "X min before
+ * expiry", offer absolute durations from now ("remind me in 1h / 2h /
+ * 4h / 8h"). All three rails (.ics + in-tab + Web Push) fire just like
+ * the expiry path, with absolute fire-at times instead of computed
+ * offsets-before-expiry.
+ *
+ * The driver still has to hit "I've left" to actually end the session
+ * (per the no-sign open-ended model) — the reminders are just "come
+ * check on your car", not "you'll get a ticket". Copy reflects that.
+ */
+const NOSIGN_DURATIONS_MIN = [30, 60, 120, 240, 480] as const
+type NoSignDurationMin = (typeof NOSIGN_DURATIONS_MIN)[number]
+
+function NoSignReminderPicker({ session, onDone }: Props) {
+  const { t } = useTranslation()
+  const [selected, setSelected] = useState<Set<NoSignDurationMin>>(
+    () => new Set<NoSignDurationMin>([60]),
+  )
+  const [icsState, setIcsState] = useState<'idle' | 'downloaded' | 'error' | 'empty'>('idle')
+  const [notifResult, setNotifResult] = useState<ScheduleResult | null>(null)
+  const [notifBusy, setNotifBusy] = useState(false)
+  const now = useNow(30_000)
+  const timeZone = useMemo(() => sessionTimezone(session.location), [session.location])
+
+  const toggle = (duration: NoSignDurationMin) => {
+    setSelected((prev) => {
+      const next = new Set(prev)
+      if (next.has(duration)) next.delete(duration)
+      else next.add(duration)
+      return next
+    })
+    setIcsState('idle')
+    setNotifResult(null)
+  }
+
+  // Sorted shortest → longest so the summary reads "1h, 2h, 4h" not "4h, 1h, 2h".
+  const selectedList = useMemo(
+    () => [...selected].sort((a, b) => a - b),
+    [selected],
+  )
+
+  const selectedFireAtList = useMemo(
+    () => selectedList.map((mins) => new Date(now + mins * 60 * 1000)),
+    [selectedList, now],
+  )
+
+  const selectedTimesLabel = useMemo(
+    () =>
+      selectedFireAtList.length === 0
+        ? null
+        : formatReminderTimesLine(selectedFireAtList, { now: new Date(now), timeZone }),
+    [selectedFireAtList, now, timeZone],
+  )
+
+  const handleIcs = async () => {
+    if (selectedFireAtList.length === 0) {
+      setIcsState('empty')
+      return
+    }
+    try {
+      const { downloadIcsAbsolute } = await import('../lib/ics')
+      downloadIcsAbsolute(session, selectedFireAtList)
+      setIcsState('downloaded')
+    } catch {
+      setIcsState('error')
+    }
+  }
+
+  const handleNotify = async () => {
+    setNotifBusy(true)
+    const result = await scheduleAbsoluteReminders(session, selectedFireAtList)
+    setNotifResult(result)
+    setNotifBusy(false)
+
+    // Fire-and-forget: also schedule server-side Web Push at the same
+    // absolute times so the user gets the reminder even with the tab
+    // closed. Same pattern as the expiry-path handleNotify above.
+    const title = session.location?.address
+      ? session.location.address
+      : t('reminders.pushTitleFallback')
+    const reminders: ScheduledReminder[] = selectedFireAtList.map((fireAt) => ({
+      fire_at: fireAt.toISOString(),
+      title,
+      body: t('reminders.pushBodyCheckOn'),
+      url: `/?session=${session.id}`,
+    }))
+    if (reminders.length > 0) {
+      void schedulePushReminders(session.id, reminders)
+    }
+  }
+
+  const chipLabel = (duration: NoSignDurationMin): string => {
+    if (duration < 60) return t('reminders.noSign.chipMin', { count: duration })
+    return t('reminders.noSign.chipHour', { count: duration / 60 })
+  }
+
+  return (
+    <div className="min-h-screen flex flex-col p-6 max-w-md mx-auto w-full">
+      <h2 className="font-display text-3xl font-extrabold text-ink-900 mb-1">
+        {t('reminders.header')}
+      </h2>
+      <p className="text-sm text-ink-700 mb-6 leading-relaxed">
+        {t('reminders.noSign.intro')}
+      </p>
+
+      {/* Chip selector */}
+      <div className="flex flex-wrap gap-2 mb-3">
+        {NOSIGN_DURATIONS_MIN.map((duration) => {
+          const isSelected = selected.has(duration)
+          const base =
+            'px-4 py-2 rounded-full text-sm font-semibold border-2 transition-colors min-w-[88px] text-center'
+          const cls = isSelected
+            ? `${base} bg-brand-500 border-brand-500 text-white shadow-sm shadow-brand-500/30`
+            : `${base} bg-white border-paper-300 text-ink-700 hover:border-brand-300`
+          return (
+            <button
+              key={duration}
+              type="button"
+              onClick={() => toggle(duration)}
+              aria-pressed={isSelected}
+              className={cls}
+            >
+              {chipLabel(duration)}
+            </button>
+          )
+        })}
+      </div>
+
+      {/* Live summary of selected fire-times */}
+      <p className="text-xs text-ink-600 mb-6 leading-relaxed min-h-[2.25rem]">
+        {selectedTimesLabel ? (
+          <Trans
+            i18nKey="reminders.summaryWithSelections"
+            values={{ times: selectedTimesLabel }}
+            components={{ strong: <span className="font-display font-semibold text-ink-900" /> }}
+          />
+        ) : (
+          <span className="italic text-ink-500">{t('reminders.summaryEmpty')}</span>
+        )}
+      </p>
+
+      {/* Calendar */}
+      <section className="mb-3 bg-white rounded-2xl border border-paper-300 p-5">
+        <div className="flex items-start gap-3 mb-3">
+          <div className="w-12 h-12 rounded-xl bg-brand-50 text-brand-600 flex items-center justify-center shrink-0">
+            <Icon name="calendar" className="w-6 h-6" />
+          </div>
+          <div>
+            <h3 className="font-display font-bold text-ink-900">
+              {t('reminders.calendarHeader')}
+            </h3>
+            <p className="text-xs text-ink-600 mt-1 leading-relaxed">
+              {t('reminders.noSign.calendarCopy')}
+            </p>
+          </div>
+        </div>
+        <button
+          onClick={handleIcs}
+          disabled={icsState === 'downloaded' || selectedList.length === 0}
+          className="w-full bg-gradient-to-r from-brand-500 via-brand-500 to-purple-600 hover:brightness-110 active:brightness-95 disabled:bg-none disabled:bg-brand-200 disabled:text-white/70 text-white font-semibold py-3 rounded-xl shadow-md shadow-brand-500/20 transition-[filter]"
+        >
+          {icsState === 'downloaded'
+            ? t('reminders.calendarDownloaded')
+            : icsState === 'error'
+              ? t('reminders.calendarError')
+              : icsState === 'empty'
+                ? t('reminders.calendarPickAtLeastOne')
+                : t('reminders.calendarCta', { count: selectedList.length })}
+        </button>
+      </section>
+
+      {/* Push */}
+      <section className="mb-6 bg-white rounded-2xl border border-paper-300 p-5">
+        <div className="flex items-start gap-3 mb-3">
+          <div className="w-12 h-12 rounded-xl bg-accent-50 text-accent-700 flex items-center justify-center shrink-0">
+            <Icon name="bell" className="w-6 h-6" />
+          </div>
+          <div>
+            <h3 className="font-display font-bold text-ink-900">
+              {t('reminders.browserHeader')}
+            </h3>
+            <p className="text-xs text-ink-600 mt-1 leading-relaxed">
+              {t('reminders.noSign.browserCopy')}
             </p>
           </div>
         </div>

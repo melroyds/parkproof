@@ -218,7 +218,16 @@
     "pushTitleFallback": "Promemoria parcheggio",
     "pushBodyAtExpiry": "Il tuo parcheggio sta scadendo ora.",
     "pushBodyBefore_one": "1 minuto alla scadenza del parcheggio.",
-    "pushBodyBefore_other": "{{count}} minuti alla scadenza del parcheggio."
+    "pushBodyBefore_other": "{{count}} minuti alla scadenza del parcheggio.",
+    "pushBodyCheckOn": "È ora di controllare la tua auto.",
+    "noSign": {
+      "intro": "Qui non c'è una scadenza esposta, ma puoi comunque chiedere un promemoria di controllo. Scegli tra quanto tempo — quante opzioni vuoi.",
+      "chipMin": "{{count}} min",
+      "chipHour_one": "1 ora",
+      "chipHour_other": "{{count}} ore",
+      "calendarCopy": "Si aggiunge al calendario iPhone / Android / Outlook con una sveglia per ogni scelta. Funziona anche se chiudi l'app.",
+      "browserCopy": "Invia una notifica a ogni orario scelto, nella tab più sul sistema operativo se disponibile."
+    }
   },
   "history": {
     "header": "Cronologia sessioni",

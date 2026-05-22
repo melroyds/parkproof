@@ -241,7 +241,12 @@ function App() {
       // No-sign sessions skip the reminder step — there's no expiry to remind
       // about. They go straight back to the home screen, where the saved
       // session is visible in History.
-      setView(session.no_sign ? { name: 'home' } : { name: 'remind', session })
+      // No-sign sessions used to skip ReminderOptions because the picker
+      // only knew about "X min before expiry" and there's no expiry on a
+      // no-sign session. The picker now supports an open-ended "remind
+      // me in N hours" mode, so route everyone through it — the driver
+      // can pick "1 hour" / "4 hours" / etc. to check on their car.
+      setView({ name: 'remind', session })
       // Bump the actives memo so the home card surfaces the new session
       // immediately rather than waiting for the next 30s tick. Mostly
       // relevant for no-sign sessions that route straight back to home.

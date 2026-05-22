@@ -212,7 +212,16 @@
     "pushTitleFallback": "Nhắc nhở đỗ xe",
     "pushBodyAtExpiry": "Thời gian đỗ xe của bạn đã hết.",
     "pushBodyBefore_one": "Còn 1 phút nữa hết thời gian đỗ xe.",
-    "pushBodyBefore_other": "Còn {{count}} phút nữa hết thời gian đỗ xe."
+    "pushBodyBefore_other": "Còn {{count}} phút nữa hết thời gian đỗ xe.",
+    "pushBodyCheckOn": "Đã đến lúc kiểm tra xe của bạn.",
+    "noSign": {
+      "intro": "Không có thời hạn đỗ xe ở đây, nhưng bạn vẫn có thể đặt nhắc nhở kiểm tra. Chọn sau bao lâu kể từ bây giờ — chọn bao nhiêu cũng được.",
+      "chipMin": "{{count}} phút",
+      "chipHour_one": "1 giờ",
+      "chipHour_other": "{{count}} giờ",
+      "calendarCopy": "Thêm vào lịch iPhone / Android / Outlook với một báo thức cho mỗi mốc. Vẫn hoạt động ngay cả khi đóng ứng dụng.",
+      "browserCopy": "Bật thông báo tại mỗi mốc đã chọn, trong tab cộng hệ thống thiết bị khi có."
+    }
   },
   "history": {
     "header": "Lịch sử phiên",

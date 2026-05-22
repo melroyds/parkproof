@@ -324,7 +324,16 @@
     "pushTitleFallback": "Parking reminder",
     "pushBodyAtExpiry": "Your parking expires now.",
     "pushBodyBefore_one": "1 min until your parking expires.",
-    "pushBodyBefore_other": "{{count}} min until your parking expires."
+    "pushBodyBefore_other": "{{count}} min until your parking expires.",
+    "pushBodyCheckOn": "Time to check on your car.",
+    "noSign": {
+      "intro": "No posted expiry here, but you can still ask for a check-in reminder. Pick how long from now — choose as many as you like.",
+      "chipMin": "{{count}} min",
+      "chipHour_one": "1 hour",
+      "chipHour_other": "{{count}} hours",
+      "calendarCopy": "Drops into the iPhone / Android / Outlook calendar with one alarm per chip. Survives even if you close this app.",
+      "browserCopy": "Fires a notification at each chosen time, in-tab plus on the device's OS when available."
+    }
   },
   "history": {
     "header": "Session history",

@@ -26,6 +26,90 @@ const MAX_TIMEOUT_MS = 24 * 60 * 60 * 1000
 // awkward "scheduled… and it fired half a second later" UX.
 const SAFETY_MARGIN_MS = 30 * 1000
 
+/**
+ * Schedule in-tab browser notifications for an OPEN-ENDED no-sign session.
+ *
+ * Unlike `scheduleParkingReminders` (which computes delays from expires_at
+ * minus offset), this takes absolute Date objects and arms a setTimeout
+ * for each. Same setTimeout constraints apply — anything beyond 24h is
+ * rejected because browser timer precision degrades past that point.
+ *
+ * Body text is "Time to check on your car at <address>" — explicitly
+ * different from the expiry-based "Parking expires" copy because the
+ * intent is different (you ASKED to be reminded, not "you'd better move
+ * or get a ticket").
+ */
+export async function scheduleAbsoluteReminders(
+  session: ParkingSession,
+  fireAtList: Date[],
+): Promise<ScheduleResult> {
+  const total = fireAtList.length
+  if (total === 0) {
+    return { status: 'nothing-selected', scheduledCount: 0, pastCount: 0, totalSelected: 0 }
+  }
+  if (typeof window === 'undefined' || !('Notification' in window)) {
+    return { status: 'unsupported', scheduledCount: 0, pastCount: 0, totalSelected: total }
+  }
+
+  const now = Date.now()
+  const fireable: { fireAt: Date; delay: number }[] = []
+  let pastCount = 0
+  let tooFarCount = 0
+  for (const fireAt of fireAtList) {
+    const delay = fireAt.getTime() - now
+    if (delay < SAFETY_MARGIN_MS) {
+      pastCount += 1
+    } else if (delay > MAX_TIMEOUT_MS) {
+      tooFarCount += 1
+    } else {
+      fireable.push({ fireAt, delay })
+    }
+  }
+
+  if (fireable.length === 0) {
+    return {
+      status: pastCount > 0 ? 'all-past' : tooFarCount > 0 ? 'all-too-far' : 'all-past',
+      scheduledCount: 0,
+      pastCount,
+      totalSelected: total,
+    }
+  }
+
+  let permission = Notification.permission
+  if (permission === 'default') {
+    permission = await Notification.requestPermission()
+  }
+  if (permission !== 'granted') {
+    return { status: 'denied', scheduledCount: 0, pastCount, totalSelected: total }
+  }
+
+  const locationLabel = session.location
+    ? (session.location.address ??
+      `${session.location.lat.toFixed(4)}, ${session.location.lng.toFixed(4)}`)
+    : 'your spot'
+
+  for (const { fireAt, delay } of fireable) {
+    setTimeout(() => {
+      try {
+        new Notification('🚗 Check on your car', {
+          body: `Time to check on your car at ${locationLabel}.`,
+          // Distinct tag per fire-time so multiple notifications coexist.
+          tag: `parkproof-${session.id}-${fireAt.getTime()}`,
+        })
+      } catch {
+        // Permission can be revoked mid-flight — silent best-effort.
+      }
+    }, delay)
+  }
+
+  return {
+    status: 'scheduled',
+    scheduledCount: fireable.length,
+    pastCount,
+    totalSelected: total,
+  }
+}
+
 export async function scheduleParkingReminders(
   session: ParkingSession,
   offsetsMinutes: number[],
