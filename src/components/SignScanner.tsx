@@ -301,7 +301,7 @@ export default function SignScanner({ onCapture, onReuseSession, onNoSignScan, o
             </button>
             <button
               onClick={confirm}
-              className="flex-1 bg-brand-500 hover:bg-brand-600 active:bg-brand-700 text-white font-semibold py-3 rounded-xl shadow-md shadow-brand-500/20 transition-colors"
+              className="flex-1 bg-gradient-to-r from-brand-500 via-brand-500 to-purple-600 hover:brightness-110 active:brightness-95 disabled:bg-none text-white font-semibold py-3 rounded-xl shadow-md shadow-brand-500/20 transition-colors"
             >
               {quality && quality.verdict !== 'ok' ? t('scanner.translateAnyway') : t('scanner.translate')}
             </button>
@@ -410,7 +410,7 @@ export default function SignScanner({ onCapture, onReuseSession, onNoSignScan, o
             </button>
             <button
               onClick={handleNoSignSave}
-              className="flex-1 bg-brand-500 hover:bg-brand-600 active:bg-brand-700 text-white font-semibold py-3 rounded-xl shadow-md shadow-brand-500/20 transition-colors"
+              className="flex-1 bg-gradient-to-r from-brand-500 via-brand-500 to-purple-600 hover:brightness-110 active:brightness-95 disabled:bg-none text-white font-semibold py-3 rounded-xl shadow-md shadow-brand-500/20 transition-colors"
             >
               {t('scanner.noSignContinue')}
             </button>

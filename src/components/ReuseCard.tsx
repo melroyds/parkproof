@@ -69,7 +69,7 @@ export default function ReuseCard({ session, distanceMeters, onReuse, onDismiss 
         </button>
         <button
           onClick={onReuse}
-          className="flex-1 bg-brand-500 hover:bg-brand-600 active:bg-brand-700 text-white font-semibold py-2.5 rounded-xl shadow-md shadow-brand-500/20 transition-colors text-sm"
+          className="flex-1 bg-gradient-to-r from-brand-500 via-brand-500 to-purple-600 hover:brightness-110 active:brightness-95 disabled:bg-none text-white font-semibold py-2.5 rounded-xl shadow-md shadow-brand-500/20 transition-colors text-sm"
         >
           {t('reuse.useThisRead')}
         </button>

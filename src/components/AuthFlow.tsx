@@ -255,7 +255,7 @@ export default function AuthFlow({ onDone, onCancel }: Props) {
           <button
             type="submit"
             disabled={busy}
-            className="bg-brand-500 hover:bg-brand-600 active:bg-brand-700 disabled:bg-brand-300 text-white font-semibold py-3 rounded-xl shadow-md shadow-brand-500/20 transition-colors mt-2"
+            className="bg-gradient-to-r from-brand-500 via-brand-500 to-purple-600 hover:brightness-110 active:brightness-95 disabled:bg-none disabled:bg-brand-300 text-white font-semibold py-3 rounded-xl shadow-md shadow-brand-500/20 transition-colors mt-2"
           >
             {busy
               ? stage.name === 'sign-in'

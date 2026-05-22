@@ -446,7 +446,7 @@ export default function SessionDetail({
         <button
           onClick={handleExportPdf}
           disabled={pdfBusy}
-          className="bg-brand-500 hover:bg-brand-600 active:bg-brand-700 disabled:bg-brand-300 text-white font-semibold py-4 rounded-2xl shadow-lg shadow-brand-500/25 transition-colors"
+          className="bg-gradient-to-r from-brand-500 via-brand-500 to-purple-600 hover:brightness-110 active:brightness-95 disabled:bg-none disabled:bg-brand-300 text-white font-semibold py-4 rounded-2xl shadow-lg shadow-brand-500/25 transition-colors"
         >
           {pdfBusy ? t('session.buildingPdf') : t('session.exportAsPdf')}
         </button>

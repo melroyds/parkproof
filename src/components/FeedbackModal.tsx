@@ -211,7 +211,7 @@ export default function FeedbackModal({ open, onClose, context }: Props) {
               <button
                 type="submit"
                 disabled={!canSubmit}
-                className="px-5 py-2 bg-brand-500 hover:bg-brand-600 active:bg-brand-700 disabled:bg-paper-300 disabled:text-ink-500 text-white text-sm font-semibold rounded-lg transition-colors"
+                className="px-5 py-2 bg-gradient-to-r from-brand-500 via-brand-500 to-purple-600 hover:brightness-110 active:brightness-95 disabled:bg-none disabled:bg-paper-300 disabled:text-ink-500 text-white text-sm font-semibold rounded-lg transition-colors"
               >
                 {submitting ? t('feedback.sending') : t('feedback.send')}
               </button>

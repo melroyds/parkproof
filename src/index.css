@@ -48,9 +48,13 @@ body {
   font-family: var(--font-sans);
   color: var(--color-ink-900);
   background-color: var(--color-paper-100);
-  background-image: url("/cavalcade-pattern.svg");
+  /* Subtle dot grid — replaces the original stylised-cars cavalcade so the
+     new poppy landing CTA and How-it-works cards don't compete with a
+     busy background. 32px tile @ ~5–8% brand-blue opacity reads as quiet
+     graph-paper texture rather than literal pattern. */
+  background-image: url("/dot-grid-pattern.svg");
   background-repeat: repeat;
-  background-size: 600px 600px;
+  background-size: 32px 32px;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }

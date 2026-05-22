@@ -177,7 +177,7 @@ export default function AppealFlow({ session, onBack }: Props) {
         <div className="flex flex-col gap-2">
           <button
             onClick={handleCopy}
-            className="bg-brand-500 hover:bg-brand-600 active:bg-brand-700 text-white font-semibold py-4 rounded-2xl shadow-lg shadow-brand-500/25 transition-colors"
+            className="bg-gradient-to-r from-brand-500 via-brand-500 to-purple-600 hover:brightness-110 active:brightness-95 disabled:bg-none text-white font-semibold py-4 rounded-2xl shadow-lg shadow-brand-500/25 transition-colors"
           >
             {copied ? t('appeal.copied') : t('appeal.copyToClipboard')}
           </button>

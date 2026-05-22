@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32" role="img" aria-hidden="true">
+  <!--
+    Subtle dot grid. Replaces the stylised-cars cavalcade pattern with
+    something quieter and more premium so the new poppy landing CTA and
+    cards don't compete with a busy background.
+    Two overlaid layers — a slightly larger softer dot anchored at the
+    centre (rgba 0.05) and a smaller crisper dot at the corner (rgba 0.08)
+    — gives a "graph-paper-ish" feel at low intensity that scales cleanly
+    when tiled. Tinted toward brand-500 (#275BFF) rather than pure black
+    so it reads as part of the brand world.
+  -->
+  <circle cx="16" cy="16" r="1.4" fill="rgba(39, 91, 255, 0.05)" />
+  <circle cx="0" cy="0" r="1" fill="rgba(39, 91, 255, 0.08)" />
+  <circle cx="32" cy="0" r="1" fill="rgba(39, 91, 255, 0.08)" />
+  <circle cx="0" cy="32" r="1" fill="rgba(39, 91, 255, 0.08)" />
+  <circle cx="32" cy="32" r="1" fill="rgba(39, 91, 255, 0.08)" />
+</svg>
