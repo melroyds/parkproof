@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="500" height="500" viewBox="0 0 500 500" role="img" aria-hidden="true">
+  <!--
+    Top-right corner aurora glow. Soft brand-blue radial gradient that
+    sits behind the page header / language picker, adding warmth +
+    dimension without competing with content. Positioned via CSS as
+    `top right` no-repeat so the centre of the gradient (cx=400, cy=80)
+    falls roughly at the viewport's top-right corner.
+  -->
+  <defs>
+    <radialGradient id="aurora" cx="80%" cy="16%" r="65%">
+      <stop offset="0%"  stop-color="#275BFF" stop-opacity="0.55"/>
+      <stop offset="35%" stop-color="#275BFF" stop-opacity="0.25"/>
+      <stop offset="70%" stop-color="#275BFF" stop-opacity="0.08"/>
+      <stop offset="100%" stop-color="#275BFF" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="500" height="500" fill="url(#aurora)"/>
+</svg>

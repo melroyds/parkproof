@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="600" height="600" viewBox="0 0 600 600" role="img" aria-hidden="true">
+  <!--
+    Tileable topographic-rings background. Two contour "peaks" per
+    600×600 tile, both self-contained inside the tile so the pattern
+    wraps seamlessly. Brand-blue stroke at low opacity; varying line
+    weights (heavier inner rings, hairline outer rings) give the
+    sense of elevation contours on a real topo map.
+  -->
+
+  <!-- Peak A — upper-left of the tile -->
+  <g fill="none" stroke="#275BFF">
+    <ellipse cx="180" cy="240" rx="22" ry="19"  stroke-width="2"   opacity="0.34"/>
+    <ellipse cx="180" cy="240" rx="48" ry="42"  stroke-width="2"   opacity="0.28"/>
+    <ellipse cx="180" cy="240" rx="76" ry="66"  stroke-width="1.5" opacity="0.22"/>
+    <ellipse cx="180" cy="240" rx="106" ry="92" stroke-width="1.5" opacity="0.18"/>
+    <ellipse cx="180" cy="240" rx="138" ry="120" stroke-width="1" opacity="0.15"/>
+    <ellipse cx="180" cy="240" rx="172" ry="150" stroke-width="1" opacity="0.12"/>
+  </g>
+
+  <!-- Peak B — lower-right of the tile, slightly different ratio -->
+  <g fill="none" stroke="#275BFF">
+    <ellipse cx="430" cy="460" rx="18" ry="16" stroke-width="2"   opacity="0.32"/>
+    <ellipse cx="430" cy="460" rx="42" ry="37" stroke-width="2"   opacity="0.26"/>
+    <ellipse cx="430" cy="460" rx="70" ry="62" stroke-width="1.5" opacity="0.22"/>
+    <ellipse cx="430" cy="460" rx="100" ry="89" stroke-width="1.5" opacity="0.18"/>
+    <ellipse cx="430" cy="460" rx="132" ry="117" stroke-width="1" opacity="0.14"/>
+  </g>
+</svg>

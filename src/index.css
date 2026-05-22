@@ -47,18 +47,33 @@
 body {
   font-family: var(--font-sans);
   color: var(--color-ink-900);
-  /* Warm-paper background (#FAF6EE) instead of the cool tech-grey
-     paper-100 token. Picks up the Fraunces serif's editorial / civic
-     personality — reads as "premium printed page" rather than "default
-     SaaS panel". The brand-blue dot-grid on top of cream gives a
-     slightly more present texture than blue-on-grey because of the
-     warm/cool contrast, without becoming busy. The card / chip
-     backgrounds still use bg-paper-* utilities, so this only affects
-     the underlying page surface. */
-  background-color: #FAF6EE;
-  background-image: url("/dot-grid-pattern.svg");
-  background-repeat: repeat;
-  background-size: 32px 32px;
+  /* Sage + topographic + corner aurora. Replaces the warm-cream + dot-grid
+     of the previous iteration. Reading the layers bottom-up:
+       1. background-color  — sage-mid (#C8DCCF). Deeper than the first sage
+          we tried (#F0F5F2) so the green has actual presence and pairs
+          properly with the hero photo's green car + the emerald answer card.
+       2. sage-rings.svg    — tileable 600x600 contour pattern with two
+          topographic "peaks" per tile. Brand-blue strokes at 12-34% opacity.
+          Connects the visual language to "maps / navigation" without
+          stating it literally.
+       3. sage-aurora.svg   — 500x500 radial gradient blob fixed in the
+          top-right corner, no-repeat. Adds a luminous accent behind every
+          page header.
+     The aurora is listed FIRST in the comma-separated background-image
+     stack so it paints on top of the ring pattern. */
+  background-color: #C8DCCF;
+  background-image:
+    url("/sage-aurora.svg"),
+    url("/sage-rings.svg");
+  background-position:
+    top right,
+    top left;
+  background-repeat:
+    no-repeat,
+    repeat;
+  background-size:
+    500px 500px,
+    600px 600px;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
