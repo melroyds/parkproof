@@ -71,8 +71,13 @@ body {
   background-repeat:
     no-repeat,
     repeat;
+  /* Aurora @ 2000x2000 (4× the SVG's native 500x500) — the radial
+     gradient stays the same shape but spills 4× further across the
+     page, so the blue glow reads as an atmospheric wash on the
+     upper portion of the screen instead of a tight corner accent.
+     User feedback: 1× looked under-committed. */
   background-size:
-    500px 500px,
+    2000px 2000px,
     600px 600px;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
