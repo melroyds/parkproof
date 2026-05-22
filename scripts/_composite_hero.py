@@ -28,10 +28,14 @@ from PIL import Image, ImageDraw
 import resvg_py
 
 ROOT = Path(__file__).resolve().parents[1]
-PHOTO_PATH = ROOT / "public" / "hero-photo-candidate.png"
+# Source photo lives under scripts/ so the 2MB Nano-Banana raw doesn't ship
+# to S3 as a static asset. The baked OUTPUT goes to public/ for delivery.
+PHOTO_PATH = ROOT / "scripts" / "screenshots-fixtures" / "hero-source.png"
 ICON_PATH = ROOT / "public" / "parkproof-icon.svg"
 OUTPUT_PATH = ROOT / "public" / "hero-illustration.png"
-DEBUG_BBOX_PATH = ROOT / "public" / "hero-sign-bbox-debug.png"
+# Debug image also kept out of public/ — it's a build artefact, not a
+# user-facing asset.
+DEBUG_BBOX_PATH = ROOT / "scripts" / "screenshots-fixtures" / "hero-sign-bbox-debug.png"
 
 # Inset proportional to the sign's smaller side so the mark "breathes"
 # inside the painted sign border without crowding it. 6% is what looked
@@ -152,8 +156,17 @@ paste_y = cy - mark_size // 2
 photo.paste(mark_img, (paste_x, paste_y), mark_img)
 
 # ── Step 5: save ──────────────────────────────────────────────────────
-photo.convert("RGB").save(OUTPUT_PATH, "PNG", optimize=True)
+# Downscale before saving — the landing renders this image at max ~728px
+# wide (full-width inside max-w-md = 28rem container). Shipping a
+# 1152x928 PNG would be ~1.4 MB; a 800px-wide downscale lands at
+# ~500-700 KB while staying sharp on 3x retina displays.
+MAX_DELIVERY_WIDTH = 800
+flat = photo.convert("RGB")
+if flat.width > MAX_DELIVERY_WIDTH:
+    new_h = round(flat.height * MAX_DELIVERY_WIDTH / flat.width)
+    flat = flat.resize((MAX_DELIVERY_WIDTH, new_h), Image.LANCZOS)
+flat.save(OUTPUT_PATH, "PNG", optimize=True)
 size_kb = OUTPUT_PATH.stat().st_size // 1024
-print(f"wrote {OUTPUT_PATH.name}  ({size_kb} KB, {photo.size[0]}x{photo.size[1]})")
+print(f"wrote {OUTPUT_PATH.name}  ({size_kb} KB, {flat.size[0]}x{flat.size[1]})")
 print(f"brand mark placed at ({paste_x}, {paste_y}) sized {mark_size}x{mark_size}, inset {inset}px")
 print(f"debug bbox image: {DEBUG_BBOX_PATH.name}")
