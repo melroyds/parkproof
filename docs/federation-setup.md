@@ -69,7 +69,7 @@ The Apple Developer portal has FIVE top-level sections in its left sidebar: Cert
 3. Click **+** → **App IDs** → **Continue** → **App** → **Continue**.
 4. Fill in:
    - **Description**: `ParkProof`
-   - **Bundle ID** (Explicit, not Wildcard): `tech.dsouza.parkproof` (reverse-DNS using a domain you control)
+   - **Bundle ID** (Explicit, not Wildcard): `au.com.parkproof.app` (reverse-DNS using a domain you control)
 5. Scroll down to **Capabilities** and tick **Sign In with Apple**.
 6. **Continue** → **Register**.
 
@@ -81,10 +81,10 @@ The Bundle ID can't be changed later — pick something durable. It's free to cr
 2. Click **+** → **Services IDs** → **Continue**.
 3. Fill in:
    - **Description**: `ParkProof Web Sign-in`
-   - **Identifier**: `tech.dsouza.parkproof.signin` (reverse-DNS; conventionally App-ID-suffixed with `.signin` but anything unique works)
+   - **Identifier**: `au.com.parkproof.signin` (reverse-DNS; conventionally App-ID-suffixed with `.signin` but anything unique works)
 4. **Continue** → **Register**.
 5. Click into the new Services ID from the list. Tick **Sign In with Apple** → click **Configure** on the same row → in the modal:
-   - **Primary App ID**: select the App ID created in step 1 (`tech.dsouza.parkproof`).
+   - **Primary App ID**: select the App ID created in step 1 (`au.com.parkproof.app`).
    - **Domains and Subdomains**: `<your-hosted-ui-domain>` (e.g. `parkproof-251800369612.auth.ap-southeast-2.amazoncognito.com`) — no `https://` prefix.
    - **Return URLs**: `https://<your-hosted-ui-domain>/oauth2/idpresponse`
    - **Save** → **Continue** → **Save**.
@@ -138,7 +138,7 @@ aws cognito-idp create-identity-provider \
 ```
 
 Substitute:
-- `<SERVICES_ID>` — the Services ID identifier from step 2 (e.g. `tech.dsouza.parkproof.signin`)
+- `<SERVICES_ID>` — the Services ID identifier from step 2 (e.g. `au.com.parkproof.signin`)
 - `<TEAM_ID>` — the 10-char team ID from the developer-portal top-right
 - `<KEY_ID>` — the 10-char key ID shown after step 3 registration
 - `<P8_AS_SINGLE_LINE>` — the output of the `awk` command from step 4
@@ -159,6 +159,51 @@ aws cognito-idp update-user-pool-client \
 
 Open the live app, click "Continue with Apple", you should land on Apple's
 sign-in page → consent → back to ParkProof signed in.
+
+## Rotating the Apple Bundle ID / Services ID later
+
+If you need to swap the Bundle ID + Services ID after the fact (e.g., to
+remove a personal name from the OAuth consent screen), the safe path is:
+
+1. Register a NEW App ID, Services ID, and Key in Apple Developer Console
+   (Steps 1-3 above). Keep the old ones alive in parallel — don't revoke yet.
+2. Use `update-identity-provider` (NOT `create-identity-provider`) to swap
+   Cognito's `SignInWithApple` provider over to the new Services ID + Key.
+   This keeps the same provider name, so the App Client's
+   `--supported-identity-providers` list stays correct with zero downtime.
+3. Smoke-test in an incognito window with "Continue with Apple".
+4. Once green, retire the old Key (Revoke) + old Services ID + old App ID
+   from Apple Developer Console.
+
+**Gotcha — `--provider-details` shell escaping is hostile to multi-line
+keys.** Passing the flattened `\n`-separated key via the inline shorthand
+syntax (`--provider-details "client_id=...,private_key=$P8,..."`) fails
+with `InvalidParameterException: Provided private key cannot be used for
+Sign in with Apple`. AWS CLI doesn't translate the literal `\n` chars,
+and Cognito doesn't either — Apple receives a malformed PEM and rejects.
+The reliable path is a JSON file with proper `\n` escape sequences (JSON
+parser converts them to real newlines):
+
+```bash
+# Write to a PROJECT-RELATIVE path (Windows aws.exe can't read /tmp/...)
+cat > apple-idp.tmp.json <<EOF
+{
+  "client_id": "au.com.parkproof.signin",
+  "team_id": "L89J489GL4",
+  "key_id": "<NEW_KEY_ID>",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIGT...\niCnQwOC8\n-----END PRIVATE KEY-----\n",
+  "authorize_scopes": "email name"
+}
+EOF
+
+aws cognito-idp update-identity-provider \
+  --user-pool-id <COGNITO_USER_POOL_ID> \
+  --provider-name SignInWithApple \
+  --provider-details file://apple-idp.tmp.json \
+  --region ap-southeast-2
+
+rm apple-idp.tmp.json
+```
 
 ## When it goes wrong
 
