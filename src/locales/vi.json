@@ -127,11 +127,21 @@
       "ack": "Tôi đã trả phí (hoặc sẽ trả trước khi rời đi)"
     },
     "logCtaBlockedPermit": "Xác nhận giấy phép được hiển thị để lưu",
+    "logCtaBlockedPermitZone": "Xác nhận bạn có giấy phép hợp lệ để lưu",
     "permitRequired": {
       "kicker": "CẦN GIẤY PHÉP NGƯỜI KHUYẾT TẬT",
       "header": "Chỗ đỗ xe này dành riêng cho người có giấy phép",
       "copy": "Đỗ xe ở đây mà không có giấy phép người khuyết tật hợp lệ được hiển thị rõ ràng là vi phạm. Tại Victoria, mức phạt là hơn $400 và chi phí xã hội — lấy đi chỗ đỗ xe của người thực sự cần — là có thật. Nếu bạn không có giấy phép, hãy quét một chỗ khác.",
       "ack": "Tôi có giấy phép người khuyết tật hợp lệ được hiển thị rõ ràng trên xe"
+    },
+    "permitZone": {
+      "kicker": "KHU VỰC GIẤY PHÉP",
+      "header": "Chỉ dành cho người có giấy phép ngay bây giờ",
+      "headerWithArea": "Chỉ dành cho Khu vực Giấy phép {{area}} ngay bây giờ",
+      "copy": "Đây là khu vực giấy phép cư trú hoặc doanh nghiệp. Bạn chỉ có thể đỗ xe ở đây nếu có giấy phép hợp lệ cho khu vực này. Cán bộ hội đồng kiểm tra số giấy phép so với khu vực — giấy phép cho khu vực kế bên không được tính.",
+      "copyWithArea": "Bạn chỉ có thể đỗ xe ở đây nếu có giấy phép hợp lệ cho Khu vực Giấy phép {{area}}. Số trên nhãn giấy phép của bạn phải khớp — cán bộ kiểm tra mã khu vực, không chỉ là việc bạn có giấy phép.",
+      "ack": "Vâng, tôi có giấy phép hợp lệ cho khu vực này",
+      "ackWithArea": "Vâng, tôi có giấy phép hợp lệ cho Khu vực Giấy phép {{area}}"
     }
   },
   "logger": {

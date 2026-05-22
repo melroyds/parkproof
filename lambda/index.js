@@ -260,11 +260,20 @@ Analyze the sign(s) and return a JSON object with these fields:
 - payment_methods: array of strings or null — list the payment methods visible on the sign in lowercase short form, REGARDLESS of whether the current time is inside the paid window. The field describes the BAY'S NATURE, not the current moment. So if the sign indicates the bay is a Meter / Ticket / Pay-by-app zone in ANY of its windows, populate this with everything visible. Allowed values: "meter", "ticket machine", "paystay", "easypark", "wilson", "carepark", "pay-by-plate". Use null ONLY when the sign is completely free (no paid zones at any time).
 - requires_disabled_permit: boolean — TRUE only when the bay is reserved for vehicles displaying a valid disability parking permit. Triggers include:
   • The wheelchair / accessibility pictogram (♿ or similar blue-square-with-wheelchair symbol)
-  • Text: "DISABLED", "DISABLED ONLY", "PERMIT HOLDERS ONLY", "ACCESSIBLE PARKING", "ACROD" (WA disability permit), "MOBILITY PASS"
+  • Text: "DISABLED", "DISABLED ONLY", "ACCESSIBLE PARKING", "ACROD" (WA disability permit), "MOBILITY PASS"
+  Note: "PERMIT HOLDERS ONLY" by itself, without an accessibility pictogram, is a GENERAL permit zone (use is_permit_zone instead). Only set requires_disabled_permit when there is an explicit accessibility/disability indicator.
   Set TRUE only when the restriction applies to the bay you're answering about RIGHT NOW (i.e. inside any time window the sign specifies — "ALL OTHER TIMES ♿ ONLY" means the restriction is in force now if the current time falls outside other windows).
   When the disability restriction lives on ONE SIDE of a multi-variant sign (e.g. left side = general, right side = ♿ ONLY), set this flag at the variant level too (each variant has its own requires_disabled_permit field) so the user's chosen variant carries the correct permit requirement.
   At the top level: when there is a clarification, set requires_disabled_permit to FALSE — defer to the per-variant flags. Otherwise set it to the actual restriction state for the whole sign.
   CRITICAL — requires_disabled_permit is ORTHOGONAL to can_park_now. A ♿-only bay during its active window is PARKABLE (a permit-holder can use it), so set can_park_now=TRUE along with requires_disabled_permit=TRUE. The app surfaces a separate acknowledgement gate ("I have a valid permit") that the user must tick before saving. Do NOT set can_park_now=false just because the bay is ♿-restricted — that strips permit-holders of the correct answer. This is the SAME pattern as paid parking: requires_ticket and requires_disabled_permit are acknowledgement signals, not parkability blockers. The only case where ♿-only correctly sets can_park_now=FALSE is when a DIFFERENT prohibition also applies (e.g. ♿-only AND inside a Clearway window — the Clearway wins).
+- is_permit_zone: boolean — TRUE when the sign indicates a general residential or business Permit Zone (NOT the disability permit, which has its own flag above). Triggers include:
+  • Red "PERMIT ZONE" panel (Victorian standard).
+  • Yellow "PERMIT AREA N" plate (e.g. "PERMIT AREA 25") — usually mounted beneath a red Permit Zone panel.
+  • Text alone like "PERMIT HOLDERS ONLY", "RESIDENTS ONLY", "RESIDENT PERMIT ZONE", "BUSINESS PERMIT ONLY" (without any disability/accessibility pictogram).
+  Set TRUE only when the permit restriction is in force RIGHT NOW (inside any time window the sign specifies — "Permit Zone Mon–Fri 8am–6pm" is in force during those hours only; outside that window anyone can park free, so set is_permit_zone=FALSE).
+  Multi-variant signs: set at the variant level too. At the top level, when there is a clarification, set is_permit_zone to FALSE and defer to per-variant flags.
+  CRITICAL — like requires_disabled_permit, this is ORTHOGONAL to can_park_now. A permit zone in its active window is PARKABLE for permit-holders. Set can_park_now=TRUE along with is_permit_zone=TRUE; the frontend surfaces an acknowledgement gate ("I hold a valid permit for this area") before Save. Do NOT set can_park_now=FALSE just because the sign says PERMIT ZONE — that strips permit-holders of the correct answer (a major usability bug — residential permit zones are extremely common in inner-Melbourne and inner-Sydney). The ONLY case where a permit zone correctly sets can_park_now=FALSE is when a DIFFERENT prohibition also applies in the same window (e.g. permit zone AND inside a Clearway — the Clearway wins).
+- permit_area: string or null — when is_permit_zone is TRUE and the sign shows a Permit Area identifier on the yellow plate (e.g. "25", "12A", "RB-3"), capture it verbatim as a short string. Null when the sign just says PERMIT ZONE / PERMIT HOLDERS ONLY without a specific area number. This is what the user verifies their physical permit against.
 - clarification: object or null — fill this when the rule depends on WHERE the driver is parked relative to the sign (left vs right arrows, side-specific labels, numbered bays, accessibility/EV/loading bays). Shape: { question: string, options: array of { label, rules, observations, can_park_now, until, duration_minutes } }. Each option must reflect the rule for that specific position. The question should be short and direct, e.g. "Where are you parked?". Labels MUST be 1–3 words naming only the position. NO parentheticals, NO arrow symbols, NO duration info in the label. Good labels: "Left side", "Right side", "Bay 12", "Accessibility bay". Bad labels: "Right side (→ arrow)", "Left (15-min)", "Bay 12 (EV only)". Set clarification to null when there is no positional ambiguity.
 
 Interpretation rules:
@@ -282,14 +291,15 @@ HOW TO COMPUTE 'until' — read carefully. 'until' is the SOONEST future moment 
 For each rule, compute its leave-by time:
 - Time-limited (1P/2P/4P/1/4P) and the current time is INSIDE the window: leave-by = now + duration, capped at the end of the window. (After the window ends, parking continues freely until the next restriction.)
 - Time-limited and the current time is OUTSIDE the window: parking is free overnight/weekend, but the clock starts the moment the window reopens. leave-by = (start of next window) + duration. Do NOT skip past a future time-limited window just because the car is currently outside it.
-- Prohibition (No Stopping/Standing/Clearway/Bus Zone/Taxi Zone/Loading Zone, or general residential/business Permit Zone without a permit) and currently INSIDE: can_park_now = false, until = null. Disability-permit (♿ / ACROD / Mobility Pass) bays are NOT prohibitions — they're parkable with the right permit. Apply the time-limit math (1P/2P/etc) for the duration field as usual, set requires_disabled_permit=true, and leave can_park_now=TRUE.
+- Prohibition (No Stopping/Standing/Clearway/Bus Zone/Taxi Zone/Loading Zone) and currently INSIDE: can_park_now = false, until = null. Disability-permit (♿ / ACROD / Mobility Pass) bays are NOT prohibitions — they're parkable with the right permit (set requires_disabled_permit=true, can_park_now=TRUE). Permit Zones (PERMIT ZONE / PERMIT AREA N) are ALSO not prohibitions — they're parkable with the right permit (set is_permit_zone=true, can_park_now=TRUE). For both permit cases apply the time-limit math (1P/2P/etc) for the duration field as usual when a separate time-limit is also posted; otherwise leave until=null inside the permit window.
 - Prohibition and currently OUTSIDE: leave-by = start of the next prohibition window.
 
 'until' = MIN(leave-by for every rule on the sign).
 
 Quick reminders:
 - "2P Mon–Fri 8am–6pm" + currently Wed 10pm → next window opens Thu 8am, leave-by = Thu 10am.
-- "2P Mon–Fri" + "Permit Zone Sat–Sun" → take the earliest leave-by across both, not the latest.
+- "2P Mon–Fri 8am–6pm" + "Permit Area 25 At all other times" → during the 2P window: can_park_now=true, requires_ticket/permit checks applied, time-limit 2h. Outside that window (Mon-Fri 6pm–8am + weekends): is_permit_zone=true, permit_area="25", can_park_now=TRUE (permit-holders can park), until=start of next 2P window if before, else null.
+- "PERMIT ZONE" alone with no time window: is_permit_zone=true, can_park_now=TRUE (parkable for permit-holders), until=null.
 - "No Stopping Mon–Fri 7am–9am" + currently Sun 2pm → 'until' = Mon 7am (start of next prohibition).
 - "1/4P Mon–Fri 8am–6pm" + currently inside the window → leave-by = now + 15 min, capped at end of window.
 
@@ -360,6 +370,20 @@ const RULE_VARIANT_SCHEMA = {
      * through to the result UI.
      */
     requires_disabled_permit: { type: 'boolean' },
+    /**
+     * Per-variant general parking-permit flag. TRUE when this side of the
+     * sign is a residential / business Permit Zone (yellow PERMIT AREA N
+     * plate beneath, or PERMIT ZONE text alone). Same orthogonality as
+     * requires_disabled_permit — the bay is PARKABLE for permit holders,
+     * so the frontend surfaces an acknowledgement gate rather than blocking.
+     */
+    is_permit_zone: { type: 'boolean' },
+    /**
+     * The permit-area identifier when visible on the sign (e.g. "25",
+     * "12A"). Null when the sign says only "PERMIT ZONE" without an area
+     * number. Helps the user confirm their permit matches THIS area.
+     */
+    permit_area: { anyOf: [{ type: 'string' }, { type: 'null' }] },
     next_transition: NEXT_TRANSITION_SCHEMA,
   },
   required: [
@@ -370,6 +394,8 @@ const RULE_VARIANT_SCHEMA = {
     'until',
     'duration_minutes',
     'requires_disabled_permit',
+    'is_permit_zone',
+    'permit_area',
     'next_transition',
   ],
   additionalProperties: false,
@@ -400,6 +426,21 @@ const RESPONSE_SCHEMA = {
      * signs use the per-variant flag instead.
      */
     requires_disabled_permit: { type: 'boolean' },
+    /**
+     * True when the bay is in a residential / business Permit Zone (a red
+     * PERMIT ZONE sign, often with a yellow PERMIT AREA N plate beneath).
+     * Like requires_disabled_permit, this is ORTHOGONAL to can_park_now —
+     * permit-holders can park; the frontend gates Save behind an
+     * acknowledgement checkbox. Multi-variant signs use the per-variant
+     * flag and this top-level field is FALSE.
+     */
+    is_permit_zone: { type: 'boolean' },
+    /**
+     * The permit area identifier visible on the sign (e.g. "25", "12A").
+     * Null when no area number is shown. Helps the user verify their
+     * permit matches this exact area.
+     */
+    permit_area: { anyOf: [{ type: 'string' }, { type: 'null' }] },
     next_transition: NEXT_TRANSITION_SCHEMA,
     clarification: {
       anyOf: [
@@ -429,6 +470,8 @@ const RESPONSE_SCHEMA = {
     'requires_ticket',
     'payment_methods',
     'requires_disabled_permit',
+    'is_permit_zone',
+    'permit_area',
     'next_transition',
     'clarification',
   ],
@@ -833,6 +876,17 @@ async function handleFeedback(event) {
     disabled_permit_acknowledged:
       typeof ctx.disabled_permit_acknowledged === 'boolean'
         ? ctx.disabled_permit_acknowledged
+        : undefined,
+    // Permit-zone gate (residential / business permits — NOT the disability
+    // permit above). Lets us slice retake by permit-zone vs free signs and
+    // measure how often actual permit-holders find + use the gate.
+    is_permit_zone:
+      typeof ctx.is_permit_zone === 'boolean' ? ctx.is_permit_zone : undefined,
+    permit_area:
+      typeof ctx.permit_area === 'string' ? ctx.permit_area.slice(0, 32) : undefined,
+    permit_zone_acknowledged:
+      typeof ctx.permit_zone_acknowledged === 'boolean'
+        ? ctx.permit_zone_acknowledged
         : undefined,
   }
 

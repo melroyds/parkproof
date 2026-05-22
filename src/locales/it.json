@@ -133,11 +133,21 @@
       "ack": "Ho pagato (o pagherò prima di andarmene)"
     },
     "logCtaBlockedPermit": "Conferma il permesso esposto per salvare",
+    "logCtaBlockedPermitZone": "Conferma di avere un permesso valido per salvare",
     "permitRequired": {
       "kicker": "PERMESSO DISABILI RICHIESTO",
       "header": "Questo posto è riservato ai titolari di permesso",
       "copy": "Parcheggiare qui senza un permesso disabili valido chiaramente esposto è un'infrazione. In Victoria la multa è di oltre $400 e il costo sociale — togliere un posto a chi ne ha bisogno — è reale. Se non ne hai uno, scansiona un altro posto.",
       "ack": "Ho un permesso disabili valido chiaramente esposto nel mio veicolo"
+    },
+    "permitZone": {
+      "kicker": "ZONA A PERMESSO",
+      "header": "Solo titolari di permesso in questo momento",
+      "headerWithArea": "Solo Area Permesso {{area}} in questo momento",
+      "copy": "Questa è una zona a permesso residenziale o commerciale. Puoi parcheggiare qui solo se hai un permesso valido per quest'area. Gli ispettori comunali controllano il numero del permesso rispetto all'area — un permesso dell'isolato accanto non vale.",
+      "copyWithArea": "Puoi parcheggiare qui solo se hai un permesso valido per l'Area Permesso {{area}}. Il numero sul tuo adesivo deve corrispondere — gli ispettori controllano il codice dell'area, non solo se hai un qualsiasi permesso.",
+      "ack": "Sì, ho un permesso valido per quest'area",
+      "ackWithArea": "Sì, ho un permesso valido per l'Area Permesso {{area}}"
     }
   },
   "logger": {

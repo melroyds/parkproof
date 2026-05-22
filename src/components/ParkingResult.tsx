@@ -51,6 +51,7 @@ function buildFeedbackContext(
   result: ParkingRules,
   ticketAcknowledged: boolean,
   disabledAcknowledged: boolean,
+  permitZoneAcknowledged: boolean,
 ) {
   return {
     confidence: result.confidence,
@@ -84,6 +85,14 @@ function buildFeedbackContext(
     requires_disabled_permit: !!result.requires_disabled_permit,
     disabled_permit_acknowledged:
       !!result.requires_disabled_permit && disabledAcknowledged,
+    // Permit-zone signals. Slice retake rate by permit-zone detection to
+    // catch the inverse problem from disability-permit detection: false
+    // negatives (we missed a Permit Zone sign that someone in the comments
+    // points out we should've caught).
+    is_permit_zone: !!result.is_permit_zone,
+    permit_area: result.permit_area ?? null,
+    permit_zone_acknowledged:
+      !!result.is_permit_zone && permitZoneAcknowledged,
   }
 }
 
@@ -145,6 +154,13 @@ export default function ParkingResult({
   // paid-parking one because the cost of getting this wrong is materially
   // higher ($400+ fine + the social cost of taking a needed bay).
   const [disabledAcknowledged, setDisabledAcknowledged] = useState(false)
+  // Permit-zone acknowledgement — same gate pattern. Amber-styled callout
+  // (between the red disability-permit callout and the amber pay-gate)
+  // because the cost of getting this wrong is real but lower than ♿
+  // (~$200 fine for an unpermitted park in a residential permit zone, vs
+  // $400+ for misusing an accessibility bay). The amber matches the
+  // pay-gate, signalling "are you sure?" rather than "this is forbidden".
+  const [permitZoneAcknowledged, setPermitZoneAcknowledged] = useState(false)
   // One id per rendering of the result — used to dedupe feedback events server-side
   // without storing anything identifiable.
   const [feedbackId] = useState(() => crypto.randomUUID())
@@ -159,14 +175,18 @@ export default function ParkingResult({
     requires_ticket,
     payment_methods,
     requires_disabled_permit,
+    is_permit_zone,
+    permit_area,
   } = result
   // Gate the Save button until the user acknowledges payment. Only meaningful
   // when can_park_now is true (we don't show Save at all when it's false).
   const mustPay = !!requires_ticket && can_park_now
   const mustHavePermit = !!requires_disabled_permit && can_park_now
+  const isPermitZone = !!is_permit_zone && can_park_now
   const blockedByPayGate = mustPay && !ticketAcknowledged
   const blockedByPermitGate = mustHavePermit && !disabledAcknowledged
-  const saveBlocked = blockedByPayGate || blockedByPermitGate
+  const blockedByPermitZoneGate = isPermitZone && !permitZoneAcknowledged
+  const saveBlocked = blockedByPayGate || blockedByPermitGate || blockedByPermitZoneGate
   const paymentActions = resolvePaymentActions(payment_methods, mustPay)
   const timeZone = timezoneForCoords(coords?.lat, coords?.lng)
   const untilLabel = formatUntil(until, timeZone)
@@ -297,7 +317,7 @@ export default function ParkingResult({
                 submitFeedback({
                   verdict: 'correct',
                   feedback_id: feedbackId,
-                  context: buildFeedbackContext(result, ticketAcknowledged, disabledAcknowledged),
+                  context: buildFeedbackContext(result, ticketAcknowledged, disabledAcknowledged, permitZoneAcknowledged),
                 })
                 setVerified(true)
               }}
@@ -310,7 +330,7 @@ export default function ParkingResult({
                 submitFeedback({
                   verdict: 'retake',
                   feedback_id: feedbackId,
-                  context: buildFeedbackContext(result, ticketAcknowledged, disabledAcknowledged),
+                  context: buildFeedbackContext(result, ticketAcknowledged, disabledAcknowledged, permitZoneAcknowledged),
                 })
                 onRetake()
               }}
@@ -373,6 +393,52 @@ export default function ParkingResult({
             />
             <span className="text-sm font-medium text-ink-900 leading-tight">
               {t('result.permitRequired.ack')}
+            </span>
+          </label>
+        </section>
+      )}
+
+      {/* Permit-zone gate — surfaces when the AI detected a residential /
+          business Permit Zone in force RIGHT NOW. Different from the red
+          ♿ gate above: this is "are you sure you have a permit for THIS
+          area?" not "this is restricted". Amber (matching the pay gate's
+          tone of voice) rather than red. Sits between ♿ and pay gates so
+          a sign that hits ♿ + permit + pay still surfaces them in
+          severity order. */}
+      {isPermitZone && (
+        <section className="mt-4 bg-amber-50 border-2 border-amber-400 rounded-2xl p-5">
+          <div className="flex items-start gap-3">
+            <div className="w-9 h-9 rounded-lg bg-amber-500 text-white flex items-center justify-center shrink-0 mt-0.5 font-display font-extrabold text-lg">
+              P
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-semibold uppercase tracking-wider text-amber-800">
+                {t('result.permitZone.kicker')}
+              </p>
+              <h3 className="font-display font-bold text-ink-900 mt-1">
+                {permit_area
+                  ? t('result.permitZone.headerWithArea', { area: permit_area })
+                  : t('result.permitZone.header')}
+              </h3>
+              <p className="text-sm text-ink-700 mt-1 leading-relaxed">
+                {permit_area
+                  ? t('result.permitZone.copyWithArea', { area: permit_area })
+                  : t('result.permitZone.copy')}
+              </p>
+            </div>
+          </div>
+
+          <label className="mt-4 flex items-start gap-2.5 cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={permitZoneAcknowledged}
+              onChange={(e) => setPermitZoneAcknowledged(e.target.checked)}
+              className="mt-0.5 w-5 h-5 rounded border-2 border-amber-500 accent-amber-600 cursor-pointer shrink-0"
+            />
+            <span className="text-sm font-medium text-ink-900 leading-tight">
+              {permit_area
+                ? t('result.permitZone.ackWithArea', { area: permit_area })
+                : t('result.permitZone.ack')}
             </span>
           </label>
         </section>
@@ -455,9 +521,11 @@ export default function ParkingResult({
           >
             {blockedByPermitGate
               ? t('result.logCtaBlockedPermit')
-              : blockedByPayGate
-                ? t('result.logCtaBlocked')
-                : t('result.logCta')}
+              : blockedByPermitZoneGate
+                ? t('result.logCtaBlockedPermitZone')
+                : blockedByPayGate
+                  ? t('result.logCtaBlocked')
+                  : t('result.logCta')}
           </button>
         )}
         <button

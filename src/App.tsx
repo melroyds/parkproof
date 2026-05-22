@@ -175,6 +175,11 @@ function App() {
       // up to the top-level result so the ParkingResult gate fires only
       // when the side the user actually picked is permit-restricted.
       requires_disabled_permit: variant.requires_disabled_permit ?? false,
+      // Permit-zone flag + area work the same way — variant-scoped on signs
+      // where one side is permit-zone and another is general parking, so
+      // the gate only fires when the chosen side is actually permit-restricted.
+      is_permit_zone: variant.is_permit_zone ?? false,
+      permit_area: variant.permit_area ?? null,
       clarification: null,
       chosen_label: variant.label,
       alternate_variants: alternates,

@@ -26,6 +26,15 @@ export interface RuleVariant {
    * the gate fires.
    */
   requires_disabled_permit?: boolean
+  /**
+   * Per-variant general parking-permit flag. Set true when this side / bay
+   * is in a residential or business Permit Zone. Like requires_disabled_permit,
+   * the variant value is merged up to the top-level result after the user
+   * picks a clarification option.
+   */
+  is_permit_zone?: boolean
+  /** The permit-area identifier (e.g. "25") when visible on the sign; null otherwise. */
+  permit_area?: string | null
   /** Optional heads-up — set when a meaningful rule change is approaching. */
   next_transition?: NextTransition | null
 }
@@ -65,6 +74,15 @@ export interface ParkingRules {
    * the user picks a side.
    */
   requires_disabled_permit?: boolean
+  /**
+   * True when the bay is in a residential / business Permit Zone — the
+   * red "PERMIT ZONE" + yellow "PERMIT AREA N" pattern. Like
+   * requires_disabled_permit, the frontend surfaces an acknowledgement
+   * checkbox gating Save (the user must confirm they hold a valid permit).
+   */
+  is_permit_zone?: boolean
+  /** Permit area identifier from the yellow plate (e.g. "25"), if visible. */
+  permit_area?: string | null
   /** Frontend-only — set when the user picked a variant from a clarification step. */
   chosen_label?: string
   /** Frontend-only — variants the user did NOT pick. Carried through for PDF context. */
