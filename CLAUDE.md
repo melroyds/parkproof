@@ -368,7 +368,7 @@ scripts/teardown.sh                            ← destroy everything (dry-run b
 - ✅ Account export + delete — full data dump as PDF; full wipe of DDB rows + S3 photos + Cognito user
 - ✅ PWA — manifest + service worker + install icons in all sizes + Apple splash
 - ✅ AWS deploy — Lambda + API Gateway + S3 + CloudFront in `ap-southeast-2`
-- ✅ Custom domain — `parkproof.dsouza.tech` via ACM + CloudFront alternate name
+- ✅ Custom domain — `www.parkproof.com.au` via ACM + CloudFront alternate name (apex + `.au` variants 301 to canonical via Cloudflare Page Rules)
 - ✅ Security hardening — CORS lockdown, OAC, private bucket, throttle, billing alarm
 - ✅ Code-split — jsPDF, ics, html2canvas, and non-English locale chunks lazy-loaded; main bundle ~100KB gzipped
 - ✅ Timezone-aware — derived from coords via `tz-lookup` (display + PDF + .ics)
@@ -378,8 +378,9 @@ scripts/teardown.sh                            ← destroy everything (dry-run b
 - ✅ Brand identity — layered-P + clock, blue/navy/teal, Fraunces serif
 - ✅ Multi-lingual UI — 9 languages (en, zh-CN, vi, id, ko, it, el, hi, pa) including PDF strings
 - ✅ AI feedback Layers 1 + 2 — verdict events + model context (confidence, hour, sign-pattern) to CloudWatch
-- ⏳ True Web Push background notifications — needs service worker push subscription + server-side scheduler (EventBridge)
+- ✅ Two-app architecture — marketing landing at `/`, React PWA at `/app/`; CloudFront Function (`parkproof-uri-rewrite`) handles trailing-slash URI resolution for OAC + S3 REST origin
+- ✅ True Web Push background notifications — VAPID + DDB subscription store + EventBridge scheduler + dispatch Lambda + cancel-on-end-session; falls back to in-tab notification when permission denied
 - ⏳ AI feedback Layer 3 — opt-in photo capture for systematic failures, building a private training dataset
 - ⏳ Citywide parking heatmap — every scan captures the data; needs share-toggle, viewer, cold-start solved
 - ⏳ Voice confirmation (Web Speech API)
-- ⏳ Council-specific appeal deep-links (auto-submit) — blocked by council-side captchas + no public APIs
+- ⛔ Council-specific appeal deep-links (auto-submit) — externally blocked by council-side captchas + no public APIs. Shelved, not pending. Revisit only if a council reaches out with a partnership offer.
