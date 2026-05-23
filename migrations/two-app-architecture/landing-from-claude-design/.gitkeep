@@ -1,0 +1,16 @@
+# Unzip the Claude Design "site bundle" output here.
+#
+# Expected contents after unzipping:
+#   index.html              ← the marketing landing
+#   asset_NNN.png|jpg|svg   ← images Claude Design baked in
+#   asset_NNN.woff2         ← fonts (Inter + Fraunces variants)
+#   asset_NNN.js            ← any inlined JS
+#
+# This directory is not part of the Vite build and is not synced to S3
+# by the current deploy.sh. The cutover-day deploy script adds a step
+# that copies these files into dist/ at the right paths.
+#
+# When you have the zip:
+#   1. Save it at  docs/launch-assets/landing-page-v1/site.zip  (committed)
+#   2. Unzip it here, into this directory.
+#   3. Verify the file list matches expectations above.

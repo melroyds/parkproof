@@ -381,6 +381,19 @@ function signTranslateApi(): Plugin {
 
 // https://vite.dev/config/
 export default defineConfig({
+  // Two-app cutover (2026-05-26): the React PWA now ships under /app/
+  // while the marketing landing lives at /. Every built URL (asset
+  // imports, manifest, SW registration) is rewritten to start with
+  // /app/ at build time via the base config below.
+  base: '/app/',
+  build: {
+    // Park the Vite output in dist/app/ so the marketing landing can
+    // sit at dist/ root without colliding. scripts/deploy.sh syncs
+    // dist/ -> S3, so this naturally puts the React app under
+    // s3://bucket/app/.
+    outDir: 'dist/app',
+    emptyOutDir: true,
+  },
   // amazon-cognito-identity-js was written before browser ESM was a thing —
   // it expects `global` to exist as an alias for the window object. Vite
   // doesn't polyfill that. Map it to `globalThis` (the spec-compliant
@@ -416,14 +429,21 @@ export default defineConfig({
         background_color: '#F2F4F7',
         display: 'standalone',
         orientation: 'portrait',
-        start_url: '/',
-        scope: '/',
+        // Two-app cutover: the PWA's installable surface lives under /app/.
+        // Installed users always land on the scan flow, never on the
+        // marketing landing. Visiting `/` (the landing) doesn't show the
+        // install prompt because the manifest's scope excludes it.
+        start_url: '/app/',
+        scope: '/app/',
         icons: [
-          { src: 'pwa-64x64.png', sizes: '64x64', type: 'image/png' },
-          { src: 'pwa-192x192.png', sizes: '192x192', type: 'image/png' },
-          { src: 'pwa-512x512.png', sizes: '512x512', type: 'image/png' },
+          // Absolute paths from the origin root — the manifest is served
+          // at /app/manifest.webmanifest but the browser resolves icon
+          // refs from a context where Vite's base rewriting doesn't apply.
+          { src: '/app/pwa-64x64.png', sizes: '64x64', type: 'image/png' },
+          { src: '/app/pwa-192x192.png', sizes: '192x192', type: 'image/png' },
+          { src: '/app/pwa-512x512.png', sizes: '512x512', type: 'image/png' },
           {
-            src: 'maskable-icon-512x512.png',
+            src: '/app/maskable-icon-512x512.png',
             sizes: '512x512',
             type: 'image/png',
             purpose: 'maskable',

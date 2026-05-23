@@ -389,6 +389,14 @@ echo "  • endpoint: $API_URL"
 
 # ───── [4/6] Build frontend ─────────────────────────────────────────────────
 echo "▶ [4/6] Building frontend"
+# Clean dist/ before each build. Especially important after the two-app
+# cutover (2026-05-26): the previous outDir was `dist`, the new outDir
+# is `dist/app`. Without this cleanup, stale files from any pre-cutover
+# build (sw.js, manifest.webmanifest, index.html at root) would linger
+# at dist/ root and ship to production alongside the new landing,
+# overwriting it on S3 sync or creating a confused PWA registration.
+# Vite's emptyOutDir: true only empties dist/app/, not dist/ itself.
+rm -rf dist
 # Bake the Cognito identifiers + API URL + VAPID public key into the
 # bundle. These are public values (anyone inspecting the JS bundle can see
 # them); not secrets. The VAPID PRIVATE key stays Lambda-side only.
@@ -399,6 +407,56 @@ VITE_COGNITO_REGION="${COGNITO_REGION:-ap-southeast-2}" \
 VITE_COGNITO_HOSTED_UI_DOMAIN="${COGNITO_HOSTED_UI_DOMAIN:-}" \
 VITE_VAPID_PUBLIC_KEY="${VAPID_PUBLIC_KEY:-}" \
   npm run build --silent
+
+# ───── [4.5/6] Compose the two-surface layout ───────────────────────────────
+# After vite build (with base: '/app/' + outDir: 'dist/app'), dist/ looks
+# like this:
+#   dist/
+#     app/
+#       index.html, sw.js, manifest.webmanifest, assets/, locales/, ...
+#
+# We now add the marketing landing on top so the final layout is:
+#   dist/
+#     index.html              ← marketing landing (Claude Design)
+#     sw.js                   ← eviction shim (clears any old root-scope SW)
+#     landing-styles.css, landing-demo.js, assets/ ...
+#     app/
+#       index.html, sw.js, manifest.webmanifest, assets/, locales/, ...
+#
+# The subsequent `aws s3 sync dist/ ... --delete` sweeps the whole tree
+# in one shot. See migrations/two-app-architecture/README.md for the
+# full architecture rationale.
+
+echo "▶ [4.5/6] Layering marketing landing + SW shim into dist/"
+
+LANDING_SRC="migrations/two-app-architecture/landing-from-claude-design"
+if [[ ! -f "$LANDING_SRC/index.html" ]]; then
+  echo "✗ Landing not found at $LANDING_SRC/index.html"
+  echo "  Unzip the Claude Design output into that directory before deploying."
+  exit 1
+fi
+
+# Copy every file from the landing folder into dist/ root.
+cp -R "$LANDING_SRC"/. dist/
+
+# Strip the meta files that ride along inside the landing folder but
+# shouldn't ship to the live site:
+#   - DEPLOY.md is Claude Design's own deployment notes (not for visitors)
+#   - .gitkeep is our placeholder so the directory survives in git when
+#     the landing isn't unpacked yet
+# `cp + rm` over `rsync --exclude` because rsync isn't guaranteed on
+# Git Bash for Windows. `-f` silences "no such file" if either is gone.
+rm -f dist/DEPLOY.md dist/.gitkeep
+
+# Drop the SW eviction shim at dist/sw.js. vite-plugin-pwa now writes
+# its SW under dist/app/sw.js (because of base: '/app/'), so dist/sw.js
+# is otherwise empty after the build. The shim self-unregisters any
+# old root-scope service worker that browsers may have cached from
+# the pre-cutover build. Idempotent — safe to run on every deploy.
+cp "migrations/two-app-architecture/public-sw-shim.js" dist/sw.js
+
+echo "  • landing files: $(find "$LANDING_SRC" -type f -not -name .gitkeep -not -name DEPLOY.md | wc -l | tr -d ' ')"
+echo "  • sw shim:        dist/sw.js (evicts old root-scope SW)"
 
 # ───── [5/6] S3 bucket + upload ─────────────────────────────────────────────
 echo "▶ [5/6] S3 bucket: $BUCKET"

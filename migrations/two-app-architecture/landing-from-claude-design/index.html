@@ -1,0 +1,588 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ParkProof — Read any Aussie parking sign in seconds</title>
+<meta name="description" content="Point your phone at any stacked Melbourne parking sign and get a plain-English verdict in under 12 seconds. Defensible if you're ticketed.">
+<link rel="icon" href="assets/parkproof-icon.svg" type="image/svg+xml">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;0,9..144,700;0,9..144,800;0,9..144,900;1,9..144,500;1,9..144,600;1,9..144,700;1,9..144,800&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="landing-styles.css">
+</head>
+
+<body>
+
+<template id="__bundler_thumbnail">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+    <rect width="200" height="200" rx="40" fill="#275BFF"/>
+    <text x="100" y="118" text-anchor="middle" font-family="Georgia, serif" font-weight="800" font-size="120" fill="#F2F4F7">P</text>
+    <circle cx="138" cy="74" r="18" fill="#F2F4F7"/>
+    <line x1="138" y1="74" x2="128" y2="68" stroke="#1A2233" stroke-width="3" stroke-linecap="round"/>
+    <line x1="138" y1="74" x2="150" y2="64" stroke="#1A2233" stroke-width="3" stroke-linecap="round"/>
+  </svg>
+</template>
+
+<!-- ============ NAV ============ -->
+<header class="nav">
+  <div class="nav-inner">
+    <a href="#top" class="nav-brand" aria-label="ParkProof home">
+      <img src="assets/parkproof-icon.svg" alt="" width="40" height="40" style="border-radius:10px">
+      <span class="nav-brand-text">ParkProof</span>
+    </a>
+    <nav class="nav-links" aria-label="Primary">
+      <a href="#problem">The problem</a>
+      <a href="#how">How it works</a>
+      <a href="#reasoning">Why it's better</a>
+      <a href="#reminders">Reminders</a>
+      <a href="#evidence">Evidence</a>
+      <a href="#privacy">Privacy</a>
+    </nav>
+    <a href="/app/" class="nav-cta">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+        <circle cx="12" cy="13" r="4"/>
+      </svg>
+      Snap a session
+    </a>
+  </div>
+</header>
+
+<!-- ============ HERO ============ -->
+<section class="hero" id="top" data-screen-label="01 Hero">
+  <div class="hero-bg" aria-hidden="true"></div>
+
+  <!-- topographic motif behind everything -->
+  <div class="topo" aria-hidden="true">
+    <svg viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice">
+      <g stroke="#7D98BE" fill="none" stroke-width="1.2" opacity="0.18">
+        <ellipse cx="1500" cy="200" rx="120" ry="100"/>
+        <ellipse cx="1500" cy="200" rx="240" ry="200"/>
+        <ellipse cx="1500" cy="200" rx="380" ry="320"/>
+        <ellipse cx="1500" cy="200" rx="540" ry="460"/>
+        <ellipse cx="1500" cy="200" rx="720" ry="620"/>
+        <ellipse cx="1500" cy="200" rx="920" ry="800"/>
+      </g>
+    </svg>
+  </div>
+
+  <div class="hero-inner">
+    <div class="hero-text">
+      <span class="hero-eyebrow">
+        <svg width="16" height="11" viewBox="0 0 24 16" aria-hidden="true">
+          <rect width="24" height="16" fill="#012169"/>
+          <path d="M0 0 L24 16 M24 0 L0 16" stroke="#fff" stroke-width="2"/>
+          <path d="M12 0 V16 M0 8 H24" stroke="#fff" stroke-width="3"/>
+          <path d="M12 0 V16 M0 8 H24" stroke="#C8102E" stroke-width="1.5"/>
+        </svg>
+        Built for Aussie drivers
+      </span>
+      <h1>
+        Read any Aussie sign <span class="accent">in seconds.</span>
+      </h1>
+      <p class="lede">
+        Point your phone at the most chaotic stacked sign in Melbourne. We tell you, in one sentence, whether you can park here — and when you need to leave.
+      </p>
+      <div class="hero-ctas">
+        <a href="/app/" class="btn btn-primary btn-lg">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+            <circle cx="12" cy="13" r="4"/>
+          </svg>
+          Snap a session
+        </a>
+        <a href="#how" class="btn btn-secondary btn-lg">See it work</a>
+      </div>
+      <div class="hero-tail">
+        <span class="hero-tail-item">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          Free, no account
+        </span>
+        <span class="hero-tail-item">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          Works offline
+        </span>
+        <span class="hero-tail-item">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          ~12 seconds per sign
+        </span>
+      </div>
+    </div>
+
+    <!-- Phone with animated demo: actual app screenshots cross-fading -->
+    <div class="hero-visual">
+      <div class="phone" aria-label="Animated demo of ParkProof analysing a parking sign">
+        <div class="phone-screen">
+          <div class="phone-notch"></div>
+          <div class="demo-stage" id="hero-demo" data-state="scan">
+            <img src="assets/app-scan-clean.png"      class="demo-screen scan"      alt="Sign photo loaded in the ParkProof scanner">
+            <img src="assets/app-loading-clean.png"   class="demo-screen loading"   alt="ParkProof parsing the sign in five steps">
+            <img src="assets/app-verdict-clean.png"   class="demo-screen verdict"   alt="Verdict: you can park here, until 4:00 am Saturday, 5h 56m left">
+            <img src="assets/app-reminders-clean.png" class="demo-screen reminders" alt="Reminders flow — calendar + browser notifications before parking expires">
+            <img src="assets/app-pdf-clean.png"       class="demo-screen pdf"       alt="Defensible evidence PDF export">
+            <img src="assets/app-korean-clean.png"    class="demo-screen korean"    alt="Korean home screen — ParkProof works in any language">
+            <!-- Soft caption overlay describing the current state -->
+            <div class="demo-caption">
+              <span class="demo-caption-dot"></span>
+              <span class="demo-caption-text">Snap the sign</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ THE PROBLEM ============ -->
+<section class="problem" id="problem" data-screen-label="02 The problem">
+  <div class="container">
+    <div class="problem-grid">
+
+      <div class="problem-photo">
+        <img src="assets/stacked-sign-photo.jpg" alt="A real stacked Melbourne CBD parking sign with six different rules on one pole">
+        <div class="annot annot-a"><span class="annot-dot" style="background:#EF4444"></span>Clearway</div>
+        <div class="annot annot-b"><span class="annot-dot" style="background:#10B981"></span>1P meter</div>
+        <div class="annot annot-c"><span class="annot-dot" style="background:#10B981"></span>2P (disabled only)</div>
+        <div class="annot annot-d"><span class="annot-dot" style="background:#5C6680"></span>EasyPark 7570</div>
+      </div>
+
+      <div>
+        <span class="allcaps problem-eyebrow">The Melbourne problem</span>
+        <h2 class="display">Aussie parking signs are <span class="italic-serif" style="color:var(--red-600);font-weight:700">absurd.</span></h2>
+        <p class="lede" style="margin-top:24px;font-size:clamp(17px,1.6vw,20px);color:var(--ink-700);line-height:1.5;max-width:520px">
+          Six signs on one pole. Each one overrides the last. Half the rules only apply on certain days, between certain hours, on the correct side of the post. Get it wrong and the tow truck doesn't ask.
+        </p>
+        <ul class="question-list">
+          <li>Does the clearway apply right now?</li>
+          <li>Is "2P" two hours or two o'clock?</li>
+          <li>Which side does the arrow point to?</li>
+          <li>What happens at 4:00 pm on a Friday?</li>
+        </ul>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ============ HOW IT WORKS ============ -->
+<section class="how" id="how" data-screen-label="03 How it works">
+  <div class="container">
+    <span class="allcaps" style="color:var(--brand-500)">Three steps. About 12 seconds.</span>
+    <h2 class="display">How it works.</h2>
+    <p class="lede">Open ParkProof. Snap the sign. Get a plain-English verdict. No account. No subscription. No telling us where you live.</p>
+
+    <div class="how-steps">
+
+      <div class="how-step">
+        <div class="how-step-num">01</div>
+        <h3>Snap</h3>
+        <p>Point your phone at the pole. Include every sign in the frame, even the weather-faded ones. ParkProof works with stacked, tilted, partial and overcast shots.</p>
+        <div class="step-meta">~ 2 seconds</div>
+      </div>
+
+      <div class="how-step">
+        <div class="how-step-num">02</div>
+        <h3>Read</h3>
+        <p>Claude vision parses every panel, normalises Australian sign grammar, and reconciles overrides — clearway over time-limit over permit zone, the works.</p>
+        <div class="step-meta">~ 8 seconds</div>
+      </div>
+
+      <div class="how-step">
+        <div class="how-step-num">03</div>
+        <h3>Verdict</h3>
+        <p>One sentence: <i>"You can park here, until 4:00 am Saturday — 5h 56m of overnight parking before the 4am tow-away."</i> Plus the bullet-list of rules we relied on, so you can double-check before walking away.</p>
+        <div class="step-meta">~ 2 seconds</div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ============ REASONING ============ -->
+<section class="reasoning" id="reasoning" data-screen-label="04 Reasoning">
+
+  <div class="topo" aria-hidden="true">
+    <svg viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice">
+      <g stroke="#85A695" fill="none" stroke-width="1.2" opacity="0.4">
+        <ellipse cx="-60" cy="900" rx="140" ry="110"/>
+        <ellipse cx="-60" cy="900" rx="280" ry="220"/>
+        <ellipse cx="-60" cy="900" rx="440" ry="350"/>
+        <ellipse cx="-60" cy="900" rx="620" ry="500"/>
+        <ellipse cx="-60" cy="900" rx="820" ry="670"/>
+        <ellipse cx="-60" cy="900" rx="1040" ry="860"/>
+      </g>
+    </svg>
+  </div>
+
+  <div class="container section-inner">
+    <span class="allcaps reasoning-eyebrow">Legal-grade reasoning</span>
+    <h2 class="display">Most OCR-only tools read the first sign.<br><span class="accent">We read every sign — then do the math.</span></h2>
+    <p class="lede">
+      Australian signs override each other in non-obvious ways. The "2P time-limit" says you have until 4:30 pm. But the clearway underneath says tow-away from 4:00 pm on weekdays. The real cap is 4:00 pm — not 4:30 pm. That's the kind of read most apps get wrong.
+    </p>
+
+    <div class="compare">
+
+      <div class="compare-side them">
+        <h3>
+          <span>OCR-only tools</span>
+          <span class="compare-tag">surface read</span>
+        </h3>
+        <ul>
+          <li>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#EF4444" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+            <span>Reads the largest text on the sign and stops.</span>
+          </li>
+          <li>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#EF4444" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+            <span>Ignores secondary panels (clearway, permit zones, day-of-week shifts).</span>
+          </li>
+          <li>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#EF4444" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+            <span>Treats the time-limit as the cap, full stop.</span>
+          </li>
+        </ul>
+        <div class="verdict-mini">
+          <div class="vm-head">Park until 4:30 pm</div>
+          <div class="vm-sub">2P time-limit · ignores clearway</div>
+        </div>
+      </div>
+
+      <div class="compare-side us">
+        <h3>
+          <span>ParkProof</span>
+          <span class="compare-tag">legal-grade</span>
+        </h3>
+        <ul>
+          <li>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            <span>Parses every panel on the pole — clearway, time-limit, permit zone, disabled, motorcycle, pay-by-phone.</span>
+          </li>
+          <li>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            <span>Cross-references the time-of-day, day-of-week, and which side of the post you're on.</span>
+          </li>
+          <li>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            <span>Applies override precedence: clearway beats time-limit beats permit. Earliest restriction wins.</span>
+          </li>
+        </ul>
+        <div class="verdict-mini">
+          <div class="vm-head">Park until 4:00 pm</div>
+          <div class="vm-sub">Clearway kicks in at 4:00 — moved up from 4:30</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ============ REMINDERS ============
+     The success path: ParkProof keeps working AFTER you park. Sits between
+     Reasoning (the differentiator) and Evidence (the failure backup) so the
+     narrative is positive→positive→backup. Cloned from the .evidence
+     section's structure to inherit visual styling without writing new CSS;
+     the class names below are intentionally `.evidence` even though the
+     content is reminders. Functionally identical, semantically a bit loose.
+============================================== -->
+<section class="evidence" id="reminders" data-screen-label="05 Reminders">
+  <div class="container section-inner">
+    <div class="evidence-grid">
+
+      <div>
+        <span class="allcaps evidence-eyebrow">Once you've parked</span>
+        <h2 class="display">Parking anxiety ends <span class="accent">when you park.</span></h2>
+        <p class="lede">
+          Other parking apps remind you about meters you paid through them. ParkProof reminds you about any parking session — the 2P free spot you grabbed at lunch, the permit-zone bay you scanned this morning. Layered push notifications, fired by a real scheduler the moment your bay is about to expire.
+        </p>
+
+        <ul class="evidence-features">
+          <li>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            <div><b>Layered alerts.</b><span>Pick any combination of 60, 30, 15, or 5 minutes before expiry. Stack as many as you want.</span></div>
+          </li>
+          <li>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+            <div><b>Works in the background.</b><span>Web Push fires even with the tab closed or the phone in your pocket. The browser handles dispatch.</span></div>
+          </li>
+          <li>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+            <div><b>One-tap re-check.</b><span>Anytime you wonder "am I still good?", a tap re-verifies your parking in 2 seconds — no walking back to the sign.</span></div>
+          </li>
+          <li>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            <div><b>Any parking session.</b><span>Paid meter, free 2P, permit zone — all covered. Not just sessions you paid through us.</span></div>
+          </li>
+        </ul>
+      </div>
+
+      <!-- Phone showing the reminders picker — re-uses the same asset
+           that's already in the hero animation cycle. No tab label here
+           (unlike the Evidence section's "EVIDENCE.PDF" tab) because the
+           phone screenshot itself reads as a reminders UI — labelling it
+           again with "REMINDERS" overlapped awkwardly with the phone
+           corner. The bottom meta line ("Next ping in 15 min") carries
+           the section's tone instead. -->
+      <div class="evidence-pdf">
+        <img src="assets/app-reminders-clean.png" alt="ParkProof reminders picker — checkboxes for 60, 30, 15, and 5 minutes before bay expires" class="evidence-pdf-img">
+        <div class="evidence-pdf-meta">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          <span>Next ping in <b>15 min</b> · session <span class="mono">a4f12c8e</span></span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ============ EVIDENCE / APPEAL ============ -->
+<section class="evidence" id="evidence" data-screen-label="06 Evidence">
+  <div class="container section-inner">
+    <div class="evidence-grid">
+
+      <div>
+        <span class="allcaps evidence-eyebrow">If you get ticketed anyway</span>
+        <h2 class="display">Every check is <span class="accent">defensible evidence.</span></h2>
+        <p class="lede">
+          If a council officer disagrees with our read, ParkProof exports the session as a cryptographically signed PDF — timestamped, GPS-anchored, sign-photo included. We even draft the appeal letter for you.
+        </p>
+
+        <ul class="evidence-features">
+          <li>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
+            <div><b>KMS-signed timestamp.</b><span>Tamper-proof clock-stamp from the moment you scanned, signed by AWS KMS.</span></div>
+          </li>
+          <li>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            <div><b>GPS-anchored arrival.</b><span>Co-ordinates accurate to ±5 m. Reverse-geocoded to a Melbourne address.</span></div>
+          </li>
+          <li>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+            <div><b>Photo of the sign + your car.</b><span>Both shots embedded inside the PDF, hashes signed alongside.</span></div>
+          </li>
+          <li>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+            <div><b>AI-drafted appeal letter.</b><span>Written in plain English, citing the contemporaneous evidence. You read it, edit it, send it.</span></div>
+          </li>
+        </ul>
+      </div>
+
+      <!-- Real PDF export from the app — drop-in screenshot -->
+      <div class="evidence-pdf">
+        <div class="evidence-pdf-tab">EVIDENCE.PDF</div>
+        <img src="assets/app-pdf-clean.png" alt="ParkProof parking evidence PDF — signed timestamp, GPS, sign rules, sign photo, car photo" class="evidence-pdf-img">
+        <div class="evidence-pdf-meta">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
+          <span>Signed at <b>10:19 pm</b> · session <span class="mono">e2173cfa</span></span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ============ PRIVACY ============ -->
+<section class="privacy" id="privacy" data-screen-label="06 Privacy">
+  <div class="container">
+    <span class="allcaps privacy-eyebrow">Privacy by default</span>
+    <h2 class="display">Anonymous-first. <span class="accent">Local-first.</span></h2>
+    <p class="lede">
+      ParkProof works fully offline. There's no account, no sign-up, no telemetry. Your photos and verdicts live on your phone unless you explicitly opt into cloud sync.
+    </p>
+
+    <div class="privacy-grid">
+
+      <div class="privacy-card">
+        <div class="icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="10"/></svg>
+        </div>
+        <h3>No account</h3>
+        <p>Open the URL, take a photo, get an answer. No email, no phone number, no Apple/Google sign-in required.</p>
+      </div>
+
+      <div class="privacy-card">
+        <div class="icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="14" rx="2"/><circle cx="12" cy="13" r="3"/></svg>
+        </div>
+        <h3>Stays on device</h3>
+        <p>Sessions, photos and verdicts are persisted to your phone's local storage. The vision API call is the only thing that leaves.</p>
+      </div>
+
+      <div class="privacy-card">
+        <div class="icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 19a4.5 4.5 0 0 0 0-9h-1.8a7 7 0 1 0-13.5 2.5"/><polyline points="8 17 12 21 16 17"/><line x1="12" y1="12" x2="12" y2="21"/></svg>
+        </div>
+        <h3>Opt-in sync</h3>
+        <p>Want sessions across devices? Sign in with Apple or Google and we sync via Cognito. Delete your account and every byte is gone.</p>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ============ FINAL CTA ============ -->
+<section class="cta-final" id="cta" data-screen-label="07 Final CTA">
+  <div class="container">
+    <div class="cta-final-inner">
+      <h2>
+        Park <span class="accent">with proof.</span>
+      </h2>
+      <p class="lede">
+        Free, anonymous, and faster than reading the sign yourself. The next time you're staring at six signs on one pole — let us read them.
+      </p>
+      <a href="/app/" class="btn btn-primary btn-lg" style="display:inline-flex">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+          <circle cx="12" cy="13" r="4"/>
+        </svg>
+        Snap a session
+      </a>
+      <div class="meta">parkproof.com.au · iOS Safari · Android Chrome · Installable PWA</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ FOOTER ============ -->
+<footer class="footer">
+  <div class="footer-inner">
+    <div class="footer-brand">
+      <img src="assets/parkproof-icon.svg" alt="" width="40" height="40" style="border-radius:10px">
+      <div>
+        <div style="font-family:var(--font-display);font-weight:800;font-size:20px;letter-spacing:-0.015em">ParkProof</div>
+        <div class="footer-tail">Park with proof.</div>
+      </div>
+    </div>
+    <div class="footer-meta">
+      <a href="/app/?privacy=open">Privacy</a> · <a href="/app/?feedback=open">Send feedback</a> · <a href="https://github.com/melroyds/parkproof/blob/main/docs/case-study.md">Case study</a><br>
+      <span class="footer-tail">Built solo over 2 weeks · Made in Melbourne · © 2026</span>
+    </div>
+  </div>
+</footer>
+
+<script src="landing-demo.js"></script>
+
+<!-- ============ LOCALE-DETECT CHIP ============
+     Shows a "Continue in 한국어 →" pill to non-English visitors. Fully
+     client-side, vanilla JS, no deps. English visitors see nothing.
+     Catches the Korean / Mandarin / Vietnamese / etc. visitor who'd
+     bounce off an English marketing page and routes them straight to
+     /app/ where i18next picks their language automatically.
+============================================== -->
+<style>
+  .pp-locale-chip {
+    position: fixed;
+    top: 16px;
+    right: 16px;
+    z-index: 100;
+    display: none;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    background: #275BFF;
+    color: #fff;
+    border-radius: 999px;
+    font-family: -apple-system, BlinkMacSystemFont, "Inter", sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    text-decoration: none;
+    box-shadow: 0 4px 16px rgba(39, 91, 255, 0.32);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+    max-width: calc(100vw - 32px);
+  }
+  .pp-locale-chip:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(39, 91, 255, 0.4);
+  }
+  .pp-locale-chip[data-show="1"] {
+    display: inline-flex;
+  }
+  .pp-locale-chip-close {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.18);
+    color: #fff;
+    text-decoration: none;
+    font-size: 14px;
+    line-height: 1;
+    margin-left: 4px;
+    transition: background 0.15s ease;
+  }
+  .pp-locale-chip-close:hover {
+    background: rgba(255, 255, 255, 0.28);
+  }
+  @media (max-width: 480px) {
+    .pp-locale-chip {
+      top: 12px;
+      right: 12px;
+      font-size: 12px;
+      padding: 8px 12px;
+    }
+  }
+</style>
+
+<a id="pp-locale-chip" class="pp-locale-chip" href="/app/" hreflang="auto">
+  <span id="pp-locale-chip-text">Continue in your language →</span>
+  <span id="pp-locale-chip-close" class="pp-locale-chip-close" role="button" aria-label="Dismiss">×</span>
+</a>
+
+<script>
+  (function () {
+    var COPY = {
+      'zh-cn': '继续使用简体中文 →',
+      'zh':    '继续使用简体中文 →',
+      'vi':    'Tiếp tục bằng tiếng Việt →',
+      'id':    'Lanjutkan dalam Bahasa Indonesia →',
+      'ko':    '한국어로 계속하기 →',
+      'it':    'Continua in italiano →',
+      'el':    'Συνέχεια στα ελληνικά →',
+      'hi':    'हिन्दी में जारी रखें →',
+      'pa':    'ਪੰਜਾਬੀ ਵਿੱਚ ਜਾਰੀ ਰੱਖੋ →',
+    }
+
+    function pickLocale() {
+      var langs = Array.isArray(navigator.languages) && navigator.languages.length
+        ? navigator.languages
+        : [navigator.language || 'en']
+
+      for (var i = 0; i < langs.length; i++) {
+        var raw = String(langs[i] || '').toLowerCase()
+        if (COPY[raw]) return raw
+        var primary = raw.split('-')[0]
+        if (COPY[primary]) return primary
+      }
+      return null
+    }
+
+    var chip = document.getElementById('pp-locale-chip')
+    var label = document.getElementById('pp-locale-chip-text')
+    var close = document.getElementById('pp-locale-chip-close')
+    if (!chip || !label || !close) return
+
+    try {
+      if (sessionStorage.getItem('pp-locale-chip-dismissed') === '1') return
+    } catch (e) { /* sessionStorage disabled — show anyway */ }
+
+    var locale = pickLocale()
+    if (!locale) return
+
+    label.textContent = COPY[locale]
+    chip.setAttribute('data-show', '1')
+
+    close.addEventListener('click', function (ev) {
+      ev.preventDefault()
+      ev.stopPropagation()
+      chip.removeAttribute('data-show')
+      try { sessionStorage.setItem('pp-locale-chip-dismissed', '1') } catch (e) {}
+    })
+  })()
+</script>
+
+</body>
+</html>

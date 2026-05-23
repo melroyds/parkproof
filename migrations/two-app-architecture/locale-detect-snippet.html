@@ -1,0 +1,148 @@
+<!--
+  Locale-detect chip — drop this into the landing page's index.html just
+  before </body>. It shows a small "Continue in <your language> →" pill
+  near the top of the page if the visitor's browser language matches one
+  of the 8 non-English locales the React app supports.
+
+  Behaviour:
+    - Fully client-side, vanilla JS, no dependencies.
+    - English visitors see nothing (no chip at all).
+    - Korean, Mandarin, Vietnamese etc. visitors see a chip in their own
+      language. Clicking it takes them straight to /app/ — i18next on the
+      React side picks up navigator.language and renders in their tongue.
+    - Dismissible: click the × to hide it for the session.
+    - Anchored to fixed top-right by default; tweak .pp-locale-chip CSS
+      if the landing's existing top-right area has anything competing.
+
+  Why "go straight to /app/" instead of also localising the landing copy:
+    Localising the marketing landing itself is a v2 weekend (8 locale
+    variants, hreflang routing, CloudFront Vary header). The chip is the
+    pragmatic v1: catches the visitor who needs the localised path,
+    leaves the English landing alone for everyone else.
+
+  How to install:
+    Open the unpacked Claude Design landing index.html, find </body>,
+    paste the entire block below immediately before it. That's the only
+    change.
+-->
+
+<style>
+  .pp-locale-chip {
+    position: fixed;
+    top: 16px;
+    right: 16px;
+    z-index: 100;
+    display: none;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    background: #275BFF;
+    color: #fff;
+    border-radius: 999px;
+    font-family: -apple-system, BlinkMacSystemFont, "Inter", sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    text-decoration: none;
+    box-shadow: 0 4px 16px rgba(39, 91, 255, 0.32);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+    max-width: calc(100vw - 32px);
+  }
+  .pp-locale-chip:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(39, 91, 255, 0.4);
+  }
+  .pp-locale-chip[data-show="1"] {
+    display: inline-flex;
+  }
+  .pp-locale-chip-close {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.18);
+    color: #fff;
+    text-decoration: none;
+    font-size: 14px;
+    line-height: 1;
+    margin-left: 4px;
+    transition: background 0.15s ease;
+  }
+  .pp-locale-chip-close:hover {
+    background: rgba(255, 255, 255, 0.28);
+  }
+  @media (max-width: 480px) {
+    .pp-locale-chip {
+      top: 12px;
+      right: 12px;
+      font-size: 12px;
+      padding: 8px 12px;
+    }
+  }
+</style>
+
+<a id="pp-locale-chip" class="pp-locale-chip" href="/app/" hreflang="auto">
+  <span id="pp-locale-chip-text">Continue in your language →</span>
+  <span id="pp-locale-chip-close" class="pp-locale-chip-close" role="button" aria-label="Dismiss">×</span>
+</a>
+
+<script>
+  (function () {
+    // Map the 8 supported non-English locales the React app speaks to a
+    // native-language CTA. Keep this in lockstep with src/lib/i18n.ts's
+    // SUPPORTED_LANGUAGES — adding a locale there means adding it here.
+    var COPY = {
+      'zh-cn': '继续使用简体中文 →',
+      'zh':    '继续使用简体中文 →',
+      'vi':    'Tiếp tục bằng tiếng Việt →',
+      'id':    'Lanjutkan dalam Bahasa Indonesia →',
+      'ko':    '한국어로 계속하기 →',
+      'it':    'Continua in italiano →',
+      'el':    'Συνέχεια στα ελληνικά →',
+      'hi':    'हिन्दी में जारी रखें →',
+      'pa':    'ਪੰਜਾਬੀ ਵਿੱਚ ਜਾਰੀ ਰੱਖੋ →',
+    }
+
+    function pickLocale() {
+      // Prefer the full navigator.languages list (in user-preference order)
+      // over the single navigator.language string. Most browsers expose both.
+      var langs = Array.isArray(navigator.languages) && navigator.languages.length
+        ? navigator.languages
+        : [navigator.language || 'en']
+
+      for (var i = 0; i < langs.length; i++) {
+        var raw = String(langs[i] || '').toLowerCase()
+        // Exact match first (e.g. "zh-cn" matches "zh-cn" before "zh").
+        if (COPY[raw]) return raw
+        // Then prefix match (e.g. "ko-kr" → "ko").
+        var primary = raw.split('-')[0]
+        if (COPY[primary]) return primary
+      }
+      return null
+    }
+
+    var chip = document.getElementById('pp-locale-chip')
+    var label = document.getElementById('pp-locale-chip-text')
+    var close = document.getElementById('pp-locale-chip-close')
+    if (!chip || !label || !close) return
+
+    // Don't re-show after dismissal in this session.
+    try {
+      if (sessionStorage.getItem('pp-locale-chip-dismissed') === '1') return
+    } catch (e) { /* sessionStorage disabled — show anyway */ }
+
+    var locale = pickLocale()
+    if (!locale) return // English-speaking visitor — show nothing.
+
+    label.textContent = COPY[locale]
+    chip.setAttribute('data-show', '1')
+
+    close.addEventListener('click', function (ev) {
+      ev.preventDefault()
+      ev.stopPropagation()
+      chip.removeAttribute('data-show')
+      try { sessionStorage.setItem('pp-locale-chip-dismissed', '1') } catch (e) {}
+    })
+  })()
+</script>
