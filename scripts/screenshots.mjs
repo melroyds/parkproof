@@ -24,7 +24,10 @@ const ROOT = dirname(dirname(fileURLToPath(import.meta.url)))
 const FIXTURES_DIR = join(ROOT, 'scripts', 'screenshots-fixtures')
 const OUT_DIR = join(ROOT, 'docs', 'screenshots')
 const PORT = 5174 // Off-default so we don't clash with a dev server you may have running
-const APP_URL = `http://localhost:${PORT}`
+// Post-two-app cutover (2026-05-23): Vite's `base` is '/app/', so the React
+// PWA is served at /app/ in dev too. The marketing landing at / would
+// otherwise be what Playwright hits first.
+const APP_URL = `http://localhost:${PORT}/app/`
 
 // ---------- Fixtures ----------
 
