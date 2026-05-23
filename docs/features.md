@@ -23,9 +23,9 @@ Live at **[https://www.parkproof.com.au](https://www.parkproof.com.au)** · Sour
 - **Clarification step** for position-dependent rules (different arrows, side-specific bays, EV-only spots) — the AI asks "where are you parked?" before answering
 - **Photo-quality pre-check** — Laplacian-variance blur + Rec.709 brightness checks fire *before* any token spend. Saves money, sets expectations
 
-## 🛡️ Defensible evidence
+## 🛡️ Tamper-proof evidence
 
-> **Every park you log gets a court-grade record — not just a screenshot.**
+> **Every park you log gets a cryptographically signed record — not just a screenshot. Not legal advice; the signature proves the record wasn't altered, not that a court will rule in your favour.**
 
 - **Session logger** — GPS coords + reverse-geocoded address (editable if wrong) + optional car photo + arrival timestamp + sign translation
 - **Cryptographic signing** — each evidence record is signed by an **AWS KMS ECDSA P-256** key. The private key never leaves AWS. The public key is shipped at `/parkproof-public-key.pem`
@@ -68,7 +68,7 @@ Live at **[https://www.parkproof.com.au](https://www.parkproof.com.au)** · Sour
 - **Paid-parking gate** — when the sign indicates a meter / ticket / app-pay zone is currently active, an explicit acknowledgement checkbox blocks Save until you tick "yes, I've paid"
 - **EasyPark / PayStay / Wilson / Care Park detection** — the AI looks specifically for app-payment stickers mounted below or beside the main sign (typically a separate small sticker), and surfaces the right deep-link
 - **Accessibility-permit gate** — when the sign requires a disability permit (♿ pictogram, "DISABLED ONLY", ACROD, Mobility Pass), a RED banner + acknowledgement-required checkbox fires. Doesn't block a permit-holder; protects everyone else
-- **No-sign mode** — log a park at an unsigned spot with an *ambient surroundings photo* as defensible evidence ("no signs were here at the time of parking"). The session stays open-ended until the driver hits "I've left"
+- **No-sign mode** — log a park at an unsigned spot with an *ambient surroundings photo* as tamper-proof evidence ("no signs were here at the time of parking"). The session stays open-ended until the driver hits "I've left"
 - **Driver-signalled end-of-session** — explicit "I've left" stamps an `ended_at` time on the record. The evidence PDF then shows actual duration on-site alongside the sign's posted limit
 
 ## ⚖️ AI appeal letters
@@ -162,11 +162,11 @@ Honest about gaps:
 
 **For a Reddit post** (technical sub like r/aws or r/programming): pull from "Built right" + the "async-polling architecture" line under Smart Polish. Mention the one-Lambda design + KMS signing chain.
 
-**For a Reddit post** (consumer sub like r/Melbourne or r/SideProject): pull from "The core moment" + "Defensible evidence" + the languages line under Inclusion.
+**For a Reddit post** (consumer sub like r/Melbourne or r/SideProject): pull from "The core moment" + "Tamper-proof evidence" + the languages line under Inclusion.
 
 **For LinkedIn**: pull 5-7 of the most distinctive bullets, lead with the core moment, end with "built in 7 days post-redundancy".
 
-**For interview**: pick the bullets that match the role. PM role → "Smart polish" + "Safety gates" demonstrate scoping. Engineering role → "Built right" + "Defensible evidence" demonstrate craft. Design role → "Inclusion & access" + the brand consistency story.
+**For interview**: pick the bullets that match the role. PM role → "Smart polish" + "Safety gates" demonstrate scoping. Engineering role → "Built right" + "Tamper-proof evidence" demonstrate craft. Design role → "Inclusion & access" + the brand consistency story.
 
 **For Hacker News (Show HN)**: lead with the technical novelty — "AI vision + cryptographic signing + offline-verifiable evidence chain", link the build journal PDF in the comments.
 

@@ -738,7 +738,7 @@ def build():
                 "                              (substitutes for sign photo as visual evidence",
                 "                               of 'no posted restrictions at this spot')",
                 "                              + GPS + reverse-geocode + arrived_at",
-                "                              ✓ Defensible photo evidence",
+                "                              ✓ Tamper-proof photo evidence",
                 "                              ✓ No AI call — no token spend, no error path",
                 "                              ✓ Renders in evidence PDF with a distinct",
                 "                                 'No posted restrictions' banner",

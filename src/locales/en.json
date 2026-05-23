@@ -106,7 +106,7 @@
     "bullet": {
       "plainEnglish": "Plain-English answers",
       "photoEvidence": "Photo evidence saved",
-      "defensible": "Defensible if you're ticketed"
+      "defensible": "Tamper-proof if you're ticketed"
     },
     "cta": "Check a parking sign",
     "builtFor": "Built for Aussie drivers",
@@ -120,13 +120,13 @@
       "answerDesc": "Plain-English verdict you can rely on."
     },
     "evidenceCallout": {
-      "title": "Defensible evidence, when it matters.",
+      "title": "Tamper-proof evidence, when it matters.",
       "body": "Every check gets a cryptographically signed timestamp, GPS, and photo record."
     },
     "feature": {
       "translateTitle": "Plain-English answers",
       "translateDesc": "Photograph any Aussie parking sign — get a 'can I park now?' verdict in 10 seconds.",
-      "evidenceTitle": "Defensible evidence",
+      "evidenceTitle": "Tamper-proof evidence",
       "evidenceDesc": "Every park gets a cryptographically-signed timestamp, GPS, and photo record.",
       "appealTitle": "AI appeal letters",
       "appealDesc": "Got a wrongful ticket? Photograph it and we'll draft a formal dispute."

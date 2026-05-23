@@ -13,7 +13,7 @@
     { state: 'loading',   duration: 2600, caption: 'Reading the sign · ~12s' },
     { state: 'verdict',   duration: 3400, caption: 'Verdict · plain English' },
     { state: 'reminders', duration: 3000, caption: 'Reminders before tow-away' },
-    { state: 'pdf',       duration: 3000, caption: 'Defensible PDF export' },
+    { state: 'pdf',       duration: 3000, caption: 'Tamper-proof PDF export' },
     { state: 'korean',    duration: 2600, caption: 'Works in your language' },
   ];
 

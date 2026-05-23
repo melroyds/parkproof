@@ -106,7 +106,7 @@
     "bullet": {
       "plainEnglish": "Jawaban yang mudah dimengerti",
       "photoEvidence": "Bukti foto tersimpan",
-      "defensible": "Bisa dipertahankan jika kena denda"
+      "defensible": "Bukti anti-modifikasi jika kena denda"
     },
     "cta": "Periksa rambu parkir",
     "builtFor": "Dibuat untuk pengemudi di Australia",
@@ -120,13 +120,13 @@
       "answerDesc": "Putusan jelas yang bisa kamu andalkan."
     },
     "evidenceCallout": {
-      "title": "Bukti yang bisa dipertahankan, saat dibutuhkan.",
+      "title": "Bukti anti-modifikasi, saat dibutuhkan.",
       "body": "Setiap pemeriksaan mendapat tanda waktu, GPS, dan foto yang ditandatangani secara kriptografis."
     },
     "feature": {
       "translateTitle": "Jawaban mudah dimengerti",
       "translateDesc": "Foto rambu parkir Australia mana pun — dapatkan putusan 'bisa parkir sekarang?' dalam 10 detik.",
-      "evidenceTitle": "Bukti yang bisa dipertahankan",
+      "evidenceTitle": "Bukti anti-modifikasi",
       "evidenceDesc": "Setiap parkir mendapat tanda waktu, GPS, dan foto yang ditandatangani secara kriptografis.",
       "appealTitle": "Surat banding AI",
       "appealDesc": "Kena denda tidak adil? Foto dendanya dan kami susunkan sanggahan resmi."

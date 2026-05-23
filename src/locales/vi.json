@@ -557,7 +557,7 @@
     "bullet": {
       "plainEnglish": "Câu trả lời dễ hiểu",
       "photoEvidence": "Bằng chứng ảnh được lưu",
-      "defensible": "Có thể bảo vệ nếu bị phạt"
+      "defensible": "Bằng chứng không thể giả mạo, nếu bị phạt"
     },
     "cta": "Kiểm tra biển báo",
     "builtFor": "Dành cho tài xế Úc",
@@ -571,13 +571,13 @@
       "answerDesc": "Câu trả lời rõ ràng bạn có thể tin tưởng."
     },
     "evidenceCallout": {
-      "title": "Bằng chứng có thể bảo vệ, khi cần.",
+      "title": "Bằng chứng không thể giả mạo, khi cần.",
       "body": "Mỗi lần kiểm tra đều có dấu thời gian, GPS và ảnh được ký mật mã."
     },
     "feature": {
       "translateTitle": "Câu trả lời rõ ràng",
       "translateDesc": "Chụp ảnh bất kỳ biển đỗ xe nào của Úc — nhận câu trả lời \"có thể đỗ không?\" trong 10 giây.",
-      "evidenceTitle": "Bằng chứng vững chắc",
+      "evidenceTitle": "Bằng chứng không thể giả mạo",
       "evidenceDesc": "Mỗi lần đỗ xe đều có dấu thời gian, GPS và ảnh được ký mã hóa.",
       "appealTitle": "Thư khiếu nại AI",
       "appealDesc": "Bị phạt oan? Chụp ảnh và chúng tôi sẽ soạn thư khiếu nại chính thức."

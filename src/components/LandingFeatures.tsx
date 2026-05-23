@@ -12,8 +12,13 @@ import Icon from './Icon'
  *      bolded "10 seconds", three checkmark value props, gradient CTA,
  *      "Built for Aussie drivers" reassurance line.
  *   2. "How it works" — three numbered cards in a horizontal row.
- *   3. "Defensible evidence" callout — the one feature that genuinely
+ *   3. "Tamper-proof evidence" callout — the one feature that genuinely
  *      sets ParkProof apart (cryptographic signing of every record).
+ *      The i18n key for the third bullet is still `defensible` for
+ *      historical reasons (renaming the key would mean editing every
+ *      locale file); the displayed *value* is now "Tamper-proof if
+ *      you're ticketed" everywhere. See `src/locales/en.json` →
+ *      `landing.bullet.defensible`.
  *
  * The CTA inside this component fires the same `onScanCta` callback as
  * the home-screen scan button, so the parent doesn't render two buttons.
@@ -151,7 +156,7 @@ export default function LandingFeatures({ onScanCta }: { onScanCta: () => void }
         ))}
       </div>
 
-      {/* ── Defensible evidence callout ──────────────────────────────── */}
+      {/* ── Tamper-proof evidence callout ────────────────────────────── */}
       <div className="bg-brand-50 border border-brand-100 rounded-2xl p-4 flex items-start gap-3 mb-10">
         <div className="w-10 h-10 rounded-xl bg-brand-500 text-white flex items-center justify-center shrink-0">
           <ShieldIcon className="w-5 h-5" />

@@ -557,7 +557,7 @@
     "bullet": {
       "plainEnglish": "通俗易懂的解读",
       "photoEvidence": "自动保存照片证据",
-      "defensible": "罚单出现时可用于申诉"
+      "defensible": "防篡改记录,以防被开罚单"
     },
     "cta": "扫描停车标志",
     "builtFor": "为澳大利亚司机打造",
@@ -571,13 +571,13 @@
       "answerDesc": "你可以信赖的明确答案。"
     },
     "evidenceCallout": {
-      "title": "需要时,可信的证据。",
+      "title": "需要时,防篡改证据。",
       "body": "每次检查都附带加密签名的时间戳、GPS 和照片记录。"
     },
     "feature": {
       "translateTitle": "通俗的解读",
       "translateDesc": "拍下任何澳洲停车标志 — 10 秒内告诉你\"现在能不能停\"。",
-      "evidenceTitle": "可作证据",
+      "evidenceTitle": "防篡改证据",
       "evidenceDesc": "每次停车都有加密签名的时间戳、GPS 和照片记录。",
       "appealTitle": "AI 申诉信",
       "appealDesc": "收到不合理的罚单？拍下来，我们帮你起草正式申诉。"

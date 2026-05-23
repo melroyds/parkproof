@@ -1,6 +1,6 @@
 # ParkProof — Product Spec
 
-> Mobile-first installable PWA for Australian drivers. Photograph any Australian parking sign → plain-English answer to **"Can I park here right now?"** → log a timestamped, GPS-tagged evidence record → calendar reminder before parking expires → export a court-friendly PDF for infringement disputes.
+> Mobile-first installable PWA for Australian drivers. Photograph any Australian parking sign → plain-English answer to **"Can I park here right now?"** → log a timestamped, GPS-tagged evidence record → calendar reminder before parking expires → export a tamper-proof PDF for infringement disputes. (Not legal advice; the cryptographic signature proves the record wasn't altered after it was saved, not that a council or court will rule in the driver's favour.)
 
 ---
 

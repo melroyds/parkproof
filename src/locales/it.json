@@ -563,7 +563,7 @@
     "bullet": {
       "plainEnglish": "Risposte in linguaggio chiaro",
       "photoEvidence": "Prove fotografiche salvate",
-      "defensible": "Difendibili in caso di multa"
+      "defensible": "Prova inalterabile in caso di multa"
     },
     "cta": "Controlla un cartello",
     "builtFor": "Pensato per i conducenti in Australia",
@@ -577,13 +577,13 @@
       "answerDesc": "Un verdetto chiaro su cui contare."
     },
     "evidenceCallout": {
-      "title": "Prove difendibili, quando contano.",
+      "title": "Prove inalterabili, quando contano.",
       "body": "Ogni controllo riceve un timestamp, GPS e fotografie firmati crittograficamente."
     },
     "feature": {
       "translateTitle": "Risposte in italiano semplice",
       "translateDesc": "Fotografa qualsiasi cartello di parcheggio australiano — verdetto 'posso parcheggiare?' in 10 secondi.",
-      "evidenceTitle": "Prove difendibili",
+      "evidenceTitle": "Prove inalterabili",
       "evidenceDesc": "Ogni parcheggio ottiene un timestamp firmato crittograficamente, GPS e foto.",
       "appealTitle": "Lettere di ricorso AI",
       "appealDesc": "Multa ingiusta? Fotografala e prepariamo un ricorso formale."

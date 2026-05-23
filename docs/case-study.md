@@ -41,7 +41,7 @@ Everything else cascaded from that:
 
 - **Anonymous-by-default.** This user has just been screwed by an institution. The last thing they want is to create an account, verify an email, agree to a privacy policy, and then *finally* get to translate a sign. So the entire app works fully anonymously. Sign-in is opt-in, gated behind features the anonymous experience already gives you (cloud sync, cross-device evidence).
 - **Mobile-first, installable.** They're standing next to the sign. They have one hand free. The home screen is a single button: "Scan a parking sign." Everything else is one tap deeper.
-- **Court-friendly output, even though they hope they never need it.** The evidence PDF is built to be print-ready, council-ready, with a cryptographic signature appendix that includes an `openssl dgst -verify` walkthrough so the receiving party (council, court, insurer) can independently confirm the file hasn't been altered since it was saved.
+- **Tamper-proof output, even though they hope they never need it.** The evidence PDF is built to be print-ready and council-ready, with a cryptographic signature appendix that includes an `openssl dgst -verify` walkthrough so any receiving party (a council, an insurer, the driver's own records) can independently confirm the file hasn't been altered since it was saved. The signature is about *integrity*, not *legal weight* — how a council or court weighs the record is their call, not ours.
 - **Cost-conscious by default.** A user who's already cranky about a parking ticket isn't going to subscribe to a parking app. The whole thing had to work on free / near-free infrastructure (~$5/mo all-in at portfolio scale).
 
 The user I *didn't* build for:

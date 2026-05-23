@@ -106,7 +106,7 @@
     "bullet": {
       "plainEnglish": "이해하기 쉬운 답변",
       "photoEvidence": "사진 증거 저장",
-      "defensible": "과태료 시 방어 가능"
+      "defensible": "과태료 시 변조 방지 증거"
     },
     "cta": "주차 표지판 확인",
     "builtFor": "호주 운전자를 위해 만들어짐",
@@ -120,13 +120,13 @@
       "answerDesc": "믿을 수 있는 명확한 판정."
     },
     "evidenceCallout": {
-      "title": "필요할 때 방어 가능한 증거.",
+      "title": "필요할 때 변조 방지 증거.",
       "body": "모든 확인은 암호학적으로 서명된 타임스탬프, GPS, 사진 기록을 받습니다."
     },
     "feature": {
       "translateTitle": "이해하기 쉬운 답변",
       "translateDesc": "호주 주차 표지판을 사진 — 10초 안에 '지금 주차할 수 있나요?' 판정 받기.",
-      "evidenceTitle": "방어 가능한 증거",
+      "evidenceTitle": "변조 방지 증거",
       "evidenceDesc": "모든 주차에 암호학적으로 서명된 타임스탬프, GPS, 사진 기록.",
       "appealTitle": "AI 이의신청서",
       "appealDesc": "잘못된 과태료를 받았나요? 사진을 찍으시면 공식 이의신청서를 작성해드립니다."

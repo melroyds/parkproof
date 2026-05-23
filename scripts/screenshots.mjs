@@ -314,7 +314,7 @@ async function captureFlow({ page, signPhotoPath, carPhotoPath, ticketPath }) {
   // Capture BEFORE any session seeding so the App.tsx empty-state branch
   // renders — that's the only path that mounts <LandingFeatures> with its
   // full hero, value bullets, gradient CTA, How-it-works grid, and the
-  // Defensible-evidence callout. This is the visual that Reddit visitors
+  // Tamper-proof-evidence callout. This is the visual that Reddit visitors
   // land on, so it gets pride of place in the README demo grid.
   await page.goto(APP_URL, { waitUntil: 'networkidle' })
   // Wait for the landing's headline accent — "simple." (the brand-blue
