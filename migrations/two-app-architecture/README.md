@@ -232,6 +232,107 @@ git stash pop                 # restore the migration edits
 
 ---
 
+## Gotchas observed during the cutover
+
+Three real issues hit during the live cutover. Documented so future-you
+doesn't burn the same time we did.
+
+### 1. Vite `base` doesn't rewrite absolute paths in JSX or service workers
+
+When you change Vite's `base` from `/` to `/app/`, Vite rewrites
+*build-time references* — HTML `<link>` / `<script>` tags, CSS `url()`
+calls, the PWA manifest's icon paths. It does **NOT** rewrite *runtime
+string literals* in JSX (`<img src="/foo.png" />`) or in the service
+worker source (`icon: '/pwa-192.png'`). Those are just strings to Vite
+and they bake into the bundle unchanged.
+
+**Symptom on this cutover:** the hero illustration 404'd on
+`parkproof.com.au/app/` because `LandingFeatures.tsx` and `App.tsx`
+both hard-coded `src="/hero-illustration.png"`. The asset is now at
+`/app/hero-illustration.png` but the code asked for the wrong path.
+Same problem in `PrivacyPolicy.tsx` (`href="/parkproof-public-key.pem"`),
+`SessionHistory.tsx` (`src="/empty-history.svg"`), and four references
+inside `src/service-worker.ts` (push-notification icon/badge URLs).
+Eight instances total.
+
+**Fix:** use `import.meta.env.BASE_URL` in JSX, drop the leading slash
+in the SW:
+
+```tsx
+// JSX — base-aware:
+<img src={`${import.meta.env.BASE_URL}hero-illustration.png`} />
+
+// Service worker — relative paths resolve against the SW's URL,
+// which is /app/service-worker.js, so the / is unnecessary:
+icon: 'pwa-192x192.png',   // resolves to /app/pwa-192x192.png
+```
+
+**Audit pattern for next time** — run these greps *before* the cutover,
+not after:
+
+```bash
+grep -rn 'src="/[^"]*\.\(png\|jpg\|svg\|webp\|ico\)' src/
+grep -rn 'href="/[^"]*\.\(pem\|html\|svg\|json\)' src/
+grep -rn "'/[^']*\.\(png\|jpg\|svg\)'" src/
+```
+
+Each match is a candidate fix.
+
+### 2. CloudFront OAC + S3 REST origin doesn't auto-resolve directories
+
+If you've run `harden.sh` (which sets up OAC), CloudFront's origin is
+the S3 REST API endpoint, not the website endpoint. REST endpoints do
+**NOT** auto-resolve `/app/` → `/app/index.html` the way website mode
+used to.
+
+**Symptom on this cutover:** `/app/` returned the marketing landing's
+HTML because CloudFront tried to fetch `/app/` from S3, got a 403
+(no such key, because the file is at `/app/index.html`), hit its
+`CustomErrorResponses` fallback (error → `/index.html`), and served
+the landing. The `X-Cache: Error from cloudfront` response header is
+the diagnostic giveaway.
+
+**Fix:** deploy a CloudFront Function on viewer-request that appends
+`index.html` to any trailing-slash URI:
+
+```javascript
+function handler(event) {
+    var request = event.request;
+    if (request.uri.endsWith('/')) {
+        request.uri += 'index.html';
+    }
+    return request;
+}
+```
+
+Provision once with `aws cloudfront create-function`, publish, then
+attach to the distribution's `DefaultCacheBehavior.FunctionAssociations`
+as event-type `viewer-request`. The function takes 5-15 min to
+propagate to all edges; the affected URLs work the moment the
+distribution status flips to `Deployed`.
+
+The function is already live on `parkproof-cdn` (name:
+`parkproof-uri-rewrite`). Don't delete it.
+
+### 3. `outDir` change leaves stale files in `dist/` between builds
+
+When you change Vite's `outDir` from `dist` (default) to `dist/app`,
+the `emptyOutDir: true` setting empties `dist/app/` — not `dist/`.
+Files from any previous build sitting at `dist/` root (old `index.html`,
+old `sw.js`, old `manifest.webmanifest`) survive the build and ship
+to production alongside the new landing.
+
+**Symptom on this cutover:** caught during the local layering
+simulation BEFORE the production deploy. Would have manifested as
+ghost files at `s3://bucket/` that confused service-worker
+registration and broke manifest discovery.
+
+**Fix:** `rm -rf dist` at the start of `deploy.sh`'s build step.
+Each deploy starts from a clean slate. Already applied — see
+`deploy.sh` around line 393.
+
+---
+
 ## Known limitations
 
 - **Landing is English-only.** The auto-detect chip catches non-English

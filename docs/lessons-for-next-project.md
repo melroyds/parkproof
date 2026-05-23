@@ -137,6 +137,44 @@ Before shipping a feature, ship the log line for it. The `[parkproof.user_feedba
 
 After every push, **explicitly check CI status** before declaring the work done. Don't trust "should be green". If CI fails on commit N, every subsequent commit piles failure-on-failure invisibly. Cost me 4 commits of silent breakage on this build.
 
+### Vite `base` doesn't rewrite absolute paths in JSX or service workers
+
+When you point a Vite build at a non-root URL — e.g., `base: '/app/'` because you've added a marketing landing at `/` and the app moved under `/app/` — Vite rewrites *build-time references* (HTML `<link>` and `<script>` tags, CSS `url()` calls, PWA manifest icon paths). It does NOT rewrite *runtime string literals* inside JSX (`<img src="/foo.png" />`) or service worker source (`icon: '/pwa-192.png'`). Those are just strings to Vite, and they bake into the bundle unchanged.
+
+**Symptom**: hero images, public-key links, empty-state illustrations all 404 on `/app/` because they're written as `/foo.png` (root) but the assets live at `/app/foo.png`. ParkProof's cutover surfaced 8 such instances (4 JSX, 4 in `src/service-worker.ts`) — all silently wrong post-deploy until manual smoke test.
+
+**Fix pattern**:
+
+```tsx
+// JSX — use Vite's exposed base value:
+<img src={`${import.meta.env.BASE_URL}hero-illustration.png`} />
+
+// Service workers — relative paths resolve against the SW's URL:
+icon: 'pwa-192x192.png',   // SW at /app/sw.js → resolves to /app/pwa-192x192.png
+```
+
+**Audit before changing `base`** — grep `src/` for `src="/`, `href="/`, and `'/<filename>.<ext>'` patterns. Each match is a candidate fix. Doing this BEFORE the deploy is much cheaper than finding it AFTER.
+
+### CloudFront with OAC + S3 REST origin doesn't auto-resolve directories
+
+S3 website-mode endpoints resolve `/app/` → `/app/index.html`. S3 REST API endpoints (what CloudFront uses when fronted by OAC for private-bucket security) do NOT. If your app lives at a subpath, plain CloudFront-with-OAC will 403 on directory requests.
+
+**Symptom**: `/app/` returns whatever your `CustomErrorResponses` falls back to (usually `/index.html`), not the React app at `/app/index.html`. Look for `X-Cache: Error from cloudfront` in the response headers.
+
+**Fix**: deploy a CloudFront Function (viewer-request handler) that rewrites trailing-slash URIs:
+
+```javascript
+function handler(event) {
+    var request = event.request;
+    if (request.uri.endsWith('/')) {
+        request.uri += 'index.html';
+    }
+    return request;
+}
+```
+
+Attach via `FunctionAssociations` in the `DefaultCacheBehavior`. Five-minute propagation, no infrastructure change beyond that. Worth bundling into the `harden.sh`-equivalent for the next project so you don't have to discover this in production.
+
 ---
 
 ## AI-integration patterns
