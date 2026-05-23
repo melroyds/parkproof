@@ -54,7 +54,9 @@ export default function SessionHistory({ onBack, onOpen }: Props) {
       {sessions.length === 0 ? (
         <div className="bg-white rounded-2xl border border-paper-300 p-8 text-center">
           <img
-            src="/empty-history.svg"
+            // BASE_URL-aware so the asset resolves correctly under the
+            // /app/ mount after the two-app cutover.
+            src={`${import.meta.env.BASE_URL}empty-history.svg`}
             alt=""
             className="w-44 h-auto mx-auto mb-3 select-none pointer-events-none"
             aria-hidden

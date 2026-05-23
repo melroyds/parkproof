@@ -556,7 +556,11 @@ function App() {
         ) : (
           <>
             <img
-              src="/hero-illustration.png"
+              // import.meta.env.BASE_URL is set by Vite's `base` config (now
+              // '/app/' post-cutover). Using it instead of a literal "/foo"
+              // means the path follows wherever the app is mounted — works
+              // in dev, prod under /app/, or any future base.
+              src={`${import.meta.env.BASE_URL}hero-illustration.png`}
               alt=""
               className="w-full max-w-[360px] mx-auto mb-2 select-none pointer-events-none"
               aria-hidden

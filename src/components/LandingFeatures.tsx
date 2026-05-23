@@ -60,7 +60,9 @@ export default function LandingFeatures({ onScanCta }: { onScanCta: () => void }
           via scripts/_composite_hero.py. */}
       <div className="w-full mb-8 -mx-2">
         <img
-          src="/hero-illustration.png"
+          // BASE_URL = '/app/' after the two-app cutover. Absolute paths like
+          // "/hero-illustration.png" 404 because the asset lives at /app/.
+          src={`${import.meta.env.BASE_URL}hero-illustration.png`}
           alt=""
           aria-hidden
           className="w-full aspect-[5/4] object-cover rounded-3xl shadow-xl shadow-ink-900/15 select-none pointer-events-none"

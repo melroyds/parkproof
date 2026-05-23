@@ -111,7 +111,9 @@ export default function PrivacyPolicy({ onBack }: Props) {
               components={{
                 a: (
                   <a
-                    href="/parkproof-public-key.pem"
+                    // Follows Vite's base (post-cutover: /app/). Without
+                    // this, the PEM 404s on the live site.
+                    href={`${import.meta.env.BASE_URL}parkproof-public-key.pem`}
                     className="text-brand-700 hover:text-brand-800 underline break-all"
                   />
                 ),

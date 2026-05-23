@@ -37,8 +37,12 @@ self.addEventListener('push', (event: PushEvent) => {
     event.waitUntil(
       self.registration.showNotification('ParkProof', {
         body: 'You have an update.',
-        icon: '/pwa-192x192.png',
-        badge: '/pwa-64x64.png',
+        // Relative paths — Notification.icon resolves against the SW's
+        // own URL (/app/service-worker.js), so 'pwa-192x192.png' becomes
+        // /app/pwa-192x192.png. Leading-slash absolute paths would 404
+        // after the two-app cutover.
+        icon: 'pwa-192x192.png',
+        badge: 'pwa-64x64.png',
       }),
     )
     return
@@ -55,8 +59,10 @@ self.addEventListener('push', (event: PushEvent) => {
   const title = payload.title || 'ParkProof'
   const options: NotificationOptions = {
     body: payload.body || '',
-    icon: '/pwa-192x192.png',
-    badge: '/pwa-64x64.png',
+    // Relative paths — see comment above. Resolves to /app/pwa-*.png
+    // because the SW lives at /app/service-worker.js post-cutover.
+    icon: 'pwa-192x192.png',
+    badge: 'pwa-64x64.png',
     // tag collapses repeat notifications for the same parking session —
     // when the schedule layer fires 30/15/5/0-min reminders, each replaces
     // the previous so the user's notification tray doesn't fill up.
