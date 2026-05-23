@@ -141,10 +141,20 @@ Honest about gaps:
 
 - **AI feedback Layer 3** — opt-in photo capture for systematic failures, building a private training dataset. Reserved for when there are real users.
 - **Citywide parking heatmap** — every scan captures the data; needs a share-toggle, viewer, and cold-start solved.
-- **Voice confirmation** (Web Speech API).
 - **Council-specific appeal deep-links** (auto-submit) — blocked by council-side captchas + no public APIs.
 
 *Recently moved off this list: **Web Push** (full VAPID + EventBridge Scheduler pipeline now shipped, including auto-cancel on early session end).*
+
+---
+
+## 🎙️ Considered and deferred: voice confirmation
+
+> **A feature we sketched, costed, then asked the harder product question about.**
+
+- **The idea** — Web Speech API voice intent ("save", "cancel", "extend") would let drivers log or re-check a session without tapping. Per-locale intent matching planned for all 9 supported languages, with a tiered rollout: English first, the four well-supported non-English locales next (zh-CN, ko, it, id), remaining locales gated on native-speaker validation
+- **Why deferred** — the deferral is product, not technical. Snapping a sign requires the phone already in hand; by the time the camera's up, voice is redundant. The legitimate use cases (re-checking from a cafe with hands full, accessibility for limited-dexterity users) are real but narrow, and don't earn engineering time over the larger remaining items (Layer 3 telemetry, citywide heatmap)
+- **What we kept** — the i18n design constraints surfaced during scoping. Web Speech API recognition quality varies significantly by locale; shipping a feature that fails silently for some users is worse than not shipping it. If voice ever becomes a meaningful user request post-launch, that constraint is the starting point — not "did we forget about i18n?"
+- **What this says about the process** — "considered and deferred" is a different verdict from "haven't built yet". Documented so future-me (and anyone reviewing this code) sees the decision, not the omission
 
 ---
 

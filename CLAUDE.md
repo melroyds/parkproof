@@ -382,5 +382,5 @@ scripts/teardown.sh                            ← destroy everything (dry-run b
 - ✅ True Web Push background notifications — VAPID + DDB subscription store + EventBridge scheduler + dispatch Lambda + cancel-on-end-session; falls back to in-tab notification when permission denied
 - ⏳ AI feedback Layer 3 — opt-in photo capture for systematic failures, building a private training dataset
 - ⏳ Citywide parking heatmap — every scan captures the data; needs share-toggle, viewer, cold-start solved
-- ⏳ Voice confirmation (Web Speech API)
+- 🤔 Voice confirmation (Web Speech API) — considered and deferred. Sketched the full 9-locale design and then deferred on product grounds: the scan-to-verdict flow requires the phone in hand, so voice is redundant for the primary use case. See `docs/features.md` § Considered and deferred for the reasoning + the i18n constraints kept for future reference.
 - ⛔ Council-specific appeal deep-links (auto-submit) — externally blocked by council-side captchas + no public APIs. Shelved, not pending. Revisit only if a council reaches out with a partnership offer.
