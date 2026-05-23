@@ -158,6 +158,26 @@ Honest about gaps:
 
 ---
 
+## 🔌 Considered and deferred: offline / hybrid sign reading
+
+> **An architectural pivot mapped end-to-end, sequenced for after launch data tells us where Claude is and isn't earning its keep.**
+
+- **The idea** — Claude vision is the *magic moment* of the scan flow today AND the single largest per-scan cost AND the only mandatory network call. There's a spectrum between "full-Claude on every scan" (where we are) and "fully offline" (a research project). Five layers sit between photo and verdict: OCR, symbol recognition, layout understanding, rule parsing, rule application. The last two are trivial to run on-device today; the first three are where Claude earns its money.
+
+- **Path A — full offline rip-and-replace.** Custom vision pipeline, fine-tuned VLM, ~6-12 months with ML/CV expertise. Realistic accuracy ceiling 70-80% on stacked Melbourne signs vs Claude's ~95%. Bundle size (a half-decent VLM is 200-500MB), battery drain, retraining cost, and "stuck at the model's release date" all argue against. **Not shipping this.** Documented for completeness; it's the wrong product call at portfolio scale.
+
+- **Path B — hybrid, sequenced over months 2-4 post-launch.** Four incremental moves: (1) pure-TS rule application library, (2) cross-user GPS-cached scan database (anonymous opt-in), (3) pattern library for common Australian signs with regex-against-OCR as a confidence-gated fast path, (4) OCR-assisted text-only Claude calls (Tesseract.js in-browser, send extracted text instead of the photo when the OCR is confident). Estimated steady-state: **70-80% of scans served offline; Claude becomes a fallback for novel / stacked signs.** Per-scan cost drops from ~$0.04 to ~$0.005 amortised.
+
+- **Path C — offline re-scan from cache (~1 weekend, cheapest win).** Smart re-scan today already does text-only refresh against rules cached from a prior visual scan, scoped to the same user at the same GPS proximity. Extending the cache to *cross-user* (anonymous opt-in, similar shape to the user-feedback bucket) would cover ~90% of Claude calls for repeat-location users. The architectural seam exists in `lambda/index.js` refresh mode already; the work is extending the cache layer, not redesigning the contract.
+
+- **Why deferred** — every path here is gated on usage data the launch hasn't produced yet. What % of scans are repeat-location? Which sign patterns dominate? Where does Claude succeed and where does it fail? Layer 1 + 2 telemetry already captures the seed of this; sequenced refinement post-launch produces real evidence for which paths earn engineering time. Building any of this before the data exists is guessing.
+
+- **What we kept** — the architectural seam, fully intact. Smart re-scan proves the text-only refresh pathway works in production. The JSON-schema rule shape (`rules`, `observations`, `can_park_now`, `until`, `duration_minutes`, `confidence`) proves layers 4 + 5 already run cheaply on the client side. ParkProof is in position to add hybrid layers without rewriting the data model — every move above is *additive*, not destructive.
+
+- **What this says about the process** — the right move when an offline alternative exists is to ship the cloud version first (faster, higher quality, easier to iterate on), gather data, and *then* decide which parts deserve to run on-device. The wrong moves are (a) build offline-first and ship a worse product, or (b) build cloud-first and never revisit. The "considered and deferred" classification here is a deliberate *not yet*, not a *never* — the roadmap exists, the data feed will tell us when to act on it.
+
+---
+
 ## How to use this list
 
 **For a Reddit post** (technical sub like r/aws or r/programming): pull from "Built right" + the "async-polling architecture" line under Smart Polish. Mention the one-Lambda design + KMS signing chain.
