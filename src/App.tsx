@@ -158,12 +158,22 @@ function App() {
   // Keyed on user-id so the sync fires exactly once per sign-in; the lint
   // wants the whole `auth.user` object on the dep list, but that would
   // re-fire on every refresh() call (unnecessary).
+  //
+  // After the sync settles (success OR error) we bump `activesVersion` so the
+  // home view re-derives. Without this, a signed-in user on a fresh device
+  // sees the "first-time visitor" LandingFeatures forever — sessionCount is
+  // computed inline at render time and there's nothing to trigger one once
+  // the pulled-from-cloud sessions land in localStorage.
   const userId = auth.user?.userId
   useEffect(() => {
     if (!userId) return
-    void performInitialSync().catch((err) => {
-      console.warn('[sync] initial sync failed:', err)
-    })
+    void performInitialSync()
+      .catch((err) => {
+        console.warn('[sync] initial sync failed:', err)
+      })
+      .finally(() => {
+        setActivesVersion((v) => v + 1)
+      })
   }, [userId])
 
   const handleCapture = async (
