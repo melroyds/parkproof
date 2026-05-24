@@ -178,7 +178,18 @@ export default function ActiveSessionCard({
             <Icon name="pin" className="w-6 h-6" strokeWidth={2.25} />
           </div>
           <div className={`flex-1 min-w-0 ${extraCount > 0 ? 'pr-16' : ''}`}>
-            <p className="text-xs font-semibold uppercase tracking-widest text-white/80">
+            <p className="text-xs font-semibold uppercase tracking-widest text-white/80 inline-flex items-center gap-1.5">
+              {/* Pulsing live-indicator dot, matched to the urgency colour
+                  via white-on-gradient. The card is the most-glanced surface
+                  for a parked user — a static "CURRENTLY PARKED" reads as
+                  stale even when the countdown below is ticking. The dot's
+                  ping animation says "this is a live session, the data
+                  underneath is moving." Reduced-motion users get the
+                  static dot via the global media query in index.css. */}
+              <span className="relative flex w-2 h-2">
+                <span className="absolute inline-flex h-full w-full rounded-full bg-white opacity-75 animate-[ping_1.8s_cubic-bezier(0,0,0.2,1)_infinite]" />
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-white" />
+              </span>
               {t('active.currentlyParked')}
             </p>
             <p className="font-display text-base font-bold leading-tight truncate mt-0.5">

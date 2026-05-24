@@ -1,7 +1,13 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../lib/use-auth'
 import { deleteAccount, exportCloudData } from '../lib/sync'
+import {
+  getPushPermissionState,
+  hasActiveSubscription,
+  subscribeToPush,
+  unsubscribeFromPush,
+} from '../lib/push'
 import Icon from './Icon'
 
 interface Props {
@@ -128,6 +134,17 @@ export default function AuthSettings({ onBack, onOpenPrivacy, onDeleted }: Props
         </button>
       </section>
 
+      {/* Push notification management — per-device toggle for whether
+          this browser receives Web Push reminders. Subscription state is
+          per-browser-per-device (different from cloud-sync which is per-
+          Cognito-account), so this lives in the signed-in settings even
+          though anonymous users CAN technically be subscribed too.
+          Anonymous users currently manage push only via the About page's
+          Enable / browser-settings flow; adding a global "Account" entry
+          for anonymous push management would need a separate non-auth
+          settings screen — defer to post-launch. */}
+      <PushManagementSection />
+
       <section className="bg-white rounded-2xl border border-paper-300 p-5 mb-3">
         <h3 className="font-display font-bold text-ink-900 mb-1">{t('settings.signOutHeader')}</h3>
         <p className="text-xs text-ink-600 mb-3 leading-relaxed">
@@ -201,5 +218,114 @@ export default function AuthSettings({ onBack, onOpenPrivacy, onDeleted }: Props
         )}
       </section>
     </div>
+  )
+}
+
+/**
+ * Per-device push-notification management. Lives at the bottom of
+ * AuthSettings as a sibling section because its state is independent
+ * of the Cognito account (the same Cognito user can be subscribed on
+ * device A and unsubscribed on device B).
+ *
+ * State machine:
+ *   idle        — initial; we don't yet know the subscription status
+ *   subscribed  — confirmed live PushSubscription on this device
+ *   notSubscribed — no subscription (permission can be granted/denied/default)
+ *   requesting  — mid-flight subscribe or unsubscribe
+ *   unsupported — browser lacks PushManager (iOS Safari <16.4)
+ *
+ * Unsubscribe path is client-side only (see push.ts comments); the server
+ * DDB row is reaped lazily on the next dispatch failure. Acceptable lag.
+ */
+function PushManagementSection() {
+  const { t } = useTranslation()
+  const [status, setStatus] = useState<
+    'idle' | 'requesting' | 'subscribed' | 'notSubscribed' | 'denied' | 'unsupported' | 'error'
+  >(() => {
+    const perm = getPushPermissionState()
+    if (perm === 'unsupported') return 'unsupported'
+    if (perm === 'denied') return 'denied'
+    return 'idle'
+  })
+
+  useEffect(() => {
+    let cancelled = false
+    void hasActiveSubscription().then((has) => {
+      if (cancelled) return
+      setStatus(has ? 'subscribed' : 'notSubscribed')
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  const handleEnable = async () => {
+    setStatus('requesting')
+    const result = await subscribeToPush()
+    if (result.ok) setStatus('subscribed')
+    else if (result.reason === 'denied') setStatus('denied')
+    else if (result.reason === 'unsupported') setStatus('unsupported')
+    else setStatus('error')
+  }
+
+  const handleDisable = async () => {
+    if (!window.confirm(t('settings.pushDisableConfirm'))) return
+    setStatus('requesting')
+    const ok = await unsubscribeFromPush()
+    setStatus(ok ? 'notSubscribed' : 'error')
+  }
+
+  if (status === 'unsupported') {
+    // No UI surface — the browser literally can't do Web Push. Showing
+    // a "you can't enable this" section is just noise.
+    return null
+  }
+
+  return (
+    <section className="bg-white rounded-2xl border border-paper-300 p-5 mb-3">
+      <h3 className="font-display font-bold text-ink-900 mb-1">
+        {t('settings.pushHeader')}
+      </h3>
+      <p className="text-xs text-ink-600 mb-3 leading-relaxed">
+        {t('settings.pushCopy')}
+      </p>
+
+      {status === 'subscribed' ? (
+        <>
+          <div className="mb-3 px-3 py-2 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-medium flex items-center gap-2">
+            <Icon name="check" className="w-4 h-4 shrink-0" strokeWidth={2.5} />
+            <span className="leading-snug">{t('settings.pushSubscribed')}</span>
+          </div>
+          <button
+            type="button"
+            onClick={handleDisable}
+            disabled={status !== 'subscribed'}
+            className="w-full bg-paper-200 hover:bg-paper-300 disabled:opacity-50 text-ink-900 font-semibold py-3 rounded-xl transition-colors"
+          >
+            {t('settings.pushDisable')}
+          </button>
+          <p className="text-[11px] text-ink-500 mt-2 leading-relaxed">
+            {t('settings.pushDisableNote')}
+          </p>
+        </>
+      ) : status === 'denied' ? (
+        <p className="text-xs text-ink-700 leading-relaxed">
+          {t('settings.pushDenied')}
+        </p>
+      ) : (
+        <button
+          type="button"
+          onClick={handleEnable}
+          disabled={status === 'requesting'}
+          className="w-full bg-brand-500 hover:bg-brand-600 disabled:opacity-50 text-white font-semibold py-3 rounded-xl transition-colors"
+        >
+          {status === 'requesting'
+            ? t('settings.pushRequesting')
+            : status === 'error'
+              ? t('settings.pushErrorRetry')
+              : t('settings.pushEnable')}
+        </button>
+      )}
+    </section>
   )
 }

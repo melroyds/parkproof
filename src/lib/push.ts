@@ -177,6 +177,39 @@ export function getDeviceId(): string {
   return getOrCreateDeviceId()
 }
 
+/**
+ * Unsubscribe this device from push notifications.
+ *
+ * Tears down the browser's PushSubscription (so the endpoint is invalidated
+ * for any future EventBridge → dispatch attempts) and resolves to true on
+ * success. On the next push dispatch the server gets HTTP 410 from the
+ * gateway and the dispatch Lambda's existing reaper deletes the DDB row,
+ * so the cloud subscription record self-cleans without a dedicated
+ * /push/unsubscribe endpoint. Acceptable lag — at most one stale-push
+ * attempt before the row goes away.
+ *
+ * Returns false on:
+ *   - Push unsupported (iOS Safari < 16.4)
+ *   - No active subscription to unsubscribe from
+ *   - Browser API threw (rare; permission revoked mid-call, etc.)
+ *
+ * Permission state is NOT cleared by this call — that's a per-site browser
+ * grant, not a per-subscription state. To fully revoke, the user has to
+ * change the browser's site settings. The Account UI should mention this.
+ */
+export async function unsubscribeFromPush(): Promise<boolean> {
+  if (!isPushSupported()) return false
+  try {
+    const reg = await navigator.serviceWorker.ready
+    const sub = await reg.pushManager.getSubscription()
+    if (!sub) return false
+    return await sub.unsubscribe()
+  } catch (err) {
+    console.error('[push] unsubscribe failed:', err)
+    return false
+  }
+}
+
 export interface ScheduledReminder {
   /** ISO timestamp (with offset or Z) — when to fire the push. */
   fire_at: string

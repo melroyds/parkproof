@@ -389,6 +389,29 @@ echo "  • endpoint: $API_URL"
 
 # ───── [4/6] Build frontend ─────────────────────────────────────────────────
 echo "▶ [4/6] Building frontend"
+
+# Re-subset the PDF fonts BEFORE vite picks them up. The subset script
+# reads src/locales/*.json, extracts every unique codepoint that
+# appears in the rendered strings, and rewrites the TTFs in
+# public/fonts/ to contain only those glyphs. This is what keeps the
+# CJK fonts under 1MB (vs 17MB raw) and ensures any new locale strings
+# added since the last deploy actually have glyph coverage when they
+# render in evidence PDFs.
+#
+# Skipped automatically if pyftsubset isn't installed (`python -m
+# fontTools.subset --help` is the canary). Falls through with a
+# warning rather than failing the deploy — fonts on disk are still
+# the previously-subsetted version, which is fine for a deploy where
+# no locale strings changed. To force a re-subset, install fonttools
+# (`pip install fonttools brotli`) and re-run this script.
+if python -m fontTools.subset --help > /dev/null 2>&1; then
+  echo "  • re-subsetting PDF fonts to match current locale strings"
+  PYTHONIOENCODING=utf-8 python scripts/_subset_pdf_fonts.py > /dev/null 2>&1 \
+    || echo "    ! WARNING: subset failed; fonts on disk are previous version"
+else
+  echo "  • fontTools not installed — skipping font re-subset (run \`pip install fonttools brotli\` to enable)"
+fi
+
 # Clean dist/ before each build. Especially important after the two-app
 # cutover (2026-05-26): the previous outDir was `dist`, the new outDir
 # is `dist/app`. Without this cleanup, stale files from any pre-cutover

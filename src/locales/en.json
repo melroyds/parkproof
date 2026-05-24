@@ -30,6 +30,11 @@
     "available": "New version available",
     "refresh": "Refresh"
   },
+  "installPrompt": {
+    "available": "Install ParkProof",
+    "install": "Install",
+    "installing": "Installing…"
+  },
   "about": {
     "title": "Everything ParkProof does",
     "lead": "You probably came here thinking oh, it reads parking signs. It does. But while it's at it, we figured we'd also save the evidence in case you get a wrongful ticket, write the dispute letter for you if you do, and remind you to move your car before time runs out. Here's the friendly tour.",
@@ -518,7 +523,17 @@
     "deleteForever": "Delete forever",
     "deleting": "Deleting…",
     "deleteTypoError": "Please type DELETE in capitals to confirm.",
-    "youSignedOut": "You're signed out."
+    "youSignedOut": "You're signed out.",
+    "pushHeader": "Push notifications on this device",
+    "pushCopy": "Reminders only fire when the app is closed if push is enabled. Subscription is per-browser-per-device, separate from your account.",
+    "pushSubscribed": "✓ Subscribed on this device",
+    "pushEnable": "Enable push",
+    "pushDisable": "Disable push on this device",
+    "pushDisableConfirm": "Disable push reminders on this device? Scheduled reminders will stop firing here, but you can re-enable any time.",
+    "pushDisableNote": "This only unsubscribes this device. To fully revoke browser permission, change site settings in your browser.",
+    "pushDenied": "You've blocked notifications for this site. To enable, change the permission in your browser's site settings, then revisit this page.",
+    "pushRequesting": "Asking your browser…",
+    "pushErrorRetry": "Couldn't enable — try again"
   },
   "privacy": {
     "header": "Privacy",

@@ -377,7 +377,17 @@
     "deleteForever": "永久删除",
     "deleting": "正在删除…",
     "deleteTypoError": "请用大写字母输入 DELETE 以确认。",
-    "youSignedOut": "您已退出登录。"
+    "youSignedOut": "您已退出登录。",
+    "pushHeader": "此设备上的推送通知",
+    "pushCopy": "只有启用推送后,提醒才会在应用关闭时触发。订阅是按浏览器+设备的,独立于你的账户。",
+    "pushSubscribed": "✓ 此设备已订阅",
+    "pushEnable": "启用推送",
+    "pushDisable": "在此设备上禁用推送",
+    "pushDisableConfirm": "在此设备上禁用推送提醒?已安排的提醒将不再在此触发,但你可以随时重新启用。",
+    "pushDisableNote": "这只会取消此设备的订阅。要完全撤销浏览器权限,请在浏览器的站点设置中更改。",
+    "pushDenied": "你已阻止此站点的通知。要启用,请在浏览器的站点设置中更改权限,然后重新访问此页面。",
+    "pushRequesting": "正在询问浏览器…",
+    "pushErrorRetry": "无法启用 — 请重试"
   },
   "privacy": {
     "header": "隐私",
@@ -705,5 +715,10 @@
     "pushNotEnabled": "在此设备上启用推送通知以添加在应用关闭时也能触发的提醒。",
     "saving": "正在保存…",
     "errorRetry": "无法更新 — 请重试"
+  },
+  "installPrompt": {
+    "available": "安装 ParkProof",
+    "install": "安装",
+    "installing": "正在安装…"
   }
 }

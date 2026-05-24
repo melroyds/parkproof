@@ -498,7 +498,17 @@
     "deleteForever": "영구 삭제",
     "deleting": "삭제 중…",
     "deleteTypoError": "확인하려면 DELETE를 대문자로 입력하세요.",
-    "youSignedOut": "로그아웃되었습니다."
+    "youSignedOut": "로그아웃되었습니다.",
+    "pushHeader": "이 기기의 푸시 알림",
+    "pushCopy": "푸시가 활성화된 경우에만 앱이 닫혔을 때 알림이 작동합니다. 구독은 브라우저+기기별이며 계정과 별개입니다.",
+    "pushSubscribed": "✓ 이 기기에서 구독 중",
+    "pushEnable": "푸시 활성화",
+    "pushDisable": "이 기기에서 푸시 비활성화",
+    "pushDisableConfirm": "이 기기에서 푸시 알림을 비활성화하시겠습니까? 예약된 알림이 여기에서 더 이상 발송되지 않지만 언제든지 다시 활성화할 수 있습니다.",
+    "pushDisableNote": "이 기기의 구독만 해지합니다. 브라우저 권한을 완전히 취소하려면 브라우저의 사이트 설정을 변경하세요.",
+    "pushDenied": "이 사이트의 알림을 차단했습니다. 활성화하려면 브라우저의 사이트 설정에서 권한을 변경한 후 이 페이지를 다시 방문하세요.",
+    "pushRequesting": "브라우저에 요청 중…",
+    "pushErrorRetry": "활성화할 수 없음 — 다시 시도"
   },
   "privacy": {
     "header": "개인정보",
@@ -711,5 +721,10 @@
     "pushNotEnabled": "앱이 닫혀 있을 때도 작동하는 알림을 추가하려면 이 기기에서 푸시 알림을 활성화하세요.",
     "saving": "저장 중…",
     "errorRetry": "업데이트할 수 없음 — 다시 시도"
+  },
+  "installPrompt": {
+    "available": "ParkProof 설치",
+    "install": "설치",
+    "installing": "설치 중…"
   }
 }

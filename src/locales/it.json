@@ -383,7 +383,17 @@
     "deleteForever": "Elimina per sempre",
     "deleting": "Eliminazione…",
     "deleteTypoError": "Digita DELETE in maiuscolo per confermare.",
-    "youSignedOut": "Sei uscito."
+    "youSignedOut": "Sei uscito.",
+    "pushHeader": "Notifiche push su questo dispositivo",
+    "pushCopy": "I promemoria suonano quando l'app è chiusa solo se il push è attivato. L'abbonamento è per-browser-per-dispositivo, separato dall'account.",
+    "pushSubscribed": "✓ Iscritto su questo dispositivo",
+    "pushEnable": "Attiva push",
+    "pushDisable": "Disattiva push su questo dispositivo",
+    "pushDisableConfirm": "Disattivare i promemoria push su questo dispositivo? I promemoria pianificati non suoneranno più qui, ma puoi riattivarli in qualsiasi momento.",
+    "pushDisableNote": "Disabilita solo questo dispositivo. Per revocare completamente il permesso del browser, cambia le impostazioni del sito nel browser.",
+    "pushDenied": "Hai bloccato le notifiche per questo sito. Per attivarle, modifica il permesso nelle impostazioni del sito del browser, poi rivisita questa pagina.",
+    "pushRequesting": "Richiesta al browser…",
+    "pushErrorRetry": "Impossibile attivare — riprova"
   },
   "privacy": {
     "header": "Privacy",
@@ -711,5 +721,10 @@
     "pushNotEnabled": "Attiva le notifiche push su questo dispositivo per aggiungere promemoria che suonano anche quando l'app è chiusa.",
     "saving": "Salvataggio…",
     "errorRetry": "Impossibile aggiornare — riprova"
+  },
+  "installPrompt": {
+    "available": "Installa ParkProof",
+    "install": "Installa",
+    "installing": "Installazione…"
   }
 }

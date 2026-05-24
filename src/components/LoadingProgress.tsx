@@ -43,7 +43,16 @@ export default function LoadingProgress() {
     <main className="min-h-screen flex flex-col items-center justify-center p-6 text-center">
       <BrandMark className="w-24 h-24 mb-6 animate-pulse" />
 
-      <p className="text-[10px] uppercase tracking-[0.18em] text-ink-500 mb-2 font-semibold">
+      <p className="text-[10px] uppercase tracking-[0.18em] text-ink-500 mb-2 font-semibold inline-flex items-center gap-1.5">
+        {/* Pulsing dot inline with the step counter — subtle liveness signal
+            for a screen that otherwise updates only every ~3 seconds when
+            the stage advances. The dot's "ping" expansion echoes outwards
+            and fades, giving the user a sense of "something is still
+            happening" between stage transitions. */}
+        <span className="relative flex w-1.5 h-1.5">
+          <span className="absolute inline-flex h-full w-full rounded-full bg-brand-500 opacity-75 animate-[ping_1.5s_cubic-bezier(0,0,0.2,1)_infinite]" />
+          <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-brand-500" />
+        </span>
         Step {Math.min(stageIndex + 1, visibleStages)} of {visibleStages}
       </p>
 
@@ -56,11 +65,24 @@ export default function LoadingProgress() {
           : STAGES[stageIndex].labelKey}
       </h2>
 
-      <div className="w-64 mt-8 h-1.5 bg-paper-300 rounded-full overflow-hidden">
+      {/* Progress bar — base fill grows toward 92% over the stage timeline.
+          The shimmer overlay (the moving lighter band) sweeps continuously
+          left-to-right INSIDE the filled portion, so the bar reads as
+          actively progressing rather than a static line that occasionally
+          jumps. Psychological "slow feels faster" win, courtesy of every
+          loading skeleton library written since 2018. */}
+      <div className="w-64 mt-8 h-1.5 bg-paper-300 rounded-full overflow-hidden relative">
         <div
-          className="h-full bg-brand-500 transition-[width] duration-700 ease-out"
+          className="h-full bg-brand-500 transition-[width] duration-700 ease-out relative overflow-hidden"
           style={{ width: `${progressPct}%` }}
-        />
+        >
+          {/* The shimmer band — a soft white-to-transparent gradient that
+              moves across the filled portion. -translate-x-full at start,
+              translate-x-full at end, infinite loop. Reduced-motion users
+              get the static base bar courtesy of the global media query
+              in index.css. */}
+          <div className="absolute inset-0 -translate-x-full animate-[shimmer_2s_ease-in-out_infinite] bg-gradient-to-r from-transparent via-white/40 to-transparent" />
+        </div>
       </div>
 
       <p className="text-xs text-ink-500 mt-6">
@@ -71,6 +93,10 @@ export default function LoadingProgress() {
         @keyframes fade-in {
           from { opacity: 0; transform: translateY(4px); }
           to   { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes shimmer {
+          0%   { transform: translateX(-100%); }
+          100% { transform: translateX(100%); }
         }
       `}</style>
     </main>

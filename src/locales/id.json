@@ -498,7 +498,17 @@
     "deleteForever": "Hapus selamanya",
     "deleting": "Menghapus…",
     "deleteTypoError": "Ketik DELETE dengan huruf kapital untuk konfirmasi.",
-    "youSignedOut": "Kamu telah keluar."
+    "youSignedOut": "Kamu telah keluar.",
+    "pushHeader": "Notifikasi push di perangkat ini",
+    "pushCopy": "Pengingat hanya menyala saat aplikasi tertutup jika push diaktifkan. Langganan per-browser-per-perangkat, terpisah dari akun.",
+    "pushSubscribed": "✓ Berlangganan di perangkat ini",
+    "pushEnable": "Aktifkan push",
+    "pushDisable": "Nonaktifkan push di perangkat ini",
+    "pushDisableConfirm": "Nonaktifkan pengingat push di perangkat ini? Pengingat terjadwal tidak akan menyala di sini, tapi kamu bisa mengaktifkan kembali kapan saja.",
+    "pushDisableNote": "Ini hanya berhenti berlangganan perangkat ini. Untuk mencabut izin browser sepenuhnya, ubah pengaturan situs di browsermu.",
+    "pushDenied": "Kamu memblokir notifikasi untuk situs ini. Untuk mengaktifkan, ubah izin di pengaturan situs browser, lalu kunjungi ulang halaman ini.",
+    "pushRequesting": "Bertanya pada browser…",
+    "pushErrorRetry": "Tidak bisa mengaktifkan — coba lagi"
   },
   "privacy": {
     "header": "Privasi",
@@ -711,5 +721,10 @@
     "pushNotEnabled": "Aktifkan notifikasi push di perangkat ini untuk menambah pengingat yang menyala saat aplikasi tertutup.",
     "saving": "Menyimpan…",
     "errorRetry": "Tidak bisa memperbarui — coba lagi"
+  },
+  "installPrompt": {
+    "available": "Pasang ParkProof",
+    "install": "Pasang",
+    "installing": "Memasang…"
   }
 }

@@ -377,7 +377,17 @@
     "deleteForever": "Xoá vĩnh viễn",
     "deleting": "Đang xoá…",
     "deleteTypoError": "Vui lòng nhập DELETE bằng chữ in hoa để xác nhận.",
-    "youSignedOut": "Bạn đã đăng xuất."
+    "youSignedOut": "Bạn đã đăng xuất.",
+    "pushHeader": "Thông báo đẩy trên thiết bị này",
+    "pushCopy": "Lời nhắc chỉ phát khi ứng dụng đóng nếu đã bật đẩy. Đăng ký theo từng trình duyệt + thiết bị, độc lập với tài khoản.",
+    "pushSubscribed": "✓ Đã đăng ký trên thiết bị này",
+    "pushEnable": "Bật đẩy",
+    "pushDisable": "Tắt đẩy trên thiết bị này",
+    "pushDisableConfirm": "Tắt nhắc đẩy trên thiết bị này? Các lời nhắc đã lên lịch sẽ không phát ở đây nữa, nhưng bạn có thể bật lại bất cứ lúc nào.",
+    "pushDisableNote": "Chỉ hủy đăng ký thiết bị này. Để thu hồi hoàn toàn quyền của trình duyệt, hãy thay đổi cài đặt trang trong trình duyệt.",
+    "pushDenied": "Bạn đã chặn thông báo cho trang này. Để bật, thay đổi quyền trong cài đặt trang của trình duyệt rồi quay lại trang này.",
+    "pushRequesting": "Đang hỏi trình duyệt…",
+    "pushErrorRetry": "Không bật được — thử lại"
   },
   "privacy": {
     "header": "Quyền riêng tư",
@@ -705,5 +715,10 @@
     "pushNotEnabled": "Bật thông báo đẩy trên thiết bị này để thêm nhắc nhở kêu khi ứng dụng đóng.",
     "saving": "Đang lưu…",
     "errorRetry": "Không thể cập nhật — thử lại"
+  },
+  "installPrompt": {
+    "available": "Cài đặt ParkProof",
+    "install": "Cài đặt",
+    "installing": "Đang cài…"
   }
 }

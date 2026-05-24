@@ -4,6 +4,7 @@ import './index.css'
 import './lib/i18n'
 import App from './App.tsx'
 import SwUpdateBanner from './components/SwUpdateBanner'
+import InstallPromptBanner from './components/InstallPromptBanner'
 import { AuthProvider } from './lib/auth-context'
 
 /**
@@ -38,6 +39,12 @@ createRoot(document.getElementById('root')!).render(
           or dismissed; reappears on the NEXT update so users stay current
           across deploys without manual hard-refresh. */}
       <SwUpdateBanner />
+      {/* Chrome / Android install prompt — captures the browser's native
+          `beforeinstallprompt` event and surfaces a clearly-branded
+          "Install ParkProof" CTA. iOS Safari doesn't fire the event, so
+          iOS users see nothing here (the in-app About page still has the
+          manual Share → Add to Home Screen instructions). */}
+      <InstallPromptBanner />
     </AuthProvider>
   </StrictMode>,
 )
