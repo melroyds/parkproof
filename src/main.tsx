@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client'
 import './index.css'
 import './lib/i18n'
 import App from './App.tsx'
+import SwUpdateBanner from './components/SwUpdateBanner'
 import { AuthProvider } from './lib/auth-context'
 
 /**
@@ -31,6 +32,12 @@ createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <AuthProvider>
       <App />
+      {/* "New version — refresh" pill that appears at the bottom when
+          a new service worker installs over an existing controller. Lives
+          at root so it floats over any view. Self-hides when refreshed
+          or dismissed; reappears on the NEXT update so users stay current
+          across deploys without manual hard-refresh. */}
+      <SwUpdateBanner />
     </AuthProvider>
   </StrictMode>,
 )

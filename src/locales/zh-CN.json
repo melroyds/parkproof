@@ -26,6 +26,10 @@
     "title": "语言",
     "tooltipPrefix": "切换应用语言为"
   },
+  "swUpdate": {
+    "available": "有新版本",
+    "refresh": "刷新"
+  },
   "home": {
     "tagline": "澳洲停车,一目了然——还能拍照存证以防被错误开罚单。",
     "scanCta": "扫描停车标志",

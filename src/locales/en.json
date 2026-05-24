@@ -26,6 +26,10 @@
     "title": "Language",
     "tooltipPrefix": "Switch app language to"
   },
+  "swUpdate": {
+    "available": "New version available",
+    "refresh": "Refresh"
+  },
   "about": {
     "title": "Everything ParkProof does",
     "lead": "You probably came here thinking oh, it reads parking signs. It does. But while it's at it, we figured we'd also save the evidence in case you get a wrongful ticket, write the dispute letter for you if you do, and remind you to move your car before time runs out. Here's the friendly tour.",

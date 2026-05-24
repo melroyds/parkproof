@@ -26,6 +26,10 @@
     "title": "Ngôn ngữ",
     "tooltipPrefix": "Chuyển ngôn ngữ ứng dụng sang"
   },
+  "swUpdate": {
+    "available": "Đã có phiên bản mới",
+    "refresh": "Tải lại"
+  },
   "home": {
     "tagline": "Đỗ xe ở Úc, giải mã rõ ràng — kèm bằng chứng ảnh phòng khi bị phạt oan.",
     "scanCta": "Quét biển báo đỗ xe",

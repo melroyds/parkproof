@@ -26,6 +26,10 @@
     "title": "Bahasa",
     "tooltipPrefix": "Ubah bahasa aplikasi ke"
   },
+  "swUpdate": {
+    "available": "Versi baru tersedia",
+    "refresh": "Muat ulang"
+  },
   "about": {
     "title": "Semua yang ParkProof lakukan",
     "lead": "Kamu mungkin ke sini berpikir oh, ini membaca rambu parkir. Memang iya. Tapi sambil kami di sini, kami juga menyimpan bukti seandainya kamu kena denda tidak adil, menuliskan surat banding untukmu jika perlu, dan mengingatkanmu untuk memindahkan mobil sebelum waktu habis. Ini tur ramahnya.",

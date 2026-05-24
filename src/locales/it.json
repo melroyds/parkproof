@@ -26,6 +26,10 @@
     "title": "Lingua",
     "tooltipPrefix": "Cambia lingua dell'app in"
   },
+  "swUpdate": {
+    "available": "Nuova versione disponibile",
+    "refresh": "Aggiorna"
+  },
   "home": {
     "tagline": "Parcheggi australiani, decifrati — con foto come prova in caso di multa ingiusta.",
     "scanCta": "Scansiona un cartello di parcheggio",
