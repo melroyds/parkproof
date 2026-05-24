@@ -1544,6 +1544,18 @@ async function handleAsyncWork(event) {
 
 // ─── Top-level dispatcher ─────────────────────────────────────────────────
 export async function handler(event) {
+  // Warmer short-circuit — fires from the `parkproof-warmer` EventBridge
+  // Scheduler rule every 5 minutes with payload {"warmer": true}. The
+  // whole point is to keep a Node container hot so the first real Reddit
+  // visitor doesn't eat a 1.5-3s init duration cold-start. We do nothing
+  // here except acknowledge — no DDB, no Claude, no logs (keeping log
+  // volume low — 8,640 warmer pings/month would dominate the log table
+  // otherwise). The Node runtime + import graph staying resident is the
+  // entire mechanism.
+  if (event && event.warmer === true) {
+    return { statusCode: 200, body: 'warm' }
+  }
+
   // First check: was this an async self-invocation? Those events have a
   // `_async_kind` marker put there by asyncSelfInvoke OR by EventBridge
   // Scheduler firing a push-dispatch event. They bypass the HTTP-style
