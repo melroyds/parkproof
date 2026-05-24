@@ -29,7 +29,7 @@ Existing apps in this space (ParkingMate.ai, Parky.AI, SIGNlanguage) translate t
 
 ParkProof does both: translates the sign, AND captures the evidence trail.
 
-I want to be honest about the scale of this problem. It's not life-altering. It's an annoyance, not a pain. Most people who get a parking ticket grumble, pay it, and move on. The actual market for *systematic* parking-evidence capture is small: people who got a wrongful ticket recently and got angry, people who park professionally (couriers, taxi drivers), and people with chronic anxiety about parking. As a startup this is tough; as a craft project, the narrowness is a feature — it forced me to scope ruthlessly.
+The honest scale: this is an annoyance, not a pain. The market for *systematic* parking-evidence capture is small — recent wrongful-ticket recipients, people who park professionally, the chronically parking-anxious. As a startup it's tough; as a craft project, the narrowness forced me to scope ruthlessly.
 
 ---
 
@@ -70,7 +70,7 @@ What I deliberately cut from v1:
 - **A citywide heatmap of parking rules.** Genuine moat — every scan captures data that could feed it — but heatmaps with five data points are worse than no map at all. Build trigger: a few hundred consistent users, or a council partnership offer.
 
 What I cut from v1 but came back to (and finished) by day 7:
-- **Web Push background notifications.** Originally deferred — the `.ics` calendar event covers the "you'll be reminded with the app closed" need on iOS/Android/macOS for users who keep a connected calendar, and I assumed that was good enough for v1. It mostly was. But after using my own app for a few days I noticed I kept *not* opening the calendar notification, and the in-tab notification only fired if I happened to have the tab open. So I went back and built the full pipeline: VAPID-signed `web-push` from the Lambda, push subscriptions persisted to DynamoDB, one-shot **EventBridge Scheduler** schedules created per selected reminder offset, dispatch routed back through the same Lambda. The interesting trade-off was the schedule-naming scheme: I picked deterministic names (`parkproof-push-{session_id}-{i}`) over random UUIDs specifically so that ending a session early could fan-out 6 parallel `DeleteSchedule` calls without ever calling `ListSchedules` — no extra IAM permission, idempotent on re-pick. The path mattered more than the destination.
+- **Web Push background notifications.** Originally deferred because the `.ics` calendar event covered "you'll be reminded with the app closed" for users with connected calendars. After using my own app for a few days I kept *not* opening the calendar notification, and the in-tab one only fired if I had the tab open. So I built the full pipeline: VAPID-signed `web-push` from the Lambda, subscriptions in DynamoDB, one-shot **EventBridge Scheduler** schedules per reminder offset, dispatch back through the same Lambda. Deterministic schedule names (`parkproof-push-{session_id}-{i}`) so ending a session early fan-outs parallel `DeleteSchedule` calls without `ListSchedules` — no extra IAM permission, idempotent on re-pick.
 
 ---
 
@@ -97,17 +97,13 @@ The cost of this was real. I had to:
 
 The benefit: the experience the wronged-driver-on-the-street actually has is the experience I built for. No friction tax on first use. If a recruiter visits the live URL, they can use every feature in 30 seconds without an email verification step.
 
-In hindsight, I'd make the same call. If this were a real product with growth targets, I'd revisit it.
+For a craft project optimising for *first-use trust*, this was the right call. For a startup optimising for retention metrics, I'd revisit it.
 
 ### 3. Cryptographic evidence signing — overengineering or differentiation?
 
-When I'm building a portfolio piece, I have to be honest about the line between "this demonstrates competence" and "this is showing off." Cryptographic signing flirted with that line.
+The premise of the app is that the evidence has to survive scrutiny. A SHA-256 hash isn't enough — the user could alter the photo after saving and re-hash. A signature over the canonical metadata + photo hashes, by a key the user doesn't hold (KMS-managed), is the only thing that proves "this record existed in this form at this time." The counter-argument is that nobody has ever used a ParkProof PDF in a real council dispute, so the apparatus is aspirational.
 
-The argument *for* it: the entire premise of the app is that the evidence has to survive scrutiny. A SHA-256 hash of the photo isn't enough — the user could alter the photo after saving it, then re-hash. A cryptographic signature over the canonical metadata + photo hashes, signed by a key the user doesn't have access to (KMS-held), is the only thing that actually proves "this record existed in this form at this time."
-
-The argument *against* it: nobody has ever used a ParkProof PDF in a real council dispute. The whole signing apparatus is aspirational.
-
-I built it anyway, for one reason: **the cost is small once and the value compounds.** $1/month for the KMS key. The `openssl dgst -verify` walkthrough in the PDF is one paragraph. And the day a real user actually submits a ParkProof PDF to a council, it'll be the differentiator. I'd rather have it sitting unused than scramble to add it under deadline pressure.
+I built it anyway because **the cost is small once and the value compounds.** $1/month for the KMS key, one paragraph for the `openssl dgst -verify` walkthrough in the PDF. The day a real user submits to a council, it'll be the differentiator. Better sitting unused than scrambled in under deadline.
 
 ### 4. 9 languages, picked from Melbourne LGA census data
 
@@ -131,7 +127,7 @@ Why I designed it this way:
 - **Verdict + context (Layer 2) tells me *what kind* of problem.** *"Of all retake verdicts, what's the confidence distribution? Which sign patterns? Which hours of day?"* If retake correlates with low confidence — good, the model is calibrated. If retake correlates with high confidence — that's a prompt regression and I need to look at it. If retake correlates with specific hours (e.g. 8pm onwards) — that's a lighting / photo-quality issue, not a model issue.
 - **Photo capture for systematic failures (Layer 3)** — not built yet. Build trigger: Layer 2 surfaces a specific failure mode worth investing photo-storage in. I'm not going to ask users to opt into photo capture until I have a clear hypothesis.
 
-This is the part of the work that I think a hiring PM would recognise as senior-PM thinking. Most product builds skip the feedback design entirely, then are surprised when the AI degrades silently and they can't tell why.
+Most AI builds skip feedback design entirely, then are surprised when the model degrades silently and they can't tell why. The Layer 1/2/3 staging is how you avoid that without over-investing on day one.
 
 ---
 
@@ -157,7 +153,6 @@ A few honest reflections:
 
 - **I'd start with the cloud schema and back-port to `localStorage`, not the other way around.** The local-first decision was right for users, but the migration cost was real — I built the canonical session shape twice.
 - **I'd write the case study earlier.** Forcing myself to articulate the trade-offs in writing would have surfaced some decisions I made on autopilot. Writing this document made me realise I never explicitly named the "no clean monetisation path" trade-off until now.
-- **I'd build the screen-recording fixture pipeline earlier.** Halfway through the build, I added a Playwright-driven screenshot harness that re-generates the README demo grid deterministically. It's now 16 captures across four themed sub-grids. If I'd had this from week 1, every PR would have come with a visual diff and I'd have caught at least three UI regressions earlier.
 
 ---
 
@@ -193,21 +188,21 @@ That's the part of the job I think most PMs underweight. It's easy to ship featu
 
 ## Stack & cost summary
 
-**Frontend:** React 19 + TypeScript (strict) + Tailwind v4 + Vite + PWA service worker. Main bundle ~225KB gzipped.
+**Frontend:** React 19 + TypeScript (strict) + Tailwind v4 + Vite + PWA service worker. ~225KB gzipped.
 
-**Backend:** Single AWS Lambda function (`parkproof-sign-translator`) handling 18 API Gateway routes via path dispatch, fronted by API Gateway HTTP API with a Cognito JWT authorizer on the cloud-sync routes. The same Lambda is also the EventBridge Scheduler target for one-shot push dispatch and the self-invoked worker for async-polled Claude calls that exceed the 30s API Gateway timeout — three invocation modes, one cold-start budget. Reused as the local dev proxy via a Vite plugin — one handler, two runtimes, no mocks.
+**Backend:** Single AWS Lambda (`parkproof-sign-translator`) handling 18 API Gateway routes via path dispatch, with a Cognito JWT authorizer on cloud-sync routes. The same Lambda is the EventBridge Scheduler target for push dispatch and the self-invoked worker for async-polled Claude calls that exceed API Gateway's 30s timeout — three invocation modes, one cold-start budget. Reused as the local dev proxy via a Vite plugin: one handler, two runtimes, no mocks.
 
-**AI:** Anthropic Claude Sonnet 4.6 with adaptive thinking and native JSON-schema-enforced output. ~$0.05 per sign-translate.
+**AI:** Claude Sonnet 4.6 with adaptive thinking and JSON-schema-enforced output. ~$0.05 per sign-translate.
 
-**Persistence:** `localStorage` first, with optional Cognito-gated mirroring to DynamoDB + a private per-user S3 prefix.
+**Persistence:** `localStorage` first, optional Cognito-gated mirror to DynamoDB + per-user S3 prefix.
 
-**Evidence integrity:** AWS KMS asymmetric key (ECDSA P-256) signing the canonical session metadata + photo hashes. Public key shipped at `/parkproof-public-key.pem` for offline verification.
+**Evidence integrity:** KMS ECDSA P-256 signing the canonical metadata + photo hashes. Public key at `/parkproof-public-key.pem` for offline verification.
 
-**Hosting:** CloudFront + private S3 with Origin Access Control, custom domain via ACM cert. ap-southeast-2 (Sydney).
+**Hosting:** CloudFront + private S3 with Origin Access Control, ACM-issued custom domain, ap-southeast-2.
 
-**Telemetry:** CloudWatch Logs with structured feedback events (verdict + model context); Logs Insights queries committed alongside the code.
+**Telemetry:** CloudWatch Logs with structured feedback events; Logs Insights queries committed alongside the code.
 
-**Cost at portfolio traffic:** ~$5–7/month (KMS asymmetric key + domain dominate; AWS itself is effectively free at this scale). Monitored with an AWS Budgets alarm at $25/month — raised from $10 to absorb a Reddit-day spike without false-alarm noise.
+**Cost:** ~$5–7/month (KMS key + domain dominate). AWS Budgets alarm at $25/month, raised from $10 to absorb a Reddit-day spike without false alarms.
 
 ---
 
