@@ -66,10 +66,19 @@ void i18n
       escapeValue: false,
     },
     detection: {
-      // localStorage first so the user's previous choice wins; browser
-      // language second for first-time visitors; HTML lang last as the
-      // ultimate fallback. Persist the choice back to localStorage.
-      order: ['localStorage', 'navigator', 'htmlTag'],
+      // querystring FIRST — `?lng=ko` is how the marketing landing's
+      // auto-detect chip hands off the user's stated language to the
+      // React app. Without this entry, i18next ignores the URL param and
+      // falls through to localStorage (which holds the user's PREVIOUS
+      // choice, typically English), and the Korean / Mandarin / etc.
+      // visitor lands in English despite explicitly clicking the chip.
+      // Default lookup param is 'lng' — matches what the landing emits.
+      //
+      // localStorage second so a user's subsequent in-app pick still wins
+      // on reload; browser language third for first-time visitors with
+      // no querystring; HTML lang last as the ultimate fallback. All
+      // resolved values get cached back to localStorage.
+      order: ['querystring', 'localStorage', 'navigator', 'htmlTag'],
       caches: ['localStorage'],
       lookupLocalStorage: 'parkproof.language',
     },
