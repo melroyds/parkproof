@@ -63,7 +63,8 @@
     "noPostedRestrictions": "无标牌限制",
     "iveLeft": "我已离开",
     "iveLeftAria": "标记您已离开此停车位",
-    "iveLeftConfirm": "现在结束此停车记录?会移至历史并记录离开时间。"
+    "iveLeftConfirm": "现在结束此停车记录?会移至历史并记录离开时间。",
+    "nextPing": "下次提醒:{{when}}"
   },
   "scanner": {
     "header": "扫描停车标志",
@@ -225,6 +226,20 @@
       "chipHour_other": "{{count}} 小时",
       "calendarCopy": "添加到 iPhone / Android / Outlook 日历,每个时间一个闹钟。即使关闭此应用也会触发。",
       "browserCopy": "在每个所选时间触发通知,标签页内 + 设备系统级(如支持)。"
+    },
+    "pushStatus": {
+      "subscribed": "✓ 此设备已启用推送提醒",
+      "notSubscribed": "未启用推送。如果不启用,只有此标签页打开时提醒才会响起。",
+      "enable": "启用推送",
+      "requesting": "正在询问浏览器…",
+      "denied": "你已阻止此网站的通知。请在浏览器的站点设置中更改权限以启用。",
+      "errorRetry": "无法启用 — 请重试",
+      "unsupported": "此浏览器不支持推送通知。"
+    },
+    "pushScheduled": {
+      "header": "推送提醒已安排",
+      "single": "将在 {{times}} 推送提醒。",
+      "multiple": "将在 {{times}} 推送提醒。"
     }
   },
   "history": {
@@ -670,5 +685,25 @@
         "一键下载所有记录。如果你改主意了，也可以一键删除所有记录和账号。"
       ]
     }
+  },
+  "scheduledReminders": {
+    "header": "已安排的提醒",
+    "noneYet": "此会话尚未设置推送提醒。",
+    "firesAtExpiry": "{{when}} — 到期时",
+    "firesBefore_one": "{{when}} — 到期前 1 分钟",
+    "firesBefore_other": "{{when}} — 到期前 {{count}} 分钟",
+    "firesFromNow_one": "{{when}} — 到达后 1 分钟",
+    "firesFromNow_other": "{{when}} — 到达后 {{count}} 分钟",
+    "firesAbsolute": "{{when}}",
+    "addAnother": "+ 添加提醒",
+    "cancelAll": "取消全部提醒",
+    "cancelAllConfirm": "取消此会话的所有推送提醒?",
+    "cancelOne": "移除此提醒",
+    "pickHeader": "何时提醒你?",
+    "pickCancel": "取消",
+    "tooLateAll": "没有足够时间在未来安排任何提醒选项。如果你已离开,请点击「结束会话」。",
+    "pushNotEnabled": "在此设备上启用推送通知以添加在应用关闭时也能触发的提醒。",
+    "saving": "正在保存…",
+    "errorRetry": "无法更新 — 请重试"
   }
 }

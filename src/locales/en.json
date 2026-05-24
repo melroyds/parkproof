@@ -184,7 +184,8 @@
     "noPostedRestrictions": "No posted restrictions",
     "iveLeft": "I've left",
     "iveLeftAria": "Signal that you've left this parking spot",
-    "iveLeftConfirm": "End this parking session now? It'll move to history with the time you left recorded."
+    "iveLeftConfirm": "End this parking session now? It'll move to history with the time you left recorded.",
+    "nextPing": "Next ping: {{when}}"
   },
   "scanner": {
     "header": "Scan parking sign",
@@ -346,7 +347,41 @@
       "chipHour_other": "{{count}} hours",
       "calendarCopy": "Drops into the iPhone / Android / Outlook calendar with one alarm per chip. Survives even if you close this app.",
       "browserCopy": "Fires a notification at each chosen time, in-tab plus on the device's OS when available."
+    },
+    "pushStatus": {
+      "subscribed": "✓ Push reminders enabled on this device",
+      "notSubscribed": "Push not enabled. Without it, reminders only fire while this tab is open.",
+      "enable": "Enable push",
+      "requesting": "Asking your browser…",
+      "denied": "You've blocked notifications. Change it in your browser's site settings to enable.",
+      "errorRetry": "Couldn't enable — try again",
+      "unsupported": "This browser doesn't support push notifications."
+    },
+    "pushScheduled": {
+      "header": "Push reminders scheduled",
+      "single": "You'll be pushed at {{times}}.",
+      "multiple": "You'll be pushed at {{times}}."
     }
+  },
+  "scheduledReminders": {
+    "header": "Scheduled reminders",
+    "noneYet": "No push reminders set for this session.",
+    "firesAtExpiry": "{{when}} — at expiry",
+    "firesBefore_one": "{{when}} — 1 min before expiry",
+    "firesBefore_other": "{{when}} — {{count}} min before expiry",
+    "firesFromNow_one": "{{when}} — in 1 min from arrival",
+    "firesFromNow_other": "{{when}} — in {{count}} min from arrival",
+    "firesAbsolute": "{{when}}",
+    "addAnother": "+ Add reminder",
+    "cancelAll": "Cancel all reminders",
+    "cancelAllConfirm": "Cancel every scheduled push reminder for this session?",
+    "cancelOne": "Remove this reminder",
+    "pickHeader": "When should we ping you?",
+    "pickCancel": "Cancel",
+    "tooLateAll": "No reminder option is far enough in the future to schedule. Tap End session if you've already left.",
+    "pushNotEnabled": "Enable push notifications on this device to add reminders that fire when the app is closed.",
+    "saving": "Saving…",
+    "errorRetry": "Couldn't update — try again"
   },
   "history": {
     "header": "Session history",

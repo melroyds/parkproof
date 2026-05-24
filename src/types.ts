@@ -168,4 +168,30 @@ export interface ParkingSession {
    * record to reflect actual duration.
    */
   ended_at?: string
+  /**
+   * Server-side Web Push reminders scheduled for this session, mirrored from
+   * the /push/schedule API response. Locally-persisted so SessionDetail can
+   * surface "scheduled for 4:00 PM, 4:25 PM" + a per-row cancel + an "Add
+   * another" picker WITHOUT a round trip to EventBridge on every render.
+   *
+   * Authoritative copy lives server-side (EventBridge Scheduler). This array
+   * is a cache for display + management UX. Each entry is one fire time;
+   * offset-vs-expiry / "before vs from-now" is derived at render time by
+   * comparing fire_at to session.expires_at.
+   *
+   * Mutations:
+   *   - ReminderOptions writes the initial set after /push/schedule succeeds
+   *   - SessionDetail's "+ Add reminder" / per-row cancel re-call /push/schedule
+   *     with the new desired union/difference, then overwrites this array
+   *   - cancelPushReminders (e.g. "I've left") doesn't currently clear this
+   *     array — the times are still "what was scheduled at the time", and the
+   *     session is over anyway. Stale fire_at after end-of-session is harmless.
+   *
+   * Additive — old sessions saved pre-feature have no field, treated as []
+   * by all readers.
+   */
+  push_reminders?: Array<{
+    /** ISO 8601 — when EventBridge will fire the push. */
+    fire_at: string
+  }>
 }

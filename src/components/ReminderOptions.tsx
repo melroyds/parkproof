@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Trans, useTranslation } from 'react-i18next'
 import type { ParkingSession } from '../types'
 import {
@@ -6,8 +6,17 @@ import {
   scheduleParkingReminders,
   type ScheduleResult,
 } from '../lib/notifications'
-import { schedulePushReminders, type ScheduledReminder } from '../lib/push'
+import {
+  getPushPermissionState,
+  hasActiveSubscription,
+  schedulePushReminders,
+  subscribeToPush,
+  type ScheduledReminder,
+} from '../lib/push'
 import { useNow } from '../lib/use-now'
+import { updateSession } from '../lib/storage'
+import { useAuth } from '../lib/use-auth'
+import { mirrorSessionUpdateToCloud } from '../lib/sync'
 import { formatExpiryAbsolute, formatReminderTimesLine } from '../lib/time-format'
 import { sessionTimezone } from '../lib/timezone'
 import Icon from './Icon'
@@ -50,6 +59,112 @@ function pickDefaults(fireable: OffsetInfo[]): Set<Offset> {
   return result
 }
 
+/**
+ * Push-subscription status pill that lives at the top of both ReminderOptions
+ * picker variants. Subscribers see a green confirmation; non-subscribers get
+ * an inline "Enable push" button — the same flow as the About page's
+ * PushSubscribeBlock, but with copy contextualised to the reminders-setting
+ * moment ("without push, reminders only fire while this tab is open").
+ *
+ * Surfaces gap #2 from the user's feedback ("I don't even know if the device
+ * is subscribed for push notifications") right where the user is about to
+ * commit to a set of reminders — the highest-stakes moment to know.
+ */
+type PushBannerStatus =
+  | 'idle'
+  | 'requesting'
+  | 'subscribed'
+  | 'denied'
+  | 'unsupported'
+  | 'error'
+
+function PushSubscriptionBanner({
+  onStatusChange,
+}: {
+  /** Notified when subscription transitions to/from 'subscribed'. The parent
+   *  uses this to hide the push-reminders section entirely when not subscribed
+   *  (no point offering chips that can't ping anyone). */
+  onStatusChange?: (subscribed: boolean) => void
+}) {
+  const { t } = useTranslation()
+  const [status, setStatus] = useState<PushBannerStatus>(() => {
+    // Initial sync state — only the cheaply-knowable things, same approach
+    // as AboutFeatures. Async hasActiveSubscription() check upgrades to
+    // 'subscribed' below.
+    const permState = getPushPermissionState()
+    if (permState === 'unsupported') return 'unsupported'
+    if (permState === 'denied') return 'denied'
+    return 'idle'
+  })
+
+  useEffect(() => {
+    let cancelled = false
+    void hasActiveSubscription().then((has) => {
+      if (cancelled) return
+      if (has) {
+        setStatus('subscribed')
+        onStatusChange?.(true)
+      }
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [onStatusChange])
+
+  const handleEnable = async () => {
+    setStatus('requesting')
+    const result = await subscribeToPush()
+    if (result.ok) {
+      setStatus('subscribed')
+      onStatusChange?.(true)
+    } else if (result.reason === 'denied') {
+      setStatus('denied')
+    } else if (result.reason === 'unsupported') {
+      setStatus('unsupported')
+    } else {
+      setStatus('error')
+    }
+  }
+
+  if (status === 'unsupported') return null // No banner = no false signal that push is possible.
+
+  if (status === 'subscribed') {
+    return (
+      <div className="mb-4 px-3 py-2 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-medium flex items-center gap-2">
+        <Icon name="check" className="w-4 h-4 shrink-0" strokeWidth={2.5} />
+        <span className="leading-snug">{t('reminders.pushStatus.subscribed')}</span>
+      </div>
+    )
+  }
+
+  return (
+    <div className="mb-4 p-3 rounded-xl bg-brand-50 border border-brand-100 flex items-start gap-3">
+      <Icon name="bell" className="w-5 h-5 text-brand-600 shrink-0 mt-0.5" />
+      <div className="flex-1 min-w-0">
+        <p className="text-xs text-ink-700 leading-relaxed mb-2">
+          {status === 'denied'
+            ? t('reminders.pushStatus.denied')
+            : t('reminders.pushStatus.notSubscribed')}
+        </p>
+        {status !== 'denied' && (
+          <button
+            type="button"
+            onClick={handleEnable}
+            disabled={status === 'requesting'}
+            className="text-xs bg-brand-500 hover:bg-brand-600 text-white px-3 py-1.5 rounded-lg disabled:opacity-50 font-semibold"
+          >
+            {status === 'requesting'
+              ? t('reminders.pushStatus.requesting')
+              : status === 'error'
+                ? t('reminders.pushStatus.errorRetry')
+                : t('reminders.pushStatus.enable')}
+          </button>
+        )}
+      </div>
+    </div>
+  )
+}
+
 function NotifStatusLine({ result }: { result: ScheduleResult }) {
   const { t } = useTranslation()
   switch (result.status) {
@@ -83,6 +198,7 @@ function NotifStatusLine({ result }: { result: ScheduleResult }) {
 
 export default function ReminderOptions({ session, onDone }: Props) {
   const { t } = useTranslation()
+  const { user } = useAuth()
   const [icsState, setIcsState] = useState<'idle' | 'downloaded' | 'error' | 'empty'>('idle')
   const [notifResult, setNotifResult] = useState<ScheduleResult | null>(null)
   const [notifBusy, setNotifBusy] = useState(false)
@@ -214,7 +330,27 @@ export default function ReminderOptions({ session, onDone }: Props) {
       }
     })
     if (reminders.length > 0) {
-      void schedulePushReminders(session.id, reminders)
+      // Await so we can persist the actual fire times to session.push_reminders
+      // for later display in SessionDetail. Without persisting, the user has
+      // no way to see "when will my reminders fire?" after leaving this
+      // screen — gap #1 the user explicitly flagged.
+      //
+      // The user doesn't WAIT on this — the in-tab notification scheduler
+      // above already ran synchronously and the success state is rendered.
+      // We just take a beat longer to fetch the server-confirmed times.
+      const pushResult = await schedulePushReminders(session.id, reminders)
+      if (pushResult && pushResult.created.length > 0) {
+        try {
+          updateSession(session.id, {
+            push_reminders: pushResult.created.map((c) => ({
+              fire_at: c.fire_at,
+            })),
+          })
+          if (user) mirrorSessionUpdateToCloud(session.id)
+        } catch (err) {
+          console.warn('[reminders] could not persist push_reminders:', err)
+        }
+      }
     }
   }
 
@@ -260,6 +396,12 @@ export default function ReminderOptions({ session, onDone }: Props) {
           components={{ strong: <span className="font-display font-bold text-ink-900" /> }}
         />
       </p>
+
+      {/* Subscription status banner — at top of picker so user knows whether
+          push will actually fire BEFORE they commit to a set of reminders.
+          Visible upfront because otherwise users have no idea their device's
+          subscription state without navigating to About. */}
+      <PushSubscriptionBanner />
 
       {/* Chip selector */}
       <div className="flex flex-wrap gap-2 mb-3">
@@ -406,6 +548,7 @@ type NoSignDurationMin = (typeof NOSIGN_DURATIONS_MIN)[number]
 
 function NoSignReminderPicker({ session, onDone }: Props) {
   const { t } = useTranslation()
+  const { user } = useAuth()
   const [selected, setSelected] = useState<Set<NoSignDurationMin>>(
     () => new Set<NoSignDurationMin>([60]),
   )
@@ -478,7 +621,21 @@ function NoSignReminderPicker({ session, onDone }: Props) {
       url: `/?session=${session.id}`,
     }))
     if (reminders.length > 0) {
-      void schedulePushReminders(session.id, reminders)
+      // Same persistence as the expiry-path handleNotify above — see comment
+      // there for why we await rather than fire-and-forget.
+      const pushResult = await schedulePushReminders(session.id, reminders)
+      if (pushResult && pushResult.created.length > 0) {
+        try {
+          updateSession(session.id, {
+            push_reminders: pushResult.created.map((c) => ({
+              fire_at: c.fire_at,
+            })),
+          })
+          if (user) mirrorSessionUpdateToCloud(session.id)
+        } catch (err) {
+          console.warn('[reminders] could not persist push_reminders:', err)
+        }
+      }
     }
   }
 
@@ -495,6 +652,8 @@ function NoSignReminderPicker({ session, onDone }: Props) {
       <p className="text-sm text-ink-700 mb-6 leading-relaxed">
         {t('reminders.noSign.intro')}
       </p>
+
+      <PushSubscriptionBanner />
 
       {/* Chip selector */}
       <div className="flex flex-wrap gap-2 mb-3">

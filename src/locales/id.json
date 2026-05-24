@@ -184,7 +184,8 @@
     "noPostedRestrictions": "Tidak ada larangan terpasang",
     "iveLeft": "Sudah pergi",
     "iveLeftAria": "Tandai bahwa kamu sudah meninggalkan tempat parkir ini",
-    "iveLeftConfirm": "Akhiri sesi parkir ini sekarang? Akan dipindahkan ke riwayat dengan waktu kepergianmu tercatat."
+    "iveLeftConfirm": "Akhiri sesi parkir ini sekarang? Akan dipindahkan ke riwayat dengan waktu kepergianmu tercatat.",
+    "nextPing": "Ping berikutnya: {{when}}"
   },
   "scanner": {
     "header": "Pindai rambu parkir",
@@ -346,6 +347,20 @@
       "chipHour_other": "{{count}} jam",
       "calendarCopy": "Masuk ke kalender iPhone / Android / Outlook dengan satu alarm per pilihan. Tetap aktif bahkan jika kamu menutup aplikasi ini.",
       "browserCopy": "Aktifkan notifikasi pada setiap waktu yang dipilih, di tab plus di OS perangkat saat tersedia."
+    },
+    "pushStatus": {
+      "subscribed": "✓ Pengingat push diaktifkan di perangkat ini",
+      "notSubscribed": "Push belum diaktifkan. Tanpanya, pengingat hanya menyala saat tab ini terbuka.",
+      "enable": "Aktifkan push",
+      "requesting": "Bertanya pada browser…",
+      "denied": "Kamu memblokir notifikasi untuk situs ini. Ubah izin di pengaturan situs browser untuk mengaktifkan.",
+      "errorRetry": "Tidak bisa mengaktifkan — coba lagi",
+      "unsupported": "Browser ini tidak mendukung notifikasi push."
+    },
+    "pushScheduled": {
+      "header": "Pengingat push terjadwal",
+      "single": "Kamu akan diping pada {{times}}.",
+      "multiple": "Kamu akan diping pada {{times}}."
     }
   },
   "history": {
@@ -676,5 +691,25 @@
     "hoursAgo_other": "{{count}} jam lalu",
     "yesterday": "kemarin",
     "daysAgo_other": "{{count}} hari lalu"
+  },
+  "scheduledReminders": {
+    "header": "Pengingat terjadwal",
+    "noneYet": "Belum ada pengingat push diatur untuk sesi ini.",
+    "firesAtExpiry": "{{when}} — saat berakhir",
+    "firesBefore_one": "{{when}} — 1 menit sebelum berakhir",
+    "firesBefore_other": "{{when}} — {{count}} menit sebelum berakhir",
+    "firesFromNow_one": "{{when}} — 1 menit setelah tiba",
+    "firesFromNow_other": "{{when}} — {{count}} menit setelah tiba",
+    "firesAbsolute": "{{when}}",
+    "addAnother": "+ Tambah pengingat",
+    "cancelAll": "Batalkan semua pengingat",
+    "cancelAllConfirm": "Batalkan setiap pengingat push terjadwal untuk sesi ini?",
+    "cancelOne": "Hapus pengingat ini",
+    "pickHeader": "Kapan kami harus mengingatkanmu?",
+    "pickCancel": "Batal",
+    "tooLateAll": "Tidak ada opsi pengingat yang masih bisa dijadwalkan di masa depan. Ketuk Akhiri sesi jika kamu sudah pergi.",
+    "pushNotEnabled": "Aktifkan notifikasi push di perangkat ini untuk menambah pengingat yang menyala saat aplikasi tertutup.",
+    "saving": "Menyimpan…",
+    "errorRetry": "Tidak bisa memperbarui — coba lagi"
   }
 }

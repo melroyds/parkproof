@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { ParkingSession } from '../types'
 import { deleteSession, endSession, updateSession } from '../lib/storage'
+import ScheduledRemindersSection from './ScheduledRemindersSection'
 import Icon from './Icon'
 import { useNow } from '../lib/use-now'
 import { formatCountdownLocalized } from '../lib/countdown'
@@ -408,6 +409,12 @@ export default function SessionDetail({
           </p>
         )}
       </section>
+
+      {/* Scheduled push reminders — self-managing surface for "what
+          notifications are queued for this session" with per-row × cancel,
+          smart-filtered "+ Add reminder" chip picker, and "Cancel all".
+          Self-hides for ended/expired-no-sign-eligible sessions. */}
+      <ScheduledRemindersSection session={session} />
 
       {/* Sign photo — only rendered for sign-translated sessions. No-sign
           sessions drop straight to the ambient/car photos below. */}

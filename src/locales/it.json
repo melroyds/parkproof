@@ -69,7 +69,8 @@
     "noPostedRestrictions": "Nessuna restrizione segnalata",
     "iveLeft": "Sono andato",
     "iveLeftAria": "Segnala che hai lasciato questo parcheggio",
-    "iveLeftConfirm": "Terminare questa sessione di parcheggio ora? Verrà spostata nella cronologia con l'ora di partenza registrata."
+    "iveLeftConfirm": "Terminare questa sessione di parcheggio ora? Verrà spostata nella cronologia con l'ora di partenza registrata.",
+    "nextPing": "Prossimo ping: {{when}}"
   },
   "scanner": {
     "header": "Scansiona cartello di parcheggio",
@@ -231,6 +232,20 @@
       "chipHour_other": "{{count}} ore",
       "calendarCopy": "Si aggiunge al calendario iPhone / Android / Outlook con una sveglia per ogni scelta. Funziona anche se chiudi l'app.",
       "browserCopy": "Invia una notifica a ogni orario scelto, nella tab più sul sistema operativo se disponibile."
+    },
+    "pushStatus": {
+      "subscribed": "✓ Promemoria push attivati su questo dispositivo",
+      "notSubscribed": "Push non attivato. Senza, i promemoria suonano solo mentre questa scheda è aperta.",
+      "enable": "Attiva push",
+      "requesting": "Richiesta al browser…",
+      "denied": "Hai bloccato le notifiche per questo sito. Modifica il permesso nelle impostazioni del sito del browser per attivare.",
+      "errorRetry": "Impossibile attivare — riprova",
+      "unsupported": "Questo browser non supporta le notifiche push."
+    },
+    "pushScheduled": {
+      "header": "Promemoria push pianificati",
+      "single": "Riceverai un ping alle {{times}}.",
+      "multiple": "Riceverai un ping alle {{times}}."
     }
   },
   "history": {
@@ -676,5 +691,25 @@
         "Un tocco per scaricare ogni registro. Un tocco per cancellare ogni registro e il tuo account, se cambi idea."
       ]
     }
+  },
+  "scheduledReminders": {
+    "header": "Promemoria pianificati",
+    "noneYet": "Nessun promemoria push impostato per questa sessione.",
+    "firesAtExpiry": "{{when}} — alla scadenza",
+    "firesBefore_one": "{{when}} — 1 min prima della scadenza",
+    "firesBefore_other": "{{when}} — {{count}} min prima della scadenza",
+    "firesFromNow_one": "{{when}} — 1 min dopo l'arrivo",
+    "firesFromNow_other": "{{when}} — {{count}} min dopo l'arrivo",
+    "firesAbsolute": "{{when}}",
+    "addAnother": "+ Aggiungi promemoria",
+    "cancelAll": "Annulla tutti i promemoria",
+    "cancelAllConfirm": "Annullare ogni promemoria push pianificato per questa sessione?",
+    "cancelOne": "Rimuovi questo promemoria",
+    "pickHeader": "Quando vuoi essere avvisato?",
+    "pickCancel": "Annulla",
+    "tooLateAll": "Nessuna opzione di promemoria è abbastanza nel futuro da poter essere pianificata. Tocca Termina sessione se sei già andato.",
+    "pushNotEnabled": "Attiva le notifiche push su questo dispositivo per aggiungere promemoria che suonano anche quando l'app è chiusa.",
+    "saving": "Salvataggio…",
+    "errorRetry": "Impossibile aggiornare — riprova"
   }
 }

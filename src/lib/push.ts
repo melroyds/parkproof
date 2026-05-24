@@ -229,18 +229,42 @@ export async function cancelPushReminders(
 }
 
 /**
- * Schedule a batch of push notifications for a saved session. Best-effort:
- * if push isn't subscribed, the call is skipped silently (the .ics +
- * in-tab paths still fire). Caller doesn't await this — fire and continue.
+ * Schedule a batch of push notifications for a saved session.
+ *
+ * Server-side semantics: REPLACE-ALL. /push/schedule first deletes every
+ * existing schedule for the given session_id, then creates the new set.
+ * Callers wanting to ADD or REMOVE a single reminder pass the full desired
+ * union/difference, not just the delta.
+ *
+ * Returns null on any failure (network / unsupported / not subscribed)
+ * rather than throwing, so callers can fire-and-forget OR await and persist.
+ *
+ * Best-effort by default — when push isn't subscribed, the call is skipped
+ * silently because the .ics + in-tab paths still fire from the same caller.
+ * The first caller (ReminderOptions, initial set) doesn't need the return
+ * value. Newer callers (SessionDetail add/remove) DO — they need the
+ * created[] fire_at list so they can persist the truth back to the session
+ * for display in the "Scheduled reminders" section.
  */
+export interface ScheduledFire {
+  /** Server-side schedule name (parkproof-push-<session_id>-<slot>). */
+  name: string
+  /** ISO 8601 timestamp when EventBridge will fire. */
+  fire_at: string
+}
+
 export async function schedulePushReminders(
   session_id: string,
   reminders: ScheduledReminder[],
-): Promise<{ created: number; skipped: number } | null> {
+): Promise<{ created: ScheduledFire[]; skipped: number } | null> {
   if (!isPushSupported()) return null
   const subscribed = await hasActiveSubscription()
   if (!subscribed) return null
-  if (reminders.length === 0) return { created: 0, skipped: 0 }
+  // Allow the empty case to reach the server — that's how the SessionDetail
+  // "remove last reminder" path works (POST with reminders=[] effectively
+  // cancels all without using /push/cancel). The server enforces a
+  // reminders.length === 0 → 400 guard, so we short-circuit here instead.
+  if (reminders.length === 0) return { created: [], skipped: 0 }
 
   try {
     const resp = await fetch(endpointUrl('/push/schedule'), {
@@ -257,13 +281,20 @@ export async function schedulePushReminders(
       return null
     }
     const result = (await resp.json()) as {
-      created: unknown[]
-      skipped: unknown[]
+      created?: Array<{ name?: unknown; fire_at?: unknown }>
+      skipped?: unknown[]
     }
-    return {
-      created: Array.isArray(result.created) ? result.created.length : 0,
-      skipped: Array.isArray(result.skipped) ? result.skipped.length : 0,
-    }
+    // Defensive shape narrowing — the server's contract is {created: [{name, fire_at}], skipped: [...]}
+    // but a future Lambda change could rearrange. Filter to entries that
+    // actually have both fields rather than passing through garbage.
+    const created: ScheduledFire[] = (result.created ?? [])
+      .filter(
+        (c): c is { name: string; fire_at: string } =>
+          typeof c?.name === 'string' && typeof c?.fire_at === 'string',
+      )
+      .map((c) => ({ name: c.name, fire_at: c.fire_at }))
+    const skipped = Array.isArray(result.skipped) ? result.skipped.length : 0
+    return { created, skipped }
   } catch (err) {
     console.error('[push] schedule threw:', err)
     return null

@@ -196,6 +196,30 @@ export default function ActiveSessionCard({
               ? t('active.moveBy', { time: expiryLabel!.combined })
               : t('active.noPostedRestrictions')}
           </p>
+          {/* "🔔 Next ping: 4:25 PM" — closes the visibility gap the user
+              flagged: previously, after setting reminders, the only way to
+              see WHEN they'd fire was opening the calendar app. Now the
+              soonest future scheduled push is visible right on the most-
+              glanced surface. Hidden when no future reminders are queued. */}
+          {(() => {
+            if (!session.push_reminders || session.push_reminders.length === 0)
+              return null
+            const upcoming = session.push_reminders
+              .map((r) => new Date(r.fire_at))
+              .filter((d) => Number.isFinite(d.getTime()) && d.getTime() > now)
+              .sort((a, b) => a.getTime() - b.getTime())[0]
+            if (!upcoming) return null
+            const label = formatExpiryAbsolute(upcoming, {
+              now: new Date(now),
+              timeZone,
+            }).combined
+            return (
+              <p className="mt-1 text-xs text-white/80 font-medium inline-flex items-center gap-1">
+                <Icon name="bell" className="w-3 h-3" strokeWidth={2.25} />
+                {t('active.nextPing', { when: label })}
+              </p>
+            )
+          })()}
         </div>
       </button>
 
