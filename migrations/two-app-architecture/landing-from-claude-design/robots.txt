@@ -1,0 +1,12 @@
+# ParkProof robots.txt — permissive crawl for everything except API proxy
+# paths and OAuth callback flows that shouldn't be indexed.
+
+User-agent: *
+Allow: /
+
+# Don't index the verify-OAuth callback URL with its ?code= query strings —
+# Google would just see the OAuth handshake landing page.
+Disallow: /app/?code=
+Disallow: /app/?state=
+
+Sitemap: https://www.parkproof.com.au/sitemap.xml

@@ -7,6 +7,33 @@
 <meta name="description" content="Point your phone at any stacked Melbourne parking sign and get a plain-English verdict in under 12 seconds. Tamper-proof evidence if you're ticketed. Not legal advice.">
 <link rel="icon" href="assets/parkproof-icon.svg" type="image/svg+xml">
 
+<!-- Canonical — disambiguates parkproof.au + apex parkproof.com.au
+     (which 301 here via Cloudflare Page Rules) for search engines. -->
+<link rel="canonical" href="https://www.parkproof.com.au/">
+
+<!-- Open Graph + Twitter share cards. Without these, Reddit / LinkedIn /
+     iMessage / X / Slack shares of parkproof.com.au render as a bare URL
+     — no thumbnail, no description, terrible CTR. og-image.png lives at
+     site root (mirrored from the React app's public/og-image.png) so
+     social platforms hit /og-image.png directly. Absolute URLs are
+     mandatory — relative paths break on most platforms' crawlers. -->
+<meta property="og:type" content="website">
+<meta property="og:title" content="ParkProof — Read any Aussie parking sign in seconds">
+<meta property="og:description" content="Photograph a stacked Melbourne parking sign and get a plain-English verdict in under 12 seconds. Tamper-proof evidence if you're ticketed.">
+<meta property="og:image" content="https://www.parkproof.com.au/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="ParkProof — Aussie parking, decoded.">
+<meta property="og:url" content="https://www.parkproof.com.au/">
+<meta property="og:site_name" content="ParkProof">
+<meta property="og:locale" content="en_AU">
+
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="ParkProof — Read any Aussie parking sign in seconds">
+<meta name="twitter:description" content="Photograph a stacked Melbourne parking sign and get a plain-English verdict in under 12 seconds. Tamper-proof evidence if you're ticketed.">
+<meta name="twitter:image" content="https://www.parkproof.com.au/og-image.png">
+<meta name="twitter:image:alt" content="ParkProof — Aussie parking, decoded.">
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;0,9..144,700;0,9..144,800;0,9..144,900;1,9..144,500;1,9..144,600;1,9..144,700;1,9..144,800&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">

@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ParkProof sitemap. Hand-authored rather than generated because the
+  surface is small (landing + /app/ + 9 localized /verify pages) and
+  doesn't change often. Edit when adding a top-level page.
+
+  lastmod dates reflect the last meaningful content change for that page,
+  not the last deploy. Update them when the page content materially
+  changes (new feature copy, new locale, layout overhaul).
+
+  /verify/ has 9 locale subdirectories. They're listed individually with
+  hreflang annotations so Google can serve the right language variant.
+-->
+<urlset xmlns="http://www.sitemap.org/schemas/sitemap/0.9"
+        xmlns:xhtml="http://www.w3.org/1999/xhtml">
+  <!-- Landing — the marketing front door. -->
+  <url>
+    <loc>https://www.parkproof.com.au/</loc>
+    <lastmod>2026-05-24</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+  </url>
+
+  <!-- React PWA entry — the actual app. -->
+  <url>
+    <loc>https://www.parkproof.com.au/app/</loc>
+    <lastmod>2026-05-24</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+
+  <!-- Verify page (English) — public openssl walkthrough for evidence PDFs. -->
+  <url>
+    <loc>https://www.parkproof.com.au/verify/</loc>
+    <lastmod>2026-05-24</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.parkproof.com.au/verify/"/>
+    <xhtml:link rel="alternate" hreflang="zh-CN" href="https://www.parkproof.com.au/verify/zh-CN/"/>
+    <xhtml:link rel="alternate" hreflang="vi" href="https://www.parkproof.com.au/verify/vi/"/>
+    <xhtml:link rel="alternate" hreflang="id" href="https://www.parkproof.com.au/verify/id/"/>
+    <xhtml:link rel="alternate" hreflang="ko" href="https://www.parkproof.com.au/verify/ko/"/>
+    <xhtml:link rel="alternate" hreflang="it" href="https://www.parkproof.com.au/verify/it/"/>
+    <xhtml:link rel="alternate" hreflang="el" href="https://www.parkproof.com.au/verify/el/"/>
+    <xhtml:link rel="alternate" hreflang="hi" href="https://www.parkproof.com.au/verify/hi/"/>
+    <xhtml:link rel="alternate" hreflang="pa" href="https://www.parkproof.com.au/verify/pa/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.parkproof.com.au/verify/"/>
+  </url>
+
+  <!-- Locale-specific verify pages (each linked from the main /verify/ via hreflang). -->
+  <url>
+    <loc>https://www.parkproof.com.au/verify/zh-CN/</loc>
+    <lastmod>2026-05-24</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://www.parkproof.com.au/verify/vi/</loc>
+    <lastmod>2026-05-24</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://www.parkproof.com.au/verify/id/</loc>
+    <lastmod>2026-05-24</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://www.parkproof.com.au/verify/ko/</loc>
+    <lastmod>2026-05-24</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://www.parkproof.com.au/verify/it/</loc>
+    <lastmod>2026-05-24</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://www.parkproof.com.au/verify/el/</loc>
+    <lastmod>2026-05-24</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://www.parkproof.com.au/verify/hi/</loc>
+    <lastmod>2026-05-24</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://www.parkproof.com.au/verify/pa/</loc>
+    <lastmod>2026-05-24</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+</urlset>
