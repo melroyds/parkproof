@@ -353,7 +353,7 @@
           Not legal advice. The signature proves the record wasn't altered after it was saved — how a council or court weighs that record is their call.
         </p>
         <p style="margin-top: 14px">
-          <a href="/verify/" style="color: var(--brand-700); text-decoration: underline; text-underline-offset: 2px; font-weight: 500; font-size: 0.95rem">
+          <a id="landing-verify-link" href="/verify/" style="color: var(--brand-700); text-decoration: underline; text-underline-offset: 2px; font-weight: 500; font-size: 0.95rem">
             See how to verify a record →
           </a>
         </p>
@@ -581,6 +581,31 @@
     } catch (e) { /* sessionStorage disabled — show anyway */ }
 
     var locale = pickLocale()
+
+    // Side-effect for the Evidence section's "See how to verify" link:
+    // if the visitor's browser language is non-English supported, rewrite
+    // the link's href to point at the matching /verify/{locale}/ page.
+    // Independent of whether the chip is shown — even if the user has
+    // dismissed the chip this session, the verify link still upgrades.
+    if (locale) {
+      var URL_MAP = {
+        'zh-cn': '/verify/zh-CN/',
+        'zh':    '/verify/zh-CN/',
+        'vi':    '/verify/vi/',
+        'id':    '/verify/id/',
+        'ko':    '/verify/ko/',
+        'it':    '/verify/it/',
+        'el':    '/verify/el/',
+        'hi':    '/verify/hi/',
+        'pa':    '/verify/pa/'
+      }
+      var verifyLink = document.getElementById('landing-verify-link')
+      if (verifyLink && URL_MAP[locale]) {
+        verifyLink.setAttribute('href', URL_MAP[locale])
+        verifyLink.setAttribute('hreflang', locale === 'zh' ? 'zh-CN' : locale)
+      }
+    }
+
     if (!locale) return
 
     label.textContent = COPY[locale]

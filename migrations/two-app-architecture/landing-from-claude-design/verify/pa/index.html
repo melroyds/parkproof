@@ -226,6 +226,42 @@
   }
   footer a { color: var(--brand-700); text-decoration: none; }
   footer a:hover { text-decoration: underline; }
+
+  /* Auto-detect chip — mirrors the landing's pp-locale-chip pattern.
+     Shown only when the visitor's browser language is supported AND
+     different from the current page's language. Dismissable per
+     session via sessionStorage. */
+  .pp-verify-chip {
+    position: fixed;
+    top: 16px;
+    right: 16px;
+    z-index: 100;
+    display: none;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    background: var(--brand-500);
+    color: #fff;
+    border-radius: 999px;
+    font-family: var(--font-sans);
+    font-size: 13px;
+    font-weight: 600;
+    text-decoration: none;
+    box-shadow: 0 4px 16px rgba(39, 91, 255, 0.32);
+    max-width: calc(100vw - 32px);
+  }
+  .pp-verify-chip:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(39, 91, 255, 0.4); }
+  .pp-verify-chip[data-show="1"] { display: inline-flex; }
+  .pp-verify-chip .close {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 18px; height: 18px; border-radius: 50%;
+    background: rgba(255, 255, 255, 0.18); color: #fff;
+    font-size: 14px; line-height: 1; margin-left: 4px;
+  }
+  .pp-verify-chip .close:hover { background: rgba(255, 255, 255, 0.28); }
+  @media (max-width: 480px) {
+    .pp-verify-chip { top: 12px; right: 12px; font-size: 12px; padding: 8px 12px; }
+  }
 </style>
 </head>
 <body>
@@ -309,6 +345,68 @@ openssl dgst -sha256 -verify parkproof-public-key.pem \
     <span><a href="/parkproof-public-key.pem">/parkproof-public-key.pem</a> <span class="sep">·</span> <a href="/">← ParkProof ਤੇ ਵਾਪਸ</a></span>
   </footer>
 </div>
+
+<!-- Auto-detect chip — nudges visitors whose browser language differs
+     from the current page's language to their language's /verify/
+     subdirectory. The locale switcher at top remains for explicit
+     switching; this chip is the one-tap discoverability layer. -->
+<a id="pp-verify-chip" class="pp-verify-chip" href="#" hreflang="auto">
+  <span id="pp-verify-chip-text">Continue in your language →</span>
+  <span class="close" role="button" aria-label="Dismiss">×</span>
+</a>
+<script>
+  (function() {
+    // Map of supported locales to (chip text, URL). Chip text is in the
+    // TARGET language so a Korean speaker sees Korean prompt etc.
+    var TARGETS = {
+      'en':    { url: '/verify/',         text: 'View in English →' },
+      'zh-cn': { url: '/verify/zh-CN/',   text: '查看简体中文版 →' },
+      'vi':    { url: '/verify/vi/',      text: 'Xem bằng tiếng Việt →' },
+      'id':    { url: '/verify/id/',      text: 'Lihat dalam Bahasa Indonesia →' },
+      'ko':    { url: '/verify/ko/',      text: '한국어로 보기 →' },
+      'it':    { url: '/verify/it/',      text: 'Visualizza in italiano →' },
+      'el':    { url: '/verify/el/',      text: 'Δες στα ελληνικά →' },
+      'hi':    { url: '/verify/hi/',      text: 'हिन्दी में देखें →' },
+      'pa':    { url: '/verify/pa/',      text: 'ਪੰਜਾਬੀ ਵਿੱਚ ਵੇਖੋ →' }
+    };
+
+    var current = (document.documentElement.lang || 'en').toLowerCase();
+
+    function pickTarget() {
+      var langs = (Array.isArray(navigator.languages) && navigator.languages.length)
+        ? navigator.languages : [navigator.language || 'en'];
+      for (var i = 0; i < langs.length; i++) {
+        var raw = String(langs[i] || '').toLowerCase();
+        if (raw === current) return null;  // already on user's language
+        if (TARGETS[raw]) return raw;
+        var primary = raw.split('-')[0];
+        if (primary === current) return null;
+        if (TARGETS[primary]) return primary;
+      }
+      return null;
+    }
+
+    var chip = document.getElementById('pp-verify-chip');
+    var text = document.getElementById('pp-verify-chip-text');
+    if (!chip || !text) return;
+
+    try { if (sessionStorage.getItem('pp-verify-chip-dismissed') === '1') return; } catch(e) {}
+
+    var target = pickTarget();
+    if (!target) return;
+
+    chip.href = TARGETS[target].url;
+    text.textContent = TARGETS[target].text;
+    chip.setAttribute('data-show', '1');
+
+    chip.querySelector('.close').addEventListener('click', function(ev) {
+      ev.preventDefault();
+      ev.stopPropagation();
+      chip.removeAttribute('data-show');
+      try { sessionStorage.setItem('pp-verify-chip-dismissed', '1'); } catch(e) {}
+    });
+  })();
+</script>
 
 </body>
 </html>
