@@ -177,6 +177,28 @@ export default function ScheduledRemindersSection({ session }: Props) {
   const anyChipViable = chipOptions.some((c) => !c.isPast && !c.alreadyScheduled)
 
   /**
+   * Compute the notification body for a given fire-at, per-reminder.
+   *
+   * Bug this fixes: handleAdd and handleRemove previously used a single body
+   * string for the WHOLE batch when re-calling /push/schedule. For expiry-
+   * bearing sessions that meant retained reminders lost their original
+   * "X min until your parking expires" copy and inherited whatever body was
+   * convenient at the call site. Result: after editing your reminders, the
+   * remaining ones could fire with "Your parking expires now" even when
+   * they're set to fire 30 min before. Same per-reminder logic as
+   * ReminderOptions.tsx — keep them in lock-step. If they diverge, the
+   * first edit silently rewrites the body text the user originally chose.
+   */
+  const bodyForFireAt = (fireAt: Date): string => {
+    if (isNoSign || expiryMs === null) {
+      return t('reminders.pushBodyCheckOn')
+    }
+    const minsBefore = Math.round((expiryMs - fireAt.getTime()) / 60_000)
+    if (minsBefore <= 0) return t('reminders.pushBodyAtExpiry')
+    return t('reminders.pushBodyBefore', { count: minsBefore })
+  }
+
+  /**
    * Persist the new fire-at list to localStorage + cloud, then notify parent.
    * Wraps the two write paths in one place — every add/remove/cancel-all
    * funnels through here so they stay consistent.
@@ -204,28 +226,22 @@ export default function ScheduledRemindersSection({ session }: Props) {
       const title = session.location?.address
         ? session.location.address
         : t('reminders.pushTitleFallback')
-      const body = isNoSign
-        ? t('reminders.pushBodyCheckOn')
-        : expiryMs !== null
-          ? (() => {
-              const offsetMins = Math.round((expiryMs - fireAt.getTime()) / 60_000)
-              return offsetMins <= 0
-                ? t('reminders.pushBodyAtExpiry')
-                : t('reminders.pushBodyBefore', { count: offsetMins })
-            })()
-          : t('reminders.pushBodyCheckOn')
-      // Build the union: existing future fire-times + the new one
+      // Build the union: existing future fire-times + the new one. Each entry
+      // gets its OWN body string computed from its own fire_at — using one
+      // shared body for the batch (the previous bug) would have rewritten
+      // existing reminders' copy on every add. bodyForFireAt keeps each
+      // entry honest to its actual offset.
       const desired: ScheduledReminder[] = [
         ...futureReminders.map((r) => ({
           fire_at: r.fire_at,
           title,
-          body,
+          body: bodyForFireAt(r.fireAt),
           url: `/?session=${session.id}`,
         })),
         {
           fire_at: fireAt.toISOString(),
           title,
-          body,
+          body: bodyForFireAt(fireAt),
           url: `/?session=${session.id}`,
         },
       ]
@@ -264,13 +280,15 @@ export default function ScheduledRemindersSection({ session }: Props) {
       const title = session.location?.address
         ? session.location.address
         : t('reminders.pushTitleFallback')
-      const body = isNoSign
-        ? t('reminders.pushBodyCheckOn')
-        : t('reminders.pushBodyAtExpiry') // body is approximate; server rebuilds anyway
+      // Per-reminder body — same bug-fix as handleAdd. Removing one row
+      // shouldn't rewrite the surviving ones' "X min before expiry" copy
+      // to a generic "Your parking expires now". Server stores whatever
+      // body we send (no server-side rebuild), so we have to compute the
+      // honest body for each retained fire_at here.
       const desired: ScheduledReminder[] = remaining.map((r) => ({
         fire_at: r.fire_at,
         title,
-        body,
+        body: bodyForFireAt(r.fireAt),
         url: `/?session=${session.id}`,
       }))
       const result = await schedulePushReminders(session.id, desired)
