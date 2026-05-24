@@ -597,6 +597,15 @@
   "about": {
     "title": "Tutto quello che fa ParkProof",
     "lead": "Probabilmente sei qui pensando ah, legge i cartelli di parcheggio. È vero. Ma già che c'eravamo, abbiamo deciso di salvare anche le prove nel caso tu prenda una multa ingiusta, scriverti la lettera di ricorso se serve, e ricordarti di spostare la macchina prima che scada il tempo. Ecco il tour amichevole.",
+    "push": {
+      "title": "Attiva le notifiche push su questo dispositivo",
+      "body": "I promemoria funzionano a mani libere anche quando ParkProof non è aperta. Concedere il permesso ora significa che i futuri promemoria di parcheggio scattano in silenzio in sottofondo — senza richiesta di permesso a metà flusso.",
+      "subscribed": "✓ Questo dispositivo è iscritto. I promemoria push scatteranno per le tue future sessioni di parcheggio.",
+      "denied": "Hai bloccato le notifiche per questo sito. Per attivarle, modifica il permesso nelle impostazioni del sito del tuo browser.",
+      "errorRetry": "Qualcosa è andato storto — riprova",
+      "enable": "Attiva le notifiche",
+      "requesting": "Sto chiedendo al tuo browser…"
+    },
     "footerNote": "Realizzato a Melbourne.",
     "cta": "Provalo — scansiona un cartello",
     "scan": {

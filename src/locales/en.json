@@ -93,6 +93,15 @@
         "One tap to download every record. One tap to delete every record and your account, if you change your mind."
       ]
     },
+    "push": {
+      "title": "Enable push notifications on this device",
+      "body": "Reminders work hands-free even when ParkProof isn't open. Granting permission now means future parking reminders fire silently in the background — no permission prompt mid-flow.",
+      "subscribed": "✓ This device is subscribed. Push reminders will fire for your future parking sessions.",
+      "denied": "You've blocked notifications for this site. To enable, change the permission in your browser's site settings.",
+      "errorRetry": "Something went wrong — try again",
+      "enable": "Enable notifications",
+      "requesting": "Asking your browser…"
+    },
     "footerNote": "Built in Melbourne.",
     "cta": "Try it — scan a sign"
   },

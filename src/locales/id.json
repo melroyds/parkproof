@@ -93,6 +93,15 @@
         "Satu ketukan untuk mengunduh semua catatan. Satu ketukan untuk menghapus semua catatan dan akunmu, jika berubah pikiran."
       ]
     },
+    "push": {
+      "title": "Aktifkan notifikasi push di perangkat ini",
+      "body": "Pengingat bekerja tanpa harus dipegang bahkan ketika ParkProof tidak terbuka. Memberi izin sekarang berarti pengingat parkir di masa depan akan berjalan diam-diam di latar belakang — tanpa permintaan izin di tengah jalan.",
+      "subscribed": "✓ Perangkat ini sudah berlangganan. Pengingat push akan aktif untuk sesi parkir mendatang.",
+      "denied": "Kamu telah memblokir notifikasi untuk situs ini. Untuk mengaktifkan, ubah izin di pengaturan situs browsermu.",
+      "errorRetry": "Ada yang tidak beres — coba lagi",
+      "enable": "Aktifkan notifikasi",
+      "requesting": "Bertanya pada browsermu…"
+    },
     "footerNote": "Dibuat di Melbourne.",
     "cta": "Coba — pindai rambu"
   },

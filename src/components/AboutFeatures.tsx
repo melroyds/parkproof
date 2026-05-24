@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { Fragment, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import Icon from './Icon'
 import {
@@ -113,62 +113,31 @@ export default function AboutFeatures({ onBack, onTryIt }: Props) {
       </header>
 
       {sections.map(({ id, emoji }) => (
-        <Section
-          key={id}
-          emoji={emoji}
-          title={t(`about.${id}.title`)}
-          lead={t(`about.${id}.lead`)}
-          items={
-            t(`about.${id}.items`, { returnObjects: true }) as unknown as string[]
-          }
-        />
-      ))}
-
-      {/* Web Push preview — foundation only tonight. Subscription happens
-          on click; backend stores the subscription; no auto-firing of
-          notifications yet (scheduling layer ships next session). Until
-          that lands, this button mainly proves the subscribe pipe works.
-          Quietly placed in the About footer rather than promoted — opt-in
-          discovery for testers without confusing regular users. */}
-      {pushStatus !== 'unsupported' && (
-        <div className="mb-6 pt-4 border-t border-paper-300">
-          <p className="text-xs font-semibold text-ink-700 mb-1">
-            🔔 Notifications (preview)
-          </p>
-          <p className="text-xs text-ink-500 leading-relaxed mb-3">
-            We're wiring up push notifications so reminders work even when
-            ParkProof isn't open. Tap to enable on this device — the auto-firing
-            schedule arrives in the next update.
-          </p>
-          {pushStatus === 'subscribed' ? (
-            <p className="text-xs text-emerald-700 font-medium">
-              ✓ This device is subscribed. You'll get a test push once we send one.
-            </p>
-          ) : pushStatus === 'denied' ? (
-            <p className="text-xs text-ink-500">
-              You've blocked notifications for this site. To enable, change the
-              permission in your browser's site settings.
-            </p>
-          ) : pushStatus === 'error' ? (
-            <button
-              onClick={handleEnablePush}
-              className="text-xs bg-paper-100 hover:bg-paper-200 text-ink-800 px-3 py-1.5 rounded-lg border border-paper-300"
-            >
-              Something went wrong — try again
-            </button>
-          ) : (
-            <button
-              onClick={handleEnablePush}
-              disabled={pushStatus === 'requesting'}
-              className="text-xs bg-brand-50 hover:bg-brand-100 text-brand-700 px-3 py-1.5 rounded-lg border border-brand-200 disabled:opacity-50"
-            >
-              {pushStatus === 'requesting'
-                ? 'Asking your browser…'
-                : 'Enable notifications on this device'}
-            </button>
+        <Fragment key={id}>
+          <Section
+            emoji={emoji}
+            title={t(`about.${id}.title`)}
+            lead={t(`about.${id}.lead`)}
+            items={
+              t(`about.${id}.items`, { returnObjects: true }) as unknown as string[]
+            }
+          />
+          {/* Push-subscribe block rendered as a child of the reminders
+              section. Pre-grants browser notification permission so when
+              the user later sets a reminder in the actual logging flow,
+              the OS doesn't interrupt mid-flow with a permission prompt.
+              Web Push is fully shipped (EventBridge scheduler + dispatch
+              Lambda), so the previous "(preview)" framing is gone — this
+              is the real feature. Skipped entirely on browsers without
+              push support so the UI stays honest. */}
+          {id === 'reminders' && pushStatus !== 'unsupported' && (
+            <PushSubscribeBlock
+              pushStatus={pushStatus}
+              onEnable={handleEnablePush}
+            />
           )}
-        </div>
-      )}
+        </Fragment>
+      ))}
 
       {/* Build-in-the-open footer — minimal, no personal identity. GitHub
           link intentionally removed: the linked profile/repo carries name +
@@ -197,6 +166,62 @@ interface SectionProps {
   title: string
   lead: string
   items: string[]
+}
+
+/**
+ * Push-subscribe callout, rendered inline as a visual child of the
+ * Reminders Section. Indented (ml-14) to align with the section's text
+ * column, brand-tinted to signal "related to reminders," and uses a
+ * negative top margin (-mt-4) to sit immediately under its parent
+ * without leaving the rhythm of the surrounding sections.
+ *
+ * Branching:
+ *   subscribed → green confirmation
+ *   denied     → instructions for changing the browser permission
+ *   error      → retry button
+ *   idle / requesting → "Enable notifications" CTA
+ */
+interface PushSubscribeBlockProps {
+  pushStatus: 'idle' | 'requesting' | 'subscribed' | 'denied' | 'unsupported' | 'error'
+  onEnable: () => void
+}
+
+function PushSubscribeBlock({ pushStatus, onEnable }: PushSubscribeBlockProps) {
+  const { t } = useTranslation()
+  return (
+    <div className="-mt-4 mb-10 ml-14 p-4 rounded-2xl bg-brand-50 border border-brand-100">
+      <p className="text-sm font-semibold text-ink-900 mb-1">
+        🔔 {t('about.push.title')}
+      </p>
+      <p className="text-xs text-ink-700 leading-relaxed mb-3">
+        {t('about.push.body')}
+      </p>
+      {pushStatus === 'subscribed' ? (
+        <p className="text-xs text-emerald-700 font-medium">
+          {t('about.push.subscribed')}
+        </p>
+      ) : pushStatus === 'denied' ? (
+        <p className="text-xs text-ink-500 leading-relaxed">
+          {t('about.push.denied')}
+        </p>
+      ) : pushStatus === 'error' ? (
+        <button
+          onClick={onEnable}
+          className="text-xs bg-white hover:bg-paper-50 text-ink-800 px-3 py-1.5 rounded-lg border border-paper-300"
+        >
+          {t('about.push.errorRetry')}
+        </button>
+      ) : (
+        <button
+          onClick={onEnable}
+          disabled={pushStatus === 'requesting'}
+          className="text-xs bg-brand-500 hover:bg-brand-600 text-white px-3 py-1.5 rounded-lg disabled:opacity-50 font-medium"
+        >
+          {pushStatus === 'requesting' ? t('about.push.requesting') : t('about.push.enable')}
+        </button>
+      )}
+    </div>
+  )
 }
 
 function Section({ emoji, title, lead, items }: SectionProps) {

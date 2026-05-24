@@ -591,6 +591,15 @@
   "about": {
     "title": "Mọi thứ ParkProof có thể làm",
     "lead": "Bạn có lẽ đến đây với suy nghĩ ồ, nó đọc biển báo đỗ xe. Đúng là nó làm vậy. Nhưng nhân tiện, chúng tôi cũng lưu lại bằng chứng phòng khi bạn bị phạt oan, viết thư khiếu nại giúp bạn nếu cần, và nhắc bạn dời xe trước khi hết giờ. Đây là tour giới thiệu thân thiện.",
+    "push": {
+      "title": "Bật thông báo đẩy trên thiết bị này",
+      "body": "Lời nhắc hoạt động không cần thao tác ngay cả khi ParkProof không mở. Cấp quyền bây giờ có nghĩa là các lời nhắc đỗ xe trong tương lai sẽ chạy ngầm — không có lời nhắc cấp quyền giữa chừng.",
+      "subscribed": "✓ Thiết bị này đã đăng ký. Lời nhắc đẩy sẽ kích hoạt cho các phiên đỗ xe tương lai.",
+      "denied": "Bạn đã chặn thông báo cho trang này. Để bật, hãy thay đổi quyền trong cài đặt trang của trình duyệt.",
+      "errorRetry": "Đã xảy ra lỗi — thử lại",
+      "enable": "Bật thông báo",
+      "requesting": "Đang hỏi trình duyệt của bạn…"
+    },
     "footerNote": "Được xây dựng tại Melbourne.",
     "cta": "Thử ngay — quét một biển báo",
     "scan": {
