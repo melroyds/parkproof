@@ -1,6 +1,6 @@
 # ParkProof — a PM case study
 
-*Mobile-first PWA. Photograph an Australian parking sign → plain-English answer + timestamped, GPS-tagged evidence. Built solo across seven active days (16-22 May 2026); ~$5/month to run; zero real users.*
+*Mobile-first PWA. Photograph an Australian parking sign → plain-English answer + timestamped, GPS-tagged evidence. Built solo across ten active days (16-25 May 2026), launched Tuesday 26 May; ~$5/month to run; zero real users.*
 
 [Live demo →](https://www.parkproof.com.au) · [Source →](https://github.com/melroyds/parkproof)
 
@@ -161,6 +161,26 @@ A few honest reflections:
 
 ---
 
+## Pre-launch hardening — the last 48 hours
+
+The most PM-y work on this project wasn't the feature build. It was the launch-readiness audit on the weekend before publishing.
+
+On Sunday afternoon (~48 hours pre-launch), with the feature set frozen and CI green, I sat down and explicitly enumerated **what could break under Reddit traffic that the green build wouldn't catch**. Six items, ~5 hours of work, framed as a "Tier 1" list — meaning *if any of these fails on launch day, you'll cringe*. The discipline was naming the silent failure modes that don't show up in tests because they're about real-world rendering, real-device behaviour, or specific traffic patterns.
+
+The first item on the list — *"test PDF export in all 9 locales"* — caught the single biggest hidden bug in the project.
+
+I'd never actually exported a PDF in Korean, Hindi, Punjabi, Chinese, Greek, or Vietnamese. The strings were translated, the rendering library (`jsPDF`) was wired in, the UI worked. But `jsPDF` ships with Adobe Type 1 fonts that have *zero* glyph coverage for any of those scripts. The first 5 minutes of the audit revealed that **six of nine locales** rendered evidence PDFs as missing-glyph rectangles. Silent data corruption for ~30% of supported users. Would have been a "btw your evidence PDF is just boxes" Reddit comment within hours of going live.
+
+The fix was substantial: source variable-weight Noto Sans TTFs from the Google Fonts GitHub repo, write a Python build-time script that subsets each font down to just the glyphs that appear in the locale JSONs (94% size reduction — Chinese SC went from 17MB to 893KB), self-host them on CloudFront, lazy-load the right one per locale at PDF export time. Two hours of focused work; ships clean. The interesting bit isn't the fix — it's that the *audit* found it. A different sequencing (skip the audit, trust the build, hit publish) would have shipped the bug.
+
+The second moment was a feedback loop on my own product. I'd shipped server-side Web Push reminders earlier in the week. After using my own app for an evening, I noticed: *I have no idea WHEN the pushes will actually fire.* The schedules live in EventBridge, invisible from the app. The `.ics` calendar event renders visibly in your calendar app, but the push reminder is a black box — set-and-forget, no way to verify or cancel without re-doing the whole session. That violates the trust principle the rest of the product is built on. I added a `Scheduled reminders` management surface in the per-session detail screen: lists every queued fire time, per-row × cancel, a smart-filtered Add picker (offsets that would fire in the past are greyed). 2.5 hours. The feature went from *fire-and-forget* to *managed-and-trusted*.
+
+The PM-relevant takeaway is the Tier-1-list-as-PM-artifact pattern. Most launches fail by skipping the audit — assuming the build is launch-ready because the tests pass and the features ship. The audit catches the silent failures the green tests miss. The cost is ~5 hours; the upside is not shipping the cringe.
+
+(Other items the audit caught: missing Open Graph meta tags on the marketing landing — Reddit/LinkedIn/iMessage shares would have rendered with no thumbnail. A first-fire Lambda cold-start of 1-3 seconds for the first Reddit visitor — fixed with an EventBridge warmer ping every 5 minutes. No rollback playbook in CLAUDE.md — fixed with a `## Rollback playbook` section keyed to symptoms. None of these would have failed a test; all would have shown up as friction on launch day.)
+
+---
+
 ## What this project taught me about PM-engineering
 
 The thing I keep returning to: **the discipline of stopping is harder than the discipline of building.** ParkProof is feature-complete for its scope. Every hour I spend adding the citywide heatmap or Layer 3 telemetry or a fourteenth language is an hour I'm not spending in front of the people I want to see this work.
@@ -187,7 +207,7 @@ That's the part of the job I think most PMs underweight. It's easy to ship featu
 
 **Telemetry:** CloudWatch Logs with structured feedback events (verdict + model context); Logs Insights queries committed alongside the code.
 
-**Cost at portfolio traffic:** ~$5–7/month (KMS asymmetric key + domain dominate; AWS itself is effectively free at this scale). Monitored with an AWS Budgets alarm at $10/month.
+**Cost at portfolio traffic:** ~$5–7/month (KMS asymmetric key + domain dominate; AWS itself is effectively free at this scale). Monitored with an AWS Budgets alarm at $25/month — raised from $10 to absorb a Reddit-day spike without false-alarm noise.
 
 ---
 

@@ -201,7 +201,7 @@ Honest about gaps:
 
 **For a Reddit post** (consumer sub like r/Melbourne or r/SideProject): pull from "The core moment" + "Tamper-proof evidence" + the languages line under Inclusion.
 
-**For LinkedIn**: pull 5-7 of the most distinctive bullets, lead with the core moment, end with "built in 7 days post-redundancy".
+**For LinkedIn**: pull 5-7 of the most distinctive bullets, lead with the core moment, end with "built solo across two weeks post-redundancy".
 
 **For interview**: pick the bullets that match the role. PM role → "Smart polish" + "Safety gates" demonstrate scoping. Engineering role → "Built right" + "Tamper-proof evidence" demonstrate craft. Design role → "Inclusion & access" + the brand consistency story.
 

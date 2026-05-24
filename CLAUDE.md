@@ -8,7 +8,7 @@ Mobile-first installable PWA. Photograph an Australian parking sign → Claude v
 
 Live: <https://www.parkproof.com.au> (custom domain on Cloudflare DNS, CloudFront-fronted). Apex `parkproof.com.au` and both forms of `parkproof.au` 301-redirect to the canonical via Cloudflare Page Rules. Old domain `parkproof.dsouza.tech` kept as fallback for ~7 days post-cutover. Hosted on AWS in `ap-southeast-2`.
 
-See [`parkproof-spec.md`](parkproof-spec.md) for the original product brief, [`README.md`](README.md) for the user-facing version, and [`docs/lessons-for-next-project.md`](docs/lessons-for-next-project.md) for the portable takeaways doc — what 8-day-me learned that the *next* project should carry forward.
+See [`parkproof-spec.md`](parkproof-spec.md) for the original product brief, [`README.md`](README.md) for the user-facing version, and [`docs/lessons-for-next-project.md`](docs/lessons-for-next-project.md) for the portable takeaways doc — what 10-day-me learned that the *next* project should carry forward.
 
 ## Run it
 

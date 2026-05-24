@@ -1,6 +1,6 @@
 # Lessons from ParkProof — for the next project
 
-A self-contained takeaways doc. Carry into the next portfolio piece (or real product) so you don't relearn what 8-day-me already paid for.
+A self-contained takeaways doc. Carry into the next portfolio piece (or real product) so you don't relearn what 10-day-me already paid for.
 
 Skim the table of contents, jump to the bit you need.
 
@@ -30,7 +30,7 @@ Skim the table of contents, jump to the bit you need.
 
 ### AWS serverless (Lambda + API Gateway + DynamoDB + S3 + KMS + Cognito + CloudFront)
 
-- **One Lambda handling 13 routes via path dispatch.** Cold-start cost paid once, deployment surface stays tiny. Don't split into multiple functions at portfolio scale.
+- **One Lambda handling 18 routes via path dispatch.** Cold-start cost paid once, deployment surface stays tiny. Don't split into multiple functions at portfolio scale. By launch the same function also handles two non-HTTP invocation modes (self-invoked async worker for slow Claude calls, EventBridge Scheduler target for one-shot push dispatch) — still one cold-start budget.
 - **DynamoDB single-table** for sessions; `PK = userId, SK = sessionId`. Indexes only when needed.
 - **S3 + OAC + CloudFront** for static hosting. Private bucket, OAC-only access. ACM cert in us-east-1 (mandatory for CloudFront), DNS-validated CNAME.
 - **KMS asymmetric (ECDSA P-256)** for evidence signing. Private key never leaves AWS; public key shipped at `/parkproof-public-key.pem`. The `openssl-verify` walkthrough in the evidence PDF means a third party can verify offline. *Almost no MVPs do this — it disproportionately impresses.*
@@ -99,7 +99,7 @@ Tempting because it feels personal ("their messages will email me!"). **Don't do
 - **Mock SDK constructors as real classes**, not arrow-function factories. `new Anthropic({apiKey})` requires a constructable.
 - **CI installs root deps only.** If your repo has subdirectory `package.json` files (e.g., `lambda/`, `worker/`, `infra/`), CI needs explicit `npm ci` steps for each.
 
-### Test surface sizing for an 8-day portfolio MVP
+### Test surface sizing for a 10-day portfolio MVP
 
 ~100-150 tests across 5-6 risk-targeted files is the right size. More is anti-portfolio. Less is amateur. Aim for:
 
@@ -230,7 +230,7 @@ Each piece is a sub-second DDB roundtrip. The 30s gateway ceiling never gets hit
 
 ### Build journal in the same week
 
-The 8-day build journal (`docs/parkproof-build-journal.pdf`) was written within hours of each day's commits. The dead ends are still raw — Day 5's CloudFront-OAC failure, Cognito-Identity-Pool failure, then async-polling success. **Most "build retrospectives" are written months later, when the failures have been softened into a clean success story.** The rawness IS the value.
+The 10-day build journal (`docs/parkproof-build-journal.pdf`) was written within hours of each day's commits. The dead ends are still raw — Day 5's CloudFront-OAC failure, Cognito-Identity-Pool failure, then async-polling success. **Most "build retrospectives" are written months later, when the failures have been softened into a clean success story.** The rawness IS the value.
 
 ### Commit messages with the "why"
 
@@ -313,6 +313,47 @@ The build journal PDF buries the "8 days post-redundancy" framing. That single c
 
 ---
 
+## Lessons from the final 48 hours (pre-launch hardening)
+
+Added retroactively after the Sunday-before-launch audit. These are the lessons that only show up under launch-readiness scrutiny, not feature-build scrutiny.
+
+### Run a "Tier 1" silent-failure audit 48 hours pre-launch
+
+The most valuable PM-y thing I did wasn't a feature. It was sitting down on the weekend before launch and enumerating the **silent-failure modes** the green tests wouldn't catch. Six items, ~5 hours. The very first item — *"test PDF export in all 9 locales"* — caught a critical bug: jsPDF's default fonts have zero glyph coverage for Chinese / Korean / Devanagari / Gurmukhi / Greek / Vietnamese diacritics, and I'd shipped the integration without ever exporting a non-English PDF myself. Six of nine locales would have rendered as boxes. **The discipline isn't the fix — it's the audit. Most launches skip this step and ship the bug.**
+
+### jsPDF + non-Latin scripts: self-host the fonts, subset them, pre-launch
+
+The jsPDF built-in fonts (helvetica / courier / times) are Adobe Type 1 with Latin-1 + Latin Extended A coverage only. Anything beyond — CJK, Devanagari, Gurmukhi, Greek, Vietnamese diacritics — renders as missing-glyph boxes. The fix is non-trivial and platform-fragile:
+
+1. **@fontsource v5+ ships only WOFF/WOFF2.** jsPDF needs TTF. v4 had TTF but the path scheme is unstable. Don't depend on it.
+2. **Google's PageSpeed Insights API now requires an API key.** Anonymous quota is zero.
+3. **Best path**: source variable-weight TTFs from the `google/fonts` GitHub repo (`raw.githubusercontent.com/google/fonts/main/ofl/...`), pre-subset at build time using `fontTools.subset` to only the glyphs that appear in your locale JSONs, self-host. CJK fonts go from 17MB → 893KB (94% reduction).
+4. **Lazy-load per-locale at PDF export time.** Only the user who's in zh-CN and clicked Export pays the fetch cost.
+
+If you ever ship a PDF generator with i18n, **test every locale before launch.** Don't trust that "the strings translate" implies "the rendering pipeline does."
+
+### i18next detection chain needs `'querystring'` explicitly
+
+Default `i18next-browser-languagedetector` order is `['localStorage', 'navigator', 'htmlTag']` — **`querystring` is NOT in the default**. So `?lng=ko` in the URL is silently ignored, and i18next falls through to localStorage (= the user's PREVIOUS choice, typically English). For any handoff flow (marketing landing → app, deep links from emails, etc.), explicitly add `'querystring'` to the front of the chain. Cost a couple of hours debugging.
+
+### When Chrome launcher fails on Windows, pivot to PageSpeed Insights API (or manual audit)
+
+Lighthouse CLI via `npx lighthouse` choked on Windows with `EPERM` on temp-file cleanup. PageSpeed Insights public API now requires a Google API key. Falling back to a **manual signal-by-signal audit** (curl the HTML, grep for `og:image` / `meta description` / alt-text coverage / canonical link) caught the actual high-impact issues — including a critical missing Open Graph card on the marketing landing that would have killed Reddit-share CTR.
+
+### Self-service management surfaces matter for "invisible" backend features
+
+When a feature lives server-side (EventBridge schedules, KMS signatures, cloud sync state), the user has no way to verify it's working without UI surfacing it. After shipping Web Push reminders, dogfooding revealed: *I have no idea WHEN the pushes will fire.* The fix was a `Scheduled reminders` section in the session detail screen — list each fire time, per-row cancel, smart-filtered add. **2.5 hours of UI for trust that the feature delivers what it promises.** Apply this principle to every "background" feature you ship.
+
+### Lambda warmer is cheap, dramatic, and one EventBridge rule away
+
+Node.js + AWS SDK + Anthropic SDK cold start = ~1 second of init duration on the first request. Bad first impression for the first Reddit visitor. Add a 3-line short-circuit at the top of `handler()` (`if (event.warmer === true) return { statusCode: 200, body: 'warm' }`), create an EventBridge Scheduler rule at `rate(5 minutes)` pinging the Lambda with `{warmer: true}`. Costs ~$0.008/month. Container stays hot indefinitely. **Do this for any latency-sensitive endpoint pre-launch.**
+
+### CLAUDE.md should have a "Rollback playbook" section
+
+Symptom → first-check → likely-fix triage table, with explicit commands for frontend revert (`git revert + scripts/deploy.sh`), Lambda version rollback (`update-function-code`), and what can't be rolled back (Cognito, DDB schema, KMS rotation). The first time you need it is the worst time to write it. **5 minutes pre-launch saves 30 minutes mid-incident.**
+
+---
+
 ## A starter checklist for the next project
 
 Hand-rolled from what worked. Print, tape to wall, work down it.
@@ -352,8 +393,8 @@ This isn't documentation about ParkProof. It's lessons EXTRACTED from ParkProof,
 
 When you start the next project, read this on Day 0, refer back to it on Day 3 when you hit the first hard infra question, and again on Day 6 when something breaks in a way that feels familiar.
 
-The point isn't to follow it religiously. The point is to *not have to rediscover what 8-day-me already paid for*.
+The point isn't to follow it religiously. The point is to *not have to rediscover what 10-day-me already paid for*.
 
 Good luck with the next one.
 
-— *Compiled 21 May 2026, the morning of Day 6.*
+— *Originally compiled 21 May 2026 (Day 6). "Final 48 hours" lessons added 24 May 2026, the Sunday before launch.*
