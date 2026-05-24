@@ -397,6 +397,7 @@
     "photosCopy": "照片在离开浏览器之前,会在您的设备上调整为 ≤1200px 并以 0.82 质量重新编码为 JPEG。原始高分辨率相机拍摄从不离开您的手机。",
     "signingHeader": "加密签名",
     "signingCopy": "无论您登录还是保持匿名(两者都有效),每个会话都由 AWS KMS 管理的 ECDSA P-256 密钥签名。私钥从不离开 AWS。公钥在 <a>/parkproof-public-key.pem</a> 公开发布,任何人(市政府、法院、保险公司)都可以使用 <code>openssl dgst</code> 验证证据链——任何导出的 PDF 中的附录都有分步说明。",
+    "verifyLinkLabel": "查看如何验证记录 →",
     "contactHeader": "联系 + 投诉",
     "contactCopy": "对于应用内控制之外的问题或行使权利,请发邮件至 <a>hello@parkproof.com.au</a>。",
     "complaintCopy": "对我们的回复不满意?您可以向 <a>澳大利亚信息专员办公室(OAIC)</a> 投诉。"

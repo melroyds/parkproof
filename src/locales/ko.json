@@ -509,6 +509,7 @@
     "photosCopy": "사진은 브라우저를 떠나기 전 기기에서 ≤1200px로 크기가 조정되고 JPEG 0.82 품질로 재인코딩됩니다. 원본 고해상도 카메라 캡처는 휴대폰을 떠나지 않습니다.",
     "signingHeader": "암호학적 서명",
     "signingCopy": "로그인하든 (익명으로 유지하든 — 둘 다 작동) 각 세션은 AWS KMS 관리 ECDSA P-256 키로 서명됩니다. 개인 키는 AWS를 떠나지 않습니다. 공개 키는 <a>/parkproof-public-key.pem</a>에 게시되어 누구나 (시청, 법원, 보험사)가 <code>openssl dgst</code>를 사용해 증거 체인을 검증할 수 있습니다 — 내보낸 PDF의 부록에서 단계별 안내를 확인하세요.",
+    "verifyLinkLabel": "기록 검증 방법 보기 →",
     "contactHeader": "연락처 + 불만",
     "contactCopy": "질문이나 앱 내 컨트롤 외부에서 권리를 행사하려면 <a>hello@parkproof.com.au</a>로 이메일을 보내주세요.",
     "complaintCopy": "응답에 불만족스러우신가요? <a>Office of the Australian Information Commissioner (OAIC)</a>에 불만을 제기할 수 있습니다."

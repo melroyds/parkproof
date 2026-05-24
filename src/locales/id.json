@@ -509,6 +509,7 @@
     "photosCopy": "Foto diubah ukurannya menjadi ≤1200px dan dikodekan ulang sebagai JPEG kualitas 0.82 di perangkatmu sebelum meninggalkan browser. Tangkapan kamera resolusi tinggi asli tidak pernah meninggalkan ponselmu.",
     "signingHeader": "Penandatanganan kriptografis",
     "signingCopy": "Saat kamu masuk (atau tetap anonim — keduanya bekerja), setiap sesi ditandatangani oleh kunci AWS KMS ECDSA P-256 yang dikelola. Kunci privat tidak pernah meninggalkan AWS. Kunci publik diterbitkan di <a>/parkproof-public-key.pem</a> untuk siapa saja (dewan kota, pengadilan, asuransi) memverifikasi rantai bukti menggunakan <code>openssl dgst</code> — lihat lampiran di PDF yang diekspor untuk langkah demi langkah.",
+    "verifyLinkLabel": "Lihat cara memverifikasi catatan →",
     "contactHeader": "Kontak + keluhan",
     "contactCopy": "Untuk pertanyaan atau untuk menggunakan hakmu di luar kontrol dalam aplikasi, email <a>hello@parkproof.com.au</a>.",
     "complaintCopy": "Tidak puas dengan respons kami? Kamu bisa mengeluh ke <a>Office of the Australian Information Commissioner (OAIC)</a>."

@@ -403,6 +403,7 @@
     "photosCopy": "Le foto vengono ridimensionate a ≤1200px e ricodificate come JPEG con qualità 0.82 sul tuo dispositivo prima di lasciare il browser. La cattura originale ad alta risoluzione non lascia mai il tuo telefono.",
     "signingHeader": "Firma crittografica",
     "signingCopy": "Quando accedi (o resti anonimo — entrambi funzionano), ogni sessione viene firmata da una chiave ECDSA P-256 gestita da AWS KMS. La chiave privata non lascia mai AWS. La chiave pubblica è pubblicata su <a>/parkproof-public-key.pem</a> affinché chiunque (un comune, un tribunale, un assicuratore) possa verificare la catena di prove con <code>openssl dgst</code> — vedi l'appendice in qualunque PDF esportato per la procedura passo-passo.",
+    "verifyLinkLabel": "Vedi come verificare un record →",
     "contactHeader": "Contatti + reclami",
     "contactCopy": "Per domande o per esercitare i tuoi diritti al di fuori dei controlli in-app, scrivi a <a>hello@parkproof.com.au</a>.",
     "complaintCopy": "Insoddisfatto della nostra risposta? Puoi presentare reclamo all'<a>Office of the Australian Information Commissioner (OAIC)</a>."

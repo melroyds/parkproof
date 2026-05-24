@@ -4,6 +4,21 @@ interface Props {
   onBack: () => void
 }
 
+// /verify lives at site root with per-locale subdirectories
+// (/verify/, /verify/ko/, /verify/zh-CN/, etc). English is the default
+// at /verify/; other locales get their own subdir. Compute the right
+// URL for the current user's UI language so the link goes straight
+// to a page they can read.
+function verifyUrlForLocale(lang: string): string {
+  // Strip region tag for matching ('en-AU' -> 'en'), keep full tag
+  // for the multi-tag locales we actually ship ('zh-CN').
+  const supported = ['en', 'zh-CN', 'vi', 'id', 'ko', 'it', 'el', 'hi', 'pa']
+  const exact = supported.find((l) => l === lang)
+  const primary = supported.find((l) => l === lang.split('-')[0])
+  const target = exact || primary || 'en'
+  return target === 'en' ? '/verify/' : `/verify/${target}/`
+}
+
 /**
  * Plain-English privacy policy, in-app. Renders the same content whether
  * the user is signed in or not (anonymous mode still uses Claude + Nominatim).
@@ -12,7 +27,8 @@ interface Props {
  * not a separate marketing page.
  */
 export default function PrivacyPolicy({ onBack }: Props) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
+  const verifyHref = verifyUrlForLocale(i18n.language)
   const formattedDate = new Date().toLocaleDateString('en-AU', {
     day: 'numeric',
     month: 'long',
@@ -141,17 +157,30 @@ export default function PrivacyPolicy({ onBack }: Props) {
             <Trans
               i18nKey="privacy.signingCopy"
               components={{
+                // PEM lives at site ROOT (/parkproof-public-key.pem),
+                // not under /app/. The deploy.sh layering step copies
+                // it into dist/ alongside the marketing landing so the
+                // canonical URL referenced in the PDF + /verify page
+                // resolves correctly.
                 a: (
                   <a
-                    // Follows Vite's base (post-cutover: /app/). Without
-                    // this, the PEM 404s on the live site.
-                    href={`${import.meta.env.BASE_URL}parkproof-public-key.pem`}
+                    href="/parkproof-public-key.pem"
                     className="text-brand-700 hover:text-brand-800 underline break-all"
                   />
                 ),
                 code: <code className="font-mono text-xs" />,
               }}
             />
+          </p>
+          <p className="mt-3">
+            <a
+              href={verifyHref}
+              target="_blank"
+              rel="noreferrer"
+              className="text-brand-700 hover:text-brand-800 underline font-medium"
+            >
+              {t('privacy.verifyLinkLabel')}
+            </a>
           </p>
         </Section>
 

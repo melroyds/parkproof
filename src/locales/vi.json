@@ -397,6 +397,7 @@
     "photosCopy": "Ảnh được thay đổi kích thước xuống ≤1200px và mã hoá lại thành JPEG chất lượng 0.82 ngay trên thiết bị của bạn trước khi rời khỏi trình duyệt. Ảnh gốc độ phân giải cao không bao giờ rời khỏi điện thoại.",
     "signingHeader": "Ký bằng mã hoá",
     "signingCopy": "Khi bạn đăng nhập (hoặc giữ ẩn danh — cả hai đều được), mỗi phiên được ký bằng khoá ECDSA P-256 do AWS KMS quản lý. Khoá riêng tư không bao giờ rời khỏi AWS. Khoá công khai được công bố tại <a>/parkproof-public-key.pem</a> để bất cứ ai (hội đồng địa phương, toà án, công ty bảo hiểm) có thể xác minh chuỗi bằng chứng bằng <code>openssl dgst</code> — xem phụ lục trong mọi PDF đã xuất để biết hướng dẫn từng bước.",
+    "verifyLinkLabel": "Xem cách xác minh một bản ghi →",
     "contactHeader": "Liên hệ + khiếu nại",
     "contactCopy": "Nếu có thắc mắc hoặc muốn thực thi quyền của bạn ngoài các điều khiển trong ứng dụng, gửi email tới <a>hello@parkproof.com.au</a>.",
     "complaintCopy": "Không hài lòng với phản hồi của chúng tôi? Bạn có thể khiếu nại lên <a>Văn phòng Uỷ viên Thông tin Úc (OAIC)</a>."
