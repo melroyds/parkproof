@@ -18,6 +18,7 @@ import FeedbackModal from './components/FeedbackModal'
 import LandingFeatures from './components/LandingFeatures'
 import AboutFeatures from './components/AboutFeatures'
 import LanguageSelector from './components/LanguageSelector'
+import BrandMark from './components/BrandMark'
 import Icon from './components/Icon'
 import LoadingProgress from './components/LoadingProgress'
 import { refreshInterpretation, translateSign } from './lib/claude'
@@ -75,6 +76,32 @@ function App() {
   const auth = useAuth()
   const { t } = useTranslation()
 
+  // OAuth federation callback splash. When Apple / Google sign-in completes,
+  // the browser lands here with ?code=<auth-code>&state=<csrf-token> in the
+  // URL. The token exchange + refresh runs in the useEffect below, which
+  // takes a beat. Previously, that beat rendered the default home view —
+  // first-time visitors briefly saw the marketing landing during their own
+  // sign-in flow, returning users saw their session card flash, both of
+  // which read as broken.
+  //
+  // We detect callback state at INITIAL render (lazy useState initializer)
+  // so the very first paint is the splash, not the wrong view. The
+  // useEffect below releases the splash on completion (success OR failure
+  // — we never want to strand the user on a loading screen).
+  const [oauthCallbackPending, setOauthCallbackPending] = useState(() => {
+    if (typeof window === 'undefined') return false
+    try {
+      const params = new URLSearchParams(window.location.search)
+      // Both params present on Cognito Hosted UI redirects. Either alone is
+      // suspicious (probably a manual URL edit) but we still show the splash
+      // to be safe — handleFederatedCallback will no-op gracefully if there's
+      // nothing to exchange.
+      return params.has('code') || params.has('state')
+    } catch {
+      return false
+    }
+  })
+
   // Hooks must run unconditionally on every render — keep these above the
   // view-name early-returns. The home view consumes them; non-home views
   // pay a negligible cost (one localStorage read + a 30s interval).
@@ -113,6 +140,13 @@ function App() {
         }
       } catch (err) {
         console.warn('[auth] federated callback failed:', err)
+      } finally {
+        // Always release the splash, even on error — leaving the user
+        // stranded on a loading screen is worse than dropping them on
+        // the home view with a stale ?code= in the URL. The auth context
+        // will still be unauthenticated in the error case, so the home
+        // view will surface its normal sign-in CTA.
+        setOauthCallbackPending(false)
       }
     })()
     // Mount-only — refresh is stable across renders for our purposes.
@@ -302,6 +336,22 @@ function App() {
     } catch (err) {
       console.warn('[storage] could not end session:', err)
     }
+  }
+
+  // OAuth federation callback splash — first paint when ?code=/?state=
+  // are present, replaces what would otherwise be a brief flash of the
+  // home view (marketing landing for first-time visitors, session card
+  // for returning users) while the token exchange runs. Cleared in the
+  // useEffect above's `finally` so callback failures don't strand here.
+  if (oauthCallbackPending) {
+    return (
+      <main className="min-h-screen flex flex-col items-center justify-center p-6 text-center">
+        <BrandMark className="w-20 h-20 mb-5 animate-pulse" />
+        <h2 className="font-display text-2xl font-extrabold text-ink-900">
+          {t('auth.signingIn')}
+        </h2>
+      </main>
+    )
   }
 
   if (view.name === 'scan') {

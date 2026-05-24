@@ -89,3 +89,26 @@ h1, h2, h3, h4, .font-display {
   font-family: var(--font-display);
   letter-spacing: -0.015em;
 }
+
+/* ─── Reduced motion ──────────────────────────────────────────────
+   Honour the user's OS-level "reduce motion" preference. Strips
+   animations and long transitions across the entire app — covers
+   Tailwind's transition-* utilities, the SW update banner pulse,
+   the loading-progress dot pulse, hover scale effects on buttons,
+   any future @keyframes we add. Keeps a 0.01ms duration rather than
+   0 so transitionend / animationend events still fire (some libs
+   listen for them as completion signals).
+
+   Carve-out: scroll-behavior is left as-is because smooth-scroll is
+   navigational, not decorative — assistive tech generally wants it.
+*/
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
