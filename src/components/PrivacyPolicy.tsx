@@ -68,6 +68,38 @@ export default function PrivacyPolicy({ onBack }: Props) {
           </ul>
         </Section>
 
+        <Section title={t('privacy.federationHeader')}>
+          <p>{t('privacy.federationCopy1')}</p>
+          <p>{t('privacy.federationCopy2')}</p>
+          <p>
+            <Trans
+              i18nKey="privacy.federationCopy3"
+              // Two named link components — Trans replaces <apple>…</apple>
+              // and <google>…</google> in the translated string with these
+              // anchor elements. Lets the JSON copy carry inline links
+              // without each locale needing different markup.
+              components={{
+                apple: (
+                  <a
+                    href="https://account.apple.com"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-brand-700 hover:text-brand-800 underline"
+                  />
+                ),
+                google: (
+                  <a
+                    href="https://myaccount.google.com"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-brand-700 hover:text-brand-800 underline"
+                  />
+                ),
+              }}
+            />
+          </p>
+        </Section>
+
         <Section title={t('privacy.locationHeader')}>
           <p>
             <Trans i18nKey="privacy.locationCopy" components={{ strong: <strong /> }} />
