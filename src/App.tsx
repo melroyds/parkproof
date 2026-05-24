@@ -158,30 +158,12 @@ function App() {
   // Keyed on user-id so the sync fires exactly once per sign-in; the lint
   // wants the whole `auth.user` object on the dep list, but that would
   // re-fire on every refresh() call (unnecessary).
-  //
-  // We ALSO bump `activesVersion` after the sync settles (success or failure)
-  // AND on sign-out. Both are inexpensive forced re-derives of the home-view
-  // counts. Without this, the "X past sessions" label sits stale until the
-  // next 30s `useNow` tick: the user signs in, cloud sessions land in
-  // localStorage, but the visible count doesn't move — reads as broken.
   const userId = auth.user?.userId
   useEffect(() => {
-    if (!userId) {
-      // Sign-out path: local data is unchanged (anonymous-first design keeps
-      // the local copy as source of truth), but the home view may have been
-      // showing cloud-merged counts. Bump so the next render re-reads.
-      setActivesVersion((v) => v + 1)
-      return
-    }
-    void performInitialSync()
-      .catch((err) => {
-        console.warn('[sync] initial sync failed:', err)
-      })
-      .finally(() => {
-        // Force a re-derive of activeSessions + sessionCount so any cloud
-        // rows that just landed in localStorage are reflected immediately.
-        setActivesVersion((v) => v + 1)
-      })
+    if (!userId) return
+    void performInitialSync().catch((err) => {
+      console.warn('[sync] initial sync failed:', err)
+    })
   }, [userId])
 
   const handleCapture = async (
@@ -601,15 +583,7 @@ function App() {
   //  (a) the active-session card's countdown stays live without manual refresh
   //  (b) when an active session crosses its expiry, it falls out of the
   //      filter and the card disappears on the next tick
-  // `sessionCount` is bound to `activesVersion` so the "X past sessions"
-  // label updates immediately when localStorage is mutated — saves, deletes,
-  // end-session stamps, and the post-sign-in cloud sync. Without the dep,
-  // the label would sit stale until the next useNow tick (up to 30s).
-  const sessionCount = useMemo(
-    () => loadSessions().length,
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [activesVersion],
-  )
+  const sessionCount = loadSessions().length
   const primaryActive = activeSessions[0]
 
   return (
