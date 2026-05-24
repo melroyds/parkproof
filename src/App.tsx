@@ -654,30 +654,23 @@ function App() {
             callout). It includes its own scan-button CTA, so we DON'T
             render the standard scan button below for first-time visitors. */}
         {!primaryActive && sessionCount === 0 ? (
-          <>
-            <LandingFeatures onScanCta={() => setView({ name: 'scan' })} />
-            {/* Cross-device sign-in for returning users on a NEW device.
-                Without this, anyone who already has a ParkProof account
-                (and ~20 saved sessions in the cloud) is stranded on the
-                landing — there's no path to sign in without first
-                creating a dummy session to leave the first-time-visitor
-                state. Real fatal flaw caught the night before launch.
-
-                Visual hierarchy: kept as a subtle underlined link rather
-                than a button so the gradient "Scan a parking sign" CTA
-                inside LandingFeatures still owns the primary action.
-                The link reads as "by the way, this exists" rather than
-                "make a decision right now." */}
-            {auth.configured && !auth.user && (
-              <button
-                type="button"
-                onClick={() => setView({ name: 'signin' })}
-                className="mt-8 text-sm text-ink-600 hover:text-ink-900 underline underline-offset-4 decoration-paper-300 hover:decoration-ink-600 transition-colors"
-              >
-                {t('home.signInToSync')}
-              </button>
-            )}
-          </>
+          <LandingFeatures
+            onScanCta={() => setView({ name: 'scan' })}
+            // Only pass the sign-in handler when Cognito is wired in AND
+            // the user isn't already signed in. LandingFeatures renders
+            // the secondary CTA conditionally on this prop being defined,
+            // so the returning-user-on-a-new-device cohort can reach the
+            // sign-in screen directly from the first-time-visitor surface.
+            // First moved this to a bottom-of-screen underlined link in
+            // the previous commit, then realised the bottom of the scroll
+            // is where things go to die. Hoisting it next to the primary
+            // CTA so it's actually discoverable.
+            onSignInCta={
+              auth.configured && !auth.user
+                ? () => setView({ name: 'signin' })
+                : undefined
+            }
+          />
         ) : (
           <>
             <button

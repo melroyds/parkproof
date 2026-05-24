@@ -28,7 +28,21 @@ import Icon from './Icon'
  * iPhone widths because the illustration is iconic and stays legible at
  * small sizes.
  */
-export default function LandingFeatures({ onScanCta }: { onScanCta: () => void }) {
+interface Props {
+  onScanCta: () => void
+  /**
+   * Optional sign-in handler. When provided, renders a secondary white
+   * button directly below the gradient scan CTA labelled "Sign in to
+   * sync". App.tsx only passes this for first-time visitors who AREN'T
+   * already signed in — the returning-user / signed-in cases handle
+   * their own auth surfaces elsewhere. Closes the "I have an account
+   * on another device and can't reach the sign-in screen" gap that
+   * was hidden by the first-time-visitor short-circuit before launch.
+   */
+  onSignInCta?: () => void
+}
+
+export default function LandingFeatures({ onScanCta, onSignInCta }: Props) {
   const { t } = useTranslation()
 
   const bullets: { key: string }[] = [
@@ -113,6 +127,31 @@ export default function LandingFeatures({ onScanCta }: { onScanCta: () => void }
         <Icon name="camera" className="w-6 h-6" strokeWidth={2} />
         {t('landing.cta')}
       </button>
+
+      {/* ── Secondary sign-in CTA. Renders ONLY for first-time visitors
+          who aren't already signed in (App.tsx gates the prop). Returning
+          users on a new device land here, see this button right under the
+          primary scan CTA, and can reach their cloud-synced sessions in
+          one tap instead of being forced to create a dummy session first.
+
+          Visual hierarchy: white-on-paper, smaller padding than the
+          gradient above. The gradient still wins the eye — this reads
+          as "second option" without disappearing.
+
+          Reuses the existing `home.signInToSync` i18n key (translated in
+          all 9 locales) to avoid translation churn. "Sign in to sync
+          across devices" wraps slightly long on Hindi/Punjabi in some
+          viewports; if that becomes a real visual problem we can add a
+          shorter `landing.signInCta` key later. */}
+      {onSignInCta && (
+        <button
+          type="button"
+          onClick={onSignInCta}
+          className="w-full bg-white hover:bg-paper-50 active:bg-paper-100 border border-paper-300 text-ink-800 font-semibold py-3 rounded-2xl transition-colors mb-3"
+        >
+          {t('home.signInToSync')}
+        </button>
+      )}
 
       {/* Reassurance line under the CTA — small shield + line. Echoes the
           civic, "we're on your side" tone of the brand. */}
