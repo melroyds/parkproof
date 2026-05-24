@@ -51,7 +51,23 @@ function ddb() {
   return _ddb
 }
 function s3() {
-  if (!_s3) _s3 = new S3Client({ region: REGION })
+  if (!_s3) {
+    // `requestChecksumCalculation` + `responseChecksumValidation` set to
+    // 'WHEN_REQUIRED' suppress the "default integrity protections" added in
+    // @aws-sdk/client-s3 v3.729+, which would otherwise inject the query
+    // parameter `x-amz-checksum-mode=ENABLED` into every presigned URL.
+    // That parameter triggers S3 CORS preflight failures in browsers — the
+    // response on the actual GET arrives WITHOUT `Access-Control-Allow-Origin`,
+    // even though the bucket's CORS rule explicitly permits the origin.
+    // Symptom: cross-device PDF export shows "Image could not be embedded"
+    // for every photo, because materializeRemotePhotos can't fetch them.
+    // We don't need checksums for evidence photos (jsPDF re-encodes anyway).
+    _s3 = new S3Client({
+      region: REGION,
+      requestChecksumCalculation: 'WHEN_REQUIRED',
+      responseChecksumValidation: 'WHEN_REQUIRED',
+    })
+  }
   return _s3
 }
 function cognito() {
