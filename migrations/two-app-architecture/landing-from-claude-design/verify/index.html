@@ -1,0 +1,304 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Verify a ParkProof evidence record — ParkProof</title>
+<meta name="description" content="Step-by-step openssl walkthrough for verifying that a ParkProof evidence PDF hasn't been altered since it was saved. Cryptographic signing via AWS KMS ECDSA P-256.">
+<meta name="robots" content="index, follow">
+<link rel="icon" href="../assets/parkproof-icon.svg" type="image/svg+xml">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700;9..144,800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    --brand-50:  #EAEFFF;
+    --brand-100: #CDD9FF;
+    --brand-500: #275BFF;
+    --brand-700: #173EB3;
+    --ink-500:   #5C6680;
+    --ink-700:   #2D374F;
+    --ink-900:   #1A2233;
+    --paper-100: #F2F4F7;
+    --paper-300: #DDE4EE;
+    --sage:      #C8DCCF;
+    --emerald:   #10B981;
+    --red:       #EF4444;
+    --font-display: 'Fraunces', Georgia, serif;
+    --font-sans:    'Inter', system-ui, sans-serif;
+    --font-mono:    'JetBrains Mono', ui-monospace, 'Cascadia Code', monospace;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    font-family: var(--font-sans);
+    color: var(--ink-900);
+    background: var(--sage);
+    font-size: 16px;
+    line-height: 1.55;
+    min-height: 100vh;
+  }
+  .wrap {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 32px 24px 80px;
+  }
+  nav.top {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 56px;
+  }
+  nav.top img { width: 32px; height: 32px; border-radius: 8px; }
+  nav.top a.brand {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: 18px;
+    color: var(--ink-900);
+    text-decoration: none;
+    letter-spacing: -0.01em;
+  }
+  nav.top .sep { color: var(--ink-500); font-size: 14px; }
+  nav.top a.back {
+    color: var(--brand-500);
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 600;
+  }
+  nav.top a.back:hover { text-decoration: underline; }
+
+  .eyebrow {
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--brand-500);
+    margin-bottom: 14px;
+  }
+  h1 {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: clamp(34px, 5vw, 48px);
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+    margin-bottom: 20px;
+    color: var(--ink-900);
+  }
+  h1 .accent { color: var(--brand-500); font-style: italic; }
+  .lede {
+    font-size: clamp(17px, 1.8vw, 19px);
+    line-height: 1.55;
+    color: var(--ink-700);
+    margin-bottom: 36px;
+    max-width: 620px;
+  }
+
+  h2 {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: clamp(22px, 2.8vw, 26px);
+    color: var(--ink-900);
+    margin-top: 48px;
+    margin-bottom: 14px;
+    letter-spacing: -0.01em;
+  }
+  p { margin-bottom: 14px; color: var(--ink-700); }
+  p.small { font-size: 14px; color: var(--ink-500); }
+
+  ol, ul { padding-left: 22px; margin-bottom: 18px; }
+  li { margin-bottom: 10px; color: var(--ink-700); }
+  li code { font-size: 0.92em; }
+
+  code {
+    font-family: var(--font-mono);
+    font-size: 0.9em;
+    background: var(--brand-50);
+    color: var(--ink-900);
+    padding: 1px 6px;
+    border-radius: 4px;
+  }
+
+  pre {
+    background: var(--ink-900);
+    color: #E5E8EE;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    line-height: 1.6;
+    padding: 18px 20px;
+    border-radius: 12px;
+    overflow-x: auto;
+    margin: 18px 0 24px;
+    -webkit-overflow-scrolling: touch;
+  }
+  pre code {
+    background: transparent;
+    color: inherit;
+    padding: 0;
+    font-size: inherit;
+  }
+  pre .comment { color: #5C6680; }
+  pre .ok { color: #6EE7B7; }
+  pre .fail { color: #FCA5A5; }
+
+  .callout {
+    background: white;
+    border: 1px solid var(--paper-300);
+    border-left: 3px solid var(--brand-500);
+    border-radius: 10px;
+    padding: 14px 18px;
+    margin: 20px 0;
+    font-size: 14px;
+    color: var(--ink-700);
+  }
+  .callout strong { color: var(--ink-900); }
+
+  .grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin: 18px 0 28px;
+  }
+  .grid-2 .card {
+    background: white;
+    border: 1px solid var(--paper-300);
+    border-radius: 12px;
+    padding: 16px 18px;
+  }
+  .grid-2 .card h3 {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 15px;
+    margin-bottom: 6px;
+    color: var(--ink-900);
+  }
+  .grid-2 .card h3 .label { font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 99px; vertical-align: middle; margin-left: 8px; letter-spacing: 0.04em; }
+  .grid-2 .card.ok h3 .label { background: #D1FADF; color: #047857; }
+  .grid-2 .card.fail h3 .label { background: #FEE2E2; color: #B91C1C; }
+  .grid-2 .card p { font-size: 13px; margin: 0; color: var(--ink-700); }
+
+  @media (max-width: 560px) {
+    .grid-2 { grid-template-columns: 1fr; }
+    pre { font-size: 12px; padding: 14px 14px; }
+  }
+
+  a.link {
+    color: var(--brand-700);
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 2px;
+  }
+  a.link:hover { color: var(--brand-500); }
+
+  footer {
+    margin-top: 64px;
+    padding-top: 24px;
+    border-top: 1px solid var(--paper-300);
+    font-size: 13px;
+    color: var(--ink-500);
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 10px;
+  }
+  footer a { color: var(--brand-700); text-decoration: none; }
+  footer a:hover { text-decoration: underline; }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <nav class="top">
+    <img src="../assets/parkproof-icon.svg" alt="">
+    <a href="/" class="brand">ParkProof</a>
+    <span class="sep">·</span>
+    <a href="/" class="back">← Back to ParkProof</a>
+  </nav>
+
+  <div class="eyebrow">Verification</div>
+  <h1>Verify a ParkProof <span class="accent">evidence record</span>.</h1>
+  <p class="lede">
+    Every ParkProof evidence PDF carries a cryptographic signature appendix. This page is the public, offline walkthrough for anyone — a council officer, an insurer, a court clerk, or the driver themselves — to confirm that the record hasn't been altered since the moment it was saved.
+  </p>
+
+  <div class="callout">
+    <strong>Honest framing.</strong> The signature proves <em>integrity</em>: the bytes inside this record are identical to the bytes signed at scan time. It does not prove the record's <em>truthfulness</em> (the AI could have read the sign incorrectly), nor does it determine the legal weight of the evidence. That's a separate judgement made by whoever's reviewing it.
+  </div>
+
+  <h2>What you're verifying</h2>
+  <p>
+    Each ParkProof session has a <strong>payload</strong> (a small text file containing the canonical session metadata plus SHA-256 hashes of the sign + car photos) and a <strong>signature</strong> (the payload signed with an AWS KMS-managed ECDSA P-256 private key that never leaves AWS). Both are printed in the signature appendix of every exported evidence PDF.
+  </p>
+  <p>
+    The <strong>public key</strong> needed to verify the signature is published at <a class="link" href="/parkproof-public-key.pem"><code>/parkproof-public-key.pem</code></a> — open it in a browser to confirm it loads, then save it locally.
+  </p>
+
+  <h2>What you'll need</h2>
+  <ul>
+    <li><strong>The evidence PDF</strong> — supplied by the person disputing or producing the record.</li>
+    <li><strong><code>openssl</code></strong> — bundled with macOS and most Linux distros; on Windows, available via Git Bash, WSL, or the standalone OpenSSL build.</li>
+    <li><strong>About 60 seconds.</strong></li>
+  </ul>
+
+  <h2>Step-by-step</h2>
+
+  <p>Open the evidence PDF, scroll to the <strong>"Signature appendix"</strong> page at the back. You'll see three blocks of text: <code>payload</code>, <code>sig.base64</code>, and a reference to the public key URL. Save the first two to files on your machine, then run the verification:</p>
+
+  <pre><span class="comment"># 1. Save the payload block from the PDF appendix to payload.txt
+#    (copy-paste exactly; preserve line endings).
+# 2. Save the base64 signature block to sig.base64.
+# 3. Fetch the public key.</span>
+curl -O https://www.parkproof.com.au/parkproof-public-key.pem
+
+<span class="comment"># 4. Decode the base64 signature to raw bytes.</span>
+base64 -d sig.base64 > sig.bin
+
+<span class="comment"># 5. Run the verification.</span>
+openssl dgst -sha256 -verify parkproof-public-key.pem \
+  -signature sig.bin payload.txt</pre>
+
+  <h2>What the result means</h2>
+
+  <div class="grid-2">
+    <div class="card ok">
+      <h3>Verified <span class="label">PASS</span></h3>
+      <p><code>Verified OK</code> — the payload in your PDF is byte-identical to what ParkProof signed at scan time. The sign rules, GPS, timestamp, address, and photo hashes have not been altered since.</p>
+    </div>
+    <div class="card fail">
+      <h3>Failure <span class="label">FAIL</span></h3>
+      <p><code>Verification failure</code> — the payload, the signature, or both have been modified since the record was saved. The PDF may have been edited, the appendix tampered with, or copy-paste introduced whitespace differences. Repeat the copy carefully before drawing conclusions.</p>
+    </div>
+  </div>
+
+  <h2>Beyond "did the bytes change?"</h2>
+  <p>
+    A successful verification confirms <em>integrity</em>. It does not confirm:
+  </p>
+  <ul>
+    <li><strong>That the AI read the sign correctly.</strong> The ParkProof scan is a machine read of a parking sign, and machines can be wrong. The verdict text and rules in the record are the AI's best read at scan time, not ground truth.</li>
+    <li><strong>That the photos depict what the person says they depict.</strong> The signature proves the photos haven't been altered <em>since saving</em>, not that the photos themselves were honestly captured.</li>
+    <li><strong>Any legal outcome.</strong> Whether the evidence supports an appeal, a refund, or a court case is the reviewer's call. ParkProof is a tool, not a lawyer.</li>
+  </ul>
+
+  <h2>Why this exists</h2>
+  <p>
+    Most parking apps that produce "evidence" produce a screenshot. Screenshots have no integrity story — they could have been edited at any point between when they were taken and when they were sent. The cryptographic signature is the difference between <em>"here's what I saw"</em> and <em>"here's what I saw, and here's mathematical proof I haven't changed it since."</em>
+  </p>
+  <p>
+    The public key is published so the verification is fully offline — you do not need to trust ParkProof, contact our servers, or run our app to confirm the integrity claim. The verification can be performed years from now even if ParkProof is no longer maintained, as long as <code>openssl</code> still exists.
+  </p>
+
+  <h2>Questions?</h2>
+  <p>
+    Email <a class="link" href="mailto:hello@parkproof.com.au">hello@parkproof.com.au</a>. We answer.
+  </p>
+
+  <footer>
+    <span>parkproof.com.au · verification page</span>
+    <span><a href="/parkproof-public-key.pem">/parkproof-public-key.pem</a> · <a href="/">Back to ParkProof</a></span>
+  </footer>
+</div>
+
+</body>
+</html>
