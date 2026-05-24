@@ -4,6 +4,7 @@ import type { TFunction } from 'i18next'
 import type { AppealDraft, ParkingSession } from '../types'
 import { ACCURACY_USABLE_M, formatAccuracy } from './accuracy'
 import { sessionTimezone } from './timezone'
+import { registerPdfFonts } from './pdf-fonts'
 
 const MARGIN = 40
 
@@ -152,6 +153,7 @@ function addImageWithOverlayCaption(
   y: number,
   caption: string[],
   t: TFunction,
+  activeFont: string,
   maxHeight = 300,
 ): number {
   const pageWidth = doc.internal.pageSize.getWidth()
@@ -190,7 +192,7 @@ function addImageWithOverlayCaption(
     }
 
     doc.setTextColor(255, 255, 255)
-    doc.setFont('helvetica', 'normal')
+    doc.setFont(activeFont, 'normal')
     doc.setFontSize(9)
     caption.forEach((line, i) => {
       doc.text(line, captionX + padding, captionY + padding + (i + 1) * lineHeight - 2)
@@ -200,7 +202,7 @@ function addImageWithOverlayCaption(
     return y + h
   } catch {
     doc.setFontSize(10)
-    doc.setFont('helvetica', 'italic')
+    doc.setFont(activeFont, 'italic')
     doc.text(t('pdf.common.imageEmbedFailed'), MARGIN, y + 14)
     return y + 20
   }
@@ -211,6 +213,7 @@ function addImageFitted(
   dataUrl: string,
   y: number,
   t: TFunction,
+  activeFont: string,
   maxHeight = 300,
 ): number {
   const pageWidth = doc.internal.pageSize.getWidth()
@@ -224,27 +227,39 @@ function addImageFitted(
     return y + h
   } catch {
     doc.setFontSize(10)
-    doc.setFont('helvetica', 'italic')
+    doc.setFont(activeFont, 'italic')
     doc.text(t('pdf.common.imageEmbedFailed'), MARGIN, y + 14)
     return y + 20
   }
 }
 
 // ─── Main entry ─────────────────────────────────────────────────────────────
-export function downloadPdf(session: ParkingSession, t: TFunction): void {
+export function downloadPdf(
+  session: ParkingSession,
+  t: TFunction,
+  locale: string,
+): void {
   const doc = new jsPDF({ unit: 'pt', format: 'a4' })
+  // Register the locale's Noto Sans font (if needed) and get back the
+  // family name to thread through all setFont() calls. For en/it/id this
+  // returns 'helvetica' — same as before. For zh-CN / ko / vi / el / hi /
+  // pa it returns the registered Noto family, enabling glyph rendering.
+  // Caller MUST have prefetched the font (see prefetchPdfFont in
+  // pdf-fonts.ts); otherwise this returns 'helvetica' with a console
+  // warning and the PDF renders with missing glyphs.
+  const activeFont = registerPdfFonts(doc, locale)
   const timezone = timezoneFor(session)
   let y = MARGIN
 
   // Title
   doc.setFontSize(22)
-  doc.setFont('helvetica', 'bold')
+  doc.setFont(activeFont, 'bold')
   doc.setTextColor(15, 23, 42)
   doc.text(t('pdf.evidence.title'), MARGIN, y)
   y += 28
 
   doc.setFontSize(10)
-  doc.setFont('helvetica', 'normal')
+  doc.setFont(activeFont, 'normal')
   doc.setTextColor(100)
   doc.text(t('pdf.evidence.sessionId', { id: session.id }), MARGIN, y)
   y += 14
@@ -326,7 +341,11 @@ export function downloadPdf(session: ParkingSession, t: TFunction): void {
     startY: y,
     head: [[t('pdf.common.fieldHeader'), t('pdf.common.valueHeader')]],
     body,
-    styles: { fontSize: 10, cellPadding: 6, valign: 'top' },
+    // font: activeFont threads the locale's registered Noto Sans into
+    // autoTable's cell rendering. Without this autoTable falls back to its
+    // default helvetica regardless of what we setFont() globally, and the
+    // table cells render as missing-glyph boxes in non-Latin locales.
+    styles: { font: activeFont, fontSize: 10, cellPadding: 6, valign: 'top' },
     headStyles: { fillColor: [15, 23, 42] },
     columnStyles: { 0: { fontStyle: 'bold', cellWidth: 130 } },
     margin: { left: MARGIN, right: MARGIN },
@@ -341,12 +360,12 @@ export function downloadPdf(session: ParkingSession, t: TFunction): void {
     if (session.ambient_photo) {
       y = ensureSpace(doc, y, 320)
       doc.setFontSize(13)
-      doc.setFont('helvetica', 'bold')
+      doc.setFont(activeFont, 'bold')
       doc.text(t('pdf.evidence.ambientPhotoHeader'), MARGIN, y)
       y += 14
-      y = addImageFitted(doc, session.ambient_photo, y, t) + 6
+      y = addImageFitted(doc, session.ambient_photo, y, t, activeFont) + 6
       doc.setFontSize(9)
-      doc.setFont('helvetica', 'italic')
+      doc.setFont(activeFont, 'italic')
       doc.setTextColor(80)
       doc.text(t('pdf.evidence.ambientPhotoCaption'), MARGIN, y, { maxWidth: doc.internal.pageSize.getWidth() - 2 * MARGIN })
       doc.setTextColor(20)
@@ -356,7 +375,7 @@ export function downloadPdf(session: ParkingSession, t: TFunction): void {
       // line so the absence is documented rather than ambiguous.
       y = ensureSpace(doc, y, 60)
       doc.setFontSize(11)
-      doc.setFont('helvetica', 'italic')
+      doc.setFont(activeFont, 'italic')
       doc.setTextColor(80)
       doc.text(t('pdf.evidence.noAmbientCaptured'), MARGIN, y, { maxWidth: doc.internal.pageSize.getWidth() - 2 * MARGIN })
       doc.setTextColor(20)
@@ -365,17 +384,17 @@ export function downloadPdf(session: ParkingSession, t: TFunction): void {
   } else if (session.sign_photo) {
     y = ensureSpace(doc, y, 320)
     doc.setFontSize(13)
-    doc.setFont('helvetica', 'bold')
+    doc.setFont(activeFont, 'bold')
     doc.text(t('pdf.evidence.signPhotoHeader'), MARGIN, y)
     y += 14
-    y = addImageFitted(doc, session.sign_photo, y, t) + 18
+    y = addImageFitted(doc, session.sign_photo, y, t, activeFont) + 18
   }
 
   // Car photo with caption overlay
   if (session.car_photo) {
     y = ensureSpace(doc, y, 320)
     doc.setFontSize(13)
-    doc.setFont('helvetica', 'bold')
+    doc.setFont(activeFont, 'bold')
     doc.text(t('pdf.evidence.carPhotoHeader'), MARGIN, y)
     y += 14
 
@@ -389,7 +408,7 @@ export function downloadPdf(session: ParkingSession, t: TFunction): void {
     }
     caption.push(fmtLocal(session.arrived_at, timezone))
 
-    y = addImageWithOverlayCaption(doc, session.car_photo, y, caption, t) + 18
+    y = addImageWithOverlayCaption(doc, session.car_photo, y, caption, t, activeFont) + 18
   }
 
   // Low-accuracy GPS disclaimer (when relevant)
@@ -401,10 +420,10 @@ export function downloadPdf(session: ParkingSession, t: TFunction): void {
     doc.setLineWidth(1)
     doc.roundedRect(MARGIN, y, doc.internal.pageSize.getWidth() - 2 * MARGIN, 50, 6, 6, 'FD')
     doc.setFontSize(10)
-    doc.setFont('helvetica', 'bold')
+    doc.setFont(activeFont, 'bold')
     doc.setTextColor(142, 61, 39) // accent-700
     doc.text(t('pdf.evidence.gpsNoticeTitle'), MARGIN + 12, y + 18)
-    doc.setFont('helvetica', 'normal')
+    doc.setFont(activeFont, 'normal')
     doc.setFontSize(9)
     doc.setTextColor(45, 55, 79) // ink-700
     const disclaimer = t('pdf.evidence.gpsNoticeBody', { accuracy: formatAccuracy(acc) })
@@ -422,12 +441,12 @@ export function downloadPdf(session: ParkingSession, t: TFunction): void {
   if (session.note && session.note.trim()) {
     y = ensureSpace(doc, y, 80)
     doc.setFontSize(13)
-    doc.setFont('helvetica', 'bold')
+    doc.setFont(activeFont, 'bold')
     doc.setTextColor(15, 23, 42)
     doc.text(t('pdf.evidence.driverNoteHeader'), MARGIN, y)
     y += 16
     doc.setFontSize(10)
-    doc.setFont('helvetica', 'normal')
+    doc.setFont(activeFont, 'normal')
     doc.setTextColor(45, 55, 79)
     const pageWidth0 = doc.internal.pageSize.getWidth()
     const noteLines = doc.splitTextToSize(
@@ -445,7 +464,7 @@ export function downloadPdf(session: ParkingSession, t: TFunction): void {
   // Statement
   y = ensureSpace(doc, y, 80)
   doc.setFontSize(10)
-  doc.setFont('helvetica', 'italic')
+  doc.setFont(activeFont, 'italic')
   doc.setTextColor(80)
   const statement = t('pdf.evidence.statement')
   const pageWidth = doc.internal.pageSize.getWidth()
@@ -460,7 +479,7 @@ export function downloadPdf(session: ParkingSession, t: TFunction): void {
   // (page 1) is the user's actual deliverable.
   if (isValidSignature(session.signature)) {
     try {
-      drawSignatureAppendix(doc, session.signature, t)
+      drawSignatureAppendix(doc, session.signature, t, activeFont)
     } catch (err) {
       console.warn('[pdf] signature appendix failed, omitting:', err)
     }
@@ -498,19 +517,20 @@ function drawSignatureAppendix(
   doc: jsPDF,
   sig: NonNullable<ParkingSession['signature']>,
   t: TFunction,
+  activeFont: string,
 ): void {
   doc.addPage()
   let y = MARGIN
   const pageWidth = doc.internal.pageSize.getWidth()
 
   doc.setFontSize(18)
-  doc.setFont('helvetica', 'bold')
+  doc.setFont(activeFont, 'bold')
   doc.setTextColor(15, 23, 42)
   doc.text(t('pdf.signature.title'), MARGIN, y)
   y += 26
 
   doc.setFontSize(10)
-  doc.setFont('helvetica', 'normal')
+  doc.setFont(activeFont, 'normal')
   doc.setTextColor(80)
   const intro = t('pdf.signature.intro')
   const introWrapped = doc.splitTextToSize(intro, pageWidth - 2 * MARGIN)
@@ -532,7 +552,7 @@ function drawSignatureAppendix(
         'https://www.parkproof.com.au/parkproof-public-key.pem',
       ],
     ],
-    styles: { fontSize: 9, cellPadding: 5, valign: 'top' },
+    styles: { font: activeFont, fontSize: 9, cellPadding: 5, valign: 'top' },
     headStyles: { fillColor: [15, 23, 42] },
     columnStyles: { 0: { fontStyle: 'bold', cellWidth: 110 } },
     margin: { left: MARGIN, right: MARGIN },
@@ -546,7 +566,7 @@ function drawSignatureAppendix(
   doc.setTextColor(40)
 
   y = ensureSpace(doc, y, 40)
-  doc.setFont('helvetica', 'bold')
+  doc.setFont(activeFont, 'bold')
   doc.setFontSize(10)
   doc.setTextColor(15, 23, 42)
   doc.text(t('pdf.signature.canonicalPayloadHeader'), MARGIN, y)
@@ -563,7 +583,7 @@ function drawSignatureAppendix(
   y += 10
 
   y = ensureSpace(doc, y, 40)
-  doc.setFont('helvetica', 'bold')
+  doc.setFont(activeFont, 'bold')
   doc.setFontSize(10)
   doc.setTextColor(15, 23, 42)
   doc.text(t('pdf.signature.signatureBlobHeader'), MARGIN, y)
@@ -581,7 +601,7 @@ function drawSignatureAppendix(
 
   // Verification instructions
   y = ensureSpace(doc, y, 100)
-  doc.setFont('helvetica', 'bold')
+  doc.setFont(activeFont, 'bold')
   doc.setFontSize(10)
   doc.setTextColor(15, 23, 42)
   doc.text(t('pdf.signature.verifyHeader'), MARGIN, y)
@@ -619,23 +639,25 @@ export function downloadAppealPdf(params: {
   editedLetter: string
   ticketPhoto: string
   t: TFunction
+  locale: string
 }): void {
-  const { session, draft, editedLetter, ticketPhoto, t } = params
+  const { session, draft, editedLetter, ticketPhoto, t, locale } = params
   const doc = new jsPDF({ unit: 'pt', format: 'a4' })
+  const activeFont = registerPdfFonts(doc, locale)
   const timezone = timezoneFor(session)
   const pageWidth = doc.internal.pageSize.getWidth()
   let y = MARGIN
 
   // Title
   doc.setFontSize(18)
-  doc.setFont('helvetica', 'bold')
+  doc.setFont(activeFont, 'bold')
   doc.setTextColor(15, 23, 42)
   doc.text(draft.appeal_subject, MARGIN, y, { maxWidth: pageWidth - 2 * MARGIN })
   y += 32
 
   // Meta
   doc.setFontSize(10)
-  doc.setFont('helvetica', 'normal')
+  doc.setFont(activeFont, 'normal')
   doc.setTextColor(100)
   doc.text(
     t('pdf.appeal.drafted', { when: new Date().toLocaleString('en-AU') }),
@@ -649,7 +671,7 @@ export function downloadAppealPdf(params: {
   // Letter body
   doc.setTextColor(15, 23, 42)
   doc.setFontSize(11)
-  doc.setFont('helvetica', 'normal')
+  doc.setFont(activeFont, 'normal')
   const lines = doc.splitTextToSize(editedLetter, pageWidth - 2 * MARGIN)
   for (const line of lines) {
     y = ensureSpace(doc, y, 14)
@@ -661,7 +683,7 @@ export function downloadAppealPdf(params: {
   // Evidence summary
   y = ensureSpace(doc, y, 200)
   doc.setFontSize(12)
-  doc.setFont('helvetica', 'bold')
+  doc.setFont(activeFont, 'bold')
   doc.text(t('pdf.appeal.supportingEvidence'), MARGIN, y)
   y += 16
 
@@ -698,7 +720,7 @@ export function downloadAppealPdf(params: {
     startY: y,
     head: [[t('pdf.common.fieldHeader'), t('pdf.common.valueHeader')]],
     body,
-    styles: { fontSize: 9, cellPadding: 5, valign: 'top' },
+    styles: { font: activeFont, fontSize: 9, cellPadding: 5, valign: 'top' },
     headStyles: { fillColor: [15, 23, 42] },
     columnStyles: { 0: { fontStyle: 'bold', cellWidth: 110 } },
     margin: { left: MARGIN, right: MARGIN },
@@ -709,10 +731,10 @@ export function downloadAppealPdf(params: {
   // Ticket photo
   y = ensureSpace(doc, y, 300)
   doc.setFontSize(11)
-  doc.setFont('helvetica', 'bold')
+  doc.setFont(activeFont, 'bold')
   doc.text(t('pdf.appeal.ticketPhotoHeader'), MARGIN, y)
   y += 14
-  y = addImageFitted(doc, ticketPhoto, y, t, 260) + 18
+  y = addImageFitted(doc, ticketPhoto, y, t, activeFont, 260) + 18
 
   // Sign photo (appeal PDFs are usually generated from translated sessions —
   // a no-sign session has no rules to appeal against — but guard for the
@@ -720,17 +742,17 @@ export function downloadAppealPdf(params: {
   if (session.sign_photo) {
     y = ensureSpace(doc, y, 300)
     doc.setFontSize(11)
-    doc.setFont('helvetica', 'bold')
+    doc.setFont(activeFont, 'bold')
     doc.text(t('pdf.appeal.signPhotoHeader'), MARGIN, y)
     y += 14
-    y = addImageFitted(doc, session.sign_photo, y, t, 260) + 18
+    y = addImageFitted(doc, session.sign_photo, y, t, activeFont, 260) + 18
   }
 
   // Car photo (if any)
   if (session.car_photo) {
     y = ensureSpace(doc, y, 300)
     doc.setFontSize(11)
-    doc.setFont('helvetica', 'bold')
+    doc.setFont(activeFont, 'bold')
     doc.text(t('pdf.appeal.carPhotoHeader'), MARGIN, y)
     y += 14
 
@@ -744,7 +766,7 @@ export function downloadAppealPdf(params: {
     }
     caption.push(fmtLocal(session.arrived_at, timezone))
 
-    addImageWithOverlayCaption(doc, session.car_photo, y, caption, t, 260)
+    addImageWithOverlayCaption(doc, session.car_photo, y, caption, t, activeFont, 260)
   }
 
   doc.save(`parkproof-appeal-${session.id.slice(0, 8)}.pdf`)
@@ -769,21 +791,26 @@ export interface FullExportPayload {
   notes?: string
 }
 
-export function downloadFullExportPdf(payload: FullExportPayload, t: TFunction): void {
+export function downloadFullExportPdf(
+  payload: FullExportPayload,
+  t: TFunction,
+  locale: string,
+): void {
   const doc = new jsPDF({ unit: 'pt', format: 'a4' })
+  const activeFont = registerPdfFonts(doc, locale)
   const pageWidth = doc.internal.pageSize.getWidth()
 
   // ─── Cover page ───
   let y = MARGIN
 
   doc.setFontSize(24)
-  doc.setFont('helvetica', 'bold')
+  doc.setFont(activeFont, 'bold')
   doc.setTextColor(15, 23, 42)
   doc.text(t('pdf.fullExport.title'), MARGIN, y)
   y += 30
 
   doc.setFontSize(11)
-  doc.setFont('helvetica', 'normal')
+  doc.setFont(activeFont, 'normal')
   doc.setTextColor(80)
   if (payload.account.email) {
     doc.text(t('pdf.fullExport.account', { email: payload.account.email }), MARGIN, y)
@@ -848,7 +875,7 @@ export function downloadFullExportPdf(payload: FullExportPayload, t: TFunction):
       t('pdf.fullExport.summaryColLocation'),
     ]],
     body: summary,
-    styles: { fontSize: 9, cellPadding: 5, valign: 'top' },
+    styles: { font: activeFont, fontSize: 9, cellPadding: 5, valign: 'top' },
     headStyles: { fillColor: [15, 23, 42] },
     columnStyles: {
       0: { fontStyle: 'bold', cellWidth: 24 },
@@ -868,7 +895,7 @@ export function downloadFullExportPdf(payload: FullExportPayload, t: TFunction):
 
     // Section header
     doc.setFontSize(16)
-    doc.setFont('helvetica', 'bold')
+    doc.setFont(activeFont, 'bold')
     doc.setTextColor(15, 23, 42)
     doc.text(
       t('pdf.fullExport.sessionHeader', { n: i + 1, total: payload.sessions.length }),
@@ -888,7 +915,7 @@ export function downloadFullExportPdf(payload: FullExportPayload, t: TFunction):
       const badgeTextWidth = doc.getTextWidth(badgeText)
       doc.roundedRect(MARGIN, y - 10, badgeTextWidth + 16, 16, 8, 8, 'FD')
       doc.setFontSize(8)
-      doc.setFont('helvetica', 'normal')
+      doc.setFont(activeFont, 'normal')
       doc.setTextColor(60, 96, 168) // brand-700
       doc.text(badgeText, MARGIN + 8, y + 1)
       y += 18
@@ -927,7 +954,7 @@ export function downloadFullExportPdf(payload: FullExportPayload, t: TFunction):
       startY: y,
       head: [[t('pdf.common.fieldHeader'), t('pdf.common.valueHeader')]],
       body,
-      styles: { fontSize: 9, cellPadding: 5, valign: 'top' },
+      styles: { font: activeFont, fontSize: 9, cellPadding: 5, valign: 'top' },
       headStyles: { fillColor: [15, 23, 42] },
       columnStyles: { 0: { fontStyle: 'bold', cellWidth: 120 } },
       margin: { left: MARGIN, right: MARGIN },
@@ -942,22 +969,22 @@ export function downloadFullExportPdf(payload: FullExportPayload, t: TFunction):
     if (session.no_sign && session.ambient_photo) {
       y = ensureSpace(doc, y, 220)
       doc.setFontSize(11)
-      doc.setFont('helvetica', 'bold')
+      doc.setFont(activeFont, 'bold')
       doc.text(t('pdf.evidence.ambientPhotoHeader'), MARGIN, y)
       y += 12
-      y = addImageFitted(doc, session.ambient_photo, y, t, 200) + 14
+      y = addImageFitted(doc, session.ambient_photo, y, t, activeFont, 200) + 14
     } else if (!session.no_sign && session.sign_photo) {
       y = ensureSpace(doc, y, 220)
       doc.setFontSize(11)
-      doc.setFont('helvetica', 'bold')
+      doc.setFont(activeFont, 'bold')
       doc.text(t('pdf.evidence.signPhotoHeader'), MARGIN, y)
       y += 12
-      y = addImageFitted(doc, session.sign_photo, y, t, 200) + 14
+      y = addImageFitted(doc, session.sign_photo, y, t, activeFont, 200) + 14
     }
     if (session.car_photo) {
       y = ensureSpace(doc, y, 220)
       doc.setFontSize(11)
-      doc.setFont('helvetica', 'bold')
+      doc.setFont(activeFont, 'bold')
       doc.text(t('pdf.evidence.carPhotoHeader'), MARGIN, y)
       y += 12
       const caption: string[] = []
@@ -968,7 +995,7 @@ export function downloadFullExportPdf(payload: FullExportPayload, t: TFunction):
         )
       }
       caption.push(fmtLocal(session.arrived_at, tz))
-      y = addImageWithOverlayCaption(doc, session.car_photo, y, caption, t, 200) + 14
+      y = addImageWithOverlayCaption(doc, session.car_photo, y, caption, t, activeFont, 200) + 14
     }
   })
 

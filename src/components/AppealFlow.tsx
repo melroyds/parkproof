@@ -24,7 +24,7 @@ const STRENGTH_LABEL = {
 } as const
 
 export default function AppealFlow({ session, onBack }: Props) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const [stage, setStage] = useState<Stage>({ name: 'capture' })
   const [editedLetter, setEditedLetter] = useState<string>('')
   const [copied, setCopied] = useState(false)
@@ -63,12 +63,18 @@ export default function AppealFlow({ session, onBack }: Props) {
     setPdfBusy(true)
     try {
       const { downloadAppealPdf } = await import('../lib/pdf')
+      // Prefetch the locale's Noto Sans font so non-Latin scripts render
+      // properly in the appeal letter body + evidence summary. Idempotent
+      // and cached; second call within the same session is a no-op.
+      const { prefetchPdfFont } = await import('../lib/pdf-fonts')
+      await prefetchPdfFont(i18n.language)
       downloadAppealPdf({
         session,
         draft: stage.draft,
         editedLetter,
         ticketPhoto: stage.ticketPhoto,
         t,
+        locale: i18n.language,
       })
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err)

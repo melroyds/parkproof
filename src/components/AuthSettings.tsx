@@ -11,7 +11,7 @@ interface Props {
 }
 
 export default function AuthSettings({ onBack, onOpenPrivacy, onDeleted }: Props) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const { user, signOut } = useAuth()
   const [exportStatus, setExportStatus] = useState<'idle' | 'busy' | 'error'>('idle')
   const [exportError, setExportError] = useState<string | null>(null)
@@ -36,16 +36,23 @@ export default function AuthSettings({ onBack, onOpenPrivacy, onDeleted }: Props
     setExportStatus('busy')
     setExportError(null)
     try {
-      const [data, pdfModule] = await Promise.all([
+      const [data, pdfModule, fontsModule] = await Promise.all([
         exportCloudData(),
         import('../lib/pdf'),
+        import('../lib/pdf-fonts'),
       ])
+      // Prefetch the locale's Noto Sans font before rendering — without
+      // this, non-Latin scripts (Chinese / Korean / Devanagari / Gurmukhi
+      // / Greek / Vietnamese diacritics) render as missing-glyph boxes
+      // across every session detail block in the multi-page export.
+      await fontsModule.prefetchPdfFont(i18n.language)
       // The cloud /me/export response shape matches downloadFullExportPdf's
       // FullExportPayload exactly. Renders a multi-page PDF: cover with
       // summary table, then one detail block per session with photos.
       pdfModule.downloadFullExportPdf(
         data as Parameters<typeof pdfModule.downloadFullExportPdf>[0],
         t,
+        i18n.language,
       )
       setExportStatus('idle')
     } catch (err) {

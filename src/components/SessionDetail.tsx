@@ -46,7 +46,7 @@ export default function SessionDetail({
   onDraftAppeal,
   onEndSession,
 }: Props) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const { user } = useAuth()
   const now = useNow()
   const expiresMs = session.expires_at ? new Date(session.expires_at).getTime() : null
@@ -77,12 +77,26 @@ export default function SessionDetail({
 
   useEffect(() => {
     let cancelled = false
-    void import('../lib/pdf').then((mod) => {
-      if (!cancelled) pdfModuleRef.current = mod
-    })
+    // Prefetch BOTH the PDF chunk AND the locale's Noto Sans font (if
+    // needed). Both are no-ops for en/it/id where the built-in font
+    // suffices. For zh-CN / ko / vi / el / hi / pa, this warms the font
+    // cache so the click handler can register the font synchronously —
+    // avoiding an await between the click and `doc.save()` that would
+    // break Safari's user-gesture download policy.
+    void Promise.all([
+      import('../lib/pdf').then((mod) => {
+        if (!cancelled) pdfModuleRef.current = mod
+      }),
+      import('../lib/pdf-fonts').then((mod) => mod.prefetchPdfFont(i18n.language)),
+    ])
     return () => {
       cancelled = true
     }
+    // i18n.language is stable per session; we deliberately don't re-fetch on
+    // every language toggle (cold-cache UX hit on no benefit) — the cache
+    // in pdf-fonts.ts dedupes anyway, so an extra fetch is harmless if the
+    // user does change language mid-detail-view.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const handleExportPdf = async () => {
@@ -91,9 +105,15 @@ export default function SessionDetail({
     try {
       // If the chunk is already in the ref, run synchronously. Otherwise
       // fall back to a fresh dynamic import — slower on first click on a
-      // cold cache, but at least it works.
+      // cold cache, but at least it works. Same fallback for the font:
+      // prefetch should have completed on mount, but if the user clicks
+      // immediately we await it here as belt-and-braces. Acceptable to
+      // break the Safari gesture in this rare cold-cache path; the
+      // typical case stays inside the gesture window.
       const mod = pdfModuleRef.current ?? (await import('../lib/pdf'))
-      mod.downloadPdf(session, t)
+      const { prefetchPdfFont } = await import('../lib/pdf-fonts')
+      await prefetchPdfFont(i18n.language)
+      mod.downloadPdf(session, t, i18n.language)
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err)
       console.error('[pdf] export failed:', err)
