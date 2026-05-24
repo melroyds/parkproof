@@ -272,6 +272,93 @@ fields @timestamp, @message
 | stats avg(ms), p90(ms), max(ms) by bin(1h), mode
 ```
 
+## Rollback playbook
+
+For when something breaks under live load (Reddit launch, post-deploy regression, etc.) and you need to recover without thinking through it from scratch.
+
+### Triage first — match symptom to the right fix
+
+| Symptom | First thing to check | Likely fix |
+|---|---|---|
+| 5xx errors on `/sign-translate` | `aws logs tail /aws/lambda/parkproof-sign-translator --follow` | Lambda code regression → revert frontend OR redeploy previous Lambda zip |
+| Slow scans (>30s) | Anthropic API status page + `[parkproof] anthropic_call=` in CloudWatch | Anthropic upstream issue → wait it out, post status update; OR our async polling broke → revert |
+| Broken landing page | `curl -sI https://www.parkproof.com.au/ \| head` for cache status | Bad deploy → revert + redeploy; OR CloudFront invalidation in flight (wait 5 min) |
+| PWA users on stale shell | Service worker is pinning old `index.html` | Users need hard refresh; new visitors fine. No rollback helps. |
+| Sign-in broken | Cognito console → User Pool `ap-southeast-2_fBbsYa7VM` → recent changes | Cognito config drift → restore via console; auth changes can't be git-reverted |
+| `429 Too Many Requests` | `aws apigatewayv2 get-stage --api-id tlsmpbft4f --stage-name $default` | API Gateway throttle hit → `scripts/set-throttle.sh 200 50` (double the burst+rate) |
+| Costs spiking past budget | AWS Console → Billing → Cost Explorer, group by service | Almost always Lambda invocations or Anthropic API; pause traffic via API Gateway disable if extreme |
+
+### Frontend rollback (most common)
+
+The site is just static files in S3 + a CloudFront cache. Rollback = redeploy a previous git commit.
+
+```bash
+# 1. Identify the last good commit (before the bad one)
+git log --oneline -10
+
+# 2. Revert the bad commit(s) — creates a NEW commit on top, doesn't rewrite history
+git revert <bad-sha>            # for a single bad commit
+git revert <a-sha>..<b-sha>     # for a range
+
+# 3. Redeploy. Frontend ships in ~3 min including CloudFront invalidation.
+./scripts/deploy.sh
+
+# 4. Push the revert so origin matches what's live
+git push
+```
+
+**Do NOT** use `git reset --hard` then force-push to roll back. `main` is already shared with `origin`; `git revert` is the safe choice and preserves the audit trail.
+
+### Lambda rollback (rare — most regressions are frontend)
+
+Lambda keeps every deployed version. `$LATEST` is what the alias points at; previous versions sit there indefinitely (~free until you delete them).
+
+```bash
+# List versions — the highest non-$LATEST number is the previous deploy
+aws lambda list-versions-by-function \
+  --function-name parkproof-sign-translator \
+  --query 'Versions[*].[Version,LastModified,Description]' --output table
+
+# Roll back: re-publish the previous version's code as $LATEST
+# (simpler than messing with aliases — API Gateway invokes $LATEST directly)
+aws lambda update-function-code \
+  --function-name parkproof-sign-translator \
+  --s3-bucket <build-bucket> --s3-key <previous.zip>
+
+# OR — if the build zip is gone, just redeploy the previous commit:
+git checkout <good-sha> -- lambda/
+./scripts/deploy.sh
+git checkout HEAD -- lambda/   # restore working tree afterwards
+```
+
+### What CANNOT be rolled back via git
+
+These are stateful and require forward-fix, not revert:
+
+- **Cognito User Pool config** — schema changes, federation providers, callback URLs. Use the AWS Console history or rebuild from `scripts/setup-auth.sh`.
+- **DynamoDB schema changes** — `parkproof-sessions` table layout. Schema-incompatible migrations are forward-only; revert app code that depended on the new shape, then re-deploy with code that handles the old shape.
+- **KMS key rotation / alias swaps** — never roll the signing key. If compromised, the only correct move is to revoke + publish a new public key + invalidate the old signatures (separate incident process).
+- **S3 bucket policy / CloudFront OAC** — `scripts/harden.sh` is idempotent and re-runnable but security-critical. Don't blindly re-run during an incident; use the AWS Console to inspect first.
+- **`parkproof-public-key.pem` once published** — once a user has downloaded it, you can't unship it. Treat as immutable.
+
+### Comms (the part nobody plans for)
+
+If the bug is user-facing during the Reddit launch window:
+
+1. **Within 5 min** — comment on the Reddit post acknowledging the issue. Vague is fine ("hitting a snag, investigating"). Silence is worse than honesty.
+2. **Within 15 min** — edit the Reddit post body to flag the issue at the top with a strikethrough on any specific feature that's broken.
+3. **After fix lands** — comment again confirming the fix + thank anyone who flagged it. The recovery thread is part of the credibility story; people remember the response more than the failure.
+4. **In-app feedback form** is the highest-fidelity signal. Tail it during the launch with the `[parkproof.user_feedback]` query above — users often catch bugs you missed.
+
+### Pre-launch checklist (Tuesday morning, before posting)
+
+- [ ] Last deploy on green CI: `gh run list --limit 3`
+- [ ] Smoke test: scan a real sign on prod, log a session, export PDF, draft an appeal. End-to-end in <2 min.
+- [ ] CloudWatch Logs Insights dashboard tab open (the Layer 1 + Layer 2 + free-text queries above)
+- [ ] Billing dashboard tab open (Cost Explorer, MTD spend view)
+- [ ] Anthropic API key still has quota: `aws lambda invoke --function-name parkproof-sign-translator --payload <test> /tmp/out` to confirm a real call works
+- [ ] Phone with PWA installed nearby for sanity checks during the window
+
 ## Gotchas
 
 - **vestauth on Windows.** A third-party tool wraps `dotenv` and stops it from populating `process.env`. `vite.config.ts` explicitly assigns parsed values to `process.env`. **Don't remove that block.**
