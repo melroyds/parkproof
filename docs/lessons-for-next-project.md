@@ -376,6 +376,28 @@ Every bug caught in the launch-eve testing window came from one of two things: (
 
 Got broken right after a deploy at 2:30am. Reverted at 2:35am. Two more bugs surfaced from continued testing. **Resisting the urge to re-attempt the broken fix the same night was the right call** — the suspect commit was the one that broke things; re-attempting the same approach at 3am with cloudy judgement would have either re-introduced the bug or shipped a different one. Discipline: name the bug clearly in CLAUDE.md gotchas + a TODO in the issue tracker, schedule the diagnosis for "tomorrow eyes-fresh", and ship only the minimum-viable workaround that doesn't touch the same surface. **The build journal entry the next morning will be more honest if you didn't try to hide the failure with a 3am re-deploy.**
 
+### AWS SDK version bumps can silently break browser CORS
+
+The gnarliest bug of the launch-eve session and the one that's most likely to bite future projects. `@aws-sdk/client-s3` v3.729+ enables "default integrity protections" — a security-positive change that injects `x-amz-checksum-mode=ENABLED` (and a related signed header) into every presigned URL the SDK generates. The change is invisible to server-side callers and to curl tests, but it breaks browser CORS in a way that's almost designed to be undebuggable: the `Access-Control-Allow-Origin` header is RETURNED by S3 on a curl-equivalent request, but BROWSERS report `No Access-Control-Allow-Origin header is present` on the actual fetch.
+
+This cost ~90 minutes of mid-launch-eve debugging — I didn't suspect the SDK because (a) the URL pattern looked normal, (b) curl tests worked, (c) the CORS bucket config was correct. The fix is one line: pass `requestChecksumCalculation: 'WHEN_REQUIRED'` + `responseChecksumValidation: 'WHEN_REQUIRED'` to the `S3Client` constructor for any client that generates browser-facing presigned URLs.
+
+**Takeaway for the next project:** when bumping an AWS SDK version anywhere it generates URLs the browser will hit, re-run the actual browser flow before declaring victory. Test envs that use curl or server-to-server fetches will pass while real browsers fail. Pin SDK majors and read the release notes for any "default integrity protections" / "default checksums" / "auto-validation" language — those are all signals that browser-facing URLs may have changed shape.
+
+### Photo upload pipelines need surfaced failure signals
+
+The two-day silent CORS failure (every photo upload from production failing the S3 preflight, the swallow-and-warn handler in `sync.ts:uploadPhoto` logging to `console.warn` only) only got caught because of bed-testing on launch eve. **The user-visible signal was "DDB session row exists, S3 has zero photos."** Nobody would have noticed without explicitly checking S3 contents — the app surface gave no indication.
+
+Two patterns to ship next time:
+  * **Toast or banner on upload failure.** "Couldn't sync photo to cloud — try again?" with retry. Annoying for users on flaky networks, but at least they know.
+  * **CloudWatch alarm on photo-upload failure count.** Emit a `[parkproof.photo_upload_error]` log line on every catch. Alarm if non-zero for 5 min. Catches the silent regression before users do.
+
+"Best-effort, warned-and-swallowed" is fine for genuinely-optional features. For features the user PAID with their attention to set up (e.g. they took a photo, they tapped Save), you owe them a visible "we tried, it didn't work, here's why."
+
+### When the localStorage cache is the bug, the recovery is "sign out, close all tabs, reopen"
+
+A stale presigned URL in localStorage will survive a hard refresh if the `alreadyInSync` patching path doesn't fire correctly (which it sometimes doesn't, for reasons not yet fully diagnosed — see CLAUDE.md gotcha). The reliable user-facing recovery is sign-out + force-quit browser + reopen, which nukes the localStorage entries entirely and forces a fresh fetch. **Document this in the user-facing FAQ before you need it during a real customer support thread.**
+
 ---
 
 ## A starter checklist for the next project
