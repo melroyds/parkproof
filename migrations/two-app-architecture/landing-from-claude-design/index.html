@@ -582,31 +582,44 @@
 
     var locale = pickLocale()
 
+    // i18next locale codes — the React app expects 'zh-CN' (not 'zh-cn').
+    // Used both for the chip's /app/?lng= URL and for the verify link.
+    var I18N_CODE = {
+      'zh-cn': 'zh-CN',
+      'zh':    'zh-CN',
+      'vi':    'vi',
+      'id':    'id',
+      'ko':    'ko',
+      'it':    'it',
+      'el':    'el',
+      'hi':    'hi',
+      'pa':    'pa'
+    }
+
     // Side-effect for the Evidence section's "See how to verify" link:
     // if the visitor's browser language is non-English supported, rewrite
     // the link's href to point at the matching /verify/{locale}/ page.
     // Independent of whether the chip is shown — even if the user has
     // dismissed the chip this session, the verify link still upgrades.
-    if (locale) {
-      var URL_MAP = {
-        'zh-cn': '/verify/zh-CN/',
-        'zh':    '/verify/zh-CN/',
-        'vi':    '/verify/vi/',
-        'id':    '/verify/id/',
-        'ko':    '/verify/ko/',
-        'it':    '/verify/it/',
-        'el':    '/verify/el/',
-        'hi':    '/verify/hi/',
-        'pa':    '/verify/pa/'
-      }
+    if (locale && I18N_CODE[locale]) {
       var verifyLink = document.getElementById('landing-verify-link')
-      if (verifyLink && URL_MAP[locale]) {
-        verifyLink.setAttribute('href', URL_MAP[locale])
-        verifyLink.setAttribute('hreflang', locale === 'zh' ? 'zh-CN' : locale)
+      if (verifyLink) {
+        verifyLink.setAttribute('href', '/verify/' + I18N_CODE[locale] + '/')
+        verifyLink.setAttribute('hreflang', I18N_CODE[locale])
       }
     }
 
     if (!locale) return
+
+    // Update the chip's destination URL too — i18next reads ?lng= from
+    // the URL ahead of localStorage in its detection chain, so this
+    // forces the React app to load in the user's stated language,
+    // overriding any previously-saved English preference. Without this,
+    // a Korean visitor clicking "Continue in 한국어 →" lands in /app/
+    // and gets English because their last session saved English to
+    // localStorage. Worst-case for the integrity of the chip's promise.
+    chip.setAttribute('href', '/app/?lng=' + I18N_CODE[locale])
+    chip.setAttribute('hreflang', I18N_CODE[locale])
 
     label.textContent = COPY[locale]
     chip.setAttribute('data-show', '1')
