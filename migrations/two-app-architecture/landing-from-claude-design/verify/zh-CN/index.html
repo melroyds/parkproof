@@ -1,12 +1,12 @@
 <!doctype html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Verify a ParkProof evidence record — ParkProof</title>
-<meta name="description" content="Step-by-step openssl walkthrough for verifying that a ParkProof evidence PDF hasn't been altered since it was saved. Cryptographic signing via AWS KMS ECDSA P-256.">
+<title>验证 ParkProof 证据记录 — ParkProof</title>
+<meta name="description" content="使用 openssl 一步步验证 ParkProof 证据 PDF 自保存以来未被篡改。基于 AWS KMS ECDSA P-256 的密码学签名。">
 <meta name="robots" content="index, follow">
-<link rel="icon" href="../assets/parkproof-icon.svg" type="image/svg+xml">
+<link rel="icon" href="../../assets/parkproof-icon.svg" type="image/svg+xml">
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -232,81 +232,81 @@
 
 <div class="wrap">
   <nav class="top">
-    <img src="../assets/parkproof-icon.svg" alt="">
+    <img src="../../assets/parkproof-icon.svg" alt="">
     <a href="/" class="brand">ParkProof</a>
     <span class="sep">·</span>
-    <a href="/" class="back">← Back to ParkProof</a>
+    <a href="/" class="back">← 返回 ParkProof</a>
   </nav>
 
-  <nav class="locale-switcher" aria-label="Language"><span class="marker">🌏</span> <span class="active">English</span> <span class="sep">·</span> <a href="/verify/zh-CN/" hreflang="zh-CN">简体中文</a> <span class="sep">·</span> <a href="/verify/vi/" hreflang="vi">Tiếng Việt</a> <span class="sep">·</span> <a href="/verify/id/" hreflang="id">Bahasa Indonesia</a> <span class="sep">·</span> <a href="/verify/ko/" hreflang="ko">한국어</a> <span class="sep">·</span> <a href="/verify/it/" hreflang="it">Italiano</a> <span class="sep">·</span> <a href="/verify/el/" hreflang="el">Ελληνικά</a> <span class="sep">·</span> <a href="/verify/hi/" hreflang="hi">हिन्दी</a> <span class="sep">·</span> <a href="/verify/pa/" hreflang="pa">ਪੰਜਾਬੀ</a></nav>
+  <nav class="locale-switcher" aria-label="Language"><span class="marker">🌏</span> <a href="/verify/" hreflang="en">English</a> <span class="sep">·</span> <span class="active">简体中文</span> <span class="sep">·</span> <a href="/verify/vi/" hreflang="vi">Tiếng Việt</a> <span class="sep">·</span> <a href="/verify/id/" hreflang="id">Bahasa Indonesia</a> <span class="sep">·</span> <a href="/verify/ko/" hreflang="ko">한국어</a> <span class="sep">·</span> <a href="/verify/it/" hreflang="it">Italiano</a> <span class="sep">·</span> <a href="/verify/el/" hreflang="el">Ελληνικά</a> <span class="sep">·</span> <a href="/verify/hi/" hreflang="hi">हिन्दी</a> <span class="sep">·</span> <a href="/verify/pa/" hreflang="pa">ਪੰਜਾਬੀ</a></nav>
 
-  <div class="eyebrow">Verification</div>
-  <h1>Verify a ParkProof <span class="accent">evidence record</span>.</h1>
-  <p class="lede">Every ParkProof evidence PDF carries a cryptographic signature appendix. This page is the public, offline walkthrough for anyone — a council officer, an insurer, a court clerk, or the driver themselves — to confirm that the record hasn't been altered since the moment it was saved.</p>
+  <div class="eyebrow">验证</div>
+  <h1>验证一份 ParkProof <span class="accent">证据记录</span>。</h1>
+  <p class="lede">每份 ParkProof 证据 PDF 都带有密码学签名附录。本页面是公开的离线指南,供任何人 — 市政官员、保险公司、法院书记员或司机本人 — 确认该记录自保存的那一刻起未被篡改。</p>
 
   <div class="callout">
-    <strong>Honest framing.</strong> The signature proves <em>integrity</em>: the bytes inside this record are identical to the bytes signed at scan time. It does not prove the record's <em>truthfulness</em> (the AI could have read the sign incorrectly), nor does it determine the legal weight of the evidence. That's a separate judgement made by whoever's reviewing it.
+    <strong>诚实表态。</strong> 签名证明的是<em>完整性</em>:该记录中的字节与扫描时签名的字节完全一致。它不证明记录的<em>真实性</em>(AI 可能读错了路牌),也不决定证据的法律效力。那是审阅者的独立判断。
   </div>
 
-  <h2>What you're verifying</h2>
-  <p>Each ParkProof session has a <strong>payload</strong> (a small text file containing the canonical session metadata plus SHA-256 hashes of the sign + car photos) and a <strong>signature</strong> (the payload signed with an AWS KMS-managed ECDSA P-256 private key that never leaves AWS). Both are printed in the signature appendix of every exported evidence PDF.</p>
-  <p>The <strong>public key</strong> needed to verify the signature is published at <a class="link" href="/parkproof-public-key.pem"><code>/parkproof-public-key.pem</code></a> — open it in a browser to confirm it loads, then save it locally.</p>
+  <h2>你在验证什么</h2>
+  <p>每个 ParkProof 会话包含一个<strong>载荷</strong>(一个小文本文件,含规范的会话元数据以及路牌+车辆照片的 SHA-256 哈希)和一个<strong>签名</strong>(用 AWS KMS 管理的 ECDSA P-256 私钥对载荷签名,该私钥永远不会离开 AWS)。两者都打印在每份导出的证据 PDF 的签名附录中。</p>
+  <p>验证签名所需的<strong>公钥</strong>发布在 <a class="link" href="/parkproof-public-key.pem"><code>/parkproof-public-key.pem</code></a> — 在浏览器中打开以确认加载,然后保存到本地。</p>
 
-  <h2>What you'll need</h2>
+  <h2>你需要的</h2>
   <ul>
-    <li><strong>The evidence PDF</strong> — supplied by the person disputing or producing the record.</li>
-    <li><strong><code>openssl</code></strong> — bundled with macOS and most Linux distros; on Windows, available via Git Bash, WSL, or the standalone OpenSSL build.</li>
-    <li><strong>About 60 seconds.</strong></li>
+    <li><strong>证据 PDF</strong> — 由争议或提交该记录的人提供。</li>
+    <li><strong><code>openssl</code></strong> — macOS 和大多数 Linux 发行版自带;Windows 上可通过 Git Bash、WSL 或独立的 OpenSSL 构建获取。</li>
+    <li><strong>约 60 秒。</strong></li>
   </ul>
 
-  <h2>Step-by-step</h2>
+  <h2>一步一步</h2>
 
-  <p>Open the evidence PDF, scroll to the <strong>"Signature appendix"</strong> page at the back. You'll see three blocks of text: <code>payload</code>, <code>sig.base64</code>, and a reference to the public key URL. Save the first two to files on your machine, then run the verification:</p>
+  <p>打开证据 PDF,滚动到末尾的<strong>"签名附录"</strong>页面。你会看到三块文本:<code>payload</code>、<code>sig.base64</code> 以及对公钥 URL 的引用。把前两块保存到本地文件,然后运行验证:</p>
 
-  <pre><span class="comment"># 1. Save the payload block from the PDF appendix to payload.txt
-#    (copy-paste exactly; preserve line endings).
-# 2. Save the base64 signature block to sig.base64.
-# 3. Fetch the public key.</span>
+  <pre><span class="comment"># 1. 把 PDF 附录中的载荷块保存到 payload.txt
+#    (精确复制粘贴;保留行尾)。
+# 2. 把 base64 签名块保存到 sig.base64。
+# 3. 获取公钥。</span>
 curl -O https://www.parkproof.com.au/parkproof-public-key.pem
 
-<span class="comment"># 4. Decode the base64 signature to raw bytes.</span>
+<span class="comment"># 4. 将 base64 签名解码为原始字节。</span>
 base64 -d sig.base64 > sig.bin
 
-<span class="comment"># 5. Run the verification.</span>
+<span class="comment"># 5. 运行验证。</span>
 openssl dgst -sha256 -verify parkproof-public-key.pem \
   -signature sig.bin payload.txt</pre>
 
-  <h2>What the result means</h2>
+  <h2>结果意味着什么</h2>
 
   <div class="grid-2">
     <div class="card ok">
-      <h3>Verified <span class="label">PASS</span></h3>
-      <p><code>Verified OK</code> — the payload in your PDF is byte-identical to what ParkProof signed at scan time. The sign rules, GPS, timestamp, address, and photo hashes have not been altered since.</p>
+      <h3>已验证 <span class="label">通过</span></h3>
+      <p><code>Verified OK</code> — 你 PDF 中的载荷与 ParkProof 扫描时签名的字节完全一致。路牌规则、GPS、时间戳、地址和照片哈希自那时起未被更改。</p>
     </div>
     <div class="card fail">
-      <h3>Failure <span class="label">FAIL</span></h3>
-      <p><code>Verification failure</code> — the payload, the signature, or both have been modified since the record was saved. The PDF may have been edited, the appendix tampered with, or copy-paste introduced whitespace differences. Repeat the copy carefully before drawing conclusions.</p>
+      <h3>失败 <span class="label">不通过</span></h3>
+      <p><code>Verification failure</code> — 载荷、签名或两者自记录保存以来已被修改。PDF 可能被编辑、附录被篡改,或复制粘贴引入了空白差异。在得出结论之前,请仔细重复复制操作。</p>
     </div>
   </div>
 
-  <h2>Beyond "did the bytes change?"</h2>
-  <p>A successful verification confirms <em>integrity</em>. It does not confirm:</p>
+  <h2>不止"字节是否改变?"</h2>
+  <p>验证成功只确认<em>完整性</em>。它不确认:</p>
   <ul>
-    <li><strong>That the AI read the sign correctly.</strong> The ParkProof scan is a machine read of a parking sign, and machines can be wrong. The verdict text and rules in the record are the AI's best read at scan time, not ground truth.</li>
-    <li><strong>That the photos depict what the person says they depict.</strong> The signature proves the photos haven't been altered <em>since saving</em>, not that the photos themselves were honestly captured.</li>
-    <li><strong>Any legal outcome.</strong> Whether the evidence supports an appeal, a refund, or a court case is the reviewer's call. ParkProof is a tool, not a lawyer.</li>
+    <li><strong>AI 是否正确读取了路牌。</strong>ParkProof 扫描是机器对停车标志的读取,机器可能出错。记录中的判定文本和规则是 AI 在扫描时的最佳读取,而非绝对真相。</li>
+    <li><strong>照片是否如其所述。</strong>签名证明照片<em>自保存以来</em>未被更改,而非照片本身是诚实拍摄的。</li>
+    <li><strong>任何法律结果。</strong>证据是否支持申诉、退款或诉讼,是审阅者的判断。ParkProof 是一个工具,不是律师。</li>
   </ul>
 
-  <h2>Why this exists</h2>
-  <p>Most parking apps that produce "evidence" produce a screenshot. Screenshots have no integrity story — they could have been edited at any point between when they were taken and when they were sent. The cryptographic signature is the difference between <em>"here's what I saw"</em> and <em>"here's what I saw, and here's mathematical proof I haven't changed it since."</em></p>
-  <p>The public key is published so the verification is fully offline — you do not need to trust ParkProof, contact our servers, or run our app to confirm the integrity claim. The verification can be performed years from now even if ParkProof is no longer maintained, as long as <code>openssl</code> still exists.</p>
+  <h2>为什么存在</h2>
+  <p>大多数生成"证据"的停车应用只产出截图。截图没有完整性的故事 — 它们可能在拍摄到发送之间的任何时刻被编辑。密码学签名是<em>"这是我看到的"</em>和<em>"这是我看到的,这是数学证明我此后没有改变它"</em>之间的差别。</p>
+  <p>公钥已发布,因此验证完全离线 — 你不需要信任 ParkProof、联系我们的服务器或运行我们的应用来确认完整性声明。即使 ParkProof 多年后不再维护,只要 <code>openssl</code> 仍然存在,验证就可以进行。</p>
 
-  <h2>Questions?</h2>
-  <p>Email <a class="link" href="mailto:hello@parkproof.com.au">hello@parkproof.com.au</a>. We answer.</p>
+  <h2>有疑问?</h2>
+  <p>发邮件到 <a class="link" href="mailto:hello@parkproof.com.au">hello@parkproof.com.au</a>。我们会回复。</p>
 
   <footer>
-    <span>parkproof.com.au · verification page</span>
-    <span><a href="/parkproof-public-key.pem">/parkproof-public-key.pem</a> <span class="sep">·</span> <a href="/">← Back to ParkProof</a></span>
+    <span>parkproof.com.au · 验证页面</span>
+    <span><a href="/parkproof-public-key.pem">/parkproof-public-key.pem</a> <span class="sep">·</span> <a href="/">← 返回 ParkProof</a></span>
   </footer>
 </div>
 

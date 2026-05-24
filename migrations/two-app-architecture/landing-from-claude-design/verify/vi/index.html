@@ -1,0 +1,314 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Xác minh bản ghi bằng chứng ParkProof — ParkProof</title>
+<meta name="description" content="Hướng dẫn từng bước bằng openssl để xác minh PDF bằng chứng ParkProof không bị thay đổi từ khi lưu. Ký mật mã qua AWS KMS ECDSA P-256.">
+<meta name="robots" content="index, follow">
+<link rel="icon" href="../../assets/parkproof-icon.svg" type="image/svg+xml">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700;9..144,800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    --brand-50:  #EAEFFF;
+    --brand-100: #CDD9FF;
+    --brand-500: #275BFF;
+    --brand-700: #173EB3;
+    --ink-500:   #5C6680;
+    --ink-700:   #2D374F;
+    --ink-900:   #1A2233;
+    --paper-100: #F2F4F7;
+    --paper-300: #DDE4EE;
+    --sage:      #C8DCCF;
+    --emerald:   #10B981;
+    --red:       #EF4444;
+    --font-display: 'Fraunces', Georgia, serif;
+    --font-sans:    'Inter', system-ui, sans-serif;
+    --font-mono:    'JetBrains Mono', ui-monospace, 'Cascadia Code', monospace;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    font-family: var(--font-sans);
+    color: var(--ink-900);
+    background: var(--sage);
+    font-size: 16px;
+    line-height: 1.55;
+    min-height: 100vh;
+  }
+  .wrap {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 32px 24px 80px;
+  }
+  nav.top {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 18px;
+  }
+  nav.top img { width: 32px; height: 32px; border-radius: 8px; }
+  nav.top a.brand {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: 18px;
+    color: var(--ink-900);
+    text-decoration: none;
+    letter-spacing: -0.01em;
+  }
+  nav.top .sep { color: var(--ink-500); font-size: 14px; }
+  nav.top a.back {
+    color: var(--brand-500);
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 600;
+  }
+  nav.top a.back:hover { text-decoration: underline; }
+
+  nav.locale-switcher {
+    margin-bottom: 40px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--paper-300);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 8px;
+    font-size: 13px;
+    color: var(--ink-500);
+    align-items: center;
+  }
+  nav.locale-switcher .marker { color: var(--brand-500); margin-right: 6px; }
+  nav.locale-switcher .sep { color: var(--paper-300); }
+  nav.locale-switcher a {
+    color: var(--brand-700);
+    text-decoration: none;
+    padding: 2px 0;
+  }
+  nav.locale-switcher a:hover { text-decoration: underline; }
+  nav.locale-switcher .active {
+    font-weight: 700;
+    color: var(--ink-900);
+  }
+
+  .eyebrow {
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--brand-500);
+    margin-bottom: 14px;
+  }
+  h1 {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: clamp(34px, 5vw, 48px);
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+    margin-bottom: 20px;
+    color: var(--ink-900);
+  }
+  h1 .accent { color: var(--brand-500); font-style: italic; }
+  .lede {
+    font-size: clamp(17px, 1.8vw, 19px);
+    line-height: 1.55;
+    color: var(--ink-700);
+    margin-bottom: 36px;
+    max-width: 620px;
+  }
+
+  h2 {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: clamp(22px, 2.8vw, 26px);
+    color: var(--ink-900);
+    margin-top: 48px;
+    margin-bottom: 14px;
+    letter-spacing: -0.01em;
+  }
+  p { margin-bottom: 14px; color: var(--ink-700); }
+  p.small { font-size: 14px; color: var(--ink-500); }
+
+  ol, ul { padding-left: 22px; margin-bottom: 18px; }
+  li { margin-bottom: 10px; color: var(--ink-700); }
+  li code { font-size: 0.92em; }
+
+  code {
+    font-family: var(--font-mono);
+    font-size: 0.9em;
+    background: var(--brand-50);
+    color: var(--ink-900);
+    padding: 1px 6px;
+    border-radius: 4px;
+  }
+
+  pre {
+    background: var(--ink-900);
+    color: #E5E8EE;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    line-height: 1.6;
+    padding: 18px 20px;
+    border-radius: 12px;
+    overflow-x: auto;
+    margin: 18px 0 24px;
+    -webkit-overflow-scrolling: touch;
+  }
+  pre code {
+    background: transparent;
+    color: inherit;
+    padding: 0;
+    font-size: inherit;
+  }
+  pre .comment { color: #5C6680; }
+
+  .callout {
+    background: white;
+    border: 1px solid var(--paper-300);
+    border-left: 3px solid var(--brand-500);
+    border-radius: 10px;
+    padding: 14px 18px;
+    margin: 20px 0;
+    font-size: 14px;
+    color: var(--ink-700);
+  }
+  .callout strong { color: var(--ink-900); }
+
+  .grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin: 18px 0 28px;
+  }
+  .grid-2 .card {
+    background: white;
+    border: 1px solid var(--paper-300);
+    border-radius: 12px;
+    padding: 16px 18px;
+  }
+  .grid-2 .card h3 {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 15px;
+    margin-bottom: 6px;
+    color: var(--ink-900);
+  }
+  .grid-2 .card h3 .label { font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 99px; vertical-align: middle; margin-left: 8px; letter-spacing: 0.04em; }
+  .grid-2 .card.ok h3 .label { background: #D1FADF; color: #047857; }
+  .grid-2 .card.fail h3 .label { background: #FEE2E2; color: #B91C1C; }
+  .grid-2 .card p { font-size: 13px; margin: 0; color: var(--ink-700); }
+
+  @media (max-width: 560px) {
+    .grid-2 { grid-template-columns: 1fr; }
+    pre { font-size: 12px; padding: 14px 14px; }
+  }
+
+  a.link {
+    color: var(--brand-700);
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 2px;
+  }
+  a.link:hover { color: var(--brand-500); }
+
+  footer {
+    margin-top: 64px;
+    padding-top: 24px;
+    border-top: 1px solid var(--paper-300);
+    font-size: 13px;
+    color: var(--ink-500);
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 10px;
+  }
+  footer a { color: var(--brand-700); text-decoration: none; }
+  footer a:hover { text-decoration: underline; }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <nav class="top">
+    <img src="../../assets/parkproof-icon.svg" alt="">
+    <a href="/" class="brand">ParkProof</a>
+    <span class="sep">·</span>
+    <a href="/" class="back">← Quay lại ParkProof</a>
+  </nav>
+
+  <nav class="locale-switcher" aria-label="Language"><span class="marker">🌏</span> <a href="/verify/" hreflang="en">English</a> <span class="sep">·</span> <a href="/verify/zh-CN/" hreflang="zh-CN">简体中文</a> <span class="sep">·</span> <span class="active">Tiếng Việt</span> <span class="sep">·</span> <a href="/verify/id/" hreflang="id">Bahasa Indonesia</a> <span class="sep">·</span> <a href="/verify/ko/" hreflang="ko">한국어</a> <span class="sep">·</span> <a href="/verify/it/" hreflang="it">Italiano</a> <span class="sep">·</span> <a href="/verify/el/" hreflang="el">Ελληνικά</a> <span class="sep">·</span> <a href="/verify/hi/" hreflang="hi">हिन्दी</a> <span class="sep">·</span> <a href="/verify/pa/" hreflang="pa">ਪੰਜਾਬੀ</a></nav>
+
+  <div class="eyebrow">Xác minh</div>
+  <h1>Xác minh một <span class="accent">bản ghi bằng chứng</span> ParkProof.</h1>
+  <p class="lede">Mỗi PDF bằng chứng ParkProof mang một phụ lục chữ ký mật mã. Trang này là hướng dẫn công khai, ngoại tuyến cho bất kỳ ai — viên chức hội đồng, công ty bảo hiểm, thư ký toà án, hoặc chính người lái xe — để xác nhận rằng bản ghi không bị thay đổi từ thời khắc nó được lưu.</p>
+
+  <div class="callout">
+    <strong>Khung trung thực.</strong> Chữ ký chứng minh <em>tính toàn vẹn</em>: các byte bên trong bản ghi này giống hệt với các byte được ký vào thời điểm quét. Nó không chứng minh <em>tính xác thực</em> của bản ghi (AI có thể đọc sai biển báo), cũng không quyết định trọng lượng pháp lý của bằng chứng. Đó là một phán đoán riêng của người xem xét.
+  </div>
+
+  <h2>Bạn đang xác minh điều gì</h2>
+  <p>Mỗi phiên ParkProof có một <strong>payload</strong> (một tệp văn bản nhỏ chứa siêu dữ liệu chính tắc của phiên cộng với hash SHA-256 của các ảnh biển báo + xe) và một <strong>chữ ký</strong> (payload được ký bằng khoá riêng tư ECDSA P-256 do AWS KMS quản lý, không bao giờ rời khỏi AWS). Cả hai được in trong phụ lục chữ ký của mỗi PDF bằng chứng xuất ra.</p>
+  <p><strong>Khoá công khai</strong> cần để xác minh chữ ký được xuất bản tại <a class="link" href="/parkproof-public-key.pem"><code>/parkproof-public-key.pem</code></a> — mở trong trình duyệt để xác nhận tải được, rồi lưu cục bộ.</p>
+
+  <h2>Bạn cần</h2>
+  <ul>
+    <li><strong>PDF bằng chứng</strong> — do người tranh chấp hoặc cung cấp bản ghi đưa cho bạn.</li>
+    <li><strong><code>openssl</code></strong> — đi kèm với macOS và hầu hết các bản phân phối Linux; trên Windows, có sẵn qua Git Bash, WSL, hoặc bản OpenSSL độc lập.</li>
+    <li><strong>Khoảng 60 giây.</strong></li>
+  </ul>
+
+  <h2>Từng bước</h2>
+
+  <p>Mở PDF bằng chứng, cuộn đến trang <strong>"Phụ lục chữ ký"</strong> ở cuối. Bạn sẽ thấy ba khối văn bản: <code>payload</code>, <code>sig.base64</code>, và tham chiếu đến URL khoá công khai. Lưu hai khối đầu vào tệp trên máy của bạn, sau đó chạy lệnh xác minh:</p>
+
+  <pre><span class="comment"># 1. Lưu khối payload từ phụ lục PDF vào payload.txt
+#    (copy-paste chính xác; giữ nguyên kết thúc dòng).
+# 2. Lưu khối chữ ký base64 vào sig.base64.
+# 3. Lấy khoá công khai.</span>
+curl -O https://www.parkproof.com.au/parkproof-public-key.pem
+
+<span class="comment"># 4. Giải mã chữ ký base64 thành byte thô.</span>
+base64 -d sig.base64 > sig.bin
+
+<span class="comment"># 5. Chạy xác minh.</span>
+openssl dgst -sha256 -verify parkproof-public-key.pem \
+  -signature sig.bin payload.txt</pre>
+
+  <h2>Kết quả có nghĩa là gì</h2>
+
+  <div class="grid-2">
+    <div class="card ok">
+      <h3>Đã xác minh <span class="label">ĐẠT</span></h3>
+      <p><code>Verified OK</code> — payload trong PDF của bạn giống hệt theo từng byte với những gì ParkProof đã ký vào thời điểm quét. Các quy tắc biển báo, GPS, timestamp, địa chỉ và hash ảnh chưa bị thay đổi kể từ đó.</p>
+    </div>
+    <div class="card fail">
+      <h3>Thất bại <span class="label">KHÔNG ĐẠT</span></h3>
+      <p><code>Verification failure</code> — payload, chữ ký, hoặc cả hai đã bị thay đổi kể từ khi bản ghi được lưu. PDF có thể đã được chỉnh sửa, phụ lục bị giả mạo, hoặc copy-paste tạo ra khác biệt khoảng trắng. Lặp lại việc sao chép cẩn thận trước khi rút ra kết luận.</p>
+    </div>
+  </div>
+
+  <h2>Hơn cả "các byte có thay đổi không?"</h2>
+  <p>Một lần xác minh thành công xác nhận <em>tính toàn vẹn</em>. Nó không xác nhận:</p>
+  <ul>
+    <li><strong>Rằng AI đọc biển báo đúng.</strong> Quét ParkProof là một lần đọc máy của biển báo đỗ xe, và máy có thể sai. Văn bản phán quyết và các quy tắc trong bản ghi là cách đọc tốt nhất của AI tại thời điểm quét, không phải sự thật tuyệt đối.</li>
+    <li><strong>Rằng các ảnh mô tả những gì người đó nói chúng mô tả.</strong> Chữ ký chứng minh các ảnh chưa bị thay đổi <em>kể từ khi lưu</em>, không phải rằng bản thân các ảnh được chụp một cách trung thực.</li>
+    <li><strong>Bất kỳ kết quả pháp lý nào.</strong> Liệu bằng chứng có hỗ trợ kháng cáo, hoàn tiền, hoặc vụ kiện hay không là quyết định của người xem xét. ParkProof là một công cụ, không phải luật sư.</li>
+  </ul>
+
+  <h2>Vì sao nó tồn tại</h2>
+  <p>Hầu hết các ứng dụng đỗ xe tạo ra "bằng chứng" chỉ tạo ra ảnh chụp màn hình. Ảnh chụp màn hình không có câu chuyện toàn vẹn — chúng có thể được chỉnh sửa tại bất kỳ thời điểm nào giữa lúc chụp và lúc gửi. Chữ ký mật mã là sự khác biệt giữa <em>"đây là những gì tôi đã thấy"</em> và <em>"đây là những gì tôi đã thấy, và đây là bằng chứng toán học rằng tôi chưa thay đổi nó kể từ đó."</em></p>
+  <p>Khoá công khai được xuất bản để việc xác minh hoàn toàn ngoại tuyến — bạn không cần tin tưởng ParkProof, liên hệ máy chủ của chúng tôi, hoặc chạy ứng dụng của chúng tôi để xác nhận tuyên bố về tính toàn vẹn. Việc xác minh có thể thực hiện sau nhiều năm ngay cả khi ParkProof không còn được duy trì, miễn là <code>openssl</code> vẫn tồn tại.</p>
+
+  <h2>Câu hỏi?</h2>
+  <p>Email <a class="link" href="mailto:hello@parkproof.com.au">hello@parkproof.com.au</a>. Chúng tôi trả lời.</p>
+
+  <footer>
+    <span>parkproof.com.au · trang xác minh</span>
+    <span><a href="/parkproof-public-key.pem">/parkproof-public-key.pem</a> <span class="sep">·</span> <a href="/">← Quay lại ParkProof</a></span>
+  </footer>
+</div>
+
+</body>
+</html>

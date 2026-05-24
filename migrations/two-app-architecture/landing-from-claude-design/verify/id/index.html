@@ -1,12 +1,12 @@
 <!doctype html>
-<html lang="en">
+<html lang="id">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Verify a ParkProof evidence record — ParkProof</title>
-<meta name="description" content="Step-by-step openssl walkthrough for verifying that a ParkProof evidence PDF hasn't been altered since it was saved. Cryptographic signing via AWS KMS ECDSA P-256.">
+<title>Verifikasi catatan bukti ParkProof — ParkProof</title>
+<meta name="description" content="Panduan langkah demi langkah openssl untuk memverifikasi PDF bukti ParkProof tidak diubah sejak disimpan. Penandatanganan kriptografis melalui AWS KMS ECDSA P-256.">
 <meta name="robots" content="index, follow">
-<link rel="icon" href="../assets/parkproof-icon.svg" type="image/svg+xml">
+<link rel="icon" href="../../assets/parkproof-icon.svg" type="image/svg+xml">
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -232,81 +232,81 @@
 
 <div class="wrap">
   <nav class="top">
-    <img src="../assets/parkproof-icon.svg" alt="">
+    <img src="../../assets/parkproof-icon.svg" alt="">
     <a href="/" class="brand">ParkProof</a>
     <span class="sep">·</span>
-    <a href="/" class="back">← Back to ParkProof</a>
+    <a href="/" class="back">← Kembali ke ParkProof</a>
   </nav>
 
-  <nav class="locale-switcher" aria-label="Language"><span class="marker">🌏</span> <span class="active">English</span> <span class="sep">·</span> <a href="/verify/zh-CN/" hreflang="zh-CN">简体中文</a> <span class="sep">·</span> <a href="/verify/vi/" hreflang="vi">Tiếng Việt</a> <span class="sep">·</span> <a href="/verify/id/" hreflang="id">Bahasa Indonesia</a> <span class="sep">·</span> <a href="/verify/ko/" hreflang="ko">한국어</a> <span class="sep">·</span> <a href="/verify/it/" hreflang="it">Italiano</a> <span class="sep">·</span> <a href="/verify/el/" hreflang="el">Ελληνικά</a> <span class="sep">·</span> <a href="/verify/hi/" hreflang="hi">हिन्दी</a> <span class="sep">·</span> <a href="/verify/pa/" hreflang="pa">ਪੰਜਾਬੀ</a></nav>
+  <nav class="locale-switcher" aria-label="Language"><span class="marker">🌏</span> <a href="/verify/" hreflang="en">English</a> <span class="sep">·</span> <a href="/verify/zh-CN/" hreflang="zh-CN">简体中文</a> <span class="sep">·</span> <a href="/verify/vi/" hreflang="vi">Tiếng Việt</a> <span class="sep">·</span> <span class="active">Bahasa Indonesia</span> <span class="sep">·</span> <a href="/verify/ko/" hreflang="ko">한국어</a> <span class="sep">·</span> <a href="/verify/it/" hreflang="it">Italiano</a> <span class="sep">·</span> <a href="/verify/el/" hreflang="el">Ελληνικά</a> <span class="sep">·</span> <a href="/verify/hi/" hreflang="hi">हिन्दी</a> <span class="sep">·</span> <a href="/verify/pa/" hreflang="pa">ਪੰਜਾਬੀ</a></nav>
 
-  <div class="eyebrow">Verification</div>
-  <h1>Verify a ParkProof <span class="accent">evidence record</span>.</h1>
-  <p class="lede">Every ParkProof evidence PDF carries a cryptographic signature appendix. This page is the public, offline walkthrough for anyone — a council officer, an insurer, a court clerk, or the driver themselves — to confirm that the record hasn't been altered since the moment it was saved.</p>
+  <div class="eyebrow">Verifikasi</div>
+  <h1>Verifikasi sebuah <span class="accent">catatan bukti</span> ParkProof.</h1>
+  <p class="lede">Setiap PDF bukti ParkProof membawa lampiran tanda tangan kriptografis. Halaman ini adalah panduan publik, offline untuk siapa saja — petugas dewan, perusahaan asuransi, panitera pengadilan, atau pengemudi sendiri — untuk mengkonfirmasi bahwa catatan tidak diubah sejak saat itu disimpan.</p>
 
   <div class="callout">
-    <strong>Honest framing.</strong> The signature proves <em>integrity</em>: the bytes inside this record are identical to the bytes signed at scan time. It does not prove the record's <em>truthfulness</em> (the AI could have read the sign incorrectly), nor does it determine the legal weight of the evidence. That's a separate judgement made by whoever's reviewing it.
+    <strong>Bingkai jujur.</strong> Tanda tangan membuktikan <em>integritas</em>: byte di dalam catatan ini identik dengan byte yang ditandatangani pada saat pemindaian. Tanda tangan tidak membuktikan <em>kebenaran</em> catatan (AI bisa salah membaca rambu), juga tidak menentukan bobot hukum bukti. Itu adalah penilaian terpisah yang dibuat oleh siapa pun yang meninjaunya.
   </div>
 
-  <h2>What you're verifying</h2>
-  <p>Each ParkProof session has a <strong>payload</strong> (a small text file containing the canonical session metadata plus SHA-256 hashes of the sign + car photos) and a <strong>signature</strong> (the payload signed with an AWS KMS-managed ECDSA P-256 private key that never leaves AWS). Both are printed in the signature appendix of every exported evidence PDF.</p>
-  <p>The <strong>public key</strong> needed to verify the signature is published at <a class="link" href="/parkproof-public-key.pem"><code>/parkproof-public-key.pem</code></a> — open it in a browser to confirm it loads, then save it locally.</p>
+  <h2>Apa yang kamu verifikasi</h2>
+  <p>Setiap sesi ParkProof memiliki <strong>payload</strong> (file teks kecil berisi metadata sesi kanonis plus hash SHA-256 dari foto rambu + mobil) dan <strong>tanda tangan</strong> (payload yang ditandatangani dengan kunci pribadi ECDSA P-256 yang dikelola AWS KMS dan tidak pernah meninggalkan AWS). Keduanya dicetak di lampiran tanda tangan setiap PDF bukti yang diekspor.</p>
+  <p><strong>Kunci publik</strong> yang diperlukan untuk memverifikasi tanda tangan diterbitkan di <a class="link" href="/parkproof-public-key.pem"><code>/parkproof-public-key.pem</code></a> — buka di browser untuk memastikan dimuat, lalu simpan secara lokal.</p>
 
-  <h2>What you'll need</h2>
+  <h2>Yang kamu butuhkan</h2>
   <ul>
-    <li><strong>The evidence PDF</strong> — supplied by the person disputing or producing the record.</li>
-    <li><strong><code>openssl</code></strong> — bundled with macOS and most Linux distros; on Windows, available via Git Bash, WSL, or the standalone OpenSSL build.</li>
-    <li><strong>About 60 seconds.</strong></li>
+    <li><strong>PDF bukti</strong> — disediakan oleh orang yang menyengketakan atau memproduksi catatan.</li>
+    <li><strong><code>openssl</code></strong> — disertakan dengan macOS dan kebanyakan distro Linux; di Windows, tersedia melalui Git Bash, WSL, atau build OpenSSL mandiri.</li>
+    <li><strong>Sekitar 60 detik.</strong></li>
   </ul>
 
-  <h2>Step-by-step</h2>
+  <h2>Langkah demi langkah</h2>
 
-  <p>Open the evidence PDF, scroll to the <strong>"Signature appendix"</strong> page at the back. You'll see three blocks of text: <code>payload</code>, <code>sig.base64</code>, and a reference to the public key URL. Save the first two to files on your machine, then run the verification:</p>
+  <p>Buka PDF bukti, gulir ke halaman <strong>"Lampiran tanda tangan"</strong> di belakang. Kamu akan melihat tiga blok teks: <code>payload</code>, <code>sig.base64</code>, dan referensi ke URL kunci publik. Simpan dua yang pertama ke file di mesinmu, lalu jalankan verifikasi:</p>
 
-  <pre><span class="comment"># 1. Save the payload block from the PDF appendix to payload.txt
-#    (copy-paste exactly; preserve line endings).
-# 2. Save the base64 signature block to sig.base64.
-# 3. Fetch the public key.</span>
+  <pre><span class="comment"># 1. Simpan blok payload dari lampiran PDF ke payload.txt
+#    (copy-paste persis; pertahankan akhir baris).
+# 2. Simpan blok tanda tangan base64 ke sig.base64.
+# 3. Ambil kunci publik.</span>
 curl -O https://www.parkproof.com.au/parkproof-public-key.pem
 
-<span class="comment"># 4. Decode the base64 signature to raw bytes.</span>
+<span class="comment"># 4. Dekode tanda tangan base64 ke byte mentah.</span>
 base64 -d sig.base64 > sig.bin
 
-<span class="comment"># 5. Run the verification.</span>
+<span class="comment"># 5. Jalankan verifikasi.</span>
 openssl dgst -sha256 -verify parkproof-public-key.pem \
   -signature sig.bin payload.txt</pre>
 
-  <h2>What the result means</h2>
+  <h2>Apa arti hasilnya</h2>
 
   <div class="grid-2">
     <div class="card ok">
-      <h3>Verified <span class="label">PASS</span></h3>
-      <p><code>Verified OK</code> — the payload in your PDF is byte-identical to what ParkProof signed at scan time. The sign rules, GPS, timestamp, address, and photo hashes have not been altered since.</p>
+      <h3>Terverifikasi <span class="label">LOLOS</span></h3>
+      <p><code>Verified OK</code> — payload di PDF-mu identik secara byte dengan apa yang ParkProof tandatangani pada saat pemindaian. Aturan rambu, GPS, timestamp, alamat, dan hash foto belum diubah sejak itu.</p>
     </div>
     <div class="card fail">
-      <h3>Failure <span class="label">FAIL</span></h3>
-      <p><code>Verification failure</code> — the payload, the signature, or both have been modified since the record was saved. The PDF may have been edited, the appendix tampered with, or copy-paste introduced whitespace differences. Repeat the copy carefully before drawing conclusions.</p>
+      <h3>Gagal <span class="label">GAGAL</span></h3>
+      <p><code>Verification failure</code> — payload, tanda tangan, atau keduanya telah dimodifikasi sejak catatan disimpan. PDF mungkin diedit, lampiran dirusak, atau copy-paste menimbulkan perbedaan spasi. Ulangi penyalinan dengan hati-hati sebelum menarik kesimpulan.</p>
     </div>
   </div>
 
-  <h2>Beyond "did the bytes change?"</h2>
-  <p>A successful verification confirms <em>integrity</em>. It does not confirm:</p>
+  <h2>Lebih dari "apakah byte berubah?"</h2>
+  <p>Verifikasi yang berhasil mengkonfirmasi <em>integritas</em>. Itu tidak mengkonfirmasi:</p>
   <ul>
-    <li><strong>That the AI read the sign correctly.</strong> The ParkProof scan is a machine read of a parking sign, and machines can be wrong. The verdict text and rules in the record are the AI's best read at scan time, not ground truth.</li>
-    <li><strong>That the photos depict what the person says they depict.</strong> The signature proves the photos haven't been altered <em>since saving</em>, not that the photos themselves were honestly captured.</li>
-    <li><strong>Any legal outcome.</strong> Whether the evidence supports an appeal, a refund, or a court case is the reviewer's call. ParkProof is a tool, not a lawyer.</li>
+    <li><strong>Bahwa AI membaca rambu dengan benar.</strong> Pemindaian ParkProof adalah pembacaan mesin dari rambu parkir, dan mesin bisa salah. Teks putusan dan aturan dalam catatan adalah pembacaan terbaik AI pada saat pemindaian, bukan kebenaran absolut.</li>
+    <li><strong>Bahwa foto menggambarkan apa yang orang itu katakan.</strong> Tanda tangan membuktikan foto belum diubah <em>sejak disimpan</em>, bukan bahwa foto itu sendiri ditangkap dengan jujur.</li>
+    <li><strong>Hasil hukum apa pun.</strong> Apakah bukti mendukung banding, pengembalian dana, atau perkara pengadilan adalah keputusan peninjau. ParkProof adalah alat, bukan pengacara.</li>
   </ul>
 
-  <h2>Why this exists</h2>
-  <p>Most parking apps that produce "evidence" produce a screenshot. Screenshots have no integrity story — they could have been edited at any point between when they were taken and when they were sent. The cryptographic signature is the difference between <em>"here's what I saw"</em> and <em>"here's what I saw, and here's mathematical proof I haven't changed it since."</em></p>
-  <p>The public key is published so the verification is fully offline — you do not need to trust ParkProof, contact our servers, or run our app to confirm the integrity claim. The verification can be performed years from now even if ParkProof is no longer maintained, as long as <code>openssl</code> still exists.</p>
+  <h2>Mengapa ini ada</h2>
+  <p>Sebagian besar aplikasi parkir yang menghasilkan "bukti" hanya menghasilkan tangkapan layar. Tangkapan layar tidak punya cerita integritas — bisa saja diedit kapan pun antara saat diambil dan saat dikirim. Tanda tangan kriptografis adalah perbedaan antara <em>"inilah yang aku lihat"</em> dan <em>"inilah yang aku lihat, dan ini bukti matematis bahwa aku belum mengubahnya sejak itu."</em></p>
+  <p>Kunci publik diterbitkan sehingga verifikasi sepenuhnya offline — kamu tidak perlu mempercayai ParkProof, menghubungi server kami, atau menjalankan aplikasi kami untuk mengkonfirmasi klaim integritas. Verifikasi dapat dilakukan bertahun-tahun dari sekarang bahkan jika ParkProof tidak lagi dipelihara, selama <code>openssl</code> masih ada.</p>
 
-  <h2>Questions?</h2>
-  <p>Email <a class="link" href="mailto:hello@parkproof.com.au">hello@parkproof.com.au</a>. We answer.</p>
+  <h2>Pertanyaan?</h2>
+  <p>Email <a class="link" href="mailto:hello@parkproof.com.au">hello@parkproof.com.au</a>. Kami menjawab.</p>
 
   <footer>
-    <span>parkproof.com.au · verification page</span>
-    <span><a href="/parkproof-public-key.pem">/parkproof-public-key.pem</a> <span class="sep">·</span> <a href="/">← Back to ParkProof</a></span>
+    <span>parkproof.com.au · halaman verifikasi</span>
+    <span><a href="/parkproof-public-key.pem">/parkproof-public-key.pem</a> <span class="sep">·</span> <a href="/">← Kembali ke ParkProof</a></span>
   </footer>
 </div>
 

@@ -1,12 +1,12 @@
 <!doctype html>
-<html lang="en">
+<html lang="it">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Verify a ParkProof evidence record — ParkProof</title>
-<meta name="description" content="Step-by-step openssl walkthrough for verifying that a ParkProof evidence PDF hasn't been altered since it was saved. Cryptographic signing via AWS KMS ECDSA P-256.">
+<title>Verifica un record di prova ParkProof — ParkProof</title>
+<meta name="description" content="Procedura passo-passo con openssl per verificare che un PDF di prova ParkProof non sia stato alterato dal salvataggio. Firma crittografica tramite AWS KMS ECDSA P-256.">
 <meta name="robots" content="index, follow">
-<link rel="icon" href="../assets/parkproof-icon.svg" type="image/svg+xml">
+<link rel="icon" href="../../assets/parkproof-icon.svg" type="image/svg+xml">
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -232,81 +232,81 @@
 
 <div class="wrap">
   <nav class="top">
-    <img src="../assets/parkproof-icon.svg" alt="">
+    <img src="../../assets/parkproof-icon.svg" alt="">
     <a href="/" class="brand">ParkProof</a>
     <span class="sep">·</span>
-    <a href="/" class="back">← Back to ParkProof</a>
+    <a href="/" class="back">← Torna a ParkProof</a>
   </nav>
 
-  <nav class="locale-switcher" aria-label="Language"><span class="marker">🌏</span> <span class="active">English</span> <span class="sep">·</span> <a href="/verify/zh-CN/" hreflang="zh-CN">简体中文</a> <span class="sep">·</span> <a href="/verify/vi/" hreflang="vi">Tiếng Việt</a> <span class="sep">·</span> <a href="/verify/id/" hreflang="id">Bahasa Indonesia</a> <span class="sep">·</span> <a href="/verify/ko/" hreflang="ko">한국어</a> <span class="sep">·</span> <a href="/verify/it/" hreflang="it">Italiano</a> <span class="sep">·</span> <a href="/verify/el/" hreflang="el">Ελληνικά</a> <span class="sep">·</span> <a href="/verify/hi/" hreflang="hi">हिन्दी</a> <span class="sep">·</span> <a href="/verify/pa/" hreflang="pa">ਪੰਜਾਬੀ</a></nav>
+  <nav class="locale-switcher" aria-label="Language"><span class="marker">🌏</span> <a href="/verify/" hreflang="en">English</a> <span class="sep">·</span> <a href="/verify/zh-CN/" hreflang="zh-CN">简体中文</a> <span class="sep">·</span> <a href="/verify/vi/" hreflang="vi">Tiếng Việt</a> <span class="sep">·</span> <a href="/verify/id/" hreflang="id">Bahasa Indonesia</a> <span class="sep">·</span> <a href="/verify/ko/" hreflang="ko">한국어</a> <span class="sep">·</span> <span class="active">Italiano</span> <span class="sep">·</span> <a href="/verify/el/" hreflang="el">Ελληνικά</a> <span class="sep">·</span> <a href="/verify/hi/" hreflang="hi">हिन्दी</a> <span class="sep">·</span> <a href="/verify/pa/" hreflang="pa">ਪੰਜਾਬੀ</a></nav>
 
-  <div class="eyebrow">Verification</div>
-  <h1>Verify a ParkProof <span class="accent">evidence record</span>.</h1>
-  <p class="lede">Every ParkProof evidence PDF carries a cryptographic signature appendix. This page is the public, offline walkthrough for anyone — a council officer, an insurer, a court clerk, or the driver themselves — to confirm that the record hasn't been altered since the moment it was saved.</p>
+  <div class="eyebrow">Verifica</div>
+  <h1>Verifica un record di <span class="accent">prova ParkProof</span>.</h1>
+  <p class="lede">Ogni PDF di prova ParkProof porta un'appendice di firma crittografica. Questa pagina è la guida pubblica e offline perché chiunque — un funzionario comunale, un assicuratore, un cancelliere, o il conducente stesso — confermi che il record non è stato alterato dal momento del salvataggio.</p>
 
   <div class="callout">
-    <strong>Honest framing.</strong> The signature proves <em>integrity</em>: the bytes inside this record are identical to the bytes signed at scan time. It does not prove the record's <em>truthfulness</em> (the AI could have read the sign incorrectly), nor does it determine the legal weight of the evidence. That's a separate judgement made by whoever's reviewing it.
+    <strong>Inquadramento onesto.</strong> La firma prova l'<em>integrità</em>: i byte all'interno di questo record sono identici ai byte firmati al momento della scansione. Non prova la <em>veridicità</em> del record (l'AI potrebbe aver letto male il cartello), né determina il peso legale della prova. Quel giudizio spetta a chi la rivede.
   </div>
 
-  <h2>What you're verifying</h2>
-  <p>Each ParkProof session has a <strong>payload</strong> (a small text file containing the canonical session metadata plus SHA-256 hashes of the sign + car photos) and a <strong>signature</strong> (the payload signed with an AWS KMS-managed ECDSA P-256 private key that never leaves AWS). Both are printed in the signature appendix of every exported evidence PDF.</p>
-  <p>The <strong>public key</strong> needed to verify the signature is published at <a class="link" href="/parkproof-public-key.pem"><code>/parkproof-public-key.pem</code></a> — open it in a browser to confirm it loads, then save it locally.</p>
+  <h2>Cosa stai verificando</h2>
+  <p>Ogni sessione ParkProof ha un <strong>payload</strong> (un piccolo file di testo contenente i metadati canonici della sessione più gli hash SHA-256 delle foto del cartello + dell'auto) e una <strong>firma</strong> (il payload firmato con una chiave privata ECDSA P-256 gestita da AWS KMS che non lascia mai AWS). Entrambi sono stampati nell'appendice di firma di ogni PDF di prova esportato.</p>
+  <p>La <strong>chiave pubblica</strong> necessaria per verificare la firma è pubblicata su <a class="link" href="/parkproof-public-key.pem"><code>/parkproof-public-key.pem</code></a> — aprila nel browser per confermare il caricamento, poi salvala localmente.</p>
 
-  <h2>What you'll need</h2>
+  <h2>Cosa ti serve</h2>
   <ul>
-    <li><strong>The evidence PDF</strong> — supplied by the person disputing or producing the record.</li>
-    <li><strong><code>openssl</code></strong> — bundled with macOS and most Linux distros; on Windows, available via Git Bash, WSL, or the standalone OpenSSL build.</li>
-    <li><strong>About 60 seconds.</strong></li>
+    <li><strong>Il PDF di prova</strong> — fornito dalla persona che contesta o produce il record.</li>
+    <li><strong><code>openssl</code></strong> — incluso in macOS e nella maggior parte delle distro Linux; su Windows, disponibile tramite Git Bash, WSL, o la build OpenSSL standalone.</li>
+    <li><strong>Circa 60 secondi.</strong></li>
   </ul>
 
-  <h2>Step-by-step</h2>
+  <h2>Passo-passo</h2>
 
-  <p>Open the evidence PDF, scroll to the <strong>"Signature appendix"</strong> page at the back. You'll see three blocks of text: <code>payload</code>, <code>sig.base64</code>, and a reference to the public key URL. Save the first two to files on your machine, then run the verification:</p>
+  <p>Apri il PDF di prova, scorri fino alla pagina <strong>"Appendice firma"</strong> in fondo. Vedrai tre blocchi di testo: <code>payload</code>, <code>sig.base64</code>, e un riferimento all'URL della chiave pubblica. Salva i primi due in file sulla tua macchina, poi esegui la verifica:</p>
 
-  <pre><span class="comment"># 1. Save the payload block from the PDF appendix to payload.txt
-#    (copy-paste exactly; preserve line endings).
-# 2. Save the base64 signature block to sig.base64.
-# 3. Fetch the public key.</span>
+  <pre><span class="comment"># 1. Salva il blocco payload dall'appendice PDF in payload.txt
+#    (copia-incolla esattamente; preserva i fine-riga).
+# 2. Salva il blocco firma base64 in sig.base64.
+# 3. Scarica la chiave pubblica.</span>
 curl -O https://www.parkproof.com.au/parkproof-public-key.pem
 
-<span class="comment"># 4. Decode the base64 signature to raw bytes.</span>
+<span class="comment"># 4. Decodifica la firma base64 in byte grezzi.</span>
 base64 -d sig.base64 > sig.bin
 
-<span class="comment"># 5. Run the verification.</span>
+<span class="comment"># 5. Esegui la verifica.</span>
 openssl dgst -sha256 -verify parkproof-public-key.pem \
   -signature sig.bin payload.txt</pre>
 
-  <h2>What the result means</h2>
+  <h2>Cosa significa il risultato</h2>
 
   <div class="grid-2">
     <div class="card ok">
-      <h3>Verified <span class="label">PASS</span></h3>
-      <p><code>Verified OK</code> — the payload in your PDF is byte-identical to what ParkProof signed at scan time. The sign rules, GPS, timestamp, address, and photo hashes have not been altered since.</p>
+      <h3>Verificato <span class="label">PASS</span></h3>
+      <p><code>Verified OK</code> — il payload nel tuo PDF è byte-identico a quello che ParkProof ha firmato al momento della scansione. Le regole del cartello, GPS, timestamp, indirizzo e hash delle foto non sono stati alterati da allora.</p>
     </div>
     <div class="card fail">
-      <h3>Failure <span class="label">FAIL</span></h3>
-      <p><code>Verification failure</code> — the payload, the signature, or both have been modified since the record was saved. The PDF may have been edited, the appendix tampered with, or copy-paste introduced whitespace differences. Repeat the copy carefully before drawing conclusions.</p>
+      <h3>Fallimento <span class="label">FAIL</span></h3>
+      <p><code>Verification failure</code> — il payload, la firma, o entrambi sono stati modificati da quando il record è stato salvato. Il PDF potrebbe essere stato modificato, l'appendice manomessa, o copia-incolla ha introdotto differenze di spaziatura. Ripeti la copia con attenzione prima di trarre conclusioni.</p>
     </div>
   </div>
 
-  <h2>Beyond "did the bytes change?"</h2>
-  <p>A successful verification confirms <em>integrity</em>. It does not confirm:</p>
+  <h2>Oltre "i byte sono cambiati?"</h2>
+  <p>Una verifica riuscita conferma l'<em>integrità</em>. Non conferma:</p>
   <ul>
-    <li><strong>That the AI read the sign correctly.</strong> The ParkProof scan is a machine read of a parking sign, and machines can be wrong. The verdict text and rules in the record are the AI's best read at scan time, not ground truth.</li>
-    <li><strong>That the photos depict what the person says they depict.</strong> The signature proves the photos haven't been altered <em>since saving</em>, not that the photos themselves were honestly captured.</li>
-    <li><strong>Any legal outcome.</strong> Whether the evidence supports an appeal, a refund, or a court case is the reviewer's call. ParkProof is a tool, not a lawyer.</li>
+    <li><strong>Che l'AI abbia letto il cartello correttamente.</strong> La scansione ParkProof è una lettura automatica di un cartello di parcheggio, e le macchine possono sbagliare. Il testo del verdetto e le regole nel record sono la migliore lettura dell'AI al momento della scansione, non la verità assoluta.</li>
+    <li><strong>Che le foto raffigurino ciò che la persona dice raffigurino.</strong> La firma prova che le foto non sono state alterate <em>dal salvataggio</em>, non che le foto stesse siano state catturate onestamente.</li>
+    <li><strong>Qualsiasi esito legale.</strong> Se la prova supporti un ricorso, un rimborso, o un caso giudiziario è la decisione del revisore. ParkProof è uno strumento, non un avvocato.</li>
   </ul>
 
-  <h2>Why this exists</h2>
-  <p>Most parking apps that produce "evidence" produce a screenshot. Screenshots have no integrity story — they could have been edited at any point between when they were taken and when they were sent. The cryptographic signature is the difference between <em>"here's what I saw"</em> and <em>"here's what I saw, and here's mathematical proof I haven't changed it since."</em></p>
-  <p>The public key is published so the verification is fully offline — you do not need to trust ParkProof, contact our servers, or run our app to confirm the integrity claim. The verification can be performed years from now even if ParkProof is no longer maintained, as long as <code>openssl</code> still exists.</p>
+  <h2>Perché esiste</h2>
+  <p>La maggior parte delle app di parcheggio che producono "prova" producono uno screenshot. Gli screenshot non hanno storia di integrità — potrebbero essere stati modificati in qualunque momento tra quando sono stati scattati e quando sono stati inviati. La firma crittografica è la differenza tra <em>"ecco cosa ho visto"</em> e <em>"ecco cosa ho visto, ed ecco la prova matematica che non l'ho cambiato da allora."</em></p>
+  <p>La chiave pubblica è pubblicata in modo che la verifica sia interamente offline — non devi fidarti di ParkProof, contattare i nostri server, o eseguire la nostra app per confermare la dichiarazione di integrità. La verifica può essere eseguita anni dopo, anche se ParkProof non è più mantenuta, finché <code>openssl</code> esiste ancora.</p>
 
-  <h2>Questions?</h2>
-  <p>Email <a class="link" href="mailto:hello@parkproof.com.au">hello@parkproof.com.au</a>. We answer.</p>
+  <h2>Domande?</h2>
+  <p>Email <a class="link" href="mailto:hello@parkproof.com.au">hello@parkproof.com.au</a>. Rispondiamo.</p>
 
   <footer>
-    <span>parkproof.com.au · verification page</span>
-    <span><a href="/parkproof-public-key.pem">/parkproof-public-key.pem</a> <span class="sep">·</span> <a href="/">← Back to ParkProof</a></span>
+    <span>parkproof.com.au · pagina di verifica</span>
+    <span><a href="/parkproof-public-key.pem">/parkproof-public-key.pem</a> <span class="sep">·</span> <a href="/">← Torna a ParkProof</a></span>
   </footer>
 </div>
 
