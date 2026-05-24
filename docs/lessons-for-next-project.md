@@ -352,6 +352,30 @@ Node.js + AWS SDK + Anthropic SDK cold start = ~1 second of init duration on the
 
 Symptom → first-check → likely-fix triage table, with explicit commands for frontend revert (`git revert + scripts/deploy.sh`), Lambda version rollback (`update-function-code`), and what can't be rolled back (Cognito, DDB schema, KMS rotation). The first time you need it is the worst time to write it. **5 minutes pre-launch saves 30 minutes mid-incident.**
 
+### S3 CORS allowlist follows domain migrations — or photos silently never upload
+
+The single most expensive bug of the project, caught in bed at 2am on launch eve. The evidence bucket was provisioned during initial setup with CORS allowing the legacy domain + raw CloudFront origin + localhost. Six weeks later the production domain migrated to `www.parkproof.com.au`, but the bucket's `AllowedOrigins` was never updated. Every photo upload from the production site hit CORS preflight failure, the frontend swallowed the error per its "best-effort" sync policy, and DDB session rows landed with NULL photo fields. Symptom from the user side: signed-in, sessions visible, **photos completely missing from UI and PDFs** — while S3 sat literally empty.
+
+Two takeaways: (1) **Add a CORS audit to every domain-migration runbook.** A 2-second `aws s3api get-bucket-cors --bucket X` would have caught it. (2) **"Best-effort, warned-and-swallowed" error handling needs an escape hatch.** Silent fail with a `console.warn()` means nobody notices until a user manually inspects S3. Either: surface upload failures to the user (toast / banner), or instrument the failure with a counter that triggers a CloudWatch alarm if non-zero for >5 min. The current design optimised for "don't fail the metadata write because of a photo glitch" — admirable but the threshold for breaking that silence is too high.
+
+### Re-render plumbing for async-pull-into-localStorage flows
+
+When an async operation mutates `localStorage` outside the React render cycle (`performInitialSync`, background sync workers, service-worker storage updates), nothing tells React to re-derive view state from it. The component holding the derived count just keeps showing the pre-mutation value until *something else* triggers a re-render (`useNow` tick at 30s in our case, or a user gesture). Symptom: post-sign-in on a fresh device, cloud sessions land in localStorage successfully but the home view stays at `sessionCount === 0` and renders the first-time-visitor experience indefinitely.
+
+The fix is a `.finally(() => bumpRenderVersion(v => v + 1))` on the async chain. **Cheap, idempotent, runs once per operation.** The version state primitive should already exist for similar "I mutated storage, please re-render" cases (save/delete/end-session); reuse it rather than introducing parallel state.
+
+⚠️ **What NOT to do**: trying to "fix this properly" by wrapping the derived count in `useMemo([versionState])` PLUS adding a fire-on-mount-when-unsigned-in branch to bump the version — that combination crashed the entire React tree on every view transition in this codebase. Reverted in 5 minutes. Root cause never fully diagnosed under 3am conditions. **The minimal `.finally()` bump alone is sufficient.** If you reach for the more elaborate refactor, do it with a local dev environment and console.log render counts to validate first.
+
+### Pre-launch testing has to happen on the actual production URL, not localhost or CloudFront-direct
+
+Every bug caught in the launch-eve testing window came from one of two things: (1) testing the *actual* production domain end-to-end on a real device, and (2) testing federation flows that aren't part of `npm run dev`. The S3 CORS bug, the OAuth callback orphan, the post-sync render: none would have surfaced under `localhost:5173` because dev runs against a permissive proxy with different CORS, different auth callback paths, and different SW behaviour.
+
+**Mandatory pre-launch smoke test**: on a real phone, on the production URL, in a private/incognito tab so the SW doesn't serve cached state. Walk every user-facing flow including (a) federated sign-in cold from no-cookie state, (b) photo upload save + PDF export, (c) sign-in then sign-out then sign-in again, (d) the marketing landing page sharing preview on at least one platform's debugger. ~30 minutes. Catches in 30 minutes what would otherwise become a Reddit comment.
+
+### Discipline of "do not deploy more code after a midnight revert"
+
+Got broken right after a deploy at 2:30am. Reverted at 2:35am. Two more bugs surfaced from continued testing. **Resisting the urge to re-attempt the broken fix the same night was the right call** — the suspect commit was the one that broke things; re-attempting the same approach at 3am with cloudy judgement would have either re-introduced the bug or shipped a different one. Discipline: name the bug clearly in CLAUDE.md gotchas + a TODO in the issue tracker, schedule the diagnosis for "tomorrow eyes-fresh", and ship only the minimum-viable workaround that doesn't touch the same surface. **The build journal entry the next morning will be more honest if you didn't try to hide the failure with a 3am re-deploy.**
+
 ---
 
 ## A starter checklist for the next project
