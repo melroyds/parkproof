@@ -55,8 +55,21 @@ export default function AuthSettings({ onBack, onOpenPrivacy, onDeleted }: Props
       // The cloud /me/export response shape matches downloadFullExportPdf's
       // FullExportPayload exactly. Renders a multi-page PDF: cover with
       // summary table, then one detail block per session with photos.
+      //
+      // Cross-device: the /me/export response carries photos as HTTPS
+      // presigned URLs (same hydration path as /sessions/list). jsPDF's
+      // addImage only works with data URLs, so materialize every session's
+      // photos before handing the payload to the generator. Per-photo
+      // failures are tolerated — the bad field falls back to "could not be
+      // embedded" while the rest of the export renders cleanly.
+      const payload = data as Parameters<
+        typeof pdfModule.downloadFullExportPdf
+      >[0]
+      const sessionsForPdf = await pdfModule.materializeRemotePhotosBatch(
+        payload.sessions,
+      )
       pdfModule.downloadFullExportPdf(
-        data as Parameters<typeof pdfModule.downloadFullExportPdf>[0],
+        { ...payload, sessions: sessionsForPdf },
         t,
         i18n.language,
       )

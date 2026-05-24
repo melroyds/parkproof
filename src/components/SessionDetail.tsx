@@ -114,7 +114,11 @@ export default function SessionDetail({
       const mod = pdfModuleRef.current ?? (await import('../lib/pdf'))
       const { prefetchPdfFont } = await import('../lib/pdf-fonts')
       await prefetchPdfFont(i18n.language)
-      mod.downloadPdf(session, t, i18n.language)
+      // Cross-device: cloud-synced photos arrive as HTTPS presigned URLs.
+      // jsPDF's addImage only works with data URLs — materialize first.
+      // No-op for same-device sessions (photos already data URLs).
+      const sessionForPdf = await mod.materializeRemotePhotos(session)
+      mod.downloadPdf(sessionForPdf, t, i18n.language)
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err)
       console.error('[pdf] export failed:', err)

@@ -137,6 +137,72 @@ function buildGuidance(session: ParkingSession, timezone: string, t: TFunction):
   })
 }
 
+// ─── Cross-device photo materialization ────────────────────────────────────
+/**
+ * Cross-device fix: when a signed-in user pulls sessions from the cloud,
+ * `sign_photo` / `car_photo` / `ambient_photo` arrive as short-TTL presigned
+ * S3 GET URLs (HTTPS), not base64 data URLs. jsPDF's `addImage` and
+ * `getImageProperties` only work synchronously with data URLs — passing an
+ * HTTPS URL throws, which the PDF code catches and renders the
+ * "Image could not be embedded" fallback. The user sees this on every
+ * cross-device PDF even though the photos exist in S3.
+ *
+ * Fix: before generating the PDF, fetch any HTTPS photo URLs and convert
+ * them to data URLs. Per-field failures are tolerated — if one photo can't
+ * be fetched (S3 404, expired presign, network), the others still embed and
+ * only the bad field falls back to "could not be embedded".
+ *
+ * Returns a NEW session object — the original is not mutated, because the
+ * caller's localStorage copy should keep its HTTPS URLs (they'll be re-minted
+ * with a fresh 1h TTL on the next /sessions/list call; the data URL we
+ * generate here is only needed for the in-flight PDF).
+ */
+export async function materializeRemotePhotos(
+  session: ParkingSession,
+): Promise<ParkingSession> {
+  const fields = ['sign_photo', 'car_photo', 'ambient_photo'] as const
+  const out: ParkingSession = { ...session }
+  await Promise.all(
+    fields.map(async (field) => {
+      const value = session[field]
+      if (typeof value !== 'string') return
+      if (value.startsWith('data:')) return // already inline; nothing to do
+      if (!/^https?:/i.test(value)) return // not a fetchable URL
+      try {
+        const res = await fetch(value)
+        if (!res.ok) {
+          console.warn(
+            `[pdf] photo fetch failed for ${field}: HTTP ${res.status}`,
+          )
+          return
+        }
+        const blob = await res.blob()
+        const dataUrl = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader()
+          reader.onload = () => resolve(reader.result as string)
+          reader.onerror = () =>
+            reject(reader.error ?? new Error('FileReader failed'))
+          reader.readAsDataURL(blob)
+        })
+        out[field] = dataUrl
+      } catch (err) {
+        console.warn(`[pdf] photo materialize failed for ${field}:`, err)
+      }
+    }),
+  )
+  return out
+}
+
+/**
+ * Batch wrapper for the full-export PDF, which renders one block per session
+ * and so needs every session's photos materialized up front.
+ */
+export async function materializeRemotePhotosBatch(
+  sessions: ParkingSession[],
+): Promise<ParkingSession[]> {
+  return Promise.all(sessions.map(materializeRemotePhotos))
+}
+
 // ─── PDF layout helpers ─────────────────────────────────────────────────────
 function ensureSpace(doc: jsPDF, y: number, needed: number): number {
   const pageHeight = doc.internal.pageSize.getHeight()
