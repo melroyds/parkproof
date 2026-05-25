@@ -118,7 +118,7 @@
     "verifyRetake": "重拍照片",
     "verifyConfirmed": "您已确认读取",
     "viewPhoto": "查看照片",
-    "logCta": "记录此次停车",
+    "logCta": "保存并提醒我",
     "scanAnother": "扫描另一个标志",
     "transitionHeadsUp": "注意 — 于 {{when}}",
     "logCtaBlocked": "确认付款后再保存",
