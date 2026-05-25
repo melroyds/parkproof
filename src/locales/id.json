@@ -107,7 +107,12 @@
       "requesting": "Bertanya pada browsermu…"
     },
     "footerNote": "Dibuat di Melbourne.",
-    "cta": "Coba — pindai rambu"
+    "cta": "Coba — pindai rambu",
+    "support": {
+      "title": "Suka ParkProof?",
+      "body": "Dibangun sendiri dalam 10 hari, gratis selamanya. Jika ini menyelamatkan Anda dari tilang, traktir saya kopi.",
+      "button": "☕ Belikan saya kopi"
+    }
   },
   "landing": {
     "heroTitle1": "Parkir",

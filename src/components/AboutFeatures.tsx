@@ -139,6 +139,31 @@ export default function AboutFeatures({ onBack, onTryIt }: Props) {
         </Fragment>
       ))}
 
+      {/* Buy-me-a-coffee block. Free-forever tipping surface, opt-in by
+          definition — anyone who's read this far has used the app, liked
+          it enough to come back to /about, and is browsing leisurely. The
+          right moment for a soft ask. New tab so the user doesn't lose
+          their place; rel='noopener' for the usual security reason.
+          Brand-tinted to match the push-subscribe block above without
+          being shouty. The coffee emoji works across all 9 locales — BMC
+          is globally recognised as a tipping platform. */}
+      <div className="mb-8 p-5 rounded-2xl bg-brand-50 border border-brand-100">
+        <p className="text-sm font-semibold text-ink-900 mb-1">
+          {t('about.support.title')}
+        </p>
+        <p className="text-xs text-ink-700 leading-relaxed mb-3">
+          {t('about.support.body')}
+        </p>
+        <a
+          href="https://buymeacoffee.com/parkproof"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center justify-center text-sm font-semibold text-white bg-ink-900 hover:bg-ink-800 px-4 py-2 rounded-xl transition-colors"
+        >
+          {t('about.support.button')}
+        </a>
+      </div>
+
       {/* Build-in-the-open footer — minimal, no personal identity. GitHub
           link intentionally removed: the linked profile/repo carries name +
           photo, and ParkProof's surface should stay free of that for the

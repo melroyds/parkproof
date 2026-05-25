@@ -112,7 +112,12 @@
       "requesting": "Asking your browser…"
     },
     "footerNote": "Built in Melbourne.",
-    "cta": "Try it — scan a sign"
+    "cta": "Try it — scan a sign",
+    "support": {
+      "title": "Like ParkProof?",
+      "body": "Built solo in 10 days, free forever. If it saved you from a ticket, chip in for the AWS bill.",
+      "button": "☕ Buy me a coffee"
+    }
   },
   "landing": {
     "heroTitle1": "Parking",

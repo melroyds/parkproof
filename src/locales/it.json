@@ -700,6 +700,11 @@
         "Ogni parcheggio che salvi viene rispecchiato sul cloud — se il telefono si rompe, le prove sono ancora lì.",
         "Un tocco per scaricare ogni registro. Un tocco per cancellare ogni registro e il tuo account, se cambi idea."
       ]
+    },
+    "support": {
+      "title": "Ti piace ParkProof?",
+      "body": "Creato da solo in 10 giorni, gratis per sempre. Se ti ha salvato da una multa, offrimi un caffè.",
+      "button": "☕ Offrimi un caffè"
     }
   },
   "scheduledReminders": {

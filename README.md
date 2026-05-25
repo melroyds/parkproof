@@ -420,6 +420,14 @@ ParkProof/
 - [`docs/how-parkproof-was-built.pdf`](docs/how-parkproof-was-built.pdf) — ELI15 explainer of the stack + architecture
 - [`docs/lessons-for-next-project.md`](docs/lessons-for-next-project.md) — portable takeaways: what to do (and not do) on the next portfolio project, distilled from ParkProof
 
+## Support
+
+ParkProof is free forever — no accounts, no ads, no upsells. If it saved you from a ticket and you'd like to chip in for the AWS bill, there's a tip jar:
+
+[☕ Buy me a coffee](https://buymeacoffee.com/parkproof)
+
+Entirely optional. The app works identically whether you tip or not.
+
 ## Credits
 
 Built with [Claude Code](https://claude.com/claude-code).

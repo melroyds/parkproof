@@ -694,6 +694,11 @@
         "Mỗi lần đậu xe đều được sao lưu lên đám mây — nếu điện thoại hỏng, bằng chứng vẫn còn đó.",
         "Một chạm để tải về mọi hồ sơ. Một chạm để xóa mọi hồ sơ và tài khoản, nếu bạn đổi ý."
       ]
+    },
+    "support": {
+      "title": "Thích ParkProof không?",
+      "body": "Tự xây dựng trong 10 ngày, miễn phí mãi mãi. Nếu nó giúp bạn tránh được vé phạt, hãy ủng hộ chi phí AWS.",
+      "button": "☕ Mời tôi một ly cà phê"
     }
   },
   "scheduledReminders": {

@@ -107,7 +107,12 @@
       "requesting": "브라우저에 요청 중…"
     },
     "footerNote": "Melbourne에서 만들어졌습니다.",
-    "cta": "사용해보기 — 표지판 스캔"
+    "cta": "사용해보기 — 표지판 스캔",
+    "support": {
+      "title": "ParkProof이 마음에 드시나요?",
+      "body": "혼자 10일 동안 만들었고 항상 무료입니다. 주차 위반 딱지를 면하셨다면 커피 한 잔 사주세요.",
+      "button": "☕ 커피 사주기"
+    }
   },
   "landing": {
     "heroTitle1": "주차가",
