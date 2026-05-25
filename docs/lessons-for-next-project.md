@@ -398,6 +398,32 @@ Two patterns to ship next time:
 
 A stale presigned URL in localStorage will survive a hard refresh if the `alreadyInSync` patching path doesn't fire correctly (which it sometimes doesn't, for reasons not yet fully diagnosed — see CLAUDE.md gotcha). The reliable user-facing recovery is sign-out + force-quit browser + reopen, which nukes the localStorage entries entirely and forces a fresh fetch. **Document this in the user-facing FAQ before you need it during a real customer support thread.**
 
+### Don't hand browsers presigned URLs to private storage. Proxy through your API.
+
+The single most important architectural lesson of the project. Caught the hard way at 9am Monday on launch eve after every other targeted fix had failed to make cross-device PDF photo embedding work on mobile.
+
+ParkProof originally followed the textbook AWS pattern: Lambda mints presigned S3 GET URLs, returns them in `/sessions/list`, browser fetches photos directly from S3. Worked perfectly on desktop. Failed on mobile in three unrelated ways:
+
+1. **S3 CORS allow-list trapped by a domain migration.** The bucket was provisioned with the old domain in `AllowedOrigins`; the production domain swap left photo uploads silently failing for two days.
+2. **AWS SDK v3.729+ default integrity protections.** The SDK started injecting `x-amz-checksum-mode=ENABLED` as a query parameter. Curl tests returned proper CORS headers; real browser fetches reported `No 'Access-Control-Allow-Origin' header is present`. ~90 minutes of debugging because the curl-vs-browser path diverged.
+3. **Android Chrome over 5G blocked the fetch at the network layer.** `status=0` errors at 4-6ms, no CORS error reachable. Likely a carrier or privacy-layer (Google One VPN, WARP, iCloud Private Relay) interaction with the long STS-tokened URLs. Different browser on the same device, same result.
+
+Each was a real bug. Each was patchable individually. But the *real* lesson is that **the browser-fetches-S3-directly pattern has too many failure modes that you can't see from the server side.** Every test path that doesn't run on a real phone over real cellular misses some of them.
+
+The fix is structural, not tactical: **add a server-side proxy endpoint that fetches from S3 on the browser's behalf and returns the bytes through the same API origin the browser already trusts.** In ParkProof: `POST /photos/materialize { session_id, role }` → `{ data_url: "data:image/jpeg;base64,..." }`. Lambda fetches S3 server-side (no CORS), authenticates via the same JWT as everything else, returns the bytes as a base64 data URL the PDF generator consumes directly.
+
+**Why this beats every other approach:**
+- No cross-origin browser fetches ⇒ no CORS to debug, no SDK-version regressions, no carrier weirdness
+- Same auth model as the rest of the API ⇒ one source of truth for "who can read this data"
+- Same CloudWatch logs ⇒ one place to debug failures
+- Same JWT expiry ⇒ no separate URL TTL to reason about
+- Same CORS config ⇒ no separate bucket-CORS allow-list to drift
+- Server-side fetch is consistent across every browser + network ⇒ you can't have "works on PC, broken on phone" anymore
+
+**Cost:** a tiny bump in Lambda execution time per photo (S3 GET is ~50ms warm) and a slightly heavier API response (a 100KB photo becomes ~135KB as base64). Both are negligible at portfolio scale. At real scale you'd put CloudFront in front of the proxy endpoint for caching.
+
+**Build this on day 1 next time.** Skip the "give the browser a presigned URL" pattern entirely for browser-facing private storage reads. The textbook pattern is fine for backend-to-backend, but for browsers it's a deep well of platform-specific failures.
+
 ---
 
 ## A starter checklist for the next project
