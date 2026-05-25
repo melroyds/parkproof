@@ -133,9 +133,15 @@ function App() {
       try {
         const handled = await handleFederatedCallback()
         if (handled) {
-          // Clean the OAuth params out of the URL — leaves the page on / with
-          // the user signed in.
-          window.history.replaceState({}, '', window.location.pathname)
+          // Replace the OAuth callback URL with the canonical app path.
+          // The browser landed at /auth/callback?code=... (Cognito's
+          // whitelisted redirect URI), CloudFront rewrote that to
+          // /app/index.html so the SPA could mount, and now we want the
+          // URL bar to reflect where the user actually IS — the React
+          // PWA at /app/ — not the OAuth callback path. Replacing rather
+          // than pushing means there's no back-button stop on the dead
+          // /auth/callback URL.
+          window.history.replaceState({}, '', '/app/')
           await auth.refresh()
         }
       } catch (err) {
