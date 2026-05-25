@@ -160,31 +160,37 @@ function buildGuidance(session: ParkingSession, timezone: string, t: TFunction):
 export async function materializeRemotePhotos(
   session: ParkingSession,
 ): Promise<ParkingSession> {
+  // Lazy-import sync.ts to keep its deps out of the PDF chunk when the
+  // session is fully same-device (every photo already a data URL).
+  const { materializePhotoFromCloud } = await import('./sync')
+
   const fields = ['sign_photo', 'car_photo', 'ambient_photo'] as const
+  const fieldToRole: Record<(typeof fields)[number], 'sign' | 'car' | 'ambient'> = {
+    sign_photo: 'sign',
+    car_photo: 'car',
+    ambient_photo: 'ambient',
+  }
   const out: ParkingSession = { ...session }
   await Promise.all(
     fields.map(async (field) => {
       const value = session[field]
       if (typeof value !== 'string') return
       if (value.startsWith('data:')) return // already inline; nothing to do
-      if (!/^https?:/i.test(value)) return // not a fetchable URL
+      if (!/^https?:/i.test(value)) return // not a remote URL we need to fetch
       try {
-        const res = await fetch(value)
-        if (!res.ok) {
-          console.warn(
-            `[pdf] photo fetch failed for ${field}: HTTP ${res.status}`,
-          )
-          return
+        // Server-side proxy fetches from S3 and returns base64. The direct
+        // browser-to-S3 path (previously here) worked on desktop but failed
+        // on some mobile carriers — see CLAUDE.md gotcha.
+        const dataUrl = await materializePhotoFromCloud(
+          session.id,
+          fieldToRole[field],
+        )
+        if (dataUrl) {
+          out[field] = dataUrl
         }
-        const blob = await res.blob()
-        const dataUrl = await new Promise<string>((resolve, reject) => {
-          const reader = new FileReader()
-          reader.onload = () => resolve(reader.result as string)
-          reader.onerror = () =>
-            reject(reader.error ?? new Error('FileReader failed'))
-          reader.readAsDataURL(blob)
-        })
-        out[field] = dataUrl
+        // null → S3 has no object at the canonical key (historical session
+        // from before the upload-CORS fix). Leave the field as the HTTPS
+        // URL; jsPDF will catch and render the "could not embed" fallback.
       } catch (err) {
         console.warn(`[pdf] photo materialize failed for ${field}:`, err)
       }

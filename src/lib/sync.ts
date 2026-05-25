@@ -155,6 +155,30 @@ export async function listCloudSessions(): Promise<ParkingSession[]> {
   return data.sessions
 }
 
+/**
+ * Materialize one photo from the cloud as a data URL via the server-side
+ * proxy. Used by the PDF generator's cross-device path. The Lambda fetches
+ * from S3 server-side and returns the bytes through the same API origin
+ * the browser already trusts — sidesteps the direct-to-S3 CORS failures
+ * we hit on some mobile networks (Android Chrome over 5G, certain
+ * privacy-layer VPNs) that the curl-equivalent test path doesn't reproduce.
+ *
+ * Returns null when S3 has no object at the canonical key — the historical
+ * sessions from before the upload-CORS fix have null photos cloud-side and
+ * we can't recover them retroactively.
+ */
+export async function materializePhotoFromCloud(
+  sessionId: string,
+  role: 'sign' | 'car' | 'ambient',
+): Promise<string | null> {
+  const res = await authFetch('/photos/materialize', {
+    method: 'POST',
+    body: JSON.stringify({ session_id: sessionId, role }),
+  })
+  const data = await expectJson<{ data_url: string | null }>(res)
+  return data.data_url
+}
+
 /** Delete one session from the cloud (DDB row + S3 photos, best-effort). */
 export async function deleteCloudSession(sessionId: string): Promise<void> {
   const res = await authFetch('/sessions/delete', {

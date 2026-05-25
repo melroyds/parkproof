@@ -283,8 +283,9 @@ ensure_route "sign-session"
 ensure_route "sessions/upload" --auth
 ensure_route "sessions/list"   --auth
 ensure_route "sessions/delete" --auth
-ensure_route "photos/presign"  --auth
-ensure_route "me/export"       --auth
+ensure_route "photos/presign"     --auth
+ensure_route "photos/materialize" --auth
+ensure_route "me/export"          --auth
 ensure_route "me/delete"       --auth
 
 # GET method variant for the two listing/export routes, so the frontend can

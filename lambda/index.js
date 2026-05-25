@@ -20,6 +20,7 @@ import tzlookup from 'tz-lookup'
 import {
   handleMeDelete,
   handleMeExport,
+  handlePhotosMaterialize,
   handlePhotosPresign,
   handleSessionsDelete,
   handleSessionsList,
@@ -1713,6 +1714,7 @@ export async function handler(event) {
     { match: /\/sessions\/list$/, handler: handleSessionsList },
     { match: /\/sessions\/delete$/, handler: handleSessionsDelete },
     { match: /\/photos\/presign$/, handler: handlePhotosPresign },
+    { match: /\/photos\/materialize$/, handler: handlePhotosMaterialize },
     { match: /\/me\/export$/, handler: handleMeExport },
     { match: /\/me\/delete$/, handler: handleMeDelete },
   ]

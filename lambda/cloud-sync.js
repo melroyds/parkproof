@@ -288,6 +288,68 @@ export async function handlePhotosPresign(event) {
   return { url, key, bucket: EVIDENCE_BUCKET }
 }
 
+// ─── /photos/materialize ──────────────────────────────────────────────────
+/**
+ * Server-side photo proxy. Replaces the older browser-direct-to-S3 fetch
+ * path that materializeRemotePhotos in src/lib/pdf.ts used. The browser-
+ * direct path worked everywhere on desktop but failed on some mobile
+ * browsers (Android Chrome over 5G observed, status=0 errors at 4-6ms,
+ * no CORS error logged) — likely a carrier/privacy-layer interaction
+ * with the long presigned S3 URLs. Going through the API removes the
+ * cross-origin S3 hop entirely.
+ *
+ * Auth: JWT (same as /sessions/list). The caller can only materialize
+ * photos under their own `{sub}/` prefix — we construct the S3 key from
+ * the JWT's sub, not from anything in the request body.
+ *
+ * Request:  POST /photos/materialize  { session_id, role }
+ * Response: { data_url: "data:image/jpeg;base64,..." }  or  { data_url: null }
+ *
+ * Best-effort: returns `data_url: null` when the S3 object doesn't exist
+ * (historical sessions from before the CORS fix). The frontend treats
+ * null the same as a fetch failure — falls back to the "could not embed"
+ * placeholder for that one photo, doesn't break the whole PDF.
+ */
+export async function handlePhotosMaterialize(event) {
+  const userId = requireUserId(event)
+  if (!EVIDENCE_BUCKET) {
+    throw new Error('S3_BUCKET_EVIDENCE not configured')
+  }
+  const body = parseBody(event)
+  const sessionId = body?.session_id
+  const role = body?.role // 'sign' | 'car' | 'ambient'
+  if (!sessionId || (role !== 'sign' && role !== 'car' && role !== 'ambient')) {
+    throw badRequest(
+      'session_id + role ("sign", "car", or "ambient") are required',
+    )
+  }
+
+  const key = `${userId}/${sessionId}/${role}.jpg`
+  try {
+    const res = await s3().send(
+      new GetObjectCommand({ Bucket: EVIDENCE_BUCKET, Key: key }),
+    )
+    // res.Body is a Readable stream in Node Lambda runtime. Collect chunks
+    // into a Buffer, then base64-encode for the data URL.
+    const chunks = []
+    for await (const chunk of res.Body) {
+      chunks.push(chunk)
+    }
+    const buf = Buffer.concat(chunks)
+    const contentType = res.ContentType || 'image/jpeg'
+    const dataUrl = `data:${contentType};base64,${buf.toString('base64')}`
+    return { data_url: dataUrl }
+  } catch (err) {
+    // S3 returns NoSuchKey via err.name on GetObject. Treat as benign null —
+    // the photo was never uploaded (the historical-session case).
+    if (err?.name === 'NoSuchKey' || err?.$metadata?.httpStatusCode === 404) {
+      return { data_url: null }
+    }
+    console.warn(`[cloud-sync] materialize GET ${key} failed:`, err?.message ?? err)
+    throw err
+  }
+}
+
 // ─── /me/export ───────────────────────────────────────────────────────────
 /**
  * Returns the user's full dataset as a JSON blob. The frontend downloads it
