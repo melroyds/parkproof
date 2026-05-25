@@ -49,6 +49,23 @@
       window.global = window
       window.process = window.process || { env: {} }
     </script>
+    <!--
+      Mobile in-page console for live debugging when phones can't connect to
+      desktop devtools via USB. Gated by `?debug=1` so it doesn't load for
+      normal users. Triggered example:
+        https://www.parkproof.com.au/app/?debug=1
+      Adds a floating "console" button in the bottom-right that opens a full
+      console / network / element inspector. Safe to leave in production —
+      Eruda only loads when the query param is present.
+    -->
+    <script>
+      if (new URLSearchParams(window.location.search).has('debug')) {
+        var s = document.createElement('script')
+        s.src = 'https://cdn.jsdelivr.net/npm/eruda'
+        s.onload = function () { window.eruda && window.eruda.init() }
+        document.head.appendChild(s)
+      }
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
