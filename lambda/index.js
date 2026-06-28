@@ -222,10 +222,10 @@ async function handleDraftAppeal(event) {
 
   if (!ticket_image_base64) throw new Error('ticket_image_base64 is required')
   if (typeof ticket_image_base64 !== 'string' || ticket_image_base64.length > MAX_IMAGE_B64_LEN) {
-    throw new Error('That photo of the notice is too large. Retake it a little smaller.')
+    throw new Error('ERR_IMAGE_TOO_LARGE')
   }
   if (!ALLOWED_MEDIA_TYPES.has(ticket_media_type)) {
-    throw new Error('Unsupported image type. Use a JPEG or PNG photo of the notice.')
+    throw new Error('ERR_IMAGE_TYPE')
   }
 
   // session may be null on the standalone-appeal path — a user who found
@@ -299,15 +299,15 @@ async function handleDraftAppeal(event) {
   )
 
   if (response.stop_reason === 'max_tokens') {
-    throw new Error('The model hit the token limit before finishing — try a clearer photo of the ticket.')
+    throw new Error('ERR_APPEAL_UNDRAFTABLE')
   }
   if (response.stop_reason === 'refusal') {
-    throw new Error('The model declined to draft an appeal for this image.')
+    throw new Error('ERR_APPEAL_UNDRAFTABLE')
   }
 
   const textBlock = response.content.find((b) => b.type === 'text')
   if (!textBlock || !textBlock.text) {
-    throw new Error('We could not draft the appeal from that photo. Try a clearer photo of the notice.')
+    throw new Error('ERR_APPEAL_UNDRAFTABLE')
   }
 
   try {
@@ -316,7 +316,7 @@ async function handleDraftAppeal(event) {
     // Do NOT log the raw model text — for the appeal flow it embeds the user's
     // address, GPS, and infringement details. Length + reason is enough.
     console.error(`[parkproof] appeal JSON parse failed: ${parseErr.message} (len=${textBlock.text.length})`)
-    throw new Error('We could not draft the appeal from that photo. Try a clearer photo of the notice.')
+    throw new Error('ERR_APPEAL_UNDRAFTABLE')
   }
 }
 
@@ -645,10 +645,10 @@ export async function translateSign({
   }
   if (!isRefresh) {
     if (typeof image_base64 !== 'string' || image_base64.length > MAX_IMAGE_B64_LEN) {
-      throw new Error('That photo is too large. Retake it a little smaller or closer to the sign.')
+      throw new Error('ERR_IMAGE_TOO_LARGE')
     }
     if (!ALLOWED_MEDIA_TYPES.has(media_type)) {
-      throw new Error('Unsupported image type. Use a JPEG or PNG photo.')
+      throw new Error('ERR_IMAGE_TYPE')
     }
   }
 
@@ -717,17 +717,15 @@ export async function translateSign({
   )
 
   if (response.stop_reason === 'max_tokens') {
-    throw new Error(
-      'The model hit the token limit before finishing — try a clearer or tighter-cropped photo of the sign.',
-    )
+    throw new Error('ERR_SIGN_UNREADABLE')
   }
   if (response.stop_reason === 'refusal') {
-    throw new Error('The model declined to read this image. Try a different photo.')
+    throw new Error('ERR_SIGN_UNREADABLE')
   }
 
   const textBlock = response.content.find((b) => b.type === 'text')
   if (!textBlock || !textBlock.text) {
-    throw new Error('We could not read this sign clearly. Try a clearer, closer photo.')
+    throw new Error('ERR_SIGN_UNREADABLE')
   }
 
   try {
@@ -737,7 +735,7 @@ export async function translateSign({
     return parsed
   } catch (parseErr) {
     console.error(`[parkproof] sign-translate JSON parse failed: ${parseErr.message} (len=${textBlock.text.length})`)
-    throw new Error('We could not read this sign clearly. Try a clearer, closer photo.')
+    throw new Error('ERR_SIGN_UNREADABLE')
   }
 }
 

@@ -65,9 +65,11 @@
     "iveLeft": "Tôi đã đi",
     "iveLeftAria": "Báo hiệu bạn đã rời khỏi chỗ đậu xe này",
     "iveLeftConfirm": "Kết thúc phiên đậu xe này ngay? Phiên sẽ chuyển sang lịch sử với thời gian rời được ghi lại.",
-    "nextPing": "Nhắc tiếp theo: {{when}}",
+    "nextPing": "Lời nhắc tiếp theo: {{when}}",
     "recheckNow": "Kiểm tra lại ngay",
-    "recheckSub": "Vẫn hợp lệ chứ? Xác minh lại trong vài giây"
+    "recheckSub": "Vẫn hợp lệ chứ? Xác minh lại trong vài giây",
+    "cardAria": "Phiên đỗ xe đang hoạt động tại {{address}}, {{status}}. Nhấn để xem chi tiết.",
+    "listCardAria": "Mở phiên đỗ xe tại {{address}}, {{status}}."
   },
   "scanner": {
     "header": "Quét biển báo đỗ xe",
@@ -143,7 +145,7 @@
     "permitRequired": {
       "kicker": "CẦN GIẤY PHÉP NGƯỜI KHUYẾT TẬT",
       "header": "Chỗ đỗ xe này dành riêng cho người có giấy phép",
-      "copy": "Đỗ xe ở đây mà không có giấy phép người khuyết tật hợp lệ được hiển thị rõ ràng là vi phạm. Tại Victoria, mức phạt là hơn $400 và chi phí xã hội — lấy đi chỗ đỗ xe của người thực sự cần — là có thật. Nếu bạn không có giấy phép, hãy quét một chỗ khác.",
+      "copy": "Đỗ xe ở đây mà không có giấy phép người khuyết tật hợp lệ được hiển thị rõ ràng là vi phạm. Tại Victoria, mức phạt là $400 trở lên, và chỗ đỗ này dành riêng cho người cần đến nó. Nếu bạn không có giấy phép, hãy quét một chỗ khác.",
       "ack": "Tôi có giấy phép người khuyết tật hợp lệ được hiển thị rõ ràng trên xe"
     },
     "permitZone": {
@@ -200,7 +202,7 @@
     "header": "Đặt nhắc nhở",
     "noExpiry": "Phiên này không có giờ hết hạn, nên nhắc nhở theo giờ không áp dụng.",
     "expired": "Giờ đỗ xe đã hết vào <strong>{{when}}</strong>. Quá muộn để nhắc — nhưng phiên của bạn vẫn được lưu làm bằng chứng nếu bạn cần khiếu nại vé phạt.",
-    "intro": "Đỗ xe hết hạn vào <strong>{{when}}</strong>. Chọn lúc nào bạn muốn được nhắc — chọn bao nhiêu cũng được.",
+    "intro": "Đỗ xe hết hạn vào <strong>{{when}}</strong>. Chọn lúc nào bạn muốn được nhắc, chọn bao nhiêu cũng được.",
     "chipAtExpiry": "Lúc hết hạn",
     "chipMin": "{{count}} phút",
     "summaryWithSelections": "Bạn sẽ được nhắc vào <strong>{{times}}</strong>.",
@@ -478,7 +480,14 @@
     "photoSyncFailed": "Một ảnh chưa sao lưu lên đám mây. Nó vẫn an toàn trên thiết bị này — mở phiên để thử lại.",
     "heavyLoad": "ParkProof đang quá tải nên lần quét của bạn không kịp hoàn tất. Vui lòng đợi một phút rồi thử lại.",
     "rateLimited": "Có quá nhiều yêu cầu từ kết nối của bạn. Vui lòng đợi một phút rồi thử lại.",
-    "syncFailed": "Không tải được các phiên đã lưu của bạn lúc này."
+    "syncFailed": "Không tải được các phiên đã lưu của bạn lúc này.",
+    "scanFailed": "Chúng tôi chưa đọc xong biển báo đó. Vui lòng thử lại sau giây lát.",
+    "signUnreadable": "Chúng tôi không đọc rõ được biển báo đó. Hãy thử chụp ảnh rõ hơn và gần hơn.",
+    "imageTooLarge": "Ảnh đó quá lớn. Hãy chụp lại nhỏ hơn một chút, hoặc đến gần biển báo hơn.",
+    "imageType": "Định dạng ảnh đó không được hỗ trợ. Hãy dùng ảnh JPEG hoặc PNG.",
+    "appealUndraftable": "Chúng tôi không soạn được thư khiếu nại từ ảnh đó. Hãy thử ảnh rõ hơn của tờ thông báo.",
+    "exportFailed": "Chưa tạo được bản xuất của bạn lúc này. Vui lòng thử lại sau giây lát.",
+    "genericRetry": "Đã có lỗi xảy ra. Vui lòng thử lại sau giây lát."
   },
   "pdf": {
     "common": {
@@ -759,7 +768,7 @@
     "cancelAll": "Hủy tất cả nhắc nhở",
     "cancelAllConfirm": "Hủy mọi nhắc nhở đẩy đã lên lịch cho phiên này?",
     "cancelOne": "Xóa nhắc nhở này",
-    "pickHeader": "Khi nào nên nhắc bạn?",
+    "pickHeader": "Bạn muốn chúng tôi nhắc lúc nào?",
     "pickCancel": "Hủy",
     "tooLateAll": "Không còn tùy chọn nhắc nhở nào trong tương lai để lên lịch. Nhấn Kết thúc phiên nếu bạn đã đi.",
     "pushNotEnabled": "Bật thông báo đẩy trên thiết bị này để thêm nhắc nhở kêu khi ứng dụng đóng.",

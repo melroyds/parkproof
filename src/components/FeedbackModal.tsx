@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { submitUserFeedback, UserFeedbackError } from '../lib/user-feedback'
+import { submitUserFeedback } from '../lib/user-feedback'
 import type { UserFeedbackContext } from '../lib/user-feedback'
 
 interface Props {
@@ -142,11 +142,10 @@ function FeedbackModalBody({
       })
       setSuccess(true)
     } catch (err) {
-      setError(
-        err instanceof UserFeedbackError
-          ? err.message
-          : t('feedback.error.generic'),
-      )
+      // Never surface the raw server/SDK detail (a 500 can carry "API 500: ...").
+      // The curated generic line covers every failure on this low-stakes form.
+      console.error('[feedback] submit failed:', err)
+      setError(t('feedback.error.generic'))
       setSubmitting(false)
     }
   }

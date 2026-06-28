@@ -43,29 +43,29 @@
     "lead": "You probably came here thinking oh, it reads parking signs. It does. But while it's at it, we figured we'd also save the evidence in case you get a wrongful ticket, write the dispute letter for you if you do, and remind you to move your car before time runs out. Here's the friendly tour.",
     "scan": {
       "title": "Snap a sign, get an answer",
-      "lead": "Point your phone at any parking sign — even the messy stacked ones with arrows and clearways.",
+      "lead": "Point your phone at any parking sign, even the messy stacked ones with arrows and clearways.",
       "items": [
         "You get a clear yes or no in about 12 seconds.",
         "If the sign has different rules for different sides of the road, we'll just ask which side you're on.",
-        "We check if your photo is too blurry or dark before we even ask the AI — saves you a wasted try."
+        "We check if your photo is too blurry or dark before we even ask the AI. Saves you a wasted try."
       ]
     },
     "evidence": {
       "title": "A receipt for your parking spot",
       "lead": "Every park you log saves the time, the GPS, the address, and (if you want) a photo of your car at the spot.",
       "items": [
-        "Download the whole thing as a tidy PDF — handy if you ever need to dispute a ticket.",
-        "It's signed with a digital seal so nobody can argue it was edited after the fact — not even us.",
-        "Add a note about why you parked there (mum's hospital visit, Saturday market) — councils take context seriously."
+        "Download the whole thing as a tidy PDF. Handy if you ever need to dispute a ticket.",
+        "It's signed with a digital seal so nobody can argue it was edited after the fact, not even us.",
+        "Add a note about why you parked there (mum's hospital visit, Saturday market). Councils take context seriously."
       ]
     },
     "sealCaveat": "The seal proves the record wasn't changed after you saved it. It doesn't prove the AI read the sign correctly, or guarantee a council will accept it.",
     "reminders": {
       "title": "A nudge before time runs out",
-      "lead": "Pick when you want to be reminded — 30 minutes before, 15, 5, whatever feels right.",
+      "lead": "Pick when you want to be reminded: 30 minutes before, 15, 5, whatever feels right.",
       "items": [
         "Drops a calendar event onto your phone so the reminder fires even if ParkProof isn't open.",
-        "Shows a live countdown on the home screen — green when you've got time, amber when you're getting close, red when you really need to move.",
+        "Shows a live countdown on the home screen: green when you've got time, amber when you're getting close, red when you really need to move.",
         "Forgot where you parked? Tap Walk back and your maps app shows you the way."
       ]
     },
@@ -75,7 +75,7 @@
       "items": [
         "If the bay needs paying (a meter, EasyPark, PayStay), we'll ask you to tick that you've paid before saving.",
         "If the bay is reserved for disability permits, we show a clear red warning.",
-        "Parked somewhere with no signs at all? You can still log it — with a photo of the surroundings to show there really weren't any."
+        "Parked somewhere with no signs at all? You can still log it, with a photo of the surroundings to show there really weren't any."
       ]
     },
     "appeal": {
@@ -91,9 +91,9 @@
       "title": "A few small kindnesses",
       "lead": "The things you shouldn't have to think about, that we've thought about for you.",
       "items": [
-        "Free. No app store. Add it to your home screen and it works like a normal app — even when you're offline.",
+        "Free. No app store. Add it to your home screen and it works like a normal app, even when you're offline.",
         "Available in 9 languages including 中文, Tiếng Việt, Bahasa Indonesia, 한국어, Italiano, Ελληνικά, हिन्दी, and ਪੰਜਾਬੀ.",
-        "Times always match the parking spot — scan in Sydney while travelling, you see Sydney times. Not your phone's home zone.",
+        "Times always match the parking spot. Scan in Sydney while travelling, you see Sydney times. Not your phone's home zone.",
         "You don't have to sign in to use any of this. Anonymous works fine."
       ]
     },
@@ -102,21 +102,21 @@
       "lead": "Optional. If you do, your records follow you across devices.",
       "items": [
         "Sign in with email, your Apple ID, or your Google account.",
-        "Every park you save mirrors to the cloud — so if your phone dies, your evidence is still there.",
+        "Every park you save mirrors to the cloud, so if your phone dies, your evidence is still there.",
         "One tap to download every record. One tap to delete every record and your account, if you change your mind."
       ]
     },
     "push": {
       "title": "Enable push notifications on this device",
-      "body": "Reminders work hands-free even when ParkProof isn't open. Granting permission now means future parking reminders fire silently in the background — no permission prompt mid-flow.",
+      "body": "Reminders work hands-free even when ParkProof isn't open. Granting permission now means future parking reminders fire silently in the background, with no permission prompt mid-flow.",
       "subscribed": "✓ This device is subscribed. Push reminders will fire for your future parking sessions.",
       "denied": "You've blocked notifications for this site. To enable, change the permission in your browser's site settings.",
-      "errorRetry": "Something went wrong — try again",
+      "errorRetry": "Something went wrong. Try again",
       "enable": "Enable notifications",
       "requesting": "Asking your browser…"
     },
     "footerNote": "Built in Melbourne.",
-    "cta": "Try it — scan a sign",
+    "cta": "Try it: scan a sign",
     "support": {
       "title": "Like ParkProof?",
       "body": "Built solo in 10 days, free forever. If it saved you from a ticket, chip in for the AWS bill.",
@@ -157,7 +157,7 @@
     },
     "feature": {
       "translateTitle": "Plain-English answers",
-      "translateDesc": "Photograph any Aussie parking sign — get a 'can I park now?' verdict in about 12 seconds.",
+      "translateDesc": "Photograph any Aussie parking sign and get a 'can I park now?' verdict in about 12 seconds.",
       "evidenceTitle": "Tamper-proof evidence",
       "evidenceDesc": "Every park gets a cryptographically-signed timestamp, GPS, and photo record.",
       "appealTitle": "AI appeal letters",
@@ -165,7 +165,7 @@
     }
   },
   "home": {
-    "tagline": "Aussie parking, decoded — with photo evidence in case of a wrongful ticket.",
+    "tagline": "Aussie parking, decoded, with photo evidence in case of a wrongful ticket.",
     "scanCta": "Scan a parking sign",
     "scanAnother": "Scan another sign",
     "scanHelp": "We'll read the sign, tell you if you can park now, and offer a reminder before time runs out.",
@@ -185,6 +185,8 @@
   },
   "active": {
     "currentlyParked": "CURRENTLY PARKED",
+    "cardAria": "Active parking session at {{address}}, {{status}}. Tap for details.",
+    "listCardAria": "Open parking session at {{address}}, {{status}}.",
     "moveBy": "Move by {{time}}",
     "tapForRecord": "Tap for evidence record",
     "recheckNow": "Re-check now",
@@ -207,7 +209,7 @@
     "iveLeft": "I've left",
     "iveLeftAria": "Signal that you've left this parking spot",
     "iveLeftConfirm": "End this parking session now? It'll move to history with the time you left recorded.",
-    "nextPing": "Next ping: {{when}}"
+    "nextPing": "Next reminder: {{when}}"
   },
   "scanner": {
     "header": "Scan parking sign",
@@ -224,18 +226,18 @@
     "translate": "Translate",
     "translateAnyway": "Translate anyway",
     "qualityHeader": "Photo could be clearer",
-    "qualityBlurry": "Photo looks blurry — tap to focus on the sign and retake for a more reliable read?",
-    "qualityDark": "Photo looks dark — the AI may misread it. Move closer to a light or retake with flash?",
-    "qualityOverexposed": "Photo looks washed out — direct sunlight on the sign? Shade the lens with your hand and retake?",
-    "qualityTiny": "Photo is very low resolution — the AI may miss details. Retake closer to the sign?",
+    "qualityBlurry": "Photo looks blurry. Tap to focus on the sign and retake for a more reliable read?",
+    "qualityDark": "Photo looks dark. The AI may misread it. Move closer to a light or retake with flash?",
+    "qualityOverexposed": "Photo looks washed out. Direct sunlight on the sign? Shade the lens with your hand and retake?",
+    "qualityTiny": "Photo is very low resolution. The AI may miss details. Retake closer to the sign?",
     "noSignHere": "No sign here? Just log my park →",
     "noSignChooseHeader": "Logging a spot with no signs",
     "noSignChooseCopy": "Optionally photograph the surroundings to demonstrate no signs were visible. This strengthens your evidence record in a dispute.",
     "noSignTakeAmbient": "Take photo of surroundings",
     "noSignTakeAmbientSub": "Show no signs were visible",
     "noSignFromLibrary": "Choose from library",
-    "noSignSkip": "Skip — just save GPS + time",
-    "noSignAmbientAlt": "Surroundings — no signs visible",
+    "noSignSkip": "Skip: just save GPS + time",
+    "noSignAmbientAlt": "Surroundings: no signs visible",
     "noSignAmbientCaption": "Captured to demonstrate no signs were posted at this spot.",
     "noSignContinue": "Continue to log"
   },
@@ -274,42 +276,42 @@
     "cantParkOverride": "Think this is wrong? You can still log this spot as evidence.",
     "cantParkOverrideCta": "Log it anyway",
     "firstSaveValue": "Saving keeps a timestamped, tamper-proof record. Your proof if you're ever wrongly ticketed.",
-    "transitionHeadsUp": "Heads up — at {{when}}",
+    "transitionHeadsUp": "Heads up: at {{when}}",
     "payRequired": {
       "kicker": "PAY REQUIRED",
       "header": "You need to pay for parking here",
       "copy": "This is a paid zone. Buy a ticket from the nearest meter or pay via PayStay / EasyPark before you walk away.",
       "openPaystay": "Open PayStay",
       "openEasypark": "Open EasyPark",
-      "meterHint": "Buy a ticket from the nearest meter or ticket machine — usually within 30m of the sign.",
+      "meterHint": "Buy a ticket from the nearest meter or ticket machine, usually within 30m of the sign.",
       "ack": "I've paid (or will pay before walking away)"
     },
     "permitRequired": {
       "kicker": "ACCESSIBILITY PERMIT REQUIRED",
       "header": "This bay is reserved for permit holders",
-      "copy": "Parking here without a valid disability permit clearly displayed is an offence. In Victoria the fine is $400+ and the social cost — taking a bay from someone who needs it — is real. If you don't have one, scan a different spot.",
+      "copy": "Parking here without a valid disability permit clearly displayed is an offence. In Victoria the fine is $400 or more, and the bay is reserved for people who need it. If you don't have one, scan a different spot.",
       "ack": "I have a valid disability permit clearly displayed in my vehicle"
     },
     "permitZone": {
       "kicker": "PERMIT ZONE",
       "header": "Permit holders only right now",
       "headerWithArea": "Permit Area {{area}} only right now",
-      "copy": "This is a residential or business permit zone. You can park here only if you hold a valid permit for this area. Council inspectors check the permit number against the area — a permit for the next block over doesn't count.",
-      "copyWithArea": "You can park here only if you hold a valid permit for Permit Area {{area}}. The permit number on your sticker must match — inspectors check the area code, not just that you have any permit.",
+      "copy": "This is a residential or business permit zone. You can park here only if you hold a valid permit for this area. Council inspectors check the permit number against the area. A permit for the next block over doesn't count.",
+      "copyWithArea": "You can park here only if you hold a valid permit for Permit Area {{area}}. The permit number on your sticker must match. Inspectors check the area code, not just that you have any permit.",
       "ack": "Yes, I hold a valid permit for this area",
       "ackWithArea": "Yes, I hold a valid permit for Permit Area {{area}}"
     }
   },
   "logger": {
     "header": "Log this parking session",
-    "intro": "We'll save a timestamped record with your photo and GPS — useful evidence if you ever contest a wrongful ticket.",
+    "intro": "We'll save a timestamped record with your photo and GPS. Useful evidence if you ever contest a wrongful ticket.",
     "locationContext": "We use your location only to timestamp where you parked. It stays on your device unless you sign in.",
     "location": "Location",
     "acquiringGps": "Acquiring GPS…",
     "captured": "Captured ✓",
     "gpsImprecise": "GPS is too imprecise to verify your spot",
-    "gpsImpreciseCopy": "Reading is <strong>{{accuracy}}</strong> — fine for finding a coffee shop, not for parking evidence. Enter the street address manually to keep this record reliable.",
-    "gpsImpreciseDanger": "Reading is <strong>{{accuracy}}</strong> — could be the wrong suburb entirely (common on Starlink, VPN, or indoor GPS). Enter the street address manually to keep this record reliable.",
+    "gpsImpreciseCopy": "Reading is <strong>{{accuracy}}</strong>, fine for finding a coffee shop, not for parking evidence. Enter the street address manually to keep this record reliable.",
+    "gpsImpreciseDanger": "Reading is <strong>{{accuracy}}</strong>, could be the wrong suburb entirely (common on Starlink, VPN, or indoor GPS). Enter the street address manually to keep this record reliable.",
     "enterAddress": "Enter the address manually",
     "manuallyEntered": "Manually entered",
     "accuracyLabel": "{{accuracy}} accuracy",
@@ -330,27 +332,27 @@
     "carOptionalHelp": "Optional but strongly recommended for evidence",
     "saveSession": "Save session",
     "noSignHeader": "Log an unsigned park",
-    "noSignIntro": "We'll save a timestamped GPS record. No AI translation — there's no sign to translate.",
+    "noSignIntro": "We'll save a timestamped GPS record. No AI translation, there's no sign to translate.",
     "noSignKicker": "EVIDENCE NOTE",
-    "noSignBanner": "You're recording that no signs were visible at this spot. The cryptographic signature covers when and where, not whether signs were truly absent — be honest, this is your evidence.",
+    "noSignBanner": "You're recording that no signs were visible at this spot. The cryptographic signature covers when and where, not whether signs were truly absent. Be honest, this is your evidence.",
     "ambientHeader": "Surroundings",
     "ambientCaption": "Captured to demonstrate no signs were posted."
   },
   "reminders": {
     "header": "Set reminders",
     "noExpiry": "This session has no expiry time, so a timed reminder doesn't apply.",
-    "expired": "Parking expired at <strong>{{when}}</strong>. Too late for a reminder — but your session is still saved as evidence if you need to dispute a ticket.",
-    "intro": "Parking expires at <strong>{{when}}</strong>. Pick when you want to be pinged — choose as many as you like.",
+    "expired": "Parking expired at <strong>{{when}}</strong>. Too late for a reminder, but your session is still saved as evidence if you need to dispute a ticket.",
+    "intro": "Parking expires at <strong>{{when}}</strong>. Pick when you want to be reminded, choose as many as you like.",
     "chipAtExpiry": "At expiry",
     "chipMin": "{{count}} min",
-    "summaryWithSelections": "You'll be pinged at <strong>{{times}}</strong>.",
-    "summaryEmpty": "No reminders selected — pick at least one chip above.",
+    "summaryWithSelections": "You'll be reminded at <strong>{{times}}</strong>.",
+    "summaryEmpty": "No reminders selected. Pick at least one chip above.",
     "calendarHeader": "Calendar reminder",
     "calendarCopy": "Drops into the iPhone / Android / Outlook calendar with one alarm per chip. Survives even if you close this app.",
     "calendarCta_one": "Download .ics with 1 alarm",
     "calendarCta_other": "Download .ics with {{count}} alarms",
-    "calendarDownloaded": "✓ Downloaded — open the file to add it",
-    "calendarError": "Download failed — try again",
+    "calendarDownloaded": "✓ Downloaded. Open the file to add it",
+    "calendarError": "Download failed. Try again",
     "calendarPickAtLeastOne": "Pick at least one reminder above",
     "browserHeader": "Browser notification",
     "browserCopy": "Fires while this tab stays open. One notification per selected chip. Good as a backup to the calendar option.",
@@ -359,12 +361,12 @@
     "browserRequesting": "Requesting permission…",
     "browserScheduled_one": "✓ 1 notification scheduled",
     "browserScheduled_other": "✓ {{count}} notifications scheduled",
-    "browserScheduledSkipped": "✓ {{count}} scheduled ({{skipped}} skipped — already past)",
-    "browserDenied": "Permission denied — use the calendar option instead",
+    "browserScheduledSkipped": "✓ {{count}} scheduled ({{skipped}} skipped, already past)",
+    "browserDenied": "Permission denied. Use the calendar option instead",
     "browserUnsupported": "Not supported on this browser",
     "browserNoExpiry": "No expiry on this session",
     "browserAllPast": "All selected reminders are already in the past",
-    "browserTooFar": "Expires in over 24h — use the calendar option instead",
+    "browserTooFar": "Expires in over 24h. Use the calendar option instead",
     "browserNothingSelected": "Pick at least one reminder above",
     "pushScheduleFailed": "Couldn't set the background reminder. It may only fire while this tab is open. Tap to try again.",
     "pushTitleFallback": "Parking reminder",
@@ -373,7 +375,7 @@
     "pushBodyBefore_other": "{{count}} min until your parking expires.",
     "pushBodyCheckOn": "Time to check on your car.",
     "noSign": {
-      "intro": "No posted expiry here, but you can still ask for a check-in reminder. Pick how long from now — choose as many as you like.",
+      "intro": "No posted expiry here, but you can still ask for a check-in reminder. Pick how long from now, choose as many as you like.",
       "chipMin": "{{count}} min",
       "chipHour_one": "1 hour",
       "chipHour_other": "{{count}} hours",
@@ -386,7 +388,7 @@
       "enable": "Enable push",
       "requesting": "Asking your browser…",
       "denied": "You've blocked notifications. Change it in your browser's site settings to enable.",
-      "errorRetry": "Couldn't enable — try again",
+      "errorRetry": "Couldn't enable. Try again",
       "unsupported": "This browser doesn't support push notifications."
     },
     "pushScheduled": {
@@ -398,28 +400,28 @@
   "scheduledReminders": {
     "header": "Scheduled reminders",
     "noneYet": "No push reminders set for this session.",
-    "firesAtExpiry": "{{when}} — at expiry",
-    "firesBefore_one": "{{when}} — 1 min before expiry",
-    "firesBefore_other": "{{when}} — {{count}} min before expiry",
-    "firesFromNow_one": "{{when}} — in 1 min from arrival",
-    "firesFromNow_other": "{{when}} — in {{count}} min from arrival",
+    "firesAtExpiry": "{{when}}: at expiry",
+    "firesBefore_one": "{{when}}: 1 min before expiry",
+    "firesBefore_other": "{{when}}: {{count}} min before expiry",
+    "firesFromNow_one": "{{when}}: in 1 min from arrival",
+    "firesFromNow_other": "{{when}}: in {{count}} min from arrival",
     "firesAbsolute": "{{when}}",
     "addAnother": "+ Add reminder",
     "cancelAll": "Cancel all reminders",
     "cancelAllConfirm": "Cancel every scheduled push reminder for this session?",
     "cancelOne": "Remove this reminder",
-    "pickHeader": "When should we ping you?",
+    "pickHeader": "When should we remind you?",
     "pickCancel": "Cancel",
     "tooLateAll": "No reminder option is far enough in the future to schedule. Tap End session if you've already left.",
     "pushNotEnabled": "Enable push notifications on this device to add reminders that fire when the app is closed.",
     "saving": "Saving…",
-    "errorRetry": "Couldn't update — try again"
+    "errorRetry": "Couldn't update. Try again"
   },
   "history": {
     "header": "Session history",
     "intro": "Every parking session you've logged. Tap one to view evidence or export a PDF.",
     "emptyTitle": "No sessions yet",
-    "emptyHelp": "Scan a sign and log a session — it'll appear here.",
+    "emptyHelp": "Scan a sign and log a session. It'll appear here.",
     "expired": "Expired",
     "noExpiry": "No expiry",
     "noSignBadge": "No posted restrictions captured"
@@ -439,8 +441,8 @@
     "noteLabel": "NOTE",
     "noNote": "No note added. Tap",
     "addNote": "Add note",
-    "noteHelp": "to record why you were here — softens a council review when the context matters.",
-    "notePlaceholder": "Why you were here — e.g. 'Mum's chemo at the Royal', 'Saturday market on Lygon'. Used as context if you ever need to appeal a ticket.",
+    "noteHelp": "to record why you were here. It softens a council review when the context matters.",
+    "notePlaceholder": "Why you were here, e.g. 'Mum's chemo at the Royal', 'Saturday market on Lygon'. Used as context if you ever need to appeal a ticket.",
     "saveNote": "Save note",
     "signPhotoLabel": "SIGN PHOTO",
     "carPhotoLabel": "CAR AT THE SPOT",
@@ -494,13 +496,13 @@
   },
   "auth": {
     "signInHeader": "Sign in",
-    "signInIntro": "Welcome back — pick up where you left off.",
+    "signInIntro": "Welcome back. Pick up where you left off.",
     "signUpHeader": "Create account",
     "signUpIntro": "Sync sessions across devices, recover them if you lose your phone, and keep evidence safe even after you uninstall.",
     "verifyHeader": "Verify your email",
     "verifyIntro": "Enter the 6-digit code we emailed to {{email}}.",
     "forgotHeader": "Forgot password",
-    "forgotIntro": "Enter your email — we'll send a reset code.",
+    "forgotIntro": "Enter your email and we'll send a reset code.",
     "resetHeader": "Reset password",
     "resetIntro": "Enter the code from your email + a new password.",
     "email": "Email",
@@ -527,12 +529,12 @@
     "continueWithApple": "Continue with Apple",
     "continueWithGoogle": "Continue with Google",
     "orDivider": "OR",
-    "footer": "Cloud sync is optional. ParkProof works fully offline without an account — your data lives on this device. Signing in just lets you see it on others.",
-    "needVerifyFirst": "You haven't verified your email yet — enter the code below.",
+    "footer": "Cloud sync is optional. ParkProof works fully offline without an account. Your data lives on this device. Signing in just lets you see it on others.",
+    "needVerifyFirst": "You haven't verified your email yet. Enter the code below.",
     "accountCreated": "Account created. We've emailed you a verification code.",
     "codeResent": "Code re-sent. Check your inbox.",
     "resetCodeSent": "We've emailed you a reset code.",
-    "emailVerified": "Email verified — sign in to continue.",
+    "emailVerified": "Email verified. Sign in to continue.",
     "passwordReset": "Password reset. Sign in with your new password.",
     "errWrongCredentials": "Wrong email or password.",
     "errAccountExists": "You already have an account. Try signing in instead.",
@@ -547,7 +549,7 @@
     "intro": "Manage cloud sync, export your data, or close your account.",
     "signedInAs": "SIGNED IN AS",
     "exportHeader": "Export your data",
-    "exportCopy": "Downloads a PDF with every parking session you've stored in the cloud — cover page summary plus a per-session detail block with photos. Share-ready, print-ready, council-ready.",
+    "exportCopy": "Downloads a PDF with every parking session you've stored in the cloud: cover page summary plus a per-session detail block with photos. Share-ready, print-ready, council-ready.",
     "exportCta": "Download as PDF",
     "exportBuilding": "Building PDF…",
     "privacyHeader": "Privacy",
@@ -573,7 +575,7 @@
     "pushDisableNote": "This only unsubscribes this device. To fully revoke browser permission, change site settings in your browser.",
     "pushDenied": "You've blocked notifications for this site. To enable, change the permission in your browser's site settings, then revisit this page.",
     "pushRequesting": "Asking your browser…",
-    "pushErrorRetry": "Couldn't enable — try again"
+    "pushErrorRetry": "Couldn't enable. Try again"
   },
   "privacy": {
     "header": "Privacy",
@@ -585,13 +587,13 @@
     "anonymousNominatim": "<strong>GPS coordinates</strong> are sent to <strong>OpenStreetMap Nominatim</strong> to resolve the street address. Nominatim does not require a key and applies their public retention policy.",
     "anonymousCloudwatch": "<strong>A random per-result UUID</strong> + a \"correct / retake\" verdict are logged to <strong>AWS CloudWatch</strong> when you tap the verification card. No PII; aggregate signal for prompt tuning.",
     "signedInHeader": "What you give us when you sign in",
-    "signedInIntro": "Signing in is optional. It enables cloud sync — the same sessions visible across all your devices.",
+    "signedInIntro": "Signing in is optional. It enables cloud sync, the same sessions visible across all your devices.",
     "signedInThings": "When you sign in, additional data leaves your device:",
-    "signedInEmail": "Your <strong>email address</strong> — stored in AWS Cognito; used as your account identifier and for password reset.",
-    "signedInSessions": "Every <strong>parking session</strong> you save — stored in AWS DynamoDB, keyed to your Cognito user ID. Includes timestamps, GPS, sign rules, the AI's translation, your notes, and the cryptographic signature.",
-    "signedInPhotos": "Every <strong>photo</strong> attached to a session — stored in AWS S3 under a path that includes your user ID, accessible only to you while signed in.",
+    "signedInEmail": "Your <strong>email address</strong>: stored in AWS Cognito; used as your account identifier and for password reset.",
+    "signedInSessions": "Every <strong>parking session</strong> you save: stored in AWS DynamoDB, keyed to your Cognito user ID. Includes timestamps, GPS, sign rules, the AI's translation, your notes, and the cryptographic signature.",
+    "signedInPhotos": "Every <strong>photo</strong> attached to a session: stored in AWS S3 under a path that includes your user ID, accessible only to you while signed in.",
     "federationHeader": "Sign-in with Apple or Google",
-    "federationCopy1": "If you choose Apple or Google sign-in instead of email/password, your authentication is brokered by AWS Cognito's Hosted UI. Your password, biometrics, or passkey never reach ParkProof — they stay with Apple or Google.",
+    "federationCopy1": "If you choose Apple or Google sign-in instead of email/password, your authentication is brokered by AWS Cognito's Hosted UI. Your password, biometrics, or passkey never reach ParkProof. They stay with Apple or Google.",
     "federationCopy2": "From the OAuth handshake we receive two things: a stable opaque user identifier (so Cognito recognises you on return), and your email address. That's it. We do not receive your profile photo, friends list, calendar, contacts, or any other information from your Apple ID or Google account.",
     "federationCopy3": "Signing out of ParkProof in-app does not revoke Apple's or Google's upstream permission. To revoke that, visit your <apple>Apple ID</apple> ('Sign in with Apple' section) or your <google>Google Account</google> ('Security > Third-party access'). Deleting your ParkProof account in-app removes our record but does not unsubscribe the upstream permission.",
     "locationHeader": "Where the data lives",
@@ -604,14 +606,14 @@
     "dontFingerprint": "We don't run analytics that fingerprint your device.",
     "rightsHeader": "Your rights",
     "rightsSignedIn": "If you sign in:",
-    "rightsExport": "<strong>Export.</strong> Tap \"Download as PDF\" in Account to get a complete document with every session you've stored — cover page summary plus a per-session detail block with photos.",
+    "rightsExport": "<strong>Export.</strong> Tap \"Download as PDF\" in Account to get a complete document with every session you've stored: cover page summary plus a per-session detail block with photos.",
     "rightsDelete": "<strong>Delete.</strong> Tap \"Delete account\" in Account. Removes your sign-in record, every DynamoDB row, and every S3 photo within seconds. Irreversible.",
-    "rightsCorrect": "<strong>Correct.</strong> You edit your sessions in-app — every change syncs to the cloud immediately if signed in.",
-    "rightsAnonymous": "If you don't sign in, all your data is on your device — clear your browser storage to delete it.",
+    "rightsCorrect": "<strong>Correct.</strong> You edit your sessions in-app. Every change syncs to the cloud immediately if signed in.",
+    "rightsAnonymous": "If you don't sign in, all your data is on your device. Clear your browser storage to delete it.",
     "photosHeader": "Photos taken inside ParkProof",
     "photosCopy": "Photos are resized to ≤1200px and re-encoded as JPEG at 0.82 quality on your device before they leave the browser. The original high-resolution camera capture never leaves your phone.",
     "signingHeader": "Cryptographic signing",
-    "signingCopy": "When you sign in (or stay anonymous — both work), each session is signed by an AWS KMS-managed ECDSA P-256 key. The private key never leaves AWS. The public key is published at <a>/parkproof-public-key.pem</a> for anyone (a council, court, insurer) to verify the evidence chain using <code>openssl dgst</code> — see the appendix in any exported PDF for the step-by-step.",
+    "signingCopy": "When you sign in (or stay anonymous, both work), each session is signed by an AWS KMS-managed ECDSA P-256 key. The private key never leaves AWS. The public key is published at <a>/parkproof-public-key.pem</a> for anyone (a council, court, insurer) to verify the evidence chain using <code>openssl dgst</code>. See the appendix in any exported PDF for the step-by-step.",
     "verifyLinkLabel": "See how to verify a record →",
     "contactHeader": "Contact + complaints",
     "contactCopy": "For questions or to exercise your rights outside of the in-app controls, email <a>hello@parkproof.com.au</a>.",
@@ -637,31 +639,38 @@
     "successTitle": "Thanks!",
     "successBody": "Your feedback landed. We'll read it as soon as we're back at the keyboard.",
     "error": {
-      "generic": "Couldn't send — please try again in a moment."
+      "generic": "Couldn't send. Please try again in a moment."
     }
   },
   "errors": {
     "somethingWrong": "Something went wrong",
     "tryAgain": "Try again",
     "backHome": "Back to home",
-    "complexSignTimeout": "This sign took too long to process — usually means it has lots of stacked rules. Try a clearer photo, or crop in to just the rules that apply where you're parked.",
+    "complexSignTimeout": "This sign took too long to process. Usually means it has lots of stacked rules. Try a clearer photo, or crop in to just the rules that apply where you're parked.",
     "offlineTitle": "You're offline",
-    "offlineBody": "Reading a sign needs a connection. Your saved sessions and reminders still work — try the scan again once you're back online.",
+    "offlineBody": "Reading a sign needs a connection. Your saved sessions and reminders still work. Try the scan again once you're back online.",
     "boundaryTitle": "Something broke",
     "boundaryBody": "ParkProof hit an unexpected error. Reloading usually fixes it, and your saved sessions are safe on this device.",
     "boundaryReload": "Reload ParkProof",
     "storageRecovered_one": "Your device storage was full, so the photo from 1 older parking record was removed to make space. Sign in to keep evidence safe in the cloud.",
     "storageRecovered_other": "Your device storage was full, so photos from {{count}} older parking records were removed to make space. Sign in to keep evidence safe in the cloud.",
-    "photoSyncFailed": "A photo didn't back up to the cloud. It's safe on this device — open the session to retry.",
+    "photoSyncFailed": "A photo didn't back up to the cloud. It's safe on this device. Open the session to retry.",
     "heavyLoad": "ParkProof is busy right now and your scan didn't finish in time. Please wait a minute and try again.",
     "rateLimited": "Too many requests from your connection. Please wait a minute, then try again.",
-    "syncFailed": "Couldn't load your saved sessions just now."
+    "syncFailed": "Couldn't load your saved sessions just now.",
+    "scanFailed": "We couldn't finish reading that sign. Please try again in a moment.",
+    "signUnreadable": "We couldn't read that sign clearly. Try a clearer, closer photo.",
+    "imageTooLarge": "That photo is too large. Retake it a little smaller, or closer to the sign.",
+    "imageType": "That image type isn't supported. Use a JPEG or PNG photo.",
+    "appealUndraftable": "We couldn't draft an appeal from that photo. Try a clearer photo of the notice.",
+    "exportFailed": "Couldn't build your export just now. Please try again in a moment.",
+    "genericRetry": "Something went wrong. Please try again in a moment."
   },
   "pdf": {
     "common": {
       "fieldHeader": "Field",
       "valueHeader": "Value",
-      "dash": "—",
+      "dash": "–",
       "notCaptured": "Not captured",
       "imageEmbedFailed": "(Image could not be embedded)"
     },
@@ -673,7 +682,7 @@
       "hoursAndMins": "{{hours}}h {{mins}}m"
     },
     "evidence": {
-      "title": "ParkProof — Parking Evidence",
+      "title": "ParkProof: Parking Evidence",
       "sessionId": "Session ID: {{id}}",
       "generated": "PDF generated: {{when}}",
       "field": {
@@ -692,11 +701,11 @@
       },
       "locationSourceValue": {
         "manuallyEntered": "Manually entered",
-        "gpsWithAccuracy": "GPS — {{accuracy}}",
-        "gpsLowAccuracy": "GPS — LOW ACCURACY {{accuracy}} (see appendix)",
+        "gpsWithAccuracy": "GPS: {{accuracy}}",
+        "gpsLowAccuracy": "GPS: LOW ACCURACY {{accuracy}} (see appendix)",
         "gps": "GPS",
         "captured": "Captured",
-        "none": "—"
+        "none": "–"
       },
       "signPhotoHeader": "Sign photo",
       "carPhotoHeader": "Car at the spot",
@@ -708,7 +717,7 @@
       "driverNoteHeader": "Driver's note",
       "driverNoteUnsigned": "Added by the driver. This note is not covered by the cryptographic signature.",
       "gpsNoticeTitle": "⚠ GPS accuracy notice",
-      "gpsNoticeBody": "The GPS reading at capture time was {{accuracy}} — wider than typical for evidence purposes. The coordinates above identify a point within that radius, not an exact spot. Common causes: indoor / multi-storey carparks, Starlink or VPN connections, or weak satellite signal. Reviewers should weight the captured address against this radius.",
+      "gpsNoticeBody": "The GPS reading at capture time was {{accuracy}}, wider than typical for evidence purposes. The coordinates above identify a point within that radius, not an exact spot. Common causes: indoor / multi-storey carparks, Starlink or VPN connections, or weak satellite signal. Reviewers should weight the captured address against this radius.",
       "statement": "This record was generated automatically by ParkProof at the time of parking. The arrival timestamp, GPS coordinates, sign translation, and photographs constitute a contemporaneous evidence record suitable for attachment to a parking infringement review submission with the relevant Australian local council.",
       "guidanceFree": "Free to park. Move by {{when}}.",
       "guidanceFreeNoExpiry": "Free to park. No expiry shown on the sign.",
@@ -730,7 +739,7 @@
       "verifyStep3": "3. Download the public key:",
       "verifyStep4": "4. Decode the signature:",
       "verifyStep5": "5. Verify:",
-      "verifyStep6": "6. Expect output: \"Verified OK\" — this confirms the metadata and the photo hashes below were not altered since signing.",
+      "verifyStep6": "6. Expect output: \"Verified OK\". This confirms the metadata and the photo hashes below were not altered since signing.",
       "verifyStep7": "7. Confirm the photos themselves match. \"Verified OK\" only proves the hashes in the payload are intact, NOT that the images in this PDF match them. For each photo, recompute its SHA-256 (sha256sum <file>, or openssl dgst -sha256 <file>) and check it equals the matching sign_photo_sha256 / car_photo_sha256 / ambient_photo_sha256 in the payload above. A mismatch means that photo was changed after signing."
     },
     "appeal": {
@@ -744,7 +753,7 @@
       "carPhotoHeader": "Car at the spot"
     },
     "fullExport": {
-      "title": "ParkProof — Account Export",
+      "title": "ParkProof: Account Export",
       "account": "Account: {{email}}",
       "userId": "User ID: {{id}}",
       "exportedAt": "Exported: {{when}}",

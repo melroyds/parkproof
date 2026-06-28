@@ -116,7 +116,7 @@ export async function postJsonWithRetry<T>(
       const detail = await safeReadDetail(resp)
       const isTimeout = TRANSIENT_STATUSES.has(resp.status)
       throw new ApiError(
-        isTimeout ? complexSignMessage() : detail || `Request failed (${resp.status})`,
+        isTimeout ? complexSignMessage() : friendlyErrorFor(detail),
         resp.status,
         isTimeout,
       )
@@ -128,9 +128,9 @@ export async function postJsonWithRetry<T>(
         await sleep(1500)
         continue
       }
-      const message =
-        err instanceof Error ? err.message : 'Network error — check your connection.'
-      throw new ApiError(message, 0, false)
+      // Never surface a raw fetch/TypeError string ("Failed to fetch"). A true
+      // offline state is detected separately in App.tsx (navigator.onLine).
+      throw new ApiError(friendlyErrorFor(null), 0, false)
     }
   }
   throw lastErr instanceof Error ? lastErr : new Error('Unreachable')
@@ -176,11 +176,7 @@ export async function postJsonAndPoll<T>(
         // on a poll shouldn't fail the whole flow. Keep trying.
         continue
       }
-      throw new ApiError(
-        await safeReadDetail(resp) || `Status check failed (${resp.status})`,
-        resp.status,
-        false,
-      )
+      throw new ApiError(friendlyErrorFor(await safeReadDetail(resp)), resp.status, false)
     }
     const payload = (await resp.json()) as {
       status: 'pending' | 'done' | 'error'
@@ -197,11 +193,7 @@ export async function postJsonAndPoll<T>(
       if (payload.error === 'JOB_TIMED_OUT') {
         throw new ApiError(heavyLoadMessage(), 504, true)
       }
-      throw new ApiError(
-        payload.error || 'Background job failed',
-        500,
-        false,
-      )
+      throw new ApiError(friendlyErrorFor(payload.error), 500, false)
     }
     // 'pending' — keep polling
   }
@@ -243,7 +235,7 @@ function complexSignMessage(): string {
     if (translated && translated !== 'errors.complexSignTimeout') return translated
   }
   // English fallback — matches the en.json copy. Keep them in sync.
-  return "This sign took too long to process — usually means it has lots of stacked rules. Try a clearer photo, or crop to just the part you need decoded."
+  return "This sign took too long to process. Usually means it has lots of stacked rules. Try a clearer photo, or crop in to just the rules that apply where you're parked."
 }
 
 /** Localised "we're under heavy load" message — used when a job is dropped/stuck. */
@@ -266,4 +258,31 @@ function rateLimitedMessage(): string {
     if (m && m !== 'errors.rateLimited') return m
   }
   return 'Too many requests from your connection. Please wait a minute, then try again.'
+}
+
+// Map a server error string to a friendly, localised message. Known error CODES
+// (ERR_*) thrown by the Lambda resolve to specific i18n copy; ANY other string
+// (a raw AWS/SDK/validation message, or an empty body) resolves to the generic
+// retry line — so a raw system error can never become the user-facing body.
+const ERROR_CODE_KEYS: Record<string, [string, string]> = {
+  ERR_SIGN_UNREADABLE: ['errors.signUnreadable', "We couldn't read that sign clearly. Try a clearer, closer photo."],
+  ERR_IMAGE_TOO_LARGE: ['errors.imageTooLarge', 'That photo is too large. Retake it a little smaller, or closer to the sign.'],
+  ERR_IMAGE_TYPE: ['errors.imageType', "That image type isn't supported. Use a JPEG or PNG photo."],
+  ERR_APPEAL_UNDRAFTABLE: ['errors.appealUndraftable', "We couldn't draft an appeal from that photo. Try a clearer photo of the notice."],
+}
+function tr(key: string, fallback: string): string {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const i18n = (globalThis as any).__parkproof_i18n
+  if (i18n && typeof i18n.t === 'function') {
+    const m = i18n.t(key) as string
+    if (m && m !== key) return m
+  }
+  return fallback
+}
+export function friendlyErrorFor(raw: string | null | undefined): string {
+  if (raw && ERROR_CODE_KEYS[raw]) {
+    const [key, fallback] = ERROR_CODE_KEYS[raw]
+    return tr(key, fallback)
+  }
+  return tr('errors.genericRetry', 'Something went wrong. Please try again in a moment.')
 }

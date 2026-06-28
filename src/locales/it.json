@@ -71,9 +71,11 @@
     "iveLeft": "Sono andato",
     "iveLeftAria": "Segnala che hai lasciato questo parcheggio",
     "iveLeftConfirm": "Terminare questa sessione di parcheggio ora? Verrà spostata nella cronologia con l'ora di partenza registrata.",
-    "nextPing": "Prossimo ping: {{when}}",
+    "nextPing": "Prossimo promemoria: {{when}}",
     "recheckNow": "Ricontrolla ora",
-    "recheckSub": "Ancora regolare? Riverifica in pochi secondi"
+    "recheckSub": "Ancora regolare? Riverifica in pochi secondi",
+    "cardAria": "Sessione di parcheggio attiva in {{address}}, {{status}}. Tocca per i dettagli.",
+    "listCardAria": "Sessione di parcheggio aperta in {{address}}, {{status}}."
   },
   "scanner": {
     "header": "Scansiona cartello di parcheggio",
@@ -149,7 +151,7 @@
     "permitRequired": {
       "kicker": "PERMESSO DISABILI RICHIESTO",
       "header": "Questo posto è riservato ai titolari di permesso",
-      "copy": "Parcheggiare qui senza un permesso disabili valido chiaramente esposto è un'infrazione. In Victoria la multa è di oltre $400 e il costo sociale — togliere un posto a chi ne ha bisogno — è reale. Se non ne hai uno, scansiona un altro posto.",
+      "copy": "Parcheggiare qui senza un permesso disabili valido chiaramente esposto è un'infrazione. In Victoria la multa è di $400 o più, e il posto è riservato a chi ne ha bisogno. Se non ne hai uno, scansiona un altro posto.",
       "ack": "Ho un permesso disabili valido chiaramente esposto nel mio veicolo"
     },
     "permitZone": {
@@ -206,7 +208,7 @@
     "header": "Imposta promemoria",
     "noExpiry": "Questa sessione non ha scadenza, quindi un promemoria temporizzato non si applica.",
     "expired": "Il parcheggio è scaduto alle <strong>{{when}}</strong>. Troppo tardi per un promemoria — ma la tua sessione è comunque salvata come prova se devi contestare una multa.",
-    "intro": "Il parcheggio scade alle <strong>{{when}}</strong>. Scegli quando vuoi essere avvisato — quante volte vuoi.",
+    "intro": "Il parcheggio scade alle <strong>{{when}}</strong>. Scegli quando vuoi essere avvisato, quante opzioni vuoi.",
     "chipAtExpiry": "Alla scadenza",
     "chipMin": "{{count}} min",
     "summaryWithSelections": "Sarai avvisato alle <strong>{{times}}</strong>.",
@@ -484,7 +486,14 @@
     "photoSyncFailed": "Una foto non è stata salvata nel cloud. È al sicuro su questo dispositivo — apri la sessione per riprovare.",
     "heavyLoad": "ParkProof è molto richiesto in questo momento e la tua scansione non è stata completata in tempo. Aspetta un minuto e riprova.",
     "rateLimited": "Troppe richieste dalla tua connessione. Aspetta un minuto, poi riprova.",
-    "syncFailed": "Non siamo riusciti a caricare le tue sessioni salvate in questo momento."
+    "syncFailed": "Non siamo riusciti a caricare le tue sessioni salvate in questo momento.",
+    "scanFailed": "Non siamo riusciti a finire di leggere quel cartello. Riprova tra un momento.",
+    "signUnreadable": "Non siamo riusciti a leggere bene quel cartello. Prova con una foto più chiara e più ravvicinata.",
+    "imageTooLarge": "Quella foto è troppo grande. Rifalla un po' più piccola, o più vicina al cartello.",
+    "imageType": "Quel tipo di immagine non è supportato. Usa una foto JPEG o PNG.",
+    "appealUndraftable": "Non siamo riusciti a redigere un ricorso da quella foto. Prova con una foto più chiara della multa.",
+    "exportFailed": "Non siamo riusciti a creare il tuo export in questo momento. Riprova tra un momento.",
+    "genericRetry": "Qualcosa è andato storto. Riprova tra un momento."
   },
   "pdf": {
     "common": {
@@ -765,7 +774,7 @@
     "cancelAll": "Annulla tutti i promemoria",
     "cancelAllConfirm": "Annullare ogni promemoria push pianificato per questa sessione?",
     "cancelOne": "Rimuovi questo promemoria",
-    "pickHeader": "Quando vuoi essere avvisato?",
+    "pickHeader": "Quando vuoi che ti ricordiamo?",
     "pickCancel": "Annulla",
     "tooLateAll": "Nessuna opzione di promemoria è abbastanza nel futuro da poter essere pianificata. Tocca Termina sessione se sei già andato.",
     "pushNotEnabled": "Attiva le notifiche push su questo dispositivo per aggiungere promemoria che suonano anche quando l'app è chiusa.",

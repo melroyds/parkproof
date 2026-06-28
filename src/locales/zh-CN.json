@@ -67,7 +67,9 @@
     "iveLeftConfirm": "现在结束此停车记录?会移至历史并记录离开时间。",
     "nextPing": "下次提醒:{{when}}",
     "recheckNow": "立即重新检查",
-    "recheckSub": "还合法吗?几秒内重新确认"
+    "recheckSub": "还合法吗?几秒内重新确认",
+    "cardAria": "在 {{address}} 的进行中停车会话,{{status}}。点击查看详情。",
+    "listCardAria": "打开在 {{address}} 的进行中停车会话,{{status}}。"
   },
   "scanner": {
     "header": "扫描停车标志",
@@ -143,7 +145,7 @@
     "permitRequired": {
       "kicker": "需要残疾人停车许可证",
       "header": "此停车位仅限持证停车",
-      "copy": "在此停车而未明显出示有效的残疾人停车许可证属于违法行为。在维多利亚州罚款超过400澳元,而社会成本——占用真正有需要的人的车位——也是真实存在的。如果您没有许可证,请扫描其他停车位。",
+      "copy": "在此停车而未明显出示有效的残疾人停车许可证属于违法行为。在维多利亚州,罚款为 $400 或更高,而该车位是为有需要的人保留的。如果你没有许可证,请扫描其他停车位。",
       "ack": "我的车辆已清晰地展示了有效的残疾人停车许可证"
     },
     "permitZone": {
@@ -200,10 +202,10 @@
     "header": "设置提醒",
     "noExpiry": "此会话没有到期时间,因此不适用定时提醒。",
     "expired": "停车已于 <strong>{{when}}</strong> 到期。提醒已经太迟——但您的会话仍作为证据保存,可在需要对罚单提出异议时使用。",
-    "intro": "停车于 <strong>{{when}}</strong> 到期。选择您希望何时被提醒——可任选多个。",
+    "intro": "停车将于 <strong>{{when}}</strong> 到期。选择你希望何时收到提醒,可任选多个。",
     "chipAtExpiry": "到期时",
     "chipMin": "{{count}} 分钟",
-    "summaryWithSelections": "您将在 <strong>{{times}}</strong> 被提醒。",
+    "summaryWithSelections": "你将在 <strong>{{times}}</strong> 收到提醒。",
     "summaryEmpty": "未选择提醒——请在上方至少选择一个。",
     "calendarHeader": "日历提醒",
     "calendarCopy": "导入 iPhone / Android / Outlook 日历,每个选项一个提醒。即使您关闭此应用也能生效。",
@@ -478,7 +480,14 @@
     "photoSyncFailed": "有一张照片未备份到云端。它在此设备上是安全的 — 打开会话即可重试。",
     "heavyLoad": "ParkProof 目前繁忙,你的扫描未能及时完成。请稍等一分钟后再试。",
     "rateLimited": "来自你网络的请求过多。请稍等一分钟,然后再试。",
-    "syncFailed": "刚才无法加载你保存的会话。"
+    "syncFailed": "刚才无法加载你保存的会话。",
+    "scanFailed": "我们没能读完那个标志。请稍后再试一次。",
+    "signUnreadable": "我们无法清晰地读取那个标志。请拍一张更清晰、更近的照片。",
+    "imageTooLarge": "这张照片太大了。请拍小一点,或靠近标志重拍。",
+    "imageType": "不支持这种图片格式。请使用 JPEG 或 PNG 照片。",
+    "appealUndraftable": "我们无法根据那张照片起草申诉。请拍一张更清晰的罚单照片。",
+    "exportFailed": "刚才无法生成你的导出文件。请稍后再试一次。",
+    "genericRetry": "出了点问题。请稍后再试一次。"
   },
   "pdf": {
     "common": {
@@ -759,7 +768,7 @@
     "cancelAll": "取消全部提醒",
     "cancelAllConfirm": "取消此会话的所有推送提醒?",
     "cancelOne": "移除此提醒",
-    "pickHeader": "何时提醒你?",
+    "pickHeader": "什么时候提醒你?",
     "pickCancel": "取消",
     "tooLateAll": "没有足够时间在未来安排任何提醒选项。如果你已离开,请点击「结束会话」。",
     "pushNotEnabled": "在此设备上启用推送通知以添加在应用关闭时也能触发的提醒。",

@@ -560,10 +560,7 @@ export default function SessionDetail({
             <p className="font-display font-bold text-ink-900 mb-1">
               {t('session.pdfErrorHeader')}
             </p>
-            <p className="text-xs text-ink-700 leading-relaxed break-words">
-              {pdfError}
-            </p>
-            <p className="text-[10px] text-ink-500 mt-2">
+            <p className="text-xs text-ink-700 leading-relaxed mt-1">
               {t('session.pdfErrorHelp')}
             </p>
           </div>

@@ -76,7 +76,10 @@ export default function AuthSettings({ onBack, onOpenPrivacy, onDeleted }: Props
       setExportStatus('idle')
     } catch (err) {
       setExportStatus('error')
-      setExportError(err instanceof Error ? err.message : String(err))
+      // Never surface the raw sync/jsPDF detail; a fixed friendly line + the
+      // console is enough on this low-frequency surface.
+      console.error('[export] failed:', err)
+      setExportError(t('errors.exportFailed'))
     }
   }
 

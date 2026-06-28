@@ -94,9 +94,10 @@ export default function ActiveSessionsList({ sessions, onBack, onOpen }: Props) 
               <button
                 onClick={() => onOpen(session)}
                 className={`w-full text-left rounded-2xl border border-paper-300 ${style.tint} hover:brightness-95 active:brightness-90 transition-all overflow-hidden flex items-stretch`}
-                aria-label={`Open parking session at ${addressLine}, ${
-                  hasExpiry ? countdown!.label : elapsed!.label
-                }`}
+                aria-label={t('active.listCardAria', {
+                  address: addressLine,
+                  status: hasExpiry ? countdown!.label : elapsed!.label,
+                })}
               >
                 {/* Coloured urgency stripe — at-a-glance grammar matches the home card */}
                 <div className={`${style.stripe} w-1.5 shrink-0`} aria-hidden />

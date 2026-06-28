@@ -149,7 +149,7 @@ export default function ActiveSessionCard({
         <button
           type="button"
           onClick={onShowMore}
-          aria-label={t('active.morePillAria', { count: extraCount, defaultValue: 'View {{count}} more active session' })}
+          aria-label={t('active.morePillAria', { count: extraCount })}
           className="absolute top-3 right-3 text-[10px] font-semibold uppercase tracking-wider bg-white/20 hover:bg-white/30 active:bg-white/25 rounded-full px-2.5 min-h-[44px] min-w-[44px] inline-flex items-center justify-center transition-colors shrink-0"
         >
           {t('active.morePill', { count: extraCount })}
@@ -177,7 +177,10 @@ export default function ActiveSessionCard({
         type="button"
         onClick={() => onOpen(session)}
         className="w-full text-left rounded-xl -m-1 p-1 transition-transform active:scale-[0.99]"
-        aria-label={`Active parking session at ${addressLine}, ${hasExpiry ? countdown!.label : elapsed!.label}. Tap for details.`}
+        aria-label={t('active.cardAria', {
+          address: addressLine,
+          status: hasExpiry ? countdown!.label : elapsed!.label,
+        })}
       >
         <div className="flex items-start gap-3">
           <div

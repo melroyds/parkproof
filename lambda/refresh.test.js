@@ -260,33 +260,34 @@ describe('error handling', () => {
     ).rejects.toThrow(/image_base64 is required/i)
   })
 
-  it('throws an actionable error on stop_reason=max_tokens (truncated JSON)', async () => {
+  // The translate path throws a stable error CODE (ERR_SIGN_UNREADABLE); the
+  // client maps it to localised, friendly copy, so a raw system string never
+  // reaches the user. These assert the code, not the user-facing wording.
+  it('throws the sign-unreadable code on stop_reason=max_tokens (truncated JSON)', async () => {
     mockCreate.mockResolvedValue(mockResponse({}, { stop_reason: 'max_tokens' }))
-    await expect(refreshCall()).rejects.toThrow(/token limit|clearer|tighter/i)
+    await expect(refreshCall()).rejects.toThrow(/ERR_SIGN_UNREADABLE/)
   })
 
-  it('throws an actionable error on stop_reason=refusal', async () => {
+  it('throws the sign-unreadable code on stop_reason=refusal', async () => {
     mockCreate.mockResolvedValue(mockResponse({}, { stop_reason: 'refusal' }))
-    await expect(refreshCall()).rejects.toThrow(/declined|different photo/i)
+    await expect(refreshCall()).rejects.toThrow(/ERR_SIGN_UNREADABLE/)
   })
 
-  it('throws a user-facing error when the model returns no text content', async () => {
+  it('throws the sign-unreadable code when the model returns no text content', async () => {
     mockCreate.mockResolvedValue({
       content: [], // no text block
       stop_reason: 'end_turn',
       usage: { input_tokens: 100, output_tokens: 0 },
     })
-    // Internal "no text content" is mapped to friendly copy before it reaches
-    // the user (the raw detail stays in CloudWatch).
-    await expect(refreshCall()).rejects.toThrow(/could not read this sign/i)
+    await expect(refreshCall()).rejects.toThrow(/ERR_SIGN_UNREADABLE/)
   })
 
-  it('throws a user-facing error on malformed JSON in the response text', async () => {
+  it('throws the sign-unreadable code on malformed JSON in the response text', async () => {
     mockCreate.mockResolvedValue({
       content: [{ type: 'text', text: '{not valid json' }],
       stop_reason: 'end_turn',
       usage: { input_tokens: 100, output_tokens: 50 },
     })
-    await expect(refreshCall()).rejects.toThrow(/could not read this sign/i)
+    await expect(refreshCall()).rejects.toThrow(/ERR_SIGN_UNREADABLE/)
   })
 })

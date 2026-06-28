@@ -197,9 +197,11 @@
     "iveLeft": "Sudah pergi",
     "iveLeftAria": "Tandai bahwa kamu sudah meninggalkan tempat parkir ini",
     "iveLeftConfirm": "Akhiri sesi parkir ini sekarang? Akan dipindahkan ke riwayat dengan waktu kepergianmu tercatat.",
-    "nextPing": "Ping berikutnya: {{when}}",
+    "nextPing": "Pengingat berikutnya: {{when}}",
     "recheckNow": "Cek ulang sekarang",
-    "recheckSub": "Masih sah? Verifikasi ulang dalam hitungan detik"
+    "recheckSub": "Masih sah? Verifikasi ulang dalam hitungan detik",
+    "cardAria": "Sesi parkir aktif di {{address}}, {{status}}. Ketuk untuk detail.",
+    "listCardAria": "Buka sesi parkir di {{address}}, {{status}}."
   },
   "scanner": {
     "header": "Pindai rambu parkir",
@@ -275,7 +277,7 @@
     "permitRequired": {
       "kicker": "IZIN DISABILITAS DIPERLUKAN",
       "header": "Tempat ini dikhususkan untuk pemegang izin",
-      "copy": "Parkir di sini tanpa izin disabilitas yang sah dan ditampilkan dengan jelas adalah pelanggaran. Di Victoria dendanya $400+ dan biaya sosialnya — mengambil tempat dari orang yang membutuhkannya — nyata. Jika kamu tidak punya, pindai tempat lain.",
+      "copy": "Parkir di sini tanpa izin disabilitas sah yang ditampilkan dengan jelas adalah pelanggaran. Di Victoria dendanya $400 atau lebih, dan tempat ini dikhususkan untuk orang yang membutuhkannya. Jika kamu tidak punya, pindai tempat lain.",
       "ack": "Saya punya izin disabilitas sah yang ditampilkan jelas di kendaraan saya"
     },
     "permitZone": {
@@ -332,7 +334,7 @@
     "header": "Atur pengingat",
     "noExpiry": "Sesi ini tidak punya waktu berakhir, jadi pengingat waktu tidak berlaku.",
     "expired": "Parkir berakhir pada <strong>{{when}}</strong>. Terlambat untuk pengingat — tapi sesimu tetap tersimpan sebagai bukti jika perlu menyanggah denda.",
-    "intro": "Parkir berakhir pada <strong>{{when}}</strong>. Pilih kapan ingin diingatkan — pilih sebanyak yang kamu mau.",
+    "intro": "Parkir berakhir pada <strong>{{when}}</strong>. Pilih kapan ingin diingatkan, pilih sebanyak yang kamu mau.",
     "chipAtExpiry": "Saat berakhir",
     "chipMin": "{{count}} mnt",
     "summaryWithSelections": "Kamu akan diingatkan pada <strong>{{times}}</strong>.",
@@ -627,7 +629,14 @@
     "photoSyncFailed": "Ada foto yang tidak tercadangkan ke cloud. Aman di perangkat ini — buka sesinya untuk coba lagi.",
     "heavyLoad": "ParkProof sedang sibuk saat ini dan pindaianmu tidak selesai tepat waktu. Tunggu sebentar lalu coba lagi.",
     "rateLimited": "Terlalu banyak permintaan dari koneksimu. Tunggu sebentar, lalu coba lagi.",
-    "syncFailed": "Tidak bisa memuat sesi tersimpanmu barusan."
+    "syncFailed": "Tidak bisa memuat sesi tersimpanmu barusan.",
+    "scanFailed": "Kami tidak bisa menyelesaikan pembacaan rambu itu. Coba lagi sebentar.",
+    "signUnreadable": "Kami tidak bisa membaca rambu itu dengan jelas. Coba foto yang lebih jelas dan lebih dekat.",
+    "imageTooLarge": "Foto itu terlalu besar. Foto ulang sedikit lebih kecil, atau lebih dekat ke rambu.",
+    "imageType": "Jenis gambar itu tidak didukung. Gunakan foto JPEG atau PNG.",
+    "appealUndraftable": "Kami tidak bisa menyusun banding dari foto itu. Coba foto surat denda yang lebih jelas.",
+    "exportFailed": "Tidak bisa membuat ekspormu barusan. Coba lagi sebentar.",
+    "genericRetry": "Ada yang tidak beres. Coba lagi sebentar."
   },
   "pdf": {
     "common": {
