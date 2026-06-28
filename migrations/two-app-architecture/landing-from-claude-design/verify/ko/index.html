@@ -312,12 +312,26 @@ base64 -d sig.base64 > sig.bin
 openssl dgst -sha256 -verify parkproof-public-key.pem \
   -signature sig.bin payload.txt</pre>
 
+  <p><strong>이것만으로는 사진이 검증되지 않습니다.</strong> 위의 <code>Verified OK</code>는 페이로드(메타데이터와 그 안에 적힌 사진 해시 값들)가 변조되지 않았음을 확인할 뿐, PDF에 표시된 <em>사진 자체</em>가 그 해시와 일치하는지는 확인하지 않습니다. 사진을 검증하려면 아래 단계를 반드시 수행하세요.</p>
+
+  <pre><span class="comment"># 6. PDF의 각 사진에 대해 SHA-256 해시를 다시 계산하고
+#    페이로드에 적힌 해시 값과 비교합니다.
+#    PDF에서 각 사진을 파일로 추출(또는 다운로드)한 뒤 실행:</span>
+sha256sum 표지판_사진.jpg     <span class="comment"># → sign_photo_sha256 와 비교</span>
+sha256sum 차량_사진.jpg       <span class="comment"># → car_photo_sha256 와 비교</span>
+sha256sum 주변_사진.jpg       <span class="comment"># → ambient_photo_sha256 와 비교</span>
+
+<span class="comment"># sha256sum 이 없으면 동등한 명령:</span>
+openssl dgst -sha256 표지판_사진.jpg</pre>
+
+  <p>계산된 해시가 페이로드의 해당 필드(<code>sign_photo_sha256</code>, <code>car_photo_sha256</code>, <code>ambient_photo_sha256</code>)와 <strong>정확히 일치</strong>하면 그 사진은 서명 시점 이후 변경되지 않은 것입니다. <strong>일치하지 않으면 해당 사진은 서명 이후 교체 또는 변경된 것</strong>이며, <code>Verified OK</code> 결과와는 별개로 신뢰할 수 없습니다. 다시 강조하면, <code>Verified OK</code>만으로는 이미지가 검증되지 않습니다 — 이 재해시 비교가 사진을 검증하는 유일한 단계입니다.</p>
+
   <h2>결과의 의미</h2>
 
   <div class="grid-2">
     <div class="card ok">
       <h3>검증됨 <span class="label">통과</span></h3>
-      <p><code>Verified OK</code> — PDF의 페이로드는 ParkProof가 스캔 시점에 서명한 것과 바이트 단위로 동일합니다. 표지판 규칙, GPS, 타임스탬프, 주소, 사진 해시는 그 이후 변경되지 않았습니다.</p>
+      <p><code>Verified OK</code> — PDF의 페이로드는 ParkProof가 스캔 시점에 서명한 것과 바이트 단위로 동일합니다. 표지판 규칙, GPS, 타임스탬프, 주소, 그리고 페이로드에 적힌 사진 해시 <em>값</em>이 변조되지 않았음을 확인합니다. 단, 이것은 사진 <em>자체</em>가 그 해시와 일치하는지는 확인하지 않습니다 — 사진을 확인하려면 위 6단계의 재해시 비교를 수행해야 합니다.</p>
     </div>
     <div class="card fail">
       <h3>실패 <span class="label">실패</span></h3>

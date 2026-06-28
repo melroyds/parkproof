@@ -516,7 +516,22 @@ export function downloadPdf(
     doc.setFont(activeFont, 'bold')
     doc.setTextColor(15, 23, 42)
     doc.text(t('pdf.evidence.driverNoteHeader'), MARGIN, y)
-    y += 16
+    y += 14
+    // The note is user-supplied free text and is NOT part of the signed
+    // payload, so mark it clearly — a reviewer must not read it as attested,
+    // tamper-evident evidence the way the signed metadata is.
+    doc.setFontSize(8)
+    doc.setFont(activeFont, 'italic')
+    doc.setTextColor(120)
+    const pwNote = doc.internal.pageSize.getWidth()
+    for (const ln of doc.splitTextToSize(
+      t('pdf.evidence.driverNoteUnsigned'),
+      pwNote - 2 * MARGIN,
+    )) {
+      doc.text(ln, MARGIN, y)
+      y += 11
+    }
+    y += 4
     doc.setFontSize(10)
     doc.setFont(activeFont, 'normal')
     doc.setTextColor(45, 55, 79)
@@ -701,6 +716,17 @@ function drawSignatureAppendix(
     y = ensureSpace(doc, y, 12)
     doc.text(line, MARGIN, y)
     y += 12
+  }
+  // Step 7 — the photo re-hash check. Longer prose (the openssl signature
+  // check alone does NOT prove the embedded images match their signed hashes),
+  // so it wraps rather than sitting in the fixed-line command list above.
+  y += 4
+  doc.setFont(activeFont, 'normal')
+  doc.setFontSize(8)
+  for (const ln of doc.splitTextToSize(t('pdf.signature.verifyStep7'), pageWidth - 2 * MARGIN)) {
+    y = ensureSpace(doc, y, 11)
+    doc.text(ln, MARGIN, y)
+    y += 11
   }
 }
 

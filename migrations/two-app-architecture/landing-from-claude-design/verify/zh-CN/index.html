@@ -312,12 +312,31 @@ base64 -d sig.base64 > sig.bin
 openssl dgst -sha256 -verify parkproof-public-key.pem \
   -signature sig.bin payload.txt</pre>
 
+  <p>上面的命令只验证<strong>载荷</strong> — 它确认元数据以及载荷中记录的照片哈希值未被改变。它<em>不会</em>检查 PDF 中实际显示的照片是否仍与那些哈希值相符。要确认照片本身,你必须重新计算每张照片的哈希并与载荷比对:</p>
+
+  <pre><span class="comment"># 6. 对 PDF 中的每张照片重新计算 SHA-256,
+#    并与载荷中对应的字段逐一比对:
+#      路牌照片  → sign_photo_sha256
+#      车辆照片  → car_photo_sha256
+#      环境照片  → ambient_photo_sha256
+#    先从 PDF 中导出每张图片为独立文件,然后:</span>
+sha256sum sign_photo.jpg
+sha256sum car_photo.jpg
+sha256sum ambient_photo.jpg
+
+<span class="comment"># 若系统没有 sha256sum,可改用 openssl:</span>
+openssl dgst -sha256 sign_photo.jpg</pre>
+
+  <div class="callout">
+    <strong>这一步不可省略。</strong> 把每条输出的哈希与载荷中相应的 <code>sign_photo_sha256</code> / <code>car_photo_sha256</code> / <code>ambient_photo_sha256</code> 字段逐字符比对。<strong>哈希一致</strong>表示该照片自签名以来未被改动;<strong>哈希不一致</strong>表示这张照片在签名之后被替换或修改过 — 即使第 5 步显示 <code>Verified OK</code> 也是如此。单凭 <code>Verified OK</code> 并<em>不</em>验证图片本身;只有完成本步的重新计算并匹配,才能确认你所看到的照片就是被签名的那些照片。
+  </div>
+
   <h2>结果意味着什么</h2>
 
   <div class="grid-2">
     <div class="card ok">
       <h3>已验证 <span class="label">通过</span></h3>
-      <p><code>Verified OK</code> — 你 PDF 中的载荷与 ParkProof 扫描时签名的字节完全一致。路牌规则、GPS、时间戳、地址和照片哈希自那时起未被更改。</p>
+      <p><code>Verified OK</code> — 你 PDF 中的载荷与 ParkProof 扫描时签名的字节完全一致。这确认了元数据(路牌规则、GPS、时间戳、地址)以及载荷中记录的照片<em>哈希值</em>自那时起未被更改。但要确认照片本身,仍需完成上面的第 6 步重新计算哈希;只有这一步才能验证 PDF 中显示的图片确实与这些哈希相符。</p>
     </div>
     <div class="card fail">
       <h3>失败 <span class="label">不通过</span></h3>

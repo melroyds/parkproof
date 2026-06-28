@@ -185,7 +185,16 @@ export default function SessionLogger({
     setCarPhoto(dataUrl)
   }
 
+  // Each saveSession() mints a fresh UUID, so it is NOT idempotent — a
+  // double-tap before the view transitions would create two distinct sessions,
+  // each firing its own KMS sign + S3 upload + DDB write. The ref is the real
+  // guard (synchronous); the state just disables the button visually.
+  const submittedRef = useRef(false)
+  const [submitting, setSubmitting] = useState(false)
   const saveSession = () => {
+    if (submittedRef.current) return
+    submittedRef.current = true
+    setSubmitting(true)
     const location =
       gps.status === 'ok'
         ? {
@@ -498,7 +507,8 @@ export default function SessionLogger({
       <div className="mt-auto flex flex-col gap-2">
         <button
           onClick={saveSession}
-          className="bg-gradient-to-r from-brand-500 via-brand-500 to-purple-600 hover:brightness-110 active:brightness-95 disabled:bg-none text-white font-semibold py-4 rounded-2xl shadow-lg shadow-brand-500/25 transition-colors"
+          disabled={submitting}
+          className="bg-gradient-to-r from-brand-500 via-brand-500 to-purple-600 hover:brightness-110 active:brightness-95 disabled:bg-none disabled:bg-brand-300 disabled:cursor-not-allowed text-white font-semibold py-4 rounded-2xl shadow-lg shadow-brand-500/25 transition-colors"
         >
           {t('logger.saveSession')}
         </button>

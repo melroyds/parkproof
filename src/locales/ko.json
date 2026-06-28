@@ -228,7 +228,8 @@
     "noSignContinue": "기록 계속",
     "privacyLine": "사진은 휴대폰에서 읽힙니다. 번역을 위해 표지판 이미지만 전송되며, 저희 서버에는 절대 저장되지 않습니다. 계정이 필요 없습니다.",
     "cameraDeniedTitle": "카메라 접근이 꺼져 있습니다",
-    "cameraDeniedCopy": "대신 갤러리에서 사진을 선택하거나, 브라우저 설정에서 카메라 접근을 다시 허용하세요."
+    "cameraDeniedCopy": "대신 갤러리에서 사진을 선택하거나, 브라우저 설정에서 카메라 접근을 다시 허용하세요.",
+    "couldntReadPhoto": "그 사진을 읽을 수 없었습니다. 다른 이미지를 시도하거나 갤러리에서 선택하세요."
   },
   "reuse": {
     "scannedHere": "여기서 {{age}}에 스캔하셨습니다",
@@ -435,7 +436,8 @@
     "howToVerify": "시청이 이 기록을 검증하는 방법 →",
     "photoSyncFailed": "사진이 클라우드에 백업되지 않음",
     "photoSyncRetry": "업로드 다시 시도",
-    "exportPhotoWarning": "이 오래된 세션의 사진 하나 이상을 클라우드에서 불러올 수 없었습니다. 그래도 내보내거나, 생성된 기기에서 열 수 있습니다."
+    "exportPhotoWarning": "이 오래된 세션의 사진 하나 이상을 클라우드에서 불러올 수 없었습니다. 그래도 내보내거나, 생성된 기기에서 열 수 있습니다.",
+    "photoHashMismatch": "이 사진은 서명된 증거와 일치하지 않으며 저장 이후 변경되었을 수 있습니다."
   },
   "appeal": {
     "captureHeader": "이의신청서 작성",
@@ -622,7 +624,10 @@
     "boundaryReload": "ParkProof 새로고침",
     "storageRecovered_one": "기기 저장 공간이 가득 차서, 공간 확보를 위해 오래된 주차 기록 1개의 사진이 삭제되었습니다. 증거를 클라우드에 안전하게 보관하려면 로그인하세요.",
     "storageRecovered_other": "기기 저장 공간이 가득 차서, 공간 확보를 위해 오래된 주차 기록 {{count}}개의 사진이 삭제되었습니다. 증거를 클라우드에 안전하게 보관하려면 로그인하세요.",
-    "photoSyncFailed": "사진이 클라우드에 백업되지 않았습니다. 이 기기에는 안전하게 있습니다 — 세션을 열어 다시 시도하세요."
+    "photoSyncFailed": "사진이 클라우드에 백업되지 않았습니다. 이 기기에는 안전하게 있습니다 — 세션을 열어 다시 시도하세요.",
+    "heavyLoad": "지금 ParkProof에 요청이 많아 스캔이 제때 끝나지 않았습니다. 1분 후 다시 시도해 주세요.",
+    "rateLimited": "이 연결에서 요청이 너무 많습니다. 1분 기다린 후 다시 시도해 주세요.",
+    "syncFailed": "방금 저장된 세션을 불러올 수 없었습니다."
   },
   "pdf": {
     "common": {
@@ -696,7 +701,8 @@
       "verifyStep3": "3. 공개 키 다운로드:",
       "verifyStep4": "4. 서명 디코딩:",
       "verifyStep5": "5. 검증:",
-      "verifyStep6": "6. 예상 출력: \"Verified OK\""
+      "verifyStep6": "6. 예상 출력: \"Verified OK\" — 이는 아래 메타데이터와 사진 해시가 서명 이후 변경되지 않았음을 확인합니다.",
+      "verifyStep7": "7. 사진 자체가 일치하는지 확인하세요. \"Verified OK\"는 페이로드의 해시가 온전함을 증명할 뿐, 이 PDF의 이미지가 그 해시와 일치함을 증명하지는 않습니다. 각 사진에 대해 SHA-256을 다시 계산하고(sha256sum <file> 또는 openssl dgst -sha256 <file>), 위 페이로드의 해당 sign_photo_sha256 / car_photo_sha256 / ambient_photo_sha256 값과 같은지 확인하세요. 일치하지 않으면 그 사진은 서명 이후 변경된 것입니다."
     },
     "appeal": {
       "drafted": "초안 {{when}}",

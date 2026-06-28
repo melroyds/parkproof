@@ -312,12 +312,35 @@ base64 -d sig.base64 > sig.bin
 openssl dgst -sha256 -verify parkproof-public-key.pem \
   -signature sig.bin payload.txt</pre>
 
+  <p>Το <code>Verified OK</code> από το βήμα 5 αποδεικνύει ότι το <em>payload</em> δεν έχει αλλοιωθεί — αλλά το payload περιέχει μόνο τα hashes SHA-256 των φωτογραφιών, όχι τις ίδιες τις φωτογραφίες. Για να επιβεβαιώσεις ότι οι φωτογραφίες που εμφανίζονται στο PDF είναι όντως εκείνες που υπογράφηκαν, πρέπει να ξαναϋπολογίσεις τα hashes τους και να τα συγκρίνεις με το payload. Χωρίς αυτό το βήμα, μια φωτογραφία θα μπορούσε να έχει αντικατασταθεί και η επαλήθευση να εξακολουθεί να δείχνει <code>Verified OK</code>.</p>
+
+  <pre><span class="comment"># 6. Για κάθε φωτογραφία στο PDF, εξήγαγε/αποθήκευσε το αρχείο εικόνας, μετά
+#    ξαναϋπολόγισε το hash SHA-256 της και σύγκρινέ το με την αντίστοιχη τιμή
+#    μέσα στο payload.txt (sign_photo_sha256 / car_photo_sha256 /
+#    ambient_photo_sha256).</span>
+sha256sum sign-photo.jpg
+sha256sum car-photo.jpg
+sha256sum ambient-photo.jpg
+
+<span class="comment"># Ή, αν δεν έχεις το sha256sum (π.χ. macOS), χρησιμοποίησε το openssl:</span>
+openssl dgst -sha256 sign-photo.jpg
+
+<span class="comment"># Σύγκρινε κάθε αποτέλεσμα, χαρακτήρα-προς-χαρακτήρα, με την αντίστοιχη
+# τιμή μέσα στο payload.txt:
+#   sign_photo_sha256     ← hash της φωτογραφίας πινακίδας
+#   car_photo_sha256      ← hash της φωτογραφίας αυτοκινήτου
+#   ambient_photo_sha256  ← hash της φωτογραφίας περιβάλλοντος</span></pre>
+
+  <div class="callout">
+    <strong>Διάβασέ το αυτό προσεκτικά.</strong> Αν ένα ξαναϋπολογισμένο hash <em>ταιριάζει</em> με την τιμή στο payload, η συγκεκριμένη φωτογραφία είναι όντως εκείνη που υπογράφηκε τη στιγμή της σάρωσης. Αν <em>δεν ταιριάζει</em>, αυτή η φωτογραφία άλλαξε μετά την υπογραφή — η εγγραφή δεν είναι αξιόπιστη για εκείνη την εικόνα. Το σκέτο <code>Verified OK</code> από το βήμα 5 <strong>δεν</strong> επαληθεύει τις εικόνες· μόνο αυτό το βήμα σύγκρισης hash το κάνει.
+  </div>
+
   <h2>Τι σημαίνει το αποτέλεσμα</h2>
 
   <div class="grid-2">
     <div class="card ok">
       <h3>Επαληθεύτηκε <span class="label">PASS</span></h3>
-      <p><code>Verified OK</code> — το payload στο PDF σου είναι byte-πανομοιότυπο με αυτό που υπέγραψε το ParkProof τη στιγμή της σάρωσης. Οι κανόνες της πινακίδας, GPS, timestamp, διεύθυνση και hashes φωτογραφιών δεν έχουν αλλοιωθεί από τότε.</p>
+      <p><code>Verified OK</code> — το payload στο PDF σου είναι byte-πανομοιότυπο με αυτό που υπέγραψε το ParkProof τη στιγμή της σάρωσης. Οι κανόνες της πινακίδας, GPS, timestamp, διεύθυνση και οι <em>τιμές</em> των hashes φωτογραφιών μέσα στο payload είναι ακέραιες. Αυτό από μόνο του δεν επαληθεύει τις ίδιες τις φωτογραφίες — για να επιβεβαιώσεις ότι οι εικόνες στο PDF ταιριάζουν με εκείνες τις υπογεγραμμένες τιμές hash, ολοκλήρωσε το βήμα 6 (ξαναϋπολογισμός hash) παραπάνω.</p>
     </div>
     <div class="card fail">
       <h3>Αποτυχία <span class="label">FAIL</span></h3>

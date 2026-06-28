@@ -55,6 +55,29 @@ async function expectJson<T>(res: Response): Promise<T> {
   return (await res.json()) as T
 }
 
+// ─── Delete tombstones ─────────────────────────────────────────────────────
+// A fire-and-forget photo/metadata upload that is already in flight can land
+// AFTER a /sessions/delete and resurrect the row the user just erased. We hold
+// a short-lived set of recently-deleted ids; uploadSession consults it both at
+// entry and right before the metadata write, so an upload that overlaps a
+// delete is dropped instead of re-creating the session in the cloud.
+const recentlyDeleted = new Map<string, number>()
+const DELETE_TOMBSTONE_MS = 30_000
+
+function markSessionDeleted(id: string): void {
+  recentlyDeleted.set(id, Date.now())
+}
+
+function isTombstoned(id: string): boolean {
+  const at = recentlyDeleted.get(id)
+  if (at == null) return false
+  if (Date.now() - at > DELETE_TOMBSTONE_MS) {
+    recentlyDeleted.delete(id)
+    return false
+  }
+  return true
+}
+
 // ─── Operations ──────────────────────────────────────────────────────────
 
 interface PresignResponse {
@@ -123,6 +146,8 @@ async function uploadPhoto(
 export async function uploadSession(
   session: ParkingSession,
 ): Promise<{ photoFailed: boolean }> {
+  // Don't resurrect a session the user just deleted.
+  if (isTombstoned(session.id)) return { photoFailed: false }
   // Pre-flight: upload photos in parallel. All three roles fail independently
   // without aborting the metadata upload — see comment block above. We still
   // track whether any photo PUT failed so the caller can surface it: a silent
@@ -147,6 +172,9 @@ export async function uploadSession(
     }),
   )
 
+  // Re-check after the photo PUTs (multi-RTT): a delete may have landed while
+  // they were in flight. Drop the metadata write so the row stays deleted.
+  if (isTombstoned(session.id)) return { photoFailed: false }
   const res = await authFetch('/sessions/upload', {
     method: 'POST',
     body: JSON.stringify({ session }),
@@ -191,6 +219,9 @@ export async function materializePhotoFromCloud(
 
 /** Delete one session from the cloud (DDB row + S3 photos, best-effort). */
 export async function deleteCloudSession(sessionId: string): Promise<void> {
+  // Tombstone first (synchronously) so any overlapping in-flight upload bails
+  // before it can re-create the row.
+  markSessionDeleted(sessionId)
   const res = await authFetch('/sessions/delete', {
     method: 'POST',
     body: JSON.stringify({ session_id: sessionId }),

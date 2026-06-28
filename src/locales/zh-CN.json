@@ -96,7 +96,8 @@
     "noSignContinue": "继续记录",
     "privacyLine": "你的照片在手机上读取。只有标志图片会被发送以进行翻译,且从不存储在我们的服务器上。无需账户。",
     "cameraDeniedTitle": "相机访问已关闭",
-    "cameraDeniedCopy": "改从相册中选择一张照片,或在浏览器设置中重新启用相机访问。"
+    "cameraDeniedCopy": "改从相册中选择一张照片,或在浏览器设置中重新启用相机访问。",
+    "couldntReadPhoto": "无法读取那张照片。请换一张图片,或从相册中选择一张。"
   },
   "reuse": {
     "scannedHere": "您 {{age}} 在此扫描过",
@@ -303,7 +304,8 @@
     "howToVerify": "市政府如何核验这份记录 →",
     "photoSyncFailed": "照片未备份到云端",
     "photoSyncRetry": "重试上传",
-    "exportPhotoWarning": "这条较旧会话有一张或多张照片无法从云端加载。你可以照常导出,或在创建它的那台设备上打开。"
+    "exportPhotoWarning": "这条较旧会话有一张或多张照片无法从云端加载。你可以照常导出,或在创建它的那台设备上打开。",
+    "photoHashMismatch": "这张照片与已签名的证据不匹配,可能在保存后被改动过。"
   },
   "appeal": {
     "captureHeader": "起草申诉信",
@@ -473,7 +475,10 @@
     "boundaryReload": "重新加载 ParkProof",
     "storageRecovered_one": "你的设备存储已满,因此为了腾出空间,移除了 1 条较旧停车记录中的照片。登录即可把证据安全保存在云端。",
     "storageRecovered_other": "你的设备存储已满,因此为了腾出空间,移除了 {{count}} 条较旧停车记录中的照片。登录即可把证据安全保存在云端。",
-    "photoSyncFailed": "有一张照片未备份到云端。它在此设备上是安全的 — 打开会话即可重试。"
+    "photoSyncFailed": "有一张照片未备份到云端。它在此设备上是安全的 — 打开会话即可重试。",
+    "heavyLoad": "ParkProof 目前繁忙,你的扫描未能及时完成。请稍等一分钟后再试。",
+    "rateLimited": "来自你网络的请求过多。请稍等一分钟,然后再试。",
+    "syncFailed": "刚才无法加载你保存的会话。"
   },
   "pdf": {
     "common": {
@@ -540,7 +545,8 @@
       "verifyStep3": "3. 下载公钥:",
       "verifyStep4": "4. 解码签名:",
       "verifyStep5": "5. 验证:",
-      "verifyStep6": "6. 预期输出:\"Verified OK\""
+      "verifyStep6": "6. 预期输出:\"Verified OK\" — 这表示下方的元数据和照片哈希自签名以来未被改动。",
+      "verifyStep7": "7. 确认照片本身是否一致。\"Verified OK\" 只能证明负载中的哈希完整无损,并不能证明此 PDF 中的图片与之匹配。对每张照片,重新计算它的 SHA-256(sha256sum <file>,或 openssl dgst -sha256 <file>),并核对它是否等于上方负载中对应的 sign_photo_sha256 / car_photo_sha256 / ambient_photo_sha256。若不一致,则表示该照片在签名后被改动过。"
     },
     "appeal": {
       "drafted": "起草于 {{when}}",

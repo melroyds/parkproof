@@ -312,12 +312,26 @@ base64 -d sig.base64 > sig.bin
 openssl dgst -sha256 -verify parkproof-public-key.pem \
   -signature sig.bin payload.txt</pre>
 
+  <p><code>Verified OK</code> ਸਿਰਫ਼ ਇਹ ਸਾਬਤ ਕਰਦਾ ਹੈ ਕਿ <strong>payload ਟੈਕਸਟ</strong> ਨਹੀਂ ਬਦਲਿਆ — ਇਹ <strong>ਫੋਟੋਆਂ ਦੀ ਪੁਸ਼ਟੀ ਨਹੀਂ ਕਰਦਾ</strong>। payload ਵਿੱਚ ਹਰ ਫੋਟੋ ਦਾ SHA-256 ਹੈਸ਼ ਹੈ, ਪਰ ਕੋਈ ਉਹਨਾਂ ਹੈਸ਼ਾਂ ਨੂੰ ਉਸੇ ਜਿਹਾ ਛੱਡ ਕੇ ਫੋਟੋ ਖੁਦ ਬਦਲ ਸਕਦਾ ਹੈ। ਫੋਟੋਆਂ ਦੀ ਪੁਸ਼ਟੀ ਕਰਨ ਲਈ ਤੁਹਾਨੂੰ ਉਹਨਾਂ ਨੂੰ ਆਪ ਮੁੜ-ਹੈਸ਼ ਕਰਨਾ ਪਵੇਗਾ:</p>
+
+  <pre><span class="comment"># 6. PDF ਵਿਚਲੀ ਹਰ ਫੋਟੋ ਲਈ, ਉਸ ਦਾ SHA-256 ਮੁੜ-ਗਣਨਾ ਕਰੋ
+#    ਅਤੇ payload ਵਿੱਚ ਮੇਲ ਖਾਂਦੇ ਖੇਤਰ ਨਾਲ ਤੁਲਨਾ ਕਰੋ:
+#      ਚਿੰਨ੍ਹ ਦੀ ਫੋਟੋ   → sign_photo_sha256
+#      ਕਾਰ ਦੀ ਫੋਟੋ      → car_photo_sha256
+#      ਆਲੇ-ਦੁਆਲੇ ਦੀ ਫੋਟੋ → ambient_photo_sha256
+#    PDF ਤੋਂ ਹਰ ਫੋਟੋ ਨੂੰ ਫਾਈਲ ਵਿੱਚ ਕੱਢੋ ਜਾਂ ਸੰਭਾਲੋ, ਫਿਰ ਚਲਾਓ:</span>
+sha256sum &lt;file&gt;
+<span class="comment"># ਜਾਂ, ਜੇ sha256sum ਉਪਲਬਧ ਨਹੀਂ ਹੈ:</span>
+openssl dgst -sha256 &lt;file&gt;</pre>
+
+  <p>ਨਿਕਲੇ ਹੈਸ਼ ਦੀ payload ਵਿੱਚਲੇ <code>sign_photo_sha256</code> / <code>car_photo_sha256</code> / <code>ambient_photo_sha256</code> ਮੁੱਲ ਨਾਲ ਅੱਖਰ-ਦਰ-ਅੱਖਰ ਤੁਲਨਾ ਕਰੋ। ਜੇ ਉਹ <strong>ਮੇਲ ਖਾਂਦੇ ਹਨ</strong>, ਤਾਂ ਉਹ ਫੋਟੋ ਉਹੀ ਹੈ ਜਿਸ ਉੱਤੇ ਹਸਤਾਖਰ ਕੀਤਾ ਗਿਆ ਸੀ। ਜੇ ਉਹ <strong>ਮੇਲ ਨਹੀਂ ਖਾਂਦੇ</strong>, ਤਾਂ ਉਸ ਫੋਟੋ ਨੂੰ ਹਸਤਾਖਰ ਤੋਂ ਬਾਅਦ ਬਦਲ ਦਿੱਤਾ ਗਿਆ ਹੈ — ਭਾਵੇਂ <code>Verified OK</code> ਪਾਸ ਹੋ ਜਾਵੇ। ਇਕੱਲਾ <code>Verified OK</code> ਚਿੱਤਰਾਂ ਦੀ ਪੁਸ਼ਟੀ <em>ਨਹੀਂ</em> ਕਰਦਾ; ਫੋਟੋਆਂ ਦੀ ਪੁਸ਼ਟੀ ਸਿਰਫ਼ ਇਸ ਮੁੜ-ਹੈਸ਼ ਕਦਮ ਨਾਲ ਪੂਰੀ ਹੁੰਦੀ ਹੈ।</p>
+
   <h2>ਨਤੀਜੇ ਦਾ ਕੀ ਮਤਲਬ ਹੈ</h2>
 
   <div class="grid-2">
     <div class="card ok">
       <h3>ਪੁਸ਼ਟੀ ਹੋਈ <span class="label">ਪਾਸ</span></h3>
-      <p><code>Verified OK</code> — ਤੁਹਾਡੇ PDF ਵਿੱਚ payload ਸਕੈਨ ਦੇ ਸਮੇਂ ParkProof ਦੁਆਰਾ ਹਸਤਾਖਰਿਤ ਨਾਲ ਬਾਈਟ-ਸਮਾਨ ਹੈ। ਚਿੰਨ੍ਹ ਨਿਯਮ, GPS, ਟਾਈਮਸਟੈਂਪ, ਪਤਾ ਅਤੇ ਫੋਟੋ ਹੈਸ਼ ਉਸ ਸਮੇਂ ਤੋਂ ਨਹੀਂ ਬਦਲੇ ਗਏ ਹਨ।</p>
+      <p><code>Verified OK</code> — ਤੁਹਾਡੇ PDF ਵਿੱਚ payload ਸਕੈਨ ਦੇ ਸਮੇਂ ParkProof ਦੁਆਰਾ ਹਸਤਾਖਰਿਤ ਨਾਲ ਬਾਈਟ-ਸਮਾਨ ਹੈ। ਇਹ ਮੈਟਾਡੇਟਾ — ਚਿੰਨ੍ਹ ਨਿਯਮ, GPS, ਟਾਈਮਸਟੈਂਪ, ਪਤਾ — ਅਤੇ payload ਵਿੱਚਲੇ ਫੋਟੋ ਹੈਸ਼ <strong>ਮੁੱਲ</strong> ਅਖੰਡ ਹਨ। ਫੋਟੋਆਂ ਖੁਦ ਉਹਨਾਂ ਹੈਸ਼ਾਂ ਨਾਲ ਮੇਲ ਖਾਂਦੀਆਂ ਹਨ ਇਹ ਪੁਸ਼ਟੀ ਕਰਨ ਲਈ ਉੱਪਰਲਾ ਮੁੜ-ਹੈਸ਼ ਕਦਮ (6) ਚਲਾਉਣਾ ਲੋੜੀਂਦਾ ਹੈ।</p>
     </div>
     <div class="card fail">
       <h3>ਅਸਫਲਤਾ <span class="label">ਫੇਲ</span></h3>

@@ -7,6 +7,7 @@ import {
   GetCommand,
   PutCommand,
   DeleteCommand,
+  UpdateCommand,
 } from '@aws-sdk/lib-dynamodb'
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3'
 import {
@@ -33,6 +34,18 @@ const REGION = process.env.AWS_REGION || 'ap-southeast-2'
 const JOBS_TABLE = process.env.JOBS_TABLE || 'parkproof-jobs'
 const SELF_FUNCTION_NAME =
   process.env.AWS_LAMBDA_FUNCTION_NAME || 'parkproof-sign-translator'
+
+// Hard server-side caps mirroring the client-side limits. The anonymous routes
+// are reachable directly (not only through the browser), so the client's resize
+// and validation cannot be trusted as the only guard.
+const MAX_IMAGE_B64_LEN = 4_000_000 // ~3MB binary; the client produces well under 1MB
+const ALLOWED_MEDIA_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif'])
+// `current_datetime` is a dev-time override of "now". Real Lambda always sets
+// AWS_LAMBDA_FUNCTION_NAME, so honour the override only outside Lambda (local
+// dev via the Vite proxy) unless explicitly allowed — otherwise any anonymous
+// caller could spoof the clock and thus the parking verdict.
+const ALLOW_TIME_OVERRIDE =
+  !process.env.AWS_LAMBDA_FUNCTION_NAME || process.env.ALLOW_TIME_OVERRIDE === '1'
 
 // ─── Async-job plumbing ───────────────────────────────────────────────────
 // API Gateway HTTP APIs cap at 30 seconds. Claude vision on stacked
@@ -105,6 +118,51 @@ async function asyncSelfInvoke(payload) {
   )
 }
 
+// ─── Per-IP rate limiting ─────────────────────────────────────────────────
+// The anonymous routes (Claude vision, KMS sign, feedback) have real per-call
+// cost. A per-IP, per-route counter in the jobs table (RL# key namespace,
+// TTL-swept) is the actual per-caller ceiling — the Lambda concurrency cap only
+// bounds simultaneity, not total volume. Limits are generous: a real user does
+// a handful of scans a minute, scripted abuse does thousands.
+const RL_WINDOW_SEC = 60
+
+/**
+ * Returns true if the request is ALLOWED. Fails OPEN by design — a limiter
+ * outage must never block a legitimate user; the concurrency cap still backstops
+ * cost if the counter is briefly unavailable.
+ */
+async function checkRateLimit(event, routeKey, limit) {
+  try {
+    const ip = event?.requestContext?.http?.sourceIp || 'unknown'
+    const bucket = Math.floor(Date.now() / 1000 / RL_WINDOW_SEC)
+    const resp = await jobsDdb().send(
+      new UpdateCommand({
+        TableName: JOBS_TABLE,
+        Key: { job_id: `RL#${routeKey}#${ip}#${bucket}` },
+        UpdateExpression: 'ADD #c :one SET #ttl = :ttl',
+        ExpressionAttributeNames: { '#c': 'count', '#ttl': 'ttl' },
+        ExpressionAttributeValues: {
+          ':one': 1,
+          ':ttl': Math.floor(Date.now() / 1000) + RL_WINDOW_SEC * 2,
+        },
+        ReturnValues: 'UPDATED_NEW',
+      }),
+    )
+    return (resp?.Attributes?.count ?? 0) <= limit
+  } catch (err) {
+    console.warn('[parkproof.ratelimit] check failed, allowing:', err?.message || err)
+    return true
+  }
+}
+
+function rateLimitedResponse() {
+  return {
+    statusCode: 429,
+    headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ error: 'RATE_LIMITED' }),
+  }
+}
+
 // ─── Appeal-letter drafter ────────────────────────────────────────────────
 const APPEAL_SYSTEM_PROMPT = `You are an Australian parking-law assistant. The user received a parking infringement notice and wants a draft appeal letter to send to the issuing council.
 
@@ -163,6 +221,12 @@ async function handleDraftAppeal(event) {
   } = body
 
   if (!ticket_image_base64) throw new Error('ticket_image_base64 is required')
+  if (typeof ticket_image_base64 !== 'string' || ticket_image_base64.length > MAX_IMAGE_B64_LEN) {
+    throw new Error('That photo of the notice is too large. Retake it a little smaller.')
+  }
+  if (!ALLOWED_MEDIA_TYPES.has(ticket_media_type)) {
+    throw new Error('Unsupported image type. Use a JPEG or PNG photo of the notice.')
+  }
 
   // session may be null on the standalone-appeal path — a user who found
   // ParkProof AFTER being ticketed and never logged a park for the spot. We
@@ -242,13 +306,17 @@ async function handleDraftAppeal(event) {
   }
 
   const textBlock = response.content.find((b) => b.type === 'text')
-  if (!textBlock || !textBlock.text) throw new Error('Model returned no text content')
+  if (!textBlock || !textBlock.text) {
+    throw new Error('We could not draft the appeal from that photo. Try a clearer photo of the notice.')
+  }
 
   try {
     return JSON.parse(textBlock.text)
   } catch (parseErr) {
-    console.error('Appeal JSON parse failed. Raw text:', textBlock.text)
-    throw new Error(`Model returned malformed JSON: ${parseErr.message}`)
+    // Do NOT log the raw model text — for the appeal flow it embeds the user's
+    // address, GPS, and infringement details. Length + reason is enough.
+    console.error(`[parkproof] appeal JSON parse failed: ${parseErr.message} (len=${textBlock.text.length})`)
+    throw new Error('We could not draft the appeal from that photo. Try a clearer photo of the notice.')
   }
 }
 
@@ -575,10 +643,18 @@ export async function translateSign({
   if (!isRefresh && !image_base64) {
     throw new Error('image_base64 is required (or prior_rules for refresh mode)')
   }
+  if (!isRefresh) {
+    if (typeof image_base64 !== 'string' || image_base64.length > MAX_IMAGE_B64_LEN) {
+      throw new Error('That photo is too large. Retake it a little smaller or closer to the sign.')
+    }
+    if (!ALLOWED_MEDIA_TYPES.has(media_type)) {
+      throw new Error('Unsupported image type. Use a JPEG or PNG photo.')
+    }
+  }
 
   const client = new Anthropic({ apiKey })
   const timezone = resolveTimezone(lat, lng)
-  const now = current_datetime || nowInTimezone(timezone)
+  const now = ALLOW_TIME_OVERRIDE && current_datetime ? current_datetime : nowInTimezone(timezone)
   const t1 = Date.now()
   console.log(
     `[parkproof] preflight=${t1 - t0}ms model=${MODEL} mode=${isRefresh ? 'refresh' : 'translate'} tz=${timezone} image_b64_len=${image_base64?.length ?? 0}`,
@@ -651,7 +727,7 @@ export async function translateSign({
 
   const textBlock = response.content.find((b) => b.type === 'text')
   if (!textBlock || !textBlock.text) {
-    throw new Error('Model returned no text content')
+    throw new Error('We could not read this sign clearly. Try a clearer, closer photo.')
   }
 
   try {
@@ -660,8 +736,8 @@ export async function translateSign({
     console.log(`[parkproof] parse=${t3 - t2}ms total=${t3 - t0}ms`)
     return parsed
   } catch (parseErr) {
-    console.error('JSON parse failed. Raw text:', textBlock.text)
-    throw new Error(`Model returned malformed JSON: ${parseErr.message}`)
+    console.error(`[parkproof] sign-translate JSON parse failed: ${parseErr.message} (len=${textBlock.text.length})`)
+    throw new Error('We could not read this sign clearly. Try a clearer, closer photo.')
   }
 }
 
@@ -1464,8 +1540,9 @@ async function handleSignTranslate(event) {
     // multi-variant signs → exceeds API Gateway's 30s cap. Enqueue a job,
     // async-invoke ourselves with the work, return 202 + job_id. The client
     // polls /sign-translate/status/{job_id} until the work completes.
+    if (!(await checkRateLimit(event, 'translate', 20))) return rateLimitedResponse()
     const job_id = crypto.randomUUID()
-    await putJob(job_id, { status: 'pending', kind: 'sign-translate' })
+    await putJob(job_id, { status: 'pending', kind: 'sign-translate', deadline: Date.now() + 70_000 })
     await asyncSelfInvoke({ _async_kind: 'sign-translate', job_id, body })
     return {
       statusCode: 202,
@@ -1507,6 +1584,18 @@ async function handleJobStatus(event) {
       statusCode: 404,
       headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
       body: JSON.stringify({ error: 'job not found or expired' }),
+    }
+  }
+  // The worker is the only thing that writes done/error. If it was dropped
+  // (throttled async invoke under load, with no DLQ) the row stays 'pending'
+  // forever and the client would poll to exhaustion and show a misleading
+  // "complex sign" message. Past the deadline, surface a distinct code the
+  // client maps to a "heavy load, try again" message instead.
+  if (job.status === 'pending' && job.deadline && Date.now() > job.deadline) {
+    return {
+      statusCode: 200,
+      headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ job_id: job.job_id, status: 'error', result: null, error: 'JOB_TIMED_OUT' }),
     }
   }
   return {
@@ -1648,6 +1737,7 @@ export async function handler(event) {
   // verdict handler. Order-sensitive.
   if (path.endsWith('/user-feedback')) {
     try {
+      if (!(await checkRateLimit(event, 'userfeedback', 10))) return rateLimitedResponse()
       return await handleUserFeedback(event)
     } catch (err) {
       console.error('user-feedback handler error:', err)
@@ -1678,9 +1768,10 @@ export async function handler(event) {
     // exceed 30s on edge cases (long infringement notice + complex
     // session context).
     try {
+      if (!(await checkRateLimit(event, 'appeal', 10))) return rateLimitedResponse()
       const body = typeof event.body === 'string' ? JSON.parse(event.body) : event.body
       const job_id = crypto.randomUUID()
-      await putJob(job_id, { status: 'pending', kind: 'draft-appeal' })
+      await putJob(job_id, { status: 'pending', kind: 'draft-appeal', deadline: Date.now() + 70_000 })
       await asyncSelfInvoke({ _async_kind: 'draft-appeal', job_id, body })
       return {
         statusCode: 202,
@@ -1699,6 +1790,7 @@ export async function handler(event) {
 
   if (path.endsWith('/sign-session')) {
     try {
+      if (!(await checkRateLimit(event, 'sign', 30))) return rateLimitedResponse()
       const result = await handleSignSession(event)
       return {
         statusCode: 200,

@@ -120,6 +120,7 @@ export default function SignScanner({ onCapture, onReuseSession, onNoSignScan, o
   // the hint never shows on the happy path.
   const cameraPendingRef = useRef(false)
   const [cameraDenied, setCameraDenied] = useState(false)
+  const [fileError, setFileError] = useState<string | null>(null)
 
   useEffect(() => {
     // Recent-sessions list is initialised lazily via useState above — no need
@@ -206,16 +207,24 @@ export default function SignScanner({ onCapture, onReuseSession, onNoSignScan, o
     // resize step we do for storage drops detail we want to evaluate against.
     // The two operations run in parallel so the user sees the preview at the
     // normal speed; quality just lands a tick later.
-    const [{ dataUrl, mediaType: mt }, qualityResult] = await Promise.all([
-      resizeImageFile(file),
-      analyseSignPhoto(file).catch((err) => {
-        console.warn('[photo-quality] analysis error, continuing:', err)
-        return null
-      }),
-    ])
-    setMediaType(mt)
-    setPreview(dataUrl)
-    setQuality(qualityResult)
+    setFileError(null)
+    try {
+      const [{ dataUrl, mediaType: mt }, qualityResult] = await Promise.all([
+        resizeImageFile(file),
+        analyseSignPhoto(file).catch((err) => {
+          console.warn('[photo-quality] analysis error, continuing:', err)
+          return null
+        }),
+      ])
+      setMediaType(mt)
+      setPreview(dataUrl)
+      setQuality(qualityResult)
+    } catch (err) {
+      // An undecodable file (corrupt, zero-byte, unsupported HEIC) would
+      // otherwise reject silently and leave the scan screen looking dead.
+      console.warn('[scanner] could not read photo:', err)
+      setFileError(t('scanner.couldntReadPhoto'))
+    }
   }
 
   const confirm = () => {
@@ -234,9 +243,15 @@ export default function SignScanner({ onCapture, onReuseSession, onNoSignScan, o
   // ambient (surroundings) photo. Runs the same resize pipeline as the
   // sign-photo path so storage stays under the 5MB localStorage ceiling.
   const handleAmbientFile = async (file: File) => {
-    const { dataUrl } = await resizeImageFile(file)
-    setAmbientPhoto(dataUrl)
-    setNoSignStage('captured')
+    setFileError(null)
+    try {
+      const { dataUrl } = await resizeImageFile(file)
+      setAmbientPhoto(dataUrl)
+      setNoSignStage('captured')
+    } catch (err) {
+      console.warn('[scanner] could not read ambient photo:', err)
+      setFileError(t('scanner.couldntReadPhoto'))
+    }
   }
 
   // User chose to skip the ambient photo. Hand off straight to SessionLogger
@@ -367,6 +382,11 @@ export default function SignScanner({ onCapture, onReuseSession, onNoSignScan, o
               camera was opened but no photo came back (permission denied or
               cancelled). Points the user at the still-available "From library"
               path above. Dismissible; never blocks the normal flow. */}
+          {fileError && (
+            <p className="mt-3 text-sm text-red-700 bg-red-50 border border-red-200 rounded-xl px-3 py-2">
+              {fileError}
+            </p>
+          )}
           {cameraDenied && (
             <div className="mt-3 bg-amber-50 border-2 border-amber-400 rounded-xl p-3">
               <div className="flex items-start gap-2">

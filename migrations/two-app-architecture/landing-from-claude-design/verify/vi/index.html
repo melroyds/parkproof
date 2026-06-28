@@ -312,12 +312,32 @@ base64 -d sig.base64 > sig.bin
 openssl dgst -sha256 -verify parkproof-public-key.pem \
   -signature sig.bin payload.txt</pre>
 
+  <p><code>Verified OK</code> ở bước 5 chỉ chứng minh <em>payload</em> còn nguyên vẹn. Bản thân payload chỉ chứa <strong>hash SHA-256</strong> của các ảnh, chứ không phải các ảnh. Để xác nhận rằng các ảnh hiển thị trong PDF chính là những ảnh đã được ký, bạn phải tự tính lại hash của từng ảnh và so sánh với hash trong payload. Nếu bạn bỏ qua bước này, một ảnh bị tráo đổi vẫn sẽ vượt qua <code>Verified OK</code>.</p>
+
+  <pre><span class="comment"># 6. Với MỖI ảnh trong PDF, trích xuất hoặc lưu ảnh ra một tệp,
+#    rồi tính lại SHA-256 của nó.</span>
+sha256sum sign_photo.jpg
+<span class="comment"># (hoặc, nếu không có sha256sum: openssl dgst -sha256 sign_photo.jpg)</span>
+openssl dgst -sha256 car_photo.jpg
+openssl dgst -sha256 ambient_photo.jpg
+
+<span class="comment"># 7. Mở payload.txt và so sánh từng giá trị hash bạn vừa tính
+#    với trường tương ứng trong payload:
+#      sign_photo.jpg    ⇄  sign_photo_sha256
+#      car_photo.jpg     ⇄  car_photo_sha256
+#      ambient_photo.jpg ⇄  ambient_photo_sha256
+# Mỗi hash phải khớp chính xác từng ký tự.</span></pre>
+
+  <div class="callout">
+    <strong>Vì sao bước này quan trọng.</strong> Nếu một hash bạn tính được <em>không</em> khớp với <code>sign_photo_sha256</code> / <code>car_photo_sha256</code> / <code>ambient_photo_sha256</code> trong payload, thì ảnh đó đã bị thay đổi sau khi ký. <code>Verified OK</code> ở bước 5 <strong>tự nó không xác minh các ảnh</strong> — nó chỉ xác minh siêu dữ liệu và các giá trị hash. Việc khớp hash ở bước 6–7 là điều ràng buộc các ảnh hiển thị với chữ ký.
+  </div>
+
   <h2>Kết quả có nghĩa là gì</h2>
 
   <div class="grid-2">
     <div class="card ok">
       <h3>Đã xác minh <span class="label">ĐẠT</span></h3>
-      <p><code>Verified OK</code> — payload trong PDF của bạn giống hệt theo từng byte với những gì ParkProof đã ký vào thời điểm quét. Các quy tắc biển báo, GPS, timestamp, địa chỉ và hash ảnh chưa bị thay đổi kể từ đó.</p>
+      <p><code>Verified OK</code> — payload trong PDF của bạn giống hệt theo từng byte với những gì ParkProof đã ký vào thời điểm quét. Các quy tắc biển báo, GPS, timestamp, địa chỉ và các <em>giá trị</em> hash ảnh trong payload còn nguyên vẹn. Để xác nhận bản thân các ảnh, hãy thực hiện bước tính lại hash (bước 6–7) và khớp từng ảnh với hash của nó.</p>
     </div>
     <div class="card fail">
       <h3>Thất bại <span class="label">KHÔNG ĐẠT</span></h3>

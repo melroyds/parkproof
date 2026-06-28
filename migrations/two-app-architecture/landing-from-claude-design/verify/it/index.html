@@ -312,12 +312,31 @@ base64 -d sig.base64 > sig.bin
 openssl dgst -sha256 -verify parkproof-public-key.pem \
   -signature sig.bin payload.txt</pre>
 
+  <p>Il passo 5 verifica la firma <strong>solo sul payload</strong>. Il payload contiene gli hash SHA-256 delle foto, ma <code>Verified OK</code> non ricalcola gli hash delle immagini effettivamente presenti nel PDF. Per confermare che le foto stesse non siano state scambiate, devi rifare l'hash di ciascuna e confrontarlo con il valore nel payload:</p>
+
+  <pre><span class="comment"># 6. Per OGNI foto del PDF, estraila/salvala su disco
+#    (es. sign-photo.jpg, car-photo.jpg, ambient-photo.jpg),
+#    poi ricalcola il suo SHA-256.</span>
+sha256sum sign-photo.jpg
+<span class="comment"># oppure, in modo equivalente:</span>
+openssl dgst -sha256 sign-photo.jpg
+
+<span class="comment"># 7. Confronta ogni hash prodotto con il valore corrispondente
+#    nel payload:
+#      sign_photo_sha256     ⇄  hash di sign-photo.jpg
+#      car_photo_sha256      ⇄  hash di car-photo.jpg
+#      ambient_photo_sha256  ⇄  hash di ambient-photo.jpg</span></pre>
+
+  <div class="callout">
+    <strong>Se un hash non corrisponde, quella foto è stata cambiata dopo la firma.</strong> Il <code>Verified OK</code> del passo 5 da solo <em>non</em> verifica le immagini: conferma solo che i valori-hash nel payload sono intatti. Le foto sono confermate solo quando ogni hash ricalcolato corrisponde esattamente al valore nel payload.
+  </div>
+
   <h2>Cosa significa il risultato</h2>
 
   <div class="grid-2">
     <div class="card ok">
       <h3>Verificato <span class="label">PASS</span></h3>
-      <p><code>Verified OK</code> — il payload nel tuo PDF è byte-identico a quello che ParkProof ha firmato al momento della scansione. Le regole del cartello, GPS, timestamp, indirizzo e hash delle foto non sono stati alterati da allora.</p>
+      <p><code>Verified OK</code> — il payload nel tuo PDF è byte-identico a quello che ParkProof ha firmato al momento della scansione. I metadati (regole del cartello, GPS, timestamp, indirizzo) e i <em>valori</em> degli hash delle foto nel payload sono intatti. Confermare le foto stesse richiede il passo di ri-hash qui sopra (passi 6–7).</p>
     </div>
     <div class="card fail">
       <h3>Fallimento <span class="label">FAIL</span></h3>

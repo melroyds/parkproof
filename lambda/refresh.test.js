@@ -270,21 +270,23 @@ describe('error handling', () => {
     await expect(refreshCall()).rejects.toThrow(/declined|different photo/i)
   })
 
-  it('throws when the model returns no text content', async () => {
+  it('throws a user-facing error when the model returns no text content', async () => {
     mockCreate.mockResolvedValue({
       content: [], // no text block
       stop_reason: 'end_turn',
       usage: { input_tokens: 100, output_tokens: 0 },
     })
-    await expect(refreshCall()).rejects.toThrow(/no text content/i)
+    // Internal "no text content" is mapped to friendly copy before it reaches
+    // the user (the raw detail stays in CloudWatch).
+    await expect(refreshCall()).rejects.toThrow(/could not read this sign/i)
   })
 
-  it('throws on malformed JSON in the response text', async () => {
+  it('throws a user-facing error on malformed JSON in the response text', async () => {
     mockCreate.mockResolvedValue({
       content: [{ type: 'text', text: '{not valid json' }],
       stop_reason: 'end_turn',
       usage: { input_tokens: 100, output_tokens: 50 },
     })
-    await expect(refreshCall()).rejects.toThrow(/malformed JSON/i)
+    await expect(refreshCall()).rejects.toThrow(/could not read this sign/i)
   })
 })

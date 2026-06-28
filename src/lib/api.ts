@@ -106,6 +106,12 @@ export async function postJsonWithRetry<T>(
         continue
       }
 
+      // Rate limited by the per-IP guard — surface a friendly localised message
+      // rather than the raw "RATE_LIMITED" code. Not retried.
+      if (resp.status === 429) {
+        throw new ApiError(rateLimitedMessage(), 429, false)
+      }
+
       // Permanent / second-attempt failure → throw with a useful message
       const detail = await safeReadDetail(resp)
       const isTimeout = TRANSIENT_STATUSES.has(resp.status)
@@ -185,6 +191,12 @@ export async function postJsonAndPoll<T>(
       return payload.result
     }
     if (payload.status === 'error') {
+      // The server flips a dropped/stuck job to this code once it's past its
+      // deadline — that's heavy-load / never-ran, NOT "your sign was too
+      // complex". Map it to the honest message.
+      if (payload.error === 'JOB_TIMED_OUT') {
+        throw new ApiError(heavyLoadMessage(), 504, true)
+      }
       throw new ApiError(
         payload.error || 'Background job failed',
         500,
@@ -193,7 +205,9 @@ export async function postJsonAndPoll<T>(
     }
     // 'pending' — keep polling
   }
-  throw new ApiError(complexSignMessage(), 504, true)
+  // Exhausted the poll budget still 'pending'. The work didn't finish in time,
+  // which under load is heavy-load, not a too-complex sign.
+  throw new ApiError(heavyLoadMessage(), 504, true)
 }
 
 async function safeReadDetail(resp: Response): Promise<string> {
@@ -230,4 +244,26 @@ function complexSignMessage(): string {
   }
   // English fallback — matches the en.json copy. Keep them in sync.
   return "This sign took too long to process — usually means it has lots of stacked rules. Try a clearer photo, or crop to just the part you need decoded."
+}
+
+/** Localised "we're under heavy load" message — used when a job is dropped/stuck. */
+function heavyLoadMessage(): string {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const i18n = (globalThis as any).__parkproof_i18n
+  if (i18n && typeof i18n.t === 'function') {
+    const m = i18n.t('errors.heavyLoad') as string
+    if (m && m !== 'errors.heavyLoad') return m
+  }
+  return "ParkProof is busy right now and your scan didn't finish in time. Please wait a minute and try again."
+}
+
+/** Localised rate-limit message — surfaced on a 429 from the per-IP guard. */
+function rateLimitedMessage(): string {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const i18n = (globalThis as any).__parkproof_i18n
+  if (i18n && typeof i18n.t === 'function') {
+    const m = i18n.t('errors.rateLimited') as string
+    if (m && m !== 'errors.rateLimited') return m
+  }
+  return 'Too many requests from your connection. Please wait a minute, then try again.'
 }

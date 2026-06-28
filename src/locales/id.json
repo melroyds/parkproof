@@ -228,7 +228,8 @@
     "noSignContinue": "Lanjut mencatat",
     "privacyLine": "Fotomu dibaca di ponselmu. Hanya gambar rambu yang dikirim untuk menerjemahkannya, dan tidak pernah disimpan di server kami. Tanpa akun.",
     "cameraDeniedTitle": "Akses kamera mati",
-    "cameraDeniedCopy": "Pilih foto dari galerimu saja, atau aktifkan kembali akses kamera di pengaturan browsermu."
+    "cameraDeniedCopy": "Pilih foto dari galerimu saja, atau aktifkan kembali akses kamera di pengaturan browsermu.",
+    "couldntReadPhoto": "Tidak bisa membaca foto itu. Coba gambar lain, atau pilih satu dari galerimu."
   },
   "reuse": {
     "scannedHere": "Kamu memindai di sini {{age}}",
@@ -435,7 +436,8 @@
     "howToVerify": "Cara dewan kota memverifikasi catatan ini →",
     "photoSyncFailed": "Foto belum tercadangkan ke cloud",
     "photoSyncRetry": "Coba unggah lagi",
-    "exportPhotoWarning": "Satu atau lebih foto tidak bisa dimuat dari cloud untuk sesi lama ini. Kamu tetap bisa mengekspor, atau buka di perangkat tempat sesi ini dibuat."
+    "exportPhotoWarning": "Satu atau lebih foto tidak bisa dimuat dari cloud untuk sesi lama ini. Kamu tetap bisa mengekspor, atau buka di perangkat tempat sesi ini dibuat.",
+    "photoHashMismatch": "Foto ini tidak cocok dengan bukti yang ditandatangani dan mungkin telah diubah sejak disimpan."
   },
   "appeal": {
     "captureHeader": "Buat draf surat banding",
@@ -622,7 +624,10 @@
     "boundaryReload": "Muat ulang ParkProof",
     "storageRecovered_one": "Penyimpanan perangkatmu penuh, jadi foto dari 1 catatan parkir lama dihapus untuk memberi ruang. Masuk untuk menjaga bukti tetap aman di cloud.",
     "storageRecovered_other": "Penyimpanan perangkatmu penuh, jadi foto dari {{count}} catatan parkir lama dihapus untuk memberi ruang. Masuk untuk menjaga bukti tetap aman di cloud.",
-    "photoSyncFailed": "Ada foto yang tidak tercadangkan ke cloud. Aman di perangkat ini — buka sesinya untuk coba lagi."
+    "photoSyncFailed": "Ada foto yang tidak tercadangkan ke cloud. Aman di perangkat ini — buka sesinya untuk coba lagi.",
+    "heavyLoad": "ParkProof sedang sibuk saat ini dan pindaianmu tidak selesai tepat waktu. Tunggu sebentar lalu coba lagi.",
+    "rateLimited": "Terlalu banyak permintaan dari koneksimu. Tunggu sebentar, lalu coba lagi.",
+    "syncFailed": "Tidak bisa memuat sesi tersimpanmu barusan."
   },
   "pdf": {
     "common": {
@@ -696,7 +701,8 @@
       "verifyStep3": "3. Unduh kunci publik:",
       "verifyStep4": "4. Dekode tanda tangan:",
       "verifyStep5": "5. Verifikasi:",
-      "verifyStep6": "6. Hasil yang diharapkan: \"Verified OK\""
+      "verifyStep6": "6. Hasil yang diharapkan: \"Verified OK\" — ini memastikan metadata dan hash foto di bawah tidak diubah sejak penandatanganan.",
+      "verifyStep7": "7. Pastikan foto-fotonya sendiri cocok. \"Verified OK\" hanya membuktikan bahwa hash di dalam payload utuh, BUKAN bahwa gambar di PDF ini cocok dengannya. Untuk setiap foto, hitung ulang SHA-256-nya (sha256sum <file>, atau openssl dgst -sha256 <file>) dan periksa apakah sama dengan sign_photo_sha256 / car_photo_sha256 / ambient_photo_sha256 yang sesuai di payload di atas. Ketidakcocokan berarti foto itu diubah setelah penandatanganan."
     },
     "appeal": {
       "drafted": "Disusun {{when}}",

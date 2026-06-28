@@ -312,12 +312,30 @@ base64 -d sig.base64 > sig.bin
 openssl dgst -sha256 -verify parkproof-public-key.pem \
   -signature sig.bin payload.txt</pre>
 
+  <p><code>Verified OK</code> केवल यह साबित करता है कि <strong>payload टेक्स्ट</strong> बदला नहीं गया है। payload में फ़ोटो स्वयं नहीं, बल्कि उनके SHA-256 हैश होते हैं। PDF में दिखाई गई वास्तविक छवियों की पुष्टि करने के लिए आपको एक और चरण चलाना होगा।</p>
+
+  <pre><span class="comment"># 6. PDF में हर फ़ोटो को फ़ाइल के रूप में सहेजें, फिर
+#    हर एक का SHA-256 दोबारा गणना करें और payload के
+#    संबंधित हैश से मिलान करें।</span>
+sha256sum sign-photo.jpg
+<span class="comment"># या: openssl dgst -sha256 sign-photo.jpg</span>
+
+<span class="comment"># आउटपुट की तुलना payload में इन फ़ील्ड्स से करें:
+#   sign_photo_sha256     ← साइन फ़ोटो
+#   car_photo_sha256      ← कार फ़ोटो
+#   ambient_photo_sha256  ← परिवेश फ़ोटो (यदि मौजूद हो)
+# हर फ़ोटो के लिए दोहराएं।</span></pre>
+
+  <div class="callout">
+    <strong>यह क्यों मायने रखता है।</strong> यदि किसी फ़ोटो का दोबारा गणना किया गया हैश payload के मिलान फ़ील्ड से <em>मेल नहीं खाता</em>, तो वह फ़ोटो हस्ताक्षर के बाद बदली गई है — भले ही <code>openssl dgst -verify</code> ने <code>Verified OK</code> लौटाया हो। केवल <code>Verified OK</code> छवियों को सत्यापित <em>नहीं</em> करता; यह केवल यह साबित करता है कि payload के अंदर हैश <em>मान</em> अक्षुण्ण हैं। फ़ोटो को स्वयं तभी सत्यापित माना जाता है जब आप ऊपर का दोबारा-हैश मिलान चला लें और हर एक मेल खाए।
+  </div>
+
   <h2>परिणाम का क्या मतलब है</h2>
 
   <div class="grid-2">
     <div class="card ok">
       <h3>सत्यापित <span class="label">पास</span></h3>
-      <p><code>Verified OK</code> — आपके PDF में payload स्कैन के समय ParkProof द्वारा हस्ताक्षरित से बाइट-समान है। साइन नियम, GPS, टाइमस्टैम्प, पता और फ़ोटो हैश तब से बदले नहीं गए हैं।</p>
+      <p><code>Verified OK</code> — आपके PDF में payload स्कैन के समय ParkProof द्वारा हस्ताक्षरित से बाइट-समान है। यह पुष्टि करता है कि मेटाडेटा (साइन नियम, GPS, टाइमस्टैम्प, पता) और payload में दर्ज फ़ोटो हैश <em>मान</em> अक्षुण्ण हैं। फ़ोटो को स्वयं सत्यापित करने के लिए ऊपर का चरण 6 दोबारा-हैश मिलान चलाना आवश्यक है।</p>
     </div>
     <div class="card fail">
       <h3>विफलता <span class="label">फेल</span></h3>

@@ -312,12 +312,33 @@ base64 -d sig.base64 > sig.bin
 openssl dgst -sha256 -verify parkproof-public-key.pem \
   -signature sig.bin payload.txt</pre>
 
+  <p><strong>Langkah 6 — verifikasi ulang foto-fotonya.</strong> Langkah <code>openssl</code> di atas hanya memverifikasi payload metadata. Payload memuat hash SHA-256 dari setiap foto, tetapi <code>Verified OK</code> saja <em>tidak</em> memverifikasi gambar itu sendiri — foto yang ditukar masih bisa lolos. Untuk setiap foto di PDF, ekspor atau simpan file gambarnya, lalu hitung ulang hash SHA-256 dan bandingkan dengan nilai hash yang sesuai di dalam <code>payload.txt</code>:</p>
+
+  <pre><span class="comment"># 6. Untuk SETIAP foto di PDF, hitung ulang hash-nya
+#    dan bandingkan dengan nilai di payload.txt.
+#    Cocokkan setiap file ke field-nya:
+#      foto rambu   → sign_photo_sha256
+#      foto mobil   → car_photo_sha256
+#      foto sekitar → ambient_photo_sha256</span>
+sha256sum &lt;file&gt;
+
+<span class="comment"># Atau, jika sha256sum tidak tersedia:</span>
+openssl dgst -sha256 &lt;file&gt;
+
+<span class="comment"># Bandingkan output dengan field sha256 yang cocok di payload.txt.
+# Hash sama  → foto itu tidak diubah sejak ditandatangani.
+# Hash beda  → foto itu DIUBAH setelah ditandatangani.</span></pre>
+
+  <div class="callout">
+    <strong>Penting.</strong> <code>Verified OK</code> dari langkah 5 hanya membuktikan bahwa metadata dan <em>nilai</em> hash di dalam payload utuh. Itu tidak membuktikan bahwa foto yang ditampilkan di PDF cocok dengan hash tersebut. Tanpa langkah 6, sebuah foto yang ditukar tetap lolos <code>Verified OK</code>. Hanya setelah hash setiap foto cocok kamu bisa memperlakukan gambar-gambar itu sebagai terverifikasi.
+  </div>
+
   <h2>Apa arti hasilnya</h2>
 
   <div class="grid-2">
     <div class="card ok">
       <h3>Terverifikasi <span class="label">LOLOS</span></h3>
-      <p><code>Verified OK</code> — payload di PDF-mu identik secara byte dengan apa yang ParkProof tandatangani pada saat pemindaian. Aturan rambu, GPS, timestamp, alamat, dan hash foto belum diubah sejak itu.</p>
+      <p><code>Verified OK</code> — payload di PDF-mu identik secara byte dengan apa yang ParkProof tandatangani pada saat pemindaian. Aturan rambu, GPS, timestamp, alamat, dan <em>nilai</em> hash foto di dalam payload utuh. Untuk mengkonfirmasi foto itu sendiri belum ditukar, kamu masih harus menjalankan langkah verifikasi ulang foto (langkah 6) — <code>Verified OK</code> saja tidak memverifikasi gambar.</p>
     </div>
     <div class="card fail">
       <h3>Gagal <span class="label">GAGAL</span></h3>

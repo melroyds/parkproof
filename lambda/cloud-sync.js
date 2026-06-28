@@ -39,6 +39,19 @@ const TABLE_NAME = process.env.DYNAMODB_TABLE_SESSIONS || 'parkproof-sessions'
 const EVIDENCE_BUCKET = process.env.S3_BUCKET_EVIDENCE
 const USER_POOL_ID = process.env.COGNITO_USER_POOL_ID
 
+// Whitelist of session fields persisted to DynamoDB. The raw session object is
+// NEVER spread into the item — a body field named pk/sk would otherwise
+// override the server-derived tenant key (cross-tenant write), and arbitrary
+// extra fields would bloat the table. pk/sk/gsi_updated_at are server-set only.
+const ALLOWED_SESSION_FIELDS = [
+  'id', 'arrived_at', 'expires_at', 'ended_at', 'location', 'rules',
+  'observations', 'chosen_label', 'alternate_variants', 'confidence',
+  'no_sign', 'note', 'sign_photo', 'car_photo', 'ambient_photo',
+  'signature', 'push_reminders', 'photo_sync_failed',
+]
+const MAX_SESSION_ITEM_BYTES = 50_000 // well under the 400KB DDB item limit
+const MAX_USER_OBJECTS = 3000 // ~1000 sessions of photos; bounds bucket-fill abuse
+
 // Lazy-init clients — Lambda reuses module-level state across invocations,
 // so we keep a singleton per cold start.
 let _ddb, _s3, _cognito
@@ -124,18 +137,22 @@ export async function handleSessionsUpload(event) {
     }
   }
 
-  // Write the session as a DynamoDB row.
-  await ddb().send(
-    new PutCommand({
-      TableName: TABLE_NAME,
-      Item: {
-        pk: pk(userId),
-        sk: sessionSk(session.id),
-        gsi_updated_at: new Date().toISOString(), // for future incremental sync GSI
-        ...session,
-      },
-    }),
-  )
+  // Write the session as a DynamoDB row — whitelisted, never spread. pk/sk are
+  // derived from the JWT sub and set by the server only, so a crafted
+  // session.pk/session.sk in the body can't redirect the write to another
+  // user's partition.
+  const item = {
+    pk: pk(userId),
+    sk: sessionSk(session.id),
+    gsi_updated_at: new Date().toISOString(), // for future incremental sync GSI
+  }
+  for (const f of ALLOWED_SESSION_FIELDS) {
+    if (session[f] !== undefined) item[f] = session[f]
+  }
+  if (Buffer.byteLength(JSON.stringify(item), 'utf8') > MAX_SESSION_ITEM_BYTES) {
+    throw badRequest('session record too large')
+  }
+  await ddb().send(new PutCommand({ TableName: TABLE_NAME, Item: item }))
 
   return {
     ok: true,
@@ -275,6 +292,22 @@ export async function handlePhotosPresign(event) {
     throw badRequest('session_id + role ("sign", "car", or "ambient") are required')
   }
 
+  // Per-user object-count ceiling. A presigned PUT can't enforce a per-object
+  // size (that needs presigned POST), so the count cap is the practical guard
+  // against a single (cheap, self-serve) account filling the evidence bucket.
+  // Re-uploading the same session/role overwrites one key, so this doesn't
+  // block legitimate re-saves.
+  const existing = await s3().send(
+    new ListObjectsV2Command({
+      Bucket: EVIDENCE_BUCKET,
+      Prefix: `${userId}/`,
+      MaxKeys: MAX_USER_OBJECTS + 1,
+    }),
+  )
+  if ((existing.KeyCount ?? 0) > MAX_USER_OBJECTS) {
+    throw badRequest('photo storage limit reached for this account')
+  }
+
   const key = `${userId}/${sessionId}/${role}.jpg`
   const url = await getSignedUrl(
     s3(),
@@ -408,16 +441,30 @@ export async function handleMeDelete(event) {
     const items = page.Items ?? []
     for (let i = 0; i < items.length; i += 25) {
       const batch = items.slice(i, i + 25)
-      await ddb().send(
-        new BatchWriteCommand({
-          RequestTables: undefined,
-          RequestItems: {
-            [TABLE_NAME]: batch.map((it) => ({
-              DeleteRequest: { Key: { pk: it.pk, sk: it.sk } },
-            })),
-          },
-        }),
-      )
+      // BatchWrite returns UnprocessedItems on partial throttling instead of
+      // throwing. Drain them with backoff — otherwise rows could survive while
+      // the code still deletes the S3 photos and the Cognito user, orphaning a
+      // user's data under an unreachable account and reporting a false success.
+      let unprocessed = {
+        [TABLE_NAME]: batch.map((it) => ({
+          DeleteRequest: { Key: { pk: it.pk, sk: it.sk } },
+        })),
+      }
+      for (let attempt = 0; attempt < 6 && Object.keys(unprocessed).length > 0; attempt++) {
+        const resp = await ddb().send(new BatchWriteCommand({ RequestItems: unprocessed }))
+        unprocessed =
+          resp.UnprocessedItems && Object.keys(resp.UnprocessedItems).length > 0
+            ? resp.UnprocessedItems
+            : {}
+        if (Object.keys(unprocessed).length > 0) {
+          await new Promise((r) => setTimeout(r, 100 * 2 ** attempt))
+        }
+      }
+      if (Object.keys(unprocessed).length > 0) {
+        // Stop BEFORE the Cognito delete so the user can re-invoke and finish
+        // the erasure rather than being locked out with rows still present.
+        throw new Error('Could not delete all session records — please try again.')
+      }
       deletedRows += batch.length
     }
     lastKey = page.LastEvaluatedKey

@@ -102,7 +102,8 @@
     "noSignContinue": "Continua la registrazione",
     "privacyLine": "La tua foto viene letta sul tuo telefono. Inviamo solo l'immagine del cartello per tradurlo, e non viene mai conservata sui nostri server. Nessun account necessario.",
     "cameraDeniedTitle": "Accesso alla fotocamera disattivato",
-    "cameraDeniedCopy": "Scegli invece una foto dalla libreria, oppure riattiva l'accesso alla fotocamera nelle impostazioni del browser."
+    "cameraDeniedCopy": "Scegli invece una foto dalla libreria, oppure riattiva l'accesso alla fotocamera nelle impostazioni del browser.",
+    "couldntReadPhoto": "Non siamo riusciti a leggere quella foto. Prova con un'altra immagine, o scegline una dalla tua libreria."
   },
   "reuse": {
     "scannedHere": "Hai scansionato qui {{age}}",
@@ -309,7 +310,8 @@
     "howToVerify": "Come un comune può verificare questo record →",
     "photoSyncFailed": "Foto non salvata nel cloud",
     "photoSyncRetry": "Riprova il caricamento",
-    "exportPhotoWarning": "Una o più foto non sono state caricate dal cloud per questa vecchia sessione. Puoi esportare comunque, oppure aprirla sul dispositivo dove è stata creata."
+    "exportPhotoWarning": "Una o più foto non sono state caricate dal cloud per questa vecchia sessione. Puoi esportare comunque, oppure aprirla sul dispositivo dove è stata creata.",
+    "photoHashMismatch": "Questa foto non corrisponde alla prova firmata e potrebbe essere stata alterata dopo il salvataggio."
   },
   "appeal": {
     "captureHeader": "Redigi una lettera di ricorso",
@@ -479,7 +481,10 @@
     "boundaryReload": "Ricarica ParkProof",
     "storageRecovered_one": "Lo storage del tuo dispositivo era pieno, quindi la foto di 1 vecchio record di parcheggio è stata rimossa per fare spazio. Accedi per tenere le prove al sicuro nel cloud.",
     "storageRecovered_other": "Lo storage del tuo dispositivo era pieno, quindi le foto di {{count}} vecchi record di parcheggio sono state rimosse per fare spazio. Accedi per tenere le prove al sicuro nel cloud.",
-    "photoSyncFailed": "Una foto non è stata salvata nel cloud. È al sicuro su questo dispositivo — apri la sessione per riprovare."
+    "photoSyncFailed": "Una foto non è stata salvata nel cloud. È al sicuro su questo dispositivo — apri la sessione per riprovare.",
+    "heavyLoad": "ParkProof è molto richiesto in questo momento e la tua scansione non è stata completata in tempo. Aspetta un minuto e riprova.",
+    "rateLimited": "Troppe richieste dalla tua connessione. Aspetta un minuto, poi riprova.",
+    "syncFailed": "Non siamo riusciti a caricare le tue sessioni salvate in questo momento."
   },
   "pdf": {
     "common": {
@@ -546,7 +551,8 @@
       "verifyStep3": "3. Scarica la chiave pubblica:",
       "verifyStep4": "4. Decodifica la firma:",
       "verifyStep5": "5. Verifica:",
-      "verifyStep6": "6. Output atteso: \"Verified OK\""
+      "verifyStep6": "6. Output atteso: \"Verified OK\" — conferma che i metadati e gli hash delle foto qui sotto non sono stati alterati dopo la firma.",
+      "verifyStep7": "7. Verifica che le foto stesse corrispondano. \"Verified OK\" dimostra solo che gli hash nel payload sono intatti, NON che le immagini in questo PDF corrispondano ad essi. Per ogni foto, ricalcola il suo SHA-256 (sha256sum <file>, oppure openssl dgst -sha256 <file>) e controlla che sia uguale al corrispondente sign_photo_sha256 / car_photo_sha256 / ambient_photo_sha256 nel payload qui sopra. Una mancata corrispondenza significa che quella foto è stata modificata dopo la firma."
     },
     "appeal": {
       "drafted": "Bozza del {{when}}",

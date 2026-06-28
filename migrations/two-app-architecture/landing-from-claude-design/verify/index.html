@@ -312,12 +312,31 @@ base64 -d sig.base64 > sig.bin
 openssl dgst -sha256 -verify parkproof-public-key.pem \
   -signature sig.bin payload.txt</pre>
 
+  <p>A passing <code>openssl</code> check proves the payload is intact — but the payload only <em>contains</em> the photos' hashes, it isn't the photos themselves. To confirm the images in the PDF are the ones that were signed, you have to recompute each photo's hash and compare it to the value inside the payload.</p>
+
+  <pre><span class="comment"># 6. Save each photo from the PDF to a file (e.g. sign.jpg, car.jpg,
+#    ambient.jpg). Then recompute its SHA-256:</span>
+sha256sum sign.jpg
+<span class="comment"># or, if you don't have sha256sum:</span>
+openssl dgst -sha256 sign.jpg
+
+<span class="comment"># 7. Open payload.txt and find the matching hash field:
+#      sign_photo_sha256     ← the sign photo
+#      car_photo_sha256      ← the car photo
+#      ambient_photo_sha256  ← the wider-context photo
+#    Compare each computed hash, character for character, to the value
+#    in payload.txt. They must match exactly.</span></pre>
+
+  <div class="callout">
+    <strong>This step is not optional.</strong> If a photo's recomputed hash does <em>not</em> match the corresponding <code>sign_photo_sha256</code> / <code>car_photo_sha256</code> / <code>ambient_photo_sha256</code> value in the payload, that photo was changed after the record was signed — even if <code>openssl</code> reported <code>Verified OK</code>. A passing signature alone proves the metadata and hash <em>values</em> weren't altered; it does <strong>not</strong> verify the images. Only the hash comparison above does that.
+  </div>
+
   <h2>What the result means</h2>
 
   <div class="grid-2">
     <div class="card ok">
       <h3>Verified <span class="label">PASS</span></h3>
-      <p><code>Verified OK</code> — the payload in your PDF is byte-identical to what ParkProof signed at scan time. The sign rules, GPS, timestamp, address, and photo hashes have not been altered since.</p>
+      <p><code>Verified OK</code> — the payload in your PDF is byte-identical to what ParkProof signed at scan time. The sign rules, GPS, timestamp, address, and the photo <em>hash values</em> recorded in the payload are intact. This does <strong>not</strong> on its own confirm the photos in the PDF — to verify the images, complete the hash-comparison step (steps 6–7) above.</p>
     </div>
     <div class="card fail">
       <h3>Failure <span class="label">FAIL</span></h3>

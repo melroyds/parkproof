@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { ParkingRules } from '../types'
 import Icon from './Icon'
@@ -171,6 +171,11 @@ export default function ParkingResult({
   // One id per rendering of the result — used to dedupe feedback events server-side
   // without storing anything identifiable.
   const [feedbackId] = useState(() => crypto.randomUUID())
+  // Synchronous double-submit guard — a fast double-tap on the verify buttons
+  // would otherwise fire submitFeedback twice with the same feedback_id and
+  // over-count the accuracy telemetry. A ref, not state, so the second tap in
+  // the same gesture sees the flag before React re-renders.
+  const feedbackSent = useRef(false)
   const now = useNow()
   const {
     observations,
@@ -329,6 +334,8 @@ export default function ParkingResult({
           <div className="flex gap-2">
             <button
               onClick={() => {
+                if (feedbackSent.current) return
+                feedbackSent.current = true
                 // Layer-2 context: enough metadata to slice failures by mode
                 // (high-confidence-but-wrong, stacked sign, night scan) without
                 // any PII. The feedback_id is a per-render UUID that ties this
@@ -346,6 +353,8 @@ export default function ParkingResult({
             </button>
             <button
               onClick={() => {
+                if (feedbackSent.current) return
+                feedbackSent.current = true
                 submitFeedback({
                   verdict: 'retake',
                   feedback_id: feedbackId,

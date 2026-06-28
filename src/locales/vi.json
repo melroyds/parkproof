@@ -96,7 +96,8 @@
     "noSignContinue": "Tiếp tục ghi nhận",
     "privacyLine": "Ảnh của bạn được đọc ngay trên điện thoại. Chỉ ảnh biển báo được gửi đi để dịch, và không bao giờ lưu trên máy chủ của chúng tôi. Không cần tài khoản.",
     "cameraDeniedTitle": "Máy ảnh đang bị tắt",
-    "cameraDeniedCopy": "Chọn một ảnh từ thư viện thay thế, hoặc bật lại quyền máy ảnh trong cài đặt trình duyệt."
+    "cameraDeniedCopy": "Chọn một ảnh từ thư viện thay thế, hoặc bật lại quyền máy ảnh trong cài đặt trình duyệt.",
+    "couldntReadPhoto": "Không đọc được ảnh đó. Thử ảnh khác, hoặc chọn một ảnh từ thư viện của bạn."
   },
   "reuse": {
     "scannedHere": "Bạn đã quét ở đây {{age}}",
@@ -303,7 +304,8 @@
     "howToVerify": "Cách hội đồng địa phương xác minh bản ghi này →",
     "photoSyncFailed": "Ảnh chưa sao lưu lên đám mây",
     "photoSyncRetry": "Thử tải lên lại",
-    "exportPhotoWarning": "Một hoặc nhiều ảnh không tải được từ đám mây cho phiên cũ này. Bạn vẫn có thể xuất, hoặc mở phiên trên thiết bị đã tạo ra nó."
+    "exportPhotoWarning": "Một hoặc nhiều ảnh không tải được từ đám mây cho phiên cũ này. Bạn vẫn có thể xuất, hoặc mở phiên trên thiết bị đã tạo ra nó.",
+    "photoHashMismatch": "Ảnh này không khớp với bằng chứng đã ký và có thể đã bị thay đổi kể từ khi lưu."
   },
   "appeal": {
     "captureHeader": "Soạn thư khiếu nại",
@@ -473,7 +475,10 @@
     "boundaryReload": "Tải lại ParkProof",
     "storageRecovered_one": "Bộ nhớ thiết bị của bạn đã đầy, nên ảnh từ 1 bản ghi đỗ xe cũ đã bị xoá để lấy chỗ trống. Đăng nhập để giữ bằng chứng an toàn trên đám mây.",
     "storageRecovered_other": "Bộ nhớ thiết bị của bạn đã đầy, nên ảnh từ {{count}} bản ghi đỗ xe cũ đã bị xoá để lấy chỗ trống. Đăng nhập để giữ bằng chứng an toàn trên đám mây.",
-    "photoSyncFailed": "Một ảnh chưa sao lưu lên đám mây. Nó vẫn an toàn trên thiết bị này — mở phiên để thử lại."
+    "photoSyncFailed": "Một ảnh chưa sao lưu lên đám mây. Nó vẫn an toàn trên thiết bị này — mở phiên để thử lại.",
+    "heavyLoad": "ParkProof đang quá tải nên lần quét của bạn không kịp hoàn tất. Vui lòng đợi một phút rồi thử lại.",
+    "rateLimited": "Có quá nhiều yêu cầu từ kết nối của bạn. Vui lòng đợi một phút rồi thử lại.",
+    "syncFailed": "Không tải được các phiên đã lưu của bạn lúc này."
   },
   "pdf": {
     "common": {
@@ -540,7 +545,8 @@
       "verifyStep3": "3. Tải khóa công khai:",
       "verifyStep4": "4. Giải mã chữ ký:",
       "verifyStep5": "5. Xác minh:",
-      "verifyStep6": "6. Kết quả mong đợi: \"Verified OK\""
+      "verifyStep6": "6. Kết quả mong đợi: \"Verified OK\" — điều này xác nhận siêu dữ liệu và các mã băm ảnh bên dưới chưa bị thay đổi kể từ khi ký.",
+      "verifyStep7": "7. Xác nhận chính các ảnh cũng khớp. \"Verified OK\" chỉ chứng minh các mã băm trong tải trọng còn nguyên vẹn, KHÔNG chứng minh rằng các hình ảnh trong PDF này khớp với chúng. Với mỗi ảnh, hãy tính lại mã SHA-256 của nó (sha256sum <file>, hoặc openssl dgst -sha256 <file>) và kiểm tra xem nó có bằng sign_photo_sha256 / car_photo_sha256 / ambient_photo_sha256 tương ứng trong tải trọng ở trên không. Nếu không khớp, nghĩa là ảnh đó đã bị thay đổi sau khi ký."
     },
     "appeal": {
       "drafted": "Soạn thảo lúc {{when}}",
