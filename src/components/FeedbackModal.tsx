@@ -16,6 +16,16 @@ const MAX_LEN = 5000
  * Modal for free-text feedback. Opens from a footer link on the home screen.
  * Submits to /user-feedback (Lambda → CloudWatch + S3 mirror).
  *
+ * The stateful body lives in a child that only mounts while open, so each open
+ * starts with fresh state — no reset-on-open effect (which would call setState
+ * synchronously inside an effect, the pattern the react-hooks lint rule flags).
+ */
+export default function FeedbackModal({ open, onClose, context }: Props) {
+  if (!open) return null
+  return <FeedbackModalBody onClose={onClose} context={context} />
+}
+
+/**
  * UX choices:
  *   - Email is optional; user can submit anonymously
  *   - Character counter shows when near the cap; otherwise hidden
@@ -25,7 +35,13 @@ const MAX_LEN = 5000
  *   - Esc closes when not loading; closes after success-state delay
  *   - Backdrop click closes (same rules)
  */
-export default function FeedbackModal({ open, onClose, context }: Props) {
+function FeedbackModalBody({
+  onClose,
+  context,
+}: {
+  onClose: () => void
+  context?: UserFeedbackContext
+}) {
   const { t, i18n } = useTranslation()
   const [message, setMessage] = useState('')
   const [email, setEmail] = useState('')
@@ -34,23 +50,15 @@ export default function FeedbackModal({ open, onClose, context }: Props) {
   const [success, setSuccess] = useState(false)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
-  // Reset form whenever the modal re-opens — never persist between sessions.
+  // Focus the textarea after the modal mounts. setTimeout lets layout settle.
   useEffect(() => {
-    if (!open) return
-    setMessage('')
-    setEmail('')
-    setError(null)
-    setSuccess(false)
-    setSubmitting(false)
-    // Focus the textarea after the modal mounts. setTimeout 0 lets layout settle.
     const id = setTimeout(() => textareaRef.current?.focus(), 50)
     return () => clearTimeout(id)
-  }, [open])
+  }, [])
 
-  // Esc-to-close + focus trap. Don't close while submitting; success state
-  // closes itself on a delay.
+  // Esc-to-close. Don't close while submitting; the success state closes itself
+  // on a delay.
   useEffect(() => {
-    if (!open) return
     function onKey(e: KeyboardEvent) {
       if (e.key === 'Escape' && !submitting && !success) {
         onClose()
@@ -58,7 +66,7 @@ export default function FeedbackModal({ open, onClose, context }: Props) {
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [open, submitting, success, onClose])
+  }, [submitting, success, onClose])
 
   // Auto-close after success — 2 second pause to read the thank-you copy.
   useEffect(() => {
@@ -66,8 +74,6 @@ export default function FeedbackModal({ open, onClose, context }: Props) {
     const id = setTimeout(onClose, 2000)
     return () => clearTimeout(id)
   }, [success, onClose])
-
-  if (!open) return null
 
   const trimmedLen = message.trim().length
   const canSubmit = trimmedLen > 0 && trimmedLen <= MAX_LEN && !submitting
