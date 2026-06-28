@@ -247,6 +247,11 @@ export interface InitialSyncResult {
   uploaded: number // local sessions newly uploaded to the cloud
   pulled: number // cloud sessions newly added to the local store
   alreadyInSync: number // sessions present on both sides with the same id
+  // True when the cloud list call failed and we proceeded treating the cloud as
+  // empty. Lets the caller distinguish "you genuinely have no sessions" from
+  // "we couldn't reach your sessions" — the latter shouldn't drop a returning
+  // user onto the first-time landing with no explanation.
+  listFailed: boolean
 }
 
 /**
@@ -257,17 +262,19 @@ export interface InitialSyncResult {
  *     it's likely to have unsaved signatures + notes)
  */
 export async function performInitialSync(): Promise<InitialSyncResult> {
+  let listFailed = false
   const [localSessions, cloudSessions] = await Promise.all([
     Promise.resolve(loadSessions()),
     listCloudSessions().catch((err) => {
       console.warn('[sync] list failed, treating cloud as empty:', err)
+      listFailed = true
       return [] as ParkingSession[]
     }),
   ])
   const localById = new Map(localSessions.map((s) => [s.id, s]))
   const cloudById = new Map(cloudSessions.map((s) => [s.id, s]))
 
-  const result: InitialSyncResult = { uploaded: 0, pulled: 0, alreadyInSync: 0 }
+  const result: InitialSyncResult = { uploaded: 0, pulled: 0, alreadyInSync: 0, listFailed }
 
   // Local-only → upload to cloud.
   for (const session of localSessions) {

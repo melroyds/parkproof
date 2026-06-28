@@ -101,6 +101,10 @@ function App() {
   const [feedbackOpen, setFeedbackOpen] = useState(false)
   // Transient save-time notice (quota recovery, photo-sync failure). Auto-clears.
   const [notice, setNotice] = useState<string | null>(null)
+  // Set when a signed-in user's first cloud sync couldn't reach their sessions,
+  // so the home view offers a retry instead of silently showing the first-time
+  // landing as if they had no data.
+  const [syncError, setSyncError] = useState(false)
   const auth = useAuth()
   const { t } = useTranslation()
 
@@ -205,15 +209,31 @@ function App() {
   // computed inline at render time and there's nothing to trigger one once
   // the pulled-from-cloud sessions land in localStorage.
   const userId = auth.user?.userId
-  useEffect(() => {
+  const runInitialSync = () => {
     if (!userId) return
+    // Note: syncError is cleared by the retry handler, NOT here — calling
+    // setState synchronously from the mount effect that invokes this would trip
+    // the cascading-render lint rule. The async branches below are fine.
     void performInitialSync()
+      .then((res) => {
+        // Couldn't reach the cloud AND nothing local to fall back on → a
+        // returning user on a fresh device would otherwise see the first-time
+        // landing with no clue their data is fine in the cloud. Offer a retry.
+        if (res.listFailed && loadSessions().length === 0) setSyncError(true)
+      })
       .catch((err) => {
         console.warn('[sync] initial sync failed:', err)
+        if (loadSessions().length === 0) setSyncError(true)
       })
       .finally(() => {
         setActivesVersion((v) => v + 1)
       })
+  }
+  useEffect(() => {
+    runInitialSync()
+    // Mount / sign-in only — keyed on userId. runInitialSync is recreated each
+    // render, so listing it as a dep would re-sync on every render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId])
 
   const handleCapture = async (
@@ -720,6 +740,20 @@ function App() {
       </header>
 
       <section className="flex-1 px-6 pb-8 flex flex-col items-center justify-center max-w-md mx-auto w-full">
+        {syncError && (
+          <div className="w-full mb-4 bg-amber-50 border border-amber-300 rounded-2xl px-4 py-3 flex items-center justify-between gap-3">
+            <span className="text-sm text-amber-900 leading-snug">{t('errors.syncFailed')}</span>
+            <button
+              onClick={() => {
+                setSyncError(false)
+                runInitialSync()
+              }}
+              className="text-sm font-semibold text-brand-700 hover:text-brand-800 underline shrink-0"
+            >
+              {t('common.retry')}
+            </button>
+          </div>
+        )}
         {primaryActive && (
           <div className="w-full mb-6">
             <ActiveSessionCard

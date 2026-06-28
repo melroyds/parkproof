@@ -527,7 +527,8 @@
       "ambientPhotoCaption": "由司机在停车时拍摄,以证明没有可见的标志。",
       "noAmbientCaptured": "此次未拍摄周围环境照片。",
       "noSignRules": "未记录已张贴的限制。司机声称此处无标志。",
-      "noSignConfidence": "不适用（未读取标志）"
+      "noSignConfidence": "不适用（未读取标志）",
+      "driverNoteUnsigned": "由驾驶员添加。此备注不在加密签名的覆盖范围内。"
     },
     "signature": {
       "title": "加密签名",

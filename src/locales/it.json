@@ -533,7 +533,8 @@
       "ambientPhotoCaption": "Catturata dal conducente al momento del parcheggio per dimostrare l'assenza di cartelli visibili.",
       "noAmbientCaptured": "Nessuna foto dell'area è stata catturata per questa sessione.",
       "noSignRules": "Nessuna restrizione affissa registrata. Il conducente afferma che non c'erano cartelli.",
-      "noSignConfidence": "Non applicabile (nessun cartello letto)"
+      "noSignConfidence": "Non applicabile (nessun cartello letto)",
+      "driverNoteUnsigned": "Aggiunta dal conducente. Questa nota non è coperta dalla firma crittografica."
     },
     "signature": {
       "title": "Firma crittografica",

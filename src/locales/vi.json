@@ -527,7 +527,8 @@
       "ambientPhotoCaption": "Người lái xe chụp tại thời điểm đỗ xe để chứng minh không có biển báo nào.",
       "noAmbientCaptured": "Không có ảnh xung quanh nào được chụp cho phiên này.",
       "noSignRules": "Không có hạn chế nào được ghi nhận. Người lái xe khẳng định không có biển báo.",
-      "noSignConfidence": "Không áp dụng (không đọc biển báo)"
+      "noSignConfidence": "Không áp dụng (không đọc biển báo)",
+      "driverNoteUnsigned": "Do tài xế bổ sung. Ghi chú này không được chữ ký mã hóa bảo vệ."
     },
     "signature": {
       "title": "Chữ ký mã hóa",

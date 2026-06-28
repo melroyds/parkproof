@@ -683,7 +683,8 @@
       "statement": "Catatan ini dibuat secara otomatis oleh ParkProof saat parkir. Stempel waktu kedatangan, koordinat GPS, terjemahan rambu, dan foto-foto merupakan catatan bukti kontemporer yang sesuai untuk dilampirkan ke pengajuan tinjauan denda parkir dengan dewan kota lokal Australia yang relevan.",
       "guidanceFree": "Bebas parkir. Pindahkan sebelum {{when}}.",
       "guidanceFreeNoExpiry": "Bebas parkir. Tidak ada waktu berakhir di rambu.",
-      "guidanceExpired": "Sesi berakhir pada {{when}}."
+      "guidanceExpired": "Sesi berakhir pada {{when}}.",
+      "driverNoteUnsigned": "Ditambahkan oleh pengemudi. Catatan ini tidak tercakup oleh tanda tangan kriptografis."
     },
     "signature": {
       "title": "Tanda tangan kriptografis",
