@@ -48,6 +48,27 @@ export default function AuthFlow({ onDone, onCancel }: Props) {
     setStage(next)
   }
 
+  // Map raw Cognito exceptions to friendly, translated copy. The error name may
+  // live on err.name, err.__type, or be embedded in err.message.
+  const friendlyError = (err: unknown): string => {
+    const name = err instanceof Error ? err.name : ''
+    const type =
+      typeof err === 'object' && err !== null && '__type' in err
+        ? String((err as { __type?: unknown }).__type ?? '')
+        : ''
+    const message = err instanceof Error ? err.message : String(err)
+    const haystack = `${name} ${type} ${message}`
+
+    if (/NotAuthorizedException/i.test(haystack)) return t('auth.errWrongCredentials')
+    if (/UsernameExistsException/i.test(haystack)) return t('auth.errAccountExists')
+    if (/LimitExceededException|TooManyRequestsException/i.test(haystack))
+      return t('auth.errTooManyAttempts')
+    if (/CodeMismatchException/i.test(haystack)) return t('auth.errCodeMismatch')
+    if (/ExpiredCodeException/i.test(haystack)) return t('auth.errCodeExpired')
+    if (/UserNotFoundException/i.test(haystack)) return t('auth.errUserNotFound')
+    return t('auth.errGeneric')
+  }
+
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault()
     setBusy(true)
@@ -58,12 +79,13 @@ export default function AuthFlow({ onDone, onCancel }: Props) {
       onDone()
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err)
-      if (/not confirmed|UserNotConfirmedException/i.test(msg)) {
+      const errName = err instanceof Error ? err.name : ''
+      if (/not confirmed|UserNotConfirmedException/i.test(`${errName} ${msg}`)) {
         // Resume the verify flow if they signed up but never verified.
         setInfo(t('auth.needVerifyFirst'))
         setStage({ name: 'verify', email: email.trim(), password })
       } else {
-        setError(msg)
+        setError(friendlyError(err))
       }
     } finally {
       setBusy(false)
@@ -79,7 +101,7 @@ export default function AuthFlow({ onDone, onCancel }: Props) {
       setInfo(t('auth.accountCreated'))
       setStage({ name: 'verify', email: email.trim(), password })
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err))
+      setError(friendlyError(err))
     } finally {
       setBusy(false)
     }
@@ -103,7 +125,7 @@ export default function AuthFlow({ onDone, onCancel }: Props) {
         setPassword('')
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err))
+      setError(friendlyError(err))
     } finally {
       setBusy(false)
     }
@@ -117,7 +139,7 @@ export default function AuthFlow({ onDone, onCancel }: Props) {
       await resendConfirmationCode(stage.email)
       setInfo(t('auth.codeResent'))
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err))
+      setError(friendlyError(err))
     } finally {
       setBusy(false)
     }
@@ -132,7 +154,7 @@ export default function AuthFlow({ onDone, onCancel }: Props) {
       setInfo(t('auth.resetCodeSent'))
       setStage({ name: 'reset', email: email.trim() })
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err))
+      setError(friendlyError(err))
     } finally {
       setBusy(false)
     }
@@ -150,7 +172,7 @@ export default function AuthFlow({ onDone, onCancel }: Props) {
       setPassword('')
       setNewPassword('')
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err))
+      setError(friendlyError(err))
     } finally {
       setBusy(false)
     }

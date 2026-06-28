@@ -136,6 +136,17 @@ export default function AboutFeatures({ onBack, onTryIt }: Props) {
               onEnable={handleEnablePush}
             />
           )}
+          {/* Plain-English caveat under the evidence section. The seal proves
+              the record hasn't been altered since it was made — it does NOT
+              prove the AI read the sign correctly, nor does it oblige a
+              council to accept the appeal. Muted, indented to align with the
+              section text column so it informs without undercutting the
+              feature it sits beneath. */}
+          {id === 'evidence' && (
+            <p className="-mt-6 mb-10 ml-14 text-xs text-ink-500 leading-relaxed">
+              {t('about.sealCaveat')}
+            </p>
+          )}
         </Fragment>
       ))}
 

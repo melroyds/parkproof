@@ -59,22 +59,56 @@ type View =
   | { name: 'history' }
   | { name: 'actives' }
   | { name: 'session'; session: ParkingSession }
-  | { name: 'appeal'; session: ParkingSession }
+  | { name: 'appeal'; session: ParkingSession | null }
   | { name: 'signin' }
   | { name: 'settings' }
   | { name: 'privacy' }
   | { name: 'about' }
-  | { name: 'error'; message: string }
+  | { name: 'error'; message: string; offline?: boolean }
 
 function stripDataUrlPrefix(dataUrl: string): string {
   return dataUrl.replace(/^data:image\/[a-zA-Z0-9+.-]+;base64,/, '')
 }
 
+/** True when the browser reports no network — drives the offline error state. */
+function isOffline(): boolean {
+  return typeof navigator !== 'undefined' && navigator.onLine === false
+}
+
+/**
+ * Transient bottom-of-screen notice. Used for save-time events the user would
+ * otherwise never learn about: a photo that failed to back up to the cloud, or
+ * evidence photos stripped to recover localStorage quota.
+ */
+function Toast({ message, onClose }: { message: string | null; onClose: () => void }) {
+  if (!message) return null
+  return (
+    <div className="fixed bottom-4 inset-x-4 z-50 max-w-md mx-auto bg-ink-900 text-white rounded-2xl shadow-lg p-4 flex items-start gap-3">
+      <p className="text-sm leading-relaxed flex-1">{message}</p>
+      <button
+        onClick={onClose}
+        aria-label="Dismiss"
+        className="text-white/70 hover:text-white text-sm font-semibold shrink-0 px-1"
+      >
+        ✕
+      </button>
+    </div>
+  )
+}
+
 function App() {
   const [view, setView] = useState<View>({ name: 'home' })
   const [feedbackOpen, setFeedbackOpen] = useState(false)
+  // Transient save-time notice (quota recovery, photo-sync failure). Auto-clears.
+  const [notice, setNotice] = useState<string | null>(null)
   const auth = useAuth()
   const { t } = useTranslation()
+
+  useEffect(() => {
+    if (!notice) return
+    const id = setTimeout(() => setNotice(null), 7000)
+    return () => clearTimeout(id)
+  }, [notice])
 
   // OAuth federation callback splash. When Apple / Google sign-in completes,
   // the browser lands here with ?code=<auth-code>&state=<csrf-token> in the
@@ -198,7 +232,7 @@ function App() {
       }
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err)
-      setView({ name: 'error', message })
+      setView({ name: 'error', message, offline: isOffline() })
     }
   }
 
@@ -272,7 +306,7 @@ function App() {
       setView({ name: 'result', result, signPhoto: session.sign_photo, coords: reusedCoords })
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err)
-      setView({ name: 'error', message })
+      setView({ name: 'error', message, offline: isOffline() })
     }
   }
 
@@ -286,6 +320,14 @@ function App() {
       if (report.evicted > 0 || report.trimmedPhotosFrom > 0) {
         console.info(
           `[storage] freed space for this session — stripped photos from ${report.trimmedPhotosFrom}, evicted ${report.evicted} old session(s).`,
+        )
+        // Tell the user — silently deleting evidence photos to fit a new save
+        // contradicts the whole "your evidence is safe" promise. Point them at
+        // sign-in as the durable fix.
+        setNotice(
+          t('errors.storageRecovered', {
+            count: report.trimmedPhotosFrom + report.evicted,
+          }),
         )
       }
       // No-sign sessions skip the reminder step — there's no expiry to remind
@@ -301,10 +343,23 @@ function App() {
       // immediately rather than waiting for the next 30s tick. Mostly
       // relevant for no-sign sessions that route straight back to home.
       setActivesVersion((v) => v + 1)
-      // Mirror to cloud immediately when signed in. Fire-and-forget — local
-      // is the source of truth, the cloud is a best-effort backup.
+      // Mirror to cloud immediately when signed in. Local is the source of
+      // truth, the cloud is a best-effort backup — but if the metadata synced
+      // and a PHOTO didn't, the row exists with a missing image (blank PDF,
+      // missing photo cross-device). That used to be swallowed silently; now we
+      // flag the session and tell the user so they can retry.
       if (auth.user) {
-        mirrorSessionToCloud(session)
+        void mirrorSessionToCloud(session).then((res) => {
+          if (res.photoFailed) {
+            try {
+              updateSession(session.id, { photo_sync_failed: true })
+            } catch (e) {
+              console.warn('[sync] could not flag photo-sync failure:', e)
+            }
+            setActivesVersion((v) => v + 1)
+            setNotice(t('errors.photoSyncFailed'))
+          }
+        })
       }
       // Sign the evidence asynchronously — never blocks the reminder flow.
       // If it succeeds, patch the saved session with the signature bundle so
@@ -411,8 +466,12 @@ function App() {
         <div className="w-16 h-16 rounded-full bg-accent-100 border-2 border-accent-500 text-accent-700 flex items-center justify-center mb-4">
           <Icon name="warning" className="w-8 h-8" />
         </div>
-        <h2 className="font-display text-2xl font-extrabold text-ink-900">{t('errors.somethingWrong')}</h2>
-        <p className="text-sm text-ink-700 mt-3 mb-6 break-words">{view.message}</p>
+        <h2 className="font-display text-2xl font-extrabold text-ink-900">
+          {view.offline ? t('errors.offlineTitle') : t('errors.somethingWrong')}
+        </h2>
+        <p className="text-sm text-ink-700 mt-3 mb-6 break-words">
+          {view.offline ? t('errors.offlineBody') : view.message}
+        </p>
         <div className="flex flex-col gap-2 w-full">
           <button
             onClick={() => setView({ name: 'scan' })}
@@ -463,6 +522,7 @@ function App() {
             })
           }
           onRetake={() => setView({ name: 'scan' })}
+          isFirstSave={loadSessions().length === 0}
         />
       </main>
     )
@@ -492,6 +552,9 @@ function App() {
     return (
       <main className="min-h-screen">
         <ReminderOptions session={view.session} onDone={() => setView({ name: 'home' })} />
+        {/* Save-time notice (quota recovery / photo-sync failure) lands here —
+            the reminder screen is the view shown immediately after save. */}
+        <Toast message={notice} onClose={() => setNotice(null)} />
       </main>
     )
   }
@@ -547,7 +610,13 @@ function App() {
       <main className="min-h-screen">
         <AppealFlow
           session={view.session}
-          onBack={() => setView({ name: 'session', session: view.session })}
+          onBack={() =>
+            setView(
+              view.session
+                ? { name: 'session', session: view.session }
+                : { name: 'home' },
+            )
+          }
         />
       </main>
     )
@@ -659,6 +728,7 @@ function App() {
               onOpen={(s) => setView({ name: 'session', session: s })}
               onShowMore={() => setView({ name: 'actives' })}
               onEndSession={handleEndSession}
+              onRecheck={handleReuseSession}
             />
           </div>
         )}
@@ -780,7 +850,18 @@ function App() {
           </ol>
         )}
 
-        <div className="mt-8 flex items-center justify-center gap-6 self-center flex-wrap">
+        {/* Standalone appeal entry — reachable for the highest-intent user:
+            someone who got a ticket and found ParkProof to fight it, but never
+            logged a park here. Routes into AppealFlow with no linked session;
+            the flow drafts from the infringement notice alone. */}
+        <button
+          onClick={() => setView({ name: 'appeal', session: null })}
+          className="mt-8 text-sm text-brand-700 hover:text-brand-800 font-medium underline self-center"
+        >
+          {t('home.draftAppeal')}
+        </button>
+
+        <div className="mt-6 flex items-center justify-center gap-6 self-center flex-wrap">
           <button
             onClick={() => setView({ name: 'about' })}
             className="text-xs text-ink-500 hover:text-ink-700 underline"
@@ -812,6 +893,7 @@ function App() {
           is_signed_in: !!auth.user,
         }}
       />
+      <Toast message={notice} onClose={() => setNotice(null)} />
     </main>
   )
 }

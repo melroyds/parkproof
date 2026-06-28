@@ -16,6 +16,12 @@ interface Props {
   onScanAnother: () => void
   onLogSession: () => void
   onRetake: () => void
+  /**
+   * True on the user's first-ever scan (no saved sessions yet). Surfaces the
+   * evidence-chain payoff beside the save CTA so a first-timer understands why
+   * a free, anonymous user would bother saving.
+   */
+  isFirstSave?: boolean
 }
 
 function formatUntil(iso: string | null, timeZone: string): string | null {
@@ -140,6 +146,7 @@ export default function ParkingResult({
   onScanAnother,
   onLogSession,
   onRetake,
+  isFirstSave,
 }: Props) {
   const { t } = useTranslation()
   const [verified, setVerified] = useState(false)
@@ -240,6 +247,14 @@ export default function ParkingResult({
           </p>
         )}
       </div>
+
+      {/* Persistent accuracy caveat — this is the screen the driver acts on
+          before walking away, so the "it's a machine read, check the real
+          sign" framing has to live here, not only on /verify. Shown for every
+          result, both can-park and can't-park. */}
+      <p className="mt-3 text-center text-xs text-ink-500 leading-relaxed px-2">
+        {t('result.aiCaveat')}
+      </p>
 
       {/* Transition-awareness banner — surfaces approaching rule changes so
           the user can make a smarter decision than "should I start parking
@@ -517,20 +532,46 @@ export default function ParkingResult({
       )}
 
       <div className="mt-6 flex flex-col gap-2">
-        {can_park_now && (
-          <button
-            onClick={onLogSession}
-            disabled={saveBlocked}
-            className="bg-gradient-to-r from-brand-500 via-brand-500 to-purple-600 hover:brightness-110 active:brightness-95 disabled:bg-none disabled:bg-brand-300 disabled:cursor-not-allowed text-white font-semibold py-4 rounded-2xl shadow-lg shadow-brand-500/25 disabled:shadow-none transition-colors"
-          >
-            {blockedByPermitGate
-              ? t('result.logCtaBlockedPermit')
-              : blockedByPermitZoneGate
-                ? t('result.logCtaBlockedPermitZone')
-                : blockedByPayGate
-                  ? t('result.logCtaBlocked')
-                  : t('result.logCta')}
-          </button>
+        {can_park_now ? (
+          <>
+            {/* First-ever scan: reconnect the evidence-chain value at the one
+                moment "Save" becomes actionable, so it doesn't read as
+                optional busywork next to "Scan another". */}
+            {isFirstSave && (
+              <p className="text-xs text-ink-600 text-center leading-relaxed mb-1">
+                {t('result.firstSaveValue')}
+              </p>
+            )}
+            <button
+              onClick={onLogSession}
+              disabled={saveBlocked}
+              className="bg-gradient-to-r from-brand-500 via-brand-500 to-purple-600 hover:brightness-110 active:brightness-95 disabled:bg-none disabled:bg-brand-300 disabled:cursor-not-allowed text-white font-semibold py-4 rounded-2xl shadow-lg shadow-brand-500/25 disabled:shadow-none transition-colors"
+            >
+              {blockedByPermitGate
+                ? t('result.logCtaBlockedPermit')
+                : blockedByPermitZoneGate
+                  ? t('result.logCtaBlockedPermitZone')
+                  : blockedByPayGate
+                    ? t('result.logCtaBlocked')
+                    : t('result.logCta')}
+            </button>
+          </>
+        ) : (
+          /* Can't-park override — an AI misread that wrongly says "can't park"
+             shouldn't strand the driver with no recourse. Offer to log the
+             spot as evidence of a reasonable decision rather than overruling
+             them silently. Routes to the same logger as the can-park save. */
+          <div className="bg-white rounded-2xl border border-paper-300 p-4 mb-1">
+            <p className="text-sm text-ink-700 leading-relaxed mb-3">
+              {t('result.cantParkOverride')}
+            </p>
+            <button
+              onClick={onLogSession}
+              className="w-full bg-paper-200 hover:bg-paper-300 text-ink-900 font-medium py-2.5 rounded-xl transition-colors"
+            >
+              {t('result.cantParkOverrideCta')}
+            </button>
+          </div>
         )}
         <button
           onClick={onScanAnother}

@@ -7,7 +7,13 @@ import Icon from './Icon'
 import BrandMark from './BrandMark'
 
 interface Props {
-  session: ParkingSession
+  /**
+   * The parking session this appeal cross-references, or null on the standalone
+   * entry (a user who got a ticket but never logged a park here). When null we
+   * draft from the infringement notice alone and skip the evidence-PDF, which
+   * has no saved session to attach.
+   */
+  session: ParkingSession | null
   onBack: () => void
 }
 
@@ -58,7 +64,7 @@ export default function AppealFlow({ session, onBack }: Props) {
   const [pdfError, setPdfError] = useState<string | null>(null)
   const [pdfBusy, setPdfBusy] = useState(false)
   const handleDownloadPdf = async () => {
-    if (stage.name !== 'review') return
+    if (stage.name !== 'review' || !session) return
     setPdfError(null)
     setPdfBusy(true)
     try {
@@ -133,7 +139,7 @@ export default function AppealFlow({ session, onBack }: Props) {
           onClick={onBack}
           className="self-start text-ink-600 hover:text-ink-900 text-sm mb-4"
         >
-          {t('common.backToSession')}
+          {session ? t('common.backToSession') : t('common.backToHome')}
         </button>
 
         <h2 className="font-display text-3xl font-extrabold text-ink-900 mb-2">
@@ -190,13 +196,18 @@ export default function AppealFlow({ session, onBack }: Props) {
           >
             {copied ? t('appeal.copied') : t('appeal.copyToClipboard')}
           </button>
-          <button
-            onClick={handleDownloadPdf}
-            disabled={pdfBusy}
-            className="bg-white border border-paper-300 hover:border-ink-600 disabled:opacity-60 text-ink-900 font-medium py-3 rounded-2xl transition-colors"
-          >
-            {pdfBusy ? t('appeal.downloadingPdf') : t('appeal.downloadPdf')}
-          </button>
+          {/* The evidence PDF attaches the saved parking session — only
+              offered when there is one. The standalone path (no session) keeps
+              copy-to-clipboard as the way out. */}
+          {session && (
+            <button
+              onClick={handleDownloadPdf}
+              disabled={pdfBusy}
+              className="bg-white border border-paper-300 hover:border-ink-600 disabled:opacity-60 text-ink-900 font-medium py-3 rounded-2xl transition-colors"
+            >
+              {pdfBusy ? t('appeal.downloadingPdf') : t('appeal.downloadPdf')}
+            </button>
+          )}
         </div>
         {pdfError && (
           <div className="mt-3 bg-accent-50 border-2 border-accent-400 rounded-xl p-3 text-sm">
@@ -221,14 +232,14 @@ export default function AppealFlow({ session, onBack }: Props) {
         onClick={onBack}
         className="self-start text-ink-600 hover:text-ink-900 text-sm mb-4 transition-colors"
       >
-        {t('common.backToSession')}
+        {session ? t('common.backToSession') : t('common.backToHome')}
       </button>
 
       <h2 className="font-display text-3xl font-extrabold text-ink-900 mb-1">
         {t('appeal.captureHeader')}
       </h2>
       <p className="text-sm text-ink-600 mb-6 leading-relaxed">
-        {t('appeal.captureIntro')}
+        {session ? t('appeal.captureIntro') : t('appeal.captureIntroStandalone')}
       </p>
 
       <div className="flex flex-col gap-3">

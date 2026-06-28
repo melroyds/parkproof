@@ -5,6 +5,8 @@ import './lib/i18n'
 import App from './App.tsx'
 import SwUpdateBanner from './components/SwUpdateBanner'
 import InstallPromptBanner from './components/InstallPromptBanner'
+import IosInstallHint from './components/IosInstallHint'
+import ErrorBoundary from './components/ErrorBoundary'
 import { AuthProvider } from './lib/auth-context'
 
 /**
@@ -32,7 +34,11 @@ window.addEventListener('vite:preloadError', () => {
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <AuthProvider>
-      <App />
+      {/* Top-level boundary — turns a full-tree render crash into a friendly,
+          reloadable fallback instead of a blank white screen. */}
+      <ErrorBoundary>
+        <App />
+      </ErrorBoundary>
       {/* "New version — refresh" pill that appears at the bottom when
           a new service worker installs over an existing controller. Lives
           at root so it floats over any view. Self-hides when refreshed
@@ -41,10 +47,12 @@ createRoot(document.getElementById('root')!).render(
       <SwUpdateBanner />
       {/* Chrome / Android install prompt — captures the browser's native
           `beforeinstallprompt` event and surfaces a clearly-branded
-          "Install ParkProof" CTA. iOS Safari doesn't fire the event, so
-          iOS users see nothing here (the in-app About page still has the
-          manual Share → Add to Home Screen instructions). */}
+          "Install ParkProof" CTA. */}
       <InstallPromptBanner />
+      {/* iOS Safari doesn't fire `beforeinstallprompt`, so the largest mobile
+          cohort never learned how to install. This shows them the manual
+          Share → Add to Home Screen path, once and dismissible. */}
+      <IosInstallHint />
     </AuthProvider>
   </StrictMode>,
 )

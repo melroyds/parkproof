@@ -9,8 +9,9 @@ import { formatCountdownLocalized } from '../lib/countdown'
 import { sessionTimezone } from '../lib/timezone'
 import { navigationUrl } from '../lib/walk-back'
 import { useAuth } from '../lib/use-auth'
-import { deleteCloudSession, mirrorSessionUpdateToCloud } from '../lib/sync'
+import { deleteCloudSession, mirrorSessionToCloud, mirrorSessionUpdateToCloud } from '../lib/sync'
 import { cancelPushReminders } from '../lib/push'
+import { verifyUrlForLocale } from '../lib/verify-url'
 
 const NOTE_MAX_LENGTH = 280
 
@@ -67,6 +68,21 @@ export default function SessionDetail({
     !isEnded &&
     (session.expires_at == null || (expiresMs !== null && expiresMs > now))
   const timeZone = useMemo(() => sessionTimezone(session.location), [session.location])
+  // Locale-aware link to the plain-English /verify walkthrough — surfaced at
+  // the point the user exports evidence, the moment they most want to know how
+  // a council actually verifies the tamper-proof claim.
+  const verifyHref = verifyUrlForLocale(i18n.language)
+  // #3 — a silent photo-sync failure flagged on the session. The cloud row
+  // exists but an image didn't reach S3, so it's missing cross-device and in
+  // the PDF. Offer a retry (signed-in only — the only state a mirror runs in).
+  const [photoSyncFailed, setPhotoSyncFailed] = useState(!!session.photo_sync_failed)
+  const [retryingPhoto, setRetryingPhoto] = useState(false)
+  // #9 — cloud-pulled sessions hold photos as remote HTTPS URLs that may fail to
+  // materialize at export time (expired presign, pre-CORS-fix historical row).
+  // Warn before the user hands a blank-evidence PDF to a council.
+  const hasRemotePhoto = (['sign_photo', 'car_photo', 'ambient_photo'] as const).some(
+    (f) => typeof session[f] === 'string' && /^https?:/i.test(session[f] as string),
+  )
 
   // Pre-import the PDF chunk so the click → save chain stays inside the
   // user-gesture window (iOS Safari otherwise sometimes blocks the download
@@ -125,6 +141,21 @@ export default function SessionDetail({
       setPdfError(message)
     } finally {
       setPdfBusy(false)
+    }
+  }
+
+  const retryPhotoSync = async () => {
+    setRetryingPhoto(true)
+    try {
+      const { photoFailed } = await mirrorSessionToCloud(session)
+      if (!photoFailed) {
+        updateSession(session.id, { photo_sync_failed: false })
+        setPhotoSyncFailed(false)
+      }
+    } catch (err) {
+      console.warn('[sync] photo re-upload failed:', err)
+    } finally {
+      setRetryingPhoto(false)
     }
   }
 
@@ -227,6 +258,32 @@ export default function SessionDetail({
               minute: '2-digit',
             })}
           </span>
+        </div>
+      )}
+
+      {/* Plain-English meaning of the "Cryptographically signed" badge — what
+          tamper-proof does and does NOT prove, in the one place the badge is
+          shown. Stops the wary user reading it as "this wins my dispute". */}
+      {session.signature && (
+        <p className="text-xs text-ink-500 leading-relaxed mb-5 -mt-3">
+          {t('about.sealCaveat')}
+        </p>
+      )}
+
+      {/* #3 — silent photo-sync failure made visible, with a retry. */}
+      {photoSyncFailed && user && (
+        <div className="mb-4 flex items-center justify-between gap-3 bg-amber-50 border border-amber-300 rounded-xl px-3 py-2">
+          <span className="text-xs text-amber-800 font-medium inline-flex items-center gap-1.5 min-w-0">
+            <Icon name="warning" className="w-4 h-4 shrink-0" />
+            <span>{t('session.photoSyncFailed')}</span>
+          </span>
+          <button
+            onClick={retryPhotoSync}
+            disabled={retryingPhoto}
+            className="text-xs font-semibold text-brand-700 hover:text-brand-800 underline shrink-0 disabled:opacity-60"
+          >
+            {t('session.photoSyncRetry')}
+          </button>
         </div>
       )}
 
@@ -499,6 +556,23 @@ export default function SessionDetail({
             </p>
           </div>
         )}
+        {/* #9 — warn before exporting a cloud-pulled session whose photos may
+            not embed, so a blank-evidence PDF doesn't leave silently. */}
+        {hasRemotePhoto && (
+          <p className="text-xs text-ink-500 leading-relaxed text-center px-2">
+            {t('session.exportPhotoWarning')}
+          </p>
+        )}
+        {/* #18 — the plain-English "how a council verifies this" walkthrough,
+            surfaced at the moment the user is producing evidence. */}
+        <a
+          href={verifyHref}
+          target="_blank"
+          rel="noreferrer"
+          className="text-xs text-brand-700 hover:text-brand-800 underline text-center py-1"
+        >
+          {t('session.howToVerify')}
+        </a>
         <button
           onClick={onDraftAppeal}
           className="bg-white border border-ink-700 hover:bg-ink-900 hover:text-white text-ink-900 font-semibold py-3 rounded-2xl transition-colors"

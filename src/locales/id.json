@@ -37,7 +37,7 @@
       "title": "Foto rambunya, dapatkan jawaban",
       "lead": "Arahkan ponselmu ke rambu parkir apa pun — bahkan yang bertumpuk dengan panah dan jalur clearway.",
       "items": [
-        "Kamu mendapat jawaban ya atau tidak yang jelas dalam sekitar 10 detik.",
+        "Kamu mendapat jawaban ya atau tidak yang jelas dalam sekitar 12 detik.",
         "Jika rambu memiliki aturan berbeda untuk sisi jalan berbeda, kami akan tanya kamu parkir di sisi mana.",
         "Kami periksa apakah fotomu terlalu buram atau gelap sebelum bertanya ke AI — supaya tidak terbuang percuma."
       ]
@@ -112,14 +112,15 @@
       "title": "Suka ParkProof?",
       "body": "Dibangun sendiri dalam 10 hari, gratis selamanya. Jika ini menyelamatkan Anda dari tilang, traktir saya kopi.",
       "button": "☕ Belikan saya kopi"
-    }
+    },
+    "sealCaveat": "Segel membuktikan catatan tidak diubah setelah kamu menyimpannya. Ini tidak membuktikan AI membaca rambu dengan benar, atau menjamin dewan kota akan menerimanya."
   },
   "landing": {
     "heroTitle1": "Parkir",
     "heroTitle2": "jadi",
     "heroTitle3": "mudah.",
     "heroSubhead": "Foto rambu parkir Australia mana pun dan dapatkan jawaban jelas dalam bahasa Indonesia dalam ",
-    "heroSubheadAccent": "10 detik",
+    "heroSubheadAccent": "12 detik",
     "heroSubheadTail": ".",
     "bullet": {
       "plainEnglish": "Jawaban yang mudah dimengerti",
@@ -135,7 +136,7 @@
       "analyseTitle": "Kami analisis",
       "analyseDesc": "AI kami membaca rambunya dalam hitungan detik.",
       "answerTitle": "Dapatkan jawaban",
-      "answerDesc": "Putusan jelas yang bisa kamu andalkan."
+      "answerDesc": "Putusan dalam bahasa yang mudah dimengerti untuk dicocokkan dengan rambu."
     },
     "evidenceCallout": {
       "title": "Bukti anti-modifikasi, saat dibutuhkan.",
@@ -143,12 +144,17 @@
     },
     "feature": {
       "translateTitle": "Jawaban mudah dimengerti",
-      "translateDesc": "Foto rambu parkir Australia mana pun — dapatkan putusan 'bisa parkir sekarang?' dalam 10 detik.",
+      "translateDesc": "Foto rambu parkir Australia mana pun — dapatkan putusan 'bisa parkir sekarang?' dalam sekitar 12 detik.",
       "evidenceTitle": "Bukti anti-modifikasi",
       "evidenceDesc": "Setiap parkir mendapat tanda waktu, GPS, dan foto yang ditandatangani secara kriptografis.",
       "appealTitle": "Surat banding AI",
       "appealDesc": "Kena denda tidak adil? Foto dendanya dan kami susunkan sanggahan resmi."
-    }
+    },
+    "accuracyNote": "ParkProof bisa salah membaca rambu yang berantakan. Selalu cocokkan bacaan kami dengan rambu sebenarnya sebelum meninggalkan mobil.",
+    "trustFree": "Gratis",
+    "trustNoAccount": "Tanpa akun",
+    "trustOffline": "Bekerja offline",
+    "locationOptional": "Lokasi bersifat opsional. Tolak saja dan kamu tetap bisa membaca rambu dan mengetik alamatnya sendiri."
   },
   "home": {
     "tagline": "Parkir Australia, diterjemahkan — dengan bukti foto seandainya kena denda tidak adil.",
@@ -166,7 +172,8 @@
       "translate": "Foto rambu → AI menerjemahkan aturan",
       "log": "Foto mobil → catatan bukti bertanda waktu",
       "remind": "Dapatkan pengingat kalender sebelum parkir habis"
-    }
+    },
+    "draftAppeal": "Kena denda? Buat draf surat banding"
   },
   "active": {
     "currentlyParked": "SEDANG PARKIR",
@@ -190,7 +197,9 @@
     "iveLeft": "Sudah pergi",
     "iveLeftAria": "Tandai bahwa kamu sudah meninggalkan tempat parkir ini",
     "iveLeftConfirm": "Akhiri sesi parkir ini sekarang? Akan dipindahkan ke riwayat dengan waktu kepergianmu tercatat.",
-    "nextPing": "Ping berikutnya: {{when}}"
+    "nextPing": "Ping berikutnya: {{when}}",
+    "recheckNow": "Cek ulang sekarang",
+    "recheckSub": "Masih sah? Verifikasi ulang dalam hitungan detik"
   },
   "scanner": {
     "header": "Pindai rambu parkir",
@@ -216,7 +225,10 @@
     "noSignSkip": "Lewati — simpan GPS + waktu saja",
     "noSignAmbientAlt": "Sekitar — tidak ada rambu terlihat",
     "noSignAmbientCaption": "Diambil untuk menunjukkan tidak ada rambu terpasang di lokasi ini.",
-    "noSignContinue": "Lanjut mencatat"
+    "noSignContinue": "Lanjut mencatat",
+    "privacyLine": "Fotomu dibaca di ponselmu. Hanya gambar rambu yang dikirim untuk menerjemahkannya, dan tidak pernah disimpan di server kami. Tanpa akun.",
+    "cameraDeniedTitle": "Akses kamera mati",
+    "cameraDeniedCopy": "Pilih foto dari galerimu saja, atau aktifkan kembali akses kamera di pengaturan browsermu."
   },
   "reuse": {
     "scannedHere": "Kamu memindai di sini {{age}}",
@@ -273,7 +285,11 @@
       "copyWithArea": "Kamu bisa parkir di sini hanya jika punya izin sah untuk Area Izin {{area}}. Nomor izin di stikermu harus cocok — inspektur memeriksa kode area, bukan hanya apakah kamu punya izin.",
       "ack": "Ya, saya punya izin sah untuk area ini",
       "ackWithArea": "Ya, saya punya izin sah untuk Area Izin {{area}}"
-    }
+    },
+    "aiCaveat": "Ini adalah bacaan AI atas rambu. Selalu lirik rambu sebenarnya sebelum meninggalkan mobil.",
+    "cantParkOverride": "Menurutmu ini salah? Kamu tetap bisa mencatat tempat ini sebagai bukti.",
+    "cantParkOverrideCta": "Catat saja",
+    "firstSaveValue": "Menyimpan menjaga catatan bertanda waktu dan anti-modifikasi. Buktimu seandainya kamu kena denda tidak adil."
   },
   "logger": {
     "header": "Catat sesi parkir ini",
@@ -308,7 +324,8 @@
     "noSignKicker": "CATATAN BUKTI",
     "noSignBanner": "Kamu mencatat bahwa tidak ada rambu yang terlihat di lokasi ini. Tanda tangan kriptografis mencakup kapan dan di mana, bukan apakah memang tidak ada rambu — jujurlah, ini buktimu.",
     "ambientHeader": "Sekitar",
-    "ambientCaption": "Diambil untuk menunjukkan tidak ada rambu terpasang."
+    "ambientCaption": "Diambil untuk menunjukkan tidak ada rambu terpasang.",
+    "locationContext": "Kami pakai lokasimu hanya untuk menandai waktu dan tempat kamu parkir. Tetap di perangkatmu kecuali kamu masuk."
   },
   "reminders": {
     "header": "Atur pengingat",
@@ -366,7 +383,8 @@
       "header": "Pengingat push terjadwal",
       "single": "Kamu akan diping pada {{times}}.",
       "multiple": "Kamu akan diping pada {{times}}."
-    }
+    },
+    "pushScheduleFailed": "Tidak bisa mengatur pengingat latar belakang. Mungkin hanya menyala saat tab ini terbuka. Ketuk untuk coba lagi."
   },
   "history": {
     "header": "Riwayat sesi",
@@ -413,7 +431,11 @@
     "endedAt": "Berakhir {{when}}",
     "noExpiryRecorded": "Tidak ada waktu berakhir tercatat",
     "deleteSession": "Hapus sesi",
-    "deleteConfirm": "Hapus sesi parkir ini? Tidak bisa dibatalkan."
+    "deleteConfirm": "Hapus sesi parkir ini? Tidak bisa dibatalkan.",
+    "howToVerify": "Cara dewan kota memverifikasi catatan ini →",
+    "photoSyncFailed": "Foto belum tercadangkan ke cloud",
+    "photoSyncRetry": "Coba unggah lagi",
+    "exportPhotoWarning": "Satu atau lebih foto tidak bisa dimuat dari cloud untuk sesi lama ini. Kamu tetap bisa mengekspor, atau buka di perangkat tempat sesi ini dibuat."
   },
   "appeal": {
     "captureHeader": "Buat draf surat banding",
@@ -437,7 +459,8 @@
     "downloadingPdf": "Membuat PDF…",
     "reviewDisclaimer": "Draf AI adalah titik awal. Baca dengan hati-hati, edit surat agar sesuai dengan suaramu dan situasimu, dan verifikasi setiap klaim sebelum mengirim. ParkProof tidak melodgekan banding untukmu.",
     "errorHeader": "Tidak bisa menyusun banding",
-    "tryDifferentPhoto": "Coba foto lain"
+    "tryDifferentPhoto": "Coba foto lain",
+    "captureIntroStandalone": "Foto surat denda yang kamu terima. Claude akan membacanya dan menyusun surat resmi yang bisa kamu kirim ke dewan kota yang menerbitkannya. Jika kamu mencatat parkir ini di ParkProof, buka dari riwayat saja agar bukti tersimpanmu terlampir ke surat."
   },
   "auth": {
     "signInHeader": "Masuk",
@@ -480,7 +503,14 @@
     "codeResent": "Kode terkirim ulang. Cek inbox.",
     "resetCodeSent": "Kami telah mengirim kode reset.",
     "emailVerified": "Email terverifikasi — masuk untuk lanjut.",
-    "passwordReset": "Kata sandi direset. Masuk dengan kata sandi baru."
+    "passwordReset": "Kata sandi direset. Masuk dengan kata sandi baru.",
+    "errWrongCredentials": "Email atau kata sandi salah.",
+    "errAccountExists": "Kamu sudah punya akun. Coba masuk saja.",
+    "errTooManyAttempts": "Terlalu banyak percobaan. Tunggu beberapa menit dan coba lagi.",
+    "errCodeMismatch": "Kode itu tidak cocok. Periksa lagi dan coba ulang.",
+    "errCodeExpired": "Kode itu sudah kedaluwarsa. Minta yang baru.",
+    "errUserNotFound": "Tidak ada akun dengan email itu.",
+    "errGeneric": "Ada yang tidak beres. Silakan coba lagi."
   },
   "settings": {
     "header": "Akun",
@@ -584,7 +614,15 @@
     "somethingWrong": "Ada yang salah",
     "tryAgain": "Coba lagi",
     "backHome": "Kembali ke beranda",
-    "complexSignTimeout": "Rambu ini terlalu lama diproses — biasanya berarti banyak aturan bertumpuk. Coba foto yang lebih jelas, atau potong ke aturan yang berlaku di tempatmu parkir."
+    "complexSignTimeout": "Rambu ini terlalu lama diproses — biasanya berarti banyak aturan bertumpuk. Coba foto yang lebih jelas, atau potong ke aturan yang berlaku di tempatmu parkir.",
+    "offlineTitle": "Kamu sedang offline",
+    "offlineBody": "Membaca rambu butuh koneksi. Sesi dan pengingat tersimpanmu tetap berfungsi — coba pindai lagi setelah kembali online.",
+    "boundaryTitle": "Ada yang rusak",
+    "boundaryBody": "ParkProof mengalami kesalahan tak terduga. Memuat ulang biasanya memperbaikinya, dan sesi tersimpanmu aman di perangkat ini.",
+    "boundaryReload": "Muat ulang ParkProof",
+    "storageRecovered_one": "Penyimpanan perangkatmu penuh, jadi foto dari 1 catatan parkir lama dihapus untuk memberi ruang. Masuk untuk menjaga bukti tetap aman di cloud.",
+    "storageRecovered_other": "Penyimpanan perangkatmu penuh, jadi foto dari {{count}} catatan parkir lama dihapus untuk memberi ruang. Masuk untuk menjaga bukti tetap aman di cloud.",
+    "photoSyncFailed": "Ada foto yang tidak tercadangkan ke cloud. Aman di perangkat ini — buka sesinya untuk coba lagi."
   },
   "pdf": {
     "common": {
@@ -730,6 +768,9 @@
   "installPrompt": {
     "available": "Pasang ParkProof",
     "install": "Pasang",
-    "installing": "Memasang…"
+    "installing": "Memasang…",
+    "iosTitle": "Pasang ParkProof di iPhone-mu",
+    "iosBody": "Ketuk tombol Share, lalu pilih 'Add to Home Screen'. Ia terbuka layar penuh dan bekerja offline.",
+    "iosDismiss": "Mengerti"
   }
 }

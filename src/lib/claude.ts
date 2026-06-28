@@ -102,20 +102,25 @@ export async function refreshInterpretation(
 export async function draftAppeal(
   ticketImageBase64: string,
   ticketMediaType: string,
-  session: ParkingSession,
+  session: ParkingSession | null,
 ): Promise<AppealDraft> {
+  // session is null on the standalone entry — a user who got a ticket but never
+  // logged a ParkProof park for the spot. The Lambda drafts from the notice
+  // alone and is instructed not to fabricate evidence the user doesn't have.
   const body = {
     ticket_image_base64: ticketImageBase64,
     ticket_media_type: ticketMediaType,
-    session: {
-      arrived_at: session.arrived_at,
-      expires_at: session.expires_at,
-      location: session.location,
-      rules: session.rules,
-      observations: session.observations,
-      chosen_label: session.chosen_label,
-      confidence: session.confidence,
-    },
+    session: session
+      ? {
+          arrived_at: session.arrived_at,
+          expires_at: session.expires_at,
+          location: session.location,
+          rules: session.rules,
+          observations: session.observations,
+          chosen_label: session.chosen_label,
+          confidence: session.confidence,
+        }
+      : null,
   }
   return postJsonAndPoll<AppealDraft>('/draft-appeal', body)
 }

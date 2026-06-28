@@ -202,6 +202,10 @@ export default function ReminderOptions({ session, onDone }: Props) {
   const [icsState, setIcsState] = useState<'idle' | 'downloaded' | 'error' | 'empty'>('idle')
   const [notifResult, setNotifResult] = useState<ScheduleResult | null>(null)
   const [notifBusy, setNotifBusy] = useState(false)
+  // True only when the user IS push-subscribed but the server-side schedule
+  // POST returned null (a real network/server failure). The not-subscribed
+  // case also returns null, but that's a legitimate skip — not a warning.
+  const [pushScheduleFailed, setPushScheduleFailed] = useState(false)
 
   const chipLabel = (offset: Offset): string =>
     offset === 0
@@ -253,6 +257,7 @@ export default function ReminderOptions({ session, onDone }: Props) {
     // Any prior submission state is now stale — reset so buttons re-enable.
     setIcsState('idle')
     setNotifResult(null)
+    setPushScheduleFailed(false)
   }
 
   // Sorted highest → lowest so summaries and downstream lists read left-to-right
@@ -297,6 +302,7 @@ export default function ReminderOptions({ session, onDone }: Props) {
 
   const handleNotify = async () => {
     setNotifBusy(true)
+    setPushScheduleFailed(false)
     const result = await scheduleParkingReminders(session, selectedList)
     setNotifResult(result)
     setNotifBusy(false)
@@ -350,6 +356,14 @@ export default function ReminderOptions({ session, onDone }: Props) {
         } catch (err) {
           console.warn('[reminders] could not persist push_reminders:', err)
         }
+      } else if (pushResult === null) {
+        // null from schedulePushReminders is ambiguous: it's a legitimate skip
+        // when push isn't subscribed, but a real failure when it IS. Only the
+        // latter deserves a warning — otherwise the user trusts a background
+        // reminder that silently never got scheduled. Disambiguate by asking
+        // whether this device actually holds an active subscription.
+        const subscribed = await hasActiveSubscription()
+        if (subscribed) setPushScheduleFailed(true)
       }
     }
   }
@@ -519,6 +533,14 @@ export default function ReminderOptions({ session, onDone }: Props) {
             <span>{t('reminders.browserCta', { count: selectedList.length })}</span>
           )}
         </button>
+        {/* Subscribed-but-failed: the only rail that fires with the tab closed
+            silently didn't get scheduled. The in-tab button above may read
+            "scheduled", so this warning is essential to avoid false confidence. */}
+        {pushScheduleFailed && (
+          <p className="mt-3 px-3 py-2 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs font-medium leading-snug">
+            {t('reminders.pushScheduleFailed')}
+          </p>
+        )}
       </section>
 
       <button
@@ -555,6 +577,8 @@ function NoSignReminderPicker({ session, onDone }: Props) {
   const [icsState, setIcsState] = useState<'idle' | 'downloaded' | 'error' | 'empty'>('idle')
   const [notifResult, setNotifResult] = useState<ScheduleResult | null>(null)
   const [notifBusy, setNotifBusy] = useState(false)
+  // See the expiry-path picker above for the subscribed-but-null rationale.
+  const [pushScheduleFailed, setPushScheduleFailed] = useState(false)
   const now = useNow(30_000)
   const timeZone = useMemo(() => sessionTimezone(session.location), [session.location])
 
@@ -567,6 +591,7 @@ function NoSignReminderPicker({ session, onDone }: Props) {
     })
     setIcsState('idle')
     setNotifResult(null)
+    setPushScheduleFailed(false)
   }
 
   // Sorted shortest → longest so the summary reads "1h, 2h, 4h" not "4h, 1h, 2h".
@@ -604,6 +629,7 @@ function NoSignReminderPicker({ session, onDone }: Props) {
 
   const handleNotify = async () => {
     setNotifBusy(true)
+    setPushScheduleFailed(false)
     const result = await scheduleAbsoluteReminders(session, selectedFireAtList)
     setNotifResult(result)
     setNotifBusy(false)
@@ -635,6 +661,11 @@ function NoSignReminderPicker({ session, onDone }: Props) {
         } catch (err) {
           console.warn('[reminders] could not persist push_reminders:', err)
         }
+      } else if (pushResult === null) {
+        // Subscribed-but-null = real failure; not-subscribed null is a skip.
+        // Same disambiguation as the expiry-path handleNotify above.
+        const subscribed = await hasActiveSubscription()
+        if (subscribed) setPushScheduleFailed(true)
       }
     }
   }
@@ -755,6 +786,12 @@ function NoSignReminderPicker({ session, onDone }: Props) {
             <span>{t('reminders.browserCta', { count: selectedList.length })}</span>
           )}
         </button>
+        {/* Subscribed-but-failed warning — see the expiry-path picker above. */}
+        {pushScheduleFailed && (
+          <p className="mt-3 px-3 py-2 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs font-medium leading-snug">
+            {t('reminders.pushScheduleFailed')}
+          </p>
+        )}
       </section>
 
       <button

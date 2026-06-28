@@ -37,7 +37,7 @@
       "title": "표지판을 찍으세요, 답을 받으세요",
       "lead": "어떤 주차 표지판이든 휴대폰을 향하세요 — 화살표와 클리어웨이가 쌓인 복잡한 것도 가능합니다.",
       "items": [
-        "약 10초 안에 명확한 예 또는 아니오 답변을 받습니다.",
+        "약 12초 안에 명확한 예 또는 아니오 답변을 받습니다.",
         "도로 양쪽이 다른 규칙이라면 어느 쪽에 주차하는지 물어봅니다.",
         "AI에게 묻기 전에 사진이 너무 흐릿하거나 어두운지 먼저 확인합니다 — 헛수고를 줄여드려요."
       ]
@@ -112,14 +112,15 @@
       "title": "ParkProof이 마음에 드시나요?",
       "body": "혼자 10일 동안 만들었고 항상 무료입니다. 주차 위반 딱지를 면하셨다면 커피 한 잔 사주세요.",
       "button": "☕ 커피 사주기"
-    }
+    },
+    "sealCaveat": "서명은 저장 후 기록이 변경되지 않았음을 증명합니다. AI가 표지판을 올바르게 읽었는지, 또는 시청이 받아들일지를 보장하지는 않습니다."
   },
   "landing": {
     "heroTitle1": "주차가",
     "heroTitle2": "더",
     "heroTitle3": "쉬워집니다.",
     "heroSubhead": "호주 주차 표지판을 사진 찍으면 명확한 한국어 답변을 ",
-    "heroSubheadAccent": "10초",
+    "heroSubheadAccent": "12초",
     "heroSubheadTail": " 안에 받습니다.",
     "bullet": {
       "plainEnglish": "이해하기 쉬운 답변",
@@ -135,7 +136,7 @@
       "analyseTitle": "분석",
       "analyseDesc": "AI가 몇 초 안에 표지판을 해독합니다.",
       "answerTitle": "답변 받기",
-      "answerDesc": "믿을 수 있는 명확한 판정."
+      "answerDesc": "표지판과 대조해 확인할 수 있는 이해하기 쉬운 판정."
     },
     "evidenceCallout": {
       "title": "필요할 때 변조 방지 증거.",
@@ -143,12 +144,17 @@
     },
     "feature": {
       "translateTitle": "이해하기 쉬운 답변",
-      "translateDesc": "호주 주차 표지판을 사진 — 10초 안에 '지금 주차할 수 있나요?' 판정 받기.",
+      "translateDesc": "호주 주차 표지판을 사진 — 약 12초 안에 '지금 주차할 수 있나요?' 판정 받기.",
       "evidenceTitle": "변조 방지 증거",
       "evidenceDesc": "모든 주차에 암호학적으로 서명된 타임스탬프, GPS, 사진 기록.",
       "appealTitle": "AI 이의신청서",
       "appealDesc": "잘못된 과태료를 받았나요? 사진을 찍으시면 공식 이의신청서를 작성해드립니다."
-    }
+    },
+    "accuracyNote": "ParkProof는 복잡한 표지판을 잘못 읽을 수 있습니다. 차를 떠나기 전에 항상 실제 표지판과 대조해 확인하세요.",
+    "trustFree": "무료",
+    "trustNoAccount": "계정 불필요",
+    "trustOffline": "오프라인 작동",
+    "locationOptional": "위치는 선택 사항입니다. 거부해도 표지판을 읽고 주소를 직접 입력할 수 있습니다."
   },
   "home": {
     "tagline": "호주 주차 규칙을 한국어로 — 잘못된 과태료에 대비한 사진 증거와 함께.",
@@ -166,7 +172,8 @@
       "translate": "표지판 사진 → AI가 규칙 번역",
       "log": "차량 사진 → 타임스탬프가 찍힌 증거 기록",
       "remind": "주차 만료 전 캘린더 알림 받기"
-    }
+    },
+    "draftAppeal": "과태료를 받았나요? 이의신청서 작성"
   },
   "active": {
     "currentlyParked": "현재 주차 중",
@@ -190,7 +197,9 @@
     "iveLeft": "떠났습니다",
     "iveLeftAria": "이 주차 자리를 떠났다는 신호 전송",
     "iveLeftConfirm": "이 주차 세션을 지금 종료할까요? 떠난 시간이 기록되어 기록으로 이동합니다.",
-    "nextPing": "다음 알림: {{when}}"
+    "nextPing": "다음 알림: {{when}}",
+    "recheckNow": "지금 다시 확인",
+    "recheckSub": "아직 합법인가요? 몇 초 안에 재확인"
   },
   "scanner": {
     "header": "주차 표지판 스캔",
@@ -216,7 +225,10 @@
     "noSignSkip": "건너뛰기 — GPS + 시간만 저장",
     "noSignAmbientAlt": "주변 — 표지판 보이지 않음",
     "noSignAmbientCaption": "이 자리에 표지판이 게시되지 않았음을 보여주기 위해 촬영됨.",
-    "noSignContinue": "기록 계속"
+    "noSignContinue": "기록 계속",
+    "privacyLine": "사진은 휴대폰에서 읽힙니다. 번역을 위해 표지판 이미지만 전송되며, 저희 서버에는 절대 저장되지 않습니다. 계정이 필요 없습니다.",
+    "cameraDeniedTitle": "카메라 접근이 꺼져 있습니다",
+    "cameraDeniedCopy": "대신 갤러리에서 사진을 선택하거나, 브라우저 설정에서 카메라 접근을 다시 허용하세요."
   },
   "reuse": {
     "scannedHere": "여기서 {{age}}에 스캔하셨습니다",
@@ -273,7 +285,11 @@
       "copyWithArea": "허가 구역 {{area}}의 유효한 허가증을 가진 경우에만 여기 주차할 수 있습니다. 허가증 스티커의 번호가 일치해야 합니다 — 단속원은 단순히 어떤 허가증이 있는지가 아니라 구역 코드를 확인합니다.",
       "ack": "예, 이 구역에 유효한 허가증이 있습니다",
       "ackWithArea": "예, 허가 구역 {{area}}에 유효한 허가증이 있습니다"
-    }
+    },
+    "aiCaveat": "이것은 AI가 읽은 표지판입니다. 차를 떠나기 전에 항상 실제 표지판을 한 번 확인하세요.",
+    "cantParkOverride": "이게 틀렸다고 생각하시나요? 그래도 이 자리를 증거로 기록할 수 있습니다.",
+    "cantParkOverrideCta": "그래도 기록하기",
+    "firstSaveValue": "저장하면 타임스탬프가 찍힌 변조 방지 기록이 남습니다. 잘못된 과태료를 받았을 때의 증거입니다."
   },
   "logger": {
     "header": "이 주차 세션 기록",
@@ -308,7 +324,8 @@
     "noSignKicker": "증거 메모",
     "noSignBanner": "이 자리에 표지판이 보이지 않았다고 기록하고 있습니다. 암호학적 서명은 언제와 어디만 다루며, 표지판이 정말로 없었는지는 다루지 않습니다 — 정직하세요, 이것은 당신의 증거입니다.",
     "ambientHeader": "주변",
-    "ambientCaption": "표지판이 게시되지 않았음을 보여주기 위해 촬영됨."
+    "ambientCaption": "표지판이 게시되지 않았음을 보여주기 위해 촬영됨.",
+    "locationContext": "위치는 주차한 곳에 타임스탬프를 남기는 데에만 사용합니다. 로그인하지 않는 한 기기에 남아 있습니다."
   },
   "reminders": {
     "header": "알림 설정",
@@ -366,7 +383,8 @@
       "header": "푸시 알림 예약됨",
       "single": "{{times}}에 알림이 전송됩니다.",
       "multiple": "{{times}}에 알림이 전송됩니다."
-    }
+    },
+    "pushScheduleFailed": "백그라운드 알림을 설정할 수 없었습니다. 이 탭이 열려 있을 때만 울릴 수 있습니다. 다시 시도하려면 누르세요."
   },
   "history": {
     "header": "세션 기록",
@@ -413,7 +431,11 @@
     "endedAt": "종료 {{when}}",
     "noExpiryRecorded": "만료 시간 기록되지 않음",
     "deleteSession": "세션 삭제",
-    "deleteConfirm": "이 주차 세션을 삭제할까요? 되돌릴 수 없습니다."
+    "deleteConfirm": "이 주차 세션을 삭제할까요? 되돌릴 수 없습니다.",
+    "howToVerify": "시청이 이 기록을 검증하는 방법 →",
+    "photoSyncFailed": "사진이 클라우드에 백업되지 않음",
+    "photoSyncRetry": "업로드 다시 시도",
+    "exportPhotoWarning": "이 오래된 세션의 사진 하나 이상을 클라우드에서 불러올 수 없었습니다. 그래도 내보내거나, 생성된 기기에서 열 수 있습니다."
   },
   "appeal": {
     "captureHeader": "이의신청서 작성",
@@ -437,7 +459,8 @@
     "downloadingPdf": "PDF 생성 중…",
     "reviewDisclaimer": "AI 초안은 출발점입니다. 주의 깊게 읽고, 자신의 목소리와 상황에 맞게 편지를 편집하고, 보내기 전에 모든 주장을 확인하세요. ParkProof가 이의신청을 제출하지 않습니다.",
     "errorHeader": "이의신청서를 작성할 수 없습니다",
-    "tryDifferentPhoto": "다른 사진 시도"
+    "tryDifferentPhoto": "다른 사진 시도",
+    "captureIntroStandalone": "받은 위반 통지서 사진을 찍으세요. Claude가 읽고, 발급한 시청에 보낼 수 있는 공식 편지를 작성합니다. 이 주차를 ParkProof에 기록했다면, 저장된 증거가 편지에 첨부되도록 기록에서 열어주세요."
   },
   "auth": {
     "signInHeader": "로그인",
@@ -480,7 +503,14 @@
     "codeResent": "코드를 다시 보냈습니다. 받은편지함을 확인하세요.",
     "resetCodeSent": "재설정 코드를 이메일로 보냈습니다.",
     "emailVerified": "이메일이 인증되었습니다 — 계속하려면 로그인하세요.",
-    "passwordReset": "비밀번호가 재설정되었습니다. 새 비밀번호로 로그인하세요."
+    "passwordReset": "비밀번호가 재설정되었습니다. 새 비밀번호로 로그인하세요.",
+    "errWrongCredentials": "이메일 또는 비밀번호가 틀렸습니다.",
+    "errAccountExists": "이미 계정이 있습니다. 대신 로그인해 보세요.",
+    "errTooManyAttempts": "시도가 너무 많습니다. 몇 분 기다린 후 다시 시도하세요.",
+    "errCodeMismatch": "코드가 일치하지 않습니다. 확인 후 다시 시도하세요.",
+    "errCodeExpired": "코드가 만료되었습니다. 새 코드를 요청하세요.",
+    "errUserNotFound": "해당 이메일로 등록된 계정이 없습니다.",
+    "errGeneric": "문제가 발생했습니다. 다시 시도해 주세요."
   },
   "settings": {
     "header": "계정",
@@ -584,7 +614,15 @@
     "somethingWrong": "문제가 발생했습니다",
     "tryAgain": "다시 시도",
     "backHome": "홈으로 돌아가기",
-    "complexSignTimeout": "이 표지판은 처리하기에 너무 오래 걸렸습니다 — 보통 쌓인 규칙이 많다는 뜻입니다. 더 선명한 사진을 시도하거나 주차하는 곳에 적용되는 규칙으로 잘라보세요."
+    "complexSignTimeout": "이 표지판은 처리하기에 너무 오래 걸렸습니다 — 보통 쌓인 규칙이 많다는 뜻입니다. 더 선명한 사진을 시도하거나 주차하는 곳에 적용되는 규칙으로 잘라보세요.",
+    "offlineTitle": "오프라인 상태입니다",
+    "offlineBody": "표지판을 읽으려면 연결이 필요합니다. 저장된 세션과 알림은 계속 작동합니다 — 다시 온라인이 되면 스캔을 다시 시도하세요.",
+    "boundaryTitle": "문제가 발생했습니다",
+    "boundaryBody": "ParkProof에 예상치 못한 오류가 발생했습니다. 새로고침하면 보통 해결되며, 저장된 세션은 이 기기에 안전하게 보관됩니다.",
+    "boundaryReload": "ParkProof 새로고침",
+    "storageRecovered_one": "기기 저장 공간이 가득 차서, 공간 확보를 위해 오래된 주차 기록 1개의 사진이 삭제되었습니다. 증거를 클라우드에 안전하게 보관하려면 로그인하세요.",
+    "storageRecovered_other": "기기 저장 공간이 가득 차서, 공간 확보를 위해 오래된 주차 기록 {{count}}개의 사진이 삭제되었습니다. 증거를 클라우드에 안전하게 보관하려면 로그인하세요.",
+    "photoSyncFailed": "사진이 클라우드에 백업되지 않았습니다. 이 기기에는 안전하게 있습니다 — 세션을 열어 다시 시도하세요."
   },
   "pdf": {
     "common": {
@@ -730,6 +768,9 @@
   "installPrompt": {
     "available": "ParkProof 설치",
     "install": "설치",
-    "installing": "설치 중…"
+    "installing": "설치 중…",
+    "iosTitle": "iPhone에 ParkProof 설치",
+    "iosBody": "공유 버튼을 누른 다음 '홈 화면에 추가'를 선택하세요. 전체 화면으로 열리고 오프라인에서도 작동합니다.",
+    "iosDismiss": "알겠습니다"
   }
 }

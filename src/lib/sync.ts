@@ -120,11 +120,16 @@ async function uploadPhoto(
  * minimum-viable record (timestamp, GPS, sign rules, signature). Losing a
  * photo is worse than losing the whole session.
  */
-export async function uploadSession(session: ParkingSession): Promise<void> {
+export async function uploadSession(
+  session: ParkingSession,
+): Promise<{ photoFailed: boolean }> {
   // Pre-flight: upload photos in parallel. All three roles fail independently
-  // without aborting the metadata upload — see comment block above.
+  // without aborting the metadata upload — see comment block above. We still
+  // track whether any photo PUT failed so the caller can surface it: a silent
+  // photo loss leaves the DDB row with a null image and a blank evidence PDF.
   // 'ambient' role added for the no-sign flow (surroundings photo showing
   // absence of signs).
+  let photoFailed = false
   await Promise.all(
     (['sign', 'car', 'ambient'] as const).map(async (role) => {
       const field = `${role}_photo` as 'sign_photo' | 'car_photo' | 'ambient_photo'
@@ -133,6 +138,7 @@ export async function uploadSession(session: ParkingSession): Promise<void> {
       try {
         await uploadPhoto(session.id, role, photo)
       } catch (err) {
+        photoFailed = true
         console.warn(
           `[sync] photo upload (${role}) for ${session.id} failed:`,
           err,
@@ -146,6 +152,10 @@ export async function uploadSession(session: ParkingSession): Promise<void> {
     body: JSON.stringify({ session }),
   })
   await expectJson<{ ok: true }>(res)
+  // Only reached when the metadata upload SUCCEEDED — so photoFailed here means
+  // "the row is on the cloud but an image isn't", the true silent-evidence-loss
+  // case. A whole-session network failure throws above and never returns this.
+  return { photoFailed }
 }
 
 /** List all sessions stored in the cloud for the signed-in user. */
@@ -312,9 +322,16 @@ function writeNewLocalSession(session: ParkingSession): void {
  * from App after saveSession, only when signed in. Never throws to the
  * caller — sync is best-effort, the local copy is the source of truth.
  */
-export function mirrorSessionToCloud(session: ParkingSession): void {
-  void uploadSession(session).catch((err) => {
+export function mirrorSessionToCloud(
+  session: ParkingSession,
+): Promise<{ photoFailed: boolean }> {
+  return uploadSession(session).catch((err) => {
     console.warn('[sync] mirror failed (will retry on next app load):', err)
+    // Whole-session failure (network/metadata). This retries on the next app
+    // load, so we deliberately don't raise the photo-failed flag here — that
+    // signal is reserved for the "row synced but photo didn't" case, which is
+    // the one that won't self-heal.
+    return { photoFailed: false }
   })
 }
 

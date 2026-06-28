@@ -194,4 +194,13 @@ export interface ParkingSession {
     /** ISO 8601 — when EventBridge will fire the push. */
     fire_at: string
   }>
+  /**
+   * Set true when a cloud mirror synced the session metadata but one or more
+   * photo uploads to S3 failed (the warned-and-swallowed path in sync.ts). The
+   * DDB row exists with a null photo, so on another device the image would be
+   * missing and the evidence PDF would render blank. SessionDetail surfaces a
+   * "Photo not backed up — retry" affordance when this is set, and clears it on
+   * a successful retry. Additive; absent ⇒ no known photo-sync failure.
+   */
+  photo_sync_failed?: boolean
 }

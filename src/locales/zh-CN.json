@@ -46,7 +46,8 @@
       "log": "拍摄您的车辆 → 带时间戳的证据记录",
       "remind": "停车到期前获得日历提醒"
     },
-    "seeEverything": "查看 ParkProof 的所有功能 →"
+    "seeEverything": "查看 ParkProof 的所有功能 →",
+    "draftAppeal": "收到罚单?起草申诉信"
   },
   "active": {
     "currentlyParked": "正在停车",
@@ -64,7 +65,9 @@
     "iveLeft": "我已离开",
     "iveLeftAria": "标记您已离开此停车位",
     "iveLeftConfirm": "现在结束此停车记录?会移至历史并记录离开时间。",
-    "nextPing": "下次提醒:{{when}}"
+    "nextPing": "下次提醒:{{when}}",
+    "recheckNow": "立即重新检查",
+    "recheckSub": "还合法吗?几秒内重新确认"
   },
   "scanner": {
     "header": "扫描停车标志",
@@ -90,7 +93,10 @@
     "noSignSkip": "跳过 — 仅保存 GPS 和时间",
     "noSignAmbientAlt": "周围环境 — 无标志可见",
     "noSignAmbientCaption": "已拍摄以证明此处无任何标志。",
-    "noSignContinue": "继续记录"
+    "noSignContinue": "继续记录",
+    "privacyLine": "你的照片在手机上读取。只有标志图片会被发送以进行翻译,且从不存储在我们的服务器上。无需账户。",
+    "cameraDeniedTitle": "相机访问已关闭",
+    "cameraDeniedCopy": "改从相册中选择一张照片,或在浏览器设置中重新启用相机访问。"
   },
   "reuse": {
     "scannedHere": "您 {{age}} 在此扫描过",
@@ -147,7 +153,11 @@
       "copyWithArea": "只有持有许可证区域 {{area}} 有效许可证的车辆才能停车。许可证贴纸上的编号必须匹配 — 执法人员会核对区域代码,不只是看您有没有许可证。",
       "ack": "是的,我持有该区域的有效许可证",
       "ackWithArea": "是的,我持有许可证区域 {{area}} 的有效许可证"
-    }
+    },
+    "aiCaveat": "这是 AI 对标志的解读。离开车辆前,请务必看一眼实际的标志。",
+    "cantParkOverride": "觉得这判断有误?你仍然可以把此处记录为证据。",
+    "cantParkOverrideCta": "仍然记录",
+    "firstSaveValue": "保存会留下一份带时间戳、防篡改的记录。万一被错误开罚单,这就是你的证据。"
   },
   "logger": {
     "header": "记录此次停车",
@@ -182,7 +192,8 @@
     "noSignKicker": "证据说明",
     "noSignBanner": "您正在记录此处无可见标志。加密签名涵盖时间和地点，但不涵盖标志是否真的不存在 — 请诚实，这是您的证据。",
     "ambientHeader": "周围环境",
-    "ambientCaption": "已拍摄以证明无标志在此处。"
+    "ambientCaption": "已拍摄以证明无标志在此处。",
+    "locationContext": "我们使用你的位置只是为了标记你停车的地点和时间。除非你登录,否则它只保留在你的设备上。"
   },
   "reminders": {
     "header": "设置提醒",
@@ -240,7 +251,8 @@
       "header": "推送提醒已安排",
       "single": "将在 {{times}} 推送提醒。",
       "multiple": "将在 {{times}} 推送提醒。"
-    }
+    },
+    "pushScheduleFailed": "无法设置后台提醒。它可能只在此标签页打开时才会触发。点击重试。"
   },
   "history": {
     "header": "停车记录",
@@ -287,7 +299,11 @@
     "endSession": "结束停车",
     "endConfirm": "现在结束此停车记录?证据记录将保留在历史中,并记录您的离开时间。",
     "endedAt": "已结束 {{when}}",
-    "noExpiryRecorded": "未记录到期时间"
+    "noExpiryRecorded": "未记录到期时间",
+    "howToVerify": "市政府如何核验这份记录 →",
+    "photoSyncFailed": "照片未备份到云端",
+    "photoSyncRetry": "重试上传",
+    "exportPhotoWarning": "这条较旧会话有一张或多张照片无法从云端加载。你可以照常导出,或在创建它的那台设备上打开。"
   },
   "appeal": {
     "captureHeader": "起草申诉信",
@@ -311,7 +327,8 @@
     "downloadingPdf": "正在生成 PDF…",
     "reviewDisclaimer": "AI 草稿是起点。请仔细阅读,根据您的语气和情况编辑,并在发送前核实每个事实。ParkProof 不替您提交申诉。",
     "errorHeader": "无法起草申诉",
-    "tryDifferentPhoto": "尝试另一张照片"
+    "tryDifferentPhoto": "尝试另一张照片",
+    "captureIntroStandalone": "为你收到的违规通知拍一张照片。Claude 会读取通知,并起草一封可发送给开具市政府的正式信件。如果你曾在 ParkProof 里记录过这次停车,请改从历史记录中打开它,这样你保存的证据就会随信附上。"
   },
   "auth": {
     "signInHeader": "登录",
@@ -354,7 +371,14 @@
     "codeResent": "验证码已重新发送。请检查您的收件箱。",
     "resetCodeSent": "我们已发送重置验证码到您的邮箱。",
     "emailVerified": "邮箱已验证——请登录继续。",
-    "passwordReset": "密码已重置。请使用新密码登录。"
+    "passwordReset": "密码已重置。请使用新密码登录。",
+    "errWrongCredentials": "邮箱或密码错误。",
+    "errAccountExists": "你已经有账户了。请改用登录。",
+    "errTooManyAttempts": "尝试次数过多。请稍等几分钟后再试。",
+    "errCodeMismatch": "验证码不匹配。请检查后再试。",
+    "errCodeExpired": "验证码已过期。请重新获取一个。",
+    "errUserNotFound": "找不到使用该邮箱的账户。",
+    "errGeneric": "出错了。请重试。"
   },
   "settings": {
     "header": "账户",
@@ -441,7 +465,15 @@
     "somethingWrong": "出错了",
     "tryAgain": "重试",
     "backHome": "返回主页",
-    "complexSignTimeout": "此停车标志处理时间过长 — 通常意味着它有很多层叠的规则。请尝试拍摄更清晰的照片,或裁剪到您停车位置适用的规则部分。"
+    "complexSignTimeout": "此停车标志处理时间过长 — 通常意味着它有很多层叠的规则。请尝试拍摄更清晰的照片,或裁剪到您停车位置适用的规则部分。",
+    "offlineTitle": "你当前处于离线状态",
+    "offlineBody": "读取标志需要网络连接。你保存的会话和提醒仍然可用 — 恢复联网后再试一次扫描。",
+    "boundaryTitle": "出了点问题",
+    "boundaryBody": "ParkProof 遇到了一个意外错误。重新加载通常就能解决,你保存的会话在此设备上是安全的。",
+    "boundaryReload": "重新加载 ParkProof",
+    "storageRecovered_one": "你的设备存储已满,因此为了腾出空间,移除了 1 条较旧停车记录中的照片。登录即可把证据安全保存在云端。",
+    "storageRecovered_other": "你的设备存储已满,因此为了腾出空间,移除了 {{count}} 条较旧停车记录中的照片。登录即可把证据安全保存在云端。",
+    "photoSyncFailed": "有一张照片未备份到云端。它在此设备上是安全的 — 打开会话即可重试。"
   },
   "pdf": {
     "common": {
@@ -586,7 +618,7 @@
     "heroTitle2": "变简单",
     "heroTitle3": "了。",
     "heroSubhead": "拍下任意澳大利亚停车标志,",
-    "heroSubheadAccent": "10 秒",
+    "heroSubheadAccent": "12 秒",
     "heroSubheadTail": "内得到清晰的中文回答。",
     "bullet": {
       "plainEnglish": "通俗易懂的解读",
@@ -602,7 +634,7 @@
       "analyseTitle": "我们分析",
       "analyseDesc": "AI 几秒内解读标志。",
       "answerTitle": "获取答案",
-      "answerDesc": "你可以信赖的明确答案。"
+      "answerDesc": "一个通俗易懂的结论,方便你对照标志核实。"
     },
     "evidenceCallout": {
       "title": "需要时,防篡改证据。",
@@ -610,12 +642,17 @@
     },
     "feature": {
       "translateTitle": "通俗的解读",
-      "translateDesc": "拍下任何澳洲停车标志 — 10 秒内告诉你\"现在能不能停\"。",
+      "translateDesc": "拍下任何澳洲停车标志 — 大约 12 秒内告诉你\"现在能不能停\"。",
       "evidenceTitle": "防篡改证据",
       "evidenceDesc": "每次停车都有加密签名的时间戳、GPS 和照片记录。",
       "appealTitle": "AI 申诉信",
       "appealDesc": "收到不合理的罚单？拍下来，我们帮你起草正式申诉。"
-    }
+    },
+    "accuracyNote": "ParkProof 可能会误读杂乱的标志。离开车辆前,请务必把我们的解读和实际标志核对一遍。",
+    "trustFree": "免费",
+    "trustNoAccount": "无需账户",
+    "trustOffline": "离线可用",
+    "locationOptional": "位置信息是可选的。即使拒绝,你仍然可以读取标志并自行输入地址。"
   },
   "about": {
     "title": "ParkProof 的全部功能",
@@ -635,7 +672,7 @@
       "title": "拍下标志，得到答案",
       "lead": "用手机对准任何停车标志拍照 — 哪怕是那种堆满箭头和清空区标识的复杂牌子。",
       "items": [
-        "大约 10 秒内就能给你一个明确的\"能停\"或\"不能停\"。",
+        "大约 12 秒内就能给你一个明确的\"能停\"或\"不能停\"。",
         "如果标志对马路两侧有不同规定，我们会直接问你停在哪一侧。",
         "在调用 AI 之前，我们会先检查照片是否模糊或太暗 — 帮你省一次试错。"
       ]
@@ -699,7 +736,8 @@
       "title": "喜欢 ParkProof 吗?",
       "body": "一个人花 10 天打造,永久免费。如果它帮你省下了一张罚单,可以请我喝杯咖啡。",
       "button": "☕ 请我喝杯咖啡"
-    }
+    },
+    "sealCaveat": "数字签名能证明记录在你保存后没有被改动过。但它不能证明 AI 把标志读对了,也不能保证市政府一定会采信。"
   },
   "scheduledReminders": {
     "header": "已安排的提醒",
@@ -724,6 +762,9 @@
   "installPrompt": {
     "available": "安装 ParkProof",
     "install": "安装",
-    "installing": "正在安装…"
+    "installing": "正在安装…",
+    "iosTitle": "在 iPhone 上安装 ParkProof",
+    "iosBody": "点击分享按钮,然后选择\"添加到主屏幕\"。它会全屏打开,离线也能用。",
+    "iosDismiss": "知道了"
   }
 }

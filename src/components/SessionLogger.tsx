@@ -82,8 +82,8 @@ export default function SessionLogger({
   const libraryInputRef = useRef<HTMLInputElement>(null)
 
   const startEdit = () => {
-    if (gps.status !== 'ok') return
-    setEditValue(gps.address ?? '')
+    if (gps.status !== 'ok' && gps.status !== 'error') return
+    setEditValue(gps.status === 'ok' ? gps.address ?? '' : '')
     setEditError(null)
     setEditStatus('idle')
     setEditMode(true)
@@ -304,6 +304,11 @@ export default function SessionLogger({
             </button>
           )}
         </div>
+        {/* Why location is used + that it stays on-device — sets expectations
+            before the GPS prompt's consequences (address, accuracy) land. */}
+        <p className="text-xs text-ink-500 mt-1 leading-relaxed">
+          {t('logger.locationContext')}
+        </p>
         {gps.status === 'ok' && !editMode && (() => {
           const isGps = gps.source === 'gps'
           const isUnreliable = isGps && gps.accuracy > ACCURACY_USABLE_M
@@ -375,7 +380,7 @@ export default function SessionLogger({
           )
         })()}
 
-        {gps.status === 'ok' && editMode && (
+        {(gps.status === 'ok' || gps.status === 'error') && editMode && (
           <div className="mt-3 space-y-2">
             <input
               type="text"
@@ -408,10 +413,19 @@ export default function SessionLogger({
             </div>
           </div>
         )}
-        {gps.status === 'error' && (
-          <div className="mt-2 space-y-1">
+        {gps.status === 'error' && !editMode && (
+          <div className="mt-2 space-y-2">
             <p className="text-xs text-ink-700 leading-relaxed">{gps.message}</p>
             <p className="text-xs text-ink-600">{t('logger.canSaveWithoutGps')}</p>
+            {/* Even with GPS down, the driver can type the address ("corner of
+                Collins and Swanston") and keep a located record — reuses the
+                same forwardGeocode edit flow as the imprecise-GPS branch. */}
+            <button
+              onClick={startEdit}
+              className="w-full bg-accent-600 hover:bg-accent-700 text-white font-semibold py-2.5 rounded-lg text-sm shadow-md shadow-accent-500/20 transition-colors"
+            >
+              {t('logger.enterAddress')}
+            </button>
           </div>
         )}
       </section>

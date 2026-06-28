@@ -46,7 +46,8 @@
       "log": "Fotografa la tua auto → prova con timestamp",
       "remind": "Ricevi un promemoria nel calendario prima della scadenza"
     },
-    "seeEverything": "Scopri tutto quello che fa ParkProof →"
+    "seeEverything": "Scopri tutto quello che fa ParkProof →",
+    "draftAppeal": "Hai preso una multa? Redigi un ricorso"
   },
   "active": {
     "currentlyParked": "ATTUALMENTE PARCHEGGIATO",
@@ -70,7 +71,9 @@
     "iveLeft": "Sono andato",
     "iveLeftAria": "Segnala che hai lasciato questo parcheggio",
     "iveLeftConfirm": "Terminare questa sessione di parcheggio ora? Verrà spostata nella cronologia con l'ora di partenza registrata.",
-    "nextPing": "Prossimo ping: {{when}}"
+    "nextPing": "Prossimo ping: {{when}}",
+    "recheckNow": "Ricontrolla ora",
+    "recheckSub": "Ancora regolare? Riverifica in pochi secondi"
   },
   "scanner": {
     "header": "Scansiona cartello di parcheggio",
@@ -96,7 +99,10 @@
     "noSignSkip": "Salta — salva solo GPS + ora",
     "noSignAmbientAlt": "Area circostante — nessun cartello visibile",
     "noSignAmbientCaption": "Catturata per dimostrare l'assenza di cartelli in questo posto.",
-    "noSignContinue": "Continua la registrazione"
+    "noSignContinue": "Continua la registrazione",
+    "privacyLine": "La tua foto viene letta sul tuo telefono. Inviamo solo l'immagine del cartello per tradurlo, e non viene mai conservata sui nostri server. Nessun account necessario.",
+    "cameraDeniedTitle": "Accesso alla fotocamera disattivato",
+    "cameraDeniedCopy": "Scegli invece una foto dalla libreria, oppure riattiva l'accesso alla fotocamera nelle impostazioni del browser."
   },
   "reuse": {
     "scannedHere": "Hai scansionato qui {{age}}",
@@ -153,7 +159,11 @@
       "copyWithArea": "Puoi parcheggiare qui solo se hai un permesso valido per l'Area Permesso {{area}}. Il numero sul tuo adesivo deve corrispondere — gli ispettori controllano il codice dell'area, non solo se hai un qualsiasi permesso.",
       "ack": "Sì, ho un permesso valido per quest'area",
       "ackWithArea": "Sì, ho un permesso valido per l'Area Permesso {{area}}"
-    }
+    },
+    "aiCaveat": "Questa è una lettura del cartello fatta dall'AI. Dai sempre un'occhiata al cartello vero prima di lasciare l'auto.",
+    "cantParkOverride": "Pensi che sia sbagliato? Puoi comunque registrare questo posto come prova.",
+    "cantParkOverrideCta": "Registralo comunque",
+    "firstSaveValue": "Salvando conservi un record con timestamp e inalterabile. La tua prova se mai prendi una multa ingiusta."
   },
   "logger": {
     "header": "Registra questa sessione di parcheggio",
@@ -188,7 +198,8 @@
     "noSignKicker": "NOTA SULLA PROVA",
     "noSignBanner": "Stai registrando che non c'erano cartelli visibili in questo posto. La firma crittografica copre quando e dove, non se i cartelli erano veramente assenti — sii onesto, questa è la tua prova.",
     "ambientHeader": "Area circostante",
-    "ambientCaption": "Catturata per dimostrare l'assenza di cartelli affissi."
+    "ambientCaption": "Catturata per dimostrare l'assenza di cartelli affissi.",
+    "locationContext": "Usiamo la tua posizione solo per registrare con timestamp dove hai parcheggiato. Resta sul tuo dispositivo a meno che tu non acceda."
   },
   "reminders": {
     "header": "Imposta promemoria",
@@ -246,7 +257,8 @@
       "header": "Promemoria push pianificati",
       "single": "Riceverai un ping alle {{times}}.",
       "multiple": "Riceverai un ping alle {{times}}."
-    }
+    },
+    "pushScheduleFailed": "Impossibile impostare il promemoria in sottofondo. Potrebbe suonare solo mentre questa scheda è aperta. Tocca per riprovare."
   },
   "history": {
     "header": "Cronologia sessioni",
@@ -293,7 +305,11 @@
     "endSession": "Termina sessione",
     "endConfirm": "Terminare questa sessione ora? Il record di prova resta nella cronologia con l'ora di partenza registrata.",
     "endedAt": "Terminata {{when}}",
-    "noExpiryRecorded": "Nessuna scadenza registrata"
+    "noExpiryRecorded": "Nessuna scadenza registrata",
+    "howToVerify": "Come un comune può verificare questo record →",
+    "photoSyncFailed": "Foto non salvata nel cloud",
+    "photoSyncRetry": "Riprova il caricamento",
+    "exportPhotoWarning": "Una o più foto non sono state caricate dal cloud per questa vecchia sessione. Puoi esportare comunque, oppure aprirla sul dispositivo dove è stata creata."
   },
   "appeal": {
     "captureHeader": "Redigi una lettera di ricorso",
@@ -317,7 +333,8 @@
     "downloadingPdf": "Creazione PDF…",
     "reviewDisclaimer": "La bozza dell'AI è solo un punto di partenza. Leggi con attenzione, modifica la lettera per adattarla al tuo tono e alle tue circostanze, e verifica ogni affermazione prima di inviarla. ParkProof non presenta il ricorso per te.",
     "errorHeader": "Impossibile redigere il ricorso",
-    "tryDifferentPhoto": "Prova un'altra foto"
+    "tryDifferentPhoto": "Prova un'altra foto",
+    "captureIntroStandalone": "Scatta una foto della notifica di multa che hai ricevuto. Claude la leggerà e redigerà una lettera formale che potrai inviare al comune che ha emesso la multa. Se hai registrato questo parcheggio in ParkProof, aprilo invece dalla cronologia così la prova salvata viene allegata alla lettera."
   },
   "auth": {
     "signInHeader": "Accedi",
@@ -360,7 +377,14 @@
     "codeResent": "Codice inviato di nuovo. Controlla la posta in arrivo.",
     "resetCodeSent": "Ti abbiamo inviato per email un codice di reset.",
     "emailVerified": "Email verificata — accedi per continuare.",
-    "passwordReset": "Password reimpostata. Accedi con la nuova password."
+    "passwordReset": "Password reimpostata. Accedi con la nuova password.",
+    "errWrongCredentials": "Email o password errate.",
+    "errAccountExists": "Hai già un account. Prova invece ad accedere.",
+    "errTooManyAttempts": "Troppi tentativi. Aspetta qualche minuto e riprova.",
+    "errCodeMismatch": "Il codice non corrisponde. Controllalo e riprova.",
+    "errCodeExpired": "Quel codice è scaduto. Richiedine uno nuovo.",
+    "errUserNotFound": "Nessun account trovato con questa email.",
+    "errGeneric": "Qualcosa è andato storto. Riprova."
   },
   "settings": {
     "header": "Account",
@@ -447,7 +471,15 @@
     "somethingWrong": "Qualcosa è andato storto",
     "tryAgain": "Riprova",
     "backHome": "Torna alla home",
-    "complexSignTimeout": "Questo cartello ha richiesto troppo tempo per essere elaborato — di solito significa che ha molte regole sovrapposte. Prova una foto più chiara, o ritaglia solo le regole che si applicano dove sei parcheggiato."
+    "complexSignTimeout": "Questo cartello ha richiesto troppo tempo per essere elaborato — di solito significa che ha molte regole sovrapposte. Prova una foto più chiara, o ritaglia solo le regole che si applicano dove sei parcheggiato.",
+    "offlineTitle": "Sei offline",
+    "offlineBody": "Leggere un cartello richiede una connessione. Le tue sessioni salvate e i promemoria funzionano comunque — riprova la scansione quando torni online.",
+    "boundaryTitle": "Qualcosa si è rotto",
+    "boundaryBody": "ParkProof ha incontrato un errore imprevisto. Ricaricare di solito risolve, e le tue sessioni salvate sono al sicuro su questo dispositivo.",
+    "boundaryReload": "Ricarica ParkProof",
+    "storageRecovered_one": "Lo storage del tuo dispositivo era pieno, quindi la foto di 1 vecchio record di parcheggio è stata rimossa per fare spazio. Accedi per tenere le prove al sicuro nel cloud.",
+    "storageRecovered_other": "Lo storage del tuo dispositivo era pieno, quindi le foto di {{count}} vecchi record di parcheggio sono state rimosse per fare spazio. Accedi per tenere le prove al sicuro nel cloud.",
+    "photoSyncFailed": "Una foto non è stata salvata nel cloud. È al sicuro su questo dispositivo — apri la sessione per riprovare."
   },
   "pdf": {
     "common": {
@@ -592,7 +624,7 @@
     "heroTitle2": "è",
     "heroTitle3": "semplice.",
     "heroSubhead": "Fotografa qualsiasi cartello di parcheggio australiano e ricevi una risposta chiara in ",
-    "heroSubheadAccent": "10 secondi",
+    "heroSubheadAccent": "12 secondi",
     "heroSubheadTail": ".",
     "bullet": {
       "plainEnglish": "Risposte in linguaggio chiaro",
@@ -608,7 +640,7 @@
       "analyseTitle": "Analizziamo",
       "analyseDesc": "L'AI decodifica il cartello in pochi secondi.",
       "answerTitle": "Ricevi la risposta",
-      "answerDesc": "Un verdetto chiaro su cui contare."
+      "answerDesc": "Un verdetto in linguaggio chiaro da confrontare con il cartello."
     },
     "evidenceCallout": {
       "title": "Prove inalterabili, quando contano.",
@@ -616,12 +648,17 @@
     },
     "feature": {
       "translateTitle": "Risposte in italiano semplice",
-      "translateDesc": "Fotografa qualsiasi cartello di parcheggio australiano — verdetto 'posso parcheggiare?' in 10 secondi.",
+      "translateDesc": "Fotografa qualsiasi cartello di parcheggio australiano — verdetto 'posso parcheggiare ora?' in circa 12 secondi.",
       "evidenceTitle": "Prove inalterabili",
       "evidenceDesc": "Ogni parcheggio ottiene un timestamp firmato crittograficamente, GPS e foto.",
       "appealTitle": "Lettere di ricorso AI",
       "appealDesc": "Multa ingiusta? Fotografala e prepariamo un ricorso formale."
-    }
+    },
+    "accuracyNote": "ParkProof può leggere male un cartello incasinato. Confronta sempre la nostra lettura con il cartello vero prima di lasciare l'auto.",
+    "trustFree": "Gratis",
+    "trustNoAccount": "Senza account",
+    "trustOffline": "Funziona offline",
+    "locationOptional": "La posizione è facoltativa. Rifiutala e potrai comunque leggere i cartelli e digitare tu stesso l'indirizzo."
   },
   "about": {
     "title": "Tutto quello che fa ParkProof",
@@ -641,7 +678,7 @@
       "title": "Fotografa un cartello, ottieni una risposta",
       "lead": "Punta il telefono su qualsiasi cartello di parcheggio — anche quelli incasinati con frecce e zone di rimozione.",
       "items": [
-        "Ricevi un sì o no chiaro in circa 10 secondi.",
+        "Ricevi un sì o no chiaro in circa 12 secondi.",
         "Se il cartello ha regole diverse per i due lati della strada, ti chiediamo semplicemente da che parte sei.",
         "Controlliamo se la foto è troppo sfocata o scura prima ancora di chiamare l'AI — ti risparmiamo un tentativo sprecato."
       ]
@@ -705,7 +742,8 @@
       "title": "Ti piace ParkProof?",
       "body": "Creato da solo in 10 giorni, gratis per sempre. Se ti ha salvato da una multa, offrimi un caffè.",
       "button": "☕ Offrimi un caffè"
-    }
+    },
+    "sealCaveat": "Il sigillo dimostra che il record non è stato modificato dopo averlo salvato. Non dimostra che l'AI abbia letto bene il cartello, né garantisce che un comune lo accetti."
   },
   "scheduledReminders": {
     "header": "Promemoria pianificati",
@@ -730,6 +768,9 @@
   "installPrompt": {
     "available": "Installa ParkProof",
     "install": "Installa",
-    "installing": "Installazione…"
+    "installing": "Installazione…",
+    "iosTitle": "Installa ParkProof sul tuo iPhone",
+    "iosBody": "Tocca il pulsante Condividi, poi scegli 'Aggiungi alla schermata Home'. Si apre a tutto schermo e funziona offline.",
+    "iosDismiss": "Ho capito"
   }
 }

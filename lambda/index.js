@@ -163,29 +163,36 @@ async function handleDraftAppeal(event) {
   } = body
 
   if (!ticket_image_base64) throw new Error('ticket_image_base64 is required')
-  if (!session || typeof session !== 'object') throw new Error('session is required')
 
-  const evidenceText = [
-    `Sign rules (what the parking sign said): ${session.rules ?? '(not recorded)'}`,
-    '',
-    `Observations from the sign:`,
-    formatObservationsForAppeal(session.observations),
-    '',
-    session.chosen_label
-      ? `Side / variant the user selected: ${session.chosen_label}`
-      : '',
-    `Arrival timestamp: ${session.arrived_at ?? '(not recorded)'}`,
-    session.expires_at ? `Parking was due to expire at: ${session.expires_at}` : '',
-    session.location?.address
-      ? `Address: ${session.location.address}`
-      : '',
-    session.location
-      ? `GPS coordinates: ${session.location.lat}, ${session.location.lng}`
-      : '',
-    `AI confidence at original scan: ${session.confidence ?? 'unknown'}`,
-  ]
-    .filter(Boolean)
-    .join('\n')
+  // session may be null on the standalone-appeal path — a user who found
+  // ParkProof AFTER being ticketed and never logged a park for the spot. We
+  // still draft from the infringement notice alone, but we must NOT let the
+  // model fabricate saved evidence the user does not have.
+  const hasSession = session && typeof session === 'object'
+
+  const evidenceText = hasSession
+    ? [
+        `Sign rules (what the parking sign said): ${session.rules ?? '(not recorded)'}`,
+        '',
+        `Observations from the sign:`,
+        formatObservationsForAppeal(session.observations),
+        '',
+        session.chosen_label
+          ? `Side / variant the user selected: ${session.chosen_label}`
+          : '',
+        `Arrival timestamp: ${session.arrived_at ?? '(not recorded)'}`,
+        session.expires_at ? `Parking was due to expire at: ${session.expires_at}` : '',
+        session.location?.address
+          ? `Address: ${session.location.address}`
+          : '',
+        session.location
+          ? `GPS coordinates: ${session.location.lat}, ${session.location.lng}`
+          : '',
+        `AI confidence at original scan: ${session.confidence ?? 'unknown'}`,
+      ]
+        .filter(Boolean)
+        .join('\n')
+    : 'No saved ParkProof parking session is linked to this appeal. The user did not log a park for this spot in the app, so there is NO contemporaneous sign reading, GPS, address, or timestamp evidence on file.'
 
   const client = new Anthropic({ apiKey })
   const t1 = Date.now()
@@ -214,7 +221,9 @@ async function handleDraftAppeal(event) {
           },
           {
             type: 'text',
-            text: `Please read the infringement notice in the attached photo and draft a concise appeal letter (target 250-400 words for the letter body) using the following parking-session evidence:\n\n${evidenceText}`,
+            text: hasSession
+              ? `Please read the infringement notice in the attached photo and draft a concise appeal letter (target 250-400 words for the letter body) using the following parking-session evidence:\n\n${evidenceText}`
+              : `Please read the infringement notice in the attached photo and draft a concise appeal letter (target 250-400 words for the letter body). There is NO saved parking-session evidence for this appeal — draft from the infringement notice alone. Do NOT invent or assert evidence the user does not have: make no claims about saved photos, GPS coordinates, timestamps, or a recorded sign reading. Focus on procedural grounds, any inconsistencies or errors visible on the notice itself, and a courteous request for review or leniency. Set evidence_strength honestly (likely "weak" without saved evidence). Context:\n\n${evidenceText}`,
           },
         ],
       },

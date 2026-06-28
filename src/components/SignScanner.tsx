@@ -110,6 +110,16 @@ export default function SignScanner({ onCapture, onReuseSession, onNoSignScan, o
   const [recentSessions] = useState<ParkingSession[]>(() => loadRecentSessions())
   const [pickerDismissed, setPickerDismissed] = useState(false)
   const [quality, setQuality] = useState<QualityResult | null>(null)
+  // Camera-denied heuristic. Tapping "Take a photo" fires the hidden camera
+  // file input; if the user denies the permission prompt or cancels, no file
+  // comes back and the CTA looks dead. We track that the camera was invoked
+  // (`cameraPending`) via a ref, then when the window regains focus with still
+  // no file selected after a short grace delay, we surface a non-blocking hint
+  // pointing at the "From library" escape hatch. Best-effort and harmless —
+  // any real file selection clears `cameraPending` before the check fires, so
+  // the hint never shows on the happy path.
+  const cameraPendingRef = useRef(false)
+  const [cameraDenied, setCameraDenied] = useState(false)
 
   useEffect(() => {
     // Recent-sessions list is initialised lazily via useState above — no need
@@ -158,6 +168,25 @@ export default function SignScanner({ onCapture, onReuseSession, onNoSignScan, o
     // Mount-only bootstrap; gpsState is read once as a fast-exit. Re-running on
     // gpsState transitions would re-fire the GPS request unnecessarily.
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // Camera-denied detector. When the camera input is opened the page loses
+  // focus (the OS camera/permission UI takes over). On regaining focus, if we
+  // still flagged the camera as pending — i.e. no file landed and cleared the
+  // flag — we treat it as a likely deny/cancel and reveal the fallback hint.
+  // A short delay lets a genuine file selection's onChange win the race first.
+  useEffect(() => {
+    const onFocus = () => {
+      if (!cameraPendingRef.current) return
+      window.setTimeout(() => {
+        if (cameraPendingRef.current) {
+          cameraPendingRef.current = false
+          setCameraDenied(true)
+        }
+      }, 600)
+    }
+    window.addEventListener('focus', onFocus)
+    return () => window.removeEventListener('focus', onFocus)
   }, [])
 
   const showProximityCard = match && !matchDismissed && !preview
@@ -236,8 +265,11 @@ export default function SignScanner({ onCapture, onReuseSession, onNoSignScan, o
       <h2 className="font-display text-3xl font-extrabold text-ink-900 mb-1">
         {t('scanner.header')}
       </h2>
-      <p className="text-sm text-ink-600 mb-6 leading-relaxed">
+      <p className="text-sm text-ink-600 mb-1 leading-relaxed">
         {t('scanner.instructions')}
+      </p>
+      <p className="text-xs text-ink-500 mb-6 leading-relaxed">
+        {t('scanner.privacyLine')}
       </p>
 
       {showProximityCard && match && (
@@ -311,7 +343,11 @@ export default function SignScanner({ onCapture, onReuseSession, onNoSignScan, o
         <>
           <div className="flex flex-col gap-3">
             <button
-              onClick={() => cameraInputRef.current?.click()}
+              onClick={() => {
+                cameraPendingRef.current = true
+                setCameraDenied(false)
+                cameraInputRef.current?.click()
+              }}
               className="border-2 border-dashed border-brand-300 hover:border-brand-500 hover:bg-brand-50/50 bg-white rounded-2xl py-8 px-4 flex flex-col items-center text-brand-600 transition-colors"
             >
               <Icon name="camera" className="w-10 h-10 mb-2" />
@@ -327,6 +363,35 @@ export default function SignScanner({ onCapture, onReuseSession, onNoSignScan, o
               <span className="text-xs text-ink-600 mt-1 text-center">{t('scanner.fromLibrarySub')}</span>
             </button>
           </div>
+          {/* Camera-denied fallback — non-blocking hint surfaced when the
+              camera was opened but no photo came back (permission denied or
+              cancelled). Points the user at the still-available "From library"
+              path above. Dismissible; never blocks the normal flow. */}
+          {cameraDenied && (
+            <div className="mt-3 bg-amber-50 border-2 border-amber-400 rounded-xl p-3">
+              <div className="flex items-start gap-2">
+                <Icon
+                  name="warning"
+                  className="w-5 h-5 text-amber-700 shrink-0 mt-0.5"
+                />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-display font-bold text-ink-900">
+                    {t('scanner.cameraDeniedTitle')}
+                  </p>
+                  <p className="text-xs text-ink-700 mt-0.5 leading-relaxed">
+                    {t('scanner.cameraDeniedCopy')}
+                  </p>
+                </div>
+                <button
+                  onClick={() => setCameraDenied(false)}
+                  className="text-ink-500 hover:text-ink-900 shrink-0 text-lg leading-none transition-colors"
+                  aria-label={t('common.back')}
+                >
+                  &times;
+                </button>
+              </div>
+            </div>
+          )}
           {/* "No sign here" affordance — secondary in visual weight (text
               link, not a button) so it doesn't compete with the primary
               scan CTAs above. The user who lands here knows what they're
@@ -454,7 +519,13 @@ export default function SignScanner({ onCapture, onReuseSession, onNoSignScan, o
         className="hidden"
         onChange={(e) => {
           const file = e.target.files?.[0]
-          if (file) handleFile(file)
+          if (file) {
+            // Real capture — clear the pending flag so the focus-based
+            // denied detector never fires, and hide any stale hint.
+            cameraPendingRef.current = false
+            setCameraDenied(false)
+            handleFile(file)
+          }
           e.target.value = ''
         }}
       />

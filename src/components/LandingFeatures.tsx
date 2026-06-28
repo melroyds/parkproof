@@ -117,6 +117,13 @@ export default function LandingFeatures({ onScanCta, onSignInCta }: Props) {
         ))}
       </ul>
 
+      {/* ── Accuracy caveat. Quiet, muted. Sets the expectation that the
+          AI read is a helpful first pass, not legal advice, BEFORE the
+          first-timer hands over a photo + GPS. */}
+      <p className="text-xs text-ink-500 leading-relaxed mb-6 max-w-[24rem]">
+        {t('landing.accuracyNote')}
+      </p>
+
       {/* ── Gradient CTA. Brand-blue → purple. Larger than the standard
           home-screen scan button to anchor the page; the camera icon
           and the bigger padding read as "this is the thing you do". */}
@@ -155,10 +162,28 @@ export default function LandingFeatures({ onScanCta, onSignInCta }: Props) {
 
       {/* Reassurance line under the CTA — small shield + line. Echoes the
           civic, "we're on your side" tone of the brand. */}
-      <div className="flex items-center justify-center gap-2 text-xs text-ink-600 mb-12">
+      <div className="flex items-center justify-center gap-2 text-xs text-ink-600 mb-4">
         <ShieldIcon className="w-4 h-4 text-brand-500" />
         <span>{t('landing.builtFor')}</span>
       </div>
+
+      {/* ── Trust strip. Mirrors the marketing hero's "Free · No account ·
+          Works offline" so direct entrants (PWA / bookmark / /app/ deep
+          link) who never see the marketing site get the same reassurance.
+          Dot-separated chips, centred, muted. */}
+      <div className="flex items-center justify-center flex-wrap gap-x-2.5 gap-y-1 text-xs font-medium text-ink-600 mb-2">
+        <span>{t('landing.trustFree')}</span>
+        <span aria-hidden className="text-paper-300">·</span>
+        <span>{t('landing.trustNoAccount')}</span>
+        <span aria-hidden className="text-paper-300">·</span>
+        <span>{t('landing.trustOffline')}</span>
+      </div>
+
+      {/* Location-optional reassurance — privacy-wary users can decline GPS
+          without breaking the app. */}
+      <p className="text-center text-[11px] text-ink-500 leading-relaxed mb-12">
+        {t('landing.locationOptional')}
+      </p>
 
       {/* ── How it works ─────────────────────────────────────────────── */}
       <h2 className="font-display text-2xl font-extrabold text-ink-900 text-center mb-5">

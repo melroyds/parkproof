@@ -25,6 +25,13 @@ interface Props {
    * card stays pure-presentation.
    */
   onEndSession?: (session: ParkingSession) => void
+  /**
+   * Tapped when the user wants to re-verify "am I still legal?" without walking
+   * back to the sign. Runs the smart re-scan (text-only refresh) on this
+   * session's prior reading. Only meaningful for sign-bearing sessions, so the
+   * card hides the button for no-sign / photo-less sessions.
+   */
+  onRecheck?: (session: ParkingSession) => void
 }
 
 /**
@@ -84,6 +91,7 @@ export default function ActiveSessionCard({
   onOpen,
   onShowMore,
   onEndSession,
+  onRecheck,
 }: Props) {
   const { t } = useTranslation()
   // 30s tick is enough granularity for minute-level countdowns; the totalMinutes
@@ -233,6 +241,23 @@ export default function ActiveSessionCard({
           })()}
         </div>
       </button>
+
+      {/* Re-check now — delivers the landing page's "one-tap re-check ... no
+          walking back to the sign" promise from the most-glanced surface,
+          instead of burying it three taps deep inside the scan screen. Only
+          for sign-bearing sessions: the smart re-scan reuses the prior sign
+          reading, which no-sign / photo-less sessions don't have. */}
+      {onRecheck && session.sign_photo && !session.no_sign && (
+        <button
+          type="button"
+          onClick={() => onRecheck(session)}
+          aria-label={t('active.recheckSub')}
+          className="mt-4 w-full bg-white/20 hover:bg-white/30 active:bg-white/25 text-white font-semibold text-sm px-4 py-2.5 rounded-xl transition-colors inline-flex items-center justify-center gap-2"
+        >
+          <Icon name="camera" className="w-4 h-4" strokeWidth={2.25} />
+          {t('active.recheckNow')}
+        </button>
+      )}
 
       {/* Walk-back footer — distance + deep-link to navigation app. Anchor
           element so screen readers announce it as a link and the click opens

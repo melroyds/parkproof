@@ -33,7 +33,10 @@
   "installPrompt": {
     "available": "Install ParkProof",
     "install": "Install",
-    "installing": "Installing…"
+    "installing": "Installing…",
+    "iosTitle": "Install ParkProof on your iPhone",
+    "iosBody": "Tap the Share button, then choose 'Add to Home Screen'. It opens full-screen and works offline.",
+    "iosDismiss": "Got it"
   },
   "about": {
     "title": "Everything ParkProof does",
@@ -42,7 +45,7 @@
       "title": "Snap a sign, get an answer",
       "lead": "Point your phone at any parking sign — even the messy stacked ones with arrows and clearways.",
       "items": [
-        "You get a clear yes or no in about 10 seconds.",
+        "You get a clear yes or no in about 12 seconds.",
         "If the sign has different rules for different sides of the road, we'll just ask which side you're on.",
         "We check if your photo is too blurry or dark before we even ask the AI — saves you a wasted try."
       ]
@@ -56,6 +59,7 @@
         "Add a note about why you parked there (mum's hospital visit, Saturday market) — councils take context seriously."
       ]
     },
+    "sealCaveat": "The seal proves the record wasn't changed after you saved it. It doesn't prove the AI read the sign correctly, or guarantee a council will accept it.",
     "reminders": {
       "title": "A nudge before time runs out",
       "lead": "Pick when you want to be reminded — 30 minutes before, 15, 5, whatever feels right.",
@@ -124,7 +128,7 @@
     "heroTitle2": "made",
     "heroTitle3": "simple.",
     "heroSubhead": "Take a photo of any Aussie parking sign and get a clear, plain-English answer in ",
-    "heroSubheadAccent": "10 seconds",
+    "heroSubheadAccent": "12 seconds",
     "heroSubheadTail": ".",
     "bullet": {
       "plainEnglish": "Plain-English answers",
@@ -133,6 +137,11 @@
     },
     "cta": "Check a parking sign",
     "builtFor": "Built for Aussie drivers",
+    "accuracyNote": "ParkProof can misread a messy sign. Always check our read against the actual sign before you leave the car.",
+    "trustFree": "Free",
+    "trustNoAccount": "No account",
+    "trustOffline": "Works offline",
+    "locationOptional": "Location is optional. Decline it and you can still read signs and type the address yourself.",
     "howItWorks": {
       "heading": "How it works",
       "snapTitle": "Snap",
@@ -140,7 +149,7 @@
       "analyseTitle": "We analyse",
       "analyseDesc": "Our AI decodes the sign in seconds.",
       "answerTitle": "Get your answer",
-      "answerDesc": "Plain-English verdict you can rely on."
+      "answerDesc": "A plain-English verdict to check against the sign."
     },
     "evidenceCallout": {
       "title": "Tamper-proof evidence, when it matters.",
@@ -148,7 +157,7 @@
     },
     "feature": {
       "translateTitle": "Plain-English answers",
-      "translateDesc": "Photograph any Aussie parking sign — get a 'can I park now?' verdict in 10 seconds.",
+      "translateDesc": "Photograph any Aussie parking sign — get a 'can I park now?' verdict in about 12 seconds.",
       "evidenceTitle": "Tamper-proof evidence",
       "evidenceDesc": "Every park gets a cryptographically-signed timestamp, GPS, and photo record.",
       "appealTitle": "AI appeal letters",
@@ -160,6 +169,7 @@
     "scanCta": "Scan a parking sign",
     "scanAnother": "Scan another sign",
     "scanHelp": "We'll read the sign, tell you if you can park now, and offer a reminder before time runs out.",
+    "draftAppeal": "Got a ticket? Draft an appeal",
     "history": "Session history",
     "historyEmpty": "empty",
     "historyCount_one": "{{count}} saved",
@@ -177,6 +187,8 @@
     "currentlyParked": "CURRENTLY PARKED",
     "moveBy": "Move by {{time}}",
     "tapForRecord": "Tap for evidence record",
+    "recheckNow": "Re-check now",
+    "recheckSub": "Still legal? Re-verify in seconds",
     "walkBack": "Walk back to your car",
     "walkBackButton": "Walk back",
     "walkBackOpens": "Opens in your maps app",
@@ -200,6 +212,9 @@
   "scanner": {
     "header": "Scan parking sign",
     "instructions": "Take a clear photo of the sign(s). If signs are stacked, include them all in one shot.",
+    "privacyLine": "Your photo is read on your phone. Only the sign image is sent to translate it, and it's never stored on our servers. No account needed.",
+    "cameraDeniedTitle": "Camera access is off",
+    "cameraDeniedCopy": "Pick a photo from your library instead, or re-enable camera access in your browser settings.",
     "takePhoto": "Take a photo",
     "takePhotoSub": "Live, with your camera",
     "fromLibrary": "From library",
@@ -254,6 +269,10 @@
     "logCtaBlockedPermit": "Confirm permit displayed to save",
     "logCtaBlockedPermitZone": "Confirm you hold a valid permit to save",
     "scanAnother": "Scan another sign",
+    "aiCaveat": "This is an AI read of the sign. Always glance at the actual sign before you leave the car.",
+    "cantParkOverride": "Think this is wrong? You can still log this spot as evidence.",
+    "cantParkOverrideCta": "Log it anyway",
+    "firstSaveValue": "Saving keeps a timestamped, tamper-proof record. Your proof if you're ever wrongly ticketed.",
     "transitionHeadsUp": "Heads up — at {{when}}",
     "payRequired": {
       "kicker": "PAY REQUIRED",
@@ -283,6 +302,7 @@
   "logger": {
     "header": "Log this parking session",
     "intro": "We'll save a timestamped record with your photo and GPS — useful evidence if you ever contest a wrongful ticket.",
+    "locationContext": "We use your location only to timestamp where you parked. It stays on your device unless you sign in.",
     "location": "Location",
     "acquiringGps": "Acquiring GPS…",
     "captured": "Captured ✓",
@@ -345,6 +365,7 @@
     "browserAllPast": "All selected reminders are already in the past",
     "browserTooFar": "Expires in over 24h — use the calendar option instead",
     "browserNothingSelected": "Pick at least one reminder above",
+    "pushScheduleFailed": "Couldn't set the background reminder. It may only fire while this tab is open. Tap to try again.",
     "pushTitleFallback": "Parking reminder",
     "pushBodyAtExpiry": "Your parking expires now.",
     "pushBodyBefore_one": "1 min until your parking expires.",
@@ -433,6 +454,10 @@
     "pdfErrorHeader": "Couldn't build the PDF",
     "pdfErrorHelp": "The error has been logged to the browser console. If this keeps happening, take a screenshot of the console output and share it.",
     "draftAppeal": "Got a ticket? Draft an appeal letter",
+    "howToVerify": "How a council can verify this record →",
+    "photoSyncFailed": "Photo not backed up to the cloud",
+    "photoSyncRetry": "Retry upload",
+    "exportPhotoWarning": "One or more photos couldn't be loaded from the cloud for this older session. You can export anyway, or open it on the device where it was created.",
     "endSession": "End session",
     "endConfirm": "End this parking session now? The evidence record stays in history with the time you left recorded.",
     "endedAt": "Ended {{when}}",
@@ -443,6 +468,7 @@
   "appeal": {
     "captureHeader": "Draft an appeal letter",
     "captureIntro": "Take a photo of the infringement notice you received. Claude will read it, cross-reference with the evidence saved in this session, and draft a formal letter you can send to the issuing council.",
+    "captureIntroStandalone": "Take a photo of the infringement notice you received. Claude will read it and draft a formal letter you can send to the issuing council. If you logged this park in ParkProof, open it from history instead so your saved evidence is attached to the letter.",
     "captureTakePhotoSub": "Camera of the ticket",
     "captureFromLibrarySub": "Photo / scan of the notice",
     "captureDisclaimer": "The AI draft is a starting point, not legal advice. You're responsible for the final letter you send.",
@@ -505,7 +531,14 @@
     "codeResent": "Code re-sent. Check your inbox.",
     "resetCodeSent": "We've emailed you a reset code.",
     "emailVerified": "Email verified — sign in to continue.",
-    "passwordReset": "Password reset. Sign in with your new password."
+    "passwordReset": "Password reset. Sign in with your new password.",
+    "errWrongCredentials": "Wrong email or password.",
+    "errAccountExists": "You already have an account. Try signing in instead.",
+    "errTooManyAttempts": "Too many attempts. Wait a few minutes and try again.",
+    "errCodeMismatch": "That code didn't match. Check it and try again.",
+    "errCodeExpired": "That code has expired. Request a new one.",
+    "errUserNotFound": "No account found with that email.",
+    "errGeneric": "Something went wrong. Please try again."
   },
   "settings": {
     "header": "Account",
@@ -609,7 +642,15 @@
     "somethingWrong": "Something went wrong",
     "tryAgain": "Try again",
     "backHome": "Back to home",
-    "complexSignTimeout": "This sign took too long to process — usually means it has lots of stacked rules. Try a clearer photo, or crop in to just the rules that apply where you're parked."
+    "complexSignTimeout": "This sign took too long to process — usually means it has lots of stacked rules. Try a clearer photo, or crop in to just the rules that apply where you're parked.",
+    "offlineTitle": "You're offline",
+    "offlineBody": "Reading a sign needs a connection. Your saved sessions and reminders still work — try the scan again once you're back online.",
+    "boundaryTitle": "Something broke",
+    "boundaryBody": "ParkProof hit an unexpected error. Reloading usually fixes it, and your saved sessions are safe on this device.",
+    "boundaryReload": "Reload ParkProof",
+    "storageRecovered_one": "Your device storage was full, so the photo from 1 older parking record was removed to make space. Sign in to keep evidence safe in the cloud.",
+    "storageRecovered_other": "Your device storage was full, so photos from {{count}} older parking records were removed to make space. Sign in to keep evidence safe in the cloud.",
+    "photoSyncFailed": "A photo didn't back up to the cloud. It's safe on this device — open the session to retry."
   },
   "pdf": {
     "common": {
