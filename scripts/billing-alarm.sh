@@ -2,21 +2,26 @@
 # ParkProof — create or update an AWS Budgets monthly cost alarm.
 #
 # Usage:
-#   bash scripts/billing-alarm.sh                            # uses defaults
-#   bash scripts/billing-alarm.sh email@example.com          # override email
-#   bash scripts/billing-alarm.sh email@example.com 25       # override threshold (USD)
+#   bash scripts/billing-alarm.sh you@example.com            # email required (or set ALARM_EMAIL)
+#   bash scripts/billing-alarm.sh you@example.com 25         # override threshold (USD)
 #
-# Defaults: $10/month threshold, alerts the email below.
+# Threshold defaults to $10/month. The alarm email has no default — pass it.
 # AWS Budgets is free for the first 2 budgets per account.
 
 set -euo pipefail
 
-DEFAULT_EMAIL="moltensnake@gmail.com"
 DEFAULT_THRESHOLD=10
 
-EMAIL="${1:-$DEFAULT_EMAIL}"
+# No personal default — pass the alarm email as the first arg or via $ALARM_EMAIL.
+EMAIL="${1:-${ALARM_EMAIL:-}}"
 THRESHOLD="${2:-$DEFAULT_THRESHOLD}"
 BUDGET_NAME="parkproof-monthly"
+
+if [[ -z "$EMAIL" ]]; then
+  echo "✗ No alarm email. Pass one as the first arg or set ALARM_EMAIL." >&2
+  echo "  e.g. bash scripts/billing-alarm.sh alerts@parkproof.com.au 25" >&2
+  exit 1
+fi
 
 cd "$(dirname "$0")/.."
 

@@ -138,7 +138,7 @@ phone on the desk, no Slack/email open.
    - `[4/6] Building frontend` ← npm run build, ~30s
    - `[4.5/6] Layering marketing landing + SW shim into dist/` ←
      new step, prints landing-file count + SW shim path
-   - `[5/6] S3 bucket: parkproof-app-251800369612` ← uploads ~5MB
+   - `[5/6] S3 bucket: parkproof-app-<ACCOUNT_ID>` ← uploads ~5MB
    - `[6/6] CloudFront: parkproof-cdn` ← invalidates `/*`
    - `✓ Deploy complete`
 

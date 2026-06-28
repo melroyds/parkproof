@@ -66,7 +66,7 @@ if (!apiUrl) {
   apiUrl = apiUrl.replace(/\/[^/]*$/, '')
 }
 
-const testEmail = `parkproof-smoketest-${Date.now()}@dsouza.tech`
+const testEmail = `parkproof-smoketest-${Date.now()}@example.com`
 const testPassword = `SmokeTest!${Date.now()}`
 
 console.log('▶ Smoke-testing auth + cloud sync against the live deployment')

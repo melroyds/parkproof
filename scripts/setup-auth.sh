@@ -100,8 +100,8 @@ APP_CLIENT_ID=$(aws cognito-idp list-user-pool-clients \
 # Callback URLs: the live CloudFront origin + local dev. Update when adding
 # more environments (staging, custom domain) by re-running this script after
 # editing the array below.
-CALLBACK_URLS='["https://www.parkproof.com.au/auth/callback","https://parkproof.dsouza.tech/auth/callback","https://d1jmpu2roekssu.cloudfront.net/auth/callback","http://localhost:5173/auth/callback"]'
-LOGOUT_URLS='["https://www.parkproof.com.au/","https://parkproof.dsouza.tech/","https://d1jmpu2roekssu.cloudfront.net/","http://localhost:5173/"]'
+CALLBACK_URLS='["https://www.parkproof.com.au/auth/callback","https://d1jmpu2roekssu.cloudfront.net/auth/callback","http://localhost:5173/auth/callback"]'
+LOGOUT_URLS='["https://www.parkproof.com.au/","https://d1jmpu2roekssu.cloudfront.net/","http://localhost:5173/"]'
 
 if [[ -z "$APP_CLIENT_ID" || "$APP_CLIENT_ID" == "None" ]]; then
   echo "  • creating client"
@@ -212,7 +212,6 @@ else
       "AllowedMethods": ["GET","PUT","HEAD"],
       "AllowedOrigins": [
         "https://www.parkproof.com.au",
-        "https://parkproof.dsouza.tech",
         "https://d1jmpu2roekssu.cloudfront.net",
         "http://localhost:5173"
       ],

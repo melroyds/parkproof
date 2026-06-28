@@ -85,7 +85,7 @@ The Bundle ID can't be changed later — pick something durable. It's free to cr
 4. **Continue** → **Register**.
 5. Click into the new Services ID from the list. Tick **Sign In with Apple** → click **Configure** on the same row → in the modal:
    - **Primary App ID**: select the App ID created in step 1 (`au.com.parkproof.app`).
-   - **Domains and Subdomains**: `<your-hosted-ui-domain>` (e.g. `parkproof-251800369612.auth.ap-southeast-2.amazoncognito.com`) — no `https://` prefix.
+   - **Domains and Subdomains**: `<your-hosted-ui-domain>` (e.g. `parkproof-<account-id>.auth.ap-southeast-2.amazoncognito.com`) — no `https://` prefix.
    - **Return URLs**: `https://<your-hosted-ui-domain>/oauth2/idpresponse`
    - **Save** → **Continue** → **Save**.
 
