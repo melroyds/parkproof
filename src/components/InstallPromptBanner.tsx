@@ -163,7 +163,7 @@ export default function InstallPromptBanner() {
           type="button"
           onClick={dismiss}
           aria-label={t('common.close')}
-          className="text-ink-400 hover:text-white leading-none text-base px-1"
+          className="text-ink-400 hover:text-white leading-none text-base px-1 min-w-[44px] min-h-[44px] inline-flex items-center justify-center -my-2.5"
         >
           ×
         </button>

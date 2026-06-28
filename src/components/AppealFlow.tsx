@@ -111,7 +111,7 @@ export default function AppealFlow({ session, onBack }: Props) {
   if (stage.name === 'error') {
     return (
       <main className="min-h-screen flex flex-col p-6 max-w-md mx-auto w-full">
-        <button onClick={onBack} className="self-start text-ink-600 hover:text-ink-900 text-sm mb-4">
+        <button onClick={onBack} className="self-start min-h-[44px] inline-flex items-center -my-2.5 text-ink-600 hover:text-ink-900 text-sm mb-4">
           {t('common.back')}
         </button>
         <div className="w-16 h-16 rounded-full bg-accent-100 border-2 border-accent-500 text-accent-700 flex items-center justify-center mb-4 mx-auto">
@@ -120,7 +120,7 @@ export default function AppealFlow({ session, onBack }: Props) {
         <h2 className="font-display text-2xl font-extrabold text-ink-900 text-center">
           {t('appeal.errorHeader')}
         </h2>
-        <p className="text-sm text-ink-700 mt-3 mb-6 break-words text-center">{stage.message}</p>
+        <p role="alert" className="text-sm text-ink-700 mt-3 mb-6 break-words text-center">{stage.message}</p>
         <button
           onClick={() => setStage({ name: 'capture' })}
           className="bg-brand-500 hover:bg-brand-600 text-white font-semibold py-3 rounded-2xl shadow-md"
@@ -137,7 +137,7 @@ export default function AppealFlow({ session, onBack }: Props) {
       <div className="min-h-screen flex flex-col p-6 max-w-md mx-auto w-full">
         <button
           onClick={onBack}
-          className="self-start text-ink-600 hover:text-ink-900 text-sm mb-4"
+          className="self-start min-h-[44px] inline-flex items-center -my-2.5 text-ink-600 hover:text-ink-900 text-sm mb-4"
         >
           {session ? t('common.backToSession') : t('common.backToHome')}
         </button>
@@ -171,12 +171,12 @@ export default function AppealFlow({ session, onBack }: Props) {
 
         <section className="bg-white rounded-2xl border border-paper-300 p-5 mb-6">
           <div className="flex items-baseline justify-between mb-2">
-            <h3 className="text-xs uppercase tracking-widest font-semibold text-ink-500">
+            <h3 id="appeal-letter-label" className="text-xs uppercase tracking-widest font-semibold text-ink-500">
               {t('appeal.letter')}
             </h3>
             <button
               onClick={() => setEditedLetter(stage.draft.appeal_letter)}
-              className="text-xs text-ink-600 hover:text-ink-900 underline"
+              className="min-h-[44px] inline-flex items-center -my-1.5 text-xs text-ink-600 hover:text-ink-900 underline"
             >
               {t('appeal.resetDraft')}
             </button>
@@ -185,6 +185,7 @@ export default function AppealFlow({ session, onBack }: Props) {
             value={editedLetter}
             onChange={(e) => setEditedLetter(e.target.value)}
             rows={16}
+            aria-labelledby="appeal-letter-label"
             className="w-full text-sm text-ink-900 bg-paper-50 border border-paper-300 rounded-xl p-3 leading-relaxed focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 resize-y"
           />
         </section>
@@ -196,6 +197,9 @@ export default function AppealFlow({ session, onBack }: Props) {
           >
             {copied ? t('appeal.copied') : t('appeal.copyToClipboard')}
           </button>
+          <span role="status" aria-live="polite" className="sr-only">
+            {copied ? t('appeal.copied') : ''}
+          </span>
           {/* The evidence PDF attaches the saved parking session — only
               offered when there is one. The standalone path (no session) keeps
               copy-to-clipboard as the way out. */}
@@ -230,7 +234,7 @@ export default function AppealFlow({ session, onBack }: Props) {
     <div className="min-h-screen flex flex-col p-6 max-w-md mx-auto w-full">
       <button
         onClick={onBack}
-        className="self-start text-ink-600 hover:text-ink-900 text-sm mb-4 transition-colors"
+        className="self-start min-h-[44px] inline-flex items-center -my-2.5 text-ink-600 hover:text-ink-900 text-sm mb-4 transition-colors"
       >
         {session ? t('common.backToSession') : t('common.backToHome')}
       </button>

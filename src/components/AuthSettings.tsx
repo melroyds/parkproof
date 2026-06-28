@@ -210,14 +210,14 @@ export default function AuthSettings({ onBack, onOpenPrivacy, onDeleted }: Props
               <button
                 onClick={() => setDeleteStage('idle')}
                 disabled={deleteStage === 'busy'}
-                className="flex-1 bg-paper-200 hover:bg-paper-300 text-ink-700 font-medium py-2.5 rounded-lg text-sm"
+                className="flex-1 bg-paper-200 hover:bg-paper-300 text-ink-700 font-medium py-3 min-h-[44px] rounded-lg text-sm"
               >
                 {t('common.cancel')}
               </button>
               <button
                 onClick={handleDelete}
                 disabled={deleteStage === 'busy' || deleteConfirmText !== 'DELETE'}
-                className="flex-1 bg-accent-600 hover:bg-accent-700 disabled:opacity-60 text-white font-semibold py-2.5 rounded-lg text-sm"
+                className="flex-1 bg-accent-600 hover:bg-accent-700 disabled:opacity-60 text-ink-900 font-semibold py-3 min-h-[44px] rounded-lg text-sm"
               >
                 {deleteStage === 'busy' ? t('settings.deleting') : t('settings.deleteForever')}
               </button>

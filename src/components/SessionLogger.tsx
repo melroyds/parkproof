@@ -301,17 +301,19 @@ export default function SessionLogger({
       <section className="mb-3 bg-white rounded-2xl border border-paper-300 p-4">
         <div className="flex items-center justify-between">
           <h3 className="font-semibold text-sm text-ink-900">{t('logger.location')}</h3>
-          {gps.status === 'pending' && (
-            <span className="text-xs text-ink-600">{t('logger.acquiringGps')}</span>
-          )}
-          {gps.status === 'ok' && (
-            <span className="text-xs text-brand-700 font-medium">{t('logger.captured')}</span>
-          )}
-          {gps.status === 'error' && (
-            <button onClick={requestGps} className="text-xs text-accent-600 underline">
-              {t('common.retry')}
-            </button>
-          )}
+          <div role="status" aria-live="polite">
+            {gps.status === 'pending' && (
+              <span className="text-xs text-ink-600">{t('logger.acquiringGps')}</span>
+            )}
+            {gps.status === 'ok' && (
+              <span className="text-xs text-brand-700 font-medium">{t('logger.captured')}</span>
+            )}
+            {gps.status === 'error' && (
+              <button onClick={requestGps} className="min-h-[44px] inline-flex items-center -my-2.5 text-xs text-accent-600 underline">
+                {t('common.retry')}
+              </button>
+            )}
+          </div>
         </div>
         {/* Why location is used + that it stays on-device — sets expectations
             before the GPS prompt's consequences (address, accuracy) land. */}
@@ -346,7 +348,7 @@ export default function SessionLogger({
                 </div>
                 <button
                   onClick={startEdit}
-                  className="w-full bg-accent-600 hover:bg-accent-700 text-white font-semibold py-2.5 rounded-lg text-sm shadow-md shadow-accent-500/20 transition-colors"
+                  className="w-full bg-accent-600 hover:bg-accent-700 text-ink-900 font-semibold py-2.5 rounded-lg text-sm shadow-md shadow-accent-500/20 transition-colors"
                 >
                   {t('logger.enterAddress')}
                 </button>
@@ -356,7 +358,7 @@ export default function SessionLogger({
 
           return (
             <div className="mt-2 flex items-start gap-3">
-              <div className="flex-1 min-w-0">
+              <div className="flex-1 min-w-0" role="status" aria-live="polite">
                 {gps.address ? (
                   <p className="text-sm text-ink-900">
                     {gps.address}{' '}
@@ -366,7 +368,8 @@ export default function SessionLogger({
                   </p>
                 ) : gps.addressLoading ? (
                   <p className="text-xs text-ink-600 font-mono">
-                    {gps.coords.lat.toFixed(5)}, {gps.coords.lng.toFixed(5)} · {t('logger.resolvingAddress')}
+                    {gps.coords.lat.toFixed(5)}, {gps.coords.lng.toFixed(5)}{' '}
+                    <span aria-hidden="true">·</span> {t('logger.resolvingAddress')}
                   </p>
                 ) : (
                   <p className="text-xs text-ink-600 font-mono">
@@ -391,7 +394,11 @@ export default function SessionLogger({
 
         {(gps.status === 'ok' || gps.status === 'error') && editMode && (
           <div className="mt-3 space-y-2">
+            <label htmlFor="logger-address-input" className="sr-only">
+              {t('logger.addressPlaceholder')}
+            </label>
             <input
+              id="logger-address-input"
               type="text"
               value={editValue}
               onChange={(e) => setEditValue(e.target.value)}
@@ -400,10 +407,17 @@ export default function SessionLogger({
                 if (e.key === 'Escape') cancelEdit()
               }}
               placeholder={t('logger.addressPlaceholder')}
+              autoComplete="street-address"
               autoFocus
+              aria-invalid={editError ? true : undefined}
+              aria-describedby={editError ? 'logger-address-error' : undefined}
               className="w-full border border-paper-300 rounded-lg px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
             />
-            {editError && <p className="text-xs text-accent-700">{editError}</p>}
+            {editError && (
+              <p id="logger-address-error" role="alert" className="text-xs text-accent-700">
+                {editError}
+              </p>
+            )}
             <div className="flex gap-2">
               <button
                 onClick={cancelEdit}
@@ -424,14 +438,14 @@ export default function SessionLogger({
         )}
         {gps.status === 'error' && !editMode && (
           <div className="mt-2 space-y-2">
-            <p className="text-xs text-ink-700 leading-relaxed">{gps.message}</p>
+            <p role="alert" className="text-xs text-ink-700 leading-relaxed">{gps.message}</p>
             <p className="text-xs text-ink-600">{t('logger.canSaveWithoutGps')}</p>
             {/* Even with GPS down, the driver can type the address ("corner of
                 Collins and Swanston") and keep a located record — reuses the
                 same forwardGeocode edit flow as the imprecise-GPS branch. */}
             <button
               onClick={startEdit}
-              className="w-full bg-accent-600 hover:bg-accent-700 text-white font-semibold py-2.5 rounded-lg text-sm shadow-md shadow-accent-500/20 transition-colors"
+              className="w-full bg-accent-600 hover:bg-accent-700 text-ink-900 font-semibold py-2.5 rounded-lg text-sm shadow-md shadow-accent-500/20 transition-colors"
             >
               {t('logger.enterAddress')}
             </button>

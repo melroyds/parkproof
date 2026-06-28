@@ -206,12 +206,20 @@ export default function AuthFlow({ onDone, onCancel }: Props) {
       </p>
 
       {info && (
-        <div className="mb-4 bg-brand-50 border border-brand-200 rounded-xl p-3 text-sm text-brand-800 leading-relaxed">
+        <div
+          role="status"
+          aria-live="polite"
+          className="mb-4 bg-brand-50 border border-brand-200 rounded-xl p-3 text-sm text-brand-800 leading-relaxed"
+        >
           {info}
         </div>
       )}
       {error && (
-        <div className="mb-4 bg-accent-50 border border-accent-300 rounded-xl p-3 text-sm text-accent-800 leading-relaxed break-words">
+        <div
+          id="auth-error"
+          role="alert"
+          className="mb-4 bg-accent-50 border border-accent-300 rounded-xl p-3 text-sm text-accent-800 leading-relaxed break-words"
+        >
           {error}
         </div>
       )}
@@ -254,6 +262,8 @@ export default function AuthFlow({ onDone, onCancel }: Props) {
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              aria-invalid={error ? true : undefined}
+              aria-describedby={error ? 'auth-error' : undefined}
               className="mt-1 w-full border border-paper-300 rounded-xl px-3 py-2.5 text-base focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
             />
           </label>
@@ -266,6 +276,8 @@ export default function AuthFlow({ onDone, onCancel }: Props) {
               minLength={8}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              aria-invalid={error ? true : undefined}
+              aria-describedby={error ? 'auth-error' : undefined}
               className="mt-1 w-full border border-paper-300 rounded-xl px-3 py-2.5 text-base focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
             />
             {stage.name === 'sign-up' && (
@@ -302,6 +314,8 @@ export default function AuthFlow({ onDone, onCancel }: Props) {
               required
               value={code}
               onChange={(e) => setCode(e.target.value)}
+              aria-invalid={error ? true : undefined}
+              aria-describedby={error ? 'auth-error' : undefined}
               className="mt-1 w-full border border-paper-300 rounded-xl px-3 py-2.5 text-base font-mono tracking-widest focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
             />
           </label>
@@ -333,6 +347,8 @@ export default function AuthFlow({ onDone, onCancel }: Props) {
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              aria-invalid={error ? true : undefined}
+              aria-describedby={error ? 'auth-error' : undefined}
               className="mt-1 w-full border border-paper-300 rounded-xl px-3 py-2.5 text-base focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
             />
           </label>
@@ -357,6 +373,8 @@ export default function AuthFlow({ onDone, onCancel }: Props) {
               required
               value={code}
               onChange={(e) => setCode(e.target.value)}
+              aria-invalid={error ? true : undefined}
+              aria-describedby={error ? 'auth-error' : undefined}
               className="mt-1 w-full border border-paper-300 rounded-xl px-3 py-2.5 text-base font-mono tracking-widest focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
             />
           </label>
@@ -369,6 +387,8 @@ export default function AuthFlow({ onDone, onCancel }: Props) {
               minLength={8}
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
+              aria-invalid={error ? true : undefined}
+              aria-describedby={error ? 'auth-error' : undefined}
               className="mt-1 w-full border border-paper-300 rounded-xl px-3 py-2.5 text-base focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
             />
           </label>
@@ -389,7 +409,7 @@ export default function AuthFlow({ onDone, onCancel }: Props) {
             <button onClick={() => goTo({ name: 'sign-up' })} className="text-brand-700 hover:text-brand-800 underline">
               {t('auth.noAccount')}
             </button>
-            <span className="mx-2">·</span>
+            <span className="mx-2" aria-hidden="true">·</span>
             <button onClick={() => goTo({ name: 'forgot' })} className="text-brand-700 hover:text-brand-800 underline">
               {t('auth.forgotPasswordLink')}
             </button>

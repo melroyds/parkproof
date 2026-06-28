@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { ParkingRules } from '../types'
 import Icon from './Icon'
@@ -35,7 +35,7 @@ function formatUntil(iso: string | null, timeZone: string): string | null {
 }
 
 const URGENCY_STYLE = {
-  normal: 'text-white/85',
+  normal: 'text-white',
   warning: 'text-white font-semibold',
   urgent: 'text-white font-bold',
   expired: 'text-white font-extrabold uppercase tracking-widest',
@@ -176,6 +176,14 @@ export default function ParkingResult({
   // over-count the accuracy telemetry. A ref, not state, so the second tap in
   // the same gesture sees the flag before React re-renders.
   const feedbackSent = useRef(false)
+  // Move focus to the verdict heading when the result mounts so a screen reader
+  // announces the can-park / can't-park answer (the app's core output) on this
+  // route-like view change. Programmatic focus, so the ring is suppressed and
+  // the "until" line is wired as the heading's description.
+  const verdictRef = useRef<HTMLHeadingElement>(null)
+  useEffect(() => {
+    verdictRef.current?.focus()
+  }, [])
   const now = useNow()
   const {
     observations,
@@ -229,7 +237,7 @@ export default function ParkingResult({
       <div
         className={`rounded-3xl p-8 text-center text-white shadow-xl ${
           can_park_now
-            ? 'bg-gradient-to-br from-emerald-500 to-emerald-700 shadow-emerald-600/30'
+            ? 'bg-gradient-to-br from-emerald-700 to-emerald-800 shadow-emerald-700/40'
             : 'bg-gradient-to-br from-red-600 to-red-800 shadow-red-600/30'
         }`}
       >
@@ -238,11 +246,16 @@ export default function ParkingResult({
             <Icon name={can_park_now ? 'check' : 'warning'} className="w-12 h-12" strokeWidth={2.5} />
           </div>
         </div>
-        <h2 className="font-display text-3xl font-extrabold tracking-tight">
+        <h2
+          ref={verdictRef}
+          tabIndex={-1}
+          aria-describedby={can_park_now && untilLabel ? 'verdict-until' : undefined}
+          className="font-display text-3xl font-extrabold tracking-tight outline-none"
+        >
           {can_park_now ? t('result.canPark') : t('result.cantPark')}
         </h2>
         {can_park_now && untilLabel && (
-          <p className="text-white/90 text-lg mt-2 font-display font-semibold">
+          <p id="verdict-until" className="text-white text-lg mt-2 font-display font-semibold">
             {t('result.until', { when: untilLabel })}
           </p>
         )}
@@ -304,7 +317,7 @@ export default function ParkingResult({
               <ul className="space-y-1.5">
                 {group.items.map((item, ii) => (
                   <li key={ii} className="flex gap-2 text-ink-900 text-base">
-                    <span className="text-brand-400 select-none">•</span>
+                    <span aria-hidden="true" className="text-brand-400 select-none">•</span>
                     <span>{item}</span>
                   </li>
                 ))}
@@ -362,7 +375,7 @@ export default function ParkingResult({
                 })
                 onRetake()
               }}
-              className="flex-1 bg-accent-600 hover:bg-accent-700 text-white font-semibold py-2.5 rounded-xl shadow-md shadow-accent-500/25 transition-colors"
+              className="flex-1 bg-accent-600 hover:bg-accent-700 text-ink-900 font-semibold py-2.5 rounded-xl shadow-md shadow-accent-500/25 transition-colors"
             >
               {t('result.verifyRetake')}
             </button>
@@ -436,7 +449,7 @@ export default function ParkingResult({
       {isPermitZone && (
         <section className="mt-4 bg-amber-50 border-2 border-amber-400 rounded-2xl p-5">
           <div className="flex items-start gap-3">
-            <div className="w-9 h-9 rounded-lg bg-amber-500 text-white flex items-center justify-center shrink-0 mt-0.5 font-display font-extrabold text-lg">
+            <div aria-hidden="true" className="w-9 h-9 rounded-lg bg-amber-500 text-white flex items-center justify-center shrink-0 mt-0.5 font-display font-extrabold text-lg">
               P
             </div>
             <div className="flex-1 min-w-0">

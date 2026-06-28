@@ -80,7 +80,7 @@ export default function LanguageSelector() {
         aria-haspopup="listbox"
         aria-expanded={open}
         aria-label={t('language.title')}
-        className="inline-flex items-center gap-2 bg-white hover:bg-paper-50 border border-paper-300 rounded-full pl-1.5 pr-3 py-1 text-sm font-medium text-ink-900 transition-colors shadow-sm"
+        className="inline-flex items-center gap-2 bg-white hover:bg-paper-50 border border-paper-300 rounded-full pl-1.5 pr-3 py-2.5 min-h-[44px] text-sm font-medium text-ink-900 transition-colors shadow-sm"
       >
         <ActiveFlag className="block w-6 h-4 rounded-sm overflow-hidden" />
         <span>{activeLang.native}</span>
@@ -110,7 +110,7 @@ export default function LanguageSelector() {
                   type="button"
                   onClick={() => handlePick(lang.code)}
                   className={[
-                    'w-full flex items-center gap-3 px-3 py-2 text-sm text-left transition-colors',
+                    'w-full flex items-center gap-3 px-3 py-2.5 min-h-[44px] text-sm text-left transition-colors',
                     isActive
                       ? 'bg-brand-50 text-brand-800 font-semibold'
                       : 'hover:bg-paper-50 text-ink-800',

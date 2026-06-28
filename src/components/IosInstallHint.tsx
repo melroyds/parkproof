@@ -78,7 +78,7 @@ export default function IosInstallHint() {
         </div>
         <button
           onClick={dismiss}
-          className="shrink-0 text-xs font-semibold text-brand-700 hover:text-brand-800 underline px-2 py-1"
+          className="shrink-0 min-h-[44px] py-2.5 inline-flex items-center text-xs font-semibold text-brand-700 hover:text-brand-800 underline px-2"
         >
           {t('installPrompt.iosDismiss')}
         </button>

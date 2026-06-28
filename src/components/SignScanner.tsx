@@ -272,7 +272,7 @@ export default function SignScanner({ onCapture, onReuseSession, onNoSignScan, o
     <div className="min-h-screen flex flex-col p-6 max-w-md mx-auto w-full">
       <button
         onClick={onCancel}
-        className="self-start text-ink-600 hover:text-ink-900 text-sm mb-4 transition-colors"
+        className="self-start text-ink-600 hover:text-ink-900 text-sm mb-4 transition-colors min-h-[44px] inline-flex items-center py-2.5 -my-2.5"
       >
         {t('common.back')}
       </button>
@@ -404,10 +404,10 @@ export default function SignScanner({ onCapture, onReuseSession, onNoSignScan, o
                 </div>
                 <button
                   onClick={() => setCameraDenied(false)}
-                  className="text-ink-500 hover:text-ink-900 shrink-0 text-lg leading-none transition-colors"
+                  className="text-ink-500 hover:text-ink-900 shrink-0 text-lg leading-none transition-colors min-w-[44px] min-h-[44px] inline-flex items-center justify-center"
                   aria-label={t('common.back')}
                 >
-                  &times;
+                  <span aria-hidden="true">&times;</span>
                 </button>
               </div>
             </div>

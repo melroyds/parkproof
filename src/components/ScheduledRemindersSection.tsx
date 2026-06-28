@@ -384,9 +384,9 @@ export default function ScheduledRemindersSection({ session }: Props) {
                     onClick={() => void handleRemove(fire_at)}
                     disabled={busy}
                     aria-label={t('scheduledReminders.cancelOne')}
-                    className="text-ink-500 hover:text-red-600 disabled:opacity-40 leading-none text-lg px-1"
+                    className="text-ink-500 hover:text-red-600 disabled:opacity-40 leading-none text-lg px-1 min-w-[44px] min-h-[44px] inline-flex items-center justify-center -my-1.5"
                   >
-                    ×
+                    <span aria-hidden="true">×</span>
                   </button>
                 )}
               </li>
@@ -410,7 +410,7 @@ export default function ScheduledRemindersSection({ session }: Props) {
               setPicking(true)
             }}
             disabled={busy || !anyChipViable}
-            className="text-sm bg-brand-50 hover:bg-brand-100 disabled:opacity-50 text-brand-700 font-semibold px-3 py-2 rounded-lg border border-brand-200"
+            className="text-sm bg-brand-50 hover:bg-brand-100 disabled:opacity-50 text-brand-700 font-semibold px-3 py-2.5 rounded-lg border border-brand-200 min-h-[44px] inline-flex items-center justify-center"
           >
             {busy ? t('scheduledReminders.saving') : t('scheduledReminders.addAnother')}
           </button>
@@ -419,7 +419,7 @@ export default function ScheduledRemindersSection({ session }: Props) {
               type="button"
               onClick={() => void handleCancelAll()}
               disabled={busy}
-              className="text-sm text-ink-600 hover:text-red-700 disabled:opacity-50 font-medium px-3 py-2"
+              className="text-sm text-ink-600 hover:text-red-700 disabled:opacity-50 font-medium px-3 py-2.5 min-h-[44px] inline-flex items-center justify-center"
             >
               {t('scheduledReminders.cancelAll')}
             </button>
@@ -441,7 +441,7 @@ export default function ScheduledRemindersSection({ session }: Props) {
               {chipOptions.map((chip) => {
                 const disabled = chip.isPast || chip.alreadyScheduled || busy
                 const base =
-                  'px-3 py-1.5 rounded-full text-xs font-semibold border-2 transition-colors min-w-[72px] text-center'
+                  'px-3 py-2.5 min-h-[44px] inline-flex items-center justify-center rounded-full text-xs font-semibold border-2 transition-colors min-w-[72px] text-center'
                 const cls = disabled
                   ? `${base} bg-paper-100 border-paper-200 text-ink-400 ${chip.isPast ? 'line-through' : ''} cursor-not-allowed`
                   : `${base} bg-white border-brand-300 text-brand-700 hover:bg-brand-50 active:bg-brand-100`
@@ -472,7 +472,7 @@ export default function ScheduledRemindersSection({ session }: Props) {
           <button
             type="button"
             onClick={() => setPicking(false)}
-            className="mt-3 text-xs text-ink-600 hover:text-ink-900 font-medium"
+            className="mt-3 text-xs text-ink-600 hover:text-ink-900 font-medium min-h-[44px] py-2.5 inline-flex items-center"
           >
             {t('scheduledReminders.pickCancel')}
           </button>

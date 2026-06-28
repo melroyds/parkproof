@@ -62,7 +62,7 @@ export default function LandingFeatures({ onScanCta, onSignInCta }: Props) {
     // Tailwind built-in purple — Tailwind v4 ships the full default palette,
     // so this works without adding a custom token in index.css.
     purple: 'bg-purple-500 text-white',
-    accent: 'bg-accent-500 text-white',
+    accent: 'bg-accent-500 text-ink-900',
   }
 
   return (

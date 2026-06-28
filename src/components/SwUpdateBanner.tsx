@@ -110,7 +110,7 @@ export default function SwUpdateBanner() {
           type="button"
           onClick={() => setDismissed(true)}
           aria-label={t('common.close')}
-          className="text-brand-100 hover:text-white leading-none text-base px-1"
+          className="text-brand-100 hover:text-white leading-none text-base min-w-[44px] min-h-[44px] inline-flex items-center justify-center -my-2.5"
         >
           ×
         </button>

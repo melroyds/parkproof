@@ -83,12 +83,15 @@ function isOffline(): boolean {
 function Toast({ message, onClose }: { message: string | null; onClose: () => void }) {
   if (!message) return null
   return (
-    <div className="fixed bottom-4 inset-x-4 z-50 max-w-md mx-auto bg-ink-900 text-white rounded-2xl shadow-lg p-4 flex items-start gap-3">
+    <div
+      role="alert"
+      className="fixed bottom-4 inset-x-4 z-50 max-w-md mx-auto bg-ink-900 text-white rounded-2xl shadow-lg p-4 flex items-start gap-3"
+    >
       <p className="text-sm leading-relaxed flex-1">{message}</p>
       <button
         onClick={onClose}
         aria-label="Dismiss"
-        className="text-white/70 hover:text-white text-sm font-semibold shrink-0 px-1"
+        className="text-white/70 hover:text-white text-sm font-semibold shrink-0 min-w-[44px] min-h-[44px] inline-flex items-center justify-center -my-2.5 -mr-2"
       >
         ✕
       </button>
@@ -486,12 +489,14 @@ function App() {
         <div className="w-16 h-16 rounded-full bg-accent-100 border-2 border-accent-500 text-accent-700 flex items-center justify-center mb-4">
           <Icon name="warning" className="w-8 h-8" />
         </div>
-        <h2 className="font-display text-2xl font-extrabold text-ink-900">
-          {view.offline ? t('errors.offlineTitle') : t('errors.somethingWrong')}
-        </h2>
-        <p className="text-sm text-ink-700 mt-3 mb-6 break-words">
-          {view.offline ? t('errors.offlineBody') : view.message}
-        </p>
+        <div role="alert">
+          <h2 className="font-display text-2xl font-extrabold text-ink-900">
+            {view.offline ? t('errors.offlineTitle') : t('errors.somethingWrong')}
+          </h2>
+          <p className="text-sm text-ink-700 mt-3 mb-6 break-words">
+            {view.offline ? t('errors.offlineBody') : view.message}
+          </p>
+        </div>
         <div className="flex flex-col gap-2 w-full">
           <button
             onClick={() => setView({ name: 'scan' })}
@@ -890,7 +895,7 @@ function App() {
             the flow drafts from the infringement notice alone. */}
         <button
           onClick={() => setView({ name: 'appeal', session: null })}
-          className="mt-8 text-sm text-brand-700 hover:text-brand-800 font-medium underline self-center"
+          className="mt-8 text-sm text-brand-700 hover:text-brand-800 font-medium underline self-center min-h-[44px] inline-flex items-center py-2.5"
         >
           {t('home.draftAppeal')}
         </button>
@@ -898,19 +903,19 @@ function App() {
         <div className="mt-6 flex items-center justify-center gap-6 self-center flex-wrap">
           <button
             onClick={() => setView({ name: 'about' })}
-            className="text-xs text-ink-500 hover:text-ink-700 underline"
+            className="text-xs text-ink-700 hover:text-ink-900 underline min-h-[44px] inline-flex items-center -my-2.5"
           >
             {t('common.about')}
           </button>
           <button
             onClick={() => setView({ name: 'privacy' })}
-            className="text-xs text-ink-500 hover:text-ink-700 underline"
+            className="text-xs text-ink-700 hover:text-ink-900 underline min-h-[44px] inline-flex items-center -my-2.5"
           >
             {t('common.privacy')}
           </button>
           <button
             onClick={() => setFeedbackOpen(true)}
-            className="text-xs text-ink-500 hover:text-ink-700 underline"
+            className="text-xs text-ink-700 hover:text-ink-900 underline min-h-[44px] inline-flex items-center -my-2.5"
           >
             {t('common.sendFeedback')}
           </button>

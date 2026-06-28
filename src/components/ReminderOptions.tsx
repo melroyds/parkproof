@@ -422,7 +422,7 @@ export default function ReminderOptions({ session, onDone }: Props) {
         {offsets.map(({ offset, isPast, fireAt }) => {
           const isSelected = selected.has(offset)
           const base =
-            'px-4 py-2 rounded-full text-sm font-semibold border-2 transition-colors min-w-[88px] text-center'
+            'px-4 py-2.5 min-h-[44px] rounded-full text-sm font-semibold border-2 transition-colors min-w-[88px] text-center'
           let cls: string
           if (isPast) {
             cls = `${base} bg-paper-100 border-paper-200 text-ink-400 line-through cursor-not-allowed`
@@ -521,12 +521,14 @@ export default function ReminderOptions({ session, onDone }: Props) {
             notifResult?.status === 'scheduled' ||
             selectedList.length === 0
           }
-          className="w-full bg-accent-500 hover:bg-accent-600 disabled:opacity-60 text-white font-semibold py-3 rounded-xl shadow-md shadow-accent-500/20 transition-colors"
+          className="w-full bg-accent-500 hover:bg-accent-600 disabled:opacity-60 text-ink-900 font-semibold py-3 rounded-xl shadow-md shadow-accent-500/20 transition-colors"
         >
           {notifBusy ? (
             <span>{t('reminders.browserRequesting')}</span>
           ) : notifResult ? (
-            <NotifStatusLine result={notifResult} />
+            <span role="status" aria-live="polite">
+              <NotifStatusLine result={notifResult} />
+            </span>
           ) : selectedList.length === 0 ? (
             <span>{t('reminders.browserNothingSelected')}</span>
           ) : (
@@ -537,7 +539,10 @@ export default function ReminderOptions({ session, onDone }: Props) {
             silently didn't get scheduled. The in-tab button above may read
             "scheduled", so this warning is essential to avoid false confidence. */}
         {pushScheduleFailed && (
-          <p className="mt-3 px-3 py-2 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs font-medium leading-snug">
+          <p
+            role="alert"
+            className="mt-3 px-3 py-2 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs font-medium leading-snug"
+          >
             {t('reminders.pushScheduleFailed')}
           </p>
         )}
@@ -691,7 +696,7 @@ function NoSignReminderPicker({ session, onDone }: Props) {
         {NOSIGN_DURATIONS_MIN.map((duration) => {
           const isSelected = selected.has(duration)
           const base =
-            'px-4 py-2 rounded-full text-sm font-semibold border-2 transition-colors min-w-[88px] text-center'
+            'px-4 py-2.5 min-h-[44px] rounded-full text-sm font-semibold border-2 transition-colors min-w-[88px] text-center'
           const cls = isSelected
             ? `${base} bg-brand-500 border-brand-500 text-white shadow-sm shadow-brand-500/30`
             : `${base} bg-white border-paper-300 text-ink-700 hover:border-brand-300`
@@ -774,12 +779,14 @@ function NoSignReminderPicker({ session, onDone }: Props) {
             notifResult?.status === 'scheduled' ||
             selectedList.length === 0
           }
-          className="w-full bg-accent-500 hover:bg-accent-600 disabled:opacity-60 text-white font-semibold py-3 rounded-xl shadow-md shadow-accent-500/20 transition-colors"
+          className="w-full bg-accent-500 hover:bg-accent-600 disabled:opacity-60 text-ink-900 font-semibold py-3 rounded-xl shadow-md shadow-accent-500/20 transition-colors"
         >
           {notifBusy ? (
             <span>{t('reminders.browserRequesting')}</span>
           ) : notifResult ? (
-            <NotifStatusLine result={notifResult} />
+            <span role="status" aria-live="polite">
+              <NotifStatusLine result={notifResult} />
+            </span>
           ) : selectedList.length === 0 ? (
             <span>{t('reminders.browserNothingSelected')}</span>
           ) : (
@@ -788,7 +795,10 @@ function NoSignReminderPicker({ session, onDone }: Props) {
         </button>
         {/* Subscribed-but-failed warning — see the expiry-path picker above. */}
         {pushScheduleFailed && (
-          <p className="mt-3 px-3 py-2 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs font-medium leading-snug">
+          <p
+            role="alert"
+            className="mt-3 px-3 py-2 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs font-medium leading-snug"
+          >
             {t('reminders.pushScheduleFailed')}
           </p>
         )}

@@ -233,7 +233,7 @@ export default function SessionDetail({
     <div className="min-h-screen flex flex-col p-6 max-w-md mx-auto w-full">
       <button
         onClick={onBack}
-        className="self-start text-ink-600 hover:text-ink-900 text-sm mb-4 transition-colors"
+        className="self-start text-ink-600 hover:text-ink-900 text-sm mb-4 transition-colors min-h-[44px] inline-flex items-center py-2.5 -my-2.5"
       >
         {t('common.backToHistory')}
       </button>
@@ -249,7 +249,9 @@ export default function SessionDetail({
         <div className="mb-6 inline-flex items-center gap-2 self-start bg-brand-50 border border-brand-200 text-brand-800 text-xs font-semibold px-3 py-1.5 rounded-full">
           <Icon name="check" className="w-4 h-4" strokeWidth={2.5} />
           <span>{t('session.cryptoSigned')}</span>
-          <span className="text-brand-600 font-normal">·</span>
+          <span className="text-brand-600 font-normal" aria-hidden="true">
+            ·
+          </span>
           <span className="text-brand-700 font-mono text-[10px]">
             {new Date(session.signature.signed_at).toLocaleString('en-AU', {
               day: 'numeric',
@@ -280,7 +282,7 @@ export default function SessionDetail({
           <button
             onClick={retryPhotoSync}
             disabled={retryingPhoto}
-            className="text-xs font-semibold text-brand-700 hover:text-brand-800 underline shrink-0 disabled:opacity-60"
+            className="text-xs font-semibold text-brand-700 hover:text-brand-800 underline shrink-0 disabled:opacity-60 min-h-[44px] inline-flex items-center -my-1.5"
           >
             {t('session.photoSyncRetry')}
           </button>
@@ -404,13 +406,16 @@ export default function SessionDetail({
           remember to add the WHY rather than just the WHEN-and-WHERE. */}
       <section className="bg-white rounded-2xl border border-paper-300 p-5 mb-3">
         <div className="flex items-baseline justify-between mb-2">
-          <h3 className="text-xs uppercase tracking-widest font-semibold text-ink-500">
+          <h3
+            id="session-note-label"
+            className="text-xs uppercase tracking-widest font-semibold text-ink-500"
+          >
             {t('session.noteLabel')}
           </h3>
           {!noteEditing && (
             <button
               onClick={startNoteEdit}
-              className="text-xs font-medium text-brand-700 hover:text-brand-800 underline"
+              className="text-xs font-medium text-brand-700 hover:text-brand-800 underline min-h-[44px] inline-flex items-center -my-1.5"
             >
               {currentNote ? t('common.edit') : t('session.addNote')}
             </button>
@@ -426,6 +431,9 @@ export default function SessionDetail({
               rows={3}
               autoFocus
               placeholder={t('session.notePlaceholder')}
+              aria-labelledby="session-note-label"
+              aria-invalid={noteError ? true : undefined}
+              aria-describedby={noteError ? 'session-note-error' : undefined}
               className="w-full text-sm text-ink-900 bg-paper-50 border border-paper-300 rounded-xl p-3 leading-relaxed focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 resize-y"
             />
             <div className="flex items-center justify-between gap-2">
@@ -435,20 +443,24 @@ export default function SessionDetail({
               <div className="flex gap-2">
                 <button
                   onClick={cancelNoteEdit}
-                  className="bg-paper-200 hover:bg-paper-300 text-ink-700 font-medium px-3 py-1.5 rounded-lg text-xs transition-colors"
+                  className="bg-paper-200 hover:bg-paper-300 text-ink-700 font-medium px-3 py-2.5 min-h-[44px] inline-flex items-center justify-center rounded-lg text-xs transition-colors"
                 >
                   {t('common.cancel')}
                 </button>
                 <button
                   onClick={saveNote}
-                  className="bg-brand-500 hover:bg-brand-600 text-white font-semibold px-3 py-1.5 rounded-lg text-xs transition-colors"
+                  className="bg-brand-500 hover:bg-brand-600 text-white font-semibold px-3 py-2.5 min-h-[44px] inline-flex items-center justify-center rounded-lg text-xs transition-colors"
                 >
                   {t('session.saveNote')}
                 </button>
               </div>
             </div>
             {noteError && (
-              <p className="text-xs text-accent-700 break-words leading-relaxed">
+              <p
+                id="session-note-error"
+                role="alert"
+                className="text-xs text-accent-700 break-words leading-relaxed"
+              >
                 {noteError}
               </p>
             )}
@@ -462,7 +474,7 @@ export default function SessionDetail({
             {t('session.noNote')}{' '}
             <button
               onClick={startNoteEdit}
-              className="underline font-medium text-brand-700"
+              className="underline font-medium text-brand-700 min-h-[44px] inline-flex items-center py-2.5 -my-2 -mx-1 align-middle"
             >
               {t('session.addNote')}
             </button>{' '}
@@ -569,7 +581,7 @@ export default function SessionDetail({
           href={verifyHref}
           target="_blank"
           rel="noreferrer"
-          className="text-xs text-brand-700 hover:text-brand-800 underline text-center py-1"
+          className="text-xs text-brand-700 hover:text-brand-800 underline text-center min-h-[44px] inline-flex items-center justify-center py-2.5 -my-1.5"
         >
           {t('session.howToVerify')}
         </a>

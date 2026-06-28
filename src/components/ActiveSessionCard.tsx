@@ -42,11 +42,11 @@ interface Props {
  */
 const URGENCY_STYLES = {
   normal: {
-    surface: 'bg-gradient-to-br from-emerald-500 to-emerald-700 shadow-emerald-600/30',
+    surface: 'bg-gradient-to-br from-emerald-700 to-emerald-800 shadow-emerald-700/40',
     iconRing: 'bg-white/20',
   },
   warning: {
-    surface: 'bg-gradient-to-br from-amber-400 to-amber-600 shadow-amber-500/30',
+    surface: 'bg-gradient-to-br from-amber-700 to-amber-800 shadow-amber-700/30',
     iconRing: 'bg-white/25',
   },
   urgent: {
@@ -150,7 +150,7 @@ export default function ActiveSessionCard({
           type="button"
           onClick={onShowMore}
           aria-label={t('active.morePillAria', { count: extraCount, defaultValue: 'View {{count}} more active session' })}
-          className="absolute top-5 right-5 text-[10px] font-semibold uppercase tracking-wider bg-white/20 hover:bg-white/30 active:bg-white/25 rounded-full px-2.5 py-1 transition-colors shrink-0"
+          className="absolute top-3 right-3 text-[10px] font-semibold uppercase tracking-wider bg-white/20 hover:bg-white/30 active:bg-white/25 rounded-full px-2.5 min-h-[44px] min-w-[44px] inline-flex items-center justify-center transition-colors shrink-0"
         >
           {t('active.morePill', { count: extraCount })}
         </button>
@@ -186,7 +186,7 @@ export default function ActiveSessionCard({
             <Icon name="pin" className="w-6 h-6" strokeWidth={2.25} />
           </div>
           <div className={`flex-1 min-w-0 ${extraCount > 0 ? 'pr-16' : ''}`}>
-            <p className="text-xs font-semibold uppercase tracking-widest text-white/80 inline-flex items-center gap-1.5">
+            <p className="text-xs font-semibold uppercase tracking-widest text-white inline-flex items-center gap-1.5">
               {/* Pulsing live-indicator dot, matched to the urgency colour
                   via white-on-gradient. The card is the most-glanced surface
                   for a parked user — a static "CURRENTLY PARKED" reads as
@@ -210,7 +210,7 @@ export default function ActiveSessionCard({
           <p className="font-display text-3xl font-extrabold tracking-tight">
             {hasExpiry ? countdown!.label : elapsed!.label}
           </p>
-          <p className="mt-1 text-sm text-white/90 font-semibold">
+          <p className="mt-1 text-sm text-white font-semibold">
             {hasExpiry
               ? t('active.moveBy', { time: expiryLabel!.combined })
               : t('active.noPostedRestrictions')}
@@ -233,7 +233,7 @@ export default function ActiveSessionCard({
               timeZone,
             }).combined
             return (
-              <p className="mt-1 text-xs text-white/80 font-medium inline-flex items-center gap-1">
+              <p className="mt-1 text-xs text-white font-medium inline-flex items-center gap-1">
                 <Icon name="bell" className="w-3 h-3" strokeWidth={2.25} />
                 {t('active.nextPing', { when: label })}
               </p>
@@ -270,7 +270,7 @@ export default function ActiveSessionCard({
                 <p className="font-display text-lg font-bold leading-none">
                   {t('active.distanceAway', { distance: walkBack!.distanceLabel })}
                 </p>
-                <p className="text-xs text-white/85 mt-1">
+                <p className="text-xs text-white mt-1">
                   {t('active.walkMinutes', { count: walkBack!.minutes })}
                 </p>
               </>
@@ -279,7 +279,7 @@ export default function ActiveSessionCard({
                 <p className="font-display text-base font-bold leading-tight">
                   {t('active.walkBack')}
                 </p>
-                <p className="text-xs text-white/75 mt-0.5">
+                <p className="text-xs text-white mt-0.5">
                   {walkBack
                     ? t('active.alreadyThere')
                     : t('active.walkBackOpens')}
@@ -323,7 +323,7 @@ export default function ActiveSessionCard({
                 onEndSession(session)
               }
             }}
-            className="text-white/90 hover:text-white text-xs font-semibold uppercase tracking-wider px-3 py-2 rounded-lg bg-white/10 hover:bg-white/20 active:bg-white/15 transition-colors inline-flex items-center gap-1.5"
+            className="text-white hover:text-white text-xs font-semibold uppercase tracking-wider px-3 py-2 rounded-lg bg-white/10 hover:bg-white/20 active:bg-white/15 transition-colors inline-flex items-center gap-1.5"
             aria-label={t('active.iveLeftAria')}
           >
             <Icon name="check" className="w-3.5 h-3.5" strokeWidth={2.5} />

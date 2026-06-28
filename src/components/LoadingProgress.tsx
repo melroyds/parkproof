@@ -58,6 +58,8 @@ export default function LoadingProgress() {
 
       <h2
         key={stageIndex}
+        role="status"
+        aria-live="polite"
         className="font-display text-2xl font-extrabold text-ink-900 max-w-xs animate-[fade-in_300ms_ease-out]"
       >
         {STAGES[stageIndex].translated
@@ -71,7 +73,13 @@ export default function LoadingProgress() {
           actively progressing rather than a static line that occasionally
           jumps. Psychological "slow feels faster" win, courtesy of every
           loading skeleton library written since 2018. */}
-      <div className="w-64 mt-8 h-1.5 bg-paper-300 rounded-full overflow-hidden relative">
+      <div
+        role="progressbar"
+        aria-valuenow={Math.round(progressPct)}
+        aria-valuemin={0}
+        aria-valuemax={100}
+        className="w-64 mt-8 h-1.5 bg-paper-300 rounded-full overflow-hidden relative"
+      >
         <div
           className="h-full bg-brand-500 transition-[width] duration-700 ease-out relative overflow-hidden"
           style={{ width: `${progressPct}%` }}
@@ -85,7 +93,7 @@ export default function LoadingProgress() {
         </div>
       </div>
 
-      <p className="text-xs text-ink-500 mt-6">
+      <p role="status" aria-live="polite" className="text-xs text-ink-500 mt-6">
         Usually takes about 10 seconds.
       </p>
 
