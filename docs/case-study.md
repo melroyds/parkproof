@@ -1,209 +1,111 @@
 # ParkProof — a PM case study
 
-*Mobile-first PWA. Photograph an Australian parking sign → plain-English answer + timestamped, GPS-tagged evidence. Built solo across ten active days (16-25 May 2026), launched Tuesday 26 May; ~$5/month to run; zero real users.*
+_Mobile-first PWA. Photograph an Australian parking sign, get a plain-English "can I park now?" verdict in seconds, and save a timestamped, GPS-tagged, cryptographically-signed evidence record you'd use to dispute a wrongful ticket. Built solo across ten active days (16–25 May 2026), launched 26 May; ~$5/month to run; nine locales; **zero real users.**_
 
-[Live demo →](https://www.parkproof.com.au) · [Source →](https://github.com/melroyds/parkproof)
+[Live →](https://www.parkproof.com.au) · [Source →](https://github.com/melroyds/parkproof)
 
----
-
-## TL;DR
-
-ParkProof is a craft project I built to demonstrate how I scope, sequence, and make trade-offs as a PM — not a startup attempt. It's intentionally a narrow, well-defined slice of a problem I have personal exposure to (Australian parking signs are notoriously dense; I have, like most Melburnians, had at least one wrongful-feeling ticket). The project gave me an excuse to make a sequence of real product decisions in public, with the constraint that everything had to ship to a working URL.
-
-The work is structured around four product questions:
-
-1. **Who's the user, and what's their actual job?**
-2. **What's the smallest version that solves the job credibly?**
-3. **What do you defer, and what triggers you to come back?**
-4. **How do you know if the AI in the loop is doing its job?**
-
-I'll walk through how I answered each, the trade-offs I made, and what I'd do next if this were a real product.
+This is a craft project built to show how I scope, sequence, and trade off as a PM, not a startup attempt. The honest framing up front: the market is thin, there's no clean monetisation path, and no real user has ever used it. What it's optimised for is demonstrating range and decision-making on a real, shipped, working product. Read it for the decisions, not the metrics, there are no real metrics yet, and the case study says so wherever it matters.
 
 ---
 
-## The problem
+## 1. The problem, and who it's for
 
-If you've ever stood next to a Melbourne CBD parking pole reading three stacked signs with overlapping time windows, side-specific arrows, and a "Permit Zone" overlay and thought *I genuinely don't know if I'm allowed to park here*, you understand the problem in your bones. Inner-city Australian parking signs are dense by design — councils stack rules to maximise revenue per pole — and the cognitive load is significant.
+Inner-city Australian parking signs stack three or four overlapping rules on one pole: time windows, side-specific arrows, permit-zone overlays, ticket-machine bays. They're dense by design (councils maximise revenue per pole), and they're genuinely hard to read correctly. Existing apps (ParkingMate.ai, Parky.AI) translate the rules well, but stop there. None capture the evidence you'd need to dispute a wrongful ticket later.
 
-Existing apps in this space (ParkingMate.ai, Parky.AI, SIGNlanguage) translate the rules. They do this well. But they stop there: none of them save the evidence you'd need to dispute a wrongful ticket later. That evidence — timestamp, GPS, the sign as it appeared when you parked, the car at the spot — is what changes the conversation with a council from "your word against the officer's" to "here's what was on the pole at 11:42am, and here's the time-math that says I was fine."
+ParkProof does both: translate the sign, **and** capture the timestamp + GPS + the sign-as-it-appeared + the car at the spot. That turns a council dispute from "your word against the officer's" into "here is what was on the pole at 11:42, and here is the time-math that says I was within the rules."
 
-ParkProof does both: translates the sign, AND captures the evidence trail.
+**The user is one person:** a driver who has already had one wrongful-feeling ticket and has decided they don't want a repeat. Mobile, one-handed, standing at the pole. Every other decision cascades from that persona (see §3).
 
-The honest scale: this is an annoyance, not a pain. The market for *systematic* parking-evidence capture is small — recent wrongful-ticket recipients, people who park professionally, the chronically parking-anxious. As a startup it's tough; as a craft project, the narrowness forced me to scope ruthlessly.
+**Who it is explicitly _not_ for:** casual once-a-week parkers (they'll guess or use Maps), fleet managers (a different product, multi-user, audit trails, billing, the willingness-to-pay segment, see §6 probe 4), council officers, and people who dispute every ticket on principle (a feature, not a customer). Naming the non-users is itself the scoping discipline this project is meant to show.
 
----
-
-## The user (and the cuts I made because of them)
-
-I built ParkProof for one person: **a driver who's already had a wrongful-feeling ticket once, and who has decided they don't want it to happen again.**
-
-Everything else cascaded from that:
-
-- **Anonymous-by-default.** This user has just been screwed by an institution. The last thing they want is to create an account, verify an email, agree to a privacy policy, and then *finally* get to translate a sign. So the entire app works fully anonymously. Sign-in is opt-in, gated behind features the anonymous experience already gives you (cloud sync, cross-device evidence).
-- **Mobile-first, installable.** They're standing next to the sign. They have one hand free. The home screen is a single button: "Scan a parking sign." Everything else is one tap deeper.
-- **Tamper-proof output, even though they hope they never need it.** The evidence PDF is built to be print-ready and council-ready, with a cryptographic signature appendix that includes an `openssl dgst -verify` walkthrough so any receiving party (a council, an insurer, the driver's own records) can independently confirm the file hasn't been altered since it was saved. The signature is about *integrity*, not *legal weight* — how a council or court weighs the record is their call, not ours.
-- **Cost-conscious by default.** A user who's already cranky about a parking ticket isn't going to subscribe to a parking app. The whole thing had to work on free / near-free infrastructure (~$5/mo all-in at portfolio scale).
-
-The user I *didn't* build for:
-
-- Casual drivers who park once a week (they'll use Apple Maps' built-in info or just guess)
-- Council parking officers (different product entirely)
-- Fleet managers (real opportunity, but very different product surface area — multi-user, audit trails, billing)
-- People who want to dispute every ticket on principle (this is a feature, not a customer)
+**Honest scale:** this is an annoyance, not a pain. Small TAM. As a venture it's weak; as a craft project, the narrowness forced ruthless scoping.
 
 ---
 
-## The MVP — what I built first, and what I cut
+## 2. How it works, at a glance
 
-I tried to be disciplined about MVP scoping. The rule I held myself to: **the first version must end in a saved evidence record that the user could in principle submit to a council.** If a feature didn't directly serve that, it didn't make v1.
+An installable React 19 + Vite PWA on CloudFront (private S3 behind Origin Access Control). You photograph a sign; the browser POSTs the image to a **single AWS Lambda** that calls Claude Sonnet 4.6 vision with JSON-Schema-enforced output and adaptive thinking.
 
-What made the cut:
-1. **Sign translation** — photograph a sign, get a plain-English "can I park now?" answer with the exact moment you must leave. ~8-12 seconds via Claude Sonnet 4.6 vision.
-2. **GPS + reverse-geocoded address** — captured silently while the user is still on the sign-scan screen, so it's already there when they go to log a session.
-3. **Car photo at the spot** — the second half of the evidence pair.
-4. **PDF export** — multi-page, timezone-aware, with the address and timestamp burnt into the corner of the car photo as a caption overlay.
-5. **Reminder** — `.ics` calendar event + in-tab browser notification, because half the value of knowing when parking expires is being reminded before it does.
+The load-bearing engineering decision is in that path. Stacked signs take Claude 30–50s to read carefully, but API Gateway's HTTP API caps a request at 30s. Rather than fight the ceiling, the fresh-scan path is **async**: the Lambda writes a `pending` row to a TTL'd DynamoDB jobs table, self-invokes as its own worker (`InvocationType: 'Event'`), and returns `202 + job_id` in under a second; the client polls a sub-second `GetItem` status endpoint. A "refresh" re-check (prior rules + current time, no image) is text-only and stays synchronous, ~4× cheaper. One Lambda dispatches 18 routes across three invocation modes (HTTP handler, self-invoked worker, EventBridge push-dispatch target) and is reused verbatim as the local dev proxy via a Vite plugin, one handler, two runtimes, no mocks.
 
-What I deliberately cut from v1:
-- **User accounts, cloud storage, cross-device.** All sessions are device-local in `localStorage`. I deferred building a database until there was a user-facing trigger that demanded one — eventually that became "what if the user loses their phone before disputing a ticket?", and I added optional cloud sync. But not on day one.
-- **Auto-submit appeals.** Tempting, but blocked by council-side captchas, login walls, and the absence of public APIs across Australian councils. A realistic version is deep-linking the user into the council's existing form with metadata pre-encoded, which is on the *next* roadmap, not v1.
-- **A citywide heatmap of parking rules.** Genuine moat — every scan captures data that could feed it — but heatmaps with five data points are worse than no map at all. Build trigger: a few hundred consistent users, or a council partnership offer.
-
-What I cut from v1 but came back to (and finished) by day 7:
-- **Web Push background notifications.** Originally deferred because the `.ics` calendar event covered "you'll be reminded with the app closed" for users with connected calendars. After using my own app for a few days I kept *not* opening the calendar notification, and the in-tab one only fired if I had the tab open. So I built the full pipeline: VAPID-signed `web-push` from the Lambda, subscriptions in DynamoDB, one-shot **EventBridge Scheduler** schedules per reminder offset, dispatch back through the same Lambda. Deterministic schedule names (`parkproof-push-{session_id}-{i}`) so ending a session early fan-outs parallel `DeleteSchedule` calls without `ListSchedules` — no extra IAM permission, idempotent on re-pick.
+Everything is **anonymous and `localStorage`-first.** Optional Cognito sign-in mirrors sessions to DynamoDB and photos to a per-user S3 prefix; the local copy stays canonical. Reminders fan out to a calendar `.ics` VALARM, an in-tab notification, and a server-side Web Push scheduled via one-shot EventBridge schedules. Evidence export is a multi-page, localised jsPDF document with a KMS-signed appendix.
 
 ---
 
-## Key trade-offs (the ones a PM-style review would actually probe)
+## 3. Key product decisions (what I chose, and what I deliberately didn't build)
 
-### 1. Sonnet 4.6 vs Haiku 4.5
+Each row is the decision, the trade-off accepted, and the alternative consciously rejected.
 
-Haiku is ~3× cheaper and ~2× faster. Tempting. I tried it. It failed.
+| Decision | Chose | Trade-off accepted | Deliberately did **not** build |
+|---|---|---|---|
+| **Vision model** | Sonnet 4.6 (adaptive thinking, schema-enforced) | ~3× the per-scan cost and 6–12s latency | Haiku 4.5 (cheaper/faster). Tried and rejected: it supports no thinking and inverted earliest-vs-farthest leave-by on stacked signs, "park until 6pm" became "until 11pm". Cost/correctness only trades one way here. |
+| **Account model** | Anonymous-by-default, `localStorage` canonical, opt-in cloud sync never gated | Built the canonical session schema twice (local + cloud) and a 3-phase quota-recovery system; resisted every retention-funnel instinct | The default SaaS sign-up wall. The target user was just screwed by an institution; they will not make an account before translating a sign. |
+| **Evidence integrity** | KMS ECDSA P-256 signature over canonical metadata + in-browser SHA-256 photo hashes, with an `openssl dgst -verify` recipe in the PDF | ~$1/mo and apparatus no real user has exercised | A plain self-held hash (the user could alter the photo and re-hash, so it proves nothing) or no integrity layer. |
+| **The 30s gateway ceiling** | Async-polling via a TTL'd jobs table + self-invoke | A small polling state machine and a jobs table | Streaming (the gateway buffers anyway) or a longer-timeout integration. The pivot _removed_ complexity rather than adding it, the tell of a good one. |
+| **i18n language set** | English + the top non-English languages spoken at home in the City of Melbourne LGA (2021 ABS Census): Mandarin, Vietnamese, Indonesian, Korean, Italian, Greek, Hindi, Punjabi | A build-time font-subsetting pipeline (jsPDF ships zero CJK/Devanagari/Gurmukhi/Greek glyphs) | The generic "translate all the major world languages" default. The signal is the data-driven _method_, not the count. |
+| **Cross-device photo access** | Server-side proxy: a JWT'd `/photos/materialize` endpoint where the Lambda fetches S3 and returns base64 through the trusted API origin | Slightly heavier responses | The textbook presigned-S3-URL pattern. Rejected after three separate mobile-only failures (S3 CORS drift, an AWS SDK checksum-header regression, a 5G carrier interaction with long STS URLs) proved it has too many failure modes invisible from the server. |
 
-The model needs to do multi-rule time-window math on stacked signs — compute the "leave-by" time for each rule, take the *earliest* one. Sonnet 4.6 with adaptive thinking handles this correctly. Haiku 4.5 does not support adaptive thinking *or* extended thinking, and without it, gets the earliest-vs-farthest leave-by inverted on multi-rule signs. That's not a 5% accuracy drop; it's the difference between "you can park until 6pm" and "you can park until 11pm" when the actual answer is 6pm.
+**Shelved on purpose, each with an explicit re-trigger** (the discipline of stopping):
 
-The cost/correctness trade-off only works in one direction. Sonnet 4.6 is the floor for this task.
-
-I logged this in the engineering notes and the system-prompt for future maintainers. The cost premium is real (~$0.05 per scan vs ~$0.015) but at portfolio traffic it's $2/month, not $200.
-
-### 2. Anonymous-first vs cloud-first
-
-The classic SaaS instinct is to require sign-up so you can build a user funnel. I picked the opposite: sign-up is *optional*, never gated, and every feature works fully anonymous on `localStorage`.
-
-The cost of this was real. I had to:
-- Build a `localStorage` quota-management system (3-phase auto-recovery when the 5MB ceiling is hit)
-- Build a migration path from `localStorage` → DynamoDB when users opt into cloud sync (which means designing the canonical schema *twice*, once local, once cloud)
-- Resist the temptation to add features behind sign-in (account-only history, "premium" tier, etc.)
-
-The benefit: the experience the wronged-driver-on-the-street actually has is the experience I built for. No friction tax on first use. If a recruiter visits the live URL, they can use every feature in 30 seconds without an email verification step.
-
-For a craft project optimising for *first-use trust*, this was the right call. For a startup optimising for retention metrics, I'd revisit it.
-
-### 3. Cryptographic evidence signing — overengineering or differentiation?
-
-The premise of the app is that the evidence has to survive scrutiny. A SHA-256 hash isn't enough — the user could alter the photo after saving and re-hash. A signature over the canonical metadata + photo hashes, by a key the user doesn't hold (KMS-managed), is the only thing that proves "this record existed in this form at this time." The counter-argument is that nobody has ever used a ParkProof PDF in a real council dispute, so the apparatus is aspirational.
-
-I built it anyway because **the cost is small once and the value compounds.** $1/month for the KMS key, one paragraph for the `openssl dgst -verify` walkthrough in the PDF. The day a real user submits to a council, it'll be the differentiator. Better sitting unused than scrambled in under deadline.
-
-### 4. 9 languages, picked from Melbourne LGA census data
-
-The temptation in i18n is to support "all the major world languages" — Spanish, French, German, Japanese. None of those move the needle for a Melbourne parking app.
-
-I went to the 2021 ABS Census for the City of Melbourne LGA and looked at the top non-English languages spoken at home. The first six picks (Mandarin, Vietnamese, Italian, Greek, Hindi, Punjabi) gave me a starting list, plus English. After a sanity-check pass on the actual LGA ranking I added Indonesian (#3) and Korean (#6) — both top non-English languages in the LGA that the first pass had missed — for nine supported languages total. Punjabi and Hindi both use the India flag in the language picker, so I show native names (हिन्दी / ਪੰਜਾਬੀ) to disambiguate.
-
-This is a small detail but it's exactly the kind of decision where you can tell a PM is doing the work vs. defaulting to a generic "translate all the things." The cost was the same as supporting any other nine languages; the *signal* of "I picked these because of the actual user data" is what differentiated.
+- **Citywide rules heatmap** — genuine data moat (every scan captures rules + GPS), but a map with five points is worse than none. Trigger: a few hundred consistent users, or a council partnership.
+- **Auto-submit appeals to councils** — externally blocked, not just deferred: council captchas, login walls, no public APIs. The realistic version is deep-linking a council's existing form with metadata pre-encoded.
+- **Voice confirmation** — deferred on _product_ grounds: snapping a sign means the phone is already in hand, so voice is redundant for the core case.
+- **AI feedback Layer 3** (opt-in photo capture of failures) — gated until Layer 2 surfaces a specific failure mode worth the photo-storage and a privacy-policy line.
+- **Offline on-device sign reading** — Path A (full offline VLM) rejected outright: ~70–80% accuracy vs ~95%, 200–500MB bundle, frozen at model-release date. Hybrid paths deferred until launch data exists.
+- **Native apps / Play Store, a premium tier, multi-city, a 9-language marketing landing** — each off the roadmap for stated reasons (PWA covers the value; anonymous-first leaves no clean charge; the prompt hard-encodes AU conventions; the acquisition audience is English-first).
 
 ---
 
-## How I'd know if it's working — the feedback loop
+## 4. What it demonstrably signals (grounded in the code)
 
-The thing I'm most proud of from a PM perspective is the AI-feedback design, even though no real user has ever fired it.
+Honest strength rating in brackets, this is what a technical reviewer can verify, not what the README claims.
 
-After each translation, the user sees two buttons under the result: "Yes, looks right" and "Retake photo." Both fire a structured event to CloudWatch Logs with the model's confidence, the rules-shape, whether the clarification step ran, the local hour of day, and a 120-character excerpt of the rules text.
-
-Why I designed it this way:
-
-- **Verdict count alone (Layer 1) tells me *if* there's a problem.** A 95% accept rate means the model is generally trusted. A 60% rate means something's broken.
-- **Verdict + context (Layer 2) tells me *what kind* of problem.** *"Of all retake verdicts, what's the confidence distribution? Which sign patterns? Which hours of day?"* If retake correlates with low confidence — good, the model is calibrated. If retake correlates with high confidence — that's a prompt regression and I need to look at it. If retake correlates with specific hours (e.g. 8pm onwards) — that's a lighting / photo-quality issue, not a model issue.
-- **Photo capture for systematic failures (Layer 3)** — not built yet. Build trigger: Layer 2 surfaces a specific failure mode worth investing photo-storage in. I'm not going to ask users to opt into photo capture until I have a clear hypothesis.
-
-Most AI builds skip feedback design entirely, then are surprised when the model degrades silently and they can't tell why. The Layer 1/2/3 staging is how you avoid that without over-investing on day one.
+- **Mobile PWA [strong].** `vite-plugin-pwa` in `injectManifest` mode with a hand-written `service-worker.ts` (precache + Web Push receiver + notification-click), a two-app architecture (marketing at `/`, PWA at `/app/`) resolved by a CloudFront viewer-request function, plus real mobile-first UX: silent GPS on the scan screen, a photo-quality pre-flight (Laplacian-variance blur + Rec.709 luminance) _before_ spending a token, walk-back map deep-links, a live countdown card.
+- **AI vision [strong].** Schema-enforced Sonnet 4.6 vision + adaptive thinking; a ~1700-token system prompt that does real domain modelling (orthogonal permit/disability/paid flags vs parkability; a worked "compute `until` = earliest leave-by across all rules" section added to fix a real regression; payment-sticker detection). Two genuinely distinct AI features (sign translate, and infringement-notice read + appeal-letter draft). A staged feedback telemetry design (verdict + model-context to CloudWatch, no PII).
+- **AWS infra [strong].** One Lambda, 18 routes, three invocation modes; Cognito JWT authorizer; DynamoDB (sessions, TTL'd jobs, push subs); S3 (OAC static, per-user evidence, lifecycle'd feedback); KMS; EventBridge Scheduler; CloudFront. Operational maturity past demo level: per-IP rate limiting via a DDB counter that fails _open_, a 5-min warmer ping, idempotent re-runnable deploy scripts, a billing alarm, a rollback playbook, and a `/me/delete` that drains DynamoDB `BatchWrite` `UnprocessedItems` with backoff before deleting the Cognito user, so erasure can't report false success.
+- **Cryptographic evidence integrity [strong].** The rare case where "cryptographic" is fully earned: hash in the browser, sign canonical metadata + hashes with a hardware-backed ECDSA P-256 key whose private half never leaves AWS, ship the public key PEM at `/parkproof-public-key.pem`, and print a self-contained `openssl` verification recipe so no party needs ParkProof in the loop. A background sweep re-signs sessions that failed mid-flight.
+- **Multi-locale i18n [strong].** Nine fully-populated locale files (not stubs, non-Latin scripts run 80–97KB vs ~48KB for English) with `react-i18next` auto-detection. The evidence PDF itself is localised and lazy-loads per-locale subsetted Noto Sans fonts. **Caveat:** the AI's sign-translation _output_ deliberately stays in English (it mirrors the literal sign); the localisation is the app shell and the evidence document.
+- **Civic-utility product thinking [solid].** Visible in the artifacts, not just claimed: the MVP rule ("every v1 feature must end in a submittable evidence record"), the deferral list with named build-triggers, anonymous-first justified from the persona, a no-sign mode for unsigned spots, a driver's-note field for human context in a council review, and evidence-strength honesty baked into the appeal prompt (it rates a case `weak` when there's no saved evidence).
 
 ---
 
-## What I'd build next (if this were going to v1)
+## 5. Honest limitations
 
-In rough priority order:
-
-1. **Council-specific appeal deep-links.** Right now the appeal flow drafts the letter and exports it as a PDF the user submits manually. The next version deep-links to the council's online dispute form with metadata pre-encoded (session ID, photo URLs, infringement number). Blocked by per-council research; the system architecture is ready.
-2. **Citywide heatmap.** Cloud sync is already in place, which means the data pipeline exists. The missing pieces are (a) a "share my scans to improve the map" opt-in toggle distinct from cloud-sync sign-in, (b) Mapbox/Leaflet viewer, (c) the cold-start problem (a map with five scans is useless). Build trigger: enough consistent users, or a council partnership.
-3. **AI feedback Layer 3.** Opt-in photo capture for systematic failure modes surfaced by Layer 2. Builds a private training dataset for prompt tuning.
-4. **Voice confirmation.** "Hey ParkProof, when does parking expire?" — Web Speech API, ~half a day of work, limited by iOS PWA support.
-
-What I'd *deprioritise* even though it's tempting:
-
-- **Multi-city expansion.** ParkProof is Australia-specific because the Claude prompt encodes Australian conventions (e.g. AEST/AEDT formatting, "P" notation, council-flavoured language). Adding the US would require re-engineering the prompt and probably hurting accuracy in the existing market. The 80/20 isn't there.
-- **A "premium" tier.** No clean way to monetise without making the anonymous experience worse, which defeats the whole positioning.
+- **Zero real users.** Every feedback loop (verdict telemetry, the user-feedback channel) is designed and wired but has never been fired by a real person. Every product decision below is self-graded by the person who made it.
+- **AI accuracy is unmeasured.** There is no labelled eval set and no real verdict data, so "the translator is correct" is asserted, not demonstrated. This is the load-bearing unknown (see §6 probe 1).
+- **The crypto is aspirational.** No ParkProof PDF has been used in a real dispute. The signature proves _integrity_ (the record wasn't altered), not _legal weight_ (that a council will rule your way). The app says so; the case study should never call it a "moat".
+- **No monetisation path.** By design, anonymous-first leaves no clean way to charge without degrading the free experience. This is the portfolio gap ParkProof does not fill (the next piece, SubToll, covers B2C monetisation).
+- **Australia-only.** The prompt hard-encodes AU conventions (AEST/AEDT, "P" notation, ACROD, council language). It does not generalise without prompt re-engineering and likely home-market accuracy loss.
+- **GPS is unreliable** indoors, in multi-storey carparks, and on desktop (IP coords can be kilometres off). Mitigated honestly: accuracy >100m is treated as untrusted, the PDF discloses accuracy, and the app falls back to manual entry.
+- **The stepped loading bar is a timed simulation** tuned from CloudWatch latency, not real token streaming (the gateway buffers). Functionally fine, not literally live.
+- **Error handling for opt-in cloud features is "warn-and-swallow",** which once caused a two-day silent photo-upload failure (S3 CORS drift after a domain migration) caught only by dogfooding, not alerting.
 
 ---
 
-## What I'd do differently with hindsight
+## 6. What a hiring PM would probe — and how this story should answer
 
-A few honest reflections:
+These are the five doubts that surfaced independently across multiple senior-PM reads. They are the real ones.
 
-- **I'd start with the cloud schema and back-port to `localStorage`, not the other way around.** The local-first decision was right for users, but the migration cost was real — I built the canonical session shape twice.
-- **I'd write the case study earlier.** Forcing myself to articulate the trade-offs in writing would have surfaced some decisions I made on autopilot. Writing this document made me realise I never explicitly named the "no clean monetisation path" trade-off until now.
+**1. "It's an AI-in-the-loop product. How do you know the translator is _accurate_, not confidently wrong?"**
+The whole evidence value-prop rests on the AI being right, and the only accuracy mechanism is a feedback button no one has pressed. There is no eval harness and no labelled test set.
+_Preempt, honestly:_ build a 30–50 sign labelled corpus (real Melbourne poles, hand-computed correct answers) and report measured accuracy _plus_ failure classes. Frame the staged telemetry as the _production_ complement to that eval, not as the validation itself. This is the single highest-leverage thing missing.
 
----
+**2. "The KMS evidence chain, no council has accepted it and you concede it proves integrity not legal weight. Differentiator, or engineering theatre?"**
+It's the headline feature and admittedly aspirational, which reads as falling in love with the artifact.
+_Preempt:_ downgrade the language everywhere from "moat" / "regulatory recognition" to "integrity guarantee" (the app copy already does this; the older docs slipped). Make the bet explicit and falsifiable: the cheap validation I _could_ have run first (show one council's review form and confirm it accepts attachments), and the condition that would have killed the feature.
 
-## Pre-launch hardening — the last 48 hours
+**3. "Zero users, every decision self-graded. Walk me through one where _data_ changed your mind, not a trade-off you reasoned out in advance."**
+Almost every decision here is framed as correctly-reasoned up front, which is the failure mode of solo work.
+_Preempt:_ surface the genuine reversals, and there are real ones: `localStorage`-first then adding cloud sync once "what if they lose the phone before disputing?" became concrete; deferring Web Push then building the full pipeline after dogfooding showed I kept ignoring the calendar reminder; redesigning the cross-device photo path away from presigned URLs after three real mobile failures; the pre-launch audit catching six-of-nine locales rendering PDFs as glyph boxes. Frame each as "I assumed X, reality showed Y, I changed course."
 
-The most PM-y work on this project wasn't the feature build. It was the launch-readiness audit on the weekend before publishing.
+**4. "Anonymous-first means no clean monetisation. Handed a revenue target, what would you actually do?"**
+A consumer/platform PM needs business-model instinct, and the portfolio openly lacks it. "Revisit it for a startup" is a deflection.
+_Preempt:_ name the willingness-to-pay wedge already in the spec, the fleet/tradie/professional-parker segment, sketch a freemium line that doesn't degrade the anonymous core (team evidence vaults, bulk export, an audit trail), and bridge explicitly to SubToll, the portfolio piece built to carry the monetisation signal.
 
-On Sunday afternoon (~48 hours pre-launch), with the feature set frozen and CI green, I sat down and explicitly enumerated **what could break under Reddit traffic that the green build wouldn't catch**. Six items, ~5 hours of work, framed as a "Tier 1" list — meaning *if any of these fails on launch day, you'll cringe*. The discipline was naming the silent failure modes that don't show up in tests because they're about real-world rendering, real-device behaviour, or specific traffic patterns.
-
-The first item on the list — *"test PDF export in all 9 locales"* — caught the single biggest hidden bug in the project.
-
-I'd never actually exported a PDF in Korean, Hindi, Punjabi, Chinese, Greek, or Vietnamese. The strings were translated, the rendering library (`jsPDF`) was wired in, the UI worked. But `jsPDF` ships with Adobe Type 1 fonts that have *zero* glyph coverage for any of those scripts. The first 5 minutes of the audit revealed that **six of nine locales** rendered evidence PDFs as missing-glyph rectangles. Silent data corruption for ~30% of supported users. Would have been a "btw your evidence PDF is just boxes" Reddit comment within hours of going live.
-
-The fix was substantial: source variable-weight Noto Sans TTFs from the Google Fonts GitHub repo, write a Python build-time script that subsets each font down to just the glyphs that appear in the locale JSONs (94% size reduction — Chinese SC went from 17MB to 893KB), self-host them on CloudFront, lazy-load the right one per locale at PDF export time. Two hours of focused work; ships clean. The interesting bit isn't the fix — it's that the *audit* found it. A different sequencing (skip the audit, trust the build, hit publish) would have shipped the bug.
-
-The second moment was a feedback loop on my own product. I'd shipped server-side Web Push reminders earlier in the week. After using my own app for an evening, I noticed: *I have no idea WHEN the pushes will actually fire.* The schedules live in EventBridge, invisible from the app. The `.ics` calendar event renders visibly in your calendar app, but the push reminder is a black box — set-and-forget, no way to verify or cancel without re-doing the whole session. That violates the trust principle the rest of the product is built on. I added a `Scheduled reminders` management surface in the per-session detail screen: lists every queued fire time, per-row × cancel, a smart-filtered Add picker (offsets that would fire in the past are greyed). 2.5 hours. The feature went from *fire-and-forget* to *managed-and-trusted*.
-
-The PM-relevant takeaway is the Tier-1-list-as-PM-artifact pattern. Most launches fail by skipping the audit — assuming the build is launch-ready because the tests pass and the features ship. The audit catches the silent failures the green tests miss. The cost is ~5 hours; the upside is not shipping the cringe.
-
-(Other items the audit caught: missing Open Graph meta tags on the marketing landing — Reddit/LinkedIn/iMessage shares would have rendered with no thumbnail. A first-fire Lambda cold-start of 1-3 seconds for the first Reddit visitor — fixed with an EventBridge warmer ping every 5 minutes. No rollback playbook in CLAUDE.md — fixed with a `## Rollback playbook` section keyed to symptoms. None of these would have failed a test; all would have shown up as friction on launch day.)
+**5. "Your own numbers don't agree, and the '12-second' promise hides the hard case."**
+Per-scan cost appears as ~$0.02, ~$0.05, and ~$0.015 across the docs; language and commit counts drift between files; and the "~12 seconds" headline is the simple-sign path, while the stacked signs that are the _reason the product exists_ take 30–50s. A PM who cites cost discipline as a principle should have clean unit economics.
+_Preempt:_ pin one canonical per-scan cost derived from real CloudWatch token usage and use it everywhere. Separate the latency paths openly, 8–12s simple, 30–50s stacked, which is _why_ async-polling and the stepped loader exist. Reconcile the figures across the docs, and clarify that every "spotted live" bug was me dogfooding on real signs, not an external user.
 
 ---
 
-## What this project taught me about PM-engineering
-
-The thing I keep returning to: **the discipline of stopping is harder than the discipline of building.** ParkProof is feature-complete for its scope. Every hour I spend adding the citywide heatmap or Layer 3 telemetry or a fourteenth language is an hour I'm not spending in front of the people I want to see this work.
-
-The decisions that made the project work weren't the ones about *what to build*. They were the ones about *what not to build, yet*. DynamoDB deferred until cloud sync had a real trigger. Auto-submit deferred until council research is done. Layer 3 telemetry deferred until Layer 2 surfaces a failure worth investigating. Each "not yet" came with an explicit build trigger so future-me could tell when the conditions had changed.
-
-That's the part of the job I think most PMs underweight. It's easy to ship features; it's hard to defend an empty roadmap slot.
-
----
-
-## Stack & cost summary
-
-**Frontend:** React 19 + TypeScript (strict) + Tailwind v4 + Vite + PWA service worker. ~225KB gzipped.
-
-**Backend:** Single AWS Lambda (`parkproof-sign-translator`) handling 18 API Gateway routes via path dispatch, with a Cognito JWT authorizer on cloud-sync routes. The same Lambda is the EventBridge Scheduler target for push dispatch and the self-invoked worker for async-polled Claude calls that exceed API Gateway's 30s timeout — three invocation modes, one cold-start budget. Reused as the local dev proxy via a Vite plugin: one handler, two runtimes, no mocks.
-
-**AI:** Claude Sonnet 4.6 with adaptive thinking and JSON-schema-enforced output. ~$0.05 per sign-translate.
-
-**Persistence:** `localStorage` first, optional Cognito-gated mirror to DynamoDB + per-user S3 prefix.
-
-**Evidence integrity:** KMS ECDSA P-256 signing the canonical metadata + photo hashes. Public key at `/parkproof-public-key.pem` for offline verification.
-
-**Hosting:** CloudFront + private S3 with Origin Access Control, ACM-issued custom domain, ap-southeast-2.
-
-**Telemetry:** CloudWatch Logs with structured feedback events; Logs Insights queries committed alongside the code.
-
-**Cost:** ~$5–7/month (KMS key + domain dominate). AWS Budgets alarm at $25/month, raised from $10 to absorb a Reddit-day spike without false alarms.
-
----
-
-*If you've read this far and you'd like to talk product — about ParkProof, AI-feedback design, or just the discipline of deferring features — drop a line at hello@parkproof.com.au.*
+_Contact: hello@parkproof.com.au_
