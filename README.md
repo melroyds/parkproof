@@ -5,7 +5,7 @@
 
 > Photograph any Australian parking sign → get a plain-English answer to **"Can I park here right now?"** plus a timestamped, GPS-tagged evidence record in case you get a wrongful ticket.
 
-A mobile-first, installable PWA with end-to-end AI: sign translation, evidence capture, departure reminders, and a tamper-proof PDF export — all working against a real AWS backend.
+A mobile-first, installable PWA with end-to-end AI: sign translation, evidence capture, departure reminders, and a tamper-evident PDF export — all working against a real AWS backend.
 
 > **🚀 Try it live:** [https://www.parkproof.com.au](https://www.parkproof.com.au)
 >
@@ -18,7 +18,7 @@ A mobile-first, installable PWA with end-to-end AI: sign translation, evidence c
 **Landing.** What a first-time visitor sees — split-colour headline, three checkmark value props, a gradient CTA, and a "How it works" strip that does the explaining without making the visitor read.
 
 <p align="center">
-  <img src="docs/screenshots/00-landing.png" alt="First-time landing — Parking made simple. headline + three checkmark bullets + gradient Check a parking sign CTA + How it works grid + Tamper-proof evidence callout" width="320" />
+  <img src="docs/screenshots/00-landing.png" alt="First-time landing — Parking made simple. headline + three checkmark bullets + gradient Check a parking sign CTA + How it works grid + Tamper-evident evidence callout" width="320" />
 </p>
 
 **Live countdown.** When you're actively parked, the home screen swaps the landing for the countdown — open the app, see how much time you have left, walk back to your car, or signal "I've left" to end the session early.
@@ -29,7 +29,7 @@ A mobile-first, installable PWA with end-to-end AI: sign translation, evidence c
 
 ### Core flow
 
-The seven-step path from photographing a sign to having a tamper-proof evidence record.
+The seven-step path from photographing a sign to having a tamper-evident evidence record.
 
 | 1. Scan | 2. Clarify (when needed) | 3. Result |
 |---|---|---|
@@ -91,7 +91,7 @@ Language list chosen from the top non-English languages spoken in the **City of 
 11. **Driver's note.** A 280-character free-text field on each session for the *why* — "Mum's chemo at the Royal", "Saturday market". Renders verbatim in the evidence PDF. Softens a council review when context matters.
 12. **AI-drafted appeal letter.** If you do get a ticket, photograph it → Claude reads the notice, cross-references your saved evidence, and drafts a formal letter to the issuing council with an evidence-strength rating (strong / moderate / weak) and a one-paragraph strategy note. Editable; export as a separate PDF.
 13. **Session History.** Every saved parking session, with status (active / ended / expired) and the option to re-export the PDF, draft an appeal, or delete.
-14. **No-sign mode.** Sometimes the closest pole is meaningless — a quiet residential street, an open carpark, an apartment laneway with no posted restriction. The "No sign here? Just log my park →" entry on the scan screen captures an *ambient surroundings* photo plus the same GPS + reverse-geocode evidence chain, skipping the AI translation entirely. These sessions are **open-ended**: they stay on the home "Currently parked" card with elapsed-time copy until the driver hits **"I've left"**, at which point an `ended_at` stamp lands on the record and the actual duration is computed into the evidence PDF (`Actual duration: 2h 14m`). Tamper-proof evidence that you parked *here* during *this window* even when the council later puts up a sign.
+14. **No-sign mode.** Sometimes the closest pole is meaningless — a quiet residential street, an open carpark, an apartment laneway with no posted restriction. The "No sign here? Just log my park →" entry on the scan screen captures an *ambient surroundings* photo plus the same GPS + reverse-geocode evidence chain, skipping the AI translation entirely. These sessions are **open-ended**: they stay on the home "Currently parked" card with elapsed-time copy until the driver hits **"I've left"**, at which point an `ended_at` stamp lands on the record and the actual duration is computed into the evidence PDF (`Actual duration: 2h 14m`). Tamper-evident evidence that you parked *here* during *this window* even when the council later puts up a sign.
 
 ### Smart features
 - **Smart Re-scan.** When you arrive at a spot you've scanned before (within 40m and 7 days), ParkProof recognises it and offers to **reuse the prior reading** — no photo, just refresh the current-time answer. ~3× faster and ~4× cheaper per scan. Desktop and no-GPS users get a "Reuse a recent scan" picker instead.

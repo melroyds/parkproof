@@ -1,4 +1,4 @@
-import { useTranslation } from 'react-i18next'
+import { Trans, useTranslation } from 'react-i18next'
 import Icon from './Icon'
 
 /**
@@ -90,18 +90,22 @@ export default function LandingFeatures({ onScanCta, onSignInCta }: Props) {
 
       {/* ── Headline + value bullets, now BELOW the hero ─────────────── */}
       <div className="mb-6">
-        {/* Split-colour headline. Three explicit lines so the brand-blue
-            "simple." sits below the navy "Parking / made" — the visual
-            rhythm of the mockup depends on this exact line break. */}
+        {/* Split-colour headline. One key with an <accent> tag instead of
+            three positional keys, so each locale places the emphasised word
+            and its line break where its own grammar wants it. The accent span
+            is `block`, so the brand-blue word drops onto its own line (the
+            "simple." rhythm) wherever the translation puts it. */}
         <h1 className="font-display text-5xl sm:text-6xl font-extrabold text-ink-900 tracking-tight leading-[0.95]">
-          <span className="block">{t('landing.heroTitle1')}</span>
-          <span className="block">{t('landing.heroTitle2')}</span>
-          <span className="block text-brand-500">{t('landing.heroTitle3')}</span>
+          <Trans
+            i18nKey="landing.heroTitle"
+            components={{ accent: <span className="block text-brand-500" /> }}
+          />
         </h1>
         <p className="text-sm text-ink-700 mt-4 leading-relaxed max-w-[22rem]">
-          {t('landing.heroSubhead')}{' '}
-          <span className="text-brand-600 font-bold">{t('landing.heroSubheadAccent')}</span>
-          {t('landing.heroSubheadTail')}
+          <Trans
+            i18nKey="landing.heroSubhead"
+            components={{ accent: <span className="text-brand-600 font-bold" /> }}
+          />
         </p>
       </div>
 
