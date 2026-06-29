@@ -1,33 +1,84 @@
 # Legal-PDF review worksheet
 
-This is the short list of strings a human native speaker should ratify before you fully lean on a locale: the ones a driver attaches to a real council dispute, where a wrong word has legal weight rather than just reading slightly off. The rest of the app already grades "natural" on independent review; this is the last 2-3% that only a human in-community certifies.
+The short list of strings a human native speaker should ratify before you fully lean on a locale: the ones a driver attaches to a real council dispute, where a wrong word has legal weight. For the four highest-value languages the legal terms have now been **verified against real Australian council pages** (see the next section), so most of that check is already done.
 
-## The five things that matter
+## Verified against real council pages
 
-1. **The signature claim says DETECTION, not PREVENTION.** The KMS signature proves a record *was not altered* since signing. It does not *prevent* alteration. Any language that says "cannot be changed / tamper-proof / unchangeable" on `pdf.signature.intro` or the badge is overclaiming on a legal document. This is the single highest-risk check.
-2. **The council / fine / appeal terms match what a real council uses.** See the shortcut below.
-3. **The disability-permit consequence is accurate** ($400, an offence) and not moralising.
-4. **The evidence statement names the right body** and claims only what is true.
-5. **The appeal disclaimer is clear** that it is a draft, not legal advice, and ParkProof does not lodge it.
+For Chinese, Punjabi, Hindi and Korean, the civic terms were checked against councils' own translated parking-fine pages. ✅ = matches official usage · ◻ = acceptable variant · ⚠ = flagged · "fixed" = ParkProof was changed to match.
 
-## The shortcut for checking legal terms
+### Chinese (zh-CN)
+| Concept | ParkProof now | Council's own term | Status |
+|---|---|---|---|
+| council | 市议会 | 市议会 | ✅ **fixed** (was 市政府) |
+| fine | 罚款 | 罚款 | ✅ match |
+| infringement notice | 违章通知 | 罚单 / 违章罚款 | ◻ acceptable |
+| review/appeal | 复核 / 申诉 | 重审 (申请罚款重审) | ◻ acceptable |
+| disability permit | 残疾人停车许可证 | 残疾人泊车许可证 | ◻ acceptable |
 
-Most Victorian and NSW councils publish their *"apply to review a parking fine"* page translated into Chinese, Vietnamese, Punjabi, Hindi, Korean, Greek, Italian, and more. Those pages are the gold-standard reference for "council", "infringement notice", "fine", "review/appeal" in each language. Have the reviewer match our terms against one of those (e.g. City of Boroondara, City of Melbourne, City of Sydney language pages). If our word matches the council's own word, it is right by definition.
+_Sources: Greater Shepparton City Council 停车罚款 (zh) · Fines Victoria zh portal · Chinese Consulate-General Melbourne. The council page uses 市议会 throughout and never 市政府._
 
-## Priority order
+### Punjabi (pa)
+| Concept | ParkProof now | Council's own term | Status |
+|---|---|---|---|
+| council | ਕੌਂਸਲ | ਕੌਂਸਲ | ✅ match |
+| fine | ਜੁਰਮਾਨਾ | ਜੁਰਮਾਨਾ | ✅ match |
+| review/appeal | ਸਮੀਖਿਆ | ਸਮੀਖਿਆ | ✅ match |
+| infringement notice | ਉਲੰਘਣਾ ਨੋਟਿਸ | ਉਲੰਘਣਾ ਵਾਲਾ ਨੋਟਿਸ | ◻ acceptable |
+| disability permit | ਅਪੰਗਤਾ ਪਰਮਿਟ | "Accessible Parking Permit" (scheme renamed 3 May 2021) | ⚠ flagged |
 
-The four locales where I *changed* the council term are where a human ratification adds the most value (if I got it right it is now correct; if not, this catches it): **Punjabi, Korean, Hindi, Chinese**. The other four are lower-risk but worth a glance.
+_Sources: Fines Victoria Punjabi portal · accessibleparking.vic.gov.au. The permit flag affects the English source too and is state-specific (VIC = Accessible Parking Permit, NSW = Mobility Parking Scheme), so it's a decision, not an auto-fix._
+
+### Hindi (hi)
+| Concept | ParkProof now | Council's own term | Status |
+|---|---|---|---|
+| council | परिषद | परिषद | ✅ **fixed** (was नगर पालिका, an Indian municipal-corp term) |
+| fine | जुर्माना | जुर्माना | ✅ match |
+| review/appeal | समीक्षा | समीक्षा / आंतरिक समीक्षा | ✅ match |
+| infringement notice | उल्लंघन नोटिस | उल्लंघन / पार्किंग जुर्माना | ◻ acceptable |
+| disability permit | विकलांगता परमिट | विकलांग व्यक्तियों के लिए पार्किंग परमिट | ◻ acceptable |
+
+_Source: City of Melbourne Hindi pages (melbourne.vic.gov.au ?lang=hi)._
+
+### Korean (ko)
+| Concept | ParkProof now | Council's own term | Status |
+|---|---|---|---|
+| fine | 벌금 | 벌금 | ✅ **fixed** (was 과태료, a Korea-domestic admin-penalty term) |
+| council | 지자체 / 시·구청 | 의회 | ◻ acceptable (의회 is the council's exact word — optional upgrade) |
+| infringement notice | 위반 통지서 | 벌칙 통보 / 벌금 통지 | ◻ acceptable |
+| review/appeal | 이의신청 | (no official source found) | — |
+| disability permit | 장애인 허가증 | Mobility Parking Scheme (MPS) card | ◻ acceptable |
+
+_Sources: Cumberland City Council Korean road-safety fact sheet · Korean Consulate-General Sydney._
+
+## Two open items from the research
+
+1. **"Disability permit" → "Accessible Parking Permit".** Victoria renamed the scheme on 3 May 2021; NSW calls it the Mobility Parking Scheme. ParkProof says "disability permit" in English and all locales. It's understood everywhere, but it is the *old* name. Because the official name is state-specific, this is your call: keep the generic "disability permit" (cross-state safe) or move to the current VIC name. Affects en.json + all 9 locales.
+2. **Korean council 의회.** ParkProof uses 지자체 (acceptable); the council's own word is 의회. A one-word upgrade if you want the exact match.
+
+## The five things to check on the remaining surfaces
+
+1. **The signature claim says DETECTION, not PREVENTION** (highest risk). `pdf.signature.intro` and the badge must say the signature lets someone *verify the record was not altered*, never that it cannot be altered.
+2. The council / fine / appeal terms (done for the four above; the shortcut below covers the rest).
+3. The disability-permit consequence ($400, an offence) is accurate and not moralising.
+4. The evidence statement names the right body and claims only what is true.
+5. The appeal disclaimer is clear it's a draft, not legal advice, and ParkProof does not lodge it.
+
+## The shortcut for the other four languages
+
+Most Victorian and NSW councils publish their *"apply to review a parking fine"* page in Vietnamese, Italian, Greek, Indonesian too (City of Boroondara, Melbourne, Sydney, Cumberland). Match our term to the council's own word; if it matches, it's right by definition.
 
 ---
 
-## Chinese (Simplified) (`zh-CN`)
+## Full string-by-string worksheet
 
-_council term just settled on 市政府; verify the signature claim + fine wording_
+### Chinese (Simplified) (`zh-CN`)
+
+_council term corrected to 市议会 after research; fine/permit verified_
 
 **Signature claim — MOST IMPORTANT** — `pdf.signature.intro`
 > EN: This evidence record was signed by ParkProof's AWS KMS-managed private key at the time of saving. The signature lets any third party (council, court, insurer) verify that the metadata and photo hashes below have not been altered since the signed_at timestamp. The private key never leaves AWS; the public key is published openly for verification.
 >
-> zh-CN: 本证据记录在保存时由 ParkProof 的 AWS KMS 托管私钥进行签名。任何第三方(市政府、法院、保险公司)均可通过该签名验证下方的元数据和照片哈希自 signed_at 时间戳以来未被篡改。私钥从未离开 AWS;公钥已公开发布以供验证。
+> zh-CN: 本证据记录在保存时由 ParkProof 的 AWS KMS 托管私钥进行签名。任何第三方(市议会、法院、保险公司)均可通过该签名验证下方的元数据和照片哈希自 signed_at 时间戳以来未被篡改。私钥从未离开 AWS;公钥已公开发布以供验证。
 >
 > ☐ Check: Must say the signature lets a third party VERIFY the record HAS NOT BEEN ALTERED (detection). It must NOT say the record cannot be altered / is unchangeable (prevention). Check the verbs.
 
@@ -48,7 +99,7 @@ _council term just settled on 市政府; verify the signature claim + fine wordi
 **Evidence-record statement** — `pdf.evidence.statement`
 > EN: This record was generated automatically by ParkProof at the time of parking. The arrival timestamp, GPS coordinates, sign translation, and photographs constitute a contemporaneous evidence record suitable for attachment to a parking infringement review submission with the relevant Australian local council.
 >
-> zh-CN: 本记录由 ParkProof 在停车时自动生成。到达时间戳、GPS 坐标、标志翻译和照片,共同构成一份同期形成的证据记录,可附于向澳大利亚相关地方市政府提交的停车罚单复核申请。
+> zh-CN: 本记录由 ParkProof 在停车时自动生成。到达时间戳、GPS 坐标、标志翻译和照片,共同构成一份同期形成的证据记录,可附于向澳大利亚相关地方市议会提交的停车罚单复核申请。
 >
 > ☐ Check: Names the correct local-government body (council) for that language; "infringement review submission" matches what a real council calls the process; claims only what is true.
 
@@ -83,7 +134,7 @@ _council term just settled on 市政府; verify the signature claim + fine wordi
 **KMS signing explainer** — `privacy.signingCopy`
 > EN: When you sign in (or stay anonymous, both work), each record is signed by an AWS KMS-managed ECDSA P-256 key. The private key never leaves AWS. The public key is published at <a>/parkproof-public-key.pem</a> for anyone (a council, court, insurer) to verify the evidence chain using <code>openssl dgst</code>. See the appendix in any exported PDF for the step-by-step.
 >
-> zh-CN: 无论你登录还是保持匿名(两种都行),每条记录都由 AWS KMS 托管的 ECDSA P-256 密钥签名。私钥从不离开 AWS。公钥公开发布在 <a>/parkproof-public-key.pem</a>,任何人(市政府、法院、保险公司)都可以用 <code>openssl dgst</code> 验证这条证据链。任何导出的 PDF 里都有一份分步说明的附录。
+> zh-CN: 无论你登录还是保持匿名(两种都行),每条记录都由 AWS KMS 托管的 ECDSA P-256 密钥签名。私钥从不离开 AWS。公钥公开发布在 <a>/parkproof-public-key.pem</a>,任何人(市议会、法院、保险公司)都可以用 <code>openssl dgst</code> 验证这条证据链。任何导出的 PDF 里都有一份分步说明的附录。
 >
 > ☐ Check: The public-key / verify-the-chain explanation is accurate and does not overclaim.
 
@@ -96,9 +147,9 @@ _council term just settled on 市政府; verify the signature claim + fine wordi
 
 ---
 
-## Punjabi (`pa`)
+### Punjabi (`pa`)
 
-_council term was corrected ਨਗਰ ਨਿਗਮ → ਕੌਂਸਲ on these exact strings — highest value to ratify_
+_council ਕੌਂਸਲ confirmed against Fines Victoria; disability-permit scheme name flagged_
 
 **Signature claim — MOST IMPORTANT** — `pdf.signature.intro`
 > EN: This evidence record was signed by ParkProof's AWS KMS-managed private key at the time of saving. The signature lets any third party (council, court, insurer) verify that the metadata and photo hashes below have not been altered since the signed_at timestamp. The private key never leaves AWS; the public key is published openly for verification.
@@ -172,9 +223,9 @@ _council term was corrected ਨਗਰ ਨਿਗਮ → ਕੌਂਸਲ on these 
 
 ---
 
-## Korean (`ko`)
+### Korean (`ko`)
 
-_council term was changed 시청 → 지자체 — ratify it reads right on the legal statement_
+_fine corrected to 벌금 after research; council 의회 is the exact council word (optional)_
 
 **Signature claim — MOST IMPORTANT** — `pdf.signature.intro`
 > EN: This evidence record was signed by ParkProof's AWS KMS-managed private key at the time of saving. The signature lets any third party (council, court, insurer) verify that the metadata and photo hashes below have not been altered since the signed_at timestamp. The private key never leaves AWS; the public key is published openly for verification.
@@ -221,7 +272,7 @@ _council term was changed 시청 → 지자체 — ratify it reads right on the 
 **Disability-permit gate** — `result.permitRequired.copy`
 > EN: Parking here without a valid disability permit clearly displayed is an offence. In Victoria the fine is $400 or more, and the bay is reserved for people who need it. If you don't have one, scan a different spot.
 >
-> ko: 유효한 장애인 허가증을 잘 보이게 두지 않고 여기 주차하면 위반입니다. Victoria에서는 과태료가 $400을 넘고, 이 자리는 정말 필요한 분들을 위한 곳이에요. 허가증이 없으시면 다른 자리를 스캔해보세요.
+> ko: 유효한 장애인 허가증을 잘 보이게 두지 않고 여기 주차하면 위반입니다. Victoria에서는 벌금가 $400을 넘고, 이 자리는 정말 필요한 분들을 위한 곳이에요. 허가증이 없으시면 다른 자리를 스캔해보세요.
 >
 > ☐ Check: States the offence and the $400 figure accurately; the term for "disability permit" is correct and respectful; no moralising.
 
@@ -248,14 +299,14 @@ _council term was changed 시청 → 지자체 — ratify it reads right on the 
 
 ---
 
-## Hindi (`hi`)
+### Hindi (`hi`)
 
-_council term was unified to नगर पालिका — ratify on the statement_
+_council term corrected to परिषद after research_
 
 **Signature claim — MOST IMPORTANT** — `pdf.signature.intro`
 > EN: This evidence record was signed by ParkProof's AWS KMS-managed private key at the time of saving. The signature lets any third party (council, court, insurer) verify that the metadata and photo hashes below have not been altered since the signed_at timestamp. The private key never leaves AWS; the public key is published openly for verification.
 >
-> hi: यह सबूत रिकॉर्ड सेव होते समय ParkProof की AWS KMS-प्रबंधित निजी कुंजी द्वारा हस्ताक्षरित किया गया था। हस्ताक्षर किसी भी तृतीय पक्ष (नगर पालिका, अदालत, बीमाकर्ता) को यह सत्यापित करने देता है कि नीचे दिए गए मेटाडेटा और फ़ोटो हैश signed_at टाइमस्टैम्प के बाद नहीं बदले गए। निजी कुंजी कभी AWS नहीं छोड़ती; सार्वजनिक कुंजी सत्यापन के लिए खुले तौर पर प्रकाशित है।
+> hi: यह सबूत रिकॉर्ड सेव होते समय ParkProof की AWS KMS-प्रबंधित निजी कुंजी द्वारा हस्ताक्षरित किया गया था। हस्ताक्षर किसी भी तृतीय पक्ष (परिषद, अदालत, बीमाकर्ता) को यह सत्यापित करने देता है कि नीचे दिए गए मेटाडेटा और फ़ोटो हैश signed_at टाइमस्टैम्प के बाद नहीं बदले गए। निजी कुंजी कभी AWS नहीं छोड़ती; सार्वजनिक कुंजी सत्यापन के लिए खुले तौर पर प्रकाशित है।
 >
 > ☐ Check: Must say the signature lets a third party VERIFY the record HAS NOT BEEN ALTERED (detection). It must NOT say the record cannot be altered / is unchangeable (prevention). Check the verbs.
 
@@ -276,7 +327,7 @@ _council term was unified to नगर पालिका — ratify on the stat
 **Evidence-record statement** — `pdf.evidence.statement`
 > EN: This record was generated automatically by ParkProof at the time of parking. The arrival timestamp, GPS coordinates, sign translation, and photographs constitute a contemporaneous evidence record suitable for attachment to a parking infringement review submission with the relevant Australian local council.
 >
-> hi: यह रिकॉर्ड ParkProof द्वारा पार्किंग के समय स्वचालित रूप से तैयार किया गया है। पहुँचने का समय, GPS निर्देशांक, साइन का अनुवाद और फ़ोटो एक समकालीन सबूत रिकॉर्ड बनाते हैं, जिसे संबंधित ऑस्ट्रेलियाई स्थानीय नगर पालिका के पास पार्किंग चालान समीक्षा आवेदन के साथ संलग्न किया जा सकता है।
+> hi: यह रिकॉर्ड ParkProof द्वारा पार्किंग के समय स्वचालित रूप से तैयार किया गया है। पहुँचने का समय, GPS निर्देशांक, साइन का अनुवाद और फ़ोटो एक समकालीन सबूत रिकॉर्ड बनाते हैं, जिसे संबंधित ऑस्ट्रेलियाई स्थानीय परिषद के पास पार्किंग चालान समीक्षा आवेदन के साथ संलग्न किया जा सकता है।
 >
 > ☐ Check: Names the correct local-government body (council) for that language; "infringement review submission" matches what a real council calls the process; claims only what is true.
 
@@ -311,7 +362,7 @@ _council term was unified to नगर पालिका — ratify on the stat
 **KMS signing explainer** — `privacy.signingCopy`
 > EN: When you sign in (or stay anonymous, both work), each record is signed by an AWS KMS-managed ECDSA P-256 key. The private key never leaves AWS. The public key is published at <a>/parkproof-public-key.pem</a> for anyone (a council, court, insurer) to verify the evidence chain using <code>openssl dgst</code>. See the appendix in any exported PDF for the step-by-step.
 >
-> hi: जब आप साइन इन करते हैं (या गुमनाम रहते हैं — दोनों चलते हैं), तो हर रिकॉर्ड AWS KMS-प्रबंधित ECDSA P-256 कुंजी से हस्ताक्षरित होता है। निजी कुंजी AWS से कभी बाहर नहीं जाती। सार्वजनिक कुंजी <a>/parkproof-public-key.pem</a> पर प्रकाशित है, ताकि कोई भी (नगर पालिका, अदालत या बीमाकर्ता) <code>openssl dgst</code> से सबूत श्रृंखला सत्यापित कर सके — चरण-दर-चरण तरीके के लिए किसी भी निर्यात की गई PDF का परिशिष्ट देखें।
+> hi: जब आप साइन इन करते हैं (या गुमनाम रहते हैं — दोनों चलते हैं), तो हर रिकॉर्ड AWS KMS-प्रबंधित ECDSA P-256 कुंजी से हस्ताक्षरित होता है। निजी कुंजी AWS से कभी बाहर नहीं जाती। सार्वजनिक कुंजी <a>/parkproof-public-key.pem</a> पर प्रकाशित है, ताकि कोई भी (परिषद, अदालत या बीमाकर्ता) <code>openssl dgst</code> से सबूत श्रृंखला सत्यापित कर सके — चरण-दर-चरण तरीके के लिए किसी भी निर्यात की गई PDF का परिशिष्ट देखें।
 >
 > ☐ Check: The public-key / verify-the-chain explanation is accurate and does not overclaim.
 
@@ -324,9 +375,9 @@ _council term was unified to नगर पालिका — ratify on the stat
 
 ---
 
-## Vietnamese (`vi`)
+### Vietnamese (`vi`)
 
-_council/fine terms — match against a council parking-fine page_
+_council/fine terms — not yet web-verified_
 
 **Signature claim — MOST IMPORTANT** — `pdf.signature.intro`
 > EN: This evidence record was signed by ParkProof's AWS KMS-managed private key at the time of saving. The signature lets any third party (council, court, insurer) verify that the metadata and photo hashes below have not been altered since the signed_at timestamp. The private key never leaves AWS; the public key is published openly for verification.
@@ -400,9 +451,9 @@ _council/fine terms — match against a council parking-fine page_
 
 ---
 
-## Indonesian (`id`)
+### Indonesian (`id`)
 
-_tamper-evident wording — confirm it says "detectable", not "tamper-proof"_
+_tamper-evident wording — confirm "detectable", not "tamper-proof"_
 
 **Signature claim — MOST IMPORTANT** — `pdf.signature.intro`
 > EN: This evidence record was signed by ParkProof's AWS KMS-managed private key at the time of saving. The signature lets any third party (council, court, insurer) verify that the metadata and photo hashes below have not been altered since the signed_at timestamp. The private key never leaves AWS; the public key is published openly for verification.
@@ -476,9 +527,9 @@ _tamper-evident wording — confirm it says "detectable", not "tamper-proof"_
 
 ---
 
-## Italian (`it`)
+### Italian (`it`)
 
-_contravvenzione/ricorso legal register_
+_contravvenzione/ricorso legal register — not yet web-verified_
 
 **Signature claim — MOST IMPORTANT** — `pdf.signature.intro`
 > EN: This evidence record was signed by ParkProof's AWS KMS-managed private key at the time of saving. The signature lets any third party (council, court, insurer) verify that the metadata and photo hashes below have not been altered since the signed_at timestamp. The private key never leaves AWS; the public key is published openly for verification.
@@ -552,9 +603,9 @@ _contravvenzione/ricorso legal register_
 
 ---
 
-## Greek (`el`)
+### Greek (`el`)
 
-_κλήση/ένσταση legal register_
+_κλήση/ένσταση legal register — not yet web-verified_
 
 **Signature claim — MOST IMPORTANT** — `pdf.signature.intro`
 > EN: This evidence record was signed by ParkProof's AWS KMS-managed private key at the time of saving. The signature lets any third party (council, court, insurer) verify that the metadata and photo hashes below have not been altered since the signed_at timestamp. The private key never leaves AWS; the public key is published openly for verification.
