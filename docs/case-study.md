@@ -1,10 +1,12 @@
 # ParkProof — a PM case study
 
-_Mobile-first PWA. Photograph an Australian parking sign, get a plain-English "can I park now?" verdict in seconds, and save a timestamped, GPS-tagged, cryptographically-signed evidence record you'd use to dispute a wrongful ticket. Built solo across ten active days (16–25 May 2026), launched 26 May; ~$5/month to run; nine locales; **zero real users.**_
+_Mobile-first PWA. Photograph an Australian parking sign, get a plain-English "can I park now?" verdict in seconds, and save a timestamped, GPS-tagged, cryptographically-signed evidence record you'd use to dispute a wrongful ticket. Built solo across ten active days (16–25 May 2026), launched 26 May; ~$5/month to run; nine locales; **no external users yet.**_
 
 [Live →](https://www.parkproof.com.au) · [Source →](https://github.com/melroyds/parkproof)
 
-This is a craft project built to show how I scope, sequence, and trade off as a PM, not a startup attempt. The honest framing up front: the market is thin, there's no clean monetisation path, and no real user has ever used it. What it's optimised for is demonstrating range and decision-making on a real, shipped, working product. Read it for the decisions, not the metrics, there are no real metrics yet, and the case study says so wherever it matters.
+This is a craft project built to show how I scope, sequence, and trade off as a PM, not a startup attempt. The honest framing up front: the market is thin, there's no clean monetisation path, and it shipped with no external users. What it's optimised for is demonstrating range and decision-making on a real, shipped, working product. Read it for the decisions, not the metrics, there are no real-usage metrics yet, and the case study says so wherever it matters.
+
+One thing changed after launch: I got stung by a wrongful-feeling ticket myself. That moved me from the hypothetical persona to an actual user of the thing I built, and it's the trigger for a July 2026 revitalisation (roadmap in §6).
 
 ---
 
@@ -38,7 +40,7 @@ Each row is the decision, the trade-off accepted, and the alternative consciousl
 
 | Decision | Chose | Trade-off accepted | Deliberately did **not** build |
 |---|---|---|---|
-| **Vision model** | Sonnet 4.6 (adaptive thinking, schema-enforced) | ~3× the per-scan cost and 6–12s latency | Haiku 4.5 (cheaper/faster). Tried and rejected: it supports no thinking and inverted earliest-vs-farthest leave-by on stacked signs, "park until 6pm" became "until 11pm". Cost/correctness only trades one way here. |
+| **Vision model** | Sonnet 4.6 (adaptive thinking, schema-enforced) | ~3× the per-scan cost (~$0.03–0.05 per fresh scan, measured from CloudWatch token usage, vs Haiku's ~$0.015) and 6–12s latency | Haiku 4.5 (cheaper/faster). Tried and rejected: it supports no thinking and inverted earliest-vs-farthest leave-by on stacked signs, "park until 6pm" became "until 11pm". Cost/correctness only trades one way here. |
 | **Account model** | Anonymous-by-default, `localStorage` canonical, opt-in cloud sync never gated | Built the canonical session schema twice (local + cloud) and a 3-phase quota-recovery system; resisted every retention-funnel instinct | The default SaaS sign-up wall. The target user was just screwed by an institution; they will not make an account before translating a sign. |
 | **Evidence integrity** | KMS ECDSA P-256 signature over canonical metadata + in-browser SHA-256 photo hashes, with an `openssl dgst -verify` recipe in the PDF | ~$1/mo and apparatus no real user has exercised | A plain self-held hash (the user could alter the photo and re-hash, so it proves nothing) or no integrity layer. |
 | **The 30s gateway ceiling** | Async-polling via a TTL'd jobs table + self-invoke | A small polling state machine and a jobs table | Streaming (the gateway buffers anyway) or a longer-timeout integration. The pivot _removed_ complexity rather than adding it, the tell of a good one. |
@@ -82,13 +84,24 @@ Honest strength rating in brackets, this is what a technical reviewer can verify
 
 ---
 
-## 6. What a hiring PM would probe — and how this story should answer
+## 6. What's next (the July 2026 revitalisation)
+
+Becoming a real user (the ticket) is the trigger to pick it back up. In rough order:
+
+- **Native parking-app linking — shipped.** When a scanned bay requires payment, the result now offers platform-aware "Open EasyPark / PayStay" buttons (plus Wilson when the sign names it). Built on the verified store URLs, EasyPark's universal link, and Android `intent://` with a Play fallback, with no invented custom schemes (no major AU parking app publishes one, so a guessed `easypark://` would be a dead button). The AI already detects the payment sticker, so the relevant app surfaces first. EasyPark and PayStay cover City of Melbourne street parking.
+- **Android first, then Apple.** Wrap the PWA as a Trusted Web Activity (Bubblewrap) for a Play Store listing before touching the App Store. The PWA stays the source of truth and the TWA is a thin shell, so this is distribution, not a rebuild. Android first because the review bar is lower and the install friction it removes is real; iOS follows, weighed against Apple's review and the address-disclosure surface.
+- **Turn accuracy into a number.** The eval harness now exists (`scripts/eval-accuracy.mjs`, `npm run eval`); the concrete task is 30–50 ground-truthed real signs in `eval/corpus/` so the headline AI claim is measured, not asserted (this is probe 1 below, downgraded from "no harness" to "corpus pending").
+- **A full visual redesign.** The design system is currently clean and consistent (a recent design audit + a shared-component-library extraction), but the brand visuals are due a deliberate refresh.
+
+---
+
+## 7. What a hiring PM would probe — and how this story should answer
 
 These are the five doubts that surfaced independently across multiple senior-PM reads. They are the real ones.
 
 **1. "It's an AI-in-the-loop product. How do you know the translator is _accurate_, not confidently wrong?"**
 The whole evidence value-prop rests on the AI being right, and the only accuracy mechanism is a feedback button no one has pressed. There is no eval harness and no labelled test set.
-_Preempt, honestly:_ build a 30–50 sign labelled corpus (real Melbourne poles, hand-computed correct answers) and report measured accuracy _plus_ failure classes. Frame the staged telemetry as the _production_ complement to that eval, not as the validation itself. This is the single highest-leverage thing missing.
+_Preempt, honestly:_ the eval harness now exists (`scripts/eval-accuracy.mjs`, `npm run eval`); the remaining task is to populate `eval/corpus/` with 30–50 ground-truthed real signs and report measured accuracy _plus_ failure classes. Frame the staged in-app telemetry as the _production_ complement, not the validation itself. Until the corpus is filled this is still the highest-leverage gap, but it's now a data-entry task, not a build.
 
 **2. "The KMS evidence chain, no council has accepted it and you concede it proves integrity not legal weight. Differentiator, or engineering theatre?"**
 It's the headline feature and admittedly aspirational, which reads as falling in love with the artifact.
@@ -104,7 +117,7 @@ _Preempt:_ name the willingness-to-pay wedge already in the spec, the fleet/trad
 
 **5. "Your own numbers don't agree, and the '12-second' promise hides the hard case."**
 Per-scan cost appears as ~$0.02, ~$0.05, and ~$0.015 across the docs; language and commit counts drift between files; and the "~12 seconds" headline is the simple-sign path, while the stacked signs that are the _reason the product exists_ take 30–50s. A PM who cites cost discipline as a principle should have clean unit economics.
-_Preempt:_ pin one canonical per-scan cost derived from real CloudWatch token usage and use it everywhere. Separate the latency paths openly, 8–12s simple, 30–50s stacked, which is _why_ async-polling and the stepped loader exist. Reconcile the figures across the docs, and clarify that every "spotted live" bug was me dogfooding on real signs, not an external user.
+_Preempt:_ the per-scan cost is now pinned from real CloudWatch usage (~$0.03–0.05 per fresh scan, ~$0.01 for a text-only refresh) and used consistently here; the stale ~$0.02 figure in the older spec is the one to correct. Separate the latency paths openly, 8–12s simple, 30–50s stacked, which is _why_ async-polling and the stepped loader exist. And clarify that every "spotted live" bug was me dogfooding on real signs, not an external user.
 
 ---
 

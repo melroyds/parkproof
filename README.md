@@ -7,6 +7,8 @@
 
 A mobile-first, installable PWA with end-to-end AI: sign translation, evidence capture, departure reminders, and a tamper-evident PDF export — all working against a real AWS backend.
 
+> **What this demonstrates (it's a PM portfolio piece).** Solo-built and shipped: a mobile PWA, AI vision with schema-enforced output + adaptive thinking, a single-Lambda AWS backend using an async-polling pattern around the API Gateway 30s ceiling, a KMS-signed tamper-evident evidence chain with an `openssl`-verifiable PDF, nine census-chosen locales, and a deliberately short roadmap where every deferred feature has a named build-trigger. The product decisions, trade-offs, the deliberately-_not_-built list, and the honest limitations are written up in **[the case study →](docs/case-study.md)** — start there if you have five minutes. This README is the exhaustive feature/architecture reference.
+
 > **🚀 Try it live:** [https://www.parkproof.com.au](https://www.parkproof.com.au)
 >
 > Best on a phone — tap your browser's share menu → **"Add to Home Screen"** and ParkProof installs like a native app (own icon, fullscreen, no browser chrome). Also works fine on desktop if you upload sign photos from your library.
