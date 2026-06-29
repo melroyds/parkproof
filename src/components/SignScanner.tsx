@@ -5,6 +5,8 @@ import { haversineMeters } from '../lib/geo'
 import { loadSessions } from '../lib/storage'
 import { analyseSignPhoto, type QualityResult } from '../lib/photo-quality'
 import Icon from './Icon'
+import Button from './ui/Button'
+import BackButton from './ui/BackButton'
 import ReuseCard from './ReuseCard'
 import RecentScansPicker from './RecentScansPicker'
 import type { ParkingSession } from '../types'
@@ -270,12 +272,7 @@ export default function SignScanner({ onCapture, onReuseSession, onNoSignScan, o
 
   return (
     <div className="min-h-screen flex flex-col p-6 max-w-md mx-auto w-full">
-      <button
-        onClick={onCancel}
-        className="self-start text-ink-600 hover:text-ink-900 text-sm mb-4 transition-colors min-h-[44px] inline-flex items-center py-2.5 -my-2.5"
-      >
-        {t('common.back')}
-      </button>
+      <BackButton onClick={onCancel}>{t('common.back')}</BackButton>
 
       <h2 className="font-display text-3xl font-extrabold text-ink-900 mb-1">
         {t('scanner.header')}
@@ -346,12 +343,9 @@ export default function SignScanner({ onCapture, onReuseSession, onNoSignScan, o
             >
               {t('scanner.retake')}
             </button>
-            <button
-              onClick={confirm}
-              className="flex-1 bg-gradient-to-r from-brand-500 via-brand-500 to-brand-700 hover:brightness-110 active:brightness-95 disabled:bg-none disabled:bg-brand-300 text-white font-semibold py-3 rounded-xl shadow-md shadow-brand-500/20 transition-colors"
-            >
+            <Button onClick={confirm} variant="primary" size="sm" className="flex-1">
               {quality && quality.verdict !== 'ok' ? t('scanner.translateAnyway') : t('scanner.translate')}
-            </button>
+            </Button>
           </div>
         </>
       ) : noSignStage === 'idle' ? (
@@ -493,12 +487,9 @@ export default function SignScanner({ onCapture, onReuseSession, onNoSignScan, o
             >
               {t('scanner.retake')}
             </button>
-            <button
-              onClick={handleNoSignSave}
-              className="flex-1 bg-gradient-to-r from-brand-500 via-brand-500 to-brand-700 hover:brightness-110 active:brightness-95 disabled:bg-none disabled:bg-brand-300 text-white font-semibold py-3 rounded-xl shadow-md shadow-brand-500/20 transition-colors"
-            >
+            <Button onClick={handleNoSignSave} variant="primary" size="sm" className="flex-1">
               {t('scanner.noSignContinue')}
-            </button>
+            </Button>
           </div>
         </div>
       )}

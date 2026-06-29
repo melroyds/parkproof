@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import type { Clarification, RuleVariant } from '../types'
+import BackButton from './ui/BackButton'
 
 interface Props {
   signPhoto: string
@@ -12,12 +13,9 @@ export default function Clarify({ signPhoto, clarification, onPick, onCancel }: 
   const { t } = useTranslation()
   return (
     <div className="min-h-screen flex flex-col p-6 max-w-md mx-auto w-full">
-      <button
-        onClick={onCancel}
-        className="self-start min-h-[44px] inline-flex items-center py-2.5 -my-2.5 text-ink-600 hover:text-ink-900 text-sm mb-4 transition-colors"
-      >
+      <BackButton onClick={onCancel}>
         {t('common.back')}
-      </button>
+      </BackButton>
 
       <h2 className="font-display text-4xl font-extrabold text-ink-900 leading-tight">
         {clarification.question}

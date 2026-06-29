@@ -1,6 +1,7 @@
 import { Fragment, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import Icon from './Icon'
+import BackButton from './ui/BackButton'
 import {
   getPushPermissionState,
   subscribeToPush,
@@ -96,12 +97,7 @@ export default function AboutFeatures({ onBack, onTryIt }: Props) {
 
   return (
     <div className="min-h-screen flex flex-col p-6 max-w-2xl mx-auto w-full">
-      <button
-        onClick={onBack}
-        className="self-start min-h-[44px] inline-flex items-center py-2.5 -my-2.5 text-ink-600 hover:text-ink-900 text-sm mb-4"
-      >
-        {t('common.back')}
-      </button>
+      <BackButton onClick={onBack}>{t('common.back')}</BackButton>
 
       <header className="mb-10">
         <h1 className="font-display text-4xl font-extrabold text-ink-900 leading-tight mb-3">

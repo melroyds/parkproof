@@ -6,6 +6,7 @@ import { loadSessions } from '../lib/storage'
 import { useNow } from '../lib/use-now'
 import { formatCountdownLocalized } from '../lib/countdown'
 import Icon from './Icon'
+import BackButton from './ui/BackButton'
 
 interface Props {
   onBack: () => void
@@ -39,12 +40,7 @@ export default function SessionHistory({ onBack, onOpen }: Props) {
 
   return (
     <div className="min-h-screen flex flex-col p-6 max-w-md mx-auto w-full">
-      <button
-        onClick={onBack}
-        className="self-start min-h-[44px] inline-flex items-center py-2.5 -my-2.5 text-ink-600 hover:text-ink-900 text-sm mb-4 transition-colors"
-      >
-        {t('common.backToHome')}
-      </button>
+      <BackButton onClick={onBack}>{t('common.backToHome')}</BackButton>
 
       <h2 className="font-display text-3xl font-extrabold text-ink-900 mb-1">
         {t('history.header')}

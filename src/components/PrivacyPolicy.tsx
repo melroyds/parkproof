@@ -1,5 +1,6 @@
 import { Trans, useTranslation } from 'react-i18next'
 import { verifyUrlForLocale } from '../lib/verify-url'
+import BackButton from './ui/BackButton'
 
 interface Props {
   onBack: () => void
@@ -23,9 +24,9 @@ export default function PrivacyPolicy({ onBack }: Props) {
 
   return (
     <div className="min-h-screen flex flex-col p-6 max-w-2xl mx-auto w-full">
-      <button onClick={onBack} className="self-start min-h-[44px] inline-flex items-center py-2.5 -my-2.5 text-ink-600 hover:text-ink-900 text-sm mb-4">
+      <BackButton onClick={onBack}>
         {t('common.back')}
-      </button>
+      </BackButton>
 
       <h2 className="font-display text-3xl font-extrabold text-ink-900 mb-1">{t('privacy.header')}</h2>
       <p className="text-sm text-ink-600 mb-6 leading-relaxed">

@@ -13,6 +13,7 @@ import { updateSession } from '../lib/storage'
 import { useAuth } from '../lib/use-auth'
 import { mirrorSessionUpdateToCloud } from '../lib/sync'
 import Icon from './Icon'
+import Card from './ui/Card'
 
 /**
  * Per-session reminder management surface — closes the loop on the user's
@@ -329,7 +330,7 @@ export default function ScheduledRemindersSection({ session }: Props) {
   }
 
   return (
-    <section className="bg-white rounded-2xl border border-paper-300 p-5 mb-3">
+    <Card className="mb-3">
       <h3 className="text-xs uppercase tracking-widest font-semibold text-ink-600 mb-3">
         {t('scheduledReminders.header')}
       </h3>
@@ -478,6 +479,6 @@ export default function ScheduledRemindersSection({ session }: Props) {
           </button>
         </div>
       )}
-    </section>
+    </Card>
   )
 }

@@ -5,6 +5,8 @@ import { draftAppeal } from '../lib/claude'
 import { resizeImageFile } from '../lib/image'
 import Icon from './Icon'
 import BrandMark from './BrandMark'
+import Button from './ui/Button'
+import Card from './ui/Card'
 
 interface Props {
   /**
@@ -153,23 +155,23 @@ export default function AppealFlow({ session, onBack }: Props) {
           {t(strength.textKey)}
         </span>
 
-        <section className="bg-white rounded-2xl border border-paper-300 p-5 mb-4">
+        <Card className="mb-4">
           <h3 className="text-xs uppercase tracking-widest font-semibold text-ink-600 mb-2">
             {t('appeal.strategy')}
           </h3>
           <p className="text-sm text-ink-800 leading-relaxed">{stage.draft.notes}</p>
-        </section>
+        </Card>
 
-        <section className="bg-white rounded-2xl border border-paper-300 p-5 mb-4">
+        <Card className="mb-4">
           <h3 className="text-xs uppercase tracking-widest font-semibold text-ink-600 mb-2">
             {t('appeal.subjectLine')}
           </h3>
           <p className="font-display text-base font-bold text-ink-900">
             {stage.draft.appeal_subject}
           </p>
-        </section>
+        </Card>
 
-        <section className="bg-white rounded-2xl border border-paper-300 p-5 mb-6">
+        <Card className="mb-6">
           <div className="flex items-baseline justify-between mb-2">
             <h3 id="appeal-letter-label" className="text-xs uppercase tracking-widest font-semibold text-ink-600">
               {t('appeal.letter')}
@@ -188,15 +190,12 @@ export default function AppealFlow({ session, onBack }: Props) {
             aria-labelledby="appeal-letter-label"
             className="w-full text-sm text-ink-900 bg-paper-50 border border-paper-300 rounded-xl p-3 leading-relaxed focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 resize-y"
           />
-        </section>
+        </Card>
 
         <div className="flex flex-col gap-2">
-          <button
-            onClick={handleCopy}
-            className="bg-gradient-to-r from-brand-500 via-brand-500 to-brand-700 hover:brightness-110 active:brightness-95 disabled:bg-none disabled:bg-brand-300 text-white font-semibold py-4 rounded-2xl shadow-lg shadow-brand-500/25 transition-colors"
-          >
+          <Button onClick={handleCopy}>
             {copied ? t('appeal.copied') : t('appeal.copyToClipboard')}
-          </button>
+          </Button>
           <span role="status" aria-live="polite" className="sr-only">
             {copied ? t('appeal.copied') : ''}
           </span>

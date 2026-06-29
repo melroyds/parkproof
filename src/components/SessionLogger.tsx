@@ -9,6 +9,9 @@ import {
   formatAccuracy,
 } from '../lib/accuracy'
 import Icon from './Icon'
+import Button from './ui/Button'
+import BackButton from './ui/BackButton'
+import Card from './ui/Card'
 
 interface Props {
   /**
@@ -240,12 +243,9 @@ export default function SessionLogger({
 
   return (
     <div className="min-h-screen flex flex-col p-6 max-w-md mx-auto w-full">
-      <button
-        onClick={onCancel}
-        className="self-start min-h-[44px] inline-flex items-center py-2.5 -my-2.5 text-ink-600 hover:text-ink-900 text-sm mb-4 transition-colors"
-      >
+      <BackButton onClick={onCancel}>
         {t('common.back')}
-      </button>
+      </BackButton>
 
       <h2 className="font-display text-3xl font-extrabold text-ink-900 mb-1">
         {isNoSign ? t('logger.noSignHeader') : t('logger.header')}
@@ -282,7 +282,7 @@ export default function SessionLogger({
           as part of the evidence summary, with a clear caption so it's not
           mistaken for the (absent) sign photo. */}
       {isNoSign && ambientPhoto && (
-        <section className="mb-3 bg-white rounded-2xl border border-paper-300 p-4">
+        <Card pad="sm" className="mb-3">
           <h3 className="font-semibold text-sm text-ink-900 mb-2">
             {t('logger.ambientHeader')}
           </h3>
@@ -294,11 +294,11 @@ export default function SessionLogger({
           <p className="text-xs text-ink-600 mt-2">
             {t('logger.ambientCaption')}
           </p>
-        </section>
+        </Card>
       )}
 
       {/* GPS card */}
-      <section className="mb-3 bg-white rounded-2xl border border-paper-300 p-4">
+      <Card pad="sm" className="mb-3">
         <div className="flex items-center justify-between">
           <h3 className="font-semibold text-sm text-ink-900">{t('logger.location')}</h3>
           <div role="status" aria-live="polite">
@@ -451,7 +451,7 @@ export default function SessionLogger({
             </button>
           </div>
         )}
-      </section>
+      </Card>
 
       {/* Car photo */}
       <section className="mb-6">
@@ -519,13 +519,13 @@ export default function SessionLogger({
       </section>
 
       <div className="mt-auto flex flex-col gap-2">
-        <button
+        <Button
           onClick={saveSession}
           disabled={submitting}
-          className="bg-gradient-to-r from-brand-500 via-brand-500 to-brand-700 hover:brightness-110 active:brightness-95 disabled:bg-none disabled:bg-brand-300 disabled:cursor-not-allowed text-white font-semibold py-4 rounded-2xl shadow-lg shadow-brand-500/25 transition-colors"
+          className="disabled:cursor-not-allowed"
         >
           {t('logger.saveSession')}
-        </button>
+        </Button>
         <button
           onClick={onCancel}
           className="text-ink-600 hover:text-ink-900 font-medium py-2 transition-colors"

@@ -11,6 +11,10 @@ import {
 import { federationConfigured, redirectToProvider } from '../lib/federated-auth'
 import { useAuth } from '../lib/use-auth'
 import BrandMark from './BrandMark'
+import Button from './ui/Button'
+import BackButton from './ui/BackButton'
+import Alert from './ui/Alert'
+import Input from './ui/Input'
 
 interface Props {
   onDone: () => void
@@ -180,12 +184,7 @@ export default function AuthFlow({ onDone, onCancel }: Props) {
 
   return (
     <div className="min-h-screen flex flex-col p-6 max-w-md mx-auto w-full">
-      <button
-        onClick={onCancel}
-        className="self-start min-h-[44px] inline-flex items-center py-2.5 -my-2.5 text-ink-600 hover:text-ink-900 text-sm mb-4"
-      >
-        {t('common.back')}
-      </button>
+      <BackButton onClick={onCancel}>{t('common.back')}</BackButton>
 
       <div className="flex items-center gap-3 mb-1">
         <BrandMark className="w-10 h-10" />
@@ -206,22 +205,14 @@ export default function AuthFlow({ onDone, onCancel }: Props) {
       </p>
 
       {info && (
-        <div
-          role="status"
-          aria-live="polite"
-          className="mb-4 bg-brand-50 border border-brand-200 rounded-xl p-3 text-sm text-brand-800 leading-relaxed"
-        >
+        <Alert variant="info" role="status" className="mb-4">
           {info}
-        </div>
+        </Alert>
       )}
       {error && (
-        <div
-          id="auth-error"
-          role="alert"
-          className="mb-4 bg-accent-50 border border-accent-300 rounded-xl p-3 text-sm text-accent-800 leading-relaxed break-words"
-        >
+        <Alert variant="notice" role="alert" id="auth-error" className="mb-4 break-words">
           {error}
-        </div>
+        </Alert>
       )}
 
       {(stage.name === 'sign-in' || stage.name === 'sign-up') && federationConfigured() && (
@@ -256,7 +247,7 @@ export default function AuthFlow({ onDone, onCancel }: Props) {
         >
           <label className="text-sm font-semibold text-ink-700">
             {t('auth.email')}
-            <input
+            <Input
               type="email"
               autoComplete="email"
               required
@@ -264,12 +255,12 @@ export default function AuthFlow({ onDone, onCancel }: Props) {
               onChange={(e) => setEmail(e.target.value)}
               aria-invalid={error ? true : undefined}
               aria-describedby={error ? 'auth-error' : undefined}
-              className="mt-1 w-full border border-paper-300 rounded-xl px-3 py-2.5 text-base focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
+              className="mt-1"
             />
           </label>
           <label className="text-sm font-semibold text-ink-700">
             {t('auth.password')}
-            <input
+            <Input
               type="password"
               autoComplete={stage.name === 'sign-up' ? 'new-password' : 'current-password'}
               required
@@ -278,7 +269,7 @@ export default function AuthFlow({ onDone, onCancel }: Props) {
               onChange={(e) => setPassword(e.target.value)}
               aria-invalid={error ? true : undefined}
               aria-describedby={error ? 'auth-error' : undefined}
-              className="mt-1 w-full border border-paper-300 rounded-xl px-3 py-2.5 text-base focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
+              className="mt-1"
             />
             {stage.name === 'sign-up' && (
               <span className="block mt-1 text-xs text-ink-600 font-normal">
@@ -286,10 +277,12 @@ export default function AuthFlow({ onDone, onCancel }: Props) {
               </span>
             )}
           </label>
-          <button
+          <Button
             type="submit"
             disabled={busy}
-            className="bg-gradient-to-r from-brand-500 via-brand-500 to-brand-700 hover:brightness-110 active:brightness-95 disabled:bg-none disabled:bg-brand-300 text-white font-semibold py-3 rounded-xl shadow-md shadow-brand-500/20 transition-colors mt-2"
+            variant="primary"
+            size="sm"
+            className="mt-2"
           >
             {busy
               ? stage.name === 'sign-in'
@@ -298,7 +291,7 @@ export default function AuthFlow({ onDone, onCancel }: Props) {
               : stage.name === 'sign-in'
                 ? t('auth.signInBtn')
                 : t('auth.createAccountBtn')}
-          </button>
+          </Button>
         </form>
       )}
 
@@ -306,7 +299,7 @@ export default function AuthFlow({ onDone, onCancel }: Props) {
         <form onSubmit={handleVerify} className="flex flex-col gap-3">
           <label className="text-sm font-semibold text-ink-700">
             {t('auth.verificationCode')}
-            <input
+            <Input
               type="text"
               inputMode="numeric"
               autoComplete="one-time-code"
@@ -316,16 +309,17 @@ export default function AuthFlow({ onDone, onCancel }: Props) {
               onChange={(e) => setCode(e.target.value)}
               aria-invalid={error ? true : undefined}
               aria-describedby={error ? 'auth-error' : undefined}
-              className="mt-1 w-full border border-paper-300 rounded-xl px-3 py-2.5 text-base font-mono tracking-widest focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
+              className="mt-1 font-mono tracking-widest"
             />
           </label>
-          <button
+          <Button
             type="submit"
             disabled={busy}
-            className="bg-brand-500 hover:bg-brand-600 disabled:bg-brand-300 text-white font-semibold py-3 rounded-xl shadow-md shadow-brand-500/20 transition-colors"
+            variant="secondary"
+            size="sm"
           >
             {busy ? t('auth.verifying') : t('auth.verifyBtn')}
-          </button>
+          </Button>
           <button
             type="button"
             onClick={handleResend}
@@ -341,7 +335,7 @@ export default function AuthFlow({ onDone, onCancel }: Props) {
         <form onSubmit={handleForgot} className="flex flex-col gap-3">
           <label className="text-sm font-semibold text-ink-700">
             {t('auth.email')}
-            <input
+            <Input
               type="email"
               autoComplete="email"
               required
@@ -349,16 +343,17 @@ export default function AuthFlow({ onDone, onCancel }: Props) {
               onChange={(e) => setEmail(e.target.value)}
               aria-invalid={error ? true : undefined}
               aria-describedby={error ? 'auth-error' : undefined}
-              className="mt-1 w-full border border-paper-300 rounded-xl px-3 py-2.5 text-base focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
+              className="mt-1"
             />
           </label>
-          <button
+          <Button
             type="submit"
             disabled={busy}
-            className="bg-brand-500 hover:bg-brand-600 disabled:bg-brand-300 text-white font-semibold py-3 rounded-xl shadow-md transition-colors"
+            variant="secondary"
+            size="sm"
           >
             {busy ? t('auth.sending') : t('auth.sendResetCode')}
-          </button>
+          </Button>
         </form>
       )}
 
@@ -366,7 +361,7 @@ export default function AuthFlow({ onDone, onCancel }: Props) {
         <form onSubmit={handleReset} className="flex flex-col gap-3">
           <label className="text-sm font-semibold text-ink-700">
             {t('auth.codeFromEmail')}
-            <input
+            <Input
               type="text"
               inputMode="numeric"
               autoComplete="one-time-code"
@@ -375,12 +370,12 @@ export default function AuthFlow({ onDone, onCancel }: Props) {
               onChange={(e) => setCode(e.target.value)}
               aria-invalid={error ? true : undefined}
               aria-describedby={error ? 'auth-error' : undefined}
-              className="mt-1 w-full border border-paper-300 rounded-xl px-3 py-2.5 text-base font-mono tracking-widest focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
+              className="mt-1 font-mono tracking-widest"
             />
           </label>
           <label className="text-sm font-semibold text-ink-700">
             {t('auth.newPassword')}
-            <input
+            <Input
               type="password"
               autoComplete="new-password"
               required
@@ -389,16 +384,17 @@ export default function AuthFlow({ onDone, onCancel }: Props) {
               onChange={(e) => setNewPassword(e.target.value)}
               aria-invalid={error ? true : undefined}
               aria-describedby={error ? 'auth-error' : undefined}
-              className="mt-1 w-full border border-paper-300 rounded-xl px-3 py-2.5 text-base focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
+              className="mt-1"
             />
           </label>
-          <button
+          <Button
             type="submit"
             disabled={busy}
-            className="bg-brand-500 hover:bg-brand-600 disabled:bg-brand-300 text-white font-semibold py-3 rounded-xl shadow-md transition-colors"
+            variant="secondary"
+            size="sm"
           >
             {busy ? t('auth.saving') : t('auth.resetPasswordBtn')}
-          </button>
+          </Button>
         </form>
       )}
 

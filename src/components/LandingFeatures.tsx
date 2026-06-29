@@ -1,5 +1,6 @@
 import { Trans, useTranslation } from 'react-i18next'
 import Icon from './Icon'
+import Button from './ui/Button'
 
 /**
  * First-time-visitor landing experience. Renders ONLY for users with no
@@ -131,13 +132,14 @@ export default function LandingFeatures({ onScanCta, onSignInCta }: Props) {
       {/* ── Gradient CTA. Brand-blue → purple. Larger than the standard
           home-screen scan button to anchor the page; the camera icon
           and the bigger padding read as "this is the thing you do". */}
-      <button
+      <Button
+        size="lg"
         onClick={onScanCta}
-        className="w-full bg-gradient-to-r from-brand-500 via-brand-500 to-brand-700 hover:brightness-110 active:brightness-95 text-white text-lg font-semibold py-5 rounded-2xl shadow-xl shadow-brand-500/30 flex items-center justify-center gap-3 transition-[filter] mb-3"
+        className="w-full gap-3 transition-[filter] mb-3"
       >
         <Icon name="camera" className="w-6 h-6" strokeWidth={2} />
         {t('landing.cta')}
-      </button>
+      </Button>
 
       {/* ── Secondary sign-in CTA. Renders ONLY for first-time visitors
           who aren't already signed in (App.tsx gates the prop). Returning

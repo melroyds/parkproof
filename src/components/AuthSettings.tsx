@@ -9,6 +9,9 @@ import {
   unsubscribeFromPush,
 } from '../lib/push'
 import Icon from './Icon'
+import Button from './ui/Button'
+import BackButton from './ui/BackButton'
+import Card from './ui/Card'
 
 interface Props {
   onBack: () => void
@@ -30,9 +33,9 @@ export default function AuthSettings({ onBack, onOpenPrivacy, onDeleted }: Props
     // this but the type system can't know.
     return (
       <div className="min-h-screen flex flex-col p-6 max-w-md mx-auto w-full">
-        <button onClick={onBack} className="self-start min-h-[44px] inline-flex items-center py-2.5 -my-2.5 text-ink-600 hover:text-ink-900 text-sm mb-4">
+        <BackButton onClick={onBack}>
           {t('common.back')}
-        </button>
+        </BackButton>
         <p className="text-ink-700">{t('settings.youSignedOut')}</p>
       </div>
     )
@@ -103,41 +106,43 @@ export default function AuthSettings({ onBack, onOpenPrivacy, onDeleted }: Props
 
   return (
     <div className="min-h-screen flex flex-col p-6 max-w-md mx-auto w-full">
-      <button onClick={onBack} className="self-start min-h-[44px] inline-flex items-center py-2.5 -my-2.5 text-ink-600 hover:text-ink-900 text-sm mb-4">
+      <BackButton onClick={onBack}>
         {t('common.back')}
-      </button>
+      </BackButton>
 
       <h2 className="font-display text-3xl font-extrabold text-ink-900 mb-1">{t('settings.header')}</h2>
       <p className="text-sm text-ink-600 mb-6 leading-relaxed">
         {t('settings.intro')}
       </p>
 
-      <section className="bg-white rounded-2xl border border-paper-300 p-5 mb-3">
+      <Card className="mb-3">
         <h3 className="text-xs uppercase tracking-widest font-semibold text-ink-600 mb-2">
           {t('settings.signedInAs')}
         </h3>
         <p className="text-ink-900 break-words">{user.email}</p>
         <p className="text-2xs text-ink-600 font-mono mt-1 break-all">{user.userId}</p>
-      </section>
+      </Card>
 
-      <section className="bg-white rounded-2xl border border-paper-300 p-5 mb-3">
+      <Card className="mb-3">
         <h3 className="font-display font-bold text-ink-900 mb-1">{t('settings.exportHeader')}</h3>
         <p className="text-xs text-ink-600 mb-3 leading-relaxed">
           {t('settings.exportCopy')}
         </p>
-        <button
+        <Button
+          variant="secondary"
+          size="sm"
           onClick={handleExport}
           disabled={exportStatus === 'busy'}
-          className="w-full bg-brand-500 hover:bg-brand-600 disabled:bg-brand-300 text-white font-semibold py-3 rounded-xl shadow-md transition-colors"
+          className="w-full"
         >
           {exportStatus === 'busy' ? t('settings.exportBuilding') : t('settings.exportCta')}
-        </button>
+        </Button>
         {exportError && (
           <p className="text-xs text-accent-700 mt-2 break-words">{exportError}</p>
         )}
-      </section>
+      </Card>
 
-      <section className="bg-white rounded-2xl border border-paper-300 p-5 mb-3">
+      <Card className="mb-3">
         <h3 className="font-display font-bold text-ink-900 mb-1">{t('settings.privacyHeader')}</h3>
         <p className="text-xs text-ink-600 mb-3 leading-relaxed">
           {t('settings.privacyCopy')}
@@ -148,7 +153,7 @@ export default function AuthSettings({ onBack, onOpenPrivacy, onDeleted }: Props
         >
           {t('settings.privacyCta')}
         </button>
-      </section>
+      </Card>
 
       {/* Push notification management — per-device toggle for whether
           this browser receives Web Push reminders. Subscription state is
@@ -161,7 +166,7 @@ export default function AuthSettings({ onBack, onOpenPrivacy, onDeleted }: Props
           settings screen — defer to post-launch. */}
       <PushManagementSection />
 
-      <section className="bg-white rounded-2xl border border-paper-300 p-5 mb-3">
+      <Card className="mb-3">
         <h3 className="font-display font-bold text-ink-900 mb-1">{t('settings.signOutHeader')}</h3>
         <p className="text-xs text-ink-600 mb-3 leading-relaxed">
           {t('settings.signOutCopy')}
@@ -175,7 +180,7 @@ export default function AuthSettings({ onBack, onOpenPrivacy, onDeleted }: Props
         >
           {t('settings.signOutCta')}
         </button>
-      </section>
+      </Card>
 
       <section className="bg-accent-50 border-2 border-accent-300 rounded-2xl p-5 mt-3">
         <h3 className="font-display font-bold text-ink-900 mb-1 flex items-center gap-2">
@@ -298,7 +303,7 @@ function PushManagementSection() {
   }
 
   return (
-    <section className="bg-white rounded-2xl border border-paper-300 p-5 mb-3">
+    <Card className="mb-3">
       <h3 className="font-display font-bold text-ink-900 mb-1">
         {t('settings.pushHeader')}
       </h3>
@@ -342,6 +347,6 @@ function PushManagementSection() {
               : t('settings.pushEnable')}
         </button>
       )}
-    </section>
+    </Card>
   )
 }

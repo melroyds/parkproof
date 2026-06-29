@@ -20,6 +20,8 @@ import { mirrorSessionUpdateToCloud } from '../lib/sync'
 import { formatExpiryAbsolute, formatReminderTimesLine } from '../lib/time-format'
 import { sessionTimezone } from '../lib/timezone'
 import Icon from './Icon'
+import Button from './ui/Button'
+import Card from './ui/Card'
 
 /**
  * Offsets the user can pick from, in minutes before expiry. Covers the realistic
@@ -474,7 +476,7 @@ export default function ReminderOptions({ session, onDone }: Props) {
       </p>
 
       {/* Calendar */}
-      <section className="mb-3 bg-white rounded-2xl border border-paper-300 p-5">
+      <Card className="mb-3">
         <div className="flex items-start gap-3 mb-3">
           <div className="w-12 h-12 rounded-xl bg-brand-50 text-brand-600 flex items-center justify-center shrink-0">
             <Icon name="calendar" className="w-6 h-6" />
@@ -486,10 +488,12 @@ export default function ReminderOptions({ session, onDone }: Props) {
             </p>
           </div>
         </div>
-        <button
+        <Button
+          variant="secondary"
+          size="sm"
           onClick={handleIcs}
           disabled={icsState === 'downloaded' || selectedList.length === 0}
-          className="w-full bg-brand-500 hover:bg-brand-600 disabled:bg-brand-300 text-white font-semibold py-3 rounded-xl shadow-md shadow-brand-500/20 transition-colors"
+          className="w-full"
         >
           {icsState === 'downloaded'
             ? t('reminders.calendarDownloaded')
@@ -498,11 +502,11 @@ export default function ReminderOptions({ session, onDone }: Props) {
               : icsState === 'empty'
                 ? t('reminders.calendarPickAtLeastOne')
                 : t('reminders.calendarCta', { count: selectedList.length })}
-        </button>
-      </section>
+        </Button>
+      </Card>
 
       {/* Push */}
-      <section className="mb-6 bg-white rounded-2xl border border-paper-300 p-5">
+      <Card className="mb-6">
         <div className="flex items-start gap-3 mb-3">
           <div className="w-12 h-12 rounded-xl bg-accent-50 text-accent-700 flex items-center justify-center shrink-0">
             <Icon name="bell" className="w-6 h-6" />
@@ -546,7 +550,7 @@ export default function ReminderOptions({ session, onDone }: Props) {
             {t('reminders.pushScheduleFailed')}
           </p>
         )}
-      </section>
+      </Card>
 
       <button
         onClick={onDone}
@@ -728,7 +732,7 @@ function NoSignReminderPicker({ session, onDone }: Props) {
       </p>
 
       {/* Calendar */}
-      <section className="mb-3 bg-white rounded-2xl border border-paper-300 p-5">
+      <Card className="mb-3">
         <div className="flex items-start gap-3 mb-3">
           <div className="w-12 h-12 rounded-xl bg-brand-50 text-brand-600 flex items-center justify-center shrink-0">
             <Icon name="calendar" className="w-6 h-6" />
@@ -755,10 +759,10 @@ function NoSignReminderPicker({ session, onDone }: Props) {
                 ? t('reminders.calendarPickAtLeastOne')
                 : t('reminders.calendarCta', { count: selectedList.length })}
         </button>
-      </section>
+      </Card>
 
       {/* Push */}
-      <section className="mb-6 bg-white rounded-2xl border border-paper-300 p-5">
+      <Card className="mb-6">
         <div className="flex items-start gap-3 mb-3">
           <div className="w-12 h-12 rounded-xl bg-accent-50 text-accent-700 flex items-center justify-center shrink-0">
             <Icon name="bell" className="w-6 h-6" />
@@ -802,7 +806,7 @@ function NoSignReminderPicker({ session, onDone }: Props) {
             {t('reminders.pushScheduleFailed')}
           </p>
         )}
-      </section>
+      </Card>
 
       <button
         onClick={onDone}

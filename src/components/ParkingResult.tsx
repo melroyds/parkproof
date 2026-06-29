@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { ParkingRules } from '../types'
 import Icon from './Icon'
+import Button from './ui/Button'
+import Card from './ui/Card'
 import { submitFeedback } from '../lib/feedback'
 import { useNow } from '../lib/use-now'
 import { formatCountdownLocalized } from '../lib/countdown'
@@ -294,7 +296,7 @@ export default function ParkingResult({
       )}
 
       {/* On the sign */}
-      <section className="mt-6 bg-white rounded-2xl p-5 border border-paper-300">
+      <Card className="mt-6">
         <div className="flex items-baseline justify-between mb-3">
           <h3 className="font-display font-bold text-ink-900 text-sm uppercase tracking-widest">
             {t('result.onTheSign')}
@@ -330,7 +332,7 @@ export default function ParkingResult({
           <span className={`w-2 h-2 rounded-full ${confidenceDot}`} />
           <span className="text-xs text-ink-600">{confidenceText}</span>
         </div>
-      </section>
+      </Card>
 
       {/* Verification card */}
       {verified ? (
@@ -564,10 +566,10 @@ export default function ParkingResult({
                 {t('result.firstSaveValue')}
               </p>
             )}
-            <button
+            <Button
               onClick={onLogSession}
               disabled={saveBlocked}
-              className="bg-gradient-to-r from-brand-500 via-brand-500 to-brand-700 hover:brightness-110 active:brightness-95 disabled:bg-none disabled:bg-brand-300 disabled:cursor-not-allowed text-white font-semibold py-4 rounded-2xl shadow-lg shadow-brand-500/25 disabled:shadow-none transition-colors"
+              className="disabled:cursor-not-allowed disabled:shadow-none"
             >
               {blockedByPermitGate
                 ? t('result.logCtaBlockedPermit')
@@ -576,14 +578,14 @@ export default function ParkingResult({
                   : blockedByPayGate
                     ? t('result.logCtaBlocked')
                     : t('result.logCta')}
-            </button>
+            </Button>
           </>
         ) : (
           /* Can't-park override — an AI misread that wrongly says "can't park"
              shouldn't strand the driver with no recourse. Offer to log the
              spot as evidence of a reasonable decision rather than overruling
              them silently. Routes to the same logger as the can-park save. */
-          <div className="bg-white rounded-2xl border border-paper-300 p-4 mb-1">
+          <Card as="div" pad="sm" className="mb-1">
             <p className="text-sm text-ink-700 leading-relaxed mb-3">
               {t('result.cantParkOverride')}
             </p>
@@ -593,7 +595,7 @@ export default function ParkingResult({
             >
               {t('result.cantParkOverrideCta')}
             </button>
-          </div>
+          </Card>
         )}
         <button
           onClick={onScanAnother}

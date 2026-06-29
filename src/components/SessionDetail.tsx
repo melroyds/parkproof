@@ -4,6 +4,9 @@ import type { ParkingSession } from '../types'
 import { deleteSession, endSession, updateSession } from '../lib/storage'
 import ScheduledRemindersSection from './ScheduledRemindersSection'
 import Icon from './Icon'
+import Button from './ui/Button'
+import BackButton from './ui/BackButton'
+import Card from './ui/Card'
 import { useNow } from '../lib/use-now'
 import { formatCountdownLocalized } from '../lib/countdown'
 import { sessionTimezone } from '../lib/timezone'
@@ -231,12 +234,9 @@ export default function SessionDetail({
 
   return (
     <div className="min-h-screen flex flex-col p-6 max-w-md mx-auto w-full">
-      <button
-        onClick={onBack}
-        className="self-start text-ink-600 hover:text-ink-900 text-sm mb-4 transition-colors min-h-[44px] inline-flex items-center py-2.5 -my-2.5"
-      >
+      <BackButton onClick={onBack}>
         {t('common.backToHistory')}
-      </button>
+      </BackButton>
 
       <h2 className="font-display text-3xl font-extrabold text-ink-900 mb-1">
         {t('session.header')}
@@ -289,7 +289,7 @@ export default function SessionDetail({
         </div>
       )}
 
-      <section className="bg-white rounded-2xl border border-paper-300 p-5 mb-3">
+      <Card className="mb-3">
         <dl className="space-y-4 text-sm">
           <div>
             <dt className="text-xs uppercase tracking-widest font-semibold text-ink-600">
@@ -400,11 +400,11 @@ export default function SessionDetail({
             </div>
           )}
         </dl>
-      </section>
+      </Card>
 
       {/* Note — user-supplied context. Soft-asks for it on empty so people
           remember to add the WHY rather than just the WHEN-and-WHERE. */}
-      <section className="bg-white rounded-2xl border border-paper-300 p-5 mb-3">
+      <Card className="mb-3">
         <div className="flex items-baseline justify-between mb-2">
           <h3
             id="session-note-label"
@@ -481,7 +481,7 @@ export default function SessionDetail({
             {t('session.noteHelp')}
           </p>
         )}
-      </section>
+      </Card>
 
       {/* Scheduled push reminders — self-managing surface for "what
           notifications are queued for this session" with per-row × cancel,
@@ -492,7 +492,7 @@ export default function SessionDetail({
       {/* Sign photo — only rendered for sign-translated sessions. No-sign
           sessions drop straight to the ambient/car photos below. */}
       {session.sign_photo && (
-        <section className="bg-white rounded-2xl border border-paper-300 p-5 mb-3">
+        <Card className="mb-3">
           <h3 className="text-xs uppercase tracking-widest font-semibold text-ink-600 mb-2">
             {t('session.signPhotoLabel')}
           </h3>
@@ -501,14 +501,14 @@ export default function SessionDetail({
             alt="Sign"
             className="w-full rounded-xl border border-paper-300"
           />
-        </section>
+        </Card>
       )}
 
       {/* No-sign sessions: show the "no posted restrictions" banner and the
           optional ambient (surroundings) photo, which substitutes for the
           sign photo as the user-supplied visual evidence. */}
       {session.no_sign && (
-        <section className="bg-white rounded-2xl border border-paper-300 p-5 mb-3">
+        <Card className="mb-3">
           <h3 className="text-xs uppercase tracking-widest font-semibold text-ink-600 mb-2">
             {t('session.noSignLabel')}
           </h3>
@@ -531,11 +531,11 @@ export default function SessionDetail({
               {t('session.noAmbientCaptured')}
             </p>
           )}
-        </section>
+        </Card>
       )}
 
       {session.car_photo && (
-        <section className="bg-white rounded-2xl border border-paper-300 p-5 mb-3">
+        <Card className="mb-3">
           <h3 className="text-xs uppercase tracking-widest font-semibold text-ink-600 mb-2">
             {t('session.carPhotoLabel')}
           </h3>
@@ -544,17 +544,13 @@ export default function SessionDetail({
             alt="Car"
             className="w-full rounded-xl border border-paper-300"
           />
-        </section>
+        </Card>
       )}
 
       <div className="mt-6 flex flex-col gap-2">
-        <button
-          onClick={handleExportPdf}
-          disabled={pdfBusy}
-          className="bg-gradient-to-r from-brand-500 via-brand-500 to-brand-700 hover:brightness-110 active:brightness-95 disabled:bg-none disabled:bg-brand-300 text-white font-semibold py-4 rounded-2xl shadow-lg shadow-brand-500/25 transition-colors"
-        >
+        <Button onClick={handleExportPdf} disabled={pdfBusy}>
           {pdfBusy ? t('session.buildingPdf') : t('session.exportAsPdf')}
-        </button>
+        </Button>
         {pdfError && (
           <div className="bg-accent-50 border-2 border-accent-400 rounded-xl p-3 text-sm">
             <p className="font-display font-bold text-ink-900 mb-1">

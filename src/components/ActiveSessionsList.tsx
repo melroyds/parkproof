@@ -5,6 +5,7 @@ import { useNow } from '../lib/use-now'
 import { formatExpiryAbsolute } from '../lib/time-format'
 import { sessionTimezone } from '../lib/timezone'
 import Icon from './Icon'
+import BackButton from './ui/BackButton'
 
 interface Props {
   sessions: ParkingSession[]
@@ -40,12 +41,9 @@ export default function ActiveSessionsList({ sessions, onBack, onOpen }: Props) 
 
   return (
     <div className="min-h-screen flex flex-col p-6 max-w-md mx-auto w-full">
-      <button
-        onClick={onBack}
-        className="self-start min-h-[44px] inline-flex items-center py-2.5 -my-2.5 text-ink-600 hover:text-ink-900 text-sm mb-4 transition-colors"
-      >
+      <BackButton onClick={onBack}>
         {t('common.back')}
-      </button>
+      </BackButton>
 
       <h2 className="font-display text-3xl font-extrabold text-ink-900 mb-1">
         {t('active.allActiveHeader', {
