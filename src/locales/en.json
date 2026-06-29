@@ -340,7 +340,6 @@
     "expired": "Parking expired at <strong>{{when}}</strong>. Too late for a reminder, but your record is still saved as evidence if you need to dispute a ticket.",
     "intro": "Parking expires at <strong>{{when}}</strong>. Pick when you want to be reminded, choose as many as you like.",
     "chipAtExpiry": "At expiry",
-    "chipMin": "{{count}} min",
     "summaryWithSelections": "You'll be reminded at <strong>{{times}}</strong>.",
     "summaryEmpty": "No reminders selected. Pick at least one chip above.",
     "calendarHeader": "Calendar reminder",
@@ -372,11 +371,12 @@
     "pushBodyCheckOn": "Time to check on your car.",
     "noSign": {
       "intro": "No posted expiry here, but you can still ask for a check-in reminder. Pick how long from now, choose as many as you like.",
-      "chipMin": "{{count}} min",
       "chipHour_one": "1 hour",
       "chipHour_other": "{{count}} hours",
       "calendarCopy": "Drops into the iPhone / Android / Outlook calendar with one alarm per chip. Survives even if you close this app.",
-      "browserCopy": "Fires a notification at each chosen time, in-tab plus on the device's OS when available."
+      "browserCopy": "Fires a notification at each chosen time, in-tab plus on the device's OS when available.",
+      "chipMin_one": "{{count}} min",
+      "chipMin_other": "{{count}} min"
     },
     "pushStatus": {
       "subscribed": "✓ Push reminders enabled on this device",
@@ -391,7 +391,9 @@
       "header": "Push reminders scheduled",
       "single": "You'll be pushed at {{times}}.",
       "multiple": "You'll be pushed at {{times}}."
-    }
+    },
+    "chipMin_one": "{{count}} min",
+    "chipMin_other": "{{count}} min"
   },
   "scheduledReminders": {
     "header": "Scheduled reminders",

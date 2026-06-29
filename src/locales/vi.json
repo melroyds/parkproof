@@ -20,7 +20,7 @@
     "no": "Không",
     "close": "Đóng",
     "sendFeedback": "Gửi phản hồi",
-    "about": "Ứng dụng làm gì"
+    "about": "Ứng dụng này làm gì"
   },
   "language": {
     "title": "Ngôn ngữ",
@@ -31,10 +31,10 @@
     "refresh": "Tải lại"
   },
   "home": {
-    "tagline": "Đỗ xe ở Úc, giải mã rõ ràng — kèm bằng chứng ảnh phòng khi bị phạt oan.",
+    "tagline": "Đỗ xe ở Úc, dễ hiểu ngay — kèm bằng chứng ảnh phòng khi bị phạt oan.",
     "scanCta": "Quét biển báo đỗ xe",
     "scanAnother": "Quét biển báo khác",
-    "scanHelp": "Chúng tôi sẽ đọc biển báo, cho bạn biết có thể đỗ xe ngay không, và đề nghị nhắc nhở trước khi hết giờ.",
+    "scanHelp": "Chúng tôi đọc biển báo, cho bạn biết có đỗ được ngay không, và nhắc bạn trước khi hết giờ.",
     "history": "Lịch sử phiên",
     "historyEmpty": "trống",
     "historyCount_one": "Đã lưu {{count}}",
@@ -42,7 +42,7 @@
     "signInToSync": "Đăng nhập để đồng bộ giữa các thiết bị",
     "account": "Tài khoản",
     "steps": {
-      "translate": "Chụp biển báo → AI dịch các quy tắc",
+      "translate": "Chụp biển báo → AI dịch quy tắc",
       "log": "Chụp xe của bạn → bằng chứng có dấu thời gian",
       "remind": "Nhận lời nhắc trên lịch trước khi hết giờ đỗ"
     },
@@ -64,10 +64,10 @@
     "noPostedRestrictions": "Không có biển báo hạn chế",
     "iveLeft": "Tôi đã đi",
     "iveLeftAria": "Báo hiệu bạn đã rời khỏi chỗ đỗ xe này",
-    "iveLeftConfirm": "Đánh dấu là đã rời đi bây giờ? Bản ghi sẽ chuyển sang lịch sử với thời gian bạn rời đi được ghi lại.",
+    "iveLeftConfirm": "Đánh dấu là đã rời đi? Bản ghi sẽ chuyển sang lịch sử kèm thời điểm bạn rời đi.",
     "nextPing": "Lời nhắc tiếp theo: {{when}}",
     "recheckNow": "Kiểm tra lại ngay",
-    "recheckSub": "Vẫn hợp lệ chứ? Xác minh lại trong vài giây",
+    "recheckSub": "Vẫn đỗ được chứ? Kiểm tra lại trong vài giây",
     "cardAria": "Bản ghi đỗ xe đang hoạt động tại {{address}}, {{status}}. Nhấn để xem chi tiết.",
     "listCardAria": "Mở bản ghi đỗ xe tại {{address}}, {{status}}.",
     "morePillAria_one": "Xem thêm {{count}} bản ghi đỗ xe đang hoạt động",
@@ -79,7 +79,7 @@
   },
   "scanner": {
     "header": "Quét biển báo đỗ xe",
-    "instructions": "Chụp ảnh rõ nét của (các) biển báo. Nếu các biển báo xếp chồng lên nhau, hãy bao gồm tất cả trong một ảnh.",
+    "instructions": "Chụp một tấm ảnh rõ nét của biển báo. Nếu các biển báo xếp chồng lên nhau, hãy gộp hết vào một ảnh.",
     "takePhoto": "Chụp ảnh",
     "takePhotoSub": "Trực tiếp, bằng máy ảnh của bạn",
     "fromLibrary": "Từ thư viện",
@@ -88,13 +88,13 @@
     "translate": "Dịch",
     "translateAnyway": "Vẫn dịch",
     "qualityHeader": "Ảnh có thể rõ hơn",
-    "qualityBlurry": "Ảnh trông bị mờ — nhấn vào biển báo để lấy nét rồi chụp lại để có kết quả tin cậy hơn?",
-    "qualityDark": "Ảnh trông tối — AI có thể đọc sai. Đến gần nguồn sáng hơn hoặc chụp lại có đèn flash?",
-    "qualityOverexposed": "Ảnh trông quá sáng — nắng chiếu trực tiếp vào biển báo? Dùng tay che ống kính rồi chụp lại?",
-    "qualityTiny": "Ảnh có độ phân giải rất thấp — AI có thể bỏ sót chi tiết. Chụp lại gần biển báo hơn?",
-    "noSignHere": "Không có biển báo ở đây? Chỉ cần ghi nhận vị trí đỗ →",
+    "qualityBlurry": "Ảnh trông hơi mờ — chạm vào biển báo để lấy nét rồi chụp lại cho chắc nhé?",
+    "qualityDark": "Ảnh trông tối — AI có thể đọc sai. Đến gần nguồn sáng hơn hoặc bật flash chụp lại nhé?",
+    "qualityOverexposed": "Ảnh trông quá chói — nắng chiếu thẳng vào biển báo? Lấy tay che bớt ống kính rồi chụp lại nhé?",
+    "qualityTiny": "Ảnh có độ phân giải khá thấp — AI có thể bỏ sót chi tiết. Lại gần biển báo hơn rồi chụp lại nhé?",
+    "noSignHere": "Không có biển báo ở đây? Cứ ghi nhận vị trí đỗ →",
     "noSignChooseHeader": "Ghi nhận vị trí không có biển báo",
-    "noSignChooseCopy": "Tùy chọn chụp ảnh xung quanh để chứng minh không có biển báo nào. Điều này củng cố hồ sơ bằng chứng của bạn.",
+    "noSignChooseCopy": "Bạn có thể chụp thêm ảnh xung quanh để cho thấy không có biển báo nào. Việc này giúp hồ sơ bằng chứng của bạn chắc chắn hơn.",
     "noSignTakeAmbient": "Chụp ảnh xung quanh",
     "noSignTakeAmbientSub": "Cho thấy không có biển báo",
     "noSignFromLibrary": "Chọn từ thư viện",
@@ -102,9 +102,9 @@
     "noSignAmbientAlt": "Xung quanh — không có biển báo",
     "noSignAmbientCaption": "Chụp để chứng minh không có biển báo tại vị trí này.",
     "noSignContinue": "Tiếp tục ghi nhận",
-    "privacyLine": "Ảnh của bạn được đọc ngay trên điện thoại. Chỉ ảnh biển báo được gửi đi để dịch, và không bao giờ lưu trên máy chủ của chúng tôi. Không cần tài khoản.",
+    "privacyLine": "Ảnh của bạn được đọc ngay trên điện thoại. Chỉ ảnh biển báo mới được gửi đi để dịch, và không bao giờ lưu trên máy chủ của chúng tôi. Không cần tài khoản.",
     "cameraDeniedTitle": "Máy ảnh đang bị tắt",
-    "cameraDeniedCopy": "Chọn một ảnh từ thư viện thay thế, hoặc bật lại quyền máy ảnh trong cài đặt trình duyệt.",
+    "cameraDeniedCopy": "Hãy chọn một ảnh từ thư viện, hoặc bật lại quyền máy ảnh trong cài đặt trình duyệt.",
     "couldntReadPhoto": "Không đọc được ảnh đó. Thử ảnh khác, hoặc chọn một ảnh từ thư viện của bạn."
   },
   "reuse": {
@@ -112,12 +112,12 @@
     "useThisRead": "Dùng lại kết quả này",
     "dismiss": "Bỏ qua",
     "pickerHeader": "Dùng lại lần quét gần đây",
-    "pickerCopy": "Chúng tôi không tự nhận diện được vị trí của bạn. Nếu bạn đang đỗ ở chỗ đã quét trong tuần qua, chọn ở đây để bỏ qua bước chụp ảnh.",
+    "pickerCopy": "Chúng tôi chưa tự xác định được vị trí của bạn. Nếu bạn đang đỗ ở chỗ đã quét trong tuần qua, chọn ở đây để bỏ qua bước chụp ảnh.",
     "metersAway": "Cách {{meters}}m",
     "signPhotoAlt": "Biển báo bạn đã quét trước đó",
     "bulletsHeader": "Các điểm chính đã ghi nhận",
     "youParked": "Bạn đã đỗ: <strong>{{side}}</strong>",
-    "matchCopy": "Biển báo trước mặt bạn có khớp với cái này không? Dùng lại để bỏ qua việc chụp ảnh và nhận câu trả lời mới \"có thể đỗ ở đây không?\" trong vài giây."
+    "matchCopy": "Biển báo trước mặt bạn có khớp với cái này không? Dùng lại để bỏ qua bước chụp ảnh và có ngay câu trả lời mới \"đỗ được ở đây không?\" trong vài giây."
   },
   "clarify": {
     "imageAlt": "Biển báo đã quét"
@@ -158,25 +158,25 @@
       "kicker": "KHU VỰC GIẤY PHÉP",
       "header": "Chỉ dành cho người có giấy phép ngay bây giờ",
       "headerWithArea": "Chỉ dành cho Khu vực Giấy phép {{area}} ngay bây giờ",
-      "copy": "Đây là khu vực giấy phép cư trú hoặc doanh nghiệp. Bạn chỉ có thể đỗ xe ở đây nếu có giấy phép hợp lệ cho khu vực này. Cán bộ hội đồng địa phương kiểm tra số giấy phép so với khu vực — giấy phép cho khu vực kế bên không được tính.",
-      "copyWithArea": "Bạn chỉ có thể đỗ xe ở đây nếu có giấy phép hợp lệ cho Khu vực Giấy phép {{area}}. Số trên nhãn giấy phép của bạn phải khớp — cán bộ kiểm tra mã khu vực, không chỉ là việc bạn có giấy phép.",
+      "copy": "Đây là khu vực giấy phép cho cư dân hoặc doanh nghiệp. Bạn chỉ đỗ được ở đây nếu có giấy phép hợp lệ cho khu vực này. Cán bộ hội đồng địa phương đối chiếu số giấy phép với khu vực — giấy phép của khu bên cạnh không được tính.",
+      "copyWithArea": "Bạn chỉ đỗ được ở đây nếu có giấy phép hợp lệ cho Khu vực Giấy phép {{area}}. Số trên nhãn giấy phép phải khớp — cán bộ kiểm tra mã khu vực, chứ không chỉ xem bạn có giấy phép hay không.",
       "ack": "Vâng, tôi có giấy phép hợp lệ cho khu vực này",
       "ackWithArea": "Vâng, tôi có giấy phép hợp lệ cho Khu vực Giấy phép {{area}}"
     },
     "aiCaveat": "Đây là kết quả AI đọc biển báo. Luôn liếc nhìn biển báo thực tế trước khi rời xe.",
-    "cantParkOverride": "Cho rằng kết quả này sai? Bạn vẫn có thể ghi nhận chỗ này làm bằng chứng.",
+    "cantParkOverride": "Thấy kết quả này sai? Bạn vẫn có thể ghi nhận chỗ này làm bằng chứng.",
     "cantParkOverrideCta": "Vẫn ghi nhận",
-    "firstSaveValue": "Lưu lại giữ một bản ghi có dấu thời gian, phát hiện được mọi thay đổi. Bằng chứng của bạn phòng khi bị phạt oan."
+    "firstSaveValue": "Lưu lại giúp giữ một bản ghi có dấu thời gian, phát hiện được mọi thay đổi. Đây là bằng chứng của bạn phòng khi bị phạt oan."
   },
   "logger": {
     "header": "Ghi lại bản ghi đỗ xe này",
-    "intro": "Chúng tôi sẽ lưu bản ghi có dấu thời gian kèm ảnh và GPS của bạn — bằng chứng hữu ích nếu bạn cần khiếu nại một vé phạt oan.",
+    "intro": "Chúng tôi sẽ lưu một bản ghi có dấu thời gian kèm ảnh và GPS của bạn — bằng chứng hữu ích nếu bạn cần khiếu nại một vé phạt oan.",
     "location": "Vị trí",
     "acquiringGps": "Đang lấy GPS…",
     "captured": "Đã ghi nhận ✓",
     "gpsImprecise": "GPS không đủ chính xác để xác minh vị trí của bạn",
-    "gpsImpreciseCopy": "Sai số đo được là <strong>{{accuracy}}</strong> — đủ để tìm quán cà phê, nhưng chưa đủ làm bằng chứng đỗ xe. Nhập địa chỉ đường thủ công để bản ghi đáng tin cậy.",
-    "gpsImpreciseDanger": "Sai số đo được là <strong>{{accuracy}}</strong> — có thể lệch hẳn sang khu phố khác (thường xảy ra với Starlink, VPN hoặc GPS trong nhà). Nhập địa chỉ đường thủ công để bản ghi đáng tin cậy.",
+    "gpsImpreciseCopy": "Sai số đo được là <strong>{{accuracy}}</strong> — đủ để tìm quán cà phê, nhưng chưa đủ làm bằng chứng đỗ xe. Hãy tự nhập địa chỉ đường để bản ghi đáng tin cậy hơn.",
+    "gpsImpreciseDanger": "Sai số đo được là <strong>{{accuracy}}</strong> — có thể lệch hẳn sang khu phố khác (thường gặp với Starlink, VPN hoặc GPS trong nhà). Hãy tự nhập địa chỉ đường để bản ghi đáng tin cậy hơn.",
     "enterAddress": "Nhập địa chỉ thủ công",
     "manuallyEntered": "Đã nhập thủ công",
     "accuracyLabel": "Độ chính xác {{accuracy}}",
@@ -186,7 +186,7 @@
     "addressNotFound": "Không tìm thấy địa chỉ đó. Thử thêm khu phố hoặc mã bưu chính.",
     "enterAddressFirst": "Nhập địa chỉ trước.",
     "gpsErrorDefault": "Không đọc được GPS của bạn.",
-    "gpsErrorDenied": "Bạn đã từ chối yêu cầu định vị. Để gắn GPS vào bản ghi này, cho phép vị trí cho trang này trong cài đặt trình duyệt rồi nhấn Thử lại.",
+    "gpsErrorDenied": "Bạn đã từ chối yêu cầu định vị. Để gắn GPS vào bản ghi này, hãy cho phép trang này truy cập vị trí trong cài đặt trình duyệt rồi nhấn Thử lại.",
     "gpsErrorUnavailable": "Thiết bị của bạn không thể xác định vị trí lúc này.",
     "gpsErrorTimeout": "Yêu cầu vị trí đã hết thời gian.",
     "gpsErrorUnsupported": "Trình duyệt này không hỗ trợ định vị.",
@@ -197,31 +197,30 @@
     "carOptionalHelp": "Tuỳ chọn nhưng rất khuyến khích để làm bằng chứng",
     "saveSession": "Lưu bản ghi",
     "noSignHeader": "Ghi nhận đỗ xe không biển báo",
-    "noSignIntro": "Chúng tôi sẽ lưu bản ghi GPS có dấu thời gian. Không cần dịch AI — không có biển báo để dịch.",
+    "noSignIntro": "Chúng tôi sẽ lưu một bản ghi GPS có dấu thời gian. Không cần AI dịch — vì không có biển báo nào để dịch.",
     "noSignKicker": "GHI CHÚ BẰNG CHỨNG",
-    "noSignBanner": "Bạn đang ghi nhận rằng không có biển báo nào tại vị trí này. Chữ ký mật mã bảo vệ khi nào và ở đâu, không phải việc biển báo có thực sự vắng mặt hay không — hãy trung thực, đây là bằng chứng của bạn.",
+    "noSignBanner": "Bạn đang ghi nhận rằng không có biển báo nào tại vị trí này. Chữ ký mật mã bảo chứng cho thời điểm và nơi chốn, chứ không bảo chứng việc biển báo có thực sự vắng mặt hay không — hãy trung thực, đây là bằng chứng của bạn.",
     "ambientHeader": "Xung quanh",
     "ambientCaption": "Chụp để chứng minh không có biển báo.",
-    "locationContext": "Chúng tôi chỉ dùng vị trí của bạn để ghi dấu thời gian nơi bạn đỗ. Nó nằm trên thiết bị của bạn trừ khi bạn đăng nhập."
+    "locationContext": "Chúng tôi chỉ dùng vị trí của bạn để ghi dấu thời gian nơi bạn đỗ. Nó nằm trên thiết bị của bạn, trừ khi bạn đăng nhập."
   },
   "reminders": {
     "header": "Đặt nhắc nhở",
     "noExpiry": "Bản ghi này không có giờ hết hạn, nên nhắc nhở theo giờ không áp dụng.",
-    "expired": "Giờ đỗ xe đã hết vào <strong>{{when}}</strong>. Quá muộn để nhắc — nhưng bản ghi của bạn vẫn được lưu làm bằng chứng nếu bạn cần khiếu nại vé phạt.",
-    "intro": "Đỗ xe hết hạn vào <strong>{{when}}</strong>. Chọn lúc nào bạn muốn được nhắc, chọn bao nhiêu cũng được.",
+    "expired": "Giờ đỗ đã hết vào <strong>{{when}}</strong>. Quá muộn để nhắc — nhưng bản ghi của bạn vẫn được lưu làm bằng chứng nếu cần khiếu nại vé phạt.",
+    "intro": "Giờ đỗ hết hạn vào <strong>{{when}}</strong>. Chọn lúc bạn muốn được nhắc, chọn bao nhiêu cũng được.",
     "chipAtExpiry": "Lúc hết hạn",
-    "chipMin": "{{count}} phút",
     "summaryWithSelections": "Bạn sẽ được nhắc vào <strong>{{times}}</strong>.",
     "summaryEmpty": "Chưa chọn nhắc nhở nào — chọn ít nhất một mục ở trên.",
     "calendarHeader": "Nhắc nhở qua lịch",
-    "calendarCopy": "Thêm vào lịch iPhone / Android / Outlook với một báo thức cho mỗi mục. Vẫn hoạt động kể cả khi bạn đóng ứng dụng này.",
+    "calendarCopy": "Thêm vào lịch iPhone / Android / Outlook, mỗi mục một báo thức. Vẫn chạy kể cả khi bạn đóng ứng dụng này.",
     "calendarCta_one": "Tải .ics với 1 báo thức",
     "calendarCta_other": "Tải .ics với {{count}} báo thức",
     "calendarDownloaded": "✓ Đã tải — mở tệp để thêm vào",
     "calendarError": "Tải thất bại — thử lại",
     "calendarPickAtLeastOne": "Chọn ít nhất một nhắc nhở ở trên",
     "browserHeader": "Thông báo trình duyệt",
-    "browserCopy": "Hoạt động khi tab này vẫn mở. Một thông báo cho mỗi mục đã chọn. Phù hợp làm phương án dự phòng cho lịch.",
+    "browserCopy": "Kêu khi tab này còn mở. Mỗi mục đã chọn một thông báo. Hợp làm phương án dự phòng cho lịch.",
     "browserCta_one": "Bật 1 thông báo trình duyệt",
     "browserCta_other": "Bật {{count}} thông báo trình duyệt",
     "browserRequesting": "Đang yêu cầu quyền…",
@@ -240,19 +239,20 @@
     "pushBodyBefore_other": "Còn {{count}} phút nữa hết thời gian đỗ xe.",
     "pushBodyCheckOn": "Đã đến lúc kiểm tra xe của bạn.",
     "noSign": {
-      "intro": "Không có thời hạn đỗ xe ở đây, nhưng bạn vẫn có thể đặt nhắc nhở kiểm tra. Chọn sau bao lâu kể từ bây giờ — chọn bao nhiêu cũng được.",
-      "chipMin": "{{count}} phút",
+      "intro": "Chỗ này không có giờ hết hạn, nhưng bạn vẫn có thể đặt nhắc kiểm tra. Chọn sau bao lâu kể từ bây giờ — chọn bao nhiêu cũng được.",
       "chipHour_one": "1 giờ",
       "chipHour_other": "{{count}} giờ",
-      "calendarCopy": "Thêm vào lịch iPhone / Android / Outlook với một báo thức cho mỗi mốc. Vẫn hoạt động ngay cả khi đóng ứng dụng.",
-      "browserCopy": "Bật thông báo tại mỗi mốc đã chọn, trong tab cộng hệ thống thiết bị khi có."
+      "calendarCopy": "Thêm vào lịch iPhone / Android / Outlook, mỗi mốc một báo thức. Vẫn chạy kể cả khi đóng ứng dụng.",
+      "browserCopy": "Kêu một thông báo tại mỗi mốc đã chọn, ngay trong tab và cả trên hệ thống thiết bị khi có thể.",
+      "chipMin_one": "{{count}} phút",
+      "chipMin_other": "{{count}} phút"
     },
     "pushStatus": {
       "subscribed": "✓ Đã bật nhắc nhở đẩy trên thiết bị này",
-      "notSubscribed": "Chưa bật đẩy. Nếu không bật, nhắc nhở chỉ kêu khi tab này đang mở.",
+      "notSubscribed": "Chưa bật đẩy. Nếu không bật, lời nhắc chỉ kêu khi tab này đang mở.",
       "enable": "Bật đẩy",
       "requesting": "Đang yêu cầu trình duyệt…",
-      "denied": "Bạn đã chặn thông báo cho trang này. Hãy thay đổi quyền trong cài đặt trang của trình duyệt để bật.",
+      "denied": "Bạn đã chặn thông báo cho trang này. Hãy đổi quyền trong cài đặt trang của trình duyệt để bật.",
       "errorRetry": "Không thể bật — thử lại",
       "unsupported": "Trình duyệt này không hỗ trợ thông báo đẩy."
     },
@@ -261,7 +261,9 @@
       "single": "Bạn sẽ được nhắc lúc {{times}}.",
       "multiple": "Bạn sẽ được nhắc lúc {{times}}."
     },
-    "pushScheduleFailed": "Không đặt được nhắc nhở chạy ngầm. Lời nhắc có thể chỉ kêu khi tab này đang mở. Nhấn để thử lại."
+    "pushScheduleFailed": "Không đặt được lời nhắc chạy ngầm. Lời nhắc có thể chỉ kêu khi tab này đang mở. Nhấn để thử lại.",
+    "chipMin_one": "{{count}} phút",
+    "chipMin_other": "{{count}} phút"
   },
   "history": {
     "header": "Bản ghi đỗ xe",
@@ -287,7 +289,7 @@
     "noteLabel": "GHI CHÚ",
     "noNote": "Chưa có ghi chú. Nhấn",
     "addNote": "Thêm ghi chú",
-    "noteHelp": "để ghi lại lý do bạn ở đây — giúp ích khi hội đồng địa phương xem xét trong tình huống cần ngữ cảnh.",
+    "noteHelp": "để ghi lại lý do bạn ở đây — giúp ích khi hội đồng địa phương xem xét trong những tình huống cần ngữ cảnh.",
     "notePlaceholder": "Lý do bạn ở đây — ví dụ 'Đưa mẹ đi hoá trị tại Royal', 'Chợ thứ Bảy ở Lygon'. Dùng làm ngữ cảnh nếu bạn cần khiếu nại vé phạt.",
     "saveNote": "Lưu ghi chú",
     "signPhotoLabel": "ẢNH BIỂN BÁO",
@@ -312,15 +314,15 @@
     "howToVerify": "Cách hội đồng địa phương xác minh bản ghi này →",
     "photoSyncFailed": "Ảnh chưa sao lưu lên đám mây",
     "photoSyncRetry": "Thử tải lên lại",
-    "exportPhotoWarning": "Một hoặc nhiều ảnh không tải được từ đám mây cho phiên cũ này. Bạn vẫn có thể xuất, hoặc mở phiên trên thiết bị đã tạo ra nó.",
+    "exportPhotoWarning": "Có một vài ảnh không tải được từ đám mây cho bản ghi cũ này. Bạn vẫn xuất được, hoặc mở bản ghi trên thiết bị đã tạo ra nó.",
     "photoHashMismatch": "Ảnh này không khớp với bằng chứng đã ký và có thể đã bị thay đổi kể từ khi lưu."
   },
   "appeal": {
     "captureHeader": "Soạn thư khiếu nại",
-    "captureIntro": "Chụp ảnh thông báo vi phạm bạn nhận được. Claude sẽ đọc, đối chiếu với bằng chứng đã lưu trong phiên này, và soạn thư chính thức để bạn gửi cho hội đồng địa phương đã ra vé phạt.",
+    "captureIntro": "Chụp ảnh thông báo vi phạm bạn nhận được. Claude sẽ đọc nó, đối chiếu với bằng chứng đã lưu trong phiên này, rồi soạn một lá thư chính thức để bạn gửi cho hội đồng địa phương đã ra vé phạt.",
     "captureTakePhotoSub": "Chụp ảnh vé phạt bằng máy ảnh",
     "captureFromLibrarySub": "Ảnh / bản quét thông báo",
-    "captureDisclaimer": "Bản nháp do AI tạo là điểm khởi đầu, không phải tư vấn pháp lý. Bạn chịu trách nhiệm về thư cuối cùng mà bạn gửi đi.",
+    "captureDisclaimer": "Bản nháp do AI tạo chỉ là điểm khởi đầu, không phải tư vấn pháp lý. Bạn chịu trách nhiệm về lá thư cuối cùng mình gửi đi.",
     "draftingHeader": "Đang đọc vé phạt…",
     "draftingSub": "Claude đang đối chiếu với bằng chứng đã lưu của bạn.",
     "reviewHeader": "Bản nháp khiếu nại",
@@ -335,16 +337,16 @@
     "copied": "Đã sao chép ✓",
     "downloadPdf": "Tải về dạng PDF",
     "downloadingPdf": "Đang tạo PDF…",
-    "reviewDisclaimer": "Bản nháp do AI tạo chỉ là điểm khởi đầu. Đọc kỹ, sửa thư để phù hợp giọng văn và hoàn cảnh của bạn, và xác minh mọi tuyên bố trước khi gửi. ParkProof không nộp khiếu nại thay bạn.",
+    "reviewDisclaimer": "Bản nháp do AI tạo chỉ là điểm khởi đầu. Hãy đọc kỹ, sửa thư cho hợp với giọng văn và hoàn cảnh của bạn, và kiểm chứng mọi điều trước khi gửi. ParkProof không nộp khiếu nại thay bạn.",
     "errorHeader": "Không soạn được khiếu nại",
     "tryDifferentPhoto": "Thử ảnh khác",
-    "captureIntroStandalone": "Chụp ảnh thông báo vi phạm bạn nhận được. Claude sẽ đọc và soạn một lá thư chính thức để bạn gửi cho hội đồng địa phương đã ra vé phạt. Nếu bạn đã ghi lại lần đỗ này trong ParkProof, hãy mở nó từ lịch sử để bằng chứng đã lưu được đính kèm vào thư."
+    "captureIntroStandalone": "Chụp ảnh thông báo vi phạm bạn nhận được. Claude sẽ đọc nó rồi soạn một lá thư chính thức để bạn gửi cho hội đồng địa phương đã ra vé phạt. Nếu bạn đã ghi lại lần đỗ này trong ParkProof, hãy mở nó từ lịch sử để bằng chứng đã lưu được đính kèm vào thư."
   },
   "auth": {
     "signInHeader": "Đăng nhập",
     "signInIntro": "Chào mừng quay lại — tiếp tục từ chỗ bạn đã dừng.",
     "signUpHeader": "Tạo tài khoản",
-    "signUpIntro": "Đồng bộ phiên giữa các thiết bị, khôi phục nếu mất điện thoại, và giữ bằng chứng an toàn cả khi bạn gỡ ứng dụng.",
+    "signUpIntro": "Đồng bộ phiên giữa các thiết bị, khôi phục lại nếu mất điện thoại, và giữ bằng chứng an toàn kể cả sau khi bạn gỡ ứng dụng.",
     "verifyHeader": "Xác minh email",
     "verifyIntro": "Nhập mã 6 chữ số chúng tôi đã gửi đến {{email}}.",
     "forgotHeader": "Quên mật khẩu",
@@ -353,7 +355,7 @@
     "resetIntro": "Nhập mã từ email của bạn + mật khẩu mới.",
     "email": "Email",
     "password": "Mật khẩu",
-    "passwordHelp": "Ít nhất 8 ký tự với kết hợp chữ hoa, chữ thường và một con số.",
+    "passwordHelp": "Ít nhất 8 ký tự, kết hợp chữ hoa, chữ thường và một con số.",
     "verificationCode": "Mã xác minh",
     "newPassword": "Mật khẩu mới",
     "codeFromEmail": "Mã từ email",
@@ -375,7 +377,7 @@
     "continueWithApple": "Tiếp tục với Apple",
     "continueWithGoogle": "Tiếp tục với Google",
     "orDivider": "HOẶC",
-    "footer": "Đồng bộ đám mây là tuỳ chọn. ParkProof hoạt động hoàn toàn offline mà không cần tài khoản — dữ liệu của bạn nằm trên thiết bị này. Đăng nhập chỉ giúp bạn xem được trên các thiết bị khác.",
+    "footer": "Đồng bộ đám mây là tuỳ chọn. ParkProof chạy hoàn toàn offline mà không cần tài khoản — dữ liệu của bạn nằm trên thiết bị này. Đăng nhập chỉ để bạn xem được trên các thiết bị khác.",
     "needVerifyFirst": "Bạn chưa xác minh email — nhập mã bên dưới.",
     "accountCreated": "Tài khoản đã tạo. Chúng tôi đã gửi cho bạn mã xác minh qua email.",
     "codeResent": "Mã đã gửi lại. Kiểm tra hộp thư.",
@@ -385,7 +387,7 @@
     "errWrongCredentials": "Email hoặc mật khẩu sai.",
     "errAccountExists": "Bạn đã có tài khoản. Thử đăng nhập thay vì tạo mới.",
     "errTooManyAttempts": "Thử quá nhiều lần. Đợi vài phút rồi thử lại.",
-    "errCodeMismatch": "Mã đó không khớp. Kiểm tra lại và thử lại.",
+    "errCodeMismatch": "Mã đó không khớp. Kiểm tra lại rồi thử lại.",
     "errCodeExpired": "Mã đó đã hết hạn. Yêu cầu mã mới.",
     "errUserNotFound": "Không tìm thấy tài khoản nào với email đó.",
     "errGeneric": "Đã có lỗi xảy ra. Vui lòng thử lại."
@@ -395,7 +397,7 @@
     "intro": "Quản lý đồng bộ đám mây, xuất dữ liệu, hoặc đóng tài khoản.",
     "signedInAs": "ĐÃ ĐĂNG NHẬP DƯỚI TÊN",
     "exportHeader": "Xuất dữ liệu của bạn",
-    "exportCopy": "Tải về PDF với mọi bản ghi đỗ xe bạn đã lưu trên đám mây: tóm tắt trang bìa cộng với phần chi tiết từng bản ghi có ảnh. Sẵn sàng để chia sẻ, in ấn, gửi hội đồng địa phương.",
+    "exportCopy": "Tải về một file PDF gồm mọi bản ghi đỗ xe bạn đã lưu trên đám mây: trang bìa tóm tắt cùng phần chi tiết từng bản ghi kèm ảnh. Sẵn sàng để chia sẻ, in ấn, hay gửi hội đồng địa phương.",
     "exportCta": "Tải về dạng PDF",
     "exportBuilding": "Đang tạo PDF…",
     "privacyHeader": "Quyền riêng tư",
@@ -405,7 +407,7 @@
     "signOutCopy": "Các bản ghi cục bộ vẫn nằm trên thiết bị này. Bạn có thể đăng nhập lại bất cứ lúc nào.",
     "signOutCta": "Đăng xuất",
     "deleteHeader": "Xoá tài khoản",
-    "deleteCopy": "Xoá tài khoản, mọi bản ghi lưu trên đám mây, và mọi ảnh trên S3. Không thể hoàn tác. Các bản ghi cục bộ trên thiết bị này cũng bị xoá khi đăng xuất sau đó.",
+    "deleteCopy": "Xoá tài khoản, mọi bản ghi lưu trên đám mây, và mọi ảnh trên S3. Không thể hoàn tác. Các bản ghi cục bộ trên thiết bị này cũng bị xoá trong lần đăng xuất ngay sau đó.",
     "deleteStart": "Tôi muốn xoá tài khoản",
     "deleteConfirmLabel": "Nhập DELETE để xác nhận",
     "deleteForever": "Xoá vĩnh viễn",
@@ -413,13 +415,13 @@
     "deleteTypoError": "Vui lòng nhập DELETE bằng chữ in hoa để xác nhận.",
     "youSignedOut": "Bạn đã đăng xuất.",
     "pushHeader": "Thông báo đẩy trên thiết bị này",
-    "pushCopy": "Lời nhắc chỉ phát khi ứng dụng đóng nếu đã bật đẩy. Đăng ký theo từng trình duyệt + thiết bị, độc lập với tài khoản.",
+    "pushCopy": "Lời nhắc chỉ kêu khi ứng dụng đóng nếu đã bật đẩy. Đăng ký theo từng trình duyệt và từng thiết bị, độc lập với tài khoản.",
     "pushSubscribed": "✓ Đã đăng ký trên thiết bị này",
     "pushEnable": "Bật đẩy",
     "pushDisable": "Tắt đẩy trên thiết bị này",
     "pushDisableConfirm": "Tắt nhắc đẩy trên thiết bị này? Các lời nhắc đã lên lịch sẽ không phát ở đây nữa, nhưng bạn có thể bật lại bất cứ lúc nào.",
-    "pushDisableNote": "Chỉ hủy đăng ký thiết bị này. Để thu hồi hoàn toàn quyền của trình duyệt, hãy thay đổi cài đặt trang trong trình duyệt.",
-    "pushDenied": "Bạn đã chặn thông báo cho trang này. Để bật, thay đổi quyền trong cài đặt trang của trình duyệt rồi quay lại trang này.",
+    "pushDisableNote": "Việc này chỉ huỷ đăng ký trên thiết bị này. Để thu hồi hẳn quyền của trình duyệt, hãy đổi cài đặt trang trong trình duyệt.",
+    "pushDenied": "Bạn đã chặn thông báo cho trang này. Để bật, hãy đổi quyền trong cài đặt trang của trình duyệt rồi quay lại trang này.",
     "pushRequesting": "Đang hỏi trình duyệt…",
     "pushErrorRetry": "Không bật được — thử lại"
   },
@@ -427,7 +429,7 @@
     "header": "Quyền riêng tư",
     "lastUpdated": "Cập nhật lần cuối: {{date}}",
     "anonymousHeader": "Bạn cung cấp gì khi dùng ParkProof không cần tài khoản",
-    "anonymousIntro": "ParkProof hoạt động hoàn toàn ẩn danh theo mặc định. Chúng tôi không yêu cầu đăng nhập, không ghi nhận tài khoản, và các bản ghi đỗ xe bạn ghi lại nằm trong <code>localStorage</code> của trình duyệt của bạn. Chúng không bao giờ rời khỏi thiết bị.",
+    "anonymousIntro": "ParkProof chạy hoàn toàn ẩn danh theo mặc định. Chúng tôi không bắt đăng nhập, không ghi nhận tài khoản, và các bản ghi đỗ xe bạn lưu nằm trong <code>localStorage</code> của trình duyệt. Chúng không bao giờ rời khỏi thiết bị.",
     "anonymousThings": "Có ba thứ rời khỏi thiết bị của bạn, kể cả ở chế độ ẩn danh:",
     "anonymousAnthropic": "<strong>Ảnh biển báo + toạ độ GPS</strong> được gửi tới <strong>Anthropic</strong> (Claude vision) để dịch biển báo. Chúng tôi không lưu phía máy chủ; chính sách lưu trữ của Anthropic được áp dụng.",
     "anonymousNominatim": "<strong>Toạ độ GPS</strong> được gửi tới <strong>OpenStreetMap Nominatim</strong> để phân giải địa chỉ đường. Nominatim không yêu cầu khoá và áp dụng chính sách lưu trữ công khai của họ.",
@@ -439,9 +441,9 @@
     "signedInSessions": "Mọi <strong>bản ghi đỗ xe</strong> bạn lưu — lưu trong AWS DynamoDB, gắn với ID người dùng Cognito của bạn. Gồm dấu thời gian, GPS, quy tắc biển báo, bản dịch của AI, ghi chú của bạn, và chữ ký mã hoá.",
     "signedInPhotos": "Mọi <strong>ảnh</strong> đính kèm bản ghi — lưu trong AWS S3 theo đường dẫn có ID người dùng của bạn, chỉ bạn truy cập được khi đã đăng nhập.",
     "federationHeader": "Đăng nhập bằng Apple hoặc Google",
-    "federationCopy1": "Nếu bạn chọn đăng nhập bằng Apple hoặc Google thay vì email/mật khẩu, xác thực của bạn được trung chuyển qua Hosted UI của AWS Cognito. Mật khẩu, sinh trắc học, hoặc passkey của bạn không bao giờ tới ParkProof — chúng ở lại với Apple hoặc Google.",
-    "federationCopy2": "Từ bắt tay OAuth, chúng tôi nhận được hai thứ: một định danh người dùng không tiết lộ thông tin ổn định (để Cognito nhận diện bạn khi quay lại), và địa chỉ email của bạn. Chỉ vậy thôi. Chúng tôi không nhận được ảnh đại diện, danh sách bạn bè, lịch, danh bạ, hoặc bất kỳ thông tin nào khác từ Apple ID hoặc Google Account của bạn.",
-    "federationCopy3": "Đăng xuất khỏi ParkProof trong ứng dụng không thu hồi quyền cấp trên của Apple hoặc Google. Để thu hồi, hãy truy cập <apple>Apple ID</apple> của bạn (phần 'Sign in with Apple') hoặc <google>Tài khoản Google</google> của bạn ('Bảo mật > Truy cập của bên thứ ba'). Xóa tài khoản ParkProof trong ứng dụng sẽ xóa hồ sơ của chúng tôi nhưng không hủy đăng ký quyền cấp trên.",
+    "federationCopy1": "Nếu bạn chọn đăng nhập bằng Apple hoặc Google thay cho email/mật khẩu, việc xác thực được trung chuyển qua Hosted UI của AWS Cognito. Mật khẩu, sinh trắc học hay passkey của bạn không bao giờ tới ParkProof — chúng ở lại với Apple hoặc Google.",
+    "federationCopy2": "Từ bước bắt tay OAuth, chúng tôi nhận được hai thứ: một định danh người dùng ổn định và ẩn danh (để Cognito nhận ra bạn khi quay lại), và địa chỉ email của bạn. Chỉ vậy thôi. Chúng tôi không nhận ảnh đại diện, danh sách bạn bè, lịch, danh bạ, hay bất kỳ thông tin nào khác từ Apple ID hoặc tài khoản Google của bạn.",
+    "federationCopy3": "Đăng xuất khỏi ParkProof trong ứng dụng không thu hồi quyền cấp trên của Apple hoặc Google. Để thu hồi, hãy vào <apple>Apple ID</apple> của bạn (mục 'Sign in with Apple') hoặc <google>tài khoản Google</google> của bạn (mục 'Bảo mật > Quyền truy cập của bên thứ ba'). Xoá tài khoản ParkProof trong ứng dụng sẽ xoá hồ sơ của chúng tôi nhưng không huỷ quyền cấp trên đó.",
     "locationHeader": "Dữ liệu nằm ở đâu",
     "locationCopy": "Toàn bộ lưu trữ đám mây nằm tại <strong>AWS Sydney (ap-southeast-2)</strong>. Dữ liệu không rời khỏi Úc cho mục đích lưu trữ. Anthropic và Nominatim có thể xử lý dữ liệu quốc tế trong một lần gọi API; các lần gọi đó không lưu lại.",
     "dontHeader": "Những gì chúng tôi không làm",
@@ -459,7 +461,7 @@
     "photosHeader": "Ảnh chụp trong ParkProof",
     "photosCopy": "Ảnh được thay đổi kích thước xuống ≤1200px và mã hoá lại thành JPEG chất lượng 0.82 ngay trên thiết bị của bạn trước khi rời khỏi trình duyệt. Ảnh gốc độ phân giải cao không bao giờ rời khỏi điện thoại.",
     "signingHeader": "Ký bằng mã hoá",
-    "signingCopy": "Khi bạn đăng nhập (hoặc giữ ẩn danh, cả hai đều được), mỗi bản ghi được ký bằng khoá ECDSA P-256 do AWS KMS quản lý. Khoá riêng tư không bao giờ rời khỏi AWS. Khoá công khai được công bố tại <a>/parkproof-public-key.pem</a> để bất cứ ai (hội đồng địa phương, toà án, công ty bảo hiểm) có thể xác minh chuỗi bằng chứng bằng <code>openssl dgst</code>. Xem phụ lục trong mọi PDF đã xuất để biết hướng dẫn từng bước.",
+    "signingCopy": "Khi bạn đăng nhập (hoặc cứ giữ ẩn danh, cả hai đều được), mỗi bản ghi được ký bằng khoá ECDSA P-256 do AWS KMS quản lý. Khoá riêng không bao giờ rời khỏi AWS. Khoá công khai được công bố tại <a>/parkproof-public-key.pem</a> để bất cứ ai (hội đồng địa phương, toà án, công ty bảo hiểm) đều có thể xác minh chuỗi bằng chứng bằng <code>openssl dgst</code>. Xem phụ lục trong mỗi PDF đã xuất để biết hướng dẫn từng bước.",
     "verifyLinkLabel": "Xem cách xác minh một bản ghi →",
     "contactHeader": "Liên hệ + khiếu nại",
     "contactCopy": "Nếu có thắc mắc hoặc muốn thực thi quyền của bạn ngoài các điều khiển trong ứng dụng, gửi email tới <a>hello@parkproof.com.au</a>.",
@@ -475,20 +477,20 @@
     "somethingWrong": "Đã có lỗi xảy ra",
     "tryAgain": "Thử lại",
     "backHome": "Quay về trang chủ",
-    "complexSignTimeout": "Biển báo này mất quá nhiều thời gian để xử lý — thường có nghĩa là nó có nhiều quy tắc xếp chồng. Hãy thử ảnh rõ hơn, hoặc cắt vào chỉ phần quy tắc áp dụng ở chỗ bạn đỗ xe.",
+    "complexSignTimeout": "Biển báo này mất quá lâu để xử lý — thường là do nó có nhiều quy tắc xếp chồng. Hãy thử ảnh rõ hơn, hoặc cắt sát vào đúng phần quy tắc áp dụng ở chỗ bạn đỗ.",
     "offlineTitle": "Bạn đang offline",
-    "offlineBody": "Đọc biển báo cần có kết nối. Các phiên đã lưu và nhắc nhở của bạn vẫn hoạt động — thử quét lại khi có mạng trở lại.",
+    "offlineBody": "Đọc biển báo cần có kết nối. Các phiên đã lưu và lời nhắc của bạn vẫn chạy — thử quét lại khi có mạng trở lại.",
     "boundaryTitle": "Đã có sự cố",
     "boundaryBody": "ParkProof gặp lỗi ngoài dự kiến. Tải lại thường khắc phục được, và các phiên đã lưu của bạn vẫn an toàn trên thiết bị này.",
     "boundaryReload": "Tải lại ParkProof",
     "storageRecovered_one": "Bộ nhớ thiết bị của bạn đã đầy, nên ảnh từ 1 bản ghi đỗ xe cũ đã bị xoá để lấy chỗ trống. Đăng nhập để giữ bằng chứng an toàn trên đám mây.",
     "storageRecovered_other": "Bộ nhớ thiết bị của bạn đã đầy, nên ảnh từ {{count}} bản ghi đỗ xe cũ đã bị xoá để lấy chỗ trống. Đăng nhập để giữ bằng chứng an toàn trên đám mây.",
     "photoSyncFailed": "Một ảnh chưa sao lưu lên đám mây. Nó vẫn an toàn trên thiết bị này — mở phiên để thử lại.",
-    "heavyLoad": "ParkProof đang quá tải nên lần quét của bạn không kịp hoàn tất. Vui lòng đợi một phút rồi thử lại.",
+    "heavyLoad": "ParkProof đang quá tải nên lần quét của bạn chưa kịp xong. Vui lòng đợi một phút rồi thử lại.",
     "rateLimited": "Có quá nhiều yêu cầu từ kết nối của bạn. Vui lòng đợi một phút rồi thử lại.",
     "syncFailed": "Không tải được các phiên đã lưu của bạn lúc này.",
     "scanFailed": "Chúng tôi chưa đọc xong biển báo đó. Vui lòng thử lại sau giây lát.",
-    "signUnreadable": "Chúng tôi không đọc rõ được biển báo đó. Hãy thử chụp ảnh rõ hơn và gần hơn.",
+    "signUnreadable": "Chúng tôi đọc không rõ biển báo đó. Hãy thử chụp một tấm rõ hơn và gần hơn.",
     "imageTooLarge": "Ảnh đó quá lớn. Hãy chụp lại nhỏ hơn một chút, hoặc đến gần biển báo hơn.",
     "imageType": "Định dạng ảnh đó không được hỗ trợ. Hãy dùng ảnh JPEG hoặc PNG.",
     "appealUndraftable": "Chúng tôi không soạn được thư khiếu nại từ ảnh đó. Hãy thử ảnh rõ hơn của tờ thông báo.",
@@ -620,7 +622,7 @@
   },
   "feedback": {
     "title": "Gửi phản hồi",
-    "intro": "Hãy cho chúng tôi biết điều gì hoạt động tốt, điều gì hỏng, hoặc bạn mong ParkProof làm được gì. Chúng tôi đọc mọi tin nhắn.",
+    "intro": "Hãy cho chúng tôi biết điều gì chạy tốt, điều gì hỏng, hoặc bạn ước ParkProof làm được gì. Chúng tôi đọc mọi tin nhắn.",
     "messageLabel": "Tin nhắn của bạn",
     "messagePlaceholder": "Phát hiện lỗi, có ý tưởng, hay chỉ muốn chào? Cho chúng tôi biết tại đây…",
     "emailLabel": "Email",
@@ -630,7 +632,7 @@
     "send": "Gửi",
     "sending": "Đang gửi…",
     "successTitle": "Cảm ơn!",
-    "successBody": "Phản hồi của bạn đã được nhận. Chúng tôi sẽ đọc ngay khi trở lại bàn phím.",
+    "successBody": "Đã nhận được phản hồi của bạn. Chúng tôi sẽ đọc ngay khi quay lại bàn phím.",
     "error": {
       "generic": "Không thể gửi — vui lòng thử lại sau."
     }
@@ -674,10 +676,10 @@
   },
   "about": {
     "title": "Mọi thứ ParkProof có thể làm",
-    "lead": "Bạn có lẽ đến đây với suy nghĩ ồ, nó đọc biển báo đỗ xe. Đúng là nó làm vậy. Nhưng nhân tiện, chúng tôi cũng lưu lại bằng chứng phòng khi bạn bị phạt oan, viết thư khiếu nại giúp bạn nếu cần, và nhắc bạn dời xe trước khi hết giờ. Đây là tour giới thiệu thân thiện.",
+    "lead": "Bạn đến đây có lẽ chỉ nghĩ à, nó đọc biển báo đỗ xe. Đúng vậy. Nhưng nhân tiện, chúng tôi cũng lưu lại bằng chứng phòng khi bạn bị phạt oan, viết thư khiếu nại giúp bạn nếu cần, và nhắc bạn dời xe trước khi hết giờ. Đây là phần giới thiệu nhẹ nhàng.",
     "push": {
       "title": "Bật thông báo đẩy trên thiết bị này",
-      "body": "Lời nhắc hoạt động không cần thao tác ngay cả khi ParkProof không mở. Cấp quyền bây giờ có nghĩa là các lời nhắc đỗ xe trong tương lai sẽ chạy ngầm — không có lời nhắc cấp quyền giữa chừng.",
+      "body": "Lời nhắc chạy không cần thao tác, kể cả khi ParkProof không mở. Cấp quyền ngay bây giờ nghĩa là các lời nhắc đỗ xe sau này sẽ chạy ngầm — không có lời xin quyền chen ngang giữa chừng.",
       "subscribed": "✓ Thiết bị này đã đăng ký. Nhắc nhở đẩy sẽ phát cho các bản ghi đỗ xe sau này của bạn.",
       "denied": "Bạn đã chặn thông báo cho trang này. Để bật, hãy thay đổi quyền trong cài đặt trang của trình duyệt.",
       "errorRetry": "Đã xảy ra lỗi — thử lại",
@@ -688,11 +690,11 @@
     "cta": "Thử ngay — quét một biển báo",
     "scan": {
       "title": "Chụp biển báo, nhận câu trả lời",
-      "lead": "Đưa điện thoại lên bất kỳ biển báo đỗ xe nào — kể cả những biển báo lộn xộn với mũi tên và khu vực cấm.",
+      "lead": "Đưa điện thoại lên bất kỳ biển báo đỗ xe nào — kể cả những biển lộn xộn đầy mũi tên và khu vực cấm dừng.",
       "items": [
         "Bạn nhận được câu trả lời rõ ràng có hoặc không trong khoảng 12 giây.",
         "Nếu biển báo có quy định khác nhau cho từng bên đường, chúng tôi sẽ hỏi bạn đang đỗ bên nào.",
-        "Chúng tôi kiểm tra xem ảnh có quá mờ hay quá tối không trước khi gọi AI — tiết kiệm cho bạn một lần thử thất bại."
+        "Chúng tôi kiểm tra xem ảnh có quá mờ hay quá tối không trước khi gọi AI — tiết kiệm cho bạn một lần thử hỏng."
       ]
     },
     "evidence": {
@@ -700,8 +702,8 @@
       "lead": "Mỗi lần đỗ xe được ghi lại đều lưu thời gian, GPS, địa chỉ, và (nếu bạn muốn) một ảnh xe của bạn tại chỗ.",
       "items": [
         "Tải xuống toàn bộ dưới dạng PDF gọn gàng — tiện lợi nếu bạn cần khiếu nại vé phạt.",
-        "Hồ sơ được ký bằng dấu kỹ thuật số nên không ai có thể nói nó bị sửa sau đó — kể cả chúng tôi.",
-        "Thêm ghi chú về lý do bạn đỗ ở đó (đưa mẹ đi viện, đi chợ Thứ Bảy) — hội đồng địa phương coi trọng bối cảnh."
+        "Hồ sơ được ký bằng dấu kỹ thuật số nên không ai có thể nói nó bị sửa về sau — kể cả chúng tôi.",
+        "Thêm ghi chú về lý do bạn đỗ ở đó (đưa mẹ đi viện, đi chợ thứ Bảy) — hội đồng địa phương coi trọng bối cảnh."
       ]
     },
     "reminders": {
@@ -714,12 +716,12 @@
       ]
     },
     "gates": {
-      "title": "Một lời nhắc nhẹ nhàng khoan đã",
-      "lead": "Những kiểm tra nhỏ ngăn bạn không bị phạt mà không hề hay biết.",
+      "title": "Vài lời nhắc nhẹ nhàng",
+      "lead": "Những kiểm tra nhỏ giúp bạn khỏi dính một vé phạt không ngờ tới.",
       "items": [
         "Nếu ô đỗ cần trả phí (đồng hồ đo, EasyPark, PayStay), chúng tôi sẽ yêu cầu bạn xác nhận đã trả tiền trước khi lưu.",
         "Nếu ô đỗ dành riêng cho người khuyết tật, chúng tôi hiện một cảnh báo đỏ rõ ràng.",
-        "Đậu ở chỗ hoàn toàn không có biển báo? Bạn vẫn có thể ghi lại — kèm ảnh môi trường xung quanh để chứng minh thực sự không có biển nào."
+        "Đỗ ở chỗ hoàn toàn không có biển báo? Bạn vẫn ghi lại được — kèm ảnh xung quanh để chứng minh thực sự chẳng có biển nào."
       ]
     },
     "appeal": {
@@ -727,17 +729,17 @@
       "lead": "Đừng tự viết thư khiếu nại. Chúng tôi sẽ viết cho bạn.",
       "items": [
         "Chụp ảnh vé phạt. Chúng tôi sẽ đối chiếu với hồ sơ đã lưu khi bạn đỗ xe.",
-        "Bạn nhận được bản nháp thư gửi hội đồng địa phương, kèm đánh giá trung thực về độ mạnh của trường hợp của bạn.",
+        "Bạn nhận được một bản nháp thư gửi hội đồng địa phương, kèm đánh giá thẳng thắn xem trường hợp của bạn mạnh đến đâu.",
         "Chỉnh sửa thoải mái, rồi tải xuống dưới dạng PDF kèm hồ sơ đỗ xe. In gửi bưu điện, hoặc gửi email."
       ]
     },
     "kindnesses": {
       "title": "Một vài điều nhỏ chu đáo",
-      "lead": "Những điều đáng ra bạn không phải lo, chúng tôi đã lo cho bạn rồi.",
+      "lead": "Những điều đáng lẽ bạn không phải bận tâm, chúng tôi đã lo sẵn cho bạn.",
       "items": [
-        "Miễn phí. Không cần kho ứng dụng. Thêm vào màn hình chính và nó hoạt động như một ứng dụng bình thường — kể cả khi không có mạng.",
+        "Miễn phí. Không cần kho ứng dụng. Thêm vào màn hình chính là nó chạy như một ứng dụng bình thường — kể cả khi không có mạng.",
         "Có sẵn 9 ngôn ngữ bao gồm 中文, Tiếng Việt, Bahasa Indonesia, 한국어, Italiano, Ελληνικά, हिन्दी và ਪੰਜਾਬੀ.",
-        "Thời gian luôn khớp với chỗ đỗ xe — quét ở Sydney khi đi du lịch, bạn thấy giờ Sydney. Không phải giờ nhà của điện thoại.",
+        "Giờ giấc luôn khớp với chỗ đỗ — quét ở Sydney khi đi du lịch, bạn thấy giờ Sydney. Không phải giờ ở nhà của điện thoại.",
         "Bạn không cần đăng nhập để dùng bất kỳ tính năng nào. Ẩn danh cũng hoạt động tốt."
       ]
     },
@@ -752,7 +754,7 @@
     },
     "support": {
       "title": "Thích ParkProof không?",
-      "body": "Tự xây dựng trong 10 ngày, miễn phí mãi mãi. Nếu nó giúp bạn tránh được vé phạt, hãy ủng hộ chi phí AWS.",
+      "body": "Tự tay làm một mình trong 10 ngày, miễn phí mãi mãi. Nếu nó giúp bạn tránh được một vé phạt, hãy góp một tay cho hoá đơn AWS.",
       "button": "☕ Mời tôi một ly cà phê"
     },
     "sealCaveat": "Dấu niêm phong chứng minh bản ghi không bị thay đổi sau khi bạn lưu. Nó không chứng minh AI đọc đúng biển báo, và cũng không bảo đảm hội đồng địa phương sẽ chấp nhận."
@@ -782,7 +784,7 @@
     "install": "Cài đặt",
     "installing": "Đang cài…",
     "iosTitle": "Cài ParkProof trên iPhone của bạn",
-    "iosBody": "Nhấn nút Chia sẻ, rồi chọn 'Thêm vào Màn hình chính'. Ứng dụng mở toàn màn hình và hoạt động offline.",
+    "iosBody": "Nhấn nút Chia sẻ, rồi chọn 'Thêm vào Màn hình chính'. Ứng dụng mở toàn màn hình và chạy được offline.",
     "iosDismiss": "Đã hiểu"
   }
 }

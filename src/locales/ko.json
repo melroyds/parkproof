@@ -32,74 +32,74 @@
   },
   "about": {
     "title": "ParkProof가 하는 모든 것",
-    "lead": "주차 표지판을 읽어주는 앱이라고 생각하셨을 거예요. 맞아요. 그런데 하는 김에 잘못된 과태료에 대비해 증거도 저장하고, 필요하다면 이의신청서도 작성해드리고, 주차 시간이 끝나기 전에 차를 옮기라고 알려드리기로 했습니다. 친절한 소개를 시작합니다.",
+    "lead": "그냥 주차 표지판을 읽어주는 앱이겠거니 하고 오셨을 거예요. 맞습니다. 그런데 이왕 하는 김에, 잘못된 과태료를 받았을 때를 대비해 증거도 저장해두고, 정말 받으셨다면 이의신청서까지 대신 써드리고, 주차 시간이 끝나기 전에 차를 옮기시라고 알려드리기로 했어요. 어떤 앱인지 편하게 둘러보세요.",
     "scan": {
       "title": "표지판을 찍으세요, 답을 받으세요",
-      "lead": "어떤 주차 표지판이든 휴대폰 카메라를 대보세요 — 화살표와 클리어웨이가 쌓인 복잡한 것도 가능합니다.",
+      "lead": "어떤 주차 표지판이든 휴대폰을 대보세요. 화살표와 클리어웨이가 잔뜩 쌓인 복잡한 표지판도 괜찮습니다.",
       "items": [
-        "약 12초 안에 명확한 예 또는 아니오 답변을 받습니다.",
-        "도로 양쪽이 다른 규칙이라면 어느 쪽에 주차하는지 물어봅니다.",
-        "AI에게 묻기 전에 사진이 너무 흐릿하거나 어두운지 먼저 확인합니다 — 헛수고를 줄여드려요."
+        "약 12초 안에 '예' 아니면 '아니오'로 분명하게 답해드립니다.",
+        "도로 양쪽 규칙이 다르면 어느 쪽에 주차하시는지만 여쭤봅니다.",
+        "AI에게 보내기 전에 사진이 너무 흐리거나 어둡지는 않은지 먼저 확인합니다. 괜히 헛수고하지 않도록요."
       ]
     },
     "evidence": {
       "title": "주차 자리에 대한 영수증",
       "lead": "기록하는 모든 주차에 시간, GPS, 주소, 그리고 (원하시면) 차량 사진이 저장됩니다.",
       "items": [
-        "전체를 깔끔한 PDF로 내려받기 — 과태료 이의제기 시 유용합니다.",
-        "디지털 서명으로 보호되어 누구도 사후 편집되었다고 주장할 수 없습니다 — 저희도 마찬가지입니다.",
-        "왜 거기에 주차했는지 메모 추가 (어머니 병원 방문, 토요일 시장) — 시·구청은 맥락을 진지하게 봅니다."
+        "전체를 깔끔한 PDF로 내려받으세요. 나중에 과태료에 이의를 제기할 일이 생기면 요긴합니다.",
+        "디지털 봉인으로 서명되어 있어, 저장한 뒤에 누가 손댔다고 우길 수 없습니다. 저희조차도요.",
+        "왜 거기 주차했는지 메모를 남겨두세요 (어머니 병원 모시고, 토요일 시장 다녀오느라). 지자체는 이런 맥락을 진지하게 봅니다."
       ]
     },
     "reminders": {
       "title": "시간이 끝나기 전 알림",
       "lead": "언제 알림 받을지 선택 — 30분 전, 15분, 5분, 무엇이든.",
       "items": [
-        "휴대폰에 캘린더 이벤트가 추가되어 ParkProof를 열지 않아도 알림이 울립니다.",
-        "홈 화면에 실시간 카운트다운 표시 — 시간이 많으면 녹색, 가까워지면 황색, 정말 옮겨야 하면 빨간색.",
-        "어디에 주차했는지 잊었나요? Walk back을 누르면 지도 앱이 길을 안내합니다."
+        "휴대폰에 캘린더 일정이 추가되어, ParkProof를 켜놓지 않아도 알림이 울립니다.",
+        "홈 화면에 카운트다운이 실시간으로 표시됩니다. 여유가 있으면 초록, 가까워지면 노랑, 정말 옮겨야 하면 빨강이에요.",
+        "어디에 주차했는지 잊으셨나요? '걸어 돌아가기'를 누르면 지도 앱이 길을 안내합니다."
       ]
     },
     "gates": {
-      "title": "부드러운 잠깐만요",
+      "title": "잠깐, 하는 부드러운 확인들",
       "lead": "예상치 못한 과태료를 막아주는 작은 확인들.",
       "items": [
-        "구역이 유료라면 (미터기, EasyPark, PayStay) 저장 전에 지불했는지 체크를 요청합니다.",
-        "장애인 주차 구역이라면 명확한 빨간 경고를 표시합니다.",
-        "표지판이 전혀 없는 곳에 주차했나요? 그래도 기록 가능합니다 — 주변 사진으로 표지판이 없었다는 것을 보여주세요."
+        "결제가 필요한 자리라면 (미터기, EasyPark, PayStay) 저장하기 전에 결제하셨는지 한 번 여쭤봅니다.",
+        "장애인 허가증 전용 자리라면 빨간 경고로 분명히 알려드립니다.",
+        "표지판이 아예 없는 곳에 주차하셨나요? 그래도 기록할 수 있어요. 주변 사진을 함께 찍어두면 정말 표지판이 없었다는 걸 보여줄 수 있습니다."
       ]
     },
     "appeal": {
       "title": "그래도 과태료를 받았나요?",
       "lead": "이의신청서를 직접 쓰지 마세요. 저희가 해드립니다.",
       "items": [
-        "과태료를 사진으로 찍으세요. 주차했을 때 저장한 것과 대조 확인합니다.",
-        "시·구청에 보낼 초안 편지와 함께, 사건이 얼마나 강력한지 정직한 평가를 받습니다.",
-        "원하는 대로 편집한 다음 주차 기록과 함께 PDF로 내려받기. 인쇄하여 우편으로, 또는 이메일로 보내세요."
+        "과태료를 사진으로 찍으세요. 주차하실 때 저장해둔 내용과 대조해드립니다.",
+        "지자체에 보낼 편지 초안과 함께, 이 건이 얼마나 승산이 있는지 솔직하게 평가해드립니다.",
+        "마음껏 고친 다음 주차 기록을 첨부한 PDF로 내려받으세요. 인쇄해서 우편으로 보내도 되고, 이메일로 보내도 됩니다."
       ]
     },
     "kindnesses": {
       "title": "몇 가지 작은 배려",
       "lead": "여러분이 생각하지 않아도 되도록 저희가 미리 생각해둔 것들.",
       "items": [
-        "무료. 앱스토어 없이. 홈 화면에 추가하면 일반 앱처럼 작동합니다 — 오프라인에서도.",
-        "9개 언어로 제공 — 中文, Tiếng Việt, Italiano, Ελληνικά, हिन्दी, ਪੰਜਾਬੀ, Bahasa Indonesia 포함.",
-        "시간은 항상 주차 위치에 맞춰집니다 — 여행 중 Sydney에서 스캔하면 Sydney 시간으로 표시. 휴대폰의 홈 시간대가 아닙니다.",
-        "이 모든 것을 사용하려고 로그인할 필요는 없습니다. 익명도 잘 작동합니다."
+        "무료입니다. 앱스토어도 필요 없어요. 홈 화면에 추가하면 일반 앱처럼 쓸 수 있고, 오프라인에서도 작동합니다.",
+        "9개 언어로 제공됩니다. 中文, Tiếng Việt, Bahasa Indonesia, Italiano, Ελληνικά, हिन्दी, ਪੰਜਾਬੀ도 포함이에요.",
+        "시간은 늘 주차한 곳을 기준으로 맞춰집니다. 여행 중 Sydney에서 스캔하면 Sydney 시간으로 보여드려요. 휴대폰에 설정된 집 시간대가 아닙니다.",
+        "이 모든 걸 쓰려고 로그인하실 필요는 없습니다. 익명으로도 잘 작동해요."
       ]
     },
     "signIn": {
       "title": "원하시면 로그인",
-      "lead": "선택 사항. 로그인하면 기록이 기기 간에 동기화됩니다.",
+      "lead": "선택 사항입니다. 로그인하면 기록이 기기를 옮겨 다녀도 따라옵니다.",
       "items": [
-        "이메일, Apple ID, 또는 Google 계정으로 로그인.",
-        "저장하는 모든 주차가 클라우드에 미러링됩니다 — 휴대폰이 고장 나도 증거는 남아 있습니다.",
-        "원 탭으로 모든 기록 내려받기. 마음을 바꾸면 원 탭으로 모든 기록과 계정 삭제."
+        "이메일, Apple ID, Google 계정 중 무엇으로든 로그인하세요.",
+        "저장하는 모든 주차 기록이 클라우드에 복제됩니다. 휴대폰이 고장 나도 증거는 그대로 남아요.",
+        "한 번 누르면 모든 기록을 내려받을 수 있고, 마음이 바뀌면 한 번 누르는 것으로 모든 기록과 계정을 지울 수 있습니다."
       ]
     },
     "push": {
       "title": "이 기기에서 푸시 알림 활성화",
-      "body": "ParkProof가 열려 있지 않아도 알림은 손을 쓰지 않고 작동합니다. 지금 권한을 부여하면 향후 주차 알림이 흐름을 방해하지 않고 백그라운드에서 조용히 실행됩니다.",
+      "body": "ParkProof를 켜두지 않아도 알림이 알아서 울립니다. 지금 권한을 허용해두면, 앞으로 주차 알림이 흐름을 끊지 않고 백그라운드에서 조용히 울려요.",
       "subscribed": "✓ 이 기기가 구독되었습니다. 앞으로의 주차 기록에 대해 푸시 알림이 전송됩니다.",
       "denied": "이 사이트에 대한 알림을 차단하셨습니다. 활성화하려면 브라우저의 사이트 설정에서 권한을 변경하세요.",
       "errorRetry": "문제가 발생했습니다 — 다시 시도",
@@ -109,14 +109,14 @@
     "footerNote": "Melbourne에서 만들어졌습니다.",
     "cta": "사용해보기 — 표지판 스캔",
     "support": {
-      "title": "ParkProof이 마음에 드시나요?",
-      "body": "혼자 10일 동안 만들었고 항상 무료입니다. 주차 위반 딱지를 면하셨다면 커피 한 잔 사주세요.",
+      "title": "ParkProof가 마음에 드시나요?",
+      "body": "혼자 10일 동안 만들었고, 앞으로도 쭉 무료입니다. 덕분에 주차 딱지를 면하셨다면 커피 한 잔 보태주세요.",
       "button": "☕ 커피 사주기"
     },
-    "sealCaveat": "서명은 저장 후 기록이 변경되지 않았음을 증명합니다. AI가 표지판을 올바르게 읽었는지, 또는 시·구청이 받아들일지를 보장하지는 않습니다."
+    "sealCaveat": "이 봉인은 저장한 뒤로 기록이 바뀌지 않았다는 걸 증명합니다. AI가 표지판을 제대로 읽었는지, 지자체가 받아줄지까지 보장하지는 않습니다."
   },
   "landing": {
-    "heroSubhead": "호주 주차 표지판을 사진 찍으면 <accent>12초</accent> 안에 명확하고 쉬운 한국어 답변을 받아보세요.",
+    "heroSubhead": "호주 주차 표지판을 사진으로 찍으면 <accent>12초</accent> 안에 쉬운 한국어로 분명하게 답해드립니다.",
     "bullet": {
       "plainEnglish": "이해하기 쉬운 답변",
       "photoEvidence": "사진 증거 저장",
@@ -139,7 +139,7 @@
     },
     "feature": {
       "translateTitle": "이해하기 쉬운 답변",
-      "translateDesc": "호주 주차 표지판을 사진 — 약 12초 안에 '지금 주차할 수 있나요?' 판정 받기.",
+      "translateDesc": "호주 주차 표지판을 사진으로 찍으면 약 12초 안에 '지금 주차할 수 있나요?' 판정을 받습니다.",
       "evidenceTitle": "변조 감지 가능 증거",
       "evidenceDesc": "모든 주차에 암호학적으로 서명된 타임스탬프, GPS, 사진 기록.",
       "appealTitle": "AI 이의신청서",
@@ -210,10 +210,10 @@
     "translate": "번역",
     "translateAnyway": "그래도 번역",
     "qualityHeader": "사진이 더 선명할 수 있어요",
-    "qualityBlurry": "사진이 흐릿해 보여요 — 표지판에 초점을 맞추고 다시 찍어 더 신뢰할 수 있는 결과를 얻을까요?",
-    "qualityDark": "사진이 어두워 보여요 — AI가 잘못 읽을 수 있습니다. 빛 가까이 이동하거나 플래시로 다시 찍을까요?",
-    "qualityOverexposed": "사진이 색이 바랜 듯해요 — 표지판에 직사광선이 비치나요? 손으로 렌즈를 가리고 다시 찍을까요?",
-    "qualityTiny": "사진 해상도가 매우 낮아요 — AI가 세부사항을 놓칠 수 있습니다. 표지판에 더 가까이 다시 찍을까요?",
+    "qualityBlurry": "사진이 흐릿해 보여요. 표지판에 초점을 맞춰 다시 찍으면 더 정확하게 읽을 수 있어요.",
+    "qualityDark": "사진이 어두워 보여요. AI가 잘못 읽을 수 있어요. 밝은 곳으로 옮기거나 플래시를 켜고 다시 찍어볼까요?",
+    "qualityOverexposed": "사진이 하얗게 떴어요. 표지판에 햇빛이 바로 비치나요? 손으로 렌즈를 가리고 다시 찍어볼까요?",
+    "qualityTiny": "사진 해상도가 너무 낮아요. AI가 세부사항을 놓칠 수 있어요. 표지판에 더 가까이 다가가 다시 찍어볼까요?",
     "noSignHere": "여기 표지판이 없나요? 그냥 주차 기록하기 →",
     "noSignChooseHeader": "표지판이 없는 자리 기록",
     "noSignChooseCopy": "선택적으로 주변을 촬영해 표지판이 보이지 않았음을 보여주세요. 분쟁 시 증거 기록을 강화합니다.",
@@ -260,7 +260,7 @@
     "logCtaBlockedPermit": "저장하려면 허가증 표시 확인",
     "logCtaBlockedPermitZone": "저장하려면 유효한 허가증 보유 확인",
     "scanAnother": "다른 표지판 스캔",
-    "transitionHeadsUp": "참고 — {{when}}에",
+    "transitionHeadsUp": "참고하세요. {{when}}에",
     "payRequired": {
       "kicker": "결제 필요",
       "header": "여기 주차하려면 결제해야 합니다",
@@ -273,14 +273,14 @@
     "permitRequired": {
       "kicker": "장애인 허가증 필요",
       "header": "이 자리는 허가증 소지자 전용",
-      "copy": "유효한 장애인 허가증을 명확히 표시하지 않고 여기 주차하는 것은 위반입니다. Victoria에서는 과태료가 $400 이상이며, 이 자리는 그것이 필요한 사람을 위해 마련된 곳입니다. 허가증이 없으시면 다른 자리를 스캔하세요.",
+      "copy": "유효한 장애인 허가증을 잘 보이게 두지 않고 여기 주차하면 위반입니다. Victoria에서는 과태료가 $400을 넘고, 이 자리는 정말 필요한 분들을 위한 곳이에요. 허가증이 없으시면 다른 자리를 스캔해보세요.",
       "ack": "차량에 유효한 장애인 허가증이 명확히 표시되어 있습니다"
     },
     "permitZone": {
       "kicker": "허가 구역",
       "header": "지금은 허가증 소지자 전용",
       "headerWithArea": "지금은 허가 구역 {{area}}만",
-      "copy": "이곳은 주거 또는 사업 허가 구역입니다. 이 구역의 유효한 허가증을 가진 경우에만 주차할 수 있습니다. 시·구청 단속원은 허가증 번호를 구역과 대조합니다 — 옆 블록의 허가증은 효력이 없습니다.",
+      "copy": "이곳은 주거 또는 사업용 허가 구역입니다. 이 구역의 유효한 허가증이 있어야만 주차할 수 있어요. 지자체 단속원은 허가증 번호를 구역과 대조합니다. 옆 블록 허가증은 인정되지 않아요.",
       "copyWithArea": "허가 구역 {{area}}의 유효한 허가증을 가진 경우에만 여기 주차할 수 있습니다. 허가증 스티커의 번호가 일치해야 합니다 — 단속원은 단순히 어떤 허가증이 있는지가 아니라 구역 코드를 확인합니다.",
       "ack": "예, 이 구역에 유효한 허가증이 있습니다",
       "ackWithArea": "예, 허가 구역 {{area}}에 유효한 허가증이 있습니다"
@@ -288,7 +288,7 @@
     "aiCaveat": "이것은 AI가 읽은 표지판입니다. 차를 떠나기 전에 항상 실제 표지판을 한 번 확인하세요.",
     "cantParkOverride": "이게 틀렸다고 생각하시나요? 그래도 이 자리를 증거로 기록할 수 있습니다.",
     "cantParkOverrideCta": "그래도 기록하기",
-    "firstSaveValue": "저장하면 타임스탬프가 찍히고 변조 여부를 입증할 수 있는 기록이 남습니다. 부당하게 과태료를 받았을 때의 증거가 됩니다."
+    "firstSaveValue": "저장해두면 타임스탬프가 찍힌, 변조 여부를 입증할 수 있는 기록이 남습니다. 부당하게 과태료를 받았을 때 당신의 증거가 됩니다."
   },
   "logger": {
     "header": "이 주차 기록 남기기",
@@ -297,8 +297,8 @@
     "acquiringGps": "GPS 수신 중…",
     "captured": "캡처됨 ✓",
     "gpsImprecise": "GPS가 자리를 확인하기에 너무 부정확합니다",
-    "gpsImpreciseCopy": "판독 <strong>{{accuracy}}</strong> — 카페 찾기에는 충분하지만 주차 증거로는 부족합니다. 기록을 신뢰할 수 있도록 거리 주소를 수동으로 입력하세요.",
-    "gpsImpreciseDanger": "판독 <strong>{{accuracy}}</strong> — 완전히 잘못된 지역일 수 있습니다 (Starlink, VPN, 실내 GPS에서 흔함). 기록을 신뢰할 수 있도록 거리 주소를 수동으로 입력하세요.",
+    "gpsImpreciseCopy": "판독값이 <strong>{{accuracy}}</strong>입니다. 카페 찾기에는 충분하지만 주차 증거로는 부족해요. 기록을 믿을 수 있게 거리 주소를 직접 입력해주세요.",
+    "gpsImpreciseDanger": "판독값이 <strong>{{accuracy}}</strong>입니다. 완전히 엉뚱한 지역일 수도 있어요 (Starlink, VPN, 실내 GPS에서 흔합니다). 기록을 믿을 수 있게 거리 주소를 직접 입력해주세요.",
     "enterAddress": "주소 수동 입력",
     "manuallyEntered": "수동 입력",
     "accuracyLabel": "정확도 {{accuracy}}",
@@ -319,9 +319,9 @@
     "carOptionalHelp": "선택 사항이지만 증거로 강력히 권장됨",
     "saveSession": "기록 저장",
     "noSignHeader": "표지판 없는 주차 기록",
-    "noSignIntro": "타임스탬프 GPS 기록을 저장합니다. AI 번역은 없습니다 — 번역할 표지판이 없습니다.",
+    "noSignIntro": "타임스탬프가 찍힌 GPS 기록을 저장합니다. 번역할 표지판이 없으니 AI 번역은 하지 않아요.",
     "noSignKicker": "증거 메모",
-    "noSignBanner": "이 자리에 표지판이 보이지 않았다고 기록하고 있습니다. 암호학적 서명은 언제와 어디만 다루며, 표지판이 정말로 없었는지는 다루지 않습니다 — 정직하세요, 이것은 당신의 증거입니다.",
+    "noSignBanner": "이 자리에 표지판이 보이지 않았다고 기록하는 중입니다. 암호 서명은 '언제'와 '어디서'만 보증하고, 표지판이 정말 없었는지까지는 보증하지 못해요. 정직하게 남겨주세요. 당신의 증거니까요.",
     "ambientHeader": "주변",
     "ambientCaption": "표지판이 게시되지 않았음을 보여주기 위해 촬영됨.",
     "locationContext": "위치는 주차한 곳에 타임스탬프를 남기는 데에만 사용합니다. 로그인하지 않는 한 기기에 남아 있습니다."
@@ -330,17 +330,16 @@
     "header": "알림 설정",
     "noExpiry": "이 기록에는 만료 시간이 없어 시간 알림이 적용되지 않습니다.",
     "expired": "주차가 <strong>{{when}}</strong>에 만료되었습니다. 알림을 받기에는 너무 늦었지만, 과태료에 이의를 제기해야 할 경우를 대비해 기록은 증거로 그대로 저장됩니다.",
-    "intro": "주차가 <strong>{{when}}</strong>에 만료됩니다. 언제 알림 받을지 선택하세요. 원하는 만큼 선택할 수 있습니다.",
+    "intro": "주차가 <strong>{{when}}</strong>에 만료됩니다. 언제 알림을 받을지 고르세요. 원하는 만큼 여러 개 선택해도 됩니다.",
     "chipAtExpiry": "만료 시점",
-    "chipMin": "{{count}}분",
     "summaryWithSelections": "<strong>{{times}}</strong>에 알림을 받습니다.",
-    "summaryEmpty": "선택된 알림 없음 — 위에서 하나 이상 선택하세요.",
+    "summaryEmpty": "선택된 알림이 없습니다. 위에서 하나 이상 골라주세요.",
     "calendarHeader": "캘린더 알림",
     "calendarCopy": "iPhone / Android / Outlook 캘린더에 추가되어 선택당 하나의 알람이 울립니다. 이 앱을 닫아도 작동합니다.",
     "calendarCta_one": "1개 알람으로 .ics 내려받기",
     "calendarCta_other": "{{count}}개 알람으로 .ics 내려받기",
-    "calendarDownloaded": "✓ 다운로드 완료 — 파일을 열어 추가하세요",
-    "calendarError": "다운로드 실패 — 다시 시도",
+    "calendarDownloaded": "✓ 내려받았습니다. 파일을 열어 추가하세요",
+    "calendarError": "내려받기 실패. 다시 시도",
     "calendarPickAtLeastOne": "위에서 알림을 하나 이상 선택하세요",
     "browserHeader": "브라우저 알림",
     "browserCopy": "이 탭이 열려 있는 동안 작동합니다. 선택당 하나의 알림. 캘린더 옵션의 백업으로 좋습니다.",
@@ -349,12 +348,12 @@
     "browserRequesting": "권한 요청 중…",
     "browserScheduled_one": "✓ 1개 알림 예약됨",
     "browserScheduled_other": "✓ {{count}}개 알림 예약됨",
-    "browserScheduledSkipped": "✓ {{count}}개 예약 ({{skipped}}개 건너뜀 — 이미 지남)",
-    "browserDenied": "권한 거부됨 — 캘린더 옵션 사용",
+    "browserScheduledSkipped": "✓ {{count}}개 예약 ({{skipped}}개는 이미 지나서 건너뜀)",
+    "browserDenied": "권한이 거부됐습니다. 대신 캘린더 알림을 이용하세요",
     "browserUnsupported": "이 브라우저에서 지원되지 않음",
     "browserNoExpiry": "이 세션에 만료 시간 없음",
     "browserAllPast": "선택한 모든 알림이 이미 지났습니다",
-    "browserTooFar": "24시간 이상 후 만료 — 캘린더 옵션 사용",
+    "browserTooFar": "만료까지 24시간이 넘습니다. 대신 캘린더 알림을 이용하세요",
     "browserNothingSelected": "위에서 알림을 하나 이상 선택하세요",
     "pushTitleFallback": "주차 알림",
     "pushBodyAtExpiry": "주차가 지금 만료됩니다.",
@@ -362,16 +361,17 @@
     "pushBodyBefore_other": "주차 만료까지 {{count}}분.",
     "pushBodyCheckOn": "차를 확인할 시간입니다.",
     "noSign": {
-      "intro": "여기 게시된 만료 시간은 없지만 확인 알림은 요청할 수 있습니다. 지금부터 얼마 후 — 원하는 만큼 선택하세요.",
-      "chipMin": "{{count}}분",
+      "intro": "여기에는 표시된 만료 시간이 없지만, 확인 알림은 받을 수 있어요. 지금부터 얼마 뒤에 받을지 고르세요. 원하는 만큼 선택해도 됩니다.",
       "chipHour_one": "1시간",
       "chipHour_other": "{{count}}시간",
       "calendarCopy": "iPhone / Android / Outlook 캘린더에 추가되어 선택당 하나의 알람이 울립니다. 이 앱을 닫아도 작동합니다.",
-      "browserCopy": "선택한 각 시간에 알림이 울립니다 — 탭 내 + 가능한 경우 기기 OS에서."
+      "browserCopy": "선택하신 시각마다 알림이 울립니다. 탭 안에서, 그리고 가능하면 기기 자체에서도요.",
+      "chipMin_one": "{{count}}분",
+      "chipMin_other": "{{count}}분"
     },
     "pushStatus": {
       "subscribed": "✓ 이 기기에서 푸시 알림이 활성화되어 있음",
-      "notSubscribed": "푸시가 활성화되지 않았습니다. 활성화하지 않으면 이 탭이 열려 있을 때만 알림이 울립니다.",
+      "notSubscribed": "푸시가 켜져 있지 않습니다. 켜지 않으면 이 탭이 열려 있을 때만 알림이 울려요.",
       "enable": "푸시 활성화",
       "requesting": "브라우저에 요청 중…",
       "denied": "이 사이트의 알림을 차단했습니다. 활성화하려면 브라우저의 사이트 설정에서 권한을 변경하세요.",
@@ -383,13 +383,15 @@
       "single": "{{times}}에 알림이 전송됩니다.",
       "multiple": "{{times}}에 알림이 전송됩니다."
     },
-    "pushScheduleFailed": "백그라운드 알림을 설정할 수 없었습니다. 이 탭이 열려 있을 때만 울릴 수 있습니다. 다시 시도하려면 누르세요."
+    "pushScheduleFailed": "백그라운드 알림을 설정할 수 없었습니다. 이 탭이 열려 있을 때만 울릴 수 있습니다. 다시 시도하려면 누르세요.",
+    "chipMin_one": "{{count}}분",
+    "chipMin_other": "{{count}}분"
   },
   "history": {
     "header": "주차 기록",
-    "intro": "저장한 모든 주차 기록입니다. 하나를 탭하여 증거를 보거나 PDF로 내보내세요.",
+    "intro": "지금까지 저장한 모든 주차 기록입니다. 하나를 누르면 증거를 보거나 PDF로 내보낼 수 있어요.",
     "emptyTitle": "아직 기록이 없습니다",
-    "emptyHelp": "표지판을 스캔하고 주차를 남겨보세요. 여기에 표시됩니다.",
+    "emptyHelp": "표지판을 스캔하고 주차를 기록해보세요. 여기에 나타납니다.",
     "expired": "만료됨",
     "noExpiry": "만료 없음",
     "noSignBadge": "표시된 제한 없음 캡처됨"
@@ -397,11 +399,11 @@
   "session": {
     "header": "주차 기록",
     "arrived": "도착 {{when}}",
-    "cryptoSigned": "암호학적 서명됨",
+    "cryptoSigned": "전자 서명됨",
     "status": "상태",
     "active": "{{when}}까지 활성",
     "signRules": "표지판 규칙",
-    "sideChosen": "선택한 측면",
+    "sideChosen": "선택한 방향",
     "locationLabel": "위치",
     "viewOnMaps": "Google Maps에서 보기",
     "walkBackPill": "차로 걸어 돌아가기",
@@ -409,8 +411,8 @@
     "noteLabel": "메모",
     "noNote": "메모 없음. 누르세요",
     "addNote": "메모 추가",
-    "noteHelp": "여기 있었던 이유를 기록 — 맥락이 중요할 때 시·구청 검토를 부드럽게 만듭니다.",
-    "notePlaceholder": "여기 있었던 이유 — 예: 'Royal 병원 어머니 항암치료', 'Lygon 토요일 시장'. 과태료 이의제기가 필요할 때 맥락으로 사용됩니다.",
+    "noteHelp": "왜 여기 계셨는지 적어두세요. 맥락이 중요할 때 지자체 검토를 한결 부드럽게 만들어줍니다.",
+    "notePlaceholder": "여기 계셨던 이유 — 예: 'Royal 병원에서 어머니 항암치료', 'Lygon 토요일 시장'. 나중에 과태료에 이의를 제기할 때 맥락으로 쓰입니다.",
     "saveNote": "메모 저장",
     "signPhotoLabel": "표지판 사진",
     "carPhotoLabel": "주차 위치의 차량",
@@ -419,7 +421,7 @@
     "ambientPhotoLabel": "주변",
     "ambientPhotoCaption": "표지판 부재를 증명하기 위해 주차 시점에 촬영됨.",
     "noAmbientCaptured": "주변 사진이 촬영되지 않았습니다.",
-    "noSignBadgeLong": "표시된 제한 없음 캡처됨. 표지판 없는 자리로 기록되었습니다.",
+    "noSignBadgeLong": "표시된 제한 없음으로 기록됨. 표지판이 없는 자리로 남겼습니다.",
     "exportAsPdf": "PDF로 내보내기",
     "buildingPdf": "PDF 생성 중…",
     "pdfErrorHeader": "PDF를 생성할 수 없습니다",
@@ -431,18 +433,18 @@
     "noExpiryRecorded": "만료 시간 기록되지 않음",
     "deleteSession": "기록 삭제",
     "deleteConfirm": "이 주차 기록을 삭제할까요? 되돌릴 수 없습니다.",
-    "howToVerify": "시·구청이 이 기록을 검증하는 방법 →",
+    "howToVerify": "지자체가 이 기록을 검증하는 방법 →",
     "photoSyncFailed": "사진이 클라우드에 백업되지 않음",
     "photoSyncRetry": "업로드 다시 시도",
-    "exportPhotoWarning": "이 오래된 세션의 사진 하나 이상을 클라우드에서 불러올 수 없었습니다. 그래도 내보내거나, 생성된 기기에서 열 수 있습니다.",
+    "exportPhotoWarning": "이 오래된 기록의 사진 일부를 클라우드에서 불러오지 못했습니다. 그대로 내보내셔도 되고, 처음 만든 기기에서 열어보셔도 됩니다.",
     "photoHashMismatch": "이 사진은 서명된 증거와 일치하지 않으며 저장 이후 변경되었을 수 있습니다."
   },
   "appeal": {
     "captureHeader": "이의신청서 작성",
-    "captureIntro": "받은 과태료 통지서 사진을 찍으세요. Claude가 읽고, 이 세션에 저장된 증거와 대조한 다음, 발급한 시·구청에 보낼 수 있는 공식 편지를 작성합니다.",
+    "captureIntro": "받으신 과태료 통지서를 사진으로 찍으세요. Claude가 통지서를 읽고, 이 기록에 저장된 증거와 대조한 다음, 발급한 지자체에 보낼 공식 편지를 작성해드립니다.",
     "captureTakePhotoSub": "과태료 카메라",
     "captureFromLibrarySub": "통지서 사진 / 스캔",
-    "captureDisclaimer": "AI 초안은 출발점이며 법률 자문이 아닙니다. 보내는 최종 편지에 대한 책임은 당신에게 있습니다.",
+    "captureDisclaimer": "AI 초안은 출발점이며 법률 자문이 아닙니다. 최종적으로 보내는 편지의 책임은 당신에게 있습니다.",
     "draftingHeader": "과태료 읽는 중…",
     "draftingSub": "Claude가 저장된 증거와 대조 확인합니다.",
     "reviewHeader": "이의신청서 초안",
@@ -457,16 +459,16 @@
     "copied": "복사됨 ✓",
     "downloadPdf": "PDF로 내려받기",
     "downloadingPdf": "PDF 생성 중…",
-    "reviewDisclaimer": "AI 초안은 출발점입니다. 주의 깊게 읽고, 자신의 목소리와 상황에 맞게 편지를 편집하고, 보내기 전에 모든 주장을 확인하세요. ParkProof가 이의신청을 제출하지 않습니다.",
+    "reviewDisclaimer": "AI 초안은 출발점일 뿐입니다. 꼼꼼히 읽고, 당신의 말투와 상황에 맞게 편지를 고치고, 보내기 전에 모든 주장을 직접 확인하세요. ParkProof가 이의신청을 대신 제출해드리지는 않습니다.",
     "errorHeader": "이의신청서를 작성할 수 없습니다",
     "tryDifferentPhoto": "다른 사진 시도",
-    "captureIntroStandalone": "받은 위반 통지서 사진을 찍으세요. Claude가 읽고, 발급한 시·구청에 보낼 수 있는 공식 편지를 작성합니다. 이 주차를 ParkProof에 기록했다면, 저장된 증거가 편지에 첨부되도록 기록에서 열어주세요."
+    "captureIntroStandalone": "받으신 위반 통지서를 사진으로 찍으세요. Claude가 통지서를 읽고 발급한 지자체에 보낼 공식 편지를 작성해드립니다. 이 주차를 ParkProof에 기록해두셨다면, 기록에서 열어주세요. 그래야 저장해둔 증거가 편지에 함께 첨부됩니다."
   },
   "auth": {
     "signInHeader": "로그인",
     "signInIntro": "다시 오신 것을 환영합니다 — 중단된 곳에서 계속하세요.",
     "signUpHeader": "계정 만들기",
-    "signUpIntro": "기기 간 세션 동기화, 휴대폰을 잃어버리면 복구, 그리고 제거 후에도 증거를 안전하게 유지합니다.",
+    "signUpIntro": "기기 간에 세션을 동기화하고, 휴대폰을 잃어버려도 복구하고, 앱을 지운 뒤에도 증거를 안전하게 지킵니다.",
     "verifyHeader": "이메일 인증",
     "verifyIntro": "{{email}}로 보낸 6자리 코드를 입력하세요.",
     "forgotHeader": "비밀번호 찾기",
@@ -497,7 +499,7 @@
     "continueWithApple": "Apple로 계속",
     "continueWithGoogle": "Google로 계속",
     "orDivider": "또는",
-    "footer": "클라우드 동기화는 선택 사항입니다. ParkProof는 계정 없이 완전히 오프라인으로 작동합니다 — 데이터는 이 기기에 있습니다. 로그인은 다른 기기에서 볼 수 있게 해줍니다.",
+    "footer": "클라우드 동기화는 선택 사항입니다. ParkProof는 계정 없이도 완전히 오프라인으로 작동하고, 데이터는 이 기기에 머뭅니다. 로그인하면 다른 기기에서도 볼 수 있을 뿐이에요.",
     "needVerifyFirst": "아직 이메일을 인증하지 않았습니다 — 아래에 코드를 입력하세요.",
     "accountCreated": "계정이 생성되었습니다. 인증 코드를 이메일로 보냈습니다.",
     "codeResent": "코드를 다시 보냈습니다. 받은편지함을 확인하세요.",
@@ -517,7 +519,7 @@
     "intro": "클라우드 동기화 관리, 데이터 내보내기, 또는 계정 폐쇄.",
     "signedInAs": "로그인 계정",
     "exportHeader": "데이터 내보내기",
-    "exportCopy": "클라우드에 저장된 모든 주차 기록이 담긴 PDF를 내려받습니다: 표지 요약 페이지와 사진이 포함된 기록별 상세 블록. 공유, 인쇄, 시·구청 제출 모두 바로 가능합니다.",
+    "exportCopy": "클라우드에 저장된 모든 주차 기록을 담은 PDF를 내려받습니다. 표지 요약 페이지와, 사진이 포함된 기록별 상세 블록으로 구성돼요. 공유, 인쇄, 지자체 제출 모두 바로 가능합니다.",
     "exportCta": "PDF로 내려받기",
     "exportBuilding": "PDF 생성 중…",
     "privacyHeader": "개인정보",
@@ -551,9 +553,9 @@
     "anonymousHeader": "계정 없이 ParkProof를 사용할 때 제공하는 정보",
     "anonymousIntro": "ParkProof는 기본적으로 완전히 익명으로 작동합니다. 로그인을 요구하지 않으며, 계정을 기록하지 않으며, 남기는 주차 기록은 자체 브라우저의 <code>localStorage</code>에 있습니다. 기기를 떠나지 않습니다.",
     "anonymousThings": "세 가지가 익명 모드에서도 기기를 떠납니다:",
-    "anonymousAnthropic": "<strong>표지판 사진 + GPS 좌표</strong>는 <strong>Anthropic</strong> (Claude 비전)으로 보내져 표지판을 번역합니다. 서버 측에 저장하지 않습니다; Anthropic의 보관 정책이 적용됩니다.",
+    "anonymousAnthropic": "<strong>표지판 사진 + GPS 좌표</strong>는 <strong>Anthropic</strong> (Claude 비전)으로 보내져 표지판을 번역합니다. 서버 측에 저장하지 않습니다. Anthropic의 보관 정책이 적용됩니다.",
     "anonymousNominatim": "<strong>GPS 좌표</strong>는 <strong>OpenStreetMap Nominatim</strong>으로 보내져 거리 주소를 확인합니다. Nominatim은 키가 필요하지 않으며 공개 보관 정책을 적용합니다.",
-    "anonymousCloudwatch": "<strong>임의의 결과별 UUID</strong> + \"맞음 / 다시 찍기\" 판정이 확인 카드를 누를 때 <strong>AWS CloudWatch</strong>에 기록됩니다. PII 없음; 프롬프트 튜닝을 위한 집계 신호.",
+    "anonymousCloudwatch": "<strong>임의의 결과별 UUID</strong> + \"맞음 / 다시 찍기\" 판정이 확인 카드를 누를 때 <strong>AWS CloudWatch</strong>에 기록됩니다. PII 없음. 프롬프트 튜닝을 위한 집계 신호.",
     "signedInHeader": "로그인할 때 제공하는 정보",
     "signedInIntro": "로그인은 선택 사항입니다. 로그인하면 클라우드 동기화가 활성화되어 동일한 기록을 모든 기기에서 볼 수 있습니다.",
     "signedInThings": "로그인하면 추가 데이터가 기기를 떠납니다:",
@@ -562,10 +564,10 @@
     "signedInPhotos": "기록에 첨부된 모든 <strong>사진</strong>: 사용자 ID가 포함된 경로 아래 AWS S3에 저장되며, 로그인한 상태에서 본인만 접근할 수 있습니다.",
     "federationHeader": "Apple 또는 Google로 로그인",
     "federationCopy1": "이메일/비밀번호 대신 Apple 또는 Google 로그인을 선택하면, 인증은 AWS Cognito Hosted UI를 통해 중개됩니다. 비밀번호, 생체 인증 또는 패스키는 ParkProof에 절대 도달하지 않으며 Apple 또는 Google에 머뭅니다.",
-    "federationCopy2": "OAuth 핸드셰이크에서 우리는 두 가지를 받습니다: 안정적이고 불투명한 사용자 식별자(Cognito가 재방문 시 당신을 인식하기 위한 것)와 이메일 주소. 그것뿐입니다. 우리는 프로필 사진, 친구 목록, 캘린더, 연락처 또는 Apple ID나 Google 계정의 다른 정보를 받지 않습니다.",
-    "federationCopy3": "앱 내에서 ParkProof에서 로그아웃해도 Apple 또는 Google의 상위 권한은 취소되지 않습니다. 취소하려면 <apple>Apple ID</apple>('Apple로 로그인' 섹션) 또는 <google>Google 계정</google>('보안 > 타사 액세스')을 방문하세요. 앱에서 ParkProof 계정을 삭제하면 우리의 기록은 제거되지만 상위 권한은 구독 취소되지 않습니다.",
+    "federationCopy2": "OAuth 핸드셰이크에서 저희는 두 가지를 받습니다: 안정적이고 불투명한 사용자 식별자(Cognito가 재방문 시 당신을 인식하기 위한 것)와 이메일 주소. 그것뿐입니다. 저희는 프로필 사진, 친구 목록, 캘린더, 연락처 또는 Apple ID나 Google 계정의 다른 정보를 받지 않습니다.",
+    "federationCopy3": "앱 내에서 ParkProof에서 로그아웃해도 Apple 또는 Google의 상위 권한은 취소되지 않습니다. 취소하려면 <apple>Apple ID</apple>('Apple로 로그인' 섹션) 또는 <google>Google 계정</google>('보안 > 타사 액세스')을 방문하세요. 앱에서 ParkProof 계정을 삭제하면 저희 기록은 제거되지만 상위 권한은 구독 취소되지 않습니다.",
     "locationHeader": "데이터가 저장되는 곳",
-    "locationCopy": "모든 클라우드 저장소는 <strong>AWS Sydney (ap-southeast-2)</strong>에 있습니다. 데이터는 저장 목적으로 호주를 떠나지 않습니다. Anthropic과 Nominatim은 단일 API 호출 중 데이터를 국제적으로 처리할 수 있습니다; 그 호출은 지속되지 않습니다.",
+    "locationCopy": "모든 클라우드 저장소는 <strong>AWS Sydney (ap-southeast-2)</strong>에 있습니다. 데이터는 저장 목적으로 호주를 떠나지 않습니다. Anthropic과 Nominatim은 단일 API 호출 중 데이터를 국제적으로 처리할 수 있습니다. 그 호출은 지속되지 않습니다.",
     "dontHeader": "하지 않는 것",
     "dontSell": "데이터를 절대 판매하지 않습니다.",
     "dontShare": "위의 AWS, Anthropic, Nominatim 흐름 이외의 제3자와 공유하지 않습니다.",
@@ -581,7 +583,7 @@
     "photosHeader": "ParkProof 내에서 찍은 사진",
     "photosCopy": "사진은 브라우저를 떠나기 전 기기에서 ≤1200px로 크기가 조정되고 JPEG 0.82 품질로 재인코딩됩니다. 원본 고해상도 카메라 캡처는 휴대폰을 떠나지 않습니다.",
     "signingHeader": "암호학적 서명",
-    "signingCopy": "로그인하든 (익명으로 유지하든 — 둘 다 작동) 각 기록은 AWS KMS 관리 ECDSA P-256 키로 서명됩니다. 개인 키는 AWS를 떠나지 않습니다. 공개 키는 <a>/parkproof-public-key.pem</a>에 게시되어 누구나 (지자체, 법원, 보험사)가 <code>openssl dgst</code>를 사용해 증거 체인을 검증할 수 있습니다. 단계별 안내는 내보낸 PDF의 부록을 확인하세요.",
+    "signingCopy": "로그인하시든 익명으로 남으시든 (둘 다 작동합니다) 각 기록은 AWS KMS가 관리하는 ECDSA P-256 키로 서명됩니다. 개인 키는 AWS를 벗어나지 않습니다. 공개 키는 <a>/parkproof-public-key.pem</a>에 게시되어 있어, 누구나 (지자체, 법원, 보험사) <code>openssl dgst</code>로 증거 체인을 검증할 수 있습니다. 단계별 안내는 내보낸 PDF의 부록을 참고하세요.",
     "verifyLinkLabel": "기록 검증 방법 보기 →",
     "contactHeader": "연락처 + 불만",
     "contactCopy": "질문이나 앱 내 컨트롤 외부에서 권리를 행사하려면 <a>hello@parkproof.com.au</a>로 이메일을 보내주세요.",
@@ -605,7 +607,7 @@
     "send": "보내기",
     "sending": "보내는 중…",
     "successTitle": "감사합니다!",
-    "successBody": "피드백이 도착했습니다. 키보드로 돌아오는 대로 읽겠습니다.",
+    "successBody": "피드백이 잘 도착했습니다. 자리로 돌아오는 대로 읽겠습니다.",
     "error": {
       "generic": "보낼 수 없음 — 잠시 후 다시 시도하세요."
     }
@@ -614,9 +616,9 @@
     "somethingWrong": "문제가 발생했습니다",
     "tryAgain": "다시 시도",
     "backHome": "홈으로 돌아가기",
-    "complexSignTimeout": "이 표지판은 처리하기에 너무 오래 걸렸습니다 — 보통 쌓인 규칙이 많다는 뜻입니다. 더 선명한 사진을 시도하거나 주차하는 곳에 적용되는 규칙으로 잘라보세요.",
+    "complexSignTimeout": "이 표지판은 처리하는 데 시간이 너무 오래 걸렸습니다. 보통 규칙이 여러 겹 쌓여 있다는 뜻이에요. 더 선명한 사진으로 다시 찍거나, 주차하시는 곳에 해당하는 규칙만 보이게 잘라서 찍어보세요.",
     "offlineTitle": "오프라인 상태입니다",
-    "offlineBody": "표지판을 읽으려면 연결이 필요합니다. 저장된 세션과 알림은 계속 작동합니다 — 다시 온라인이 되면 스캔을 다시 시도하세요.",
+    "offlineBody": "표지판을 읽으려면 인터넷 연결이 필요합니다. 저장된 세션과 알림은 그대로 작동해요. 다시 연결되면 스캔을 다시 시도해보세요.",
     "boundaryTitle": "문제가 발생했습니다",
     "boundaryBody": "ParkProof에 예상치 못한 오류가 발생했습니다. 새로고침하면 보통 해결되며, 저장된 세션은 이 기기에 안전하게 보관됩니다.",
     "boundaryReload": "ParkProof 새로고침",
@@ -647,7 +649,7 @@
       "minOnly_other": "{{count}}분",
       "hourOnly_one": "1시간",
       "hoursOnly_other": "{{count}}시간",
-      "hoursAndMins": "{{hours}}시 {{mins}}분"
+      "hoursAndMins": "{{hours}}시간 {{mins}}분"
     },
     "evidence": {
       "title": "ParkProof — 주차 증거",
@@ -663,7 +665,7 @@
         "locationGps": "위치 (GPS)",
         "locationSource": "위치 출처",
         "mapLink": "지도 링크",
-        "sideVariant": "선택한 측면 / 변형",
+        "sideVariant": "선택한 방향 / 변형",
         "signRules": "표지판 규칙",
         "aiConfidence": "AI 신뢰도"
       },
@@ -684,8 +686,8 @@
       "noSignConfidence": "해당 없음 (표지판이 읽히지 않음)",
       "driverNoteHeader": "운전자 메모",
       "gpsNoticeTitle": "⚠ GPS 정확도 알림",
-      "gpsNoticeBody": "캡처 시점의 GPS 판독은 {{accuracy}}였습니다 — 증거 목적으로는 일반적인 것보다 넓습니다. 위 좌표는 정확한 지점이 아닌 해당 반경 내 지점을 식별합니다. 일반적인 원인: 실내 / 다층 주차장, Starlink 또는 VPN 연결, 또는 약한 위성 신호. 검토자는 이 반경에 대해 캡처된 주소를 신중히 평가해야 합니다.",
-      "statement": "이 기록은 주차 시점에 ParkProof에 의해 자동으로 생성되었습니다. 도착 타임스탬프, GPS 좌표, 표지판 번역, 사진은 관련 호주 지자체에 주차 위반 검토 제출에 첨부하기에 적합한 동시대 증거 기록을 구성합니다.",
+      "gpsNoticeBody": "캡처 시점의 GPS 판독값은 {{accuracy}}였습니다. 증거 용도로는 보통보다 넓은 값입니다. 위 좌표는 정확한 한 지점이 아니라 그 반경 안의 한 지점을 가리킵니다. 흔한 원인은 실내 또는 다층 주차장, Starlink나 VPN 연결, 약한 위성 신호입니다. 검토자는 이 반경을 감안해 캡처된 주소를 평가해야 합니다.",
+      "statement": "이 기록은 주차하는 순간에 ParkProof가 자동으로 생성했습니다. 도착 타임스탬프, GPS 좌표, 표지판 번역, 사진은 해당 호주 지자체의 주차 위반 검토 제출에 첨부하기 적합한, 그 시점에 작성된 증거 기록을 이룹니다.",
       "guidanceFree": "주차 무료. {{when}}까지 이동.",
       "guidanceFreeNoExpiry": "주차 무료. 표지판에 만료 시간 없음.",
       "guidanceExpired": "세션이 {{when}}에 만료됨.",
@@ -693,7 +695,7 @@
     },
     "signature": {
       "title": "암호학적 서명",
-      "intro": "이 증거 기록은 저장 시 ParkProof의 AWS KMS 관리 개인 키로 서명되었습니다. 서명은 모든 제3자 (지자체, 법원, 보험사)가 아래 메타데이터와 사진 해시가 signed_at 타임스탬프 이후 변경되지 않았음을 검증할 수 있게 합니다. 개인 키는 AWS를 떠나지 않습니다; 공개 키는 검증을 위해 공개적으로 게시됩니다.",
+      "intro": "이 증거 기록은 저장 시 ParkProof의 AWS KMS 관리 개인 키로 서명되었습니다. 서명은 모든 제3자 (지자체, 법원, 보험사)가 아래 메타데이터와 사진 해시가 signed_at 타임스탬프 이후 변경되지 않았음을 검증할 수 있게 합니다. 개인 키는 AWS를 떠나지 않습니다. 공개 키는 검증을 위해 공개적으로 게시됩니다.",
       "algorithm": "알고리즘",
       "keyAlias": "키 별칭",
       "signedAt": "서명 시점 (UTC)",
@@ -715,7 +717,7 @@
       "linkedSession": "연결된 ParkProof 세션: {{id}}",
       "supportingEvidence": "뒷받침 증거 (ParkProof에서)",
       "fieldGps": "GPS",
-      "fieldSideSelected": "선택한 측면",
+      "fieldSideSelected": "선택한 방향",
       "ticketPhotoHeader": "위반 통지서 (사진)",
       "signPhotoHeader": "주차 시점의 주차 표지판",
       "carPhotoHeader": "주차 위치의 차량"
@@ -743,12 +745,12 @@
     "minLeft_other": "{{count}}분 남음",
     "hourLeft_one": "1시간 남음",
     "hoursLeft_other": "{{count}}시간 남음",
-    "hoursMinsLeft": "{{hours}}시 {{mins}}분 남음",
+    "hoursMinsLeft": "{{hours}}시간 {{mins}}분 남음",
     "parkedForMin_one": "1분 주차",
     "parkedForMin_other": "{{count}}분 주차",
     "parkedForHour_one": "1시간 주차",
     "parkedForHours_other": "{{count}}시간 주차",
-    "parkedForHoursMins": "{{hours}}시 {{mins}}분 주차",
+    "parkedForHoursMins": "{{hours}}시간 {{mins}}분 주차",
     "justNow": "방금",
     "minAgo_one": "1분 전",
     "minAgo_other": "{{count}}분 전",
@@ -772,7 +774,7 @@
     "cancelOne": "이 알림 제거",
     "pickHeader": "언제 알려드릴까요?",
     "pickCancel": "취소",
-    "tooLateAll": "예약할 수 있는 미래 시점의 알림 옵션이 없습니다. 이미 떠났다면 세션 종료를 누르세요.",
+    "tooLateAll": "예약할 만큼 충분히 뒤로 떨어진 알림 옵션이 없습니다. 이미 떠나셨다면 '세션 종료'를 누르세요.",
     "pushNotEnabled": "앱이 닫혀 있을 때도 작동하는 알림을 추가하려면 이 기기에서 푸시 알림을 활성화하세요.",
     "saving": "저장 중…",
     "errorRetry": "업데이트할 수 없음 — 다시 시도"
