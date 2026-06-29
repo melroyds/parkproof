@@ -291,7 +291,7 @@ export default function SessionLogger({
             alt={t('logger.ambientHeader')}
             className="w-full rounded-xl border border-paper-300 object-contain max-h-[40vh] bg-paper-50"
           />
-          <p className="text-xs text-ink-500 mt-2">
+          <p className="text-xs text-ink-600 mt-2">
             {t('logger.ambientCaption')}
           </p>
         </section>
@@ -317,7 +317,7 @@ export default function SessionLogger({
         </div>
         {/* Why location is used + that it stays on-device — sets expectations
             before the GPS prompt's consequences (address, accuracy) land. */}
-        <p className="text-xs text-ink-500 mt-1 leading-relaxed">
+        <p className="text-xs text-ink-600 mt-1 leading-relaxed">
           {t('logger.locationContext')}
         </p>
         {gps.status === 'ok' && !editMode && (() => {
@@ -376,7 +376,7 @@ export default function SessionLogger({
                     {gps.coords.lat.toFixed(5)}, {gps.coords.lng.toFixed(5)}
                   </p>
                 )}
-                <p className="text-[10px] text-ink-500 mt-0.5">
+                <p className="text-2xs text-ink-600 mt-0.5">
                   {gps.source === 'manual'
                     ? t('logger.manuallyEntered')
                     : t('logger.accuracyLabel', { accuracy: formatAccuracy(gps.accuracy) })}
@@ -490,7 +490,7 @@ export default function SessionLogger({
             </button>
           </div>
         )}
-        <p className="text-xs text-ink-500 mt-2 text-center">
+        <p className="text-xs text-ink-600 mt-2 text-center">
           {t('logger.carOptionalHelp')}
         </p>
         <input
@@ -522,7 +522,7 @@ export default function SessionLogger({
         <button
           onClick={saveSession}
           disabled={submitting}
-          className="bg-gradient-to-r from-brand-500 via-brand-500 to-purple-600 hover:brightness-110 active:brightness-95 disabled:bg-none disabled:bg-brand-300 disabled:cursor-not-allowed text-white font-semibold py-4 rounded-2xl shadow-lg shadow-brand-500/25 transition-colors"
+          className="bg-gradient-to-r from-brand-500 via-brand-500 to-brand-700 hover:brightness-110 active:brightness-95 disabled:bg-none disabled:bg-brand-300 disabled:cursor-not-allowed text-white font-semibold py-4 rounded-2xl shadow-lg shadow-brand-500/25 transition-colors"
         >
           {t('logger.saveSession')}
         </button>

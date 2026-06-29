@@ -51,17 +51,17 @@ export default function LandingFeatures({ onScanCta, onSignInCta }: Props) {
     { key: 'defensible' },
   ]
 
-  const steps: { num: string; tone: 'brand' | 'purple' | 'accent'; key: 'snap' | 'analyse' | 'answer'; icon: 'camera' | 'check' | 'warning' }[] = [
+  const steps: { num: string; tone: 'brand' | 'ink' | 'accent'; key: 'snap' | 'analyse' | 'answer'; icon: 'camera' | 'check' | 'warning' }[] = [
     { num: '1', tone: 'brand', key: 'snap', icon: 'camera' },
-    { num: '2', tone: 'purple', key: 'analyse', icon: 'warning' },
+    { num: '2', tone: 'ink', key: 'analyse', icon: 'warning' },
     { num: '3', tone: 'accent', key: 'answer', icon: 'check' },
   ]
 
-  const stepToneClasses: Record<'brand' | 'purple' | 'accent', string> = {
+  // Three distinct on-brand step badges: brand blue, navy ink, teal accent.
+  // (Was a Tailwind-default purple, the only off-token colour in the app.)
+  const stepToneClasses: Record<'brand' | 'ink' | 'accent', string> = {
     brand: 'bg-brand-500 text-white',
-    // Tailwind built-in purple — Tailwind v4 ships the full default palette,
-    // so this works without adding a custom token in index.css.
-    purple: 'bg-purple-500 text-white',
+    ink: 'bg-ink-700 text-white',
     accent: 'bg-accent-500 text-ink-900',
   }
 
@@ -124,7 +124,7 @@ export default function LandingFeatures({ onScanCta, onSignInCta }: Props) {
       {/* ── Accuracy caveat. Quiet, muted. Sets the expectation that the
           AI read is a helpful first pass, not legal advice, BEFORE the
           first-timer hands over a photo + GPS. */}
-      <p className="text-xs text-ink-500 leading-relaxed mb-6 max-w-[24rem]">
+      <p className="text-xs text-ink-600 leading-relaxed mb-6 max-w-[24rem]">
         {t('landing.accuracyNote')}
       </p>
 
@@ -133,7 +133,7 @@ export default function LandingFeatures({ onScanCta, onSignInCta }: Props) {
           and the bigger padding read as "this is the thing you do". */}
       <button
         onClick={onScanCta}
-        className="w-full bg-gradient-to-r from-brand-500 via-brand-500 to-purple-600 hover:brightness-110 active:brightness-95 text-white text-lg font-semibold py-5 rounded-2xl shadow-xl shadow-brand-500/30 flex items-center justify-center gap-3 transition-[filter] mb-3"
+        className="w-full bg-gradient-to-r from-brand-500 via-brand-500 to-brand-700 hover:brightness-110 active:brightness-95 text-white text-lg font-semibold py-5 rounded-2xl shadow-xl shadow-brand-500/30 flex items-center justify-center gap-3 transition-[filter] mb-3"
       >
         <Icon name="camera" className="w-6 h-6" strokeWidth={2} />
         {t('landing.cta')}
@@ -185,7 +185,7 @@ export default function LandingFeatures({ onScanCta, onSignInCta }: Props) {
 
       {/* Location-optional reassurance — privacy-wary users can decline GPS
           without breaking the app. */}
-      <p className="text-center text-[11px] text-ink-500 leading-relaxed mb-12">
+      <p className="text-center text-2xs text-ink-600 leading-relaxed mb-12">
         {t('landing.locationOptional')}
       </p>
 
@@ -201,21 +201,21 @@ export default function LandingFeatures({ onScanCta, onSignInCta }: Props) {
                 <Icon name={icon} className="w-5 h-5" strokeWidth={2.25} />
                 {/* Numbered badge in the bottom-right corner of the icon
                     circle — matches the mockup's "1 / 2 / 3" pill. */}
-                <span className="absolute -bottom-1 -left-1 bg-white border border-paper-300 rounded-full w-5 h-5 flex items-center justify-center text-[10px] font-bold text-ink-800">
+                <span className="absolute -bottom-1 -left-1 bg-white border border-paper-300 rounded-full w-5 h-5 flex items-center justify-center text-2xs font-bold text-ink-800">
                   {num}
                 </span>
               </div>
               <h3 className="font-display text-xs font-extrabold text-ink-900 leading-tight mb-1">
                 {t(`landing.howItWorks.${key}Title`)}
               </h3>
-              <p className="text-[11px] text-ink-600 leading-relaxed">
+              <p className="text-2xs text-ink-600 leading-relaxed">
                 {t(`landing.howItWorks.${key}Desc`)}
               </p>
             </div>
             {idx < steps.length - 1 && (
               <span
                 aria-hidden
-                className="hidden sm:block absolute top-9 -right-3 text-ink-400 text-lg font-light pointer-events-none"
+                className="hidden sm:block absolute top-9 -right-3 text-ink-400 text-lg pointer-events-none"
               >
                 ›
               </span>

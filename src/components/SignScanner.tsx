@@ -283,7 +283,7 @@ export default function SignScanner({ onCapture, onReuseSession, onNoSignScan, o
       <p className="text-sm text-ink-600 mb-1 leading-relaxed">
         {t('scanner.instructions')}
       </p>
-      <p className="text-xs text-ink-500 mb-6 leading-relaxed">
+      <p className="text-xs text-ink-600 mb-6 leading-relaxed">
         {t('scanner.privacyLine')}
       </p>
 
@@ -348,7 +348,7 @@ export default function SignScanner({ onCapture, onReuseSession, onNoSignScan, o
             </button>
             <button
               onClick={confirm}
-              className="flex-1 bg-gradient-to-r from-brand-500 via-brand-500 to-purple-600 hover:brightness-110 active:brightness-95 disabled:bg-none text-white font-semibold py-3 rounded-xl shadow-md shadow-brand-500/20 transition-colors"
+              className="flex-1 bg-gradient-to-r from-brand-500 via-brand-500 to-brand-700 hover:brightness-110 active:brightness-95 disabled:bg-none disabled:bg-brand-300 text-white font-semibold py-3 rounded-xl shadow-md shadow-brand-500/20 transition-colors"
             >
               {quality && quality.verdict !== 'ok' ? t('scanner.translateAnyway') : t('scanner.translate')}
             </button>
@@ -404,7 +404,7 @@ export default function SignScanner({ onCapture, onReuseSession, onNoSignScan, o
                 </div>
                 <button
                   onClick={() => setCameraDenied(false)}
-                  className="text-ink-500 hover:text-ink-900 shrink-0 text-lg leading-none transition-colors min-w-[44px] min-h-[44px] inline-flex items-center justify-center"
+                  className="text-ink-600 hover:text-ink-900 shrink-0 text-lg leading-none transition-colors min-w-[44px] min-h-[44px] inline-flex items-center justify-center"
                   aria-label={t('common.back')}
                 >
                   <span aria-hidden="true">&times;</span>
@@ -495,7 +495,7 @@ export default function SignScanner({ onCapture, onReuseSession, onNoSignScan, o
             </button>
             <button
               onClick={handleNoSignSave}
-              className="flex-1 bg-gradient-to-r from-brand-500 via-brand-500 to-purple-600 hover:brightness-110 active:brightness-95 disabled:bg-none text-white font-semibold py-3 rounded-xl shadow-md shadow-brand-500/20 transition-colors"
+              className="flex-1 bg-gradient-to-r from-brand-500 via-brand-500 to-brand-700 hover:brightness-110 active:brightness-95 disabled:bg-none disabled:bg-brand-300 text-white font-semibold py-3 rounded-xl shadow-md shadow-brand-500/20 transition-colors"
             >
               {t('scanner.noSignContinue')}
             </button>

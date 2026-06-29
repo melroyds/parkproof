@@ -122,7 +122,7 @@ export default function ActiveSessionsList({ sessions, onBack, onOpen }: Props) 
                   </div>
                   <Icon
                     name="check"
-                    className="w-4 h-4 text-ink-500 rotate-[-45deg] shrink-0"
+                    className="w-4 h-4 text-ink-600 rotate-[-45deg] shrink-0"
                     strokeWidth={2}
                   />
                 </div>

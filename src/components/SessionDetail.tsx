@@ -252,7 +252,7 @@ export default function SessionDetail({
           <span className="text-brand-600 font-normal" aria-hidden="true">
             ·
           </span>
-          <span className="text-brand-700 font-mono text-[10px]">
+          <span className="text-brand-700 font-mono text-2xs">
             {new Date(session.signature.signed_at).toLocaleString('en-AU', {
               day: 'numeric',
               month: 'short',
@@ -267,7 +267,7 @@ export default function SessionDetail({
           tamper-proof does and does NOT prove, in the one place the badge is
           shown. Stops the wary user reading it as "this wins my dispute". */}
       {session.signature && (
-        <p className="text-xs text-ink-500 leading-relaxed mb-5 -mt-3">
+        <p className="text-xs text-ink-600 leading-relaxed mb-5 -mt-3">
           {t('about.sealCaveat')}
         </p>
       )}
@@ -292,12 +292,12 @@ export default function SessionDetail({
       <section className="bg-white rounded-2xl border border-paper-300 p-5 mb-3">
         <dl className="space-y-4 text-sm">
           <div>
-            <dt className="text-xs uppercase tracking-widest font-semibold text-ink-500">
+            <dt className="text-xs uppercase tracking-widest font-semibold text-ink-600">
               {t('session.status')}
             </dt>
             <dd
               className={`mt-1 font-display font-bold ${
-                isEnded || isExpired ? 'text-ink-500' : 'text-brand-700'
+                isEnded || isExpired ? 'text-ink-600' : 'text-brand-700'
               }`}
             >
               {isEnded
@@ -327,7 +327,7 @@ export default function SessionDetail({
             )}
           </div>
           <div>
-            <dt className="text-xs uppercase tracking-widest font-semibold text-ink-500">
+            <dt className="text-xs uppercase tracking-widest font-semibold text-ink-600">
               {t('session.signRules')}
             </dt>
             <dd className="mt-1 text-ink-900">
@@ -342,7 +342,7 @@ export default function SessionDetail({
           </div>
           {session.chosen_label && (
             <div>
-              <dt className="text-xs uppercase tracking-widest font-semibold text-ink-500">
+              <dt className="text-xs uppercase tracking-widest font-semibold text-ink-600">
                 {t('session.sideChosen')}
               </dt>
               <dd className="mt-1 text-ink-900">{session.chosen_label}</dd>
@@ -350,7 +350,7 @@ export default function SessionDetail({
           )}
           {session.location && (
             <div>
-              <dt className="text-xs uppercase tracking-widest font-semibold text-ink-500">
+              <dt className="text-xs uppercase tracking-widest font-semibold text-ink-600">
                 {t('session.locationLabel')}
               </dt>
               <dd className="mt-1">
@@ -363,7 +363,7 @@ export default function SessionDetail({
                   <Icon name="pin" className="w-4 h-4" />
                   {session.location.address ?? t('session.viewOnMaps')}
                 </a>
-                <p className="text-xs text-ink-500 font-mono mt-0.5">
+                <p className="text-xs text-ink-600 font-mono mt-0.5">
                   ({session.location.lat.toFixed(5)}, {session.location.lng.toFixed(5)})
                 </p>
                 {/* Walking-mode deep-link — separate from the "View on Maps"
@@ -393,7 +393,7 @@ export default function SessionDetail({
               a misleading "low" value. */}
           {!session.no_sign && (
             <div>
-              <dt className="text-xs uppercase tracking-widest font-semibold text-ink-500">
+              <dt className="text-xs uppercase tracking-widest font-semibold text-ink-600">
                 {t('session.aiConfidence')}
               </dt>
               <dd className="mt-1 text-ink-900 capitalize">{session.confidence}</dd>
@@ -408,7 +408,7 @@ export default function SessionDetail({
         <div className="flex items-baseline justify-between mb-2">
           <h3
             id="session-note-label"
-            className="text-xs uppercase tracking-widest font-semibold text-ink-500"
+            className="text-xs uppercase tracking-widest font-semibold text-ink-600"
           >
             {t('session.noteLabel')}
           </h3>
@@ -437,7 +437,7 @@ export default function SessionDetail({
               className="w-full text-sm text-ink-900 bg-paper-50 border border-paper-300 rounded-xl p-3 leading-relaxed focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 resize-y"
             />
             <div className="flex items-center justify-between gap-2">
-              <span className="text-[10px] text-ink-500 font-mono">
+              <span className="text-2xs text-ink-600 font-mono">
                 {noteDraft.length}/{NOTE_MAX_LENGTH}
               </span>
               <div className="flex gap-2">
@@ -470,7 +470,7 @@ export default function SessionDetail({
             {currentNote}
           </p>
         ) : (
-          <p className="text-xs text-ink-500 italic leading-relaxed">
+          <p className="text-xs text-ink-600 italic leading-relaxed">
             {t('session.noNote')}{' '}
             <button
               onClick={startNoteEdit}
@@ -493,7 +493,7 @@ export default function SessionDetail({
           sessions drop straight to the ambient/car photos below. */}
       {session.sign_photo && (
         <section className="bg-white rounded-2xl border border-paper-300 p-5 mb-3">
-          <h3 className="text-xs uppercase tracking-widest font-semibold text-ink-500 mb-2">
+          <h3 className="text-xs uppercase tracking-widest font-semibold text-ink-600 mb-2">
             {t('session.signPhotoLabel')}
           </h3>
           <img
@@ -509,7 +509,7 @@ export default function SessionDetail({
           sign photo as the user-supplied visual evidence. */}
       {session.no_sign && (
         <section className="bg-white rounded-2xl border border-paper-300 p-5 mb-3">
-          <h3 className="text-xs uppercase tracking-widest font-semibold text-ink-500 mb-2">
+          <h3 className="text-xs uppercase tracking-widest font-semibold text-ink-600 mb-2">
             {t('session.noSignLabel')}
           </h3>
           <p className="text-sm text-ink-700 leading-relaxed mb-3">
@@ -522,12 +522,12 @@ export default function SessionDetail({
                 alt={t('session.ambientPhotoLabel')}
                 className="w-full rounded-xl border border-paper-300"
               />
-              <p className="text-xs text-ink-500 mt-2">
+              <p className="text-xs text-ink-600 mt-2">
                 {t('session.ambientPhotoCaption')}
               </p>
             </>
           ) : (
-            <p className="text-xs text-ink-500 italic">
+            <p className="text-xs text-ink-600 italic">
               {t('session.noAmbientCaptured')}
             </p>
           )}
@@ -536,7 +536,7 @@ export default function SessionDetail({
 
       {session.car_photo && (
         <section className="bg-white rounded-2xl border border-paper-300 p-5 mb-3">
-          <h3 className="text-xs uppercase tracking-widest font-semibold text-ink-500 mb-2">
+          <h3 className="text-xs uppercase tracking-widest font-semibold text-ink-600 mb-2">
             {t('session.carPhotoLabel')}
           </h3>
           <img
@@ -551,7 +551,7 @@ export default function SessionDetail({
         <button
           onClick={handleExportPdf}
           disabled={pdfBusy}
-          className="bg-gradient-to-r from-brand-500 via-brand-500 to-purple-600 hover:brightness-110 active:brightness-95 disabled:bg-none disabled:bg-brand-300 text-white font-semibold py-4 rounded-2xl shadow-lg shadow-brand-500/25 transition-colors"
+          className="bg-gradient-to-r from-brand-500 via-brand-500 to-brand-700 hover:brightness-110 active:brightness-95 disabled:bg-none disabled:bg-brand-300 text-white font-semibold py-4 rounded-2xl shadow-lg shadow-brand-500/25 transition-colors"
         >
           {pdfBusy ? t('session.buildingPdf') : t('session.exportAsPdf')}
         </button>
@@ -568,7 +568,7 @@ export default function SessionDetail({
         {/* #9 — warn before exporting a cloud-pulled session whose photos may
             not embed, so a blank-evidence PDF doesn't leave silently. */}
         {hasRemotePhoto && (
-          <p className="text-xs text-ink-500 leading-relaxed text-center px-2">
+          <p className="text-xs text-ink-600 leading-relaxed text-center px-2">
             {t('session.exportPhotoWarning')}
           </p>
         )}

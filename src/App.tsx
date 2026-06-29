@@ -500,7 +500,7 @@ function App() {
         <div className="flex flex-col gap-2 w-full">
           <button
             onClick={() => setView({ name: 'scan' })}
-            className="bg-gradient-to-r from-brand-500 via-brand-500 to-purple-600 hover:brightness-110 active:brightness-95 disabled:bg-none text-white font-semibold py-3 rounded-2xl shadow-md transition-colors"
+            className="bg-gradient-to-r from-brand-500 via-brand-500 to-brand-700 hover:brightness-110 active:brightness-95 disabled:bg-none disabled:bg-brand-300 text-white font-semibold py-3 rounded-2xl shadow-md transition-colors"
           >
             {t('errors.tryAgain')}
           </button>
@@ -800,7 +800,7 @@ function App() {
           <>
             <button
               onClick={() => setView({ name: 'scan' })}
-              className="w-full bg-gradient-to-r from-brand-500 via-brand-500 to-purple-600 hover:brightness-110 active:brightness-95 disabled:bg-none text-white text-lg font-semibold py-5 rounded-2xl shadow-lg shadow-brand-500/25 flex items-center justify-center gap-3 transition-colors"
+              className="w-full bg-gradient-to-r from-brand-500 via-brand-500 to-brand-700 hover:brightness-110 active:brightness-95 disabled:bg-none disabled:bg-brand-300 text-white text-lg font-semibold py-5 rounded-2xl shadow-lg shadow-brand-500/25 flex items-center justify-center gap-3 transition-colors"
             >
               <Icon name="camera" className="w-6 h-6" />
               {primaryActive ? t('home.scanAnother') : t('home.scanCta')}

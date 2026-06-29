@@ -25,7 +25,7 @@ export default function ReuseCard({ session, distanceMeters, onReuse, onDismiss 
         <h3 className="font-display font-bold text-ink-900 text-lg leading-tight">
           {t('reuse.scannedHere', { age })}
         </h3>
-        <span className="text-[10px] uppercase tracking-widest font-semibold text-brand-700 shrink-0">
+        <span className="text-2xs uppercase tracking-widest font-semibold text-brand-700 shrink-0">
           {t('reuse.metersAway', { meters: Math.round(distanceMeters) })}
         </span>
       </div>
@@ -36,7 +36,7 @@ export default function ReuseCard({ session, distanceMeters, onReuse, onDismiss 
         className="w-full h-32 object-contain rounded-xl mb-3 border border-paper-300 bg-white"
       />
 
-      <p className="text-xs uppercase tracking-widest font-semibold text-ink-500 mb-2">
+      <p className="text-xs uppercase tracking-widest font-semibold text-ink-600 mb-2">
         {t('reuse.bulletsHeader')}
       </p>
       <ul className="space-y-1 mb-4">
@@ -69,7 +69,7 @@ export default function ReuseCard({ session, distanceMeters, onReuse, onDismiss 
         </button>
         <button
           onClick={onReuse}
-          className="flex-1 bg-gradient-to-r from-brand-500 via-brand-500 to-purple-600 hover:brightness-110 active:brightness-95 disabled:bg-none text-white font-semibold py-2.5 rounded-xl shadow-md shadow-brand-500/20 transition-colors text-sm"
+          className="flex-1 bg-gradient-to-r from-brand-500 via-brand-500 to-brand-700 hover:brightness-110 active:brightness-95 disabled:bg-none disabled:bg-brand-300 text-white font-semibold py-2.5 rounded-xl shadow-md shadow-brand-500/20 transition-colors text-sm"
         >
           {t('reuse.useThisRead')}
         </button>

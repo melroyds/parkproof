@@ -43,7 +43,7 @@ export default function LoadingProgress() {
     <main className="min-h-screen flex flex-col items-center justify-center p-6 text-center">
       <BrandMark className="w-24 h-24 mb-6 animate-pulse" />
 
-      <p className="text-[10px] uppercase tracking-[0.18em] text-ink-500 mb-2 font-semibold inline-flex items-center gap-1.5">
+      <p className="text-2xs uppercase tracking-[0.18em] text-ink-600 mb-2 font-semibold inline-flex items-center gap-1.5">
         {/* Pulsing dot inline with the step counter — subtle liveness signal
             for a screen that otherwise updates only every ~3 seconds when
             the stage advances. The dot's "ping" expansion echoes outwards
@@ -93,7 +93,7 @@ export default function LoadingProgress() {
         </div>
       </div>
 
-      <p role="status" aria-live="polite" className="text-xs text-ink-500 mt-6">
+      <p role="status" aria-live="polite" className="text-xs text-ink-600 mt-6">
         Usually takes about 10 seconds.
       </p>
 

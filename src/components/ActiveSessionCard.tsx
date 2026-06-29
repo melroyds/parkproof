@@ -150,7 +150,7 @@ export default function ActiveSessionCard({
           type="button"
           onClick={onShowMore}
           aria-label={t('active.morePillAria', { count: extraCount })}
-          className="absolute top-3 right-3 text-[10px] font-semibold uppercase tracking-wider bg-white/20 hover:bg-white/30 active:bg-white/25 rounded-full px-2.5 min-h-[44px] min-w-[44px] inline-flex items-center justify-center transition-colors shrink-0"
+          className="absolute top-3 right-3 text-2xs font-semibold uppercase tracking-wider bg-white/20 hover:bg-white/30 active:bg-white/25 rounded-full px-2.5 min-h-[44px] min-w-[44px] inline-flex items-center justify-center transition-colors shrink-0"
         >
           {t('active.morePill', { count: extraCount })}
         </button>
@@ -159,7 +159,7 @@ export default function ActiveSessionCard({
         // the count visible without pretending to be tappable.
         <span
           aria-hidden
-          className="absolute top-5 right-5 text-[10px] font-semibold uppercase tracking-wider bg-white/20 rounded-full px-2.5 py-1 shrink-0"
+          className="absolute top-5 right-5 text-2xs font-semibold uppercase tracking-wider bg-white/20 rounded-full px-2.5 py-1 shrink-0"
         >
           {t('active.morePill', { count: extraCount })}
         </span>

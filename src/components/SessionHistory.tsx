@@ -17,9 +17,9 @@ function statusFor(
   now: number,
   t: TFunction,
 ): { label: string; color: string } {
-  if (!session.expires_at) return { label: t('history.noExpiry'), color: 'text-ink-500' }
+  if (!session.expires_at) return { label: t('history.noExpiry'), color: 'text-ink-600' }
   const expiresMs = new Date(session.expires_at).getTime()
-  if (expiresMs < now) return { label: t('history.expired'), color: 'text-ink-500' }
+  if (expiresMs < now) return { label: t('history.expired'), color: 'text-ink-600' }
   const countdown = formatCountdownLocalized(expiresMs - now, t)
   const color =
     countdown.urgency === 'urgent' || countdown.urgency === 'expired'

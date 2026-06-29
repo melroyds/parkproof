@@ -5,6 +5,10 @@
   --font-sans: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --font-display: "Fraunces", Georgia, "Times New Roman", serif;
 
+  /* Micro-label tier below text-xs (was a scatter of text-[10px]/[11px]). */
+  --text-2xs: 0.6875rem; /* 11px */
+  --text-2xs--line-height: 1rem;
+
   /* ─── Paper (background scale, cool off-white) ──────────────── */
   --color-paper-50:  #F8FAFC;
   --color-paper-100: #F2F4F7;
@@ -12,6 +16,7 @@
   --color-paper-300: #DDE4EE;
 
   /* ─── Ink (text scale, navy) ──────────────────────────────── */
+  --color-ink-400: #8A93AB;
   --color-ink-500: #5C6680;
   --color-ink-600: #404B66;
   --color-ink-700: #2D374F;
@@ -90,11 +95,30 @@ h1, h2, h3, h4, .font-display {
   letter-spacing: -0.015em;
 }
 
+/* ─── Focus ring ───────────────────────────────────────────────────
+   One standardised keyboard-focus indicator for every interactive
+   element. Previously there was none, so focus fell back to the UA
+   default outline, which renders inconsistently over the sage bg and
+   rounded buttons. Only shows for keyboard (:focus-visible), never on
+   mouse/touch. Inputs keep their own focus:ring as well; this is the
+   floor. */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible,
+[tabindex]:focus-visible,
+[role="button"]:focus-visible {
+  outline: 2px solid var(--color-brand-500);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
 /* ─── Reduced motion ──────────────────────────────────────────────
    Honour the user's OS-level "reduce motion" preference. Strips
    animations and long transitions across the entire app — covers
-   Tailwind's transition-* utilities, the SW update banner pulse,
-   the loading-progress dot pulse, hover scale effects on buttons,
+   Tailwind's transition-* utilities, the loading-progress dot pulse,
+   hover scale effects on buttons, the ping dots, the hero shimmer,
    any future @keyframes we add. Keeps a 0.01ms duration rather than
    0 so transitionend / animationend events still fire (some libs
    listen for them as completion signals).

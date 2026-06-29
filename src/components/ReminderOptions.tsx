@@ -464,10 +464,10 @@ export default function ReminderOptions({ session, onDone }: Props) {
           <Trans
             i18nKey="reminders.summaryWithSelections"
             values={{ times: selectedTimesLabel }}
-            components={{ strong: <span className="font-display font-semibold text-ink-900" /> }}
+            components={{ strong: <span className="font-display font-bold text-ink-900" /> }}
           />
         ) : (
-          <span className="italic text-ink-500">
+          <span className="italic text-ink-600">
             {t('reminders.summaryEmpty')}
           </span>
         )}
@@ -489,7 +489,7 @@ export default function ReminderOptions({ session, onDone }: Props) {
         <button
           onClick={handleIcs}
           disabled={icsState === 'downloaded' || selectedList.length === 0}
-          className="w-full bg-brand-500 hover:bg-brand-600 disabled:bg-brand-200 disabled:text-white/70 text-white font-semibold py-3 rounded-xl shadow-md shadow-brand-500/20 transition-colors"
+          className="w-full bg-brand-500 hover:bg-brand-600 disabled:bg-brand-300 text-white font-semibold py-3 rounded-xl shadow-md shadow-brand-500/20 transition-colors"
         >
           {icsState === 'downloaded'
             ? t('reminders.calendarDownloaded')
@@ -720,10 +720,10 @@ function NoSignReminderPicker({ session, onDone }: Props) {
           <Trans
             i18nKey="reminders.summaryWithSelections"
             values={{ times: selectedTimesLabel }}
-            components={{ strong: <span className="font-display font-semibold text-ink-900" /> }}
+            components={{ strong: <span className="font-display font-bold text-ink-900" /> }}
           />
         ) : (
-          <span className="italic text-ink-500">{t('reminders.summaryEmpty')}</span>
+          <span className="italic text-ink-600">{t('reminders.summaryEmpty')}</span>
         )}
       </p>
 
@@ -745,7 +745,7 @@ function NoSignReminderPicker({ session, onDone }: Props) {
         <button
           onClick={handleIcs}
           disabled={icsState === 'downloaded' || selectedList.length === 0}
-          className="w-full bg-gradient-to-r from-brand-500 via-brand-500 to-purple-600 hover:brightness-110 active:brightness-95 disabled:bg-none disabled:bg-brand-200 disabled:text-white/70 text-white font-semibold py-3 rounded-xl shadow-md shadow-brand-500/20 transition-[filter]"
+          className="w-full bg-gradient-to-r from-brand-500 via-brand-500 to-brand-700 hover:brightness-110 active:brightness-95 disabled:bg-none disabled:bg-brand-300 text-white font-semibold py-3 rounded-xl shadow-md shadow-brand-500/20 transition-[filter]"
         >
           {icsState === 'downloaded'
             ? t('reminders.calendarDownloaded')

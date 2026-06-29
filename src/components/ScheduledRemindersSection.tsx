@@ -330,7 +330,7 @@ export default function ScheduledRemindersSection({ session }: Props) {
 
   return (
     <section className="bg-white rounded-2xl border border-paper-300 p-5 mb-3">
-      <h3 className="text-xs uppercase tracking-widest font-semibold text-ink-500 mb-3">
+      <h3 className="text-xs uppercase tracking-widest font-semibold text-ink-600 mb-3">
         {t('scheduledReminders.header')}
       </h3>
 
@@ -384,7 +384,7 @@ export default function ScheduledRemindersSection({ session }: Props) {
                     onClick={() => void handleRemove(fire_at)}
                     disabled={busy}
                     aria-label={t('scheduledReminders.cancelOne')}
-                    className="text-ink-500 hover:text-red-600 disabled:opacity-40 leading-none text-lg px-1 min-w-[44px] min-h-[44px] inline-flex items-center justify-center -my-1.5"
+                    className="text-ink-600 hover:text-red-600 disabled:opacity-40 leading-none text-lg px-1 min-w-[44px] min-h-[44px] inline-flex items-center justify-center -my-1.5"
                   >
                     <span aria-hidden="true">×</span>
                   </button>
@@ -433,7 +433,7 @@ export default function ScheduledRemindersSection({ session }: Props) {
             {t('scheduledReminders.pickHeader')}
           </p>
           {!anyChipViable ? (
-            <p className="text-xs text-ink-500 leading-relaxed">
+            <p className="text-xs text-ink-600 leading-relaxed">
               {t('scheduledReminders.tooLateAll')}
             </p>
           ) : (

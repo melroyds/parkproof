@@ -123,7 +123,7 @@ export default function AppealFlow({ session, onBack }: Props) {
         <p role="alert" className="text-sm text-ink-700 mt-3 mb-6 break-words text-center">{stage.message}</p>
         <button
           onClick={() => setStage({ name: 'capture' })}
-          className="bg-brand-500 hover:bg-brand-600 text-white font-semibold py-3 rounded-2xl shadow-md"
+          className="bg-brand-500 hover:bg-brand-600 text-white font-semibold py-4 rounded-2xl shadow-md"
         >
           {t('appeal.tryDifferentPhoto')}
         </button>
@@ -154,14 +154,14 @@ export default function AppealFlow({ session, onBack }: Props) {
         </span>
 
         <section className="bg-white rounded-2xl border border-paper-300 p-5 mb-4">
-          <h3 className="text-xs uppercase tracking-widest font-semibold text-ink-500 mb-2">
+          <h3 className="text-xs uppercase tracking-widest font-semibold text-ink-600 mb-2">
             {t('appeal.strategy')}
           </h3>
           <p className="text-sm text-ink-800 leading-relaxed">{stage.draft.notes}</p>
         </section>
 
         <section className="bg-white rounded-2xl border border-paper-300 p-5 mb-4">
-          <h3 className="text-xs uppercase tracking-widest font-semibold text-ink-500 mb-2">
+          <h3 className="text-xs uppercase tracking-widest font-semibold text-ink-600 mb-2">
             {t('appeal.subjectLine')}
           </h3>
           <p className="font-display text-base font-bold text-ink-900">
@@ -171,7 +171,7 @@ export default function AppealFlow({ session, onBack }: Props) {
 
         <section className="bg-white rounded-2xl border border-paper-300 p-5 mb-6">
           <div className="flex items-baseline justify-between mb-2">
-            <h3 id="appeal-letter-label" className="text-xs uppercase tracking-widest font-semibold text-ink-500">
+            <h3 id="appeal-letter-label" className="text-xs uppercase tracking-widest font-semibold text-ink-600">
               {t('appeal.letter')}
             </h3>
             <button
@@ -193,7 +193,7 @@ export default function AppealFlow({ session, onBack }: Props) {
         <div className="flex flex-col gap-2">
           <button
             onClick={handleCopy}
-            className="bg-gradient-to-r from-brand-500 via-brand-500 to-purple-600 hover:brightness-110 active:brightness-95 disabled:bg-none text-white font-semibold py-4 rounded-2xl shadow-lg shadow-brand-500/25 transition-colors"
+            className="bg-gradient-to-r from-brand-500 via-brand-500 to-brand-700 hover:brightness-110 active:brightness-95 disabled:bg-none disabled:bg-brand-300 text-white font-semibold py-4 rounded-2xl shadow-lg shadow-brand-500/25 transition-colors"
           >
             {copied ? t('appeal.copied') : t('appeal.copyToClipboard')}
           </button>
@@ -222,7 +222,7 @@ export default function AppealFlow({ session, onBack }: Props) {
           </div>
         )}
 
-        <p className="text-xs text-ink-500 mt-4 text-center leading-relaxed">
+        <p className="text-xs text-ink-600 mt-4 text-center leading-relaxed">
           {t('appeal.reviewDisclaimer')}
         </p>
       </div>
@@ -289,7 +289,7 @@ export default function AppealFlow({ session, onBack }: Props) {
         }}
       />
 
-      <p className="text-xs text-ink-500 mt-6 text-center leading-relaxed">
+      <p className="text-xs text-ink-600 mt-6 text-center leading-relaxed">
         {t('appeal.captureDisclaimer')}
       </p>
     </div>

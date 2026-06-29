@@ -255,7 +255,7 @@ export default function ParkingResult({
           {can_park_now ? t('result.canPark') : t('result.cantPark')}
         </h2>
         {can_park_now && untilLabel && (
-          <p id="verdict-until" className="text-white text-lg mt-2 font-display font-semibold">
+          <p id="verdict-until" className="text-white text-lg mt-2 font-display font-bold">
             {t('result.until', { when: untilLabel })}
           </p>
         )}
@@ -270,7 +270,7 @@ export default function ParkingResult({
           before walking away, so the "it's a machine read, check the real
           sign" framing has to live here, not only on /verify. Shown for every
           result, both can-park and can't-park. */}
-      <p className="mt-3 text-center text-xs text-ink-500 leading-relaxed px-2">
+      <p className="mt-3 text-center text-xs text-ink-600 leading-relaxed px-2">
         {t('result.aiCaveat')}
       </p>
 
@@ -449,7 +449,7 @@ export default function ParkingResult({
       {isPermitZone && (
         <section className="mt-4 bg-amber-50 border-2 border-amber-400 rounded-2xl p-5">
           <div className="flex items-start gap-3">
-            <div aria-hidden="true" className="w-9 h-9 rounded-lg bg-amber-500 text-white flex items-center justify-center shrink-0 mt-0.5 font-display font-extrabold text-lg">
+            <div aria-hidden="true" className="w-9 h-9 rounded-lg bg-amber-700 text-white flex items-center justify-center shrink-0 mt-0.5 font-display font-extrabold text-lg">
               P
             </div>
             <div className="flex-1 min-w-0">
@@ -567,7 +567,7 @@ export default function ParkingResult({
             <button
               onClick={onLogSession}
               disabled={saveBlocked}
-              className="bg-gradient-to-r from-brand-500 via-brand-500 to-purple-600 hover:brightness-110 active:brightness-95 disabled:bg-none disabled:bg-brand-300 disabled:cursor-not-allowed text-white font-semibold py-4 rounded-2xl shadow-lg shadow-brand-500/25 disabled:shadow-none transition-colors"
+              className="bg-gradient-to-r from-brand-500 via-brand-500 to-brand-700 hover:brightness-110 active:brightness-95 disabled:bg-none disabled:bg-brand-300 disabled:cursor-not-allowed text-white font-semibold py-4 rounded-2xl shadow-lg shadow-brand-500/25 disabled:shadow-none transition-colors"
             >
               {blockedByPermitGate
                 ? t('result.logCtaBlockedPermit')

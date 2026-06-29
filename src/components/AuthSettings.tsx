@@ -113,11 +113,11 @@ export default function AuthSettings({ onBack, onOpenPrivacy, onDeleted }: Props
       </p>
 
       <section className="bg-white rounded-2xl border border-paper-300 p-5 mb-3">
-        <h3 className="text-xs uppercase tracking-widest font-semibold text-ink-500 mb-2">
+        <h3 className="text-xs uppercase tracking-widest font-semibold text-ink-600 mb-2">
           {t('settings.signedInAs')}
         </h3>
         <p className="text-ink-900 break-words">{user.email}</p>
-        <p className="text-[10px] text-ink-500 font-mono mt-1 break-all">{user.userId}</p>
+        <p className="text-2xs text-ink-600 font-mono mt-1 break-all">{user.userId}</p>
       </section>
 
       <section className="bg-white rounded-2xl border border-paper-300 p-5 mb-3">
@@ -320,7 +320,7 @@ function PushManagementSection() {
           >
             {t('settings.pushDisable')}
           </button>
-          <p className="text-[11px] text-ink-500 mt-2 leading-relaxed">
+          <p className="text-2xs text-ink-600 mt-2 leading-relaxed">
             {t('settings.pushDisableNote')}
           </p>
         </>

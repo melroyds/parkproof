@@ -27,7 +27,7 @@ function ErrorFallback() {
       </p>
       <button
         onClick={() => window.location.reload()}
-        className="bg-gradient-to-r from-brand-500 via-brand-500 to-purple-600 hover:brightness-110 active:brightness-95 text-white font-semibold py-3 px-6 rounded-2xl shadow-md transition-colors"
+        className="bg-gradient-to-r from-brand-500 via-brand-500 to-brand-700 hover:brightness-110 active:brightness-95 text-white font-semibold py-3 px-6 rounded-2xl shadow-md transition-colors"
       >
         {t('errors.boundaryReload')}
       </button>

@@ -143,7 +143,7 @@ export default function AboutFeatures({ onBack, onTryIt }: Props) {
               section text column so it informs without undercutting the
               feature it sits beneath. */}
           {id === 'evidence' && (
-            <p className="-mt-6 mb-10 ml-14 text-xs text-ink-500 leading-relaxed">
+            <p className="-mt-6 mb-10 ml-14 text-xs text-ink-600 leading-relaxed">
               {t('about.sealCaveat')}
             </p>
           )}
@@ -181,14 +181,14 @@ export default function AboutFeatures({ onBack, onTryIt }: Props) {
           regular-user audience. People who want to reach the maker can use
           the in-app Feedback form or the listed support email. */}
       <div className="mb-8 pt-4 border-t border-paper-300">
-        <p className="text-xs text-ink-500 leading-relaxed">
+        <p className="text-xs text-ink-600 leading-relaxed">
           {t('about.footerNote')}
         </p>
       </div>
 
       <button
         onClick={onTryIt}
-        className="w-full bg-gradient-to-r from-brand-500 via-brand-500 to-purple-600 hover:brightness-110 active:brightness-95 disabled:bg-none text-white text-lg font-semibold py-5 rounded-2xl shadow-lg shadow-brand-500/25 flex items-center justify-center gap-3 transition-colors mb-4"
+        className="w-full bg-gradient-to-r from-brand-500 via-brand-500 to-brand-700 hover:brightness-110 active:brightness-95 disabled:bg-none disabled:bg-brand-300 text-white text-lg font-semibold py-5 rounded-2xl shadow-lg shadow-brand-500/25 flex items-center justify-center gap-3 transition-colors mb-4"
       >
         <Icon name="camera" className="w-6 h-6" />
         {t('about.cta')}
@@ -237,7 +237,7 @@ function PushSubscribeBlock({ pushStatus, onEnable }: PushSubscribeBlockProps) {
           {t('about.push.subscribed')}
         </p>
       ) : pushStatus === 'denied' ? (
-        <p className="text-xs text-ink-500 leading-relaxed">
+        <p className="text-xs text-ink-600 leading-relaxed">
           {t('about.push.denied')}
         </p>
       ) : pushStatus === 'error' ? (

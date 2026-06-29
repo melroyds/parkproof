@@ -241,7 +241,7 @@ export default function AuthFlow({ onDone, onCancel }: Props) {
           >
             {t('auth.continueWithGoogle')}
           </button>
-          <div className="flex items-center gap-3 my-2 text-xs text-ink-500">
+          <div className="flex items-center gap-3 my-2 text-xs text-ink-600">
             <div className="flex-1 h-px bg-paper-300" />
             <span>{t('auth.orDivider')}</span>
             <div className="flex-1 h-px bg-paper-300" />
@@ -281,7 +281,7 @@ export default function AuthFlow({ onDone, onCancel }: Props) {
               className="mt-1 w-full border border-paper-300 rounded-xl px-3 py-2.5 text-base focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
             />
             {stage.name === 'sign-up' && (
-              <span className="block mt-1 text-xs text-ink-500 font-normal">
+              <span className="block mt-1 text-xs text-ink-600 font-normal">
                 {t('auth.passwordHelp')}
               </span>
             )}
@@ -289,7 +289,7 @@ export default function AuthFlow({ onDone, onCancel }: Props) {
           <button
             type="submit"
             disabled={busy}
-            className="bg-gradient-to-r from-brand-500 via-brand-500 to-purple-600 hover:brightness-110 active:brightness-95 disabled:bg-none disabled:bg-brand-300 text-white font-semibold py-3 rounded-xl shadow-md shadow-brand-500/20 transition-colors mt-2"
+            className="bg-gradient-to-r from-brand-500 via-brand-500 to-brand-700 hover:brightness-110 active:brightness-95 disabled:bg-none disabled:bg-brand-300 text-white font-semibold py-3 rounded-xl shadow-md shadow-brand-500/20 transition-colors mt-2"
           >
             {busy
               ? stage.name === 'sign-in'
@@ -427,7 +427,7 @@ export default function AuthFlow({ onDone, onCancel }: Props) {
         )}
       </div>
 
-      <p className="mt-auto pt-8 text-xs text-ink-500 text-center leading-relaxed">
+      <p className="mt-auto pt-8 text-xs text-ink-600 text-center leading-relaxed">
         {t('auth.footer')}
       </p>
     </div>
