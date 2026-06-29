@@ -9,6 +9,7 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "screenshots": "node scripts/screenshots.mjs",
+    "eval": "node scripts/eval-accuracy.mjs",
     "smoke-test:auth": "node scripts/smoke-test-auth.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
