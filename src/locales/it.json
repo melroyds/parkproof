@@ -557,15 +557,16 @@
       "schema": "Schema",
       "publicKeyUrl": "URL chiave pubblica",
       "canonicalPayloadHeader": "Payload canonico (i byte esatti che sono stati firmati):",
+      "payloadB64Header": "Payload canonico, base64 (decodifica questo per verificare):",
       "signatureBlobHeader": "Firma (DER, base64):",
       "verifyHeader": "Per verificare con openssl (qualsiasi piattaforma):",
-      "verifyStep1": "1. Salva il payload canonico qui sopra in un file: payload.txt (senza newline finale)",
+      "verifyStep1": "1. Salva il blocco payload base64 qui sopra in un file: payload.b64, poi decodificalo nei byte esatti che sono stati firmati. base64 -d ignora gli a capo, quindi recuperi i byte precisi senza alcun a capo finale superfluo:",
       "verifyStep2": "2. Salva la stringa base64 della firma qui sopra in un file: sig.base64",
       "verifyStep3": "3. Scarica la chiave pubblica:",
       "verifyStep4": "4. Decodifica la firma:",
       "verifyStep5": "5. Verifica:",
-      "verifyStep6": "6. Output atteso: \"Verified OK\" — conferma che i metadati e gli hash delle foto qui sotto non sono stati alterati dopo la firma.",
-      "verifyStep7": "7. Verifica che le foto stesse corrispondano. \"Verified OK\" dimostra solo che gli hash nel payload sono intatti, NON che le immagini in questo PDF corrispondano ad essi. Per ogni foto, ricalcola il suo SHA-256 (sha256sum <file>, oppure openssl dgst -sha256 <file>) e controlla che sia uguale al corrispondente sign_photo_sha256 / car_photo_sha256 / ambient_photo_sha256 nel payload qui sopra. Una mancata corrispondenza significa che quella foto è stata modificata dopo la firma."
+      "verifyStep6": "6. Output atteso: \"Verified OK\". Conferma che i metadati e gli hash delle foto registrati nel payload sono autentici e invariati dal momento signed_at.",
+      "verifyStep7": "7. Riguardo alle foto: le immagini mostrate in questo PDF sono una copia visiva, ricodificata per il documento, quindi i loro byte differiscono dagli originali e non riprodurranno gli hash nel payload. È normale e non è segno di manomissione. La firma vincola lo SHA-256 di ogni foto originale (i valori sign_photo_sha256, car_photo_sha256 e ambient_photo_sha256 all'interno del payload firmato), e il passaggio 6 ha già dimostrato che quei valori sono autentici. Per verificare in modo indipendente una specifica immagine, calcola l'hash del file originale acquisito (dal record ParkProof o dall'esportazione dei dati del tuo account), non della copia stampata qui, e confrontalo con il valore corrispondente sopra."
     },
     "appeal": {
       "drafted": "Bozza del {{when}}",

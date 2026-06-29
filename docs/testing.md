@@ -49,11 +49,11 @@ The honest line: anything whose failure is **loud** (a crash, a build error, a b
 
 ## The highest-risk untested paths (ranked)
 
-### P0 — Evidence-chain integrity (the marquee trust feature, provably unverified)
+### P0 — Evidence-chain integrity (RESOLVED — see the verify-walkthrough fix)
 
-**1. The photo-hash leg is broken by construction.** `hashDataUrlImage` (`signing.ts`) hashes the bytes of the resized JPEG in localStorage. The evidence PDF then embeds photos through jsPDF's `addImage`, which **recompresses** them. So the PDF's Step-7 instruction ("recompute the SHA-256 of each photo and confirm it matches") can *never* pass, because the photo a verifier extracts from the PDF is not byte-identical to the one that was hashed. The integrity promise silently always reads as "tampered." _Recommended fix (own pass, not bundled here): either export the original hashed JPEG alongside the PDF for the verifier to hash, or scope the signed attestation to the metadata only and reword the photo step. Do not touch the signing flow casually._
+**1. The photo-hash leg (RESOLVED).** Previously the PDF told a verifier to recompute the SHA-256 of an embedded photo and match it to the signed value, which could *never* pass because jsPDF re-encodes embedded images. Fixed by scoping the claim honestly (option b): the embedded photos are now described as a re-encoded visual copy, the signature commits to the SHA-256 of each *original* photo (printed in the payload and confirmed by the metadata signature), and step 7 tells a verifier to hash the *original captured file* to confirm a specific image. Verified end-to-end: hashing the original file with `openssl dgst -sha256` reproduces the signed value exactly.
 
-**2. The signer's canonical bytes are never proven equal to the verifier's input.** The signer does `sha256(canonicalize(payload))` and KMS-signs the digest; the PDF tells a human to re-create `payload.txt` and run `openssl dgst -sha256 -verify`. There was no golden-vector test, no external-verify harness, proving those two byte-streams match. Three things break it silently: (a) a **trailing newline** that `echo`/most editors add to `payload.txt` makes openssl report failure on *genuine* evidence; (b) the PDF renders the canonical payload as wrapped 7pt Courier, so a human transcriber reintroduces whitespace; (c) any change to the field set, key order, or float formatting changes the bytes with nothing in CI failing. _Partially addressed this pass: `canonicalize` is now exported and pinned by a golden-vector test, so (c) can no longer regress silently. The walkthrough wording fix for (a)/(b) is recommended as a follow-up._
+**2. The metadata signature now verifies externally (RESOLVED).** The canonical bytes are pinned by the golden-vector test, and the walkthrough no longer depends on lossy copy-paste. The PDF now prints the payload as base64 and the verifier runs `base64 -d`, which ignores the PDF's line wrapping and adds no trailing newline, recovering the exact signed bytes. Verified end-to-end against a real KMS signature: the new method returns `Verified OK` (even with an apostrophe in the payload), while the old `echo`-with-trailing-newline method returns `Verification failure`, confirming the original bug and the fix. This closes (a) the trailing-newline break, (b) the wrapped-transcription break, and (c) the format-drift break (pinned by the test).
 
 ### P1 — Silent data loss and PII
 
@@ -75,7 +75,7 @@ Closed the pure-upside, zero-runtime-risk gaps with real tests (the trust-critic
 - **`src/lib/signing.test.ts`** — `retryUnsignedSessions` candidate selection (horizon, cap, throttle, NaN-age) and `hashDataUrlImage`.
 - **`src/lib/pure-logic.test.ts`** — `parking-apps`, `api` (`friendlyErrorFor`/`endpointUrl`), `accuracy`, `verify-url` pure helpers.
 
-The two P0 evidence-chain *product* bugs (the photo-hash leg, the verify-walkthrough newline) and the P1 PII issues are flagged here and left for dedicated passes, because a careless fix to the signing or de-identification flow makes the evidence *worse* while still printing "Verified." Not fixing those inside a test-coverage commit is deliberate.
+The two P0 evidence-chain *product* bugs (the photo-hash leg, the verify-walkthrough newline) were flagged here and then fixed in a dedicated follow-up pass (the base64 verify walkthrough + honest photo-claim wording, verified end-to-end with openssl against a real KMS signature) rather than rushed inside the test-coverage commit, because a careless fix to the signing flow makes the evidence *worse* while still printing "Verified." The P1 PII issues (cloud-sync silent photo loss, free-text feedback retention, address de-identification) remain open for their own passes.
 
 ## Running the tests
 

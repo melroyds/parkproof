@@ -703,15 +703,16 @@
       "schema": "Skema",
       "publicKeyUrl": "URL kunci publik",
       "canonicalPayloadHeader": "Payload kanonik (byte tepat yang ditandatangani):",
+      "payloadB64Header": "Payload kanonis, base64 (dekode ini untuk memverifikasi):",
       "signatureBlobHeader": "Tanda tangan (DER, base64):",
       "verifyHeader": "Untuk memverifikasi dengan openssl (platform apa pun):",
-      "verifyStep1": "1. Simpan payload kanonik di atas ke file: payload.txt (tanpa baris akhir)",
+      "verifyStep1": "1. Simpan blok payload base64 di atas ke berkas: payload.b64, lalu dekode menjadi byte persis yang ditandatangani. base64 -d mengabaikan pembungkusan baris, sehingga Anda memperoleh byte yang tepat tanpa baris baru yang berlebih:",
       "verifyStep2": "2. Simpan string base64 tanda tangan di atas ke file: sig.base64",
       "verifyStep3": "3. Unduh kunci publik:",
       "verifyStep4": "4. Dekode tanda tangan:",
       "verifyStep5": "5. Verifikasi:",
-      "verifyStep6": "6. Hasil yang diharapkan: \"Verified OK\" — ini memastikan metadata dan hash foto di bawah tidak diubah sejak penandatanganan.",
-      "verifyStep7": "7. Pastikan foto-fotonya sendiri cocok. \"Verified OK\" hanya membuktikan bahwa hash di dalam payload utuh, BUKAN bahwa gambar di PDF ini cocok dengannya. Untuk setiap foto, hitung ulang SHA-256-nya (sha256sum <file>, atau openssl dgst -sha256 <file>) dan periksa apakah sama dengan sign_photo_sha256 / car_photo_sha256 / ambient_photo_sha256 yang sesuai di payload di atas. Ketidakcocokan berarti foto itu diubah setelah penandatanganan."
+      "verifyStep6": "6. Keluaran yang diharapkan: \"Verified OK\". Ini mengonfirmasi bahwa metadata dan hash foto yang tercatat dalam payload asli dan tidak berubah sejak waktu signed_at.",
+      "verifyStep7": "7. Tentang foto: gambar yang ditampilkan dalam PDF ini adalah salinan visual, dikodekan ulang untuk dokumen, sehingga byte-nya berbeda dari aslinya dan tidak akan menghasilkan hash dalam payload. Itu wajar dan bukan tanda pemalsuan. Tanda tangan berkomitmen pada SHA-256 dari setiap foto asli (nilai sign_photo_sha256, car_photo_sha256, dan ambient_photo_sha256 di dalam payload yang ditandatangani), dan langkah 6 sudah membuktikan nilai-nilai itu asli. Untuk memverifikasi gambar tertentu secara independen, hitung hash berkas asli yang diambil (dari catatan ParkProof atau ekspor data akun Anda), bukan salinan yang dicetak di sini, lalu bandingkan dengan nilai yang sesuai di atas."
     },
     "appeal": {
       "drafted": "Disusun {{when}}",

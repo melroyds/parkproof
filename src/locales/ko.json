@@ -703,15 +703,16 @@
       "schema": "스키마",
       "publicKeyUrl": "공개 키 URL",
       "canonicalPayloadHeader": "표준 페이로드 (서명된 정확한 바이트):",
+      "payloadB64Header": "정규화된 페이로드, base64 (검증하려면 이 값을 디코딩하세요):",
       "signatureBlobHeader": "서명 (DER, base64):",
       "verifyHeader": "openssl로 검증 (모든 플랫폼):",
-      "verifyStep1": "1. 위의 표준 페이로드를 파일에 저장: payload.txt (개행 없음)",
+      "verifyStep1": "1. 위의 base64 페이로드 블록을 파일로 저장하세요: payload.b64. 그런 다음 서명된 정확한 바이트로 디코딩하세요. base64 -d는 줄바꿈을 무시하므로 불필요한 줄바꿈 없이 정확한 바이트를 복원합니다:",
       "verifyStep2": "2. 위의 서명 base64 문자열을 파일에 저장: sig.base64",
       "verifyStep3": "3. 공개 키 다운로드:",
       "verifyStep4": "4. 서명 디코딩:",
       "verifyStep5": "5. 검증:",
-      "verifyStep6": "6. 예상 출력: \"Verified OK\" — 이는 아래 메타데이터와 사진 해시가 서명 이후 변경되지 않았음을 확인합니다.",
-      "verifyStep7": "7. 사진 자체가 일치하는지 확인하세요. \"Verified OK\"는 페이로드의 해시가 온전함을 증명할 뿐, 이 PDF의 이미지가 그 해시와 일치함을 증명하지는 않습니다. 각 사진에 대해 SHA-256을 다시 계산하고(sha256sum <file> 또는 openssl dgst -sha256 <file>), 위 페이로드의 해당 sign_photo_sha256 / car_photo_sha256 / ambient_photo_sha256 값과 같은지 확인하세요. 일치하지 않으면 그 사진은 서명 이후 변경된 것입니다."
+      "verifyStep6": "6. 예상 출력: \"Verified OK\". 이는 페이로드에 기록된 메타데이터와 사진 해시가 signed_at 시각 이후 진본이며 변경되지 않았음을 증명합니다.",
+      "verifyStep7": "7. 사진에 관하여: 이 PDF에 표시된 이미지는 문서용으로 다시 인코딩된 시각적 사본이므로 바이트가 원본과 달라 페이로드의 해시를 재현하지 못합니다. 이는 정상이며 변조의 징후가 아닙니다. 서명은 각 원본 사진의 SHA-256(서명된 페이로드 안의 sign_photo_sha256, car_photo_sha256, ambient_photo_sha256 값)에 대한 것이며, 6단계에서 그 값들이 진본임을 이미 증명했습니다. 특정 이미지를 독립적으로 확인하려면 여기 인쇄된 사본이 아니라 원본 촬영 파일(ParkProof 기록 또는 계정 내보내기에서 가져온 것)의 해시를 계산하여 위의 해당 값과 비교하세요."
     },
     "appeal": {
       "drafted": "초안 {{when}}",

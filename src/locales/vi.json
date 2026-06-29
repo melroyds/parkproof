@@ -557,15 +557,16 @@
       "schema": "Lược đồ",
       "publicKeyUrl": "URL khóa công khai",
       "canonicalPayloadHeader": "Tải trọng chuẩn (chuỗi byte chính xác đã được ký):",
+      "payloadB64Header": "Payload chuẩn hóa, dạng base64 (giải mã chuỗi này để xác minh):",
       "signatureBlobHeader": "Chữ ký (DER, base64):",
       "verifyHeader": "Xác minh bằng openssl (mọi nền tảng):",
-      "verifyStep1": "1. Lưu tải trọng chuẩn ở trên vào tệp: payload.txt (không có dòng mới ở cuối)",
+      "verifyStep1": "1. Lưu khối payload base64 ở trên vào tệp: payload.b64, sau đó giải mã thành đúng các byte đã được ký. base64 -d bỏ qua việc xuống dòng, nên bạn khôi phục được chính xác các byte mà không có ký tự xuống dòng thừa:",
       "verifyStep2": "2. Lưu chuỗi base64 chữ ký ở trên vào tệp: sig.base64",
       "verifyStep3": "3. Tải khóa công khai:",
       "verifyStep4": "4. Giải mã chữ ký:",
       "verifyStep5": "5. Xác minh:",
-      "verifyStep6": "6. Kết quả mong đợi: \"Verified OK\" — điều này xác nhận siêu dữ liệu và các mã băm ảnh bên dưới chưa bị thay đổi kể từ khi ký.",
-      "verifyStep7": "7. Xác nhận chính các ảnh cũng khớp. \"Verified OK\" chỉ chứng minh các mã băm trong tải trọng còn nguyên vẹn, KHÔNG chứng minh rằng các hình ảnh trong PDF này khớp với chúng. Với mỗi ảnh, hãy tính lại mã SHA-256 của nó (sha256sum <file>, hoặc openssl dgst -sha256 <file>) và kiểm tra xem nó có bằng sign_photo_sha256 / car_photo_sha256 / ambient_photo_sha256 tương ứng trong tải trọng ở trên không. Nếu không khớp, nghĩa là ảnh đó đã bị thay đổi sau khi ký."
+      "verifyStep6": "6. Kết quả mong đợi: \"Verified OK\". Điều này xác nhận phần metadata và các giá trị băm ảnh được ghi trong payload là xác thực và không bị thay đổi kể từ thời điểm signed_at.",
+      "verifyStep7": "7. Về ảnh: các hình trong tệp PDF này là bản sao trực quan, được mã hóa lại cho tài liệu, nên các byte của chúng khác với bản gốc và sẽ không tái tạo được các giá trị băm trong payload. Đây là điều bình thường, không phải dấu hiệu bị giả mạo. Chữ ký cam kết với SHA-256 của từng ảnh gốc (các giá trị sign_photo_sha256, car_photo_sha256 và ambient_photo_sha256 trong payload đã ký), và bước 6 đã chứng minh các giá trị đó là xác thực. Để xác minh độc lập một hình cụ thể, hãy băm tệp ảnh gốc đã chụp (từ bản ghi ParkProof hoặc bản xuất dữ liệu tài khoản của bạn), không phải bản sao in ở đây, và so sánh với giá trị tương ứng ở trên."
     },
     "appeal": {
       "drafted": "Soạn thảo lúc {{when}}",

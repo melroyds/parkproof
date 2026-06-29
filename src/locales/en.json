@@ -731,15 +731,16 @@
       "schema": "Schema",
       "publicKeyUrl": "Public key URL",
       "canonicalPayloadHeader": "Canonical payload (the exact bytes that were signed):",
+      "payloadB64Header": "Canonical payload, base64 (decode this to verify):",
       "signatureBlobHeader": "Signature (DER, base64):",
       "verifyHeader": "To verify with openssl (any platform):",
-      "verifyStep1": "1. Save the canonical payload above to a file: payload.txt (no trailing newline)",
+      "verifyStep1": "1. Save the base64 payload block above to a file: payload.b64, then decode it to the exact signed bytes. base64 -d ignores the line wrapping, so you recover the precise bytes with no stray newline:",
       "verifyStep2": "2. Save the signature base64 string above to a file: sig.base64",
       "verifyStep3": "3. Download the public key:",
       "verifyStep4": "4. Decode the signature:",
       "verifyStep5": "5. Verify:",
-      "verifyStep6": "6. Expect output: \"Verified OK\". This confirms the metadata and the photo hashes below were not altered since signing.",
-      "verifyStep7": "7. Confirm the photos themselves match. \"Verified OK\" only proves the hashes in the payload are intact, NOT that the images in this PDF match them. For each photo, recompute its SHA-256 (sha256sum <file>, or openssl dgst -sha256 <file>) and check it equals the matching sign_photo_sha256 / car_photo_sha256 / ambient_photo_sha256 in the payload above. A mismatch means that photo was changed after signing."
+      "verifyStep6": "6. Expect output: \"Verified OK\". This confirms the metadata and the photo hashes recorded in the payload are authentic and unchanged since the signed_at time.",
+      "verifyStep7": "7. About the photos: the images shown in this PDF are a visual copy, re-encoded for the document, so their bytes differ from the originals and will not reproduce the hashes in the payload. That is expected and is not a sign of tampering. The signature commits to the SHA-256 of each original photo (the sign_photo_sha256, car_photo_sha256 and ambient_photo_sha256 values inside the signed payload), and step 6 already proved those values are authentic. To independently confirm a specific image, hash the original captured file (from the ParkProof record or your account export), not the copy printed here, and compare it to the matching value above."
     },
     "appeal": {
       "drafted": "Drafted {{when}}",

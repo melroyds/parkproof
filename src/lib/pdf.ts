@@ -600,6 +600,21 @@ function isValidSignature(
   return required.every((k) => typeof sig[k] === 'string' && sig[k].length > 0)
 }
 
+/**
+ * Base64 of the UTF-8 bytes of a string. The verifier decodes this with
+ * `base64 -d`, which ignores the line wrapping the PDF introduces, so they
+ * reconstruct the EXACT signed bytes (no stray trailing newline, no re-wrapped
+ * whitespace). These bytes match what the Lambda hashed: Node's
+ * `createHash('sha256').update(canonical_payload)` encodes the string as UTF-8,
+ * and TextEncoder here produces the same UTF-8 byte sequence.
+ */
+function base64Utf8(s: string): string {
+  const bytes = new TextEncoder().encode(s)
+  let bin = ''
+  for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i])
+  return btoa(bin)
+}
+
 function drawSignatureAppendix(
   doc: jsPDF,
   sig: NonNullable<ParkingSession['signature']>,
@@ -669,6 +684,27 @@ function drawSignatureAppendix(
   }
   y += 10
 
+  // Base64 of the same payload. The verify walkthrough decodes THIS (not the
+  // wrapped plain text above) because `base64 -d` strips the line wrapping and
+  // yields the exact signed bytes — the plain block is wrapped for human
+  // reading and would reintroduce newlines if copied directly.
+  y = ensureSpace(doc, y, 40)
+  doc.setFont(activeFont, 'bold')
+  doc.setFontSize(10)
+  doc.setTextColor(15, 23, 42)
+  doc.text(t('pdf.signature.payloadB64Header'), MARGIN, y)
+  y += 14
+  doc.setFont('courier', 'normal')
+  doc.setFontSize(7)
+  doc.setTextColor(40)
+  const payloadB64Lines = doc.splitTextToSize(base64Utf8(sig.canonical_payload), pageWidth - 2 * MARGIN)
+  for (const line of payloadB64Lines) {
+    y = ensureSpace(doc, y, 9)
+    doc.text(line, MARGIN, y)
+    y += 9
+  }
+  y += 10
+
   y = ensureSpace(doc, y, 40)
   doc.setFont(activeFont, 'bold')
   doc.setFontSize(10)
@@ -702,6 +738,7 @@ function drawSignatureAppendix(
   // translated.
   const verifySteps = [
     t('pdf.signature.verifyStep1'),
+    '   base64 -d payload.b64 > payload.txt',
     t('pdf.signature.verifyStep2'),
     t('pdf.signature.verifyStep3'),
     '   curl -O https://www.parkproof.com.au/parkproof-public-key.pem',

@@ -557,15 +557,16 @@
       "schema": "架构",
       "publicKeyUrl": "公钥 URL",
       "canonicalPayloadHeader": "规范化负载(被签名的确切字节):",
+      "payloadB64Header": "规范化负载（base64 编码，解码后用于验证）：",
       "signatureBlobHeader": "签名(DER,base64):",
       "verifyHeader": "使用 openssl 验证(任意平台):",
-      "verifyStep1": "1. 将上方的规范化负载保存到文件:payload.txt(末尾不要有换行符)",
+      "verifyStep1": "1. 将上方的 base64 负载块保存为文件：payload.b64，然后解码还原出被签名的确切字节。base64 -d 会忽略换行，因此你能得到精确的字节，且不含多余的换行符：",
       "verifyStep2": "2. 将上方的 base64 签名字符串保存到文件:sig.base64",
       "verifyStep3": "3. 下载公钥:",
       "verifyStep4": "4. 解码签名:",
       "verifyStep5": "5. 验证:",
-      "verifyStep6": "6. 预期输出:\"Verified OK\",这表示下方的元数据和照片哈希自签名以来未被改动。",
-      "verifyStep7": "7. 确认照片本身是否一致。\"Verified OK\" 只能证明负载中的哈希完整无损,并不能证明此 PDF 中的图片与之匹配。对每张照片,重新计算它的 SHA-256(sha256sum <file>,或 openssl dgst -sha256 <file>),并核对它是否等于上方负载中对应的 sign_photo_sha256 / car_photo_sha256 / ambient_photo_sha256。若不一致,则表示该照片在签名后被改动过。"
+      "verifyStep6": "6. 预期输出：\"Verified OK\"。这证明负载中记录的元数据和照片哈希自 signed_at 时间以来真实且未被更改。",
+      "verifyStep7": "7. 关于照片：本 PDF 中显示的图像是为文档重新编码的可视副本，其字节与原始文件不同，因此无法重现负载中的哈希值。这是正常的，并不表示被篡改。签名所承诺的是每张原始照片的 SHA-256（即签名负载中的 sign_photo_sha256、car_photo_sha256 和 ambient_photo_sha256 值），第 6 步已经证明这些值是真实的。若要独立核对某张图像，请对原始拍摄文件（来自 ParkProof 记录或你的账户导出），而非此处打印的副本，计算哈希，并与上方对应的值进行比较。"
     },
     "appeal": {
       "drafted": "起草于 {{when}}",
