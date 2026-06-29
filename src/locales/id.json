@@ -61,7 +61,7 @@
       ]
     },
     "gates": {
-      "title": "Tunggu sebentar yang lembut",
+      "title": "Sedikit pengingat sebelum kamu pergi",
       "lead": "Pemeriksaan kecil yang mencegah kamu mendapat denda tak terduga.",
       "items": [
         "Jika lokasinya berbayar (meter, EasyPark, PayStay), kami akan minta kamu centang bahwa kamu sudah membayar sebelum menyimpan.",
@@ -110,7 +110,7 @@
     "cta": "Coba — pindai rambu",
     "support": {
       "title": "Suka ParkProof?",
-      "body": "Dibangun sendiri dalam 10 hari, gratis selamanya. Jika ini menyelamatkan Anda dari tilang, traktir saya kopi.",
+      "body": "Dibangun sendiri dalam 10 hari, gratis selamanya. Kalau ini menyelamatkanmu dari denda, bantu bayar tagihan AWS-nya.",
       "button": "☕ Belikan saya kopi"
     },
     "sealCaveat": "Segel membuktikan catatan tidak diubah setelah kamu menyimpannya. Ini tidak membuktikan AI membaca rambu dengan benar, atau menjamin dewan kota akan menerimanya."
@@ -295,17 +295,17 @@
     "intro": "Kami akan menyimpan catatan bertanda waktu dengan fotomu dan GPS — bukti berguna jika kamu pernah menyanggah denda tidak adil.",
     "location": "Lokasi",
     "acquiringGps": "Mengambil GPS…",
-    "captured": "Tertangkap ✓",
+    "captured": "Tersimpan ✓",
     "gpsImprecise": "GPS terlalu tidak presisi untuk memverifikasi lokasimu",
     "gpsImpreciseCopy": "Pembacaan <strong>{{accuracy}}</strong> — cukup untuk mencari kafe, bukan untuk bukti parkir. Masukkan alamat jalan secara manual agar catatan tetap andal.",
-    "gpsImpreciseDanger": "Pembacaan <strong>{{accuracy}}</strong> — bisa jadi pinggiran kota yang salah sama sekali (umum di Starlink, VPN, atau GPS dalam ruangan). Masukkan alamat jalan secara manual agar catatan tetap andal.",
+    "gpsImpreciseDanger": "Pembacaan <strong>{{accuracy}}</strong> — bisa jadi area yang salah sama sekali (umum di Starlink, VPN, atau GPS dalam ruangan). Masukkan alamat jalan secara manual agar catatan tetap andal.",
     "enterAddress": "Masukkan alamat secara manual",
     "manuallyEntered": "Dimasukkan manual",
     "accuracyLabel": "Akurasi {{accuracy}}",
-    "addressPlaceholder": "Jalan, pinggiran kota, negara bagian",
+    "addressPlaceholder": "Jalan, area, negara bagian",
     "lookingUp": "Mencari…",
     "update": "Perbarui",
-    "addressNotFound": "Tidak menemukan alamat itu. Coba tambahkan pinggiran kota atau kode pos.",
+    "addressNotFound": "Tidak menemukan alamat itu. Coba tambahkan nama area atau kode pos.",
     "enterAddressFirst": "Masukkan alamat dulu.",
     "gpsErrorDefault": "Tidak bisa membaca GPS-mu.",
     "gpsErrorDenied": "Kamu menolak permintaan lokasi. Untuk melampirkan GPS ke catatan ini, izinkan lokasi untuk situs ini di pengaturan browser dan ketuk Coba Lagi.",
@@ -392,7 +392,7 @@
     "emptyHelp": "Pindai rambu dan catat parkir — akan muncul di sini.",
     "expired": "Berakhir",
     "noExpiry": "Tanpa berakhir",
-    "noSignBadge": "Tidak ada larangan terpasang tertangkap"
+    "noSignBadge": "Tidak ada larangan terpasang terekam"
   },
   "session": {
     "header": "Catatan parkir",
@@ -419,7 +419,7 @@
     "ambientPhotoLabel": "Sekitar",
     "ambientPhotoCaption": "Diambil saat parkir untuk membuktikan ketiadaan rambu.",
     "noAmbientCaptured": "Tidak ada foto sekitar yang diambil.",
-    "noSignBadgeLong": "Tidak ada larangan terpasang tertangkap. Ini dicatat sebagai tempat tanpa rambu.",
+    "noSignBadgeLong": "Tidak ada larangan terpasang terekam. Ini dicatat sebagai tempat tanpa rambu.",
     "exportAsPdf": "Ekspor sebagai PDF",
     "buildingPdf": "Membuat PDF…",
     "pdfErrorHeader": "Tidak bisa membuat PDF",
@@ -457,7 +457,7 @@
     "copied": "Tersalin ✓",
     "downloadPdf": "Unduh sebagai PDF",
     "downloadingPdf": "Membuat PDF…",
-    "reviewDisclaimer": "Draf AI adalah titik awal. Baca dengan hati-hati, edit surat agar sesuai dengan suaramu dan situasimu, dan verifikasi setiap klaim sebelum mengirim. ParkProof tidak melodgekan banding untukmu.",
+    "reviewDisclaimer": "Draf AI adalah titik awal. Baca dengan hati-hati, edit surat agar sesuai dengan suaramu dan situasimu, dan verifikasi setiap klaim sebelum mengirim. ParkProof tidak mengajukan bandingnya untukmu.",
     "errorHeader": "Tidak bisa menyusun banding",
     "tryDifferentPhoto": "Coba foto lain",
     "captureIntroStandalone": "Foto surat denda yang kamu terima. Claude akan membacanya dan menyusun surat resmi yang bisa kamu kirim ke dewan kota yang menerbitkannya. Jika kamu mencatat parkir ini di ParkProof, buka dari riwayat saja agar bukti tersimpanmu terlampir ke surat."
@@ -639,7 +639,7 @@
       "fieldHeader": "Field",
       "valueHeader": "Nilai",
       "dash": "—",
-      "notCaptured": "Tidak tertangkap",
+      "notCaptured": "Tidak terekam",
       "imageEmbedFailed": "(Gambar tidak bisa disematkan)"
     },
     "duration": {
@@ -672,7 +672,7 @@
         "gpsWithAccuracy": "GPS — {{accuracy}}",
         "gpsLowAccuracy": "GPS — AKURASI RENDAH {{accuracy}} (lihat lampiran)",
         "gps": "GPS",
-        "captured": "Tertangkap",
+        "captured": "Terekam",
         "none": "—"
       },
       "signPhotoHeader": "Foto rambu",
@@ -680,7 +680,7 @@
       "ambientPhotoHeader": "Foto sekitar",
       "ambientPhotoCaption": "Diambil oleh pengemudi saat parkir untuk membuktikan tidak ada rambu yang terlihat.",
       "noAmbientCaptured": "Tidak ada foto sekitar yang diambil untuk sesi ini.",
-      "noSignRules": "Tidak ada larangan terpasang tertangkap. Sesi ini dicatat di tempat yang dinyatakan pengemudi tidak punya rambu.",
+      "noSignRules": "Tidak ada larangan terpasang terekam. Sesi ini dicatat di tempat yang dinyatakan pengemudi tidak punya rambu.",
       "noSignConfidence": "Tidak berlaku (tidak ada rambu yang dibaca)",
       "driverNoteHeader": "Catatan pengemudi",
       "gpsNoticeTitle": "⚠ Pemberitahuan akurasi GPS",

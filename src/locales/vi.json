@@ -61,9 +61,9 @@
     "walkMinutes_one": "≈ 1 phút đi bộ",
     "walkMinutes_other": "≈ {{count}} phút đi bộ",
     "morePill": "+{{count}} nữa",
-    "noPostedRestrictions": "Không có biển cấm",
+    "noPostedRestrictions": "Không có biển báo hạn chế",
     "iveLeft": "Tôi đã đi",
-    "iveLeftAria": "Báo hiệu bạn đã rời khỏi chỗ đậu xe này",
+    "iveLeftAria": "Báo hiệu bạn đã rời khỏi chỗ đỗ xe này",
     "iveLeftConfirm": "Đánh dấu là đã rời đi bây giờ? Bản ghi sẽ chuyển sang lịch sử với thời gian bạn rời đi được ghi lại.",
     "nextPing": "Lời nhắc tiếp theo: {{when}}",
     "recheckNow": "Kiểm tra lại ngay",
@@ -158,7 +158,7 @@
       "kicker": "KHU VỰC GIẤY PHÉP",
       "header": "Chỉ dành cho người có giấy phép ngay bây giờ",
       "headerWithArea": "Chỉ dành cho Khu vực Giấy phép {{area}} ngay bây giờ",
-      "copy": "Đây là khu vực giấy phép cư trú hoặc doanh nghiệp. Bạn chỉ có thể đỗ xe ở đây nếu có giấy phép hợp lệ cho khu vực này. Cán bộ hội đồng kiểm tra số giấy phép so với khu vực — giấy phép cho khu vực kế bên không được tính.",
+      "copy": "Đây là khu vực giấy phép cư trú hoặc doanh nghiệp. Bạn chỉ có thể đỗ xe ở đây nếu có giấy phép hợp lệ cho khu vực này. Cán bộ hội đồng địa phương kiểm tra số giấy phép so với khu vực — giấy phép cho khu vực kế bên không được tính.",
       "copyWithArea": "Bạn chỉ có thể đỗ xe ở đây nếu có giấy phép hợp lệ cho Khu vực Giấy phép {{area}}. Số trên nhãn giấy phép của bạn phải khớp — cán bộ kiểm tra mã khu vực, không chỉ là việc bạn có giấy phép.",
       "ack": "Vâng, tôi có giấy phép hợp lệ cho khu vực này",
       "ackWithArea": "Vâng, tôi có giấy phép hợp lệ cho Khu vực Giấy phép {{area}}"
@@ -174,7 +174,7 @@
     "location": "Vị trí",
     "acquiringGps": "Đang lấy GPS…",
     "captured": "Đã ghi nhận ✓",
-    "gpsImprecise": "GPS quá thiếu chính xác để xác minh vị trí của bạn",
+    "gpsImprecise": "GPS không đủ chính xác để xác minh vị trí của bạn",
     "gpsImpreciseCopy": "Sai số đo được là <strong>{{accuracy}}</strong> — đủ để tìm quán cà phê, nhưng chưa đủ làm bằng chứng đỗ xe. Nhập địa chỉ đường thủ công để bản ghi đáng tin cậy.",
     "gpsImpreciseDanger": "Sai số đo được là <strong>{{accuracy}}</strong> — có thể lệch hẳn sang khu phố khác (thường xảy ra với Starlink, VPN hoặc GPS trong nhà). Nhập địa chỉ đường thủ công để bản ghi đáng tin cậy.",
     "enterAddress": "Nhập địa chỉ thủ công",
@@ -248,7 +248,7 @@
       "browserCopy": "Bật thông báo tại mỗi mốc đã chọn, trong tab cộng hệ thống thiết bị khi có."
     },
     "pushStatus": {
-      "subscribed": "✓ Đã bật nhắc nhở qua đẩy trên thiết bị này",
+      "subscribed": "✓ Đã bật nhắc nhở đẩy trên thiết bị này",
       "notSubscribed": "Chưa bật đẩy. Nếu không bật, nhắc nhở chỉ kêu khi tab này đang mở.",
       "enable": "Bật đẩy",
       "requesting": "Đang yêu cầu trình duyệt…",
@@ -440,7 +440,7 @@
     "signedInPhotos": "Mọi <strong>ảnh</strong> đính kèm bản ghi — lưu trong AWS S3 theo đường dẫn có ID người dùng của bạn, chỉ bạn truy cập được khi đã đăng nhập.",
     "federationHeader": "Đăng nhập bằng Apple hoặc Google",
     "federationCopy1": "Nếu bạn chọn đăng nhập bằng Apple hoặc Google thay vì email/mật khẩu, xác thực của bạn được trung chuyển qua Hosted UI của AWS Cognito. Mật khẩu, sinh trắc học, hoặc passkey của bạn không bao giờ tới ParkProof — chúng ở lại với Apple hoặc Google.",
-    "federationCopy2": "Từ bắt tay OAuth, chúng tôi nhận được hai thứ: một định danh người dùng không trong suốt ổn định (để Cognito nhận diện bạn khi quay lại), và địa chỉ email của bạn. Chỉ vậy thôi. Chúng tôi không nhận được ảnh đại diện, danh sách bạn bè, lịch, danh bạ, hoặc bất kỳ thông tin nào khác từ Apple ID hoặc Google Account của bạn.",
+    "federationCopy2": "Từ bắt tay OAuth, chúng tôi nhận được hai thứ: một định danh người dùng không tiết lộ thông tin ổn định (để Cognito nhận diện bạn khi quay lại), và địa chỉ email của bạn. Chỉ vậy thôi. Chúng tôi không nhận được ảnh đại diện, danh sách bạn bè, lịch, danh bạ, hoặc bất kỳ thông tin nào khác từ Apple ID hoặc Google Account của bạn.",
     "federationCopy3": "Đăng xuất khỏi ParkProof trong ứng dụng không thu hồi quyền cấp trên của Apple hoặc Google. Để thu hồi, hãy truy cập <apple>Apple ID</apple> của bạn (phần 'Sign in with Apple') hoặc <google>Tài khoản Google</google> của bạn ('Bảo mật > Truy cập của bên thứ ba'). Xóa tài khoản ParkProof trong ứng dụng sẽ xóa hồ sơ của chúng tôi nhưng không hủy đăng ký quyền cấp trên.",
     "locationHeader": "Dữ liệu nằm ở đâu",
     "locationCopy": "Toàn bộ lưu trữ đám mây nằm tại <strong>AWS Sydney (ap-southeast-2)</strong>. Dữ liệu không rời khỏi Úc cho mục đích lưu trữ. Anthropic và Nominatim có thể xử lý dữ liệu quốc tế trong một lần gọi API; các lần gọi đó không lưu lại.",
@@ -519,7 +519,7 @@
         "signRules": "Quy tắc trên biển báo",
         "aiConfidence": "Độ tin cậy AI",
         "endedAt": "Đã rời (do tài xế xác nhận)",
-        "actualDuration": "Thời gian đậu thực tế"
+        "actualDuration": "Thời gian đỗ xe thực tế"
       },
       "locationSourceValue": {
         "manuallyEntered": "Nhập thủ công",
@@ -534,7 +534,7 @@
       "driverNoteHeader": "Ghi chú của tài xế",
       "gpsNoticeTitle": "⚠ Thông báo về độ chính xác GPS",
       "gpsNoticeBody": "Tín hiệu GPS khi ghi nhận là {{accuracy}} — rộng hơn mức thông thường dùng làm bằng chứng. Tọa độ phía trên xác định một điểm trong bán kính đó, không phải vị trí chính xác. Nguyên nhân thường gặp: bãi đỗ trong nhà / nhiều tầng, kết nối Starlink hoặc VPN, hoặc tín hiệu vệ tinh yếu. Người xét duyệt nên cân nhắc địa chỉ ghi nhận trong phạm vi bán kính này.",
-      "statement": "Hồ sơ này được ParkProof tạo tự động tại thời điểm đỗ xe. Dấu thời gian đến nơi, tọa độ GPS, bản dịch biển báo và các ảnh chụp tạo thành một hồ sơ bằng chứng cùng thời điểm, phù hợp để đính kèm khi yêu cầu xem xét lại phiếu phạt đỗ xe gửi đến hội đồng địa phương Úc có thẩm quyền.",
+      "statement": "Hồ sơ này được ParkProof tạo tự động tại thời điểm đỗ xe. Dấu thời gian đến nơi, tọa độ GPS, bản dịch biển báo và các ảnh chụp tạo thành một hồ sơ bằng chứng cùng thời điểm, phù hợp để đính kèm khi yêu cầu xem xét lại vé phạt đỗ xe gửi đến hội đồng địa phương Úc có thẩm quyền.",
       "guidanceFree": "Được phép đỗ. Di chuyển trước {{when}}.",
       "guidanceFreeNoExpiry": "Được phép đỗ. Biển báo không ghi giờ hết hạn.",
       "guidanceExpired": "Phiên đã hết hạn lúc {{when}}.",
@@ -547,7 +547,7 @@
     },
     "signature": {
       "title": "Chữ ký mã hóa",
-      "intro": "Hồ sơ bằng chứng này được ký bằng khóa riêng do AWS KMS của ParkProof quản lý tại thời điểm lưu. Chữ ký cho phép bất kỳ bên thứ ba nào (hội đồng, tòa án, công ty bảo hiểm) xác minh rằng siêu dữ liệu và mã băm ảnh bên dưới chưa bị thay đổi kể từ dấu thời gian signed_at. Khóa riêng không bao giờ rời khỏi AWS; khóa công khai được công bố rộng rãi để xác minh.",
+      "intro": "Hồ sơ bằng chứng này được ký bằng khóa riêng do AWS KMS của ParkProof quản lý tại thời điểm lưu. Chữ ký cho phép bất kỳ bên thứ ba nào (hội đồng địa phương, tòa án, công ty bảo hiểm) xác minh rằng siêu dữ liệu và mã băm ảnh bên dưới chưa bị thay đổi kể từ dấu thời gian signed_at. Khóa riêng không bao giờ rời khỏi AWS; khóa công khai được công bố rộng rãi để xác minh.",
       "algorithm": "Thuật toán",
       "keyAlias": "Bí danh khóa",
       "signedAt": "Ký lúc (UTC)",
@@ -570,7 +570,7 @@
       "supportingEvidence": "Bằng chứng hỗ trợ (từ ParkProof)",
       "fieldGps": "GPS",
       "fieldSideSelected": "Phía đã chọn",
-      "ticketPhotoHeader": "Giấy phạt (ảnh)",
+      "ticketPhotoHeader": "Vé phạt (ảnh)",
       "signPhotoHeader": "Biển báo đỗ xe tại thời điểm đỗ",
       "carPhotoHeader": "Xe tại chỗ đỗ"
     },
@@ -612,11 +612,11 @@
     "hoursAgo_other": "{{count}} giờ trước",
     "yesterday": "hôm qua",
     "daysAgo_other": "{{count}} ngày trước",
-    "parkedForMin_one": "Đã đậu 1 phút",
-    "parkedForMin_other": "Đã đậu {{count}} phút",
-    "parkedForHour_one": "Đã đậu 1 giờ",
-    "parkedForHours_other": "Đã đậu {{count}} giờ",
-    "parkedForHoursMins": "Đã đậu {{hours}} giờ {{mins}} phút"
+    "parkedForMin_one": "Đã đỗ 1 phút",
+    "parkedForMin_other": "Đã đỗ {{count}} phút",
+    "parkedForHour_one": "Đã đỗ 1 giờ",
+    "parkedForHours_other": "Đã đỗ {{count}} giờ",
+    "parkedForHoursMins": "Đã đỗ {{hours}} giờ {{mins}} phút"
   },
   "feedback": {
     "title": "Gửi phản hồi",
@@ -691,17 +691,17 @@
       "lead": "Đưa điện thoại lên bất kỳ biển báo đỗ xe nào — kể cả những biển báo lộn xộn với mũi tên và khu vực cấm.",
       "items": [
         "Bạn nhận được câu trả lời rõ ràng có hoặc không trong khoảng 12 giây.",
-        "Nếu biển báo có quy định khác nhau cho từng bên đường, chúng tôi sẽ hỏi bạn đang đậu bên nào.",
+        "Nếu biển báo có quy định khác nhau cho từng bên đường, chúng tôi sẽ hỏi bạn đang đỗ bên nào.",
         "Chúng tôi kiểm tra xem ảnh có quá mờ hay quá tối không trước khi gọi AI — tiết kiệm cho bạn một lần thử thất bại."
       ]
     },
     "evidence": {
-      "title": "Biên lai cho chỗ đậu xe của bạn",
-      "lead": "Mỗi lần đậu xe được ghi lại đều lưu thời gian, GPS, địa chỉ, và (nếu bạn muốn) một ảnh xe của bạn tại chỗ.",
+      "title": "Biên lai cho chỗ đỗ xe của bạn",
+      "lead": "Mỗi lần đỗ xe được ghi lại đều lưu thời gian, GPS, địa chỉ, và (nếu bạn muốn) một ảnh xe của bạn tại chỗ.",
       "items": [
         "Tải xuống toàn bộ dưới dạng PDF gọn gàng — tiện lợi nếu bạn cần khiếu nại vé phạt.",
         "Hồ sơ được ký bằng dấu kỹ thuật số nên không ai có thể nói nó bị sửa sau đó — kể cả chúng tôi.",
-        "Thêm ghi chú về lý do bạn đậu ở đó (đưa mẹ đi viện, đi chợ Thứ Bảy) — hội đồng thành phố coi trọng bối cảnh."
+        "Thêm ghi chú về lý do bạn đỗ ở đó (đưa mẹ đi viện, đi chợ Thứ Bảy) — hội đồng địa phương coi trọng bối cảnh."
       ]
     },
     "reminders": {
@@ -710,15 +710,15 @@
       "items": [
         "Tạo sự kiện trong lịch điện thoại của bạn để lời nhắc vang lên ngay cả khi ParkProof không mở.",
         "Hiển thị bộ đếm ngược trực tiếp trên màn hình chính — xanh khi còn nhiều thời gian, vàng khi sắp hết, đỏ khi bạn thực sự cần dời xe.",
-        "Quên chỗ đậu xe? Nhấn Quay lại xe và ứng dụng bản đồ sẽ chỉ đường cho bạn."
+        "Quên chỗ đỗ xe? Nhấn Quay lại xe và ứng dụng bản đồ sẽ chỉ đường cho bạn."
       ]
     },
     "gates": {
       "title": "Một lời nhắc nhẹ nhàng khoan đã",
       "lead": "Những kiểm tra nhỏ ngăn bạn không bị phạt mà không hề hay biết.",
       "items": [
-        "Nếu ô đậu cần trả phí (đồng hồ đo, EasyPark, PayStay), chúng tôi sẽ yêu cầu bạn xác nhận đã trả tiền trước khi lưu.",
-        "Nếu ô đậu dành riêng cho người khuyết tật, chúng tôi hiện một cảnh báo đỏ rõ ràng.",
+        "Nếu ô đỗ cần trả phí (đồng hồ đo, EasyPark, PayStay), chúng tôi sẽ yêu cầu bạn xác nhận đã trả tiền trước khi lưu.",
+        "Nếu ô đỗ dành riêng cho người khuyết tật, chúng tôi hiện một cảnh báo đỏ rõ ràng.",
         "Đậu ở chỗ hoàn toàn không có biển báo? Bạn vẫn có thể ghi lại — kèm ảnh môi trường xung quanh để chứng minh thực sự không có biển nào."
       ]
     },
@@ -726,9 +726,9 @@
       "title": "Vẫn bị phạt rồi?",
       "lead": "Đừng tự viết thư khiếu nại. Chúng tôi sẽ viết cho bạn.",
       "items": [
-        "Chụp ảnh vé phạt. Chúng tôi sẽ đối chiếu với hồ sơ đã lưu khi bạn đậu xe.",
-        "Bạn nhận được bản nháp thư gửi hội đồng, kèm đánh giá trung thực về độ mạnh của trường hợp của bạn.",
-        "Chỉnh sửa thoải mái, rồi tải xuống dưới dạng PDF kèm hồ sơ đậu xe. In gửi bưu điện, hoặc gửi email."
+        "Chụp ảnh vé phạt. Chúng tôi sẽ đối chiếu với hồ sơ đã lưu khi bạn đỗ xe.",
+        "Bạn nhận được bản nháp thư gửi hội đồng địa phương, kèm đánh giá trung thực về độ mạnh của trường hợp của bạn.",
+        "Chỉnh sửa thoải mái, rồi tải xuống dưới dạng PDF kèm hồ sơ đỗ xe. In gửi bưu điện, hoặc gửi email."
       ]
     },
     "kindnesses": {
@@ -737,7 +737,7 @@
       "items": [
         "Miễn phí. Không cần kho ứng dụng. Thêm vào màn hình chính và nó hoạt động như một ứng dụng bình thường — kể cả khi không có mạng.",
         "Có sẵn 9 ngôn ngữ bao gồm 中文, Tiếng Việt, Bahasa Indonesia, 한국어, Italiano, Ελληνικά, हिन्दी và ਪੰਜਾਬੀ.",
-        "Thời gian luôn khớp với chỗ đậu xe — quét ở Sydney khi đi du lịch, bạn thấy giờ Sydney. Không phải giờ nhà của điện thoại.",
+        "Thời gian luôn khớp với chỗ đỗ xe — quét ở Sydney khi đi du lịch, bạn thấy giờ Sydney. Không phải giờ nhà của điện thoại.",
         "Bạn không cần đăng nhập để dùng bất kỳ tính năng nào. Ẩn danh cũng hoạt động tốt."
       ]
     },
@@ -746,7 +746,7 @@
       "lead": "Tùy chọn. Nếu đăng nhập, hồ sơ của bạn sẽ đi theo bạn qua các thiết bị.",
       "items": [
         "Đăng nhập bằng email, Apple ID, hoặc tài khoản Google.",
-        "Mỗi lần đậu xe đều được sao lưu lên đám mây — nếu điện thoại hỏng, bằng chứng vẫn còn đó.",
+        "Mỗi lần đỗ xe đều được sao lưu lên đám mây — nếu điện thoại hỏng, bằng chứng vẫn còn đó.",
         "Một chạm để tải về mọi hồ sơ. Một chạm để xóa mọi hồ sơ và tài khoản, nếu bạn đổi ý."
       ]
     },

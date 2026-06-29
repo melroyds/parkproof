@@ -51,7 +51,7 @@
   },
   "active": {
     "currentlyParked": "ATTUALMENTE PARCHEGGIATO",
-    "moveBy": "Sposta entro le {{time}}",
+    "moveBy": "Spostati entro le {{time}}",
     "tapForRecord": "Tocca per la prova",
     "walkBack": "Torna a piedi all'auto",
     "walkBackButton": "Torna a piedi",
@@ -68,9 +68,9 @@
     "allActiveIntro_other": "{{count}} record di parcheggio attivi. Tocca una qualsiasi per aprirlo.",
     "lastLoggedSpot": "Ultimo posto registrato",
     "noPostedRestrictions": "Nessuna restrizione segnalata",
-    "iveLeft": "Sono andato",
+    "iveLeft": "Ho lasciato il posto",
     "iveLeftAria": "Segnala che hai lasciato questo parcheggio",
-    "iveLeftConfirm": "Segnalare che sei andato ora? Verrà spostato nella cronologia con l'ora di partenza registrata.",
+    "iveLeftConfirm": "Vuoi segnare che hai lasciato il posto? Verrà spostato nella cronologia con l'ora di partenza registrata.",
     "nextPing": "Prossimo promemoria: {{when}}",
     "recheckNow": "Ricontrolla ora",
     "recheckSub": "Ancora regolare? Riverifica in pochi secondi",
@@ -147,7 +147,7 @@
       "ack": "Ho pagato (o pagherò prima di andarmene)"
     },
     "logCtaBlockedPermit": "Conferma il permesso esposto per salvare",
-    "logCtaBlockedPermitZone": "Conferma di avere un permesso valido per salvare",
+    "logCtaBlockedPermitZone": "Per salvare, conferma di avere un permesso valido",
     "permitRequired": {
       "kicker": "PERMESSO DISABILI RICHIESTO",
       "header": "Questo posto è riservato ai titolari di permesso",
@@ -235,7 +235,7 @@
     "browserTooFar": "Scade tra oltre 24h — usa invece l'opzione calendario",
     "browserNothingSelected": "Scegli almeno un promemoria qui sopra",
     "pushTitleFallback": "Promemoria parcheggio",
-    "pushBodyAtExpiry": "Il tuo parcheggio sta scadendo ora.",
+    "pushBodyAtExpiry": "Il tuo parcheggio scade ora.",
     "pushBodyBefore_one": "1 minuto alla scadenza del parcheggio.",
     "pushBodyBefore_other": "{{count}} minuti alla scadenza del parcheggio.",
     "pushBodyCheckOn": "È ora di controllare la tua auto.",
@@ -245,7 +245,7 @@
       "chipHour_one": "1 ora",
       "chipHour_other": "{{count}} ore",
       "calendarCopy": "Si aggiunge al calendario iPhone / Android / Outlook con una sveglia per ogni scelta. Funziona anche se chiudi l'app.",
-      "browserCopy": "Invia una notifica a ogni orario scelto, nella tab più sul sistema operativo se disponibile."
+      "browserCopy": "Invia una notifica a ogni orario scelto, nella scheda e anche sul sistema operativo del dispositivo quando disponibile."
     },
     "pushStatus": {
       "subscribed": "✓ Promemoria push attivati su questo dispositivo",
@@ -258,8 +258,8 @@
     },
     "pushScheduled": {
       "header": "Promemoria push pianificati",
-      "single": "Riceverai un ping alle {{times}}.",
-      "multiple": "Riceverai un ping alle {{times}}."
+      "single": "Riceverai un promemoria alle {{times}}.",
+      "multiple": "Riceverai un promemoria alle {{times}}."
     },
     "pushScheduleFailed": "Impossibile impostare il promemoria in sottofondo. Potrebbe suonare solo mentre questa scheda è aperta. Tocca per riprovare."
   },
@@ -274,7 +274,7 @@
   },
   "session": {
     "header": "Record di parcheggio",
-    "arrived": "Arrivato {{when}}",
+    "arrived": "Arrivo {{when}}",
     "cryptoSigned": "Firmato crittograficamente",
     "status": "STATO",
     "active": "Attiva fino alle {{when}}",
@@ -305,8 +305,8 @@
     "ambientPhotoCaption": "Catturata al momento del parcheggio per attestare l'assenza di cartelli.",
     "noAmbientCaptured": "Nessuna foto dell'area è stata catturata.",
     "noSignBadgeLong": "Nessuna restrizione affissa registrata. Registrato come posto senza cartelli.",
-    "endSession": "Sono andato",
-    "endConfirm": "Segnalare che sei andato ora? Il record resta nella cronologia con l'ora di partenza registrata.",
+    "endSession": "Ho lasciato il posto",
+    "endConfirm": "Vuoi segnare che hai lasciato il posto? Il record resta nella cronologia con l'ora di partenza registrata.",
     "endedAt": "Terminata {{when}}",
     "noExpiryRecorded": "Nessuna scadenza registrata",
     "howToVerify": "Come un comune può verificare questo record →",
@@ -535,7 +535,7 @@
       "gpsNoticeTitle": "⚠ Avviso sulla precisione GPS",
       "gpsNoticeBody": "La lettura GPS al momento dell'acquisizione era {{accuracy}} — più ampia del consueto per scopi probatori. Le coordinate indicate identificano un punto all'interno di tale raggio, non un punto esatto. Cause comuni: parcheggi interni / multipiano, connessioni Starlink o VPN, o segnale satellitare debole. Chi valuta dovrebbe ponderare l'indirizzo registrato in base a questo raggio.",
       "statement": "Questo documento è stato generato automaticamente da ParkProof al momento del parcheggio. L'orario di arrivo, le coordinate GPS, la traduzione del cartello e le fotografie costituiscono un registro probatorio contestuale, idoneo a essere allegato a una richiesta di revisione di una contravvenzione di sosta presso il comune australiano competente.",
-      "guidanceFree": "Parcheggio consentito. Sposta entro le {{when}}.",
+      "guidanceFree": "Parcheggio consentito. Sposta l'auto entro le {{when}}.",
       "guidanceFreeNoExpiry": "Parcheggio consentito. Nessuna scadenza indicata sul cartello.",
       "guidanceExpired": "Sessione scaduta alle {{when}}.",
       "ambientPhotoHeader": "Foto dell'area circostante",
@@ -599,7 +599,7 @@
     }
   },
   "time": {
-    "moveNow": "Sposta subito",
+    "moveNow": "Spostati ora",
     "minLeft_one": "1 min rimanente",
     "minLeft_other": "{{count}} min rimanenti",
     "hourLeft_one": "1 ora rimanente",

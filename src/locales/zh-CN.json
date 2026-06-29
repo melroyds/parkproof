@@ -176,14 +176,14 @@
     "captured": "已捕获 ✓",
     "gpsImprecise": "GPS 精度不足,无法验证您的位置",
     "gpsImpreciseCopy": "读取精度为 <strong>{{accuracy}}</strong>——足够找咖啡店,但不足以作为停车证据。请手动输入街道地址以保持记录可靠。",
-    "gpsImpreciseDanger": "读取精度为 <strong>{{accuracy}}</strong>——可能完全是错误的郊区(常见于 Starlink、VPN 或室内 GPS)。请手动输入街道地址以保持记录可靠。",
+    "gpsImpreciseDanger": "读取精度为 <strong>{{accuracy}}</strong>——可能完全是错误的城区(常见于 Starlink、VPN 或室内 GPS)。请手动输入街道地址以保持记录可靠。",
     "enterAddress": "手动输入地址",
     "manuallyEntered": "手动输入",
     "accuracyLabel": "{{accuracy}} 精度",
-    "addressPlaceholder": "街道、郊区、州",
+    "addressPlaceholder": "街道、城区、州",
     "lookingUp": "查询中…",
     "update": "更新",
-    "addressNotFound": "找不到该地址。请尝试添加郊区或邮编。",
+    "addressNotFound": "找不到该地址。请尝试添加城区或邮编。",
     "enterAddressFirst": "请先输入地址。",
     "gpsErrorDefault": "无法读取您的 GPS。",
     "gpsErrorDenied": "你拒绝了位置请求。要为此记录附加 GPS,请在浏览器设置中允许此站点使用位置,然后点击重试。",
@@ -279,7 +279,7 @@
     "status": "状态",
     "active": "活跃至 {{when}}",
     "signRules": "标志规则",
-    "sideChosen": "已选侧面",
+    "sideChosen": "所选方向",
     "locationLabel": "位置",
     "viewOnMaps": "在 Google 地图上查看",
     "walkBackPill": "走回车辆",
@@ -300,7 +300,7 @@
     "deleteSession": "删除记录",
     "deleteConfirm": "删除此停车记录?此操作无法撤销。",
     "noSignLabel": "无已张贴的限制",
-    "noSignDescription": "此记录在无停车标志的地点。未进行 AI 翻译。",
+    "noSignDescription": "此记录是在没有停车标志的地点登记的。未进行 AI 翻译。",
     "ambientPhotoLabel": "周围环境",
     "ambientPhotoCaption": "在停车时拍摄以证明无标志存在。",
     "noAmbientCaptured": "未拍摄周围环境照片。",
@@ -317,7 +317,7 @@
   },
   "appeal": {
     "captureHeader": "起草申诉信",
-    "captureIntro": "为您收到的违规通知拍一张照片。Claude 将读取通知,与此会话保存的证据交叉对比,并起草一封可发送给开具市政府的正式信件。",
+    "captureIntro": "为您收到的违规通知拍一张照片。Claude 将读取通知,与此会话保存的证据交叉对比,并起草一封可发送给开具该通知的市政府的正式信件。",
     "captureTakePhotoSub": "用相机拍罚单",
     "captureFromLibrarySub": "通知的照片或扫描件",
     "captureDisclaimer": "AI 草稿是起点,不是法律建议。您对最终发送的信件负责。",
@@ -338,7 +338,7 @@
     "reviewDisclaimer": "AI 草稿是起点。请仔细阅读,根据您的语气和情况编辑,并在发送前核实每个事实。ParkProof 不替您提交申诉。",
     "errorHeader": "无法起草申诉",
     "tryDifferentPhoto": "尝试另一张照片",
-    "captureIntroStandalone": "为你收到的违规通知拍一张照片。Claude 会读取通知,并起草一封可发送给开具市政府的正式信件。如果你曾在 ParkProof 里记录过这次停车,请改从历史记录中打开它,这样你保存的证据就会随信附上。"
+    "captureIntroStandalone": "为你收到的违规通知拍一张照片。Claude 会读取通知,并起草一封可发送给开具该通知的市政府的正式信件。如果你曾在 ParkProof 里记录过这次停车,请改从历史记录中打开它,这样你保存的证据就会随信附上。"
   },
   "auth": {
     "signInHeader": "登录",
@@ -534,7 +534,7 @@
       "driverNoteHeader": "驾驶员备注",
       "gpsNoticeTitle": "⚠ GPS 精度提示",
       "gpsNoticeBody": "拍摄时的 GPS 读数为 {{accuracy}} — 比通常用作证据所需的精度更宽。上方坐标指向该半径范围内的一点,而非确切位置。常见原因:室内 / 多层停车场、Starlink 或 VPN 连接,或卫星信号较弱。审核人员应结合该半径范围审视所记录的地址。",
-      "statement": "本记录由 ParkProof 在停车时自动生成。到达时间戳、GPS 坐标、标志翻译和照片构成一份同期形成的证据记录,适用于提交至澳大利亚相关地方议会的停车罚单复核申请。",
+      "statement": "本记录由 ParkProof 在停车时自动生成。到达时间戳、GPS 坐标、标志翻译和照片构成一份同期形成的证据记录,适用于提交至澳大利亚相关地方市政府的停车罚单复核申请。",
       "guidanceFree": "可停车。请在 {{when}} 前离开。",
       "guidanceFreeNoExpiry": "可停车。标志上未显示到期时间。",
       "guidanceExpired": "会话已于 {{when}} 到期。",
@@ -547,7 +547,7 @@
     },
     "signature": {
       "title": "加密签名",
-      "intro": "本证据记录在保存时由 ParkProof 的 AWS KMS 托管私钥进行签名。任何第三方(议会、法院、保险公司)均可通过该签名验证下方的元数据和照片哈希自 signed_at 时间戳以来未被篡改。私钥从未离开 AWS;公钥已公开发布以供验证。",
+      "intro": "本证据记录在保存时由 ParkProof 的 AWS KMS 托管私钥进行签名。任何第三方(市政府、法院、保险公司)均可通过该签名验证下方的元数据和照片哈希自 signed_at 时间戳以来未被篡改。私钥从未离开 AWS;公钥已公开发布以供验证。",
       "algorithm": "算法",
       "keyAlias": "密钥别名",
       "signedAt": "签名时间(UTC)",
@@ -717,7 +717,7 @@
       "title": "温柔地提醒你\"等一下\"",
       "lead": "这些小检查能避免你拿到完全没预料到的罚单。",
       "items": [
-        "如果这个车位需要付费（仪表、EasyPark、PayStay），我们会让你先勾选\"已付款\"再保存。",
+        "如果这个车位需要付费(停车计时器、EasyPark、PayStay),我们会让你先勾选\"已付款\"再保存。",
         "如果是残疾人专用车位，我们会显示一个明显的红色警告。",
         "停在完全没有标志的地方？你还是可以登记 — 拍一张周围环境的照片作为证据。"
       ]
