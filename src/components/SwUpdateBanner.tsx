@@ -97,7 +97,7 @@ export default function SwUpdateBanner() {
 
   return (
     <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 max-w-[calc(100vw-1.5rem)]">
-      <div className="bg-brand-600 text-white rounded-full shadow-xl shadow-brand-900/20 px-4 py-2.5 flex items-center gap-3 text-sm whitespace-nowrap">
+      <div className="bg-brand-600 text-white rounded-full border border-brand-900/10 shadow-sm px-4 py-2.5 flex items-center gap-3 text-sm whitespace-nowrap">
         <span className="font-semibold">{t('swUpdate.available')}</span>
         <button
           type="button"

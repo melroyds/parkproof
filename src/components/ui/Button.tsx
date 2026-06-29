@@ -18,19 +18,20 @@ import type { ButtonHTMLAttributes, ReactNode } from 'react'
 type Variant = 'primary' | 'secondary' | 'outline'
 type Size = 'sm' | 'md' | 'lg'
 
+// Slick + flat: solid pine, crisp radii, no gradients, no coloured drop-shadows.
 const SIZE: Record<Size, string> = {
-  sm: 'py-3 rounded-xl text-base shadow-md shadow-brand-500/20',
-  md: 'py-4 rounded-2xl text-base shadow-lg shadow-brand-500/25',
-  lg: 'py-5 rounded-2xl text-lg shadow-xl shadow-brand-500/30',
+  sm: 'py-2.5 rounded-lg text-sm',
+  md: 'py-3.5 rounded-xl text-base',
+  lg: 'py-4 rounded-xl text-lg',
 }
 
 const VARIANT: Record<Variant, string> = {
   primary:
-    'bg-gradient-to-r from-brand-500 via-brand-500 to-brand-700 hover:brightness-110 active:brightness-95 disabled:bg-none disabled:bg-brand-300 text-white font-semibold',
+    'bg-brand-500 hover:bg-brand-600 active:bg-brand-700 disabled:bg-brand-300 text-white font-semibold shadow-sm shadow-brand-900/10',
   secondary:
-    'bg-brand-500 hover:bg-brand-600 disabled:bg-brand-300 text-white font-semibold',
+    'bg-brand-50 hover:bg-brand-100 active:bg-brand-200 disabled:opacity-60 text-brand-700 font-semibold',
   outline:
-    'bg-white border border-paper-300 hover:border-ink-600 disabled:opacity-60 text-ink-900 font-medium',
+    'bg-white border border-paper-300 hover:border-brand-500 hover:text-brand-700 disabled:opacity-60 text-ink-900 font-medium',
 }
 
 interface Props extends ButtonHTMLAttributes<HTMLButtonElement> {

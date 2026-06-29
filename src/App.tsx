@@ -85,7 +85,7 @@ function Toast({ message, onClose }: { message: string | null; onClose: () => vo
   return (
     <div
       role="alert"
-      className="fixed bottom-4 inset-x-4 z-50 max-w-md mx-auto bg-ink-900 text-white rounded-2xl shadow-lg p-4 flex items-start gap-3"
+      className="fixed bottom-4 inset-x-4 z-50 max-w-md mx-auto bg-ink-900 text-white rounded-xl shadow-sm p-4 flex items-start gap-3"
     >
       <p className="text-sm leading-relaxed flex-1">{message}</p>
       <button
@@ -486,7 +486,7 @@ function App() {
   if (view.name === 'error') {
     return (
       <main className="min-h-screen flex flex-col items-center justify-center p-6 text-center max-w-md mx-auto">
-        <div className="w-16 h-16 rounded-full bg-accent-100 border-2 border-accent-500 text-accent-700 flex items-center justify-center mb-4">
+        <div className="w-16 h-16 rounded-full bg-amber-50 border-2 border-amber-400 text-amber-700 flex items-center justify-center mb-4">
           <Icon name="warning" className="w-8 h-8" />
         </div>
         <div role="alert">
@@ -500,13 +500,13 @@ function App() {
         <div className="flex flex-col gap-2 w-full">
           <button
             onClick={() => setView({ name: 'scan' })}
-            className="bg-gradient-to-r from-brand-500 via-brand-500 to-brand-700 hover:brightness-110 active:brightness-95 disabled:bg-none disabled:bg-brand-300 text-white font-semibold py-3 rounded-2xl shadow-md transition-colors"
+            className="bg-brand-500 hover:bg-brand-600 active:bg-brand-700 disabled:bg-brand-300 text-white font-semibold py-3 rounded-xl shadow-sm shadow-brand-900/10 transition-colors"
           >
             {t('errors.tryAgain')}
           </button>
           <button
             onClick={() => setView({ name: 'home' })}
-            className="bg-paper-200 hover:bg-paper-300 text-ink-900 font-medium py-3 rounded-2xl transition-colors"
+            className="bg-white border border-paper-300 hover:border-brand-500 hover:text-brand-700 text-ink-900 font-medium py-3 rounded-xl transition-colors"
           >
             {t('errors.backHome')}
           </button>
@@ -710,9 +710,12 @@ function App() {
           // Replace the decorative hero with the live status when there's an
           // active session — it's the most useful information on the screen
           // at that moment, and competes for the same visual real estate.
-          <h1 className="font-display text-3xl font-extrabold text-ink-900 tracking-tight">
-            ParkProof
-          </h1>
+          <div className="flex items-center justify-center gap-2.5">
+            <BrandMark variant="glyph" className="w-8 h-8" />
+            <h1 className="font-display text-3xl font-extrabold text-ink-900 tracking-tight">
+              ParkProof
+            </h1>
+          </div>
         ) : (
           <>
             <img
@@ -725,9 +728,12 @@ function App() {
               className="w-full max-w-[360px] mx-auto mb-2 select-none pointer-events-none"
               aria-hidden
             />
-            <h1 className="font-display text-4xl font-extrabold text-ink-900 tracking-tight">
-              ParkProof
-            </h1>
+            <div className="flex items-center justify-center gap-2.5">
+              <BrandMark variant="glyph" className="w-9 h-9" />
+              <h1 className="font-display text-4xl font-extrabold text-ink-900 tracking-tight">
+                ParkProof
+              </h1>
+            </div>
             <p className="text-sm text-ink-600 mt-2 max-w-[20rem] mx-auto leading-relaxed">
               {t('home.tagline')}
             </p>
@@ -800,7 +806,7 @@ function App() {
           <>
             <button
               onClick={() => setView({ name: 'scan' })}
-              className="w-full bg-gradient-to-r from-brand-500 via-brand-500 to-brand-700 hover:brightness-110 active:brightness-95 disabled:bg-none disabled:bg-brand-300 text-white text-lg font-semibold py-5 rounded-2xl shadow-lg shadow-brand-500/25 flex items-center justify-center gap-3 transition-colors"
+              className="w-full bg-brand-500 hover:bg-brand-600 active:bg-brand-700 disabled:bg-brand-300 text-white text-lg font-semibold py-4 rounded-xl shadow-sm shadow-brand-900/10 flex items-center justify-center gap-3 transition-colors"
             >
               <Icon name="camera" className="w-6 h-6" />
               {primaryActive ? t('home.scanAnother') : t('home.scanCta')}

@@ -25,10 +25,11 @@ type Stage =
   | { name: 'review'; draft: AppealDraft; ticketPhoto: string }
   | { name: 'error'; message: string }
 
+// Pine tiers: strong = full pine, moderate = muted slate-green accent, weak = neutral paper.
 const STRENGTH_LABEL = {
   strong: { color: 'text-brand-700 bg-brand-50 border-brand-200', textKey: 'appeal.strongEvidence' },
   moderate: { color: 'text-accent-700 bg-accent-50 border-accent-200', textKey: 'appeal.moderateEvidence' },
-  weak: { color: 'text-ink-700 bg-paper-200 border-paper-300', textKey: 'appeal.weakEvidence' },
+  weak: { color: 'text-ink-600 bg-paper-200 border-paper-300', textKey: 'appeal.weakEvidence' },
 } as const
 
 export default function AppealFlow({ session, onBack }: Props) {
@@ -125,7 +126,7 @@ export default function AppealFlow({ session, onBack }: Props) {
         <p role="alert" className="text-sm text-ink-700 mt-3 mb-6 break-words text-center">{stage.message}</p>
         <button
           onClick={() => setStage({ name: 'capture' })}
-          className="bg-brand-500 hover:bg-brand-600 text-white font-semibold py-4 rounded-2xl shadow-md"
+          className="bg-brand-500 hover:bg-brand-600 active:bg-brand-700 text-white font-semibold py-3.5 rounded-xl shadow-sm shadow-brand-900/10 transition-colors"
         >
           {t('appeal.tryDifferentPhoto')}
         </button>
@@ -206,14 +207,14 @@ export default function AppealFlow({ session, onBack }: Props) {
             <button
               onClick={handleDownloadPdf}
               disabled={pdfBusy}
-              className="bg-white border border-paper-300 hover:border-ink-600 disabled:opacity-60 text-ink-900 font-medium py-3 rounded-2xl transition-colors"
+              className="bg-white border border-paper-300 hover:border-brand-500 hover:text-brand-700 disabled:opacity-60 text-ink-900 font-medium py-3.5 rounded-xl transition-colors"
             >
               {pdfBusy ? t('appeal.downloadingPdf') : t('appeal.downloadPdf')}
             </button>
           )}
         </div>
         {pdfError && (
-          <div className="mt-3 bg-accent-50 border-2 border-accent-400 rounded-xl p-3 text-sm">
+          <div className="mt-3 bg-accent-50 border border-accent-300 rounded-lg p-3 text-sm">
             <p className="font-display font-bold text-ink-900 mb-1">
               {t('session.pdfErrorHeader')}
             </p>
@@ -248,7 +249,7 @@ export default function AppealFlow({ session, onBack }: Props) {
       <div className="flex flex-col gap-3">
         <button
           onClick={() => cameraInputRef.current?.click()}
-          className="border-2 border-dashed border-brand-300 hover:border-brand-500 hover:bg-brand-50/50 bg-white rounded-2xl py-8 px-4 flex flex-col items-center text-brand-600 transition-colors"
+          className="border-2 border-dashed border-brand-300 hover:border-brand-500 hover:bg-brand-50/50 bg-white rounded-xl py-8 px-4 flex flex-col items-center text-brand-600 transition-colors"
         >
           <Icon name="camera" className="w-10 h-10 mb-2" />
           <span className="text-sm font-semibold text-ink-900">{t('scanner.takePhoto')}</span>
@@ -256,7 +257,7 @@ export default function AppealFlow({ session, onBack }: Props) {
         </button>
         <button
           onClick={() => libraryInputRef.current?.click()}
-          className="border-2 border-dashed border-accent-300 hover:border-accent-500 hover:bg-accent-50/50 bg-white rounded-2xl py-8 px-4 flex flex-col items-center text-accent-700 transition-colors"
+          className="border-2 border-dashed border-accent-300 hover:border-accent-500 hover:bg-accent-50/50 bg-white rounded-xl py-8 px-4 flex flex-col items-center text-accent-700 transition-colors"
         >
           <Icon name="gallery" className="w-10 h-10 mb-2" />
           <span className="text-sm font-semibold text-ink-900">{t('scanner.fromLibrary')}</span>

@@ -19,10 +19,10 @@ interface Props {
  * as a coloured stripe + matching subtle background tint.
  */
 const URGENCY_STYLES = {
-  normal: { stripe: 'bg-emerald-500', tint: 'bg-emerald-50', text: 'text-emerald-900' },
+  normal: { stripe: 'bg-brand-600', tint: 'bg-brand-50', text: 'text-brand-700' },
   warning: { stripe: 'bg-amber-500', tint: 'bg-amber-50', text: 'text-amber-900' },
   urgent: { stripe: 'bg-red-600', tint: 'bg-red-50', text: 'text-red-900' },
-  expired: { stripe: 'bg-ink-700', tint: 'bg-paper-100', text: 'text-ink-900' },
+  expired: { stripe: 'bg-ink-900', tint: 'bg-paper-100', text: 'text-ink-900' },
 } as const
 
 /**
@@ -91,7 +91,7 @@ export default function ActiveSessionsList({ sessions, onBack, onOpen }: Props) 
             <li key={session.id}>
               <button
                 onClick={() => onOpen(session)}
-                className={`w-full text-left rounded-2xl border border-paper-300 ${style.tint} hover:brightness-95 active:brightness-90 transition-all overflow-hidden flex items-stretch`}
+                className={`w-full text-left rounded-lg border border-paper-300 ${style.tint} hover:brightness-95 active:brightness-90 transition-all overflow-hidden flex items-stretch`}
                 aria-label={t('active.listCardAria', {
                   address: addressLine,
                   status: hasExpiry ? countdown!.label : elapsed!.label,
@@ -109,7 +109,7 @@ export default function ActiveSessionsList({ sessions, onBack, onOpen }: Props) 
                     <p className="font-display text-base font-bold text-ink-900 truncate leading-tight">
                       {addressLine}
                     </p>
-                    <p className={`text-sm font-semibold mt-0.5 ${style.text}`}>
+                    <p className={`text-sm font-semibold mt-0.5 tnum ${style.text}`}>
                       {hasExpiry ? countdown!.label : elapsed!.label}
                     </p>
                     <p className="text-xs text-ink-600 mt-0.5">

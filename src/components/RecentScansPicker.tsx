@@ -48,12 +48,12 @@ export default function RecentScansPicker({ sessions, onPick, onDismiss }: Props
             <button
               key={s.id}
               onClick={() => onPick(s)}
-              className="bg-white hover:bg-paper-50 border border-paper-300 hover:border-brand-300 rounded-2xl p-3 text-left flex items-center gap-3 transition-colors"
+              className="bg-white hover:bg-brand-50 border border-brand-900/10 hover:border-brand-600 rounded-lg p-3 text-left flex items-center gap-3 transition-colors"
             >
               <img
                 src={s.sign_photo ?? undefined}
                 alt=""
-                className="w-14 h-14 object-cover rounded-lg border border-paper-300 flex-none bg-white"
+                className="w-14 h-14 object-cover rounded-md border border-brand-900/10 flex-none bg-white"
               />
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-ink-900 truncate">{headline}</p>
@@ -62,7 +62,7 @@ export default function RecentScansPicker({ sessions, onPick, onDismiss }: Props
                   {s.chosen_label ? ` · ${s.chosen_label}` : ''}
                 </p>
               </div>
-              <span className="text-brand-500 text-xl leading-none" aria-hidden>
+              <span className="text-brand-600 text-xl leading-none" aria-hidden>
                 ›
               </span>
             </button>

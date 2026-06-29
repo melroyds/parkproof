@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import type { ParkingSession } from '../types'
 import { deleteSession, endSession, updateSession } from '../lib/storage'
 import ScheduledRemindersSection from './ScheduledRemindersSection'
+import VerifiedSeal from './VerifiedSeal'
 import Icon from './Icon'
 import Button from './ui/Button'
 import BackButton from './ui/BackButton'
@@ -246,20 +247,23 @@ export default function SessionDetail({
       </p>
 
       {session.signature && (
-        <div className="mb-6 inline-flex items-center gap-2 self-start bg-brand-50 border border-brand-200 text-brand-800 text-xs font-semibold px-3 py-1.5 rounded-full">
-          <Icon name="check" className="w-4 h-4" strokeWidth={2.5} />
-          <span>{t('session.cryptoSigned')}</span>
-          <span className="text-brand-600 font-normal" aria-hidden="true">
-            ·
-          </span>
-          <span className="text-brand-700 font-mono text-2xs">
-            {new Date(session.signature.signed_at).toLocaleString('en-AU', {
-              day: 'numeric',
-              month: 'short',
-              hour: 'numeric',
-              minute: '2-digit',
-            })}
-          </span>
+        <div className="mb-6 flex items-center gap-3 self-start">
+          <VerifiedSeal size={44} glow />
+          <div className="min-w-0">
+            <p className="text-sm font-display font-bold text-brand-800">
+              {t('session.cryptoSigned')}
+            </p>
+            <p className="text-2xs text-brand-700 font-mono truncate">
+              {session.signature.signature_base64.slice(0, 16)}
+              {' · '}
+              {new Date(session.signature.signed_at).toLocaleString('en-AU', {
+                day: 'numeric',
+                month: 'short',
+                hour: 'numeric',
+                minute: '2-digit',
+              })}
+            </p>
+          </div>
         </div>
       )}
 
@@ -580,7 +584,7 @@ export default function SessionDetail({
         </a>
         <button
           onClick={onDraftAppeal}
-          className="bg-white border border-ink-700 hover:bg-ink-900 hover:text-white text-ink-900 font-semibold py-3 rounded-2xl transition-colors"
+          className="bg-white border border-ink-700 hover:bg-ink-900 hover:text-white text-ink-900 font-semibold py-3 rounded-xl transition-colors"
         >
           {t('session.draftAppeal')}
         </button>
@@ -590,7 +594,7 @@ export default function SessionDetail({
         {canEnd && (
           <button
             onClick={handleEnd}
-            className="bg-white border border-brand-500 hover:bg-brand-50 active:bg-brand-100 text-brand-700 font-semibold py-3 rounded-2xl transition-colors"
+            className="bg-white border border-brand-500 hover:bg-brand-50 active:bg-brand-100 text-brand-700 font-semibold py-3 rounded-xl transition-colors"
           >
             {t('session.endSession')}
           </button>

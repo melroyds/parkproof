@@ -1,6 +1,7 @@
 import { Trans, useTranslation } from 'react-i18next'
 import Icon from './Icon'
 import Button from './ui/Button'
+import VerifiedSeal from './VerifiedSeal'
 
 /**
  * First-time-visitor landing experience. Renders ONLY for users with no
@@ -58,12 +59,13 @@ export default function LandingFeatures({ onScanCta, onSignInCta }: Props) {
     { num: '3', tone: 'accent', key: 'answer', icon: 'check' },
   ]
 
-  // Three distinct on-brand step badges: brand blue, navy ink, teal accent.
-  // (Was a Tailwind-default purple, the only off-token colour in the app.)
+  // Three pine-family step badges: pine, dark ink, muted slate-green accent.
+  // Kept tonal (no vivid pop) so the Greenfield palette stays calm — accent
+  // is the restrained slate-green, used only here as a secondary surface.
   const stepToneClasses: Record<'brand' | 'ink' | 'accent', string> = {
     brand: 'bg-brand-500 text-white',
     ink: 'bg-ink-700 text-white',
-    accent: 'bg-accent-500 text-ink-900',
+    accent: 'bg-accent-500 text-white',
   }
 
   return (
@@ -85,7 +87,7 @@ export default function LandingFeatures({ onScanCta, onSignInCta }: Props) {
           src={`${import.meta.env.BASE_URL}hero-illustration.png`}
           alt=""
           aria-hidden
-          className="w-full aspect-[5/4] object-cover rounded-3xl shadow-xl shadow-ink-900/15 select-none pointer-events-none"
+          className="w-full aspect-[5/4] object-cover rounded-2xl border border-brand-900/10 select-none pointer-events-none"
         />
       </div>
 
@@ -129,13 +131,13 @@ export default function LandingFeatures({ onScanCta, onSignInCta }: Props) {
         {t('landing.accuracyNote')}
       </p>
 
-      {/* ── Gradient CTA. Brand-blue → purple. Larger than the standard
+      {/* ── Primary CTA. Flat pine (Greenfield). Larger than the standard
           home-screen scan button to anchor the page; the camera icon
           and the bigger padding read as "this is the thing you do". */}
       <Button
         size="lg"
         onClick={onScanCta}
-        className="w-full gap-3 transition-[filter] mb-3"
+        className="w-full gap-3 mb-3"
       >
         <Icon name="camera" className="w-6 h-6" strokeWidth={2} />
         {t('landing.cta')}
@@ -160,7 +162,7 @@ export default function LandingFeatures({ onScanCta, onSignInCta }: Props) {
         <button
           type="button"
           onClick={onSignInCta}
-          className="w-full bg-white hover:bg-paper-50 active:bg-paper-100 border border-paper-300 text-ink-800 font-semibold py-3 rounded-2xl transition-colors mb-3"
+          className="w-full bg-white hover:bg-paper-50 active:bg-paper-100 border border-paper-300 hover:border-brand-500 text-ink-800 font-semibold py-3 rounded-xl transition-colors mb-3"
         >
           {t('home.signInToSync')}
         </button>
@@ -198,7 +200,7 @@ export default function LandingFeatures({ onScanCta, onSignInCta }: Props) {
       <div className="grid grid-cols-3 gap-2 mb-10">
         {steps.map(({ num, tone, key, icon }, idx) => (
           <div key={num} className="relative">
-            <div className="bg-white border border-paper-300 rounded-2xl p-3 flex flex-col items-center text-center shadow-sm h-full">
+            <div className="bg-white border border-paper-300 rounded-lg p-3 flex flex-col items-center text-center h-full">
               <div className={`relative w-12 h-12 rounded-full ${stepToneClasses[tone]} flex items-center justify-center mb-2`}>
                 <Icon name={icon} className="w-5 h-5" strokeWidth={2.25} />
                 {/* Numbered badge in the bottom-right corner of the icon
@@ -227,9 +229,9 @@ export default function LandingFeatures({ onScanCta, onSignInCta }: Props) {
       </div>
 
       {/* ── Tamper-proof evidence callout ────────────────────────────── */}
-      <div className="bg-brand-50 border border-brand-100 rounded-2xl p-4 flex items-start gap-3 mb-10">
-        <div className="w-10 h-10 rounded-xl bg-brand-500 text-white flex items-center justify-center shrink-0">
-          <ShieldIcon className="w-5 h-5" />
+      <div className="bg-brand-50 border border-brand-100 rounded-lg p-4 flex items-start gap-3 mb-10">
+        <div className="shrink-0">
+          <VerifiedSeal size={40} glow />
         </div>
         <div className="flex-1 min-w-0">
           <h3 className="font-display text-base font-extrabold text-ink-900 leading-tight">

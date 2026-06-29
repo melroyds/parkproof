@@ -37,7 +37,7 @@ export default function Alert({
       id={id}
       role={role}
       aria-live={role === 'status' ? 'polite' : undefined}
-      className={`border rounded-xl p-3 text-sm leading-relaxed ${VARIANT[variant]} ${className}`.trim()}
+      className={`border rounded-lg p-3 text-sm leading-relaxed ${VARIANT[variant]} ${className}`.trim()}
     >
       {children}
     </div>

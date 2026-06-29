@@ -220,7 +220,7 @@ export default function AuthFlow({ onDone, onCancel }: Props) {
           <button
             type="button"
             onClick={() => redirectToProvider('SignInWithApple')}
-            className="w-full bg-ink-900 hover:bg-ink-800 text-white font-semibold py-3 rounded-xl shadow-md transition-colors flex items-center justify-center gap-2"
+            className="w-full bg-ink-900 hover:bg-ink-800 text-white font-semibold py-3 rounded-xl shadow-sm transition-colors flex items-center justify-center gap-2"
           >
             <span aria-hidden></span>
             {t('auth.continueWithApple')}

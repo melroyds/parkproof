@@ -154,7 +154,7 @@ export default function AboutFeatures({ onBack, onTryIt }: Props) {
           Brand-tinted to match the push-subscribe block above without
           being shouty. The coffee emoji works across all 9 locales — BMC
           is globally recognised as a tipping platform. */}
-      <div className="mb-8 p-5 rounded-2xl bg-brand-50 border border-brand-100">
+      <div className="mb-8 p-5 rounded-lg bg-brand-50 border border-brand-100">
         <p className="text-sm font-semibold text-ink-900 mb-1">
           {t('about.support.title')}
         </p>
@@ -184,7 +184,7 @@ export default function AboutFeatures({ onBack, onTryIt }: Props) {
 
       <button
         onClick={onTryIt}
-        className="w-full bg-gradient-to-r from-brand-500 via-brand-500 to-brand-700 hover:brightness-110 active:brightness-95 disabled:bg-none disabled:bg-brand-300 text-white text-lg font-semibold py-5 rounded-2xl shadow-lg shadow-brand-500/25 flex items-center justify-center gap-3 transition-colors mb-4"
+        className="w-full bg-brand-500 hover:bg-brand-600 active:bg-brand-700 disabled:bg-brand-300 text-white text-lg font-semibold py-4 rounded-xl shadow-sm shadow-brand-900/10 flex items-center justify-center gap-3 transition-colors mb-4"
       >
         <Icon name="camera" className="w-6 h-6" />
         {t('about.cta')}
@@ -221,7 +221,7 @@ interface PushSubscribeBlockProps {
 function PushSubscribeBlock({ pushStatus, onEnable }: PushSubscribeBlockProps) {
   const { t } = useTranslation()
   return (
-    <div className="-mt-4 mb-10 ml-14 p-4 rounded-2xl bg-brand-50 border border-brand-100">
+    <div className="-mt-4 mb-10 ml-14 p-4 rounded-lg bg-brand-50 border border-brand-100">
       <p className="text-sm font-semibold text-ink-900 mb-1">
         🔔 {t('about.push.title')}
       </p>
@@ -229,7 +229,7 @@ function PushSubscribeBlock({ pushStatus, onEnable }: PushSubscribeBlockProps) {
         {t('about.push.body')}
       </p>
       {pushStatus === 'subscribed' ? (
-        <p className="text-xs text-emerald-700 font-medium">
+        <p className="text-xs text-brand-700 font-medium">
           {t('about.push.subscribed')}
         </p>
       ) : pushStatus === 'denied' ? (

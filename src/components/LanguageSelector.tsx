@@ -80,7 +80,7 @@ export default function LanguageSelector() {
         aria-haspopup="listbox"
         aria-expanded={open}
         aria-label={t('language.title')}
-        className="inline-flex items-center gap-2 bg-white hover:bg-paper-50 border border-paper-300 rounded-full pl-1.5 pr-3 py-2.5 min-h-[44px] text-sm font-medium text-ink-900 transition-colors shadow-sm"
+        className="inline-flex items-center gap-2 bg-white hover:bg-paper-50 border border-brand-900/10 rounded-full pl-1.5 pr-3 py-2.5 min-h-[44px] text-sm font-medium text-ink-900 transition-colors"
       >
         <ActiveFlag className="block w-6 h-4 rounded-sm overflow-hidden" />
         <span>{activeLang.native}</span>
@@ -99,7 +99,7 @@ export default function LanguageSelector() {
         <ul
           role="listbox"
           aria-label={t('language.title')}
-          className="absolute left-1/2 -translate-x-1/2 mt-2 z-20 w-56 bg-white border border-paper-300 rounded-2xl shadow-lg shadow-ink-900/10 py-1 overflow-hidden"
+          className="absolute left-1/2 -translate-x-1/2 mt-2 z-20 w-56 bg-white border border-brand-900/10 rounded-lg shadow-sm py-1 overflow-hidden"
         >
           {SUPPORTED_LANGUAGES.map((lang) => {
             const Flag = FLAG_COMPONENTS[lang.country]

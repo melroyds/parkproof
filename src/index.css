@@ -1,107 +1,82 @@
 @import "tailwindcss";
 
 @theme {
-  /* ─── Typography ─────────────────────────────────────────────── */
-  --font-sans: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  --font-display: "Fraunces", Georgia, "Times New Roman", serif;
+  /* ─── Typography ─────────────────────────────────────────────────
+     Display = Space Grotesk, Latin moments only (wordmark, verdict,
+     numerals). It falls back to Inter so non-Latin headings never break
+     (the reason Fraunces was retired). Body = Inter + the Noto chain. */
+  --font-sans: "Inter", "Noto Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-display: "Space Grotesk", "Inter", system-ui, sans-serif;
 
-  /* Micro-label tier below text-xs (was a scatter of text-[10px]/[11px]). */
   --text-2xs: 0.6875rem; /* 11px */
   --text-2xs--line-height: 1rem;
 
-  /* ─── Paper (background scale, cool off-white) ──────────────── */
-  --color-paper-50:  #F8FAFC;
-  --color-paper-100: #F2F4F7;
-  --color-paper-200: #E5E8EE;
-  --color-paper-300: #DDE4EE;
+  /* ─── Paper (background scale, cool green-tinted off-white) ──────── */
+  --color-paper-50:  #F8FBF9;
+  --color-paper-100: #F3F6F4; /* app background — flat, clean, no pattern */
+  --color-paper-200: #E7ECE9;
+  --color-paper-300: #DBE3DF;
 
-  /* ─── Ink (text scale, navy) ──────────────────────────────── */
-  --color-ink-400: #8A93AB;
-  --color-ink-500: #5C6680;
-  --color-ink-600: #404B66;
-  --color-ink-700: #2D374F;
-  --color-ink-800: #232C42;
-  --color-ink-900: #1A2233;
+  /* ─── Ink (text scale, near-black green) ────────────────────────── */
+  --color-ink-400: #6E7B74;
+  --color-ink-500: #54625A;
+  --color-ink-600: #3C4A43;
+  --color-ink-700: #25332C;
+  --color-ink-800: #16241D;
+  --color-ink-900: #0B1A14; /* primary text — 14:1+ on paper */
 
-  /* ─── Brand (vivid blue) ─────────────────────────────────── */
-  --color-brand-50:  #EAEFFF;
-  --color-brand-100: #CDD9FF;
-  --color-brand-200: #9FB6FF;
-  --color-brand-300: #6F8FFF;
-  --color-brand-400: #4870FF;
-  --color-brand-500: #275BFF;
-  --color-brand-600: #1F4CD9;
-  --color-brand-700: #173EB3;
-  --color-brand-800: #11308C;
-  --color-brand-900: #0B2466;
+  /* ─── Brand: deep pine (brand = verified = go, one colour) ──────── */
+  --color-brand-50:  #E9F3EE;
+  --color-brand-100: #C9E5D5;
+  --color-brand-200: #9CCFB2;
+  --color-brand-300: #63B187;
+  --color-brand-400: #2C8A5C;
+  --color-brand-500: #0E5C3A; /* base */
+  --color-brand-600: #0C5133;
+  --color-brand-700: #0A4129;
+  --color-brand-800: #073B25; /* "vault" — dark evidence surfaces */
+  --color-brand-900: #052A1B;
 
-  /* ─── Accent (teal) ──────────────────────────────────────── */
-  --color-accent-50:  #E0F7F8;
-  --color-accent-100: #B8EDEF;
-  --color-accent-200: #88DFE2;
-  --color-accent-300: #57D0D3;
-  --color-accent-400: #36C7CA;
-  --color-accent-500: #20C4C7;
-  --color-accent-600: #1AA9AC;
-  --color-accent-700: #138B8E;
-  --color-accent-800: #0F6F71;
-  --color-accent-900: #0B5557;
+  /* ─── Accent: restrained slate-green secondary (notices, quiet UI).
+     NOT the bright mint — mint is a rare spark, see --color-mint. ──── */
+  --color-accent-50:  #EDF3F0;
+  --color-accent-100: #D7E5DF;
+  --color-accent-200: #B7CCC4;
+  --color-accent-300: #8FA9A0;
+  --color-accent-400: #6B857B;
+  --color-accent-500: #4F665D;
+  --color-accent-600: #3D514A;
+  --color-accent-700: #2E3E38;
+  --color-accent-800: #223029;
+  --color-accent-900: #16211C;
+
+  /* ─── Mint spark — RARE: the Verified Seal glow + active-tap only ── */
+  --color-mint: #7BE3A4;
 }
 
-/* ─── Global defaults ──────────────────────────────────────────── */
+/* ─── Global defaults ──────────────────────────────────────────────
+   Slick and flat. The previous sage + topographic-rings + corner-aurora
+   background is retired entirely. The everyday app sits on a clean cool
+   surface with no pattern, so the verdict card and the Verified Seal have
+   nothing to fight. Document texture (the engine-turned guilloché) is
+   reserved for the dark evidence/vault surfaces, applied per-component. */
 body {
   font-family: var(--font-sans);
   color: var(--color-ink-900);
-  /* Sage + topographic + corner aurora. Replaces the warm-cream + dot-grid
-     of the previous iteration. Reading the layers bottom-up:
-       1. background-color  — sage-mid (#C8DCCF). Deeper than the first sage
-          we tried (#F0F5F2) so the green has actual presence and pairs
-          properly with the hero photo's green car + the emerald answer card.
-       2. sage-rings.svg    — tileable 600x600 contour pattern with two
-          topographic "peaks" per tile. Brand-blue strokes at 12-34% opacity.
-          Connects the visual language to "maps / navigation" without
-          stating it literally.
-       3. sage-aurora.svg   — 500x500 radial gradient blob fixed in the
-          top-right corner, no-repeat. Adds a luminous accent behind every
-          page header.
-     The aurora is listed FIRST in the comma-separated background-image
-     stack so it paints on top of the ring pattern. */
-  background-color: #C8DCCF;
-  background-image:
-    url("/sage-aurora.svg"),
-    url("/sage-rings.svg");
-  background-position:
-    top right,
-    top left;
-  background-repeat:
-    no-repeat,
-    repeat;
-  /* Aurora @ 1500x1500 (3× the SVG's native 500x500). Goldilocks
-     point arrived at by dialling: 1× = under-committed corner spot,
-     4× = blue wash that swallowed the sage personality, 2× = right
-     direction but slightly shy. 3× lets the glow reach about
-     two-thirds down the page, frames the hero + headline + bullets,
-     but the "How it works" grid and Tamper-proof-evidence callout
-     still sit on cleanly sage. */
-  background-size:
-    1500px 1500px,
-    600px 600px;
+  background-color: var(--color-paper-100);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
 h1, h2, h3, h4, .font-display {
   font-family: var(--font-display);
-  letter-spacing: -0.015em;
+  letter-spacing: -0.02em;
 }
 
-/* ─── Focus ring ───────────────────────────────────────────────────
-   One standardised keyboard-focus indicator for every interactive
-   element. Previously there was none, so focus fell back to the UA
-   default outline, which renders inconsistently over the sage bg and
-   rounded buttons. Only shows for keyboard (:focus-visible), never on
-   mouse/touch. Inputs keep their own focus:ring as well; this is the
-   floor. */
+/* Tabular figures for countdowns / timestamps so numbers feel measured. */
+.tnum { font-variant-numeric: tabular-nums; }
+
+/* ─── Focus ring ──────────────────────────────────────────────────── */
 a:focus-visible,
 button:focus-visible,
 input:focus-visible,
@@ -114,18 +89,7 @@ select:focus-visible,
   border-radius: 4px;
 }
 
-/* ─── Reduced motion ──────────────────────────────────────────────
-   Honour the user's OS-level "reduce motion" preference. Strips
-   animations and long transitions across the entire app — covers
-   Tailwind's transition-* utilities, the loading-progress dot pulse,
-   hover scale effects on buttons, the ping dots, the hero shimmer,
-   any future @keyframes we add. Keeps a 0.01ms duration rather than
-   0 so transitionend / animationend events still fire (some libs
-   listen for them as completion signals).
-
-   Carve-out: scroll-behavior is left as-is because smooth-scroll is
-   navigational, not decorative — assistive tech generally wants it.
-*/
+/* ─── Reduced motion ──────────────────────────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

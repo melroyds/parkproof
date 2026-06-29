@@ -20,12 +20,12 @@ export default function ReuseCard({ session, distanceMeters, onReuse, onDismiss 
   const bulletItems = session.observations.flatMap((g) => g.items).slice(0, 4)
 
   return (
-    <section className="mb-6 bg-brand-50 border border-brand-200 rounded-2xl p-5 shadow-sm">
+    <section className="mb-6 bg-brand-50 border border-brand-900/10 rounded-lg p-5">
       <div className="flex items-baseline justify-between mb-3 gap-2">
         <h3 className="font-display font-bold text-ink-900 text-lg leading-tight">
           {t('reuse.scannedHere', { age })}
         </h3>
-        <span className="text-2xs uppercase tracking-widest font-semibold text-brand-700 shrink-0">
+        <span className="text-2xs uppercase tracking-widest font-semibold text-brand-700 shrink-0 tnum">
           {t('reuse.metersAway', { meters: Math.round(distanceMeters) })}
         </span>
       </div>
@@ -33,7 +33,7 @@ export default function ReuseCard({ session, distanceMeters, onReuse, onDismiss 
       <img
         src={session.sign_photo ?? undefined}
         alt={t('reuse.signPhotoAlt')}
-        className="w-full h-32 object-contain rounded-xl mb-3 border border-paper-300 bg-white"
+        className="w-full h-32 object-contain rounded-lg mb-3 border border-paper-300 bg-white"
       />
 
       <p className="text-xs uppercase tracking-widest font-semibold text-ink-600 mb-2">
@@ -69,7 +69,7 @@ export default function ReuseCard({ session, distanceMeters, onReuse, onDismiss 
         </button>
         <button
           onClick={onReuse}
-          className="flex-1 bg-gradient-to-r from-brand-500 via-brand-500 to-brand-700 hover:brightness-110 active:brightness-95 disabled:bg-none disabled:bg-brand-300 text-white font-semibold py-2.5 rounded-xl shadow-md shadow-brand-500/20 transition-colors text-sm"
+          className="flex-1 bg-brand-700 hover:bg-brand-600 active:bg-brand-700 disabled:bg-brand-300 text-white font-semibold py-2.5 rounded-xl transition-colors text-sm"
         >
           {t('reuse.useThisRead')}
         </button>

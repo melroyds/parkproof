@@ -182,7 +182,7 @@ export default function AuthSettings({ onBack, onOpenPrivacy, onDeleted }: Props
         </button>
       </Card>
 
-      <section className="bg-accent-50 border-2 border-accent-300 rounded-2xl p-5 mt-3">
+      <section className="bg-accent-50 border border-accent-300 rounded-lg p-5 mt-3">
         <h3 className="font-display font-bold text-ink-900 mb-1 flex items-center gap-2">
           <Icon name="warning" className="w-5 h-5 text-accent-700" />
           {t('settings.deleteHeader')}
@@ -313,7 +313,7 @@ function PushManagementSection() {
 
       {status === 'subscribed' ? (
         <>
-          <div className="mb-3 px-3 py-2 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-medium flex items-center gap-2">
+          <div className="mb-3 px-3 py-2 rounded-lg bg-brand-50 border border-brand-200 text-brand-800 text-xs font-medium flex items-center gap-2">
             <Icon name="check" className="w-4 h-4 shrink-0" strokeWidth={2.5} />
             <span className="leading-snug">{t('settings.pushSubscribed')}</span>
           </div>

@@ -38,10 +38,10 @@ function formatUntil(iso: string | null, timeZone: string): string | null {
 }
 
 const URGENCY_STYLE = {
-  normal: 'text-white',
-  warning: 'text-white font-semibold',
-  urgent: 'text-white font-bold',
-  expired: 'text-white font-extrabold uppercase tracking-widest',
+  normal: 'text-ink-600',
+  warning: 'text-ink-700 font-semibold',
+  urgent: 'text-brand-700 font-bold',
+  expired: 'text-red-700 font-extrabold uppercase tracking-widest',
 } as const
 
 const CONFIDENCE_DOT = {
@@ -242,16 +242,21 @@ export default function ParkingResult({
 
   return (
     <div className="min-h-screen flex flex-col p-6 max-w-md mx-auto w-full">
-      {/* Answer card — semantic green/red, kept */}
+      {/* Answer card — the one emphatic object. GO is pine, STOP keeps the
+          quarantined red. Flat white surface, crisp 1.5px coloured border. */}
       <div
-        className={`rounded-3xl p-8 text-center text-white shadow-xl ${
+        className={`rounded-2xl p-8 text-center bg-white ${
           can_park_now
-            ? 'bg-gradient-to-br from-emerald-700 to-emerald-800 shadow-emerald-700/40'
-            : 'bg-gradient-to-br from-red-600 to-red-800 shadow-red-600/30'
+            ? 'border-[1.5px] border-brand-500'
+            : 'border-[1.5px] border-red-500'
         }`}
       >
         <div className="flex justify-center mb-3">
-          <div className="w-20 h-20 rounded-full bg-white/15 flex items-center justify-center">
+          <div
+            className={`w-20 h-20 rounded-full flex items-center justify-center ${
+              can_park_now ? 'bg-brand-50 text-brand-700' : 'bg-red-50 text-red-600'
+            }`}
+          >
             <Icon name={can_park_now ? 'check' : 'warning'} className="w-12 h-12" strokeWidth={2.5} />
           </div>
         </div>
@@ -259,17 +264,21 @@ export default function ParkingResult({
           ref={verdictRef}
           tabIndex={-1}
           aria-describedby={can_park_now && untilLabel ? 'verdict-until' : undefined}
-          className="font-display text-3xl font-extrabold tracking-tight outline-none"
+          className={`font-display text-3xl font-extrabold tracking-tight outline-none ${
+            can_park_now ? 'text-ink-900' : 'text-red-700'
+          }`}
         >
           {can_park_now ? t('result.canPark') : t('result.cantPark')}
         </h2>
         {can_park_now && untilLabel && (
-          <p id="verdict-until" className="text-white text-lg mt-2 font-display font-bold">
-            {t('result.until', { when: untilLabel })}
+          <p id="verdict-until" className="mt-3 flex justify-center">
+            <span className="inline-block bg-brand-500 text-white text-lg font-display font-bold tnum rounded-full px-4 py-1.5">
+              {t('result.until', { when: untilLabel })}
+            </span>
           </p>
         )}
         {countdown && (
-          <p className={`text-sm mt-1 ${URGENCY_STYLE[countdown.urgency]}`}>
+          <p className={`text-sm mt-2 tnum ${URGENCY_STYLE[countdown.urgency]}`}>
             {countdown.label}
           </p>
         )}
@@ -287,7 +296,7 @@ export default function ParkingResult({
           the user can make a smarter decision than "should I start parking
           now or wait 5 minutes for the restriction to lift". */}
       {next_transition && transitionLabel && (
-        <div className="mt-4 bg-brand-50 border border-brand-200 rounded-2xl p-4 flex items-start gap-3">
+        <div className="mt-4 bg-brand-50 border border-brand-200 rounded-lg p-4 flex items-start gap-3">
           <div className="w-8 h-8 rounded-full bg-brand-500 text-white flex items-center justify-center shrink-0 mt-0.5">
             <Icon name="bell" className="w-4 h-4" strokeWidth={2.5} />
           </div>
@@ -309,7 +318,7 @@ export default function ParkingResult({
             {t('result.onTheSign')}
           </h3>
           {chosen_label && (
-            <span className="text-xs font-semibold text-accent-800 bg-accent-50 border border-accent-200 rounded-full px-2.5 py-1">
+            <span className="text-xs font-semibold text-brand-800 bg-brand-50 border border-brand-200 rounded px-2.5 py-1">
               {chosen_label}
             </span>
           )}
@@ -323,11 +332,15 @@ export default function ParkingResult({
                   {group.scope}
                 </h4>
               )}
-              <ul className="space-y-1.5">
+              {/* Square-ish chips so each observation reads like a field on a
+                  parking ticket. */}
+              <ul className="flex flex-wrap gap-1.5">
                 {group.items.map((item, ii) => (
-                  <li key={ii} className="flex gap-2 text-ink-900 text-base">
-                    <span aria-hidden="true" className="text-brand-400 select-none">•</span>
-                    <span>{item}</span>
+                  <li
+                    key={ii}
+                    className="bg-brand-50 border border-brand-200 text-ink-900 text-sm rounded px-2.5 py-1"
+                  >
+                    {item}
                   </li>
                 ))}
               </ul>
@@ -335,7 +348,7 @@ export default function ParkingResult({
           ))}
         </div>
 
-        <div className="flex items-center gap-2 mt-5 pt-4 border-t border-paper-200">
+        <div className="flex items-center gap-2 mt-5 pt-4 border-t border-paper-300">
           <span className={`w-2 h-2 rounded-full ${confidenceDot}`} />
           <span className="text-xs text-ink-600">{confidenceText}</span>
         </div>
@@ -343,12 +356,12 @@ export default function ParkingResult({
 
       {/* Verification card */}
       {verified ? (
-        <p className="mt-4 text-center text-sm text-accent-700 font-medium inline-flex items-center justify-center gap-1.5">
+        <p className="mt-4 text-center text-sm text-brand-700 font-medium inline-flex items-center justify-center gap-1.5">
           <Icon name="check" className="w-4 h-4" strokeWidth={2.5} />
           {t('result.verifyConfirmed')}
         </p>
       ) : (
-        <section className="mt-4 bg-accent-50 border border-accent-200 rounded-2xl p-5">
+        <section className="mt-4 bg-accent-50 border border-accent-200 rounded-lg p-5">
           <h3 className="font-display font-bold text-ink-900 mb-1">{t('result.verifyHeader')}</h3>
           <p className="text-sm text-ink-700 mb-4">
             {t('result.verifyCopy')}
@@ -369,7 +382,7 @@ export default function ParkingResult({
                 })
                 setVerified(true)
               }}
-              className="flex-1 bg-white border border-paper-300 hover:border-ink-600 text-ink-900 font-medium py-2.5 rounded-xl transition-colors"
+              className="flex-1 bg-white border border-paper-300 hover:border-brand-500 text-ink-900 font-medium py-2.5 rounded-xl transition-colors"
             >
               {t('result.verifyYes')}
             </button>
@@ -384,7 +397,7 @@ export default function ParkingResult({
                 })
                 onRetake()
               }}
-              className="flex-1 bg-accent-600 hover:bg-accent-700 text-ink-900 font-semibold py-2.5 rounded-xl shadow-md shadow-accent-500/25 transition-colors"
+              className="flex-1 bg-accent-600 hover:bg-accent-700 text-white font-semibold py-2.5 rounded-xl transition-colors"
             >
               {t('result.verifyRetake')}
             </button>
@@ -393,11 +406,11 @@ export default function ParkingResult({
       )}
 
       {/* View the photo */}
-      <details className="mt-4 bg-white rounded-2xl border border-paper-300 overflow-hidden">
+      <details className="mt-4 bg-white rounded-lg border border-paper-300 overflow-hidden">
         <summary className="px-5 py-3 text-sm font-medium text-ink-700 cursor-pointer select-none">
           {t('result.viewPhoto')}
         </summary>
-        <img src={signPhoto} alt={t('clarify.imageAlt')} className="w-full border-t border-paper-200" />
+        <img src={signPhoto} alt={t('clarify.imageAlt')} className="w-full border-t border-paper-300" />
       </details>
 
       {/* Accessibility-permit gate — same architectural pattern as the
@@ -407,7 +420,7 @@ export default function ParkingResult({
           user should see this first if both are present (some bays are
           both ♿ AND metered). */}
       {mustHavePermit && (
-        <section className="mt-4 bg-red-50 border-2 border-red-500 rounded-2xl p-5">
+        <section className="mt-4 bg-red-50 border-2 border-red-500 rounded-lg p-5">
           <div className="flex items-start gap-3">
             <div className="w-9 h-9 rounded-full bg-red-600 text-white flex items-center justify-center shrink-0 mt-0.5">
               {/* Wheelchair-style accessibility glyph — drawn inline rather
@@ -456,7 +469,7 @@ export default function ParkingResult({
           a sign that hits ♿ + permit + pay still surfaces them in
           severity order. */}
       {isPermitZone && (
-        <section className="mt-4 bg-amber-50 border-2 border-amber-400 rounded-2xl p-5">
+        <section className="mt-4 bg-amber-50 border-2 border-amber-400 rounded-lg p-5">
           <div className="flex items-start gap-3">
             <div aria-hidden="true" className="w-9 h-9 rounded-lg bg-amber-700 text-white flex items-center justify-center shrink-0 mt-0.5 font-display font-extrabold text-lg">
               P
@@ -499,7 +512,7 @@ export default function ParkingResult({
           requirement impossible to miss, (2) actively help the user pay it.
           The Save button below is disabled until the checkbox is ticked. */}
       {mustPay && (
-        <section className="mt-4 bg-amber-50 border-2 border-amber-400 rounded-2xl p-5">
+        <section className="mt-4 bg-amber-50 border-2 border-amber-400 rounded-lg p-5">
           <div className="flex items-start gap-3">
             <div className="w-8 h-8 rounded-full bg-amber-500 text-white flex items-center justify-center shrink-0 mt-0.5">
               <Icon name="warning" className="w-4 h-4" strokeWidth={2.5} />
@@ -617,7 +630,7 @@ export default function ParkingResult({
         )}
         <button
           onClick={onScanAnother}
-          className="bg-paper-200 hover:bg-paper-300 text-ink-900 font-medium py-3 rounded-2xl transition-colors"
+          className="bg-paper-200 hover:bg-paper-300 text-ink-900 font-medium py-3 rounded-xl transition-colors"
         >
           {t('result.scanAnother')}
         </button>

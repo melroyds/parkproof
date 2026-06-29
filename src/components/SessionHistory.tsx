@@ -6,6 +6,7 @@ import { loadSessions } from '../lib/storage'
 import { useNow } from '../lib/use-now'
 import { formatCountdownLocalized } from '../lib/countdown'
 import Icon from './Icon'
+import VerifiedSeal from './VerifiedSeal'
 import BackButton from './ui/BackButton'
 
 interface Props {
@@ -48,7 +49,7 @@ export default function SessionHistory({ onBack, onOpen }: Props) {
       <p className="text-sm text-ink-600 mb-6 leading-relaxed">{t('history.intro')}</p>
 
       {sessions.length === 0 ? (
-        <div className="bg-white rounded-2xl border border-paper-300 p-8 text-center">
+        <div className="bg-white rounded-lg border border-brand-900/10 p-8 text-center">
           <img
             // BASE_URL-aware so the asset resolves correctly under the
             // /app/ mount after the two-app cutover.
@@ -69,7 +70,7 @@ export default function SessionHistory({ onBack, onOpen }: Props) {
               <button
                 key={s.id}
                 onClick={() => onOpen(s)}
-                className="text-left bg-white hover:bg-paper-50 border border-paper-300 hover:border-brand-300 rounded-2xl p-4 transition-colors"
+                className="text-left bg-white hover:bg-paper-50 border border-brand-900/10 hover:border-brand-300 rounded-lg p-4 transition-colors"
               >
                 <div className="flex items-start gap-3">
                   {/* Thumbnail priority for the row: sign_photo (translated
@@ -87,18 +88,23 @@ export default function SessionHistory({ onBack, onOpen }: Props) {
                     </div>
                   )}
                   <div className="flex-1 min-w-0">
-                    <p className="font-medium text-ink-900 truncate">
-                      {arrival.toLocaleDateString('en-AU', {
-                        weekday: 'short',
-                        day: 'numeric',
-                        month: 'short',
-                      })}
-                      {' · '}
-                      {arrival.toLocaleTimeString('en-AU', {
-                        hour: 'numeric',
-                        minute: '2-digit',
-                      })}
-                    </p>
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      {s.signature && (
+                        <VerifiedSeal size={16} glow={false} className="flex-none" />
+                      )}
+                      <p className="font-medium text-ink-900 truncate">
+                        {arrival.toLocaleDateString('en-AU', {
+                          weekday: 'short',
+                          day: 'numeric',
+                          month: 'short',
+                        })}
+                        {' · '}
+                        {arrival.toLocaleTimeString('en-AU', {
+                          hour: 'numeric',
+                          minute: '2-digit',
+                        })}
+                      </p>
+                    </div>
                     {s.location?.address && (
                       <p className="text-xs text-ink-700 mt-0.5 truncate">{s.location.address}</p>
                     )}

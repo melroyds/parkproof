@@ -167,11 +167,11 @@ function FeedbackModalBody({
       aria-modal="true"
       aria-labelledby="feedback-title"
     >
-      <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
+      <div className="bg-white rounded-2xl border border-brand-900/10 shadow-sm max-w-lg w-full max-h-[90vh] overflow-y-auto">
         {success ? (
           <div className="p-8 text-center">
             <div
-              className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-emerald-100 text-emerald-600 text-2xl mb-4"
+              className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-brand-100 text-brand-600 text-2xl mb-4"
               aria-hidden="true"
             >
               ✓
@@ -280,7 +280,7 @@ function FeedbackModalBody({
               <button
                 type="submit"
                 disabled={!canSubmit}
-                className="px-5 py-2 bg-gradient-to-r from-brand-500 via-brand-500 to-brand-700 hover:brightness-110 active:brightness-95 disabled:bg-none disabled:bg-paper-300 disabled:text-ink-600 text-white text-sm font-semibold rounded-lg transition-colors"
+                className="px-5 py-2 bg-brand-500 hover:bg-brand-600 active:bg-brand-700 disabled:bg-paper-300 disabled:text-ink-600 text-white text-sm font-semibold rounded-xl transition-colors"
               >
                 {submitting ? t('feedback.sending') : t('feedback.send')}
               </button>

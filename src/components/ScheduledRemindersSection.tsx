@@ -385,7 +385,7 @@ export default function ScheduledRemindersSection({ session }: Props) {
                     onClick={() => void handleRemove(fire_at)}
                     disabled={busy}
                     aria-label={t('scheduledReminders.cancelOne')}
-                    className="text-ink-600 hover:text-red-600 disabled:opacity-40 leading-none text-lg px-1 min-w-[44px] min-h-[44px] inline-flex items-center justify-center -my-1.5"
+                    className="text-ink-600 hover:text-ink-900 disabled:opacity-40 leading-none text-lg px-1 min-w-[44px] min-h-[44px] inline-flex items-center justify-center -my-1.5"
                   >
                     <span aria-hidden="true">×</span>
                   </button>
@@ -397,7 +397,7 @@ export default function ScheduledRemindersSection({ session }: Props) {
       )}
 
       {error && (
-        <p className="text-xs text-red-700 bg-red-50 border border-red-200 rounded-lg px-3 py-2 mb-3">
+        <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mb-3">
           {error}
         </p>
       )}
@@ -420,7 +420,7 @@ export default function ScheduledRemindersSection({ session }: Props) {
               type="button"
               onClick={() => void handleCancelAll()}
               disabled={busy}
-              className="text-sm text-ink-600 hover:text-red-700 disabled:opacity-50 font-medium px-3 py-2.5 min-h-[44px] inline-flex items-center justify-center"
+              className="text-sm text-ink-600 hover:text-ink-900 disabled:opacity-50 font-medium px-3 py-2.5 min-h-[44px] inline-flex items-center justify-center"
             >
               {t('scheduledReminders.cancelAll')}
             </button>
