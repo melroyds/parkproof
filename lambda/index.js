@@ -767,7 +767,7 @@ function getKmsClient() {
  * for primitives. Both sides (Lambda + verifier) must produce identical bytes
  * for the signature to validate.
  */
-function canonicalize(value) {
+export function canonicalize(value) {
   if (value === null) return 'null'
   if (typeof value === 'string') return JSON.stringify(value)
   if (typeof value === 'number') return JSON.stringify(value)
@@ -780,7 +780,7 @@ function canonicalize(value) {
   throw new Error(`canonicalize: unsupported type ${typeof value}`)
 }
 
-async function handleSignSession(event) {
+export async function handleSignSession(event) {
   const keyId = process.env.KMS_KEY_ID
   if (!keyId) throw new Error('KMS_KEY_ID env var not configured')
 
@@ -1210,7 +1210,7 @@ function scheduler() {
  * expressions in UTC with NO trailing offset or Z. Convert from any ISO
  * date string into that exact shape.
  */
-function toSchedulerAtExpr(iso) {
+export function toSchedulerAtExpr(iso) {
   const d = new Date(iso)
   if (Number.isNaN(d.getTime())) throw new Error('invalid fire_at')
   const pad = (n) => String(n).padStart(2, '0')
@@ -1231,7 +1231,7 @@ const PUSH_MAX_REMINDERS_PER_SESSION = 6
 // Allowed chars: [0-9a-zA-Z-_.] (EventBridge rule), max length tuned so the
 // composed `parkproof-push-{session_id}-{i}` name stays under the 64-char
 // EventBridge limit (15 prefix + sid + 2 suffix ≤ 64 → sid ≤ 47).
-function isSafeSessionId(s) {
+export function isSafeSessionId(s) {
   return typeof s === 'string' && /^[a-zA-Z0-9._-]{1,47}$/.test(s)
 }
 
