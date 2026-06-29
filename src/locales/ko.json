@@ -267,6 +267,7 @@
       "copy": "유료 구역입니다. 떠나기 전에 가장 가까운 미터기에서 티켓을 구입하거나 PayStay / EasyPark로 결제하세요.",
       "openPaystay": "PayStay 열기",
       "openEasypark": "EasyPark 열기",
+      "openApp": "{{app}} 열기",
       "meterHint": "가장 가까운 미터기 또는 티켓 머신에서 티켓 구입 — 보통 표지판 30m 이내.",
       "ack": "결제했습니다 (또는 떠나기 전에 결제할 예정)"
     },

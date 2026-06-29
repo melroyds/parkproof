@@ -143,6 +143,7 @@
       "copy": "Đây là khu vực đỗ xe trả phí. Hãy mua vé từ đồng hồ tính phí gần nhất hoặc thanh toán qua PayStay / EasyPark trước khi rời đi.",
       "openPaystay": "Mở PayStay",
       "openEasypark": "Mở EasyPark",
+      "openApp": "Mở {{app}}",
       "meterHint": "Mua vé từ đồng hồ tính phí hoặc máy bán vé gần nhất — thường trong vòng 30m từ biển báo.",
       "ack": "Tôi đã trả phí (hoặc sẽ trả trước khi rời đi)"
     },

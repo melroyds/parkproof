@@ -267,6 +267,7 @@
       "copy": "Ini zona berbayar. Beli tiket dari meter terdekat atau bayar via PayStay / EasyPark sebelum pergi.",
       "openPaystay": "Buka PayStay",
       "openEasypark": "Buka EasyPark",
+      "openApp": "Buka {{app}}",
       "meterHint": "Beli tiket dari meter atau mesin tiket terdekat — biasanya dalam 30m dari rambu.",
       "ack": "Saya sudah bayar (atau akan bayar sebelum pergi)"
     },

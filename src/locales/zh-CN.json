@@ -143,6 +143,7 @@
       "copy": "这是付费停车区。请在离开前使用最近的停车计时器或通过 PayStay / EasyPark 付款。",
       "openPaystay": "打开 PayStay",
       "openEasypark": "打开 EasyPark",
+      "openApp": "打开 {{app}}",
       "meterHint": "在最近的停车计时器或售票机购买停车票,通常在标志 30 米范围内。",
       "ack": "我已付款（或我会在离开前付款）"
     },

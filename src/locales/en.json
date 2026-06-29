@@ -279,6 +279,7 @@
       "copy": "This is a paid zone. Buy a ticket from the nearest meter or pay via PayStay / EasyPark before you walk away.",
       "openPaystay": "Open PayStay",
       "openEasypark": "Open EasyPark",
+      "openApp": "Open {{app}}",
       "meterHint": "Buy a ticket from the nearest meter or ticket machine, usually within 30m of the sign.",
       "ack": "I've paid (or will pay before walking away)"
     },

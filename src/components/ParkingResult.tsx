@@ -5,6 +5,7 @@ import Icon from './Icon'
 import Button from './ui/Button'
 import Card from './ui/Card'
 import { submitFeedback } from '../lib/feedback'
+import { PARKING_APPS, launchUrlFor, type ParkingApp } from '../lib/parking-apps'
 import { useNow } from '../lib/use-now'
 import { formatCountdownLocalized } from '../lib/countdown'
 import { formatExpiryAbsolute } from '../lib/time-format'
@@ -115,25 +116,31 @@ function resolvePaymentActions(methods: string[] | null | undefined, requiresTic
   const has = (s: string) => list.includes(s)
   // "Unspecified" = paid required but the AI didn't pick out which method.
   const unspecified = requiresTicket && list.length === 0
+  // Any other named pay-by-app (e.g. Wilson) gets its own button from the
+  // verified registry; Care Park has no verified listing so it falls to the
+  // meter hint.
+  const extraApps: ParkingApp[] = []
+  if (has('wilson')) extraApps.push(PARKING_APPS.wilson)
   return {
     paystay: has('paystay') || unspecified,
     easypark: has('easypark') || unspecified,
-    // Wilson / Care Park aren't ubiquitous enough to warrant top-level buttons,
-    // but the meter / ticket-machine hint is the right fallback when only
-    // physical methods are detected.
+    extraApps,
+    // The meter / ticket-machine hint is the right fallback when only physical
+    // methods are detected and no app applies.
     meterOnly:
       !has('paystay') &&
       !has('easypark') &&
+      extraApps.length === 0 &&
       (has('meter') || has('ticket machine') || has('pay-by-plate')),
   }
 }
 
-// Universal links — if the user has the app installed iOS/Android intercepts
-// and opens it directly; otherwise the user lands on the marketing site.
-// Easier to maintain than per-platform custom schemes (`paystay://`) that
-// silently fail when the app isn't installed.
-const PAYSTAY_URL = 'https://paystay.com.au/'
-const EASYPARK_URL = 'https://easypark.net/'
+// Platform-aware launch links from the verified parking-apps registry: on iOS
+// the App Store / EasyPark universal link, on Android an intent:// keyed by the
+// verified package name with a Play fallback, on desktop the website. No AU
+// parking app publishes a custom URL scheme, so we never invent one.
+const PAYSTAY_URL = launchUrlFor(PARKING_APPS.paystay)
+const EASYPARK_URL = launchUrlFor(PARKING_APPS.easypark)
 
 const CONFIDENCE_KEY = {
   low: 'common.lowConfidence',
@@ -510,8 +517,19 @@ export default function ParkingResult({
             </div>
           </div>
 
-          {(paymentActions.paystay || paymentActions.easypark) && (
-            <div className="mt-4 flex gap-2">
+          {(paymentActions.paystay || paymentActions.easypark || paymentActions.extraApps.length > 0) && (
+            <div className="mt-4 flex flex-wrap gap-2">
+              {paymentActions.extraApps.map((app) => (
+                <a
+                  key={app.id}
+                  href={launchUrlFor(app)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex-1 inline-flex items-center justify-center gap-2 bg-white border-2 border-amber-400 hover:bg-amber-100 text-ink-900 font-semibold py-2.5 rounded-xl transition-colors text-sm"
+                >
+                  {t('result.payRequired.openApp', { app: app.name })}
+                </a>
+              ))}
               {paymentActions.paystay && (
                 <a
                   href={PAYSTAY_URL}

@@ -143,6 +143,7 @@
       "copy": "Questa è una zona a pagamento. Compra un ticket al parchimetro più vicino o paga con PayStay / EasyPark prima di allontanarti.",
       "openPaystay": "Apri PayStay",
       "openEasypark": "Apri EasyPark",
+      "openApp": "Apri {{app}}",
       "meterHint": "Acquista un ticket dal parchimetro o dalla biglietteria più vicina — di solito entro 30m dal cartello.",
       "ack": "Ho pagato (o pagherò prima di andarmene)"
     },
