@@ -30,7 +30,7 @@ export default function AuthSettings({ onBack, onOpenPrivacy, onDeleted }: Props
     // this but the type system can't know.
     return (
       <div className="min-h-screen flex flex-col p-6 max-w-md mx-auto w-full">
-        <button onClick={onBack} className="self-start text-ink-600 hover:text-ink-900 text-sm mb-4">
+        <button onClick={onBack} className="self-start min-h-[44px] inline-flex items-center py-2.5 -my-2.5 text-ink-600 hover:text-ink-900 text-sm mb-4">
           {t('common.back')}
         </button>
         <p className="text-ink-700">{t('settings.youSignedOut')}</p>
@@ -103,7 +103,7 @@ export default function AuthSettings({ onBack, onOpenPrivacy, onDeleted }: Props
 
   return (
     <div className="min-h-screen flex flex-col p-6 max-w-md mx-auto w-full">
-      <button onClick={onBack} className="self-start text-ink-600 hover:text-ink-900 text-sm mb-4">
+      <button onClick={onBack} className="self-start min-h-[44px] inline-flex items-center py-2.5 -my-2.5 text-ink-600 hover:text-ink-900 text-sm mb-4">
         {t('common.back')}
       </button>
 

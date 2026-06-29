@@ -14,7 +14,7 @@ export default function Clarify({ signPhoto, clarification, onPick, onCancel }: 
     <div className="min-h-screen flex flex-col p-6 max-w-md mx-auto w-full">
       <button
         onClick={onCancel}
-        className="self-start text-ink-600 hover:text-ink-900 text-sm mb-4 transition-colors"
+        className="self-start min-h-[44px] inline-flex items-center py-2.5 -my-2.5 text-ink-600 hover:text-ink-900 text-sm mb-4 transition-colors"
       >
         {t('common.back')}
       </button>

@@ -23,7 +23,7 @@ export default function PrivacyPolicy({ onBack }: Props) {
 
   return (
     <div className="min-h-screen flex flex-col p-6 max-w-2xl mx-auto w-full">
-      <button onClick={onBack} className="self-start text-ink-600 hover:text-ink-900 text-sm mb-4">
+      <button onClick={onBack} className="self-start min-h-[44px] inline-flex items-center py-2.5 -my-2.5 text-ink-600 hover:text-ink-900 text-sm mb-4">
         {t('common.back')}
       </button>
 
