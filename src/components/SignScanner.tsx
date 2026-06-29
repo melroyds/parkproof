@@ -312,7 +312,7 @@ export default function SignScanner({ onCapture, onReuseSession, onNoSignScan, o
               Saves a wasted Claude call on obvious bad input AND helps the
               user understand why a result might be low-confidence. */}
           {quality && quality.verdict !== 'ok' && (
-            <div className="mb-3 bg-amber-50 border border-amber-400 rounded-lg p-3">
+            <div className="gf-card mb-3 bg-amber-50 p-3">
               <div className="flex items-start gap-2">
                 <Icon
                   name="warning"
@@ -382,7 +382,7 @@ export default function SignScanner({ onCapture, onReuseSession, onNoSignScan, o
             </p>
           )}
           {cameraDenied && (
-            <div className="mt-3 bg-amber-50 border border-amber-400 rounded-lg p-3">
+            <div className="gf-card mt-3 bg-amber-50 p-3">
               <div className="flex items-start gap-2">
                 <Icon
                   name="warning"
@@ -398,7 +398,7 @@ export default function SignScanner({ onCapture, onReuseSession, onNoSignScan, o
                 </div>
                 <button
                   onClick={() => setCameraDenied(false)}
-                  className="text-ink-600 hover:text-ink-900 shrink-0 text-lg leading-none transition-colors min-w-[44px] min-h-[44px] inline-flex items-center justify-center"
+                  className="text-ink-600 hover:text-ink-900 shrink-0 text-lg leading-none transition-colors min-w-[44px] min-h-[44px] inline-flex items-center justify-center mt-1 mr-1"
                   aria-label={t('common.back')}
                 >
                   <span aria-hidden="true">&times;</span>
@@ -423,7 +423,7 @@ export default function SignScanner({ onCapture, onReuseSession, onNoSignScan, o
         // a surroundings photo. Either path commits — the choice is purely
         // about evidence weight, not whether the session gets saved.
         <div className="flex flex-col gap-3">
-          <div className="bg-brand-50 border border-brand-900/10 rounded-lg p-5">
+          <div className="gf-card bg-brand-50 p-5">
             <h3 className="font-display font-bold text-ink-900 mb-1">
               {t('scanner.noSignChooseHeader')}
             </h3>

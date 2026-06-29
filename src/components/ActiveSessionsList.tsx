@@ -91,7 +91,7 @@ export default function ActiveSessionsList({ sessions, onBack, onOpen }: Props) 
             <li key={session.id}>
               <button
                 onClick={() => onOpen(session)}
-                className={`w-full text-left rounded-lg border border-paper-300 ${style.tint} hover:brightness-95 active:brightness-90 transition-all overflow-hidden flex items-stretch`}
+                className={`gf-card w-full text-left ${style.tint} hover:brightness-95 active:brightness-90 transition-all overflow-hidden flex items-stretch`}
                 aria-label={t('active.listCardAria', {
                   address: addressLine,
                   status: hasExpiry ? countdown!.label : elapsed!.label,

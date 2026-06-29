@@ -214,7 +214,7 @@ export default function AppealFlow({ session, onBack }: Props) {
           )}
         </div>
         {pdfError && (
-          <div className="mt-3 bg-accent-50 border border-accent-300 rounded-lg p-3 text-sm">
+          <div className="gf-card mt-3 bg-accent-50 p-3 text-sm">
             <p className="font-display font-bold text-ink-900 mb-1">
               {t('session.pdfErrorHeader')}
             </p>

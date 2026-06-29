@@ -158,7 +158,7 @@ export default function ActiveSessionCard({
           type="button"
           onClick={onShowMore}
           aria-label={t('active.morePillAria', { count: extraCount })}
-          className="absolute top-3 right-3 text-2xs font-semibold uppercase tracking-wider bg-white/20 hover:bg-white/30 active:bg-white/25 rounded-full px-2.5 min-h-[44px] min-w-[44px] inline-flex items-center justify-center transition-colors shrink-0"
+          className="absolute top-5 right-5 text-2xs font-semibold uppercase tracking-wider bg-white/20 hover:bg-white/30 active:bg-white/25 rounded-full px-2.5 min-h-[44px] min-w-[44px] inline-flex items-center justify-center transition-colors shrink-0"
         >
           {t('active.morePill', { count: extraCount })}
         </button>
@@ -176,7 +176,7 @@ export default function ActiveSessionCard({
 
   return (
     <div
-      className={`w-full rounded-2xl p-5 text-white relative border ${style.surface}`}
+      className={`gf-card-lg w-full p-5 text-white relative ${style.surface}`}
       style={
         style.glass
           ? {

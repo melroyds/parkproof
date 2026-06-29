@@ -49,7 +49,7 @@ export default function SessionHistory({ onBack, onOpen }: Props) {
       <p className="text-sm mb-6 leading-relaxed" style={{ color: '#A9CFBE' }}>{t('history.intro')}</p>
 
       {sessions.length === 0 ? (
-        <div className="bg-white rounded-lg border border-brand-900/10 p-8 text-center">
+        <div className="gf-card bg-white p-8 text-center">
           <img
             // BASE_URL-aware so the asset resolves correctly under the
             // /app/ mount after the two-app cutover.
@@ -70,7 +70,7 @@ export default function SessionHistory({ onBack, onOpen }: Props) {
               <button
                 key={s.id}
                 onClick={() => onOpen(s)}
-                className="text-left bg-white hover:bg-paper-50 border border-brand-900/10 hover:border-brand-300 rounded-lg p-4 transition-colors"
+                className="gf-card text-left bg-white hover:bg-paper-50 p-4 transition-colors"
               >
                 <div className="flex items-start gap-3">
                   {/* Thumbnail priority for the row: sign_photo (translated

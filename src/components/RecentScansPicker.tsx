@@ -49,7 +49,7 @@ export default function RecentScansPicker({ sessions, onPick, onDismiss }: Props
             <button
               key={s.id}
               onClick={() => onPick(s)}
-              className="bg-white hover:bg-brand-50 border border-brand-900/10 hover:border-brand-600 rounded-lg p-3 text-left flex items-center gap-3 transition-colors"
+              className="gf-card bg-white hover:bg-brand-50 p-3 text-left flex items-center gap-3 transition-colors"
             >
               <img
                 src={s.sign_photo ?? undefined}

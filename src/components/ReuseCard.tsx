@@ -20,12 +20,12 @@ export default function ReuseCard({ session, distanceMeters, onReuse, onDismiss 
   const bulletItems = session.observations.flatMap((g) => g.items).slice(0, 4)
 
   return (
-    <section className="mb-6 bg-brand-50 border border-brand-900/10 rounded-lg p-5">
+    <section className="gf-card mb-6 bg-brand-50 p-5">
       <div className="flex items-baseline justify-between mb-3 gap-2">
         <h3 className="font-display font-bold text-ink-900 text-lg leading-tight">
           {t('reuse.scannedHere', { age })}
         </h3>
-        <span className="text-2xs uppercase tracking-widest font-semibold text-brand-700 shrink-0 tnum">
+        <span className="text-2xs uppercase tracking-widest font-semibold text-brand-700 shrink-0 tnum mt-1 mr-1">
           {t('reuse.metersAway', { meters: Math.round(distanceMeters) })}
         </span>
       </div>

@@ -245,13 +245,7 @@ export default function ParkingResult({
     <div className="min-h-screen flex flex-col p-6 max-w-md mx-auto w-full">
       {/* Answer card — the one emphatic object that FLOATS off the page with a
           soft pine-tinted shadow. GO is pine, STOP keeps the quarantined red. */}
-      <div
-        className={`rounded-2xl p-8 text-center bg-white shadow-[0_14px_40px_rgba(7,59,37,0.16),0_2px_6px_rgba(7,59,37,0.08)] ${
-          can_park_now
-            ? 'border-[1.5px] border-brand-500'
-            : 'border-[1.5px] border-red-500'
-        }`}
-      >
+      <div className="gf-card-lg p-8 text-center bg-white">
         <div className="flex justify-center mb-3">
           <div
             className={`w-20 h-20 rounded-full flex items-center justify-center ${
@@ -361,11 +355,10 @@ export default function ParkingResult({
             with banknote guilloché texture, the mint-glowing Verified Seal,
             paper text, and a mono mint short-hash. */
         <div
-          className="mt-4 rounded-xl px-5 py-4 flex items-center gap-4 border bg-brand-800 overflow-hidden"
+          className="gf-card mt-4 px-5 py-4 flex items-center gap-4 bg-brand-800 overflow-hidden"
           style={{
             backgroundImage:
               'repeating-linear-gradient(115deg, rgba(123,227,164,0.055) 0 1px, transparent 1px 8px)',
-            borderColor: 'rgba(123,227,164,0.22)',
           }}
         >
           <VerifiedSeal glow size={38} className="shrink-0" />
@@ -439,7 +432,7 @@ export default function ParkingResult({
           user should see this first if both are present (some bays are
           both ♿ AND metered). */}
       {mustHavePermit && (
-        <section className="mt-4 bg-red-50 border-2 border-red-500 rounded-lg p-5">
+        <section className="gf-card mt-4 bg-red-50 p-5">
           <div className="flex items-start gap-3">
             <div className="w-9 h-9 rounded-full bg-red-600 text-white flex items-center justify-center shrink-0 mt-0.5">
               {/* Wheelchair-style accessibility glyph — drawn inline rather
@@ -488,7 +481,7 @@ export default function ParkingResult({
           a sign that hits ♿ + permit + pay still surfaces them in
           severity order. */}
       {isPermitZone && (
-        <section className="mt-4 bg-amber-50 border-2 border-amber-400 rounded-lg p-5">
+        <section className="gf-card mt-4 bg-amber-50 p-5">
           <div className="flex items-start gap-3">
             <div aria-hidden="true" className="w-9 h-9 rounded-lg bg-amber-700 text-white flex items-center justify-center shrink-0 mt-0.5 font-display font-extrabold text-lg">
               P
@@ -531,7 +524,7 @@ export default function ParkingResult({
           requirement impossible to miss, (2) actively help the user pay it.
           The Save button below is disabled until the checkbox is ticked. */}
       {mustPay && (
-        <section className="mt-4 bg-amber-50 border-2 border-amber-400 rounded-lg p-5">
+        <section className="gf-card mt-4 bg-amber-50 p-5">
           <div className="flex items-start gap-3">
             <div className="w-8 h-8 rounded-full bg-amber-500 text-white flex items-center justify-center shrink-0 mt-0.5">
               <Icon name="warning" className="w-4 h-4" strokeWidth={2.5} />

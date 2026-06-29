@@ -837,14 +837,14 @@ function App() {
         {!(sessionCount === 0 && !primaryActive) && (
           <button
             onClick={() => setView({ name: 'history' })}
-            className="mt-8 w-full border text-paper-50 font-medium py-3 rounded-2xl flex items-start justify-between gap-3 px-5 transition-colors hover:brightness-110"
-            style={{ background: 'rgba(255,255,255,0.055)', borderColor: 'rgba(123,227,164,0.22)' }}
+            className="gf-card mt-8 w-full text-paper-50 font-medium py-3 flex items-start justify-between gap-3 px-5 transition-colors hover:brightness-110"
+            style={{ background: 'rgba(255,255,255,0.055)' }}
           >
             <span className="flex items-start gap-2 min-w-0 flex-1">
               <Icon name="list" className="w-5 h-5 shrink-0 mt-px text-[#A9CFBE]" />
               <span className="leading-snug text-left">{t('home.history')}</span>
             </span>
-            <span className="text-sm shrink-0 mt-px" style={{ color: '#A9CFBE' }}>
+            <span className="text-sm shrink-0 mt-px pr-2" style={{ color: '#A9CFBE' }}>
               {sessionCount === 0 ? t('home.historyEmpty') : t('home.historyCount', { count: sessionCount })}
             </span>
           </button>
@@ -859,26 +859,26 @@ function App() {
           auth.user ? (
             <button
               onClick={() => setView({ name: 'settings' })}
-              className="mt-2 w-full border text-paper-50 font-medium py-3 rounded-2xl flex items-start justify-between gap-3 px-5 transition-colors hover:brightness-110"
-              style={{ background: 'rgba(255,255,255,0.055)', borderColor: 'rgba(123,227,164,0.22)' }}
+              className="gf-card mt-2 w-full text-paper-50 font-medium py-3 flex items-start justify-between gap-3 px-5 transition-colors hover:brightness-110"
+              style={{ background: 'rgba(255,255,255,0.055)' }}
             >
               <span className="flex items-start gap-2 min-w-0 flex-1">
                 <Icon name="check" className="w-5 h-5 text-[#7BE3A4] shrink-0 mt-px" strokeWidth={2.5} />
                 <span className="truncate">{auth.user.email}</span>
               </span>
-              <span className="text-xs shrink-0 mt-1" style={{ color: '#A9CFBE' }}>{t('home.account')}</span>
+              <span className="text-xs shrink-0 mt-1 pr-2" style={{ color: '#A9CFBE' }}>{t('home.account')}</span>
             </button>
           ) : (
             <button
               onClick={() => setView({ name: 'signin' })}
-              className="mt-2 w-full border text-paper-50 font-medium py-3 rounded-2xl flex items-start justify-between gap-3 px-5 transition-colors hover:brightness-110"
-              style={{ background: 'rgba(255,255,255,0.055)', borderColor: 'rgba(123,227,164,0.22)' }}
+              className="gf-card mt-2 w-full text-paper-50 font-medium py-3 flex items-start justify-between gap-3 px-5 transition-colors hover:brightness-110"
+              style={{ background: 'rgba(255,255,255,0.055)' }}
             >
               <span className="flex items-start gap-2 min-w-0 flex-1">
                 <Icon name="bell" className="w-5 h-5 shrink-0 mt-px text-[#A9CFBE]" />
                 <span className="leading-snug text-left">{t('home.signInToSync')}</span>
               </span>
-              <span className="text-xs shrink-0 mt-1" style={{ color: '#A9CFBE' }}>{t('common.optional')}</span>
+              <span className="text-xs shrink-0 mt-1 pr-2" style={{ color: '#A9CFBE' }}>{t('common.optional')}</span>
             </button>
           )
         )}

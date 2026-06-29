@@ -182,7 +182,7 @@ export default function AuthSettings({ onBack, onOpenPrivacy, onDeleted }: Props
         </button>
       </Card>
 
-      <section className="bg-accent-50 border border-accent-300 rounded-lg p-5 mt-3">
+      <section className="gf-card bg-accent-50 p-5 mt-3">
         <h3 className="font-display font-bold text-ink-900 mb-1 flex items-center gap-2">
           <Icon name="warning" className="w-5 h-5 text-accent-700" />
           {t('settings.deleteHeader')}

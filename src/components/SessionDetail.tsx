@@ -252,12 +252,11 @@ export default function SessionDetail({
           text, and the signature hash in mono mint. */}
       {session.signature && (
         <div
-          className="mb-5 rounded-2xl border p-5 shadow-[0_14px_40px_rgba(7,59,37,0.22),0_2px_6px_rgba(7,59,37,0.12)]"
+          className="gf-card-lg mb-5 p-5"
           style={{
             background: '#073B25',
             backgroundImage:
               'repeating-linear-gradient(115deg, rgba(123,227,164,0.055) 0 1px, transparent 1px 8px)',
-            borderColor: 'rgba(123,227,164,0.22)',
           }}
         >
           <div className="flex items-center gap-3.5">

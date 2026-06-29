@@ -154,7 +154,7 @@ export default function AboutFeatures({ onBack, onTryIt }: Props) {
           Brand-tinted to match the push-subscribe block above without
           being shouty. The coffee emoji works across all 9 locales — BMC
           is globally recognised as a tipping platform. */}
-      <div className="mb-8 p-5 rounded-lg bg-brand-50 border border-brand-100">
+      <div className="gf-card mb-8 p-5 bg-brand-50">
         <p className="text-sm font-semibold text-ink-900 mb-1">
           {t('about.support.title')}
         </p>
@@ -221,7 +221,7 @@ interface PushSubscribeBlockProps {
 function PushSubscribeBlock({ pushStatus, onEnable }: PushSubscribeBlockProps) {
   const { t } = useTranslation()
   return (
-    <div className="-mt-4 mb-10 ml-14 p-4 rounded-lg bg-brand-50 border border-brand-100">
+    <div className="gf-card -mt-4 mb-10 ml-14 p-4 bg-brand-50">
       <p className="text-sm font-semibold text-ink-900 mb-1">
         🔔 {t('about.push.title')}
       </p>

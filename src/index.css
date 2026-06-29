@@ -87,6 +87,23 @@ h1, h2, h3, h4, .font-display {
 /* Tabular figures for countdowns / timestamps so numbers feel measured. */
 .tnum { font-variant-numeric: tabular-nums; }
 
+/* ─── Signature card shape ─────────────────────────────────────────────
+   The chamfer: a cut top-right corner that echoes the Datum P's index notch,
+   so the card silhouette stops being the default rounded-rect every React app
+   ships. Corners are otherwise sharp (engineered, not soft). The lift uses
+   `filter: drop-shadow` rather than box-shadow so the shadow follows the cut
+   instead of being clipped by it. Apply to genuine content cards only — not
+   chips, buttons, inputs, popovers, or full-screen wrappers. */
+.gf-card {
+  clip-path: polygon(0 0, calc(100% - 20px) 0, 100% 20px, 100% 100%, 0 100%);
+  filter: drop-shadow(0 12px 26px rgba(0, 0, 0, 0.26));
+}
+/* A deeper cut for the large signature cards (verdict, evidence, active). */
+.gf-card-lg {
+  clip-path: polygon(0 0, calc(100% - 28px) 0, 100% 28px, 100% 100%, 0 100%);
+  filter: drop-shadow(0 16px 34px rgba(0, 0, 0, 0.30));
+}
+
 /* ─── Focus ring ──────────────────────────────────────────────────── */
 a:focus-visible,
 button:focus-visible,

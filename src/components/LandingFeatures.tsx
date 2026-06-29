@@ -202,8 +202,8 @@ export default function LandingFeatures({ onScanCta, onSignInCta }: Props) {
         {steps.map(({ num, tone, key, icon }, idx) => (
           <div key={num} className="relative">
             <div
-              className="border rounded-xl p-3 flex flex-col items-center text-center h-full"
-              style={{ background: 'rgba(255,255,255,0.055)', borderColor: 'rgba(123,227,164,0.22)' }}
+              className="gf-card p-3 flex flex-col items-center text-center h-full"
+              style={{ background: 'rgba(255,255,255,0.055)' }}
             >
               <div className={`relative w-12 h-12 rounded-full ${stepToneClasses[tone]} flex items-center justify-center mb-2`}>
                 <Icon name={icon} className="w-5 h-5" strokeWidth={2.25} />
@@ -238,10 +238,9 @@ export default function LandingFeatures({ onScanCta, onSignInCta }: Props) {
 
       {/* ── Tamper-proof evidence callout ────────────────────────────── */}
       <div
-        className="border rounded-2xl p-4 flex items-start gap-3 mb-10 shadow-[0_4px_16px_rgba(0,0,0,0.25)]"
+        className="gf-card-lg p-4 flex items-start gap-3 mb-10"
         style={{
           background: 'rgba(255,255,255,0.055)',
-          borderColor: 'rgba(123,227,164,0.22)',
           backgroundImage:
             'repeating-linear-gradient(115deg, rgba(123,227,164,0.07) 0 1px, transparent 1px 8px)',
         }}
@@ -257,7 +256,7 @@ export default function LandingFeatures({ onScanCta, onSignInCta }: Props) {
             {t('landing.evidenceCallout.body')}
           </p>
         </div>
-        <span aria-hidden className="text-xl shrink-0 leading-none mt-1" style={{ color: 'rgba(123,227,164,0.5)' }}>›</span>
+        <span aria-hidden className="text-xl shrink-0 leading-none mt-3 mr-1" style={{ color: 'rgba(123,227,164,0.5)' }}>›</span>
       </div>
     </div>
   )

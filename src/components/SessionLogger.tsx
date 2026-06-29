@@ -260,7 +260,7 @@ export default function SessionLogger({
           claim. Helpful to spell out so the user understands what they're
           actually capturing. */}
       {isNoSign && (
-        <div className="mb-3 bg-brand-50 border border-brand-200 rounded-lg p-4">
+        <div className="gf-card mb-3 bg-brand-50 p-4">
           <div className="flex items-start gap-3">
             <div className="w-8 h-8 rounded-full bg-brand-500 text-white flex items-center justify-center shrink-0 mt-0.5">
               <Icon name="warning" className="w-4 h-4" strokeWidth={2.5} />

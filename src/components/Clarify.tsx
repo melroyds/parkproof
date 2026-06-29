@@ -32,7 +32,7 @@ export default function Clarify({ signPhoto, clarification, onPick, onCancel }: 
           <button
             key={i}
             onClick={() => onPick(option)}
-            className="bg-white hover:bg-brand-50 border-2 border-brand-600 hover:border-brand-700 text-brand-700 text-2xl font-bold py-6 rounded-xl transition-colors font-display tracking-tight"
+            className="gf-card bg-white hover:bg-brand-50 text-brand-700 text-2xl font-bold py-6 transition-colors font-display tracking-tight"
           >
             {option.label}
           </button>
