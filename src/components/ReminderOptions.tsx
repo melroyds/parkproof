@@ -380,20 +380,20 @@ export default function ReminderOptions({ session, onDone }: Props) {
   if (!anyFireable) {
     return (
       <div className="min-h-screen flex flex-col p-6 max-w-md mx-auto w-full">
-        <h2 className="font-display text-3xl font-extrabold text-ink-900 mb-2">{t('reminders.header')}</h2>
-        <p className="text-sm text-ink-700 mb-6 leading-relaxed">
+        <h2 className="font-display text-3xl font-extrabold text-paper-50 mb-2">{t('reminders.header')}</h2>
+        <p className="text-sm mb-6 leading-relaxed" style={{ color: '#A9CFBE' }}>
           {/* <Trans> renders the <strong> placeholder inside the JSON as a
               real React element, so the expiry-time stays visually anchored
               the way it was before i18n flattened everything. */}
           <Trans
             i18nKey="reminders.expired"
             values={{ when: expiresLabel }}
-            components={{ strong: <span className="font-display font-bold text-ink-900" /> }}
+            components={{ strong: <span className="font-display font-bold text-paper-50" /> }}
           />
         </p>
         <button
           onClick={onDone}
-          className="mt-auto bg-ink-900 hover:bg-ink-800 text-white font-semibold py-4 rounded-xl transition-colors"
+          className="mt-auto bg-brand-500 hover:bg-brand-600 active:bg-brand-700 text-white font-semibold py-4 rounded-xl transition-colors"
         >
           {t('common.done')}
         </button>
@@ -404,12 +404,12 @@ export default function ReminderOptions({ session, onDone }: Props) {
   // === Main flow ===
   return (
     <div className="min-h-screen flex flex-col p-6 max-w-md mx-auto w-full">
-      <h2 className="font-display text-3xl font-extrabold text-ink-900 mb-1">{t('reminders.header')}</h2>
-      <p className="text-sm text-ink-700 mb-6 leading-relaxed">
+      <h2 className="font-display text-3xl font-extrabold text-paper-50 mb-1">{t('reminders.header')}</h2>
+      <p className="text-sm mb-6 leading-relaxed" style={{ color: '#A9CFBE' }}>
         <Trans
           i18nKey="reminders.intro"
           values={{ when: expiresLabel }}
-          components={{ strong: <span className="font-display font-bold text-ink-900" /> }}
+          components={{ strong: <span className="font-display font-bold text-paper-50" /> }}
         />
       </p>
 
@@ -461,15 +461,15 @@ export default function ReminderOptions({ session, onDone }: Props) {
       </div>
 
       {/* Live summary of selected fire-times */}
-      <p className="text-xs text-ink-600 mb-6 leading-relaxed min-h-[2.25rem]">
+      <p className="text-xs mb-6 leading-relaxed min-h-[2.25rem]" style={{ color: '#A9CFBE' }}>
         {selectedTimesLabel ? (
           <Trans
             i18nKey="reminders.summaryWithSelections"
             values={{ times: selectedTimesLabel }}
-            components={{ strong: <span className="font-display font-bold text-ink-900" /> }}
+            components={{ strong: <span className="font-display font-bold text-paper-50" /> }}
           />
         ) : (
-          <span className="italic text-ink-600">
+          <span className="italic" style={{ color: '#A9CFBE' }}>
             {t('reminders.summaryEmpty')}
           </span>
         )}
@@ -554,7 +554,7 @@ export default function ReminderOptions({ session, onDone }: Props) {
 
       <button
         onClick={onDone}
-        className="mt-auto bg-ink-900 hover:bg-ink-800 text-white font-semibold py-4 rounded-xl transition-colors"
+        className="mt-auto bg-brand-500 hover:bg-brand-600 active:bg-brand-700 text-white font-semibold py-4 rounded-xl transition-colors"
       >
         {t('common.done')}
       </button>
@@ -686,10 +686,10 @@ function NoSignReminderPicker({ session, onDone }: Props) {
 
   return (
     <div className="min-h-screen flex flex-col p-6 max-w-md mx-auto w-full">
-      <h2 className="font-display text-3xl font-extrabold text-ink-900 mb-1">
+      <h2 className="font-display text-3xl font-extrabold text-paper-50 mb-1">
         {t('reminders.header')}
       </h2>
-      <p className="text-sm text-ink-700 mb-6 leading-relaxed">
+      <p className="text-sm mb-6 leading-relaxed" style={{ color: '#A9CFBE' }}>
         {t('reminders.noSign.intro')}
       </p>
 
@@ -719,15 +719,15 @@ function NoSignReminderPicker({ session, onDone }: Props) {
       </div>
 
       {/* Live summary of selected fire-times */}
-      <p className="text-xs text-ink-600 mb-6 leading-relaxed min-h-[2.25rem]">
+      <p className="text-xs mb-6 leading-relaxed min-h-[2.25rem]" style={{ color: '#A9CFBE' }}>
         {selectedTimesLabel ? (
           <Trans
             i18nKey="reminders.summaryWithSelections"
             values={{ times: selectedTimesLabel }}
-            components={{ strong: <span className="font-display font-bold text-ink-900" /> }}
+            components={{ strong: <span className="font-display font-bold text-paper-50" /> }}
           />
         ) : (
-          <span className="italic text-ink-600">{t('reminders.summaryEmpty')}</span>
+          <span className="italic" style={{ color: '#A9CFBE' }}>{t('reminders.summaryEmpty')}</span>
         )}
       </p>
 
@@ -810,7 +810,7 @@ function NoSignReminderPicker({ session, onDone }: Props) {
 
       <button
         onClick={onDone}
-        className="mt-auto bg-ink-900 hover:bg-ink-800 text-white font-semibold py-4 rounded-xl transition-colors"
+        className="mt-auto bg-brand-500 hover:bg-brand-600 active:bg-brand-700 text-white font-semibold py-4 rounded-xl transition-colors"
       >
         {t('common.done')}
       </button>

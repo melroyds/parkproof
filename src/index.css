@@ -62,8 +62,19 @@
    reserved for the dark evidence/vault surfaces, applied per-component. */
 body {
   font-family: var(--font-sans);
+  /* Default text stays dark — it is inherited by content inside the white/glass
+     cards that float on the vault. Text placed directly ON the vault background
+     sets its own light colour (text-paper-50 / sage) per-component. */
   color: var(--color-ink-900);
-  background-color: var(--color-paper-100);
+  /* App-wide premium vault surface with a faint banknote guilloché. The white
+     and glass cards float on this; the verdict card stays bright as the one
+     high-contrast moment. */
+  background-color: var(--color-brand-800);
+  background-image: repeating-linear-gradient(
+    115deg,
+    rgba(123, 227, 164, 0.05) 0 1px,
+    transparent 1px 8px
+  );
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }

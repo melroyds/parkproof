@@ -101,10 +101,10 @@ export default function AppealFlow({ session, onBack }: Props) {
     return (
       <main className="min-h-screen flex flex-col items-center justify-center p-6 text-center">
         <BrandMark className="w-20 h-20 mb-5 animate-pulse" />
-        <h2 className="font-display text-2xl font-extrabold text-ink-900">
+        <h2 className="font-display text-2xl font-extrabold text-paper-50">
           {t('appeal.draftingHeader')}
         </h2>
-        <p className="text-sm text-ink-600 mt-2">
+        <p className="text-sm mt-2" style={{ color: '#A9CFBE' }}>
           {t('appeal.draftingSub')}
         </p>
       </main>
@@ -114,16 +114,16 @@ export default function AppealFlow({ session, onBack }: Props) {
   if (stage.name === 'error') {
     return (
       <main className="min-h-screen flex flex-col p-6 max-w-md mx-auto w-full">
-        <button onClick={onBack} className="self-start min-h-[44px] inline-flex items-center -my-2.5 text-ink-600 hover:text-ink-900 text-sm mb-4">
+        <button onClick={onBack} className="self-start min-h-[44px] inline-flex items-center -my-2.5 text-[#A9CFBE] hover:text-paper-50 text-sm mb-4">
           {t('common.back')}
         </button>
         <div className="w-16 h-16 rounded-full bg-accent-100 border-2 border-accent-500 text-accent-700 flex items-center justify-center mb-4 mx-auto">
           <Icon name="warning" className="w-8 h-8" />
         </div>
-        <h2 className="font-display text-2xl font-extrabold text-ink-900 text-center">
+        <h2 className="font-display text-2xl font-extrabold text-paper-50 text-center">
           {t('appeal.errorHeader')}
         </h2>
-        <p role="alert" className="text-sm text-ink-700 mt-3 mb-6 break-words text-center">{stage.message}</p>
+        <p role="alert" className="text-sm mt-3 mb-6 break-words text-center" style={{ color: '#A9CFBE' }}>{stage.message}</p>
         <button
           onClick={() => setStage({ name: 'capture' })}
           className="bg-brand-500 hover:bg-brand-600 active:bg-brand-700 text-white font-semibold py-3.5 rounded-xl shadow-sm shadow-brand-900/10 transition-colors"
@@ -140,15 +140,15 @@ export default function AppealFlow({ session, onBack }: Props) {
       <div className="min-h-screen flex flex-col p-6 max-w-md mx-auto w-full">
         <button
           onClick={onBack}
-          className="self-start min-h-[44px] inline-flex items-center -my-2.5 text-ink-600 hover:text-ink-900 text-sm mb-4"
+          className="self-start min-h-[44px] inline-flex items-center -my-2.5 text-[#A9CFBE] hover:text-paper-50 text-sm mb-4"
         >
           {session ? t('common.backToSession') : t('common.backToHome')}
         </button>
 
-        <h2 className="font-display text-3xl font-extrabold text-ink-900 mb-2">
+        <h2 className="font-display text-3xl font-extrabold text-paper-50 mb-2">
           {t('appeal.reviewHeader')}
         </h2>
-        <p className="text-sm text-ink-600 mb-6 leading-relaxed">{stage.draft.ticket_summary}</p>
+        <p className="text-sm mb-6 leading-relaxed" style={{ color: '#A9CFBE' }}>{stage.draft.ticket_summary}</p>
 
         <span
           className={`text-xs font-semibold uppercase tracking-widest border rounded-full px-3 py-1 self-start mb-4 ${strength.color}`}
@@ -222,7 +222,7 @@ export default function AppealFlow({ session, onBack }: Props) {
           </div>
         )}
 
-        <p className="text-xs text-ink-600 mt-4 text-center leading-relaxed">
+        <p className="text-xs mt-4 text-center leading-relaxed" style={{ color: '#A9CFBE' }}>
           {t('appeal.reviewDisclaimer')}
         </p>
       </div>
@@ -234,15 +234,15 @@ export default function AppealFlow({ session, onBack }: Props) {
     <div className="min-h-screen flex flex-col p-6 max-w-md mx-auto w-full">
       <button
         onClick={onBack}
-        className="self-start min-h-[44px] inline-flex items-center -my-2.5 text-ink-600 hover:text-ink-900 text-sm mb-4 transition-colors"
+        className="self-start min-h-[44px] inline-flex items-center -my-2.5 text-[#A9CFBE] hover:text-paper-50 text-sm mb-4 transition-colors"
       >
         {session ? t('common.backToSession') : t('common.backToHome')}
       </button>
 
-      <h2 className="font-display text-3xl font-extrabold text-ink-900 mb-1">
+      <h2 className="font-display text-3xl font-extrabold text-paper-50 mb-1">
         {t('appeal.captureHeader')}
       </h2>
-      <p className="text-sm text-ink-600 mb-6 leading-relaxed">
+      <p className="text-sm mb-6 leading-relaxed" style={{ color: '#A9CFBE' }}>
         {session ? t('appeal.captureIntro') : t('appeal.captureIntroStandalone')}
       </p>
 
@@ -289,7 +289,7 @@ export default function AppealFlow({ session, onBack }: Props) {
         }}
       />
 
-      <p className="text-xs text-ink-600 mt-6 text-center leading-relaxed">
+      <p className="text-xs mt-6 text-center leading-relaxed" style={{ color: '#A9CFBE' }}>
         {t('appeal.captureDisclaimer')}
       </p>
     </div>

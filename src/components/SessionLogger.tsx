@@ -243,14 +243,14 @@ export default function SessionLogger({
 
   return (
     <div className="min-h-screen flex flex-col p-6 max-w-md mx-auto w-full">
-      <BackButton onClick={onCancel}>
+      <BackButton onClick={onCancel} className="text-paper-50 hover:text-[#7BE3A4]">
         {t('common.back')}
       </BackButton>
 
-      <h2 className="font-display text-3xl font-extrabold text-ink-900 mb-1">
+      <h2 className="font-display text-3xl font-extrabold text-paper-50 mb-1">
         {isNoSign ? t('logger.noSignHeader') : t('logger.header')}
       </h2>
-      <p className="text-sm text-ink-600 mb-6 leading-relaxed">
+      <p className="text-sm mb-6 leading-relaxed" style={{ color: '#A9CFBE' }}>
         {isNoSign ? t('logger.noSignIntro') : t('logger.intro')}
       </p>
 
@@ -455,17 +455,17 @@ export default function SessionLogger({
 
       {/* Car photo */}
       <section className="mb-6">
-        <h3 className="font-semibold text-sm text-ink-900 mb-2">{t('logger.carAtSpot')}</h3>
+        <h3 className="font-semibold text-sm text-paper-50 mb-2">{t('logger.carAtSpot')}</h3>
         {carPhoto ? (
           <>
             <img
               src={carPhoto}
               alt={t('logger.carAtSpot')}
-              className="w-full rounded-lg border border-paper-300 object-contain max-h-[50vh] bg-white"
+              className="w-full rounded-lg border border-white/10 object-contain max-h-[50vh] bg-white"
             />
             <button
               onClick={() => setCarPhoto(null)}
-              className="text-sm text-brand-700 hover:text-brand-800 underline mt-2"
+              className="text-sm text-[#7BE3A4] hover:text-[#7BE3A4]/80 underline mt-2"
             >
               {t('logger.carRetake')}
             </button>
@@ -490,7 +490,7 @@ export default function SessionLogger({
             </button>
           </div>
         )}
-        <p className="text-xs text-ink-600 mt-2 text-center">
+        <p className="text-xs mt-2 text-center" style={{ color: '#A9CFBE' }}>
           {t('logger.carOptionalHelp')}
         </p>
         <input
@@ -528,7 +528,7 @@ export default function SessionLogger({
         </Button>
         <button
           onClick={onCancel}
-          className="text-ink-600 hover:text-ink-900 font-medium py-2 transition-colors"
+          className="text-paper-50 hover:text-[#7BE3A4] font-medium py-2 transition-colors"
         >
           {t('common.cancel')}
         </button>

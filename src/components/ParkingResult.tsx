@@ -289,7 +289,7 @@ export default function ParkingResult({
           before walking away, so the "it's a machine read, check the real
           sign" framing has to live here, not only on /verify. Shown for every
           result, both can-park and can't-park. */}
-      <p className="mt-3 text-center text-xs text-ink-600 leading-relaxed px-2">
+      <p className="mt-3 text-center text-xs leading-relaxed px-2" style={{ color: '#A9CFBE' }}>
         {t('result.aiCaveat')}
       </p>
 
@@ -612,7 +612,7 @@ export default function ParkingResult({
                 moment "Save" becomes actionable, so it doesn't read as
                 optional busywork next to "Scan another". */}
             {isFirstSave && (
-              <p className="text-xs text-ink-600 text-center leading-relaxed mb-1">
+              <p className="text-xs text-center leading-relaxed mb-1" style={{ color: '#A9CFBE' }}>
                 {t('result.firstSaveValue')}
               </p>
             )}

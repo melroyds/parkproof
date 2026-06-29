@@ -184,11 +184,11 @@ export default function AuthFlow({ onDone, onCancel }: Props) {
 
   return (
     <div className="min-h-screen flex flex-col p-6 max-w-md mx-auto w-full">
-      <BackButton onClick={onCancel}>{t('common.back')}</BackButton>
+      <BackButton onClick={onCancel} className="!text-[#A9CFBE] hover:!text-paper-50">{t('common.back')}</BackButton>
 
       <div className="flex items-center gap-3 mb-1">
         <BrandMark className="w-10 h-10" />
-        <h2 className="font-display text-3xl font-extrabold text-ink-900">
+        <h2 className="font-display text-3xl font-extrabold text-paper-50">
           {stage.name === 'sign-up' && t('auth.signUpHeader')}
           {stage.name === 'sign-in' && t('auth.signInHeader')}
           {stage.name === 'verify' && t('auth.verifyHeader')}
@@ -196,7 +196,7 @@ export default function AuthFlow({ onDone, onCancel }: Props) {
           {stage.name === 'reset' && t('auth.resetHeader')}
         </h2>
       </div>
-      <p className="text-sm text-ink-600 mb-6 leading-relaxed">
+      <p className="text-sm mb-6 leading-relaxed" style={{ color: '#A9CFBE' }}>
         {stage.name === 'sign-up' && t('auth.signUpIntro')}
         {stage.name === 'sign-in' && t('auth.signInIntro')}
         {stage.name === 'verify' && t('auth.verifyIntro', { email: stage.email })}
@@ -232,10 +232,10 @@ export default function AuthFlow({ onDone, onCancel }: Props) {
           >
             {t('auth.continueWithGoogle')}
           </button>
-          <div className="flex items-center gap-3 my-2 text-xs text-ink-600">
-            <div className="flex-1 h-px bg-paper-300" />
+          <div className="flex items-center gap-3 my-2 text-xs" style={{ color: '#A9CFBE' }}>
+            <div className="flex-1 h-px bg-white/10" />
             <span>{t('auth.orDivider')}</span>
-            <div className="flex-1 h-px bg-paper-300" />
+            <div className="flex-1 h-px bg-white/10" />
           </div>
         </div>
       )}
@@ -245,7 +245,7 @@ export default function AuthFlow({ onDone, onCancel }: Props) {
           onSubmit={stage.name === 'sign-in' ? handleSignIn : handleSignUp}
           className="flex flex-col gap-3"
         >
-          <label className="text-sm font-semibold text-ink-700">
+          <label className="text-sm font-semibold text-paper-50">
             {t('auth.email')}
             <Input
               type="email"
@@ -258,7 +258,7 @@ export default function AuthFlow({ onDone, onCancel }: Props) {
               className="mt-1"
             />
           </label>
-          <label className="text-sm font-semibold text-ink-700">
+          <label className="text-sm font-semibold text-paper-50">
             {t('auth.password')}
             <Input
               type="password"
@@ -272,7 +272,7 @@ export default function AuthFlow({ onDone, onCancel }: Props) {
               className="mt-1"
             />
             {stage.name === 'sign-up' && (
-              <span className="block mt-1 text-xs text-ink-600 font-normal">
+              <span className="block mt-1 text-xs font-normal" style={{ color: '#A9CFBE' }}>
                 {t('auth.passwordHelp')}
               </span>
             )}
@@ -297,7 +297,7 @@ export default function AuthFlow({ onDone, onCancel }: Props) {
 
       {stage.name === 'verify' && (
         <form onSubmit={handleVerify} className="flex flex-col gap-3">
-          <label className="text-sm font-semibold text-ink-700">
+          <label className="text-sm font-semibold text-paper-50">
             {t('auth.verificationCode')}
             <Input
               type="text"
@@ -324,7 +324,7 @@ export default function AuthFlow({ onDone, onCancel }: Props) {
             type="button"
             onClick={handleResend}
             disabled={busy}
-            className="text-sm text-brand-700 hover:text-brand-800 underline self-center mt-1"
+            className="text-sm text-[#7BE3A4] hover:text-paper-50 underline self-center mt-1"
           >
             {t('auth.resendCode')}
           </button>
@@ -333,7 +333,7 @@ export default function AuthFlow({ onDone, onCancel }: Props) {
 
       {stage.name === 'forgot' && (
         <form onSubmit={handleForgot} className="flex flex-col gap-3">
-          <label className="text-sm font-semibold text-ink-700">
+          <label className="text-sm font-semibold text-paper-50">
             {t('auth.email')}
             <Input
               type="email"
@@ -359,7 +359,7 @@ export default function AuthFlow({ onDone, onCancel }: Props) {
 
       {stage.name === 'reset' && (
         <form onSubmit={handleReset} className="flex flex-col gap-3">
-          <label className="text-sm font-semibold text-ink-700">
+          <label className="text-sm font-semibold text-paper-50">
             {t('auth.codeFromEmail')}
             <Input
               type="text"
@@ -373,7 +373,7 @@ export default function AuthFlow({ onDone, onCancel }: Props) {
               className="mt-1 font-mono tracking-widest"
             />
           </label>
-          <label className="text-sm font-semibold text-ink-700">
+          <label className="text-sm font-semibold text-paper-50">
             {t('auth.newPassword')}
             <Input
               type="password"
@@ -399,31 +399,31 @@ export default function AuthFlow({ onDone, onCancel }: Props) {
       )}
 
       {/* Bottom links */}
-      <div className="mt-6 text-center text-sm text-ink-600 space-y-2">
+      <div className="mt-6 text-center text-sm space-y-2" style={{ color: '#A9CFBE' }}>
         {stage.name === 'sign-in' && (
           <>
-            <button onClick={() => goTo({ name: 'sign-up' })} className="text-brand-700 hover:text-brand-800 underline">
+            <button onClick={() => goTo({ name: 'sign-up' })} className="text-[#7BE3A4] hover:text-paper-50 underline">
               {t('auth.noAccount')}
             </button>
             <span className="mx-2" aria-hidden="true">·</span>
-            <button onClick={() => goTo({ name: 'forgot' })} className="text-brand-700 hover:text-brand-800 underline">
+            <button onClick={() => goTo({ name: 'forgot' })} className="text-[#7BE3A4] hover:text-paper-50 underline">
               {t('auth.forgotPasswordLink')}
             </button>
           </>
         )}
         {stage.name === 'sign-up' && (
-          <button onClick={() => goTo({ name: 'sign-in' })} className="text-brand-700 hover:text-brand-800 underline">
+          <button onClick={() => goTo({ name: 'sign-in' })} className="text-[#7BE3A4] hover:text-paper-50 underline">
             {t('auth.haveAccount')}
           </button>
         )}
         {(stage.name === 'forgot' || stage.name === 'reset' || stage.name === 'verify') && (
-          <button onClick={() => goTo({ name: 'sign-in' })} className="text-brand-700 hover:text-brand-800 underline">
+          <button onClick={() => goTo({ name: 'sign-in' })} className="text-[#7BE3A4] hover:text-paper-50 underline">
             {t('auth.backToSignIn')}
           </button>
         )}
       </div>
 
-      <p className="mt-auto pt-8 text-xs text-ink-600 text-center leading-relaxed">
+      <p className="mt-auto pt-8 text-xs text-center leading-relaxed" style={{ color: '#A9CFBE' }}>
         {t('auth.footer')}
       </p>
     </div>

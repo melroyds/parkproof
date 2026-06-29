@@ -17,7 +17,7 @@ export default function Clarify({ signPhoto, clarification, onPick, onCancel }: 
         {t('common.back')}
       </BackButton>
 
-      <h2 className="font-display text-4xl font-extrabold text-ink-900 leading-tight">
+      <h2 className="font-display text-4xl font-extrabold text-paper-50 leading-tight">
         {clarification.question}
       </h2>
 

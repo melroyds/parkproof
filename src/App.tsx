@@ -441,7 +441,7 @@ function App() {
     return (
       <main className="min-h-screen flex flex-col items-center justify-center p-6 text-center">
         <BrandMark className="w-20 h-20 mb-5 animate-pulse" />
-        <h2 className="font-display text-2xl font-extrabold text-ink-900">
+        <h2 className="font-display text-2xl font-extrabold text-paper-50">
           {t('auth.signingIn')}
         </h2>
       </main>
@@ -490,10 +490,10 @@ function App() {
           <Icon name="warning" className="w-8 h-8" />
         </div>
         <div role="alert">
-          <h2 className="font-display text-2xl font-extrabold text-ink-900">
+          <h2 className="font-display text-2xl font-extrabold text-paper-50">
             {view.offline ? t('errors.offlineTitle') : t('errors.somethingWrong')}
           </h2>
-          <p className="text-sm text-ink-700 mt-3 mb-6 break-words">
+          <p className="text-sm mt-3 mb-6 break-words" style={{ color: '#A9CFBE' }}>
             {view.offline ? t('errors.offlineBody') : view.message}
           </p>
         </div>

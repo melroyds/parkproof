@@ -33,10 +33,10 @@ export default function AuthSettings({ onBack, onOpenPrivacy, onDeleted }: Props
     // this but the type system can't know.
     return (
       <div className="min-h-screen flex flex-col p-6 max-w-md mx-auto w-full">
-        <BackButton onClick={onBack}>
+        <BackButton onClick={onBack} className="!text-[#A9CFBE] hover:!text-paper-50">
           {t('common.back')}
         </BackButton>
-        <p className="text-ink-700">{t('settings.youSignedOut')}</p>
+        <p className="text-paper-50">{t('settings.youSignedOut')}</p>
       </div>
     )
   }
@@ -106,12 +106,12 @@ export default function AuthSettings({ onBack, onOpenPrivacy, onDeleted }: Props
 
   return (
     <div className="min-h-screen flex flex-col p-6 max-w-md mx-auto w-full">
-      <BackButton onClick={onBack}>
+      <BackButton onClick={onBack} className="!text-[#A9CFBE] hover:!text-paper-50">
         {t('common.back')}
       </BackButton>
 
-      <h2 className="font-display text-3xl font-extrabold text-ink-900 mb-1">{t('settings.header')}</h2>
-      <p className="text-sm text-ink-600 mb-6 leading-relaxed">
+      <h2 className="font-display text-3xl font-extrabold text-paper-50 mb-1">{t('settings.header')}</h2>
+      <p className="text-sm mb-6 leading-relaxed" style={{ color: '#A9CFBE' }}>
         {t('settings.intro')}
       </p>
 

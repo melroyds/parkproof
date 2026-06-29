@@ -235,14 +235,14 @@ export default function SessionDetail({
 
   return (
     <div className="min-h-screen flex flex-col p-6 max-w-md mx-auto w-full">
-      <BackButton onClick={onBack}>
+      <BackButton onClick={onBack} className="text-[#7BE3A4] hover:text-paper-50">
         {t('common.backToHistory')}
       </BackButton>
 
-      <h2 className="font-display text-3xl font-extrabold tracking-tight text-ink-900 mb-1">
+      <h2 className="font-display text-3xl font-extrabold tracking-tight text-paper-50 mb-1">
         {t('session.header')}
       </h2>
-      <p className="text-sm text-ink-600 mb-3 leading-relaxed">
+      <p className="text-sm mb-3 leading-relaxed" style={{ color: '#A9CFBE' }}>
         {t('session.arrived', { when: fmtLocal(session.arrived_at, timeZone, true) })}
       </p>
 
@@ -584,7 +584,7 @@ export default function SessionDetail({
         {/* #9 — warn before exporting a cloud-pulled session whose photos may
             not embed, so a blank-evidence PDF doesn't leave silently. */}
         {hasRemotePhoto && (
-          <p className="text-xs text-ink-600 leading-relaxed text-center px-2">
+          <p className="text-xs leading-relaxed text-center px-2" style={{ color: '#A9CFBE' }}>
             {t('session.exportPhotoWarning')}
           </p>
         )}
@@ -594,7 +594,7 @@ export default function SessionDetail({
           href={verifyHref}
           target="_blank"
           rel="noreferrer"
-          className="text-xs text-brand-700 hover:text-brand-800 underline text-center min-h-[44px] inline-flex items-center justify-center py-2.5 -my-1.5"
+          className="text-xs text-[#7BE3A4] hover:text-paper-50 underline text-center min-h-[44px] inline-flex items-center justify-center py-2.5 -my-1.5"
         >
           {t('session.howToVerify')}
         </a>

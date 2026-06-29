@@ -27,17 +27,18 @@ export default function RecentScansPicker({ sessions, onPick, onDismiss }: Props
   return (
     <section className="mb-6">
       <div className="flex items-baseline justify-between mb-2">
-        <h3 className="font-display font-bold text-ink-900 text-sm uppercase tracking-widest">
+        <h3 className="font-display font-bold text-paper-50 text-sm uppercase tracking-widest">
           {t('reuse.pickerHeader')}
         </h3>
         <button
           onClick={onDismiss}
-          className="text-xs text-ink-600 hover:text-ink-900 underline"
+          className="text-xs underline hover:opacity-80"
+          style={{ color: '#7BE3A4' }}
         >
           {t('reuse.dismiss')}
         </button>
       </div>
-      <p className="text-xs text-ink-600 mb-3">
+      <p className="text-xs mb-3" style={{ color: '#A9CFBE' }}>
         {t('reuse.pickerCopy')}
       </p>
       <div className="flex flex-col gap-2">

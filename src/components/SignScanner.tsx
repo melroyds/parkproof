@@ -274,13 +274,13 @@ export default function SignScanner({ onCapture, onReuseSession, onNoSignScan, o
     <div className="min-h-screen flex flex-col p-6 max-w-md mx-auto w-full">
       <BackButton onClick={onCancel}>{t('common.back')}</BackButton>
 
-      <h2 className="font-display text-3xl font-extrabold text-ink-900 mb-1">
+      <h2 className="font-display text-3xl font-extrabold text-paper-50 mb-1">
         {t('scanner.header')}
       </h2>
-      <p className="text-sm text-ink-600 mb-1 leading-relaxed">
+      <p className="text-sm mb-1 leading-relaxed" style={{ color: '#A9CFBE' }}>
         {t('scanner.instructions')}
       </p>
-      <p className="text-xs text-ink-600 mb-6 leading-relaxed">
+      <p className="text-xs mb-6 leading-relaxed" style={{ color: '#A9CFBE' }}>
         {t('scanner.privacyLine')}
       </p>
 
@@ -412,7 +412,8 @@ export default function SignScanner({ onCapture, onReuseSession, onNoSignScan, o
               looking for. */}
           <button
             onClick={handleNoSignStart}
-            className="mt-6 text-sm text-ink-600 hover:text-ink-900 underline self-center transition-colors"
+            className="mt-6 text-sm underline self-center transition-colors hover:opacity-80"
+            style={{ color: '#7BE3A4' }}
           >
             {t('scanner.noSignHere')}
           </button>
@@ -459,7 +460,8 @@ export default function SignScanner({ onCapture, onReuseSession, onNoSignScan, o
           </button>
           <button
             onClick={() => setNoSignStage('idle')}
-            className="text-sm text-ink-600 hover:text-ink-900 underline self-center transition-colors"
+            className="text-sm underline self-center transition-colors hover:opacity-80"
+            style={{ color: '#7BE3A4' }}
           >
             {t('common.back')}
           </button>
@@ -474,7 +476,7 @@ export default function SignScanner({ onCapture, onReuseSession, onNoSignScan, o
               className="w-full rounded-lg border border-brand-900/10 object-contain max-h-[55vh] bg-white"
             />
           )}
-          <p className="text-xs text-ink-600 text-center">
+          <p className="text-xs text-center" style={{ color: '#A9CFBE' }}>
             {t('scanner.noSignAmbientCaption')}
           </p>
           <div className="flex gap-2">

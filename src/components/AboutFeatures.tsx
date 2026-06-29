@@ -97,13 +97,13 @@ export default function AboutFeatures({ onBack, onTryIt }: Props) {
 
   return (
     <div className="min-h-screen flex flex-col p-6 max-w-2xl mx-auto w-full">
-      <BackButton onClick={onBack}>{t('common.back')}</BackButton>
+      <BackButton onClick={onBack} className="!text-[#A9CFBE] hover:!text-paper-50">{t('common.back')}</BackButton>
 
       <header className="mb-10">
-        <h1 className="font-display text-4xl font-extrabold text-ink-900 leading-tight mb-3">
+        <h1 className="font-display text-4xl font-extrabold text-paper-50 leading-tight mb-3">
           {t('about.title')}
         </h1>
-        <p className="text-base text-ink-700 leading-relaxed max-w-prose">
+        <p className="text-base leading-relaxed max-w-prose" style={{ color: '#A9CFBE' }}>
           {t('about.lead')}
         </p>
       </header>
@@ -139,7 +139,7 @@ export default function AboutFeatures({ onBack, onTryIt }: Props) {
               section text column so it informs without undercutting the
               feature it sits beneath. */}
           {id === 'evidence' && (
-            <p className="-mt-6 mb-10 ml-14 text-xs text-ink-600 leading-relaxed">
+            <p className="-mt-6 mb-10 ml-14 text-xs leading-relaxed" style={{ color: '#A9CFBE' }}>
               {t('about.sealCaveat')}
             </p>
           )}
@@ -176,8 +176,8 @@ export default function AboutFeatures({ onBack, onTryIt }: Props) {
           photo, and ParkProof's surface should stay free of that for the
           regular-user audience. People who want to reach the maker can use
           the in-app Feedback form or the listed support email. */}
-      <div className="mb-8 pt-4 border-t border-paper-300">
-        <p className="text-xs text-ink-600 leading-relaxed">
+      <div className="mb-8 pt-4 border-t border-white/10">
+        <p className="text-xs leading-relaxed" style={{ color: '#A9CFBE' }}>
           {t('about.footerNote')}
         </p>
       </div>
@@ -267,19 +267,19 @@ function Section({ emoji, title, lead, items }: SectionProps) {
           <span aria-hidden>{emoji}</span>
         </div>
         <div className="flex-1 min-w-0">
-          <h2 className="font-display text-xl font-extrabold text-ink-900 leading-tight">
+          <h2 className="font-display text-xl font-extrabold text-paper-50 leading-tight">
             {title}
           </h2>
-          <p className="text-sm text-ink-600 leading-relaxed mt-1">{lead}</p>
+          <p className="text-sm leading-relaxed mt-1" style={{ color: '#A9CFBE' }}>{lead}</p>
         </div>
       </header>
       <ul className="space-y-2 mt-3">
         {list.map((item) => (
           <li
             key={item}
-            className="flex items-start gap-2 text-sm text-ink-700 leading-relaxed"
+            className="flex items-start gap-2 text-sm leading-relaxed text-paper-50"
           >
-            <span className="text-brand-500 shrink-0 mt-0.5" aria-hidden>
+            <span className="text-[#7BE3A4] shrink-0 mt-0.5" aria-hidden>
               ✓
             </span>
             <span>{item}</span>
