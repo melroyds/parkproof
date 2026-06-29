@@ -149,10 +149,10 @@
     "logCtaBlockedPermit": "Xác nhận giấy phép được hiển thị để lưu",
     "logCtaBlockedPermitZone": "Xác nhận bạn có giấy phép hợp lệ để lưu",
     "permitRequired": {
-      "kicker": "CẦN GIẤY PHÉP NGƯỜI KHUYẾT TẬT",
+      "kicker": "CẦN GIẤY PHÉP ĐỖ XE TIẾP CẬN",
       "header": "Chỗ đỗ xe này dành riêng cho người có giấy phép",
-      "copy": "Đỗ xe ở đây mà không có giấy phép người khuyết tật hợp lệ được hiển thị rõ ràng là vi phạm. Tại Victoria, mức phạt là $400 trở lên, và chỗ đỗ này dành riêng cho người cần đến nó. Nếu bạn không có giấy phép, hãy quét một chỗ khác.",
-      "ack": "Tôi có giấy phép người khuyết tật hợp lệ được hiển thị rõ ràng trên xe"
+      "copy": "Đỗ xe ở đây mà không có giấy phép đỗ xe tiếp cận hợp lệ được hiển thị rõ ràng là vi phạm. Tại Victoria, mức phạt là $400 trở lên, và chỗ đỗ này dành riêng cho người cần đến nó. Nếu bạn không có giấy phép, hãy quét một chỗ khác.",
+      "ack": "Tôi có giấy phép đỗ xe tiếp cận hợp lệ được hiển thị rõ ràng trên xe"
     },
     "permitZone": {
       "kicker": "KHU VỰC GIẤY PHÉP",
@@ -720,7 +720,7 @@
       "lead": "Những kiểm tra nhỏ giúp bạn khỏi dính một vé phạt không ngờ tới.",
       "items": [
         "Nếu ô đỗ cần trả phí (đồng hồ đo, EasyPark, PayStay), chúng tôi sẽ yêu cầu bạn xác nhận đã trả tiền trước khi lưu.",
-        "Nếu ô đỗ dành riêng cho người khuyết tật, chúng tôi hiện một cảnh báo đỏ rõ ràng.",
+        "Nếu ô đỗ dành riêng cho giấy phép đỗ xe tiếp cận, chúng tôi hiện một cảnh báo đỏ rõ ràng.",
         "Đỗ ở chỗ hoàn toàn không có biển báo? Bạn vẫn ghi lại được — kèm ảnh xung quanh để chứng minh thực sự chẳng có biển nào."
       ]
     },

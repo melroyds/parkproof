@@ -149,10 +149,10 @@
     "logCtaBlockedPermit": "Conferma il permesso esposto per salvare",
     "logCtaBlockedPermitZone": "Conferma di avere un permesso valido per salvare",
     "permitRequired": {
-      "kicker": "PERMESSO DISABILI RICHIESTO",
+      "kicker": "PERMESSO DI PARCHEGGIO ACCESSIBILE RICHIESTO",
       "header": "Questo posto è riservato ai titolari di permesso",
-      "copy": "Parcheggiare qui senza un permesso disabili valido chiaramente esposto è un'infrazione. In Victoria la multa è di $400 o più, e il posto è riservato a chi ne ha bisogno. Se non ne hai uno, scansiona un altro posto.",
-      "ack": "Ho un permesso disabili valido chiaramente esposto nel mio veicolo"
+      "copy": "Parcheggiare qui senza un permesso di parcheggio accessibile valido chiaramente esposto è un'infrazione. In Victoria la multa è di $400 o più, e il posto è riservato a chi ne ha bisogno. Se non ne hai uno, scansiona un altro posto.",
+      "ack": "Ho un permesso di parcheggio accessibile valido chiaramente esposto nel mio veicolo"
     },
     "permitZone": {
       "kicker": "ZONA A PERMESSO",
@@ -720,7 +720,7 @@
       "lead": "I piccoli controlli che ti evitano una multa che non avresti previsto.",
       "items": [
         "Se il posto va pagato (parchimetro, EasyPark, PayStay), ti chiediamo di confermare il pagamento prima di salvare.",
-        "Se il posto è riservato ai permessi disabili, mostriamo un avviso rosso ben visibile.",
+        "Se il posto è riservato ai permessi di parcheggio accessibile, mostriamo un avviso rosso ben visibile.",
         "Hai parcheggiato dove non ci sono cartelli? Puoi comunque registrarlo, con una foto di quel che c'è intorno a dimostrare che davvero non ce n'erano."
       ]
     },

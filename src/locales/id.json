@@ -65,7 +65,7 @@
       "lead": "Pemeriksaan-pemeriksaan kecil yang mencegahmu kena denda tak terduga.",
       "items": [
         "Kalau lokasinya berbayar (meter, EasyPark, PayStay), kami minta kamu centang dulu bahwa sudah bayar sebelum menyimpan.",
-        "Kalau lokasinya khusus pemegang izin disabilitas, kami tampilkan peringatan merah yang jelas.",
+        "Kalau lokasinya khusus pemegang izin parkir aksesibel, kami tampilkan peringatan merah yang jelas.",
         "Parkir di tempat yang tidak ada rambunya sama sekali? Tetap bisa kamu catat, lengkap dengan foto sekitar untuk menunjukkan memang tidak ada rambu."
       ]
     },
@@ -271,10 +271,10 @@
       "ack": "Saya sudah bayar (atau akan bayar sebelum pergi)"
     },
     "permitRequired": {
-      "kicker": "IZIN DISABILITAS DIPERLUKAN",
+      "kicker": "IZIN PARKIR AKSESIBEL DIPERLUKAN",
       "header": "Tempat ini dikhususkan untuk pemegang izin",
-      "copy": "Parkir di sini tanpa izin disabilitas sah yang ditampilkan dengan jelas adalah pelanggaran. Di Victoria dendanya $400 atau lebih, dan tempat ini dikhususkan untuk orang yang membutuhkannya. Jika kamu tidak punya, pindai tempat lain.",
-      "ack": "Saya punya izin disabilitas sah yang ditampilkan jelas di kendaraan saya"
+      "copy": "Parkir di sini tanpa izin parkir aksesibel sah yang ditampilkan dengan jelas adalah pelanggaran. Di Victoria dendanya $400 atau lebih, dan tempat ini dikhususkan untuk orang yang membutuhkannya. Jika kamu tidak punya, pindai tempat lain.",
+      "ack": "Saya punya izin parkir aksesibel sah yang ditampilkan jelas di kendaraan saya"
     },
     "permitZone": {
       "kicker": "ZONA IZIN",

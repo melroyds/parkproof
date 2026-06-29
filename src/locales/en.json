@@ -74,7 +74,7 @@
       "lead": "The little checks that stop you from getting a ticket you didn't see coming.",
       "items": [
         "If the bay needs paying (a meter, EasyPark, PayStay), we'll ask you to tick that you've paid before saving.",
-        "If the bay is reserved for disability permits, we show a clear red warning.",
+        "If the bay is reserved for accessible parking permits, we show a clear red warning.",
         "Parked somewhere with no signs at all? You can still log it, with a photo of the surroundings to show there really weren't any."
       ]
     },
@@ -283,10 +283,10 @@
       "ack": "I've paid (or will pay before walking away)"
     },
     "permitRequired": {
-      "kicker": "ACCESSIBILITY PERMIT REQUIRED",
+      "kicker": "ACCESSIBLE PARKING PERMIT REQUIRED",
       "header": "This bay is reserved for permit holders",
-      "copy": "Parking here without a valid disability permit clearly displayed is an offence. In Victoria the fine is $400 or more, and the bay is reserved for people who need it. If you don't have one, scan a different spot.",
-      "ack": "I have a valid disability permit clearly displayed in my vehicle"
+      "copy": "Parking here without a valid accessible parking permit clearly displayed is an offence. In Victoria the fine is $400 or more, and the bay is reserved for people who need it. If you don't have one, scan a different spot.",
+      "ack": "I have a valid accessible parking permit clearly displayed in my vehicle"
     },
     "permitZone": {
       "kicker": "PERMIT ZONE",
