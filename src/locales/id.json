@@ -638,7 +638,7 @@
   },
   "pdf": {
     "common": {
-      "fieldHeader": "Field",
+      "fieldHeader": "Bidang",
       "valueHeader": "Nilai",
       "dash": "—",
       "notCaptured": "Tidak terekam",

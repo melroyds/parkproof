@@ -117,7 +117,7 @@
     "signPhotoAlt": "Il cartello che hai scansionato in precedenza",
     "bulletsHeader": "Dettagli registrati",
     "youParked": "Hai parcheggiato: <strong>{{side}}</strong>",
-    "matchCopy": "Il cartello davanti a te corrisponde a questo? Riusalo per saltare la foto e avere in pochi secondi una nuova risposta su se puoi parcheggiare adesso."
+    "matchCopy": "Il cartello davanti a te corrisponde a questo? Riusalo per saltare la foto e scoprire in pochi secondi se puoi parcheggiare adesso."
   },
   "clarify": {
     "imageAlt": "Cartello scansionato"
@@ -660,7 +660,7 @@
       "body": "Ogni controllo riceve un timestamp, GPS e fotografie firmati crittograficamente."
     },
     "feature": {
-      "translateTitle": "Risposte in italiano semplice",
+      "translateTitle": "Risposte in linguaggio chiaro",
       "translateDesc": "Fotografa qualsiasi cartello di parcheggio australiano e ricevi in circa 12 secondi il verdetto: posso parcheggiare adesso?",
       "evidenceTitle": "Prove con manomissione rilevabile",
       "evidenceDesc": "Ogni parcheggio ottiene un timestamp firmato crittograficamente, GPS e foto.",

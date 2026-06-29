@@ -606,7 +606,7 @@
     "minLeft_other": "{{count}} मिनट बाकी",
     "hourLeft_one": "1 घंटा बाकी",
     "hoursLeft_other": "{{count}} घंटे बाकी",
-    "hoursMinsLeft": "{{hours}}घं {{mins}}मि बाकी",
+    "hoursMinsLeft": "{{hours}} घंटे {{mins}} मिनट बाकी",
     "justNow": "अभी",
     "minAgo_one": "1 मिनट पहले",
     "minAgo_other": "{{count}} मिनट पहले",
