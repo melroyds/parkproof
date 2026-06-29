@@ -1,0 +1,72 @@
+/* ParkProof — "Greenfield / Verified Pine" theme tokens (Tailwind v4 @theme).
+ *
+ * Drop-in replacement for the brand/ink/paper/accent tokens in src/index.css.
+ * The whole idea: pine green is the brand AND "verified" AND "go" — one colour,
+ * one promise. Keep the green dark and saturated; the failure mode is drifting
+ * into herbal/wellness mint. Mint is a 1px spark only, never a fill.
+ *
+ * Type: Space Grotesk for Latin display moments ONLY (wordmark, the verdict,
+ * big numerals). Inter + the Noto fallback chain carries all body and all 9
+ * locales, so the display face never touches CJK/Devanagari/Greek (the exact
+ * reason Fraunces had to go).
+ */
+
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&display=swap');
+
+@theme {
+  /* ── Brand: deep pine (brand = verified = go) ─────────────────────────── */
+  --color-brand-50:  #E9F3EE;
+  --color-brand-100: #C9E5D5;
+  --color-brand-200: #9CCFB2;
+  --color-brand-300: #63B187;
+  --color-brand-400: #2C8A5C;
+  --color-brand-500: #0E5C3A; /* base — header, primary buttons, the seal */
+  --color-brand-600: #0C5133;
+  --color-brand-700: #0A4129;
+  --color-brand-800: #073B25; /* "vault" — dark evidence panels, signed PDF */
+  --color-brand-900: #052A1B;
+
+  /* ── Ink: near-black green (14:1+ on paper) ───────────────────────────── */
+  --color-ink-500: #0B1A14; /* primary text */
+  --color-ink-400: #44554D; /* muted / secondary text */
+  --color-ink-300: #7C8B83; /* hints, disabled */
+
+  /* ── Paper: cool, green-tinted off-white (hue ~150°, NOT warm cream) ───── */
+  --color-paper-500: #F4F7F5; /* app background */
+  --color-surface:   #FFFFFF; /* cards */
+  --color-vault:     #073B25; /* dark evidence/PDF ground */
+
+  /* ── Accent: mint spark — RARE (seal glow, active-tap), never a fill ───── */
+  --color-accent-500: #7BE3A4;
+
+  /* ── Semantic: answer card ONLY ───────────────────────────────────────── */
+  --color-go:   #0E5C3A; /* = brand pine (verified = go) */
+  --color-stop: #C0392B; /* quarantined; only on the verdict card */
+
+  /* ── Type ─────────────────────────────────────────────────────────────── */
+  --font-display: 'Space Grotesk', 'Inter', system-ui, sans-serif;
+  --font-sans: 'Inter', 'Noto Sans', 'Noto Sans SC', 'Noto Sans KR',
+    'Noto Sans Devanagari', system-ui, sans-serif;
+
+  /* ── Shape ────────────────────────────────────────────────────────────── */
+  --radius-chip: 3px;    /* square-ish "ticket field" observation chips */
+  --radius-card: 8px;    /* standard cards */
+  --radius-verdict: 16px;/* the answer card — the one emphatic, rounded object */
+}
+
+/* Cool paper ground with a barely-visible engine-turned (banknote) texture.
+ * ~3% pine, invisible in bright sun so legibility is never harmed, reads as
+ * "official document" up close. Dark evidence surfaces flip to vault green. */
+body {
+  background-color: var(--color-paper-500);
+  background-image: repeating-linear-gradient(
+    115deg,
+    color-mix(in srgb, var(--color-brand-500) 3%, transparent) 0 1px,
+    transparent 1px 8px
+  );
+  color: var(--color-ink-500);
+  font-family: var(--font-sans);
+}
+
+/* Tabular figures on every countdown / timestamp so the numbers feel measured. */
+.tnum { font-variant-numeric: tabular-nums; }

@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>ParkProof — Greenfield / Verified Pine</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --brand: #0E5C3A; --brand-deep: #073B25; --brand-50: #E9F3EE; --brand-100: #C9E5D5;
+    --ink: #0B1A14; --ink-muted: #44554D; --ink-faint: #7C8B83;
+    --paper: #F4F7F5; --surface: #FFFFFF; --vault: #073B25;
+    --accent: #7BE3A4; --stop: #C0392B;
+    --display: 'Space Grotesk', system-ui, sans-serif;
+    --sans: 'Inter', system-ui, sans-serif;
+    --mono: 'IBM Plex Mono', monospace;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; font-family: var(--sans); color: var(--ink);
+    background-color: var(--paper);
+    background-image: repeating-linear-gradient(115deg, rgba(14,92,58,0.035) 0 1px, transparent 1px 8px);
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 1100px; margin: 0 auto; padding: 40px 24px 80px; }
+  h1 { font-family: var(--display); font-weight: 700; letter-spacing: -0.02em; color: var(--ink); margin: 0 0 4px; }
+  .sub { color: var(--ink-muted); margin: 0 0 28px; font-size: 15px; }
+  .ref { display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-end; padding: 18px 20px; background: var(--surface);
+         border: 1px solid rgba(14,92,58,0.18); border-radius: 10px; margin-bottom: 36px; }
+  .sw { width: 46px; height: 46px; border-radius: 7px; }
+  .swh { font-family: var(--mono); font-size: 10px; color: var(--ink-muted); margin-top: 5px; }
+  .screens { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 26px; }
+  .stack { display: flex; flex-direction: column; align-items: center; }
+  .cap { font-size: 13px; font-weight: 600; color: var(--ink-muted); margin-bottom: 10px; }
+  .frame { background: var(--ink); border-radius: 34px; padding: 8px; width: 320px; box-shadow: 0 12px 40px rgba(11,26,20,0.14); }
+  .screen { background: var(--paper); background-image: repeating-linear-gradient(115deg, rgba(14,92,58,0.04) 0 1px, transparent 1px 8px);
+            border-radius: 27px; padding: 18px 16px 20px; min-height: 560px; }
+  .screen.vault { background: var(--vault); background-image: repeating-linear-gradient(115deg, rgba(123,227,164,0.08) 0 1px, transparent 1px 7px); color: #DCEFE5; }
+  .brandrow { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; }
+  .word { display: flex; align-items: center; gap: 8px; font-family: var(--display); font-weight: 700; font-size: 19px; letter-spacing: -0.02em; }
+  .card { background: var(--surface); border: 1px solid rgba(14,92,58,0.18); border-radius: 8px; padding: 15px; }
+  .lbl { font-size: 11px; font-weight: 600; color: var(--brand); letter-spacing: 0.05em; text-transform: uppercase; }
+  .big { font-family: var(--display); font-weight: 700; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+  .btn { background: var(--brand); color: #EAF7EF; font-weight: 600; font-size: 14px; text-align: center; padding: 13px; border-radius: 11px; }
+  .btn-out { border: 1px solid rgba(14,92,58,0.4); color: var(--brand); font-weight: 600; font-size: 13px; text-align: center; padding: 10px; border-radius: 10px; }
+  .chip { display: inline-block; background: rgba(14,92,58,0.06); border: 1px solid rgba(14,92,58,0.22); color: var(--ink);
+          font-size: 11.5px; font-weight: 500; padding: 4px 9px; border-radius: 3px; }
+  .verdict { background: var(--surface); border: 1.5px solid var(--brand); border-radius: 16px; padding: 17px; }
+  .pill { display: inline-block; background: var(--brand); color: #EAF7EF; font-weight: 600; font-size: 13px; padding: 5px 12px; border-radius: 7px; font-variant-numeric: tabular-nums; }
+  .pill.stop { background: var(--stop); }
+  .mono { font-family: var(--mono); font-size: 11px; }
+  .seal-row { display: flex; align-items: center; gap: 12px; }
+  .muted { color: var(--ink-muted); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>ParkProof &mdash; Greenfield / Verified Pine</h1>
+  <p class="sub">Pine is the brand, &ldquo;verified&rdquo;, and &ldquo;go&rdquo; all at once. Cool paper, engine-turned texture, the Verified Seal as the hero object. Space Grotesk for the verdict, Inter for everything else.</p>
+
+  <div class="ref">
+    <div><div class="sw" style="background:#0E5C3A"></div><div class="swh">brand 0E5C3A</div></div>
+    <div><div class="sw" style="background:#073B25"></div><div class="swh">vault 073B25</div></div>
+    <div><div class="sw" style="background:#0B1A14"></div><div class="swh">ink 0B1A14</div></div>
+    <div><div class="sw" style="background:#F4F7F5;border:1px solid rgba(11,26,20,0.2)"></div><div class="swh">paper F4F7F5</div></div>
+    <div><div class="sw" style="background:#7BE3A4"></div><div class="swh">mint spark</div></div>
+    <div><div class="sw" style="background:#C0392B"></div><div class="swh">stop C0392B</div></div>
+    <div style="border-left:1px solid rgba(14,92,58,0.18);padding-left:20px">
+      <div style="font-family:var(--display);font-weight:700;font-size:24px;letter-spacing:-0.02em">You can park</div>
+      <div style="font-size:13px;color:var(--ink-muted);margin-top:2px">Space Grotesk 700 &middot; verdict &amp; numerals</div>
+      <div style="font-size:14px;margin-top:8px">The quick brown fox &mdash; Inter 400/500/600 body</div>
+    </div>
+  </div>
+
+  <div class="screens">
+
+    <div class="stack">
+      <div class="cap">Home &middot; currently parked</div>
+      <div class="frame"><div class="screen">
+        <div class="brandrow">
+          <div class="word">
+            <svg width="22" height="22" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10.5" fill="none" stroke="#0E5C3A" stroke-width="1.3" stroke-dasharray="1.5 1.5"/><circle cx="12" cy="12" r="7" fill="#0E5C3A"/><path d="M8.8 12.1l2.2 2.2 4.2-4.4" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            ParkProof
+          </div>
+          <span class="mono muted">EN</span>
+        </div>
+        <div class="card" style="margin-bottom:14px">
+          <div class="lbl">Currently parked</div>
+          <div style="display:flex;align-items:baseline;gap:8px;margin-top:6px">
+            <span class="big" style="font-size:36px;color:var(--brand)">1h 30m</span>
+            <span class="muted" style="font-size:12px;font-weight:500">left</span>
+          </div>
+          <div style="font-size:13px;font-weight:500;margin-top:8px">12 King&#39;s Way, Melbourne</div>
+          <div class="muted" style="font-size:12px;margin-top:3px">Leave by 4:00 PM</div>
+          <div style="border-top:1px solid rgba(14,92,58,0.13);margin-top:12px;padding-top:10px;display:flex;justify-content:space-between;font-size:12px;font-weight:500">
+            <span style="color:var(--brand)">4 min walk</span><span class="muted">I&#39;ve left</span>
+          </div>
+        </div>
+        <div class="btn" style="margin-bottom:10px">Scan a sign</div>
+        <div class="muted" style="text-align:center;font-size:12.5px;font-weight:500;padding:6px">7 saved records</div>
+      </div></div>
+    </div>
+
+    <div class="stack">
+      <div class="cap">The verdict</div>
+      <div class="frame"><div class="screen">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:13px;font-size:13px;font-weight:600" class="muted">&lsaquo;&nbsp; Your reading</div>
+        <div class="verdict" style="margin-bottom:13px">
+          <div style="display:flex;align-items:center;gap:8px">
+            <svg width="22" height="22" viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="#0E5C3A"/><path d="M7.5 12.3l3 3 6-6.2" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span class="big" style="font-size:22px">You can park here</span>
+          </div>
+          <div class="pill" style="margin-top:12px">Leave by 4:00 PM &middot; 1h 30m</div>
+          <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:13px">
+            <span class="chip">2P</span><span class="chip">Mon&ndash;Fri 8am&ndash;6pm</span><span class="chip">&rarr; Right side</span>
+          </div>
+        </div>
+        <div class="card seal-row" style="margin-bottom:13px">
+          <svg width="44" height="44" viewBox="0 0 48 48"><circle cx="24" cy="24" r="22.5" fill="none" stroke="#7BE3A4" stroke-width="2"/><circle cx="24" cy="24" r="20" fill="none" stroke="#0E5C3A" stroke-width="1.2" stroke-dasharray="1.6 1.6"/><circle cx="24" cy="24" r="14.5" fill="#0E5C3A"/><path d="M18 24.2l4 4 8.4-8.6" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <div><div style="font-size:13px;font-weight:600">Signed &amp; tamper-evident</div><div class="mono" style="color:var(--brand);margin-top:2px">KMS &middot; f3a9c4…b21</div></div>
+        </div>
+        <div style="display:flex;gap:9px;margin-bottom:9px"><div class="btn-out" style="flex:1">Looks right</div><div class="btn-out" style="flex:1;border-color:rgba(11,26,20,0.2);color:var(--ink-muted)">Retake</div></div>
+        <div class="btn">Save this spot</div>
+      </div></div>
+    </div>
+
+    <div class="stack">
+      <div class="cap">Payment required</div>
+      <div class="frame"><div class="screen">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:13px;font-size:13px;font-weight:600" class="muted">&lsaquo;&nbsp; Your reading</div>
+        <div class="verdict" style="margin-bottom:13px">
+          <div style="display:flex;align-items:center;gap:8px">
+            <svg width="22" height="22" viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="#0E5C3A"/><path d="M7.5 12.3l3 3 6-6.2" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span class="big" style="font-size:22px">You can park here</span>
+          </div>
+          <div class="pill" style="margin-top:12px">Until 6:00 PM &middot; paid</div>
+        </div>
+        <div class="card" style="border-color:rgba(14,92,58,0.35);margin-bottom:12px">
+          <div style="font-size:13px;font-weight:600">This bay needs payment</div>
+          <div class="muted" style="font-size:12px;margin:5px 0 11px">Pay before you leave the car.</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <div class="btn-out" style="flex:1">Open EasyPark</div><div class="btn-out" style="flex:1">Open PayStay</div>
+          </div>
+          <label style="display:flex;align-items:center;gap:8px;margin-top:12px;font-size:12.5px;font-weight:500">
+            <span style="width:18px;height:18px;border:1.5px solid var(--brand);border-radius:4px;display:inline-block"></span> Yes, I&#39;ve paid
+          </label>
+        </div>
+        <div class="btn" style="opacity:.5">Save this spot</div>
+      </div></div>
+    </div>
+
+    <div class="stack">
+      <div class="cap">Evidence record &middot; the vault</div>
+      <div class="frame"><div class="screen vault">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;font-size:13px;font-weight:600;color:#9FCBB5">&lsaquo;&nbsp; Record &middot; 30 Jun 2026</div>
+        <div style="display:flex;justify-content:center;margin:6px 0 18px">
+          <svg width="76" height="76" viewBox="0 0 76 76"><circle cx="38" cy="38" r="36" fill="none" stroke="#7BE3A4" stroke-width="1.5" opacity="0.6"/><circle cx="38" cy="38" r="31" fill="none" stroke="#7BE3A4" stroke-width="1" stroke-dasharray="1.4 1.8"/><circle cx="38" cy="38" r="23" fill="#0E5C3A"/><path d="M29 38.5l6 6 13-13.5" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <div style="text-align:center;font-family:var(--display);font-weight:600;font-size:16px;color:#EAF7EF">Verified record</div>
+        <div style="text-align:center;font-size:11px;color:#9FCBB5;margin-top:3px">KMS ECDSA P-256 &middot; signed 04:30 UTC</div>
+        <div style="background:rgba(255,255,255,0.05);border:1px solid rgba(123,227,164,0.22);border-radius:8px;padding:11px;margin-top:16px">
+          <div class="mono" style="color:#9FCBB5;font-size:10px;line-height:1.7;word-break:break-all">{"schema":"parkproof-evidence-v1",<br>"session_id":"a7f…","arrived_at":<br>"2026-06-30T14:30:00+10:00",…}</div>
+        </div>
+        <div style="display:flex;gap:9px;margin-top:14px">
+          <div class="btn-out" style="flex:1;border-color:rgba(123,227,164,0.5);color:#9FE3C0">Export PDF</div>
+          <div class="btn" style="flex:1;background:#7BE3A4;color:#073B25">How to verify</div>
+        </div>
+      </div></div>
+    </div>
+
+  </div>
+</div>
+</body>
+</html>
