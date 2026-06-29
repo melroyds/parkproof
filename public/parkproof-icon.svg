@@ -1,37 +1,15 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
   <title id="title">ParkProof app icon</title>
-  <desc id="desc">Layered blue and navy serif P monogram with an integrated alarm clock.</desc>
-  <defs>
-    <style>
-      .serif { font-family: Fraunces, Georgia, 'Times New Roman', serif; font-weight: 800; }
-    </style>
-  </defs>
+  <desc id="desc">Datum P: a pine P drawn as a surveyor's instrument with a datum point and an index notch.</desc>
 
-  <!-- App tile -->
+  <!-- App tile (stripped by scripts/_composite_hero.py before compositing onto the photo sign) -->
   <rect x="34" y="34" width="444" height="444" rx="96" fill="#F3F6F4"/>
 
-  <!-- Shadow P -->
-  <text class="serif" x="154" y="394" font-size="330" fill="#073B25">P</text>
-
-  <!-- Front P -->
-  <text class="serif" x="106" y="344" font-size="330" fill="#0E5C3A">P</text>
-
-  <!-- Alarm clock integrated into the bowl of the front P -->
-  <g transform="translate(252 185)">
-    <!-- bells -->
-    <path d="M-70,-50 C-94,-44 -102,-22 -94,-4 L-48,-18 C-49,-35 -57,-45 -70,-50Z" fill="#F3F6F4"/>
-    <path d="M70,-50 C94,-44 102,-22 94,-4 L48,-18 C49,-35 57,-45 70,-50Z" fill="#F3F6F4"/>
-    <circle cx="-82" cy="-57" r="5" fill="#F3F6F4"/>
-    <circle cx="82" cy="-57" r="5" fill="#F3F6F4"/>
-
-    <!-- face -->
-    <circle cx="0" cy="0" r="76" fill="#F3F6F4"/>
-    <circle cx="0" cy="0" r="68" fill="none" stroke="#0E5C3A" stroke-width="10"/>
-    <circle cx="0" cy="0" r="84" fill="none" stroke="#F3F6F4" stroke-width="8"/>
-
-    <!-- hands -->
-    <line x1="0" y1="0" x2="-38" y2="-28" stroke="#073B25" stroke-width="12" stroke-linecap="round"/>
-    <line x1="0" y1="0" x2="45" y2="-34" stroke="#073B25" stroke-width="12" stroke-linecap="round"/>
-    <circle cx="0" cy="0" r="12" fill="#073B25"/>
+  <!-- Datum P -->
+  <g transform="translate(18 47) scale(4.4)">
+    <rect x="27" y="19" width="12.5" height="63" fill="#0E5C3A"/>
+    <path fill-rule="evenodd" fill="#0E5C3A" d="M57 13 A24 24 0 1 0 57 61 A24 24 0 1 0 57 13 Z M57 25 A12 12 0 1 1 57 49 A12 12 0 1 1 57 25 Z"/>
+    <circle cx="57" cy="37" r="5.5" fill="#073B25"/>
+    <path d="M73 20 L80.5 17.5 L77.5 27 Z" fill="#7BE3A4"/>
   </g>
 </svg>

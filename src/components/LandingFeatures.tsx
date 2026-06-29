@@ -1,6 +1,5 @@
 import { Trans, useTranslation } from 'react-i18next'
 import Icon from './Icon'
-import Button from './ui/Button'
 import VerifiedSeal from './VerifiedSeal'
 
 /**
@@ -59,13 +58,13 @@ export default function LandingFeatures({ onScanCta, onSignInCta }: Props) {
     { num: '3', tone: 'accent', key: 'answer', icon: 'check' },
   ]
 
-  // Three pine-family step badges: pine, dark ink, muted slate-green accent.
-  // Kept tonal (no vivid pop) so the Greenfield palette stays calm — accent
-  // is the restrained slate-green, used only here as a secondary surface.
+  // Three step badges, now sitting on the dark vault how-it-works cards.
+  // Kept as translucent paper-tinted discs so the mint stays a rare spark
+  // (it lives only on the index notch / hairlines on this surface).
   const stepToneClasses: Record<'brand' | 'ink' | 'accent', string> = {
-    brand: 'bg-brand-500 text-white',
-    ink: 'bg-ink-700 text-white',
-    accent: 'bg-accent-500 text-white',
+    brand: 'bg-white/10 text-paper-50',
+    ink: 'bg-white/10 text-paper-50',
+    accent: 'bg-white/10 text-paper-50',
   }
 
   return (
@@ -87,7 +86,8 @@ export default function LandingFeatures({ onScanCta, onSignInCta }: Props) {
           src={`${import.meta.env.BASE_URL}hero-illustration.png`}
           alt=""
           aria-hidden
-          className="w-full aspect-[5/4] object-cover rounded-2xl border border-brand-900/10 select-none pointer-events-none"
+          className="w-full aspect-[5/4] object-cover rounded-2xl border select-none pointer-events-none shadow-[0_8px_28px_rgba(0,0,0,0.3)]"
+          style={{ borderColor: 'rgba(123,227,164,0.22)' }}
         />
       </div>
 
@@ -98,16 +98,16 @@ export default function LandingFeatures({ onScanCta, onSignInCta }: Props) {
             and its line break where its own grammar wants it. The accent span
             is `block`, so the brand-blue word drops onto its own line (the
             "simple." rhythm) wherever the translation puts it. */}
-        <h1 className="font-display text-5xl sm:text-6xl font-extrabold text-ink-900 tracking-tight leading-[0.95]">
+        <h1 className="font-display text-5xl sm:text-6xl font-extrabold text-paper-50 tracking-tight leading-[0.95]">
           <Trans
             i18nKey="landing.heroTitle"
-            components={{ accent: <span className="block text-brand-500" /> }}
+            components={{ accent: <span className="block text-[#7BE3A4]" /> }}
           />
         </h1>
-        <p className="text-sm text-ink-700 mt-4 leading-relaxed max-w-[22rem]">
+        <p className="text-sm mt-4 leading-relaxed max-w-[22rem]" style={{ color: '#A9CFBE' }}>
           <Trans
             i18nKey="landing.heroSubhead"
-            components={{ accent: <span className="text-brand-600 font-bold" /> }}
+            components={{ accent: <span className="text-paper-50 font-bold" /> }}
           />
         </p>
       </div>
@@ -115,8 +115,8 @@ export default function LandingFeatures({ onScanCta, onSignInCta }: Props) {
       {/* ── Three checkmark value props ─────────────────────────────── */}
       <ul className="mb-6 space-y-3">
         {bullets.map(({ key }) => (
-          <li key={key} className="flex items-center gap-2.5 text-base text-ink-800">
-            <span className="inline-flex items-center justify-center w-6 h-6 rounded-full border-2 border-brand-500 text-brand-500 shrink-0">
+          <li key={key} className="flex items-center gap-2.5 text-base text-paper-50">
+            <span className="inline-flex items-center justify-center w-6 h-6 rounded-full border-2 border-[#7BE3A4] text-[#7BE3A4] shrink-0">
               <Icon name="check" className="w-3.5 h-3.5" strokeWidth={3} />
             </span>
             <span>{t(`landing.bullet.${key}`)}</span>
@@ -127,21 +127,21 @@ export default function LandingFeatures({ onScanCta, onSignInCta }: Props) {
       {/* ── Accuracy caveat. Quiet, muted. Sets the expectation that the
           AI read is a helpful first pass, not legal advice, BEFORE the
           first-timer hands over a photo + GPS. */}
-      <p className="text-xs text-ink-600 leading-relaxed mb-6 max-w-[24rem]">
+      <p className="text-xs leading-relaxed mb-6 max-w-[24rem]" style={{ color: '#A9CFBE' }}>
         {t('landing.accuracyNote')}
       </p>
 
       {/* ── Primary CTA. Flat pine (Greenfield). Larger than the standard
           home-screen scan button to anchor the page; the camera icon
           and the bigger padding read as "this is the thing you do". */}
-      <Button
-        size="lg"
+      <button
+        type="button"
         onClick={onScanCta}
-        className="w-full gap-3 mb-3"
+        className="w-full inline-flex items-center justify-center gap-3 mb-3 bg-paper-50 hover:bg-white active:bg-paper-100 text-brand-800 text-lg font-semibold py-4 rounded-xl shadow-[0_4px_16px_rgba(0,0,0,0.25)] transition-colors"
       >
         <Icon name="camera" className="w-6 h-6" strokeWidth={2} />
         {t('landing.cta')}
-      </Button>
+      </button>
 
       {/* ── Secondary sign-in CTA. Renders ONLY for first-time visitors
           who aren't already signed in (App.tsx gates the prop). Returning
@@ -162,7 +162,8 @@ export default function LandingFeatures({ onScanCta, onSignInCta }: Props) {
         <button
           type="button"
           onClick={onSignInCta}
-          className="w-full bg-white hover:bg-paper-50 active:bg-paper-100 border border-paper-300 hover:border-brand-500 text-ink-800 font-semibold py-3 rounded-xl transition-colors mb-3"
+          className="w-full border text-paper-50 font-semibold py-3 rounded-xl transition-colors mb-3 hover:brightness-110"
+          style={{ background: 'rgba(255,255,255,0.055)', borderColor: 'rgba(123,227,164,0.22)' }}
         >
           {t('home.signInToSync')}
         </button>
@@ -170,8 +171,8 @@ export default function LandingFeatures({ onScanCta, onSignInCta }: Props) {
 
       {/* Reassurance line under the CTA — small shield + line. Echoes the
           civic, "we're on your side" tone of the brand. */}
-      <div className="flex items-center justify-center gap-2 text-xs text-ink-600 mb-4">
-        <ShieldIcon className="w-4 h-4 text-brand-500" />
+      <div className="flex items-center justify-center gap-2 text-xs mb-4" style={{ color: '#A9CFBE' }}>
+        <ShieldIcon className="w-4 h-4 text-[#7BE3A4]" />
         <span>{t('landing.builtFor')}</span>
       </div>
 
@@ -179,47 +180,54 @@ export default function LandingFeatures({ onScanCta, onSignInCta }: Props) {
           Works offline" so direct entrants (PWA / bookmark / /app/ deep
           link) who never see the marketing site get the same reassurance.
           Dot-separated chips, centred, muted. */}
-      <div className="flex items-center justify-center flex-wrap gap-x-2.5 gap-y-1 text-xs font-medium text-ink-600 mb-2">
+      <div className="flex items-center justify-center flex-wrap gap-x-2.5 gap-y-1 text-xs font-medium mb-2" style={{ color: '#A9CFBE' }}>
         <span>{t('landing.trustFree')}</span>
-        <span aria-hidden className="text-paper-300">·</span>
+        <span aria-hidden style={{ color: 'rgba(123,227,164,0.4)' }}>·</span>
         <span>{t('landing.trustNoAccount')}</span>
-        <span aria-hidden className="text-paper-300">·</span>
+        <span aria-hidden style={{ color: 'rgba(123,227,164,0.4)' }}>·</span>
         <span>{t('landing.trustOffline')}</span>
       </div>
 
       {/* Location-optional reassurance — privacy-wary users can decline GPS
           without breaking the app. */}
-      <p className="text-center text-2xs text-ink-600 leading-relaxed mb-12">
+      <p className="text-center text-2xs leading-relaxed mb-12" style={{ color: '#A9CFBE' }}>
         {t('landing.locationOptional')}
       </p>
 
       {/* ── How it works ─────────────────────────────────────────────── */}
-      <h2 className="font-display text-2xl font-extrabold text-ink-900 text-center mb-5">
+      <h2 className="font-display text-2xl font-extrabold text-paper-50 text-center mb-5">
         {t('landing.howItWorks.heading')}
       </h2>
       <div className="grid grid-cols-3 gap-2 mb-10">
         {steps.map(({ num, tone, key, icon }, idx) => (
           <div key={num} className="relative">
-            <div className="bg-white border border-paper-300 rounded-lg p-3 flex flex-col items-center text-center h-full">
+            <div
+              className="border rounded-xl p-3 flex flex-col items-center text-center h-full"
+              style={{ background: 'rgba(255,255,255,0.055)', borderColor: 'rgba(123,227,164,0.22)' }}
+            >
               <div className={`relative w-12 h-12 rounded-full ${stepToneClasses[tone]} flex items-center justify-center mb-2`}>
                 <Icon name={icon} className="w-5 h-5" strokeWidth={2.25} />
                 {/* Numbered badge in the bottom-right corner of the icon
                     circle — matches the mockup's "1 / 2 / 3" pill. */}
-                <span className="absolute -bottom-1 -left-1 bg-white border border-paper-300 rounded-full w-5 h-5 flex items-center justify-center text-2xs font-bold text-ink-800">
+                <span
+                  className="absolute -bottom-1 -left-1 border rounded-full w-5 h-5 flex items-center justify-center text-2xs font-bold text-brand-800 bg-paper-50"
+                  style={{ borderColor: 'rgba(123,227,164,0.22)' }}
+                >
                   {num}
                 </span>
               </div>
-              <h3 className="font-display text-xs font-extrabold text-ink-900 leading-tight mb-1">
+              <h3 className="font-display text-xs font-extrabold text-paper-50 leading-tight mb-1">
                 {t(`landing.howItWorks.${key}Title`)}
               </h3>
-              <p className="text-2xs text-ink-600 leading-relaxed">
+              <p className="text-2xs leading-relaxed" style={{ color: '#A9CFBE' }}>
                 {t(`landing.howItWorks.${key}Desc`)}
               </p>
             </div>
             {idx < steps.length - 1 && (
               <span
                 aria-hidden
-                className="hidden sm:block absolute top-9 -right-3 text-ink-400 text-lg pointer-events-none"
+                className="hidden sm:block absolute top-9 -right-3 text-lg pointer-events-none"
+                style={{ color: 'rgba(123,227,164,0.5)' }}
               >
                 ›
               </span>
@@ -229,19 +237,27 @@ export default function LandingFeatures({ onScanCta, onSignInCta }: Props) {
       </div>
 
       {/* ── Tamper-proof evidence callout ────────────────────────────── */}
-      <div className="bg-brand-50 border border-brand-100 rounded-lg p-4 flex items-start gap-3 mb-10">
+      <div
+        className="border rounded-2xl p-4 flex items-start gap-3 mb-10 shadow-[0_4px_16px_rgba(0,0,0,0.25)]"
+        style={{
+          background: 'rgba(255,255,255,0.055)',
+          borderColor: 'rgba(123,227,164,0.22)',
+          backgroundImage:
+            'repeating-linear-gradient(115deg, rgba(123,227,164,0.07) 0 1px, transparent 1px 8px)',
+        }}
+      >
         <div className="shrink-0">
           <VerifiedSeal size={40} glow />
         </div>
         <div className="flex-1 min-w-0">
-          <h3 className="font-display text-base font-extrabold text-ink-900 leading-tight">
+          <h3 className="font-display text-base font-extrabold text-paper-50 leading-tight">
             {t('landing.evidenceCallout.title')}
           </h3>
-          <p className="text-xs text-ink-700 mt-1 leading-relaxed">
+          <p className="text-xs mt-1 leading-relaxed" style={{ color: '#A9CFBE' }}>
             {t('landing.evidenceCallout.body')}
           </p>
         </div>
-        <span aria-hidden className="text-ink-400 text-xl shrink-0 leading-none mt-1">›</span>
+        <span aria-hidden className="text-xl shrink-0 leading-none mt-1" style={{ color: 'rgba(123,227,164,0.5)' }}>›</span>
       </div>
     </div>
   )

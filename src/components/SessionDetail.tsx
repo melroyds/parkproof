@@ -239,41 +239,57 @@ export default function SessionDetail({
         {t('common.backToHistory')}
       </BackButton>
 
-      <h2 className="font-display text-3xl font-extrabold text-ink-900 mb-1">
+      <h2 className="font-display text-3xl font-extrabold tracking-tight text-ink-900 mb-1">
         {t('session.header')}
       </h2>
       <p className="text-sm text-ink-600 mb-3 leading-relaxed">
         {t('session.arrived', { when: fmtLocal(session.arrived_at, timeZone, true) })}
       </p>
 
+      {/* Register A — the signed-record vault panel. The cryptographic proof
+          is the brand's hero moment, so it sits on vault green with a
+          banknote guilloché texture, a glowing mint Verified Seal, paper
+          text, and the signature hash in mono mint. */}
       {session.signature && (
-        <div className="mb-6 flex items-center gap-3 self-start">
-          <VerifiedSeal size={44} glow />
-          <div className="min-w-0">
-            <p className="text-sm font-display font-bold text-brand-800">
-              {t('session.cryptoSigned')}
-            </p>
-            <p className="text-2xs text-brand-700 font-mono truncate">
-              {session.signature.signature_base64.slice(0, 16)}
-              {' · '}
-              {new Date(session.signature.signed_at).toLocaleString('en-AU', {
-                day: 'numeric',
-                month: 'short',
-                hour: 'numeric',
-                minute: '2-digit',
-              })}
-            </p>
+        <div
+          className="mb-5 rounded-2xl border p-5 shadow-[0_14px_40px_rgba(7,59,37,0.22),0_2px_6px_rgba(7,59,37,0.12)]"
+          style={{
+            background: '#073B25',
+            backgroundImage:
+              'repeating-linear-gradient(115deg, rgba(123,227,164,0.055) 0 1px, transparent 1px 8px)',
+            borderColor: 'rgba(123,227,164,0.22)',
+          }}
+        >
+          <div className="flex items-center gap-3.5">
+            <VerifiedSeal size={48} glow />
+            <div className="min-w-0">
+              <p className="text-sm font-display font-bold text-paper-50">
+                {t('session.cryptoSigned')}
+              </p>
+              <p className="text-2xs font-mono truncate text-[#7BE3A4]">
+                {session.signature.signature_base64.slice(0, 16)}
+                <span style={{ color: '#A9CFBE' }}>
+                  {' · '}
+                  {new Date(session.signature.signed_at).toLocaleString('en-AU', {
+                    day: 'numeric',
+                    month: 'short',
+                    hour: 'numeric',
+                    minute: '2-digit',
+                  })}
+                </span>
+              </p>
+            </div>
           </div>
+          {/* Plain-English meaning of the "Cryptographically signed" badge —
+              what tamper-proof does and does NOT prove. On the vault panel it
+              reads in muted sage. */}
+          <p
+            className="text-xs leading-relaxed mt-3"
+            style={{ color: '#A9CFBE' }}
+          >
+            {t('about.sealCaveat')}
+          </p>
         </div>
-      )}
-
-      {/* Plain-English meaning of the "Cryptographically signed" badge — what
-          tamper-proof does and does NOT prove, in the one place the badge is
-          shown. Stops the wary user reading it as "this wins my dispute". */}
-      {session.signature && (
-        <p className="text-xs text-ink-600 leading-relaxed mb-5 -mt-3">
-          {t('about.sealCaveat')}
-        </p>
       )}
 
       {/* #3 — silent photo-sync failure made visible, with a retry. */}
@@ -293,7 +309,7 @@ export default function SessionDetail({
         </div>
       )}
 
-      <Card className="mb-3">
+      <Card className="mb-3 rounded-2xl border-transparent shadow-[0_14px_40px_rgba(7,59,37,0.16),0_2px_6px_rgba(7,59,37,0.08)]">
         <dl className="space-y-4 text-sm">
           <div>
             <dt className="text-xs uppercase tracking-widest font-semibold text-ink-600">
@@ -408,7 +424,7 @@ export default function SessionDetail({
 
       {/* Note — user-supplied context. Soft-asks for it on empty so people
           remember to add the WHY rather than just the WHEN-and-WHERE. */}
-      <Card className="mb-3">
+      <Card className="mb-3 rounded-2xl border-transparent shadow-[0_14px_40px_rgba(7,59,37,0.16),0_2px_6px_rgba(7,59,37,0.08)]">
         <div className="flex items-baseline justify-between mb-2">
           <h3
             id="session-note-label"
@@ -496,7 +512,7 @@ export default function SessionDetail({
       {/* Sign photo — only rendered for sign-translated sessions. No-sign
           sessions drop straight to the ambient/car photos below. */}
       {session.sign_photo && (
-        <Card className="mb-3">
+        <Card className="mb-3 rounded-2xl border-transparent shadow-[0_14px_40px_rgba(7,59,37,0.16),0_2px_6px_rgba(7,59,37,0.08)]">
           <h3 className="text-xs uppercase tracking-widest font-semibold text-ink-600 mb-2">
             {t('session.signPhotoLabel')}
           </h3>
@@ -512,7 +528,7 @@ export default function SessionDetail({
           optional ambient (surroundings) photo, which substitutes for the
           sign photo as the user-supplied visual evidence. */}
       {session.no_sign && (
-        <Card className="mb-3">
+        <Card className="mb-3 rounded-2xl border-transparent shadow-[0_14px_40px_rgba(7,59,37,0.16),0_2px_6px_rgba(7,59,37,0.08)]">
           <h3 className="text-xs uppercase tracking-widest font-semibold text-ink-600 mb-2">
             {t('session.noSignLabel')}
           </h3>
@@ -539,7 +555,7 @@ export default function SessionDetail({
       )}
 
       {session.car_photo && (
-        <Card className="mb-3">
+        <Card className="mb-3 rounded-2xl border-transparent shadow-[0_14px_40px_rgba(7,59,37,0.16),0_2px_6px_rgba(7,59,37,0.08)]">
           <h3 className="text-xs uppercase tracking-widest font-semibold text-ink-600 mb-2">
             {t('session.carPhotoLabel')}
           </h3>

@@ -4,6 +4,7 @@ import type { ParkingRules } from '../types'
 import Icon from './Icon'
 import Button from './ui/Button'
 import Card from './ui/Card'
+import VerifiedSeal from './VerifiedSeal'
 import { submitFeedback } from '../lib/feedback'
 import { PARKING_APPS, launchUrlFor, type ParkingApp } from '../lib/parking-apps'
 import { useNow } from '../lib/use-now'
@@ -242,10 +243,10 @@ export default function ParkingResult({
 
   return (
     <div className="min-h-screen flex flex-col p-6 max-w-md mx-auto w-full">
-      {/* Answer card — the one emphatic object. GO is pine, STOP keeps the
-          quarantined red. Flat white surface, crisp 1.5px coloured border. */}
+      {/* Answer card — the one emphatic object that FLOATS off the page with a
+          soft pine-tinted shadow. GO is pine, STOP keeps the quarantined red. */}
       <div
-        className={`rounded-2xl p-8 text-center bg-white ${
+        className={`rounded-2xl p-8 text-center bg-white shadow-[0_14px_40px_rgba(7,59,37,0.16),0_2px_6px_rgba(7,59,37,0.08)] ${
           can_park_now
             ? 'border-[1.5px] border-brand-500'
             : 'border-[1.5px] border-red-500'
@@ -264,7 +265,7 @@ export default function ParkingResult({
           ref={verdictRef}
           tabIndex={-1}
           aria-describedby={can_park_now && untilLabel ? 'verdict-until' : undefined}
-          className={`font-display text-3xl font-extrabold tracking-tight outline-none ${
+          className={`font-display text-4xl font-extrabold tracking-tight leading-[1.05] outline-none ${
             can_park_now ? 'text-ink-900' : 'text-red-700'
           }`}
         >
@@ -272,13 +273,13 @@ export default function ParkingResult({
         </h2>
         {can_park_now && untilLabel && (
           <p id="verdict-until" className="mt-3 flex justify-center">
-            <span className="inline-block bg-brand-500 text-white text-lg font-display font-bold tnum rounded-full px-4 py-1.5">
+            <span className="inline-block bg-brand-500 text-white text-lg font-display font-bold tabular-nums tnum rounded-full px-4 py-1.5 shadow-[0_2px_8px_rgba(7,59,37,0.2)]">
               {t('result.until', { when: untilLabel })}
             </span>
           </p>
         )}
         {countdown && (
-          <p className={`text-sm mt-2 tnum ${URGENCY_STYLE[countdown.urgency]}`}>
+          <p className={`text-sm mt-2 tabular-nums tnum ${URGENCY_STYLE[countdown.urgency]}`}>
             {countdown.label}
           </p>
         )}
@@ -356,10 +357,28 @@ export default function ParkingResult({
 
       {/* Verification card */}
       {verified ? (
-        <p className="mt-4 text-center text-sm text-brand-700 font-medium inline-flex items-center justify-center gap-1.5">
-          <Icon name="check" className="w-4 h-4" strokeWidth={2.5} />
-          {t('result.verifyConfirmed')}
-        </p>
+        /* VAULT signed-strip — the premium contrast moment. Dark vault panel
+            with banknote guilloché texture, the mint-glowing Verified Seal,
+            paper text, and a mono mint short-hash. */
+        <div
+          className="mt-4 rounded-xl px-5 py-4 flex items-center gap-4 border bg-brand-800 overflow-hidden"
+          style={{
+            backgroundImage:
+              'repeating-linear-gradient(115deg, rgba(123,227,164,0.055) 0 1px, transparent 1px 8px)',
+            borderColor: 'rgba(123,227,164,0.22)',
+          }}
+        >
+          <VerifiedSeal glow size={38} className="shrink-0" />
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-display font-semibold text-paper-50 inline-flex items-center gap-1.5">
+              <Icon name="check" className="w-4 h-4 text-[#7BE3A4]" strokeWidth={2.5} />
+              {t('result.verifyConfirmed')}
+            </p>
+            <p className="mt-0.5 font-mono text-xs tracking-wide text-[#7BE3A4]">
+              {feedbackId.slice(0, 8)}
+            </p>
+          </div>
+        </div>
       ) : (
         <section className="mt-4 bg-accent-50 border border-accent-200 rounded-lg p-5">
           <h3 className="font-display font-bold text-ink-900 mb-1">{t('result.verifyHeader')}</h3>

@@ -1,82 +1,50 @@
 interface Props {
   className?: string
   /**
-   * `badge`: includes the cool off-white rounded-square background. Use as a standalone brand mark.
-   * `glyph`: the layered P + clock only, transparent background. Use inside coloured surfaces.
+   * `badge`: includes the rounded-square tile background (standalone mark).
+   * `glyph`: the Datum P only, transparent background (use inside coloured surfaces).
    */
   variant?: 'badge' | 'glyph'
+  /**
+   * `pine`: pine mark on a paper tile — for light surfaces (default).
+   * `paper`: paper mark + glowing mint datum point on a vault tile — for dark surfaces.
+   */
+  tone?: 'pine' | 'paper'
 }
 
-const FONT_FAMILY = "'Space Grotesk', system-ui, sans-serif"
-
-export default function BrandMark({ className = 'w-16 h-16', variant = 'badge' }: Props) {
+/**
+ * Datum P — the brand mark. A P drawn as a surveyor's instrument: the bowl is
+ * an engineered ring fixed to a datum point, with a single index notch (the
+ * lone mint spark). It encodes "Park", a fixed verified place, and a measuring
+ * instrument at once, and shares the notch motif with the Verified Seal while
+ * keeping a distinct silhouette so the two never compete.
+ */
+export default function BrandMark({
+  className = 'w-16 h-16',
+  variant = 'badge',
+  tone = 'pine',
+}: Props) {
+  const mark = tone === 'paper' ? '#F3F6F4' : '#0E5C3A'
+  const dot = tone === 'paper' ? '#7BE3A4' : '#073B25'
+  const tile = tone === 'paper' ? '#073B25' : '#F3F6F4'
+  // Datum P paths live in a 0..100 space; nudge to optical centre per variant.
+  const g = variant === 'badge' ? 'translate(4 10) scale(0.85)' : 'translate(-11 -4) scale(1.15)'
   return (
-    <svg
-      viewBox="0 0 512 512"
-      xmlns="http://www.w3.org/2000/svg"
-      className={className}
-      role="img"
-      aria-label="ParkProof"
-    >
-      {variant === 'badge' && (
-        <rect x="34" y="34" width="444" height="444" rx="96" fill="#F3F6F4" />
-      )}
-      {/* Shadow P (navy, behind/right) */}
-      <text
-        x="154"
-        y="394"
-        fontFamily={FONT_FAMILY}
-        fontSize="330"
-        fontWeight="800"
-        fill="#073B25"
-      >
-        P
-      </text>
-      {/* Front P (vivid blue, on top/left) */}
-      <text
-        x="106"
-        y="344"
-        fontFamily={FONT_FAMILY}
-        fontSize="330"
-        fontWeight="800"
-        fill="#0E5C3A"
-      >
-        P
-      </text>
-      {/* Alarm clock — nestled in the bowl of the front P */}
-      <g transform="translate(252 185)">
+    <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" className={className} role="img" aria-label="ParkProof">
+      {variant === 'badge' && <rect x="4" y="4" width="92" height="92" rx="22" fill={tile} />}
+      <g transform={g}>
+        {/* stem (plumb-line) */}
+        <rect x="27" y="19" width="12.5" height="63" fill={mark} />
+        {/* bowl as an engineered ring (annulus) */}
         <path
-          d="M-70,-50 C-94,-44 -102,-22 -94,-4 L-48,-18 C-49,-35 -57,-45 -70,-50Z"
-          fill="#F3F6F4"
+          fillRule="evenodd"
+          fill={mark}
+          d="M57 13 A24 24 0 1 0 57 61 A24 24 0 1 0 57 13 Z M57 25 A12 12 0 1 1 57 49 A12 12 0 1 1 57 25 Z"
         />
-        <path
-          d="M70,-50 C94,-44 102,-22 94,-4 L48,-18 C49,-35 57,-45 70,-50Z"
-          fill="#F3F6F4"
-        />
-        <circle cx="-82" cy="-57" r="5" fill="#F3F6F4" />
-        <circle cx="82" cy="-57" r="5" fill="#F3F6F4" />
-        <circle cx="0" cy="0" r="76" fill="#F3F6F4" />
-        <circle cx="0" cy="0" r="68" fill="none" stroke="#0E5C3A" strokeWidth="10" />
-        <circle cx="0" cy="0" r="84" fill="none" stroke="#F3F6F4" strokeWidth="8" />
-        <line
-          x1="0"
-          y1="0"
-          x2="-38"
-          y2="-28"
-          stroke="#0B1A14"
-          strokeWidth="12"
-          strokeLinecap="round"
-        />
-        <line
-          x1="0"
-          y1="0"
-          x2="45"
-          y2="-34"
-          stroke="#0B1A14"
-          strokeWidth="12"
-          strokeLinecap="round"
-        />
-        <circle cx="0" cy="0" r="12" fill="#0B1A14" />
+        {/* datum point */}
+        <circle cx="57" cy="37" r="5.5" fill={dot} />
+        {/* index notch — the lone mint spark */}
+        <path d="M73 20 L80.5 17.5 L77.5 27 Z" fill="#7BE3A4" />
       </g>
     </svg>
   )
