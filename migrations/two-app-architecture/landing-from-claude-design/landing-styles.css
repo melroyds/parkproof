@@ -129,7 +129,11 @@ img { display: block; max-width: 100%; }
 
 section { position: relative; }
 section + section { padding-top: var(--section-gap); }
-section:first-of-type { padding-top: 0; }
+/* The first section sits under the sticky, in-flow nav. A flat 0 left the hero
+   eyebrow pill flush against the nav's bottom edge; a small top gap lifts it off
+   the bar without opening a large void. (This wins over `.hero`'s own padding-top
+   shorthand via higher specificity, so it's the real top-spacing lever here.) */
+section:first-of-type { padding-top: clamp(14px, 2.5vw, 20px); }
 section:last-of-type { padding-bottom: var(--section-gap); }
 
 /* ---------------- Topographic background motif (removed — vault only) ---------------- */
@@ -199,6 +203,7 @@ section:last-of-type { padding-bottom: var(--section-gap); }
   color: var(--vault);
   padding: 10px 18px;
   border-radius: var(--r-btn);
+  clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 0 100%);
   text-decoration: none;
   font-weight: 600;
   font-size: 15px;
@@ -228,16 +233,19 @@ section:last-of-type { padding-bottom: var(--section-gap); }
   font-weight: 600;
   text-decoration: none;
   white-space: nowrap;
-  transition: transform .15s, box-shadow .15s, background .15s, color .15s;
+  transition: transform .15s, filter .15s, background .15s, color .15s;
 }
 .btn-lg { padding: 20px 32px; font-size: 18px; }
 .btn-md { padding: 14px 22px; font-size: 16px; }
 .btn-primary {
   background: var(--paper-50);
   color: var(--vault);
-  box-shadow: 0 8px 20px rgba(0,0,0,0.28);
+  /* Signature chamfer — echoes the cards' cut corner. drop-shadow (not
+     box-shadow) so the lift follows the cut instead of being clipped by it. */
+  clip-path: polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% 100%, 0 100%);
+  filter: drop-shadow(0 8px 18px rgba(0,0,0,0.28));
 }
-.btn-primary:hover { transform: translateY(-2px); box-shadow: 0 12px 28px rgba(0,0,0,0.34); }
+.btn-primary:hover { transform: translateY(-2px); filter: drop-shadow(0 12px 26px rgba(0,0,0,0.34)); }
 .btn-secondary {
   background: var(--glass-bg);
   color: var(--ink-900);
@@ -1109,6 +1117,15 @@ button:focus-visible {
   outline: 2px solid var(--mint);
   outline-offset: 2px;
   border-radius: 4px;
+}
+
+/* Chamfered buttons clip the outline-offset, so an offset outline would be
+   eaten by the clip-path. Swap to an inset double-ring (vault + mint) that
+   stays fully visible inside the cut on the light paper button. */
+.btn-primary:focus-visible,
+.nav-cta:focus-visible {
+  outline: none;
+  box-shadow: inset 0 0 0 2px var(--vault), inset 0 0 0 4px var(--mint);
 }
 
 /* ---------------- Reduced motion ---------------- */

@@ -27,7 +27,7 @@ const SIZE: Record<Size, string> = {
 
 const VARIANT: Record<Variant, string> = {
   primary:
-    'bg-brand-500 hover:bg-brand-600 active:bg-brand-700 disabled:bg-brand-300 text-white font-semibold shadow-sm shadow-brand-900/10',
+    'bg-brand-500 hover:bg-brand-600 active:bg-brand-700 disabled:bg-brand-300 text-white font-semibold gf-btn',
   secondary:
     'bg-brand-50 hover:bg-brand-100 active:bg-brand-200 disabled:opacity-60 text-brand-700 font-semibold',
   outline:

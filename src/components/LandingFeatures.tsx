@@ -125,7 +125,7 @@ export default function LandingFeatures({ onScanCta, onSignInCta }: Props) {
       <button
         type="button"
         onClick={onScanCta}
-        className="w-full inline-flex items-center justify-center gap-3 mb-3 bg-paper-50 hover:bg-white active:bg-paper-100 text-brand-800 text-lg font-semibold py-4 rounded-xl shadow-[0_4px_16px_rgba(0,0,0,0.25)] transition-colors"
+        className="w-full inline-flex items-center justify-center gap-3 mb-3 bg-paper-50 hover:bg-white active:bg-paper-100 text-brand-800 text-lg font-semibold py-4 rounded-xl gf-btn transition-colors"
       >
         <Icon name="camera" className="w-6 h-6" strokeWidth={2} />
         {t('landing.cta')}

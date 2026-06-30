@@ -103,6 +103,22 @@ h1, h2, h3, h4, .font-display {
   clip-path: polygon(0 0, calc(100% - 28px) 0, 100% 28px, 100% 100%, 0 100%);
   filter: drop-shadow(0 16px 34px rgba(0, 0, 0, 0.30));
 }
+/* The primary-button echo of the chamfer — a smaller 14px cut so the main CTA
+   carries the same engineered silhouette as the cards. clip-path clips
+   box-shadow, so the lift moves to `filter: drop-shadow`. Reserved for the
+   primary action only; secondary/ghost buttons + chips stay clean rounded. */
+.gf-btn {
+  clip-path: polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 0 100%);
+  filter: drop-shadow(0 6px 14px rgba(11, 26, 20, 0.22));
+}
+.gf-btn:hover { filter: drop-shadow(0 9px 20px rgba(11, 26, 20, 0.28)); }
+/* The clip-path eats the global focus outline's offset (and a brand-on-brand
+   ring would vanish on the pine button). Swap to a high-contrast inset
+   double-ring that renders inside the clip and stays visible. */
+.gf-btn:focus-visible {
+  outline: none;
+  box-shadow: inset 0 0 0 2px #fff, inset 0 0 0 4px var(--color-brand-800);
+}
 
 /* ─── Landing-hero animation ───────────────────────────────────────────
    One-time sequence: the scan sweeps the sign, the verdict record rises in,
