@@ -104,6 +104,36 @@ h1, h2, h3, h4, .font-display {
   filter: drop-shadow(0 16px 34px rgba(0, 0, 0, 0.30));
 }
 
+/* ─── Landing-hero animation ───────────────────────────────────────────
+   One-time sequence: the scan sweeps the sign, the verdict record rises in,
+   the seal stamps on with a mint pulse. Each uses `both` fill so under
+   prefers-reduced-motion (durations forced ~0 above) it jumps straight to the
+   final frame — the scan/pulse end invisible, the card+seal end visible — i.e.
+   the correct clean static hero with no motion. */
+@keyframes gf-hero-scan {
+  0% { transform: translateY(-26px); opacity: 0; }
+  18% { opacity: 1; }
+  82% { opacity: 1; }
+  100% { transform: translateY(64px); opacity: 0; }
+}
+@keyframes gf-hero-rise {
+  0% { opacity: 0; transform: translateY(10px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+@keyframes gf-hero-stamp {
+  0% { opacity: 0; transform: scale(1.18); }
+  60% { opacity: 1; }
+  100% { opacity: 1; transform: scale(1); }
+}
+@keyframes gf-hero-pulse {
+  0% { opacity: 0.5; transform: scale(0.85); }
+  100% { opacity: 0; transform: scale(2); }
+}
+.gf-hero-scan { animation: gf-hero-scan 1.15s ease-out both; }
+.gf-hero-card { animation: gf-hero-rise 0.5s ease-out 0.55s both; transform-box: fill-box; }
+.gf-hero-seal { animation: gf-hero-stamp 0.45s ease-out 0.95s both; transform-box: fill-box; transform-origin: center; }
+.gf-hero-pulse { animation: gf-hero-pulse 0.75s ease-out 0.98s both; transform-box: fill-box; transform-origin: center; }
+
 /* ─── Focus ring ──────────────────────────────────────────────────── */
 a:focus-visible,
 button:focus-visible,

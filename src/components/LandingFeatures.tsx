@@ -1,6 +1,7 @@
 import { Trans, useTranslation } from 'react-i18next'
 import Icon from './Icon'
 import VerifiedSeal from './VerifiedSeal'
+import HeroAnswer from './HeroAnswer'
 
 /**
  * First-time-visitor landing experience. Renders ONLY for users with no
@@ -69,26 +70,13 @@ export default function LandingFeatures({ onScanCta, onSignInCta }: Props) {
 
   return (
     <div className="w-full">
-      {/* ── Hero photo — full-bleed at the TOP, ahead of the headline.
-          Earlier this lived in a small 140-180px side-column, which made
-          it read as decorative. The user feedback was unambiguous: the
-          photo IS the brand statement, headline supports it. Now it's a
-          generous full-width image with a slight shadow + rounded corners
-          so it reads as a hero shot, not a thumbnail. object-cover on a
-          fixed aspect ratio keeps the composition tight on tall phones.
-          AI-generated (Nano Banana / Gemini Flash) with the layered-P +
-          clock brand mark composited onto the otherwise-blank sign face
-          via scripts/_composite_hero.py. */}
-      <div className="w-full mb-8 -mx-2">
-        <img
-          // BASE_URL = '/app/' after the two-app cutover. Absolute paths like
-          // "/hero-illustration.png" 404 because the asset lives at /app/.
-          src={`${import.meta.env.BASE_URL}hero-illustration.png`}
-          alt=""
-          aria-hidden
-          className="w-full aspect-[5/4] object-cover rounded-2xl border select-none pointer-events-none shadow-[0_8px_28px_rgba(0,0,0,0.3)]"
-          style={{ borderColor: 'rgba(123,227,164,0.22)' }}
-        />
+      {/* ── Hero — a fully-designed illustration: an Aussie parking sign
+          resolving into a stamped, tamper-evident verdict record. Says what
+          ParkProof IS (a verified answer) in one image, and animates once on
+          mount (scan -> record rises -> seal stamps). Replaces the old
+          composited stock photo. */}
+      <div className="w-full mb-8">
+        <HeroAnswer className="w-full h-auto select-none pointer-events-none" />
       </div>
 
       {/* ── Headline + value bullets, now BELOW the hero ─────────────── */}
