@@ -80,9 +80,17 @@
       <span class="hero-eyebrow">
         <svg width="16" height="11" viewBox="0 0 24 16" aria-hidden="true">
           <rect width="24" height="16" fill="#012169"/>
-          <path d="M0 0 L24 16 M24 0 L0 16" stroke="#fff" stroke-width="2"/>
-          <path d="M12 0 V16 M0 8 H24" stroke="#fff" stroke-width="3"/>
-          <path d="M12 0 V16 M0 8 H24" stroke="#C8102E" stroke-width="1.5"/>
+          <!-- Union Jack canton (top-left quarter) -->
+          <path d="M0 0 L12 8 M12 0 L0 8" stroke="#fff" stroke-width="1.6"/>
+          <path d="M6 0 V8 M0 4 H12" stroke="#fff" stroke-width="2"/>
+          <path d="M6 0 V8 M0 4 H12" stroke="#C8102E" stroke-width="0.9"/>
+          <!-- Commonwealth star + Southern Cross -->
+          <circle cx="6" cy="12.5" r="1.4" fill="#fff"/>
+          <circle cx="18.5" cy="4" r="0.95" fill="#fff"/>
+          <circle cx="21" cy="8" r="0.95" fill="#fff"/>
+          <circle cx="17.5" cy="9.5" r="0.95" fill="#fff"/>
+          <circle cx="19.5" cy="12.5" r="0.95" fill="#fff"/>
+          <circle cx="22" cy="6" r="0.6" fill="#fff"/>
         </svg>
         Built for Aussie drivers
       </span>
@@ -185,7 +193,7 @@
 <!-- ============ HOW IT WORKS ============ -->
 <section class="how" id="how" data-screen-label="03 How it works">
   <div class="container">
-    <span class="allcaps" style="color:var(--brand-500)">Three steps. About 12 seconds.</span>
+    <span class="allcaps" style="color:var(--mint)">Three steps. About 12 seconds.</span>
     <h2 class="display">How it works.</h2>
     <p class="lede">Open ParkProof. Snap the sign. Get a plain-English verdict. No account. No subscription. No telling us where you live.</p>
 
@@ -329,7 +337,33 @@
            corner. The bottom meta line ("Next ping in 15 min") carries
            the section's tone instead. -->
       <div class="evidence-pdf">
-        <img src="assets/app-reminders-clean.png" alt="ParkProof reminders picker — checkboxes for 60, 30, 15, and 5 minutes before bay expires" class="evidence-pdf-img">
+        <svg class="evidence-pdf-img" viewBox="0 0 340 470" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="ParkProof reminder picker: choose how many minutes before the bay expires to be reminded">
+          <rect width="340" height="470" fill="#062018"/>
+          <rect width="340" height="470" fill="none" stroke="rgba(123,227,164,0.10)" stroke-width="1"/>
+          <text x="26" y="56" font-family="'Space Grotesk',sans-serif" font-weight="700" font-size="23" fill="#F3F6F4" letter-spacing="-0.5">Remind me before</text>
+          <text x="26" y="84" font-family="'Space Grotesk',sans-serif" font-weight="700" font-size="23" fill="#F3F6F4" letter-spacing="-0.5">the bay expires</text>
+          <text x="26" y="112" font-family="Inter,sans-serif" font-size="13" fill="#A9CFBE">Bay expires 4:00 PM &middot; pick your lead times</text>
+          <!-- offset chips -->
+          <g font-family="'Space Grotesk',sans-serif" font-weight="600" font-size="15" text-anchor="middle">
+            <rect x="26" y="140" width="52" height="40" rx="9" fill="rgba(255,255,255,0.05)" stroke="rgba(123,227,164,0.20)"/><text x="52" y="165" fill="#C9E5D5">30</text>
+            <rect x="86" y="140" width="52" height="40" rx="9" fill="#0E5C3A"/><text x="112" y="165" fill="#EAF7EF">15</text>
+            <rect x="146" y="140" width="52" height="40" rx="9" fill="rgba(255,255,255,0.05)" stroke="rgba(123,227,164,0.20)"/><text x="172" y="165" fill="#C9E5D5">10</text>
+            <rect x="206" y="140" width="52" height="40" rx="9" fill="#0E5C3A"/><text x="232" y="165" fill="#EAF7EF">5</text>
+            <rect x="266" y="140" width="48" height="40" rx="9" fill="rgba(255,255,255,0.05)" stroke="rgba(123,227,164,0.20)"/><text x="290" y="165" fill="#C9E5D5">2</text>
+          </g>
+          <text x="26" y="206" font-family="Inter,sans-serif" font-size="12" fill="#7E9C8C">minutes before &middot; tap to toggle</text>
+          <!-- push toggle card -->
+          <rect x="26" y="232" width="288" height="64" rx="12" fill="rgba(255,255,255,0.05)" stroke="rgba(123,227,164,0.18)"/>
+          <text x="44" y="262" font-family="Inter,sans-serif" font-weight="600" font-size="14" fill="#F3F6F4">Push notification</text>
+          <text x="44" y="282" font-family="Inter,sans-serif" font-size="12" fill="#A9CFBE">Even with the app closed</text>
+          <rect x="252" y="252" width="44" height="24" rx="12" fill="#0E5C3A"/><circle cx="284" cy="264" r="9" fill="#7BE3A4"/>
+          <!-- next ping -->
+          <circle cx="32" cy="330" r="3.5" fill="#7BE3A4"/>
+          <text x="44" y="335" font-family="Inter,sans-serif" font-weight="600" font-size="13" fill="#7BE3A4">Next ping at 3:45 PM</text>
+          <!-- done button -->
+          <rect x="26" y="368" width="288" height="52" rx="12" fill="#F3F6F4"/>
+          <text x="170" y="400" text-anchor="middle" font-family="Inter,sans-serif" font-weight="600" font-size="15" fill="#073B25">Set reminders</text>
+        </svg>
         <div class="evidence-pdf-meta">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
           <span>Next ping in <b>15 min</b> · session <span class="mono">a4f12c8e</span></span>
@@ -386,7 +420,44 @@
            overlay tab labelled EVIDENCE.PDF was redundant and
            cropped awkwardly against the corner of the image. -->
       <div class="evidence-pdf">
-        <img src="assets/app-pdf-clean.png" alt="ParkProof parking evidence PDF — signed timestamp, GPS, sign rules, sign photo, car photo" class="evidence-pdf-img">
+        <svg class="evidence-pdf-img" viewBox="0 0 340 470" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="ParkProof evidence record: a verified, KMS-signed parking record with timestamp, GPS, rules and photo">
+          <rect width="340" height="470" fill="#062018"/>
+          <rect width="340" height="470" fill="none" stroke="rgba(123,227,164,0.10)" stroke-width="1"/>
+          <!-- seal + heading -->
+          <g transform="translate(26 30)">
+            <circle cx="22" cy="22" r="21" fill="none" stroke="#7BE3A4" stroke-width="1.6"/>
+            <circle cx="22" cy="22" r="18" fill="none" stroke="#7BE3A4" stroke-width="0.9" stroke-dasharray="1.3 1.5"/>
+            <circle cx="22" cy="22" r="13" fill="#0E5C3A"/>
+            <path d="M16 22.2l4 4 8.4-8.6" fill="none" stroke="#EAFBF1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </g>
+          <text x="86" y="44" font-family="'JetBrains Mono',monospace" font-weight="500" font-size="11" fill="#7BE3A4" letter-spacing="1.5">VERIFIED RECORD</text>
+          <text x="86" y="64" font-family="Inter,sans-serif" font-size="11" fill="#A9CFBE">Tamper-evident</text>
+          <!-- verdict -->
+          <text x="26" y="116" font-family="'Space Grotesk',sans-serif" font-weight="700" font-size="26" fill="#F3F6F4" letter-spacing="-0.5">You can park</text>
+          <rect x="26" y="130" width="150" height="32" rx="8" fill="#0E5C3A"/>
+          <text x="42" y="152" font-family="Inter,sans-serif" font-weight="600" font-size="14" fill="#EAF7EF">until 4:00 PM</text>
+          <!-- signed metadata -->
+          <g font-family="'JetBrains Mono',monospace" font-size="12">
+            <text x="26" y="196" fill="#A9CFBE">signed_at  <tspan fill="#F3F6F4">2026-06-30 22:19 AEST</tspan></text>
+            <text x="26" y="218" fill="#A9CFBE">location   <tspan fill="#F3F6F4">-37.7980, 144.9675</tspan></text>
+            <text x="26" y="240" fill="#A9CFBE">rules      <tspan fill="#F3F6F4">2P Mon-Fri 8-6</tspan></text>
+            <text x="26" y="262" fill="#A9CFBE">kms_sig    <tspan fill="#7BE3A4">f3a9c4&hellip;b21 &#x2713;</tspan></text>
+          </g>
+          <!-- sign photo block -->
+          <rect x="26" y="284" width="288" height="104" rx="10" fill="rgba(255,255,255,0.05)" stroke="rgba(123,227,164,0.18)"/>
+          <g transform="translate(46 300)">
+            <path d="M0 6 H58 L70 18 V72 H0 Z" fill="#F3F6F4"/>
+            <text x="14" y="58" font-family="'Space Grotesk',sans-serif" font-weight="700" font-size="30" fill="#0E5C3A">2P</text>
+          </g>
+          <text x="140" y="324" font-family="Inter,sans-serif" font-weight="600" font-size="13" fill="#F3F6F4">Sign photo</text>
+          <text x="140" y="344" font-family="Inter,sans-serif" font-size="11.5" fill="#A9CFBE">Hashed &amp; covered by</text>
+          <text x="140" y="360" font-family="Inter,sans-serif" font-size="11.5" fill="#A9CFBE">the signature above</text>
+          <!-- actions -->
+          <rect x="26" y="404" width="140" height="44" rx="11" fill="#F3F6F4"/>
+          <text x="96" y="431" text-anchor="middle" font-family="Inter,sans-serif" font-weight="600" font-size="14" fill="#073B25">Export PDF</text>
+          <rect x="174" y="404" width="140" height="44" rx="11" fill="none" stroke="rgba(123,227,164,0.45)"/>
+          <text x="244" y="431" text-anchor="middle" font-family="Inter,sans-serif" font-weight="600" font-size="14" fill="#7BE3A4">How to verify</text>
+        </svg>
         <div class="evidence-pdf-meta">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
           <span>Signed at <b>10:19 pm</b> · session <span class="mono">e2173cfa</span></span>
