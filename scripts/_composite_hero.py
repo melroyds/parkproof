@@ -133,7 +133,7 @@ mark_size = min(mark_w, mark_h)  # square — the icon is 512x512
 # ── Step 2: build a tile-less brand-mark SVG ──────────────────────────
 svg_src = ICON_PATH.read_text(encoding="utf-8")
 tile_less = re.sub(
-    r'<rect\s+x="34"\s+y="34"[^/]*fill="#F2F4F7"\s*/>\s*',
+    r'<rect\s+x="34"\s+y="34"[^/]*fill="#F3F6F4"\s*/>\s*',
     "",
     svg_src,
     count=1,

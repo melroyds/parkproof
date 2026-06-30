@@ -243,14 +243,14 @@ export default function SessionLogger({
 
   return (
     <div className="min-h-screen flex flex-col p-6 max-w-md mx-auto w-full">
-      <BackButton onClick={onCancel}>
+      <BackButton onClick={onCancel} className="text-paper-50 hover:text-[#7BE3A4]">
         {t('common.back')}
       </BackButton>
 
-      <h2 className="font-display text-3xl font-extrabold text-ink-900 mb-1">
+      <h2 className="font-display text-3xl font-extrabold text-paper-50 mb-1">
         {isNoSign ? t('logger.noSignHeader') : t('logger.header')}
       </h2>
-      <p className="text-sm text-ink-600 mb-6 leading-relaxed">
+      <p className="text-sm mb-6 leading-relaxed" style={{ color: '#A9CFBE' }}>
         {isNoSign ? t('logger.noSignIntro') : t('logger.intro')}
       </p>
 
@@ -260,7 +260,7 @@ export default function SessionLogger({
           claim. Helpful to spell out so the user understands what they're
           actually capturing. */}
       {isNoSign && (
-        <div className="mb-3 bg-brand-50 border border-brand-200 rounded-2xl p-4">
+        <div className="gf-card mb-3 bg-brand-50 p-4">
           <div className="flex items-start gap-3">
             <div className="w-8 h-8 rounded-full bg-brand-500 text-white flex items-center justify-center shrink-0 mt-0.5">
               <Icon name="warning" className="w-4 h-4" strokeWidth={2.5} />
@@ -327,9 +327,9 @@ export default function SessionLogger({
 
           if (isUnreliable) {
             return (
-              <div className="mt-3 bg-accent-50 border-2 border-accent-400 rounded-xl p-3">
+              <div className="mt-3 bg-amber-50 border border-amber-300 rounded-lg p-3">
                 <div className="flex items-start gap-2 mb-2">
-                  <Icon name="warning" className="w-5 h-5 text-accent-700 shrink-0 mt-0.5" />
+                  <Icon name="warning" className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-display font-bold text-ink-900">
                       {t('logger.gpsImprecise')}
@@ -348,7 +348,7 @@ export default function SessionLogger({
                 </div>
                 <button
                   onClick={startEdit}
-                  className="w-full bg-accent-600 hover:bg-accent-700 text-ink-900 font-semibold py-2.5 rounded-lg text-sm shadow-md shadow-accent-500/20 transition-colors"
+                  className="w-full bg-brand-500 hover:bg-brand-600 text-white font-semibold py-2.5 rounded-lg text-sm transition-colors"
                 >
                   {t('logger.enterAddress')}
                 </button>
@@ -445,7 +445,7 @@ export default function SessionLogger({
                 same forwardGeocode edit flow as the imprecise-GPS branch. */}
             <button
               onClick={startEdit}
-              className="w-full bg-accent-600 hover:bg-accent-700 text-ink-900 font-semibold py-2.5 rounded-lg text-sm shadow-md shadow-accent-500/20 transition-colors"
+              className="w-full bg-brand-500 hover:bg-brand-600 text-white font-semibold py-2.5 rounded-lg text-sm transition-colors"
             >
               {t('logger.enterAddress')}
             </button>
@@ -455,17 +455,17 @@ export default function SessionLogger({
 
       {/* Car photo */}
       <section className="mb-6">
-        <h3 className="font-semibold text-sm text-ink-900 mb-2">{t('logger.carAtSpot')}</h3>
+        <h3 className="font-semibold text-sm text-paper-50 mb-2">{t('logger.carAtSpot')}</h3>
         {carPhoto ? (
           <>
             <img
               src={carPhoto}
               alt={t('logger.carAtSpot')}
-              className="w-full rounded-2xl border border-paper-300 object-contain max-h-[50vh] bg-white"
+              className="w-full rounded-lg border border-white/10 object-contain max-h-[50vh] bg-white"
             />
             <button
               onClick={() => setCarPhoto(null)}
-              className="text-sm text-brand-700 hover:text-brand-800 underline mt-2"
+              className="text-sm text-[#7BE3A4] hover:text-[#7BE3A4]/80 underline mt-2"
             >
               {t('logger.carRetake')}
             </button>
@@ -474,7 +474,7 @@ export default function SessionLogger({
           <div className="grid grid-cols-2 gap-3">
             <button
               onClick={() => cameraInputRef.current?.click()}
-              className="border-2 border-dashed border-brand-300 hover:border-brand-500 hover:bg-brand-50/50 bg-white rounded-2xl py-8 px-4 flex flex-col items-center text-brand-600 transition-colors"
+              className="border-2 border-dashed border-brand-300 hover:border-brand-500 hover:bg-brand-50/50 bg-white rounded-lg py-8 px-4 flex flex-col items-center text-brand-600 transition-colors"
             >
               <Icon name="camera" className="w-10 h-10 mb-2" />
               <span className="text-sm font-semibold text-ink-900">{t('scanner.takePhoto')}</span>
@@ -482,7 +482,7 @@ export default function SessionLogger({
             </button>
             <button
               onClick={() => libraryInputRef.current?.click()}
-              className="border-2 border-dashed border-accent-300 hover:border-accent-500 hover:bg-accent-50/50 bg-white rounded-2xl py-8 px-4 flex flex-col items-center text-accent-700 transition-colors"
+              className="border-2 border-dashed border-accent-300 hover:border-accent-500 hover:bg-accent-50/50 bg-white rounded-lg py-8 px-4 flex flex-col items-center text-accent-700 transition-colors"
             >
               <Icon name="gallery" className="w-10 h-10 mb-2" />
               <span className="text-sm font-semibold text-ink-900">{t('scanner.fromLibrary')}</span>
@@ -490,7 +490,7 @@ export default function SessionLogger({
             </button>
           </div>
         )}
-        <p className="text-xs text-ink-600 mt-2 text-center">
+        <p className="text-xs mt-2 text-center" style={{ color: '#A9CFBE' }}>
           {t('logger.carOptionalHelp')}
         </p>
         <input
@@ -528,7 +528,7 @@ export default function SessionLogger({
         </Button>
         <button
           onClick={onCancel}
-          className="text-ink-600 hover:text-ink-900 font-medium py-2 transition-colors"
+          className="text-paper-50 hover:text-[#7BE3A4] font-medium py-2 transition-colors"
         >
           {t('common.cancel')}
         </button>

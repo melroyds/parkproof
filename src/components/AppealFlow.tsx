@@ -25,10 +25,11 @@ type Stage =
   | { name: 'review'; draft: AppealDraft; ticketPhoto: string }
   | { name: 'error'; message: string }
 
+// Pine tiers: strong = full pine, moderate = muted slate-green accent, weak = neutral paper.
 const STRENGTH_LABEL = {
   strong: { color: 'text-brand-700 bg-brand-50 border-brand-200', textKey: 'appeal.strongEvidence' },
   moderate: { color: 'text-accent-700 bg-accent-50 border-accent-200', textKey: 'appeal.moderateEvidence' },
-  weak: { color: 'text-ink-700 bg-paper-200 border-paper-300', textKey: 'appeal.weakEvidence' },
+  weak: { color: 'text-ink-600 bg-paper-200 border-paper-300', textKey: 'appeal.weakEvidence' },
 } as const
 
 export default function AppealFlow({ session, onBack }: Props) {
@@ -100,10 +101,10 @@ export default function AppealFlow({ session, onBack }: Props) {
     return (
       <main className="min-h-screen flex flex-col items-center justify-center p-6 text-center">
         <BrandMark className="w-20 h-20 mb-5 animate-pulse" />
-        <h2 className="font-display text-2xl font-extrabold text-ink-900">
+        <h2 className="font-display text-2xl font-extrabold text-paper-50">
           {t('appeal.draftingHeader')}
         </h2>
-        <p className="text-sm text-ink-600 mt-2">
+        <p className="text-sm mt-2" style={{ color: '#A9CFBE' }}>
           {t('appeal.draftingSub')}
         </p>
       </main>
@@ -113,19 +114,19 @@ export default function AppealFlow({ session, onBack }: Props) {
   if (stage.name === 'error') {
     return (
       <main className="min-h-screen flex flex-col p-6 max-w-md mx-auto w-full">
-        <button onClick={onBack} className="self-start min-h-[44px] inline-flex items-center -my-2.5 text-ink-600 hover:text-ink-900 text-sm mb-4">
+        <button onClick={onBack} className="self-start min-h-[44px] inline-flex items-center -my-2.5 text-[#A9CFBE] hover:text-paper-50 text-sm mb-4">
           {t('common.back')}
         </button>
         <div className="w-16 h-16 rounded-full bg-accent-100 border-2 border-accent-500 text-accent-700 flex items-center justify-center mb-4 mx-auto">
           <Icon name="warning" className="w-8 h-8" />
         </div>
-        <h2 className="font-display text-2xl font-extrabold text-ink-900 text-center">
+        <h2 className="font-display text-2xl font-extrabold text-paper-50 text-center">
           {t('appeal.errorHeader')}
         </h2>
-        <p role="alert" className="text-sm text-ink-700 mt-3 mb-6 break-words text-center">{stage.message}</p>
+        <p role="alert" className="text-sm mt-3 mb-6 break-words text-center" style={{ color: '#A9CFBE' }}>{stage.message}</p>
         <button
           onClick={() => setStage({ name: 'capture' })}
-          className="bg-brand-500 hover:bg-brand-600 text-white font-semibold py-4 rounded-2xl shadow-md"
+          className="bg-brand-500 hover:bg-brand-600 active:bg-brand-700 text-white font-semibold py-3.5 rounded-xl shadow-sm shadow-brand-900/10 transition-colors"
         >
           {t('appeal.tryDifferentPhoto')}
         </button>
@@ -139,15 +140,15 @@ export default function AppealFlow({ session, onBack }: Props) {
       <div className="min-h-screen flex flex-col p-6 max-w-md mx-auto w-full">
         <button
           onClick={onBack}
-          className="self-start min-h-[44px] inline-flex items-center -my-2.5 text-ink-600 hover:text-ink-900 text-sm mb-4"
+          className="self-start min-h-[44px] inline-flex items-center -my-2.5 text-[#A9CFBE] hover:text-paper-50 text-sm mb-4"
         >
           {session ? t('common.backToSession') : t('common.backToHome')}
         </button>
 
-        <h2 className="font-display text-3xl font-extrabold text-ink-900 mb-2">
+        <h2 className="font-display text-3xl font-extrabold text-paper-50 mb-2">
           {t('appeal.reviewHeader')}
         </h2>
-        <p className="text-sm text-ink-600 mb-6 leading-relaxed">{stage.draft.ticket_summary}</p>
+        <p className="text-sm mb-6 leading-relaxed" style={{ color: '#A9CFBE' }}>{stage.draft.ticket_summary}</p>
 
         <span
           className={`text-xs font-semibold uppercase tracking-widest border rounded-full px-3 py-1 self-start mb-4 ${strength.color}`}
@@ -206,14 +207,14 @@ export default function AppealFlow({ session, onBack }: Props) {
             <button
               onClick={handleDownloadPdf}
               disabled={pdfBusy}
-              className="bg-white border border-paper-300 hover:border-ink-600 disabled:opacity-60 text-ink-900 font-medium py-3 rounded-2xl transition-colors"
+              className="bg-white border border-paper-300 hover:border-brand-500 hover:text-brand-700 disabled:opacity-60 text-ink-900 font-medium py-3.5 rounded-xl transition-colors"
             >
               {pdfBusy ? t('appeal.downloadingPdf') : t('appeal.downloadPdf')}
             </button>
           )}
         </div>
         {pdfError && (
-          <div className="mt-3 bg-accent-50 border-2 border-accent-400 rounded-xl p-3 text-sm">
+          <div className="gf-card mt-3 bg-accent-50 p-3 text-sm">
             <p className="font-display font-bold text-ink-900 mb-1">
               {t('session.pdfErrorHeader')}
             </p>
@@ -221,7 +222,7 @@ export default function AppealFlow({ session, onBack }: Props) {
           </div>
         )}
 
-        <p className="text-xs text-ink-600 mt-4 text-center leading-relaxed">
+        <p className="text-xs mt-4 text-center leading-relaxed" style={{ color: '#A9CFBE' }}>
           {t('appeal.reviewDisclaimer')}
         </p>
       </div>
@@ -233,22 +234,22 @@ export default function AppealFlow({ session, onBack }: Props) {
     <div className="min-h-screen flex flex-col p-6 max-w-md mx-auto w-full">
       <button
         onClick={onBack}
-        className="self-start min-h-[44px] inline-flex items-center -my-2.5 text-ink-600 hover:text-ink-900 text-sm mb-4 transition-colors"
+        className="self-start min-h-[44px] inline-flex items-center -my-2.5 text-[#A9CFBE] hover:text-paper-50 text-sm mb-4 transition-colors"
       >
         {session ? t('common.backToSession') : t('common.backToHome')}
       </button>
 
-      <h2 className="font-display text-3xl font-extrabold text-ink-900 mb-1">
+      <h2 className="font-display text-3xl font-extrabold text-paper-50 mb-1">
         {t('appeal.captureHeader')}
       </h2>
-      <p className="text-sm text-ink-600 mb-6 leading-relaxed">
+      <p className="text-sm mb-6 leading-relaxed" style={{ color: '#A9CFBE' }}>
         {session ? t('appeal.captureIntro') : t('appeal.captureIntroStandalone')}
       </p>
 
       <div className="flex flex-col gap-3">
         <button
           onClick={() => cameraInputRef.current?.click()}
-          className="border-2 border-dashed border-brand-300 hover:border-brand-500 hover:bg-brand-50/50 bg-white rounded-2xl py-8 px-4 flex flex-col items-center text-brand-600 transition-colors"
+          className="border-2 border-dashed border-brand-300 hover:border-brand-500 hover:bg-brand-50/50 bg-white rounded-xl py-8 px-4 flex flex-col items-center text-brand-600 transition-colors"
         >
           <Icon name="camera" className="w-10 h-10 mb-2" />
           <span className="text-sm font-semibold text-ink-900">{t('scanner.takePhoto')}</span>
@@ -256,7 +257,7 @@ export default function AppealFlow({ session, onBack }: Props) {
         </button>
         <button
           onClick={() => libraryInputRef.current?.click()}
-          className="border-2 border-dashed border-accent-300 hover:border-accent-500 hover:bg-accent-50/50 bg-white rounded-2xl py-8 px-4 flex flex-col items-center text-accent-700 transition-colors"
+          className="border-2 border-dashed border-accent-300 hover:border-accent-500 hover:bg-accent-50/50 bg-white rounded-xl py-8 px-4 flex flex-col items-center text-accent-700 transition-colors"
         >
           <Icon name="gallery" className="w-10 h-10 mb-2" />
           <span className="text-sm font-semibold text-ink-900">{t('scanner.fromLibrary')}</span>
@@ -288,7 +289,7 @@ export default function AppealFlow({ session, onBack }: Props) {
         }}
       />
 
-      <p className="text-xs text-ink-600 mt-6 text-center leading-relaxed">
+      <p className="text-xs mt-6 text-center leading-relaxed" style={{ color: '#A9CFBE' }}>
         {t('appeal.captureDisclaimer')}
       </p>
     </div>

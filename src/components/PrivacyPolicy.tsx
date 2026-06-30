@@ -24,16 +24,16 @@ export default function PrivacyPolicy({ onBack }: Props) {
 
   return (
     <div className="min-h-screen flex flex-col p-6 max-w-2xl mx-auto w-full">
-      <BackButton onClick={onBack}>
+      <BackButton onClick={onBack} className="!text-[#A9CFBE] hover:!text-paper-50">
         {t('common.back')}
       </BackButton>
 
-      <h2 className="font-display text-3xl font-extrabold text-ink-900 mb-1">{t('privacy.header')}</h2>
-      <p className="text-sm text-ink-600 mb-6 leading-relaxed">
+      <h2 className="font-display text-3xl font-extrabold text-paper-50 mb-1">{t('privacy.header')}</h2>
+      <p className="text-sm mb-6 leading-relaxed" style={{ color: '#A9CFBE' }}>
         {t('privacy.lastUpdated', { date: formattedDate })}
       </p>
 
-      <article className="prose space-y-4 text-sm text-ink-800 leading-relaxed">
+      <article className="prose space-y-4 text-sm leading-relaxed" style={{ color: '#D7E8DF' }}>
         <Section title={t('privacy.anonymousHeader')}>
           <p>
             <Trans
@@ -87,7 +87,7 @@ export default function PrivacyPolicy({ onBack }: Props) {
                     href="https://account.apple.com"
                     target="_blank"
                     rel="noreferrer"
-                    className="text-brand-700 hover:text-brand-800 underline"
+                    className="text-[#7BE3A4] hover:text-paper-50 underline"
                   />
                 ),
                 google: (
@@ -95,7 +95,7 @@ export default function PrivacyPolicy({ onBack }: Props) {
                     href="https://myaccount.google.com"
                     target="_blank"
                     rel="noreferrer"
-                    className="text-brand-700 hover:text-brand-800 underline"
+                    className="text-[#7BE3A4] hover:text-paper-50 underline"
                   />
                 ),
               }}
@@ -152,7 +152,7 @@ export default function PrivacyPolicy({ onBack }: Props) {
                 a: (
                   <a
                     href="/parkproof-public-key.pem"
-                    className="text-brand-700 hover:text-brand-800 underline break-all"
+                    className="text-[#7BE3A4] hover:text-paper-50 underline break-all"
                   />
                 ),
                 code: <code className="font-mono text-xs" />,
@@ -164,7 +164,7 @@ export default function PrivacyPolicy({ onBack }: Props) {
               href={verifyHref}
               target="_blank"
               rel="noreferrer"
-              className="text-brand-700 hover:text-brand-800 underline font-medium"
+              className="text-[#7BE3A4] hover:text-paper-50 underline font-medium"
             >
               {t('privacy.verifyLinkLabel')}
             </a>
@@ -176,7 +176,7 @@ export default function PrivacyPolicy({ onBack }: Props) {
             <Trans
               i18nKey="privacy.contactCopy"
               components={{
-                a: <a href="mailto:hello@parkproof.com.au" className="text-brand-700 underline" />,
+                a: <a href="mailto:hello@parkproof.com.au" className="text-[#7BE3A4] underline" />,
               }}
             />
           </p>
@@ -189,7 +189,7 @@ export default function PrivacyPolicy({ onBack }: Props) {
                     href="https://www.oaic.gov.au/"
                     target="_blank"
                     rel="noreferrer"
-                    className="text-brand-700 underline"
+                    className="text-[#7BE3A4] underline"
                   />
                 ),
               }}
@@ -204,7 +204,7 @@ export default function PrivacyPolicy({ onBack }: Props) {
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section>
-      <h3 className="font-display text-lg font-bold text-ink-900 mb-2 mt-6 first:mt-0">
+      <h3 className="font-display text-lg font-bold text-paper-50 mb-2 mt-6 first:mt-0">
         {title}
       </h3>
       <div className="space-y-2">{children}</div>

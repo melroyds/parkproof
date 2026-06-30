@@ -35,26 +35,34 @@ interface Props {
 }
 
 /**
- * Per-urgency styling. We use the same Emerald/Amber/Red palette as the answer
- * card on ParkingResult so the colour grammar stays consistent ("green = go,
- * red = stop") — distinct from brand-* / accent-* which mean "ParkProof"
- * rather than "is parking OK right now".
+ * Per-urgency styling. The calm/normal tier is now a translucent "glass" panel
+ * that sits on the dark-vault home surface — premium register A. Its countdown
+ * numerals glow mint (the jewel). Amber + red urgency tiers stay as genuine
+ * solid warning/stop hues for the <=60min / <=15min / expired boundaries, with
+ * white numerals for contrast — urgency must never be muted into glass.
+ *
+ * `glass` flags the normal tier so the JSX can opt the numerals + live dot into
+ * mint and apply the inline translucent panel style.
  */
 const URGENCY_STYLES = {
   normal: {
-    surface: 'bg-gradient-to-br from-emerald-700 to-emerald-800 shadow-emerald-700/40',
-    iconRing: 'bg-white/20',
+    surface: '',
+    glass: true,
+    iconRing: 'bg-white/10',
   },
   warning: {
-    surface: 'bg-gradient-to-br from-amber-700 to-amber-800 shadow-amber-700/30',
+    surface: 'bg-amber-700',
+    glass: false,
     iconRing: 'bg-white/25',
   },
   urgent: {
-    surface: 'bg-gradient-to-br from-red-600 to-red-800 shadow-red-600/30',
+    surface: 'bg-red-700',
+    glass: false,
     iconRing: 'bg-white/20',
   },
   expired: {
-    surface: 'bg-gradient-to-br from-ink-700 to-ink-900 shadow-ink-900/40',
+    surface: 'bg-ink-900',
+    glass: false,
     iconRing: 'bg-white/15',
   },
 } as const
@@ -150,7 +158,7 @@ export default function ActiveSessionCard({
           type="button"
           onClick={onShowMore}
           aria-label={t('active.morePillAria', { count: extraCount })}
-          className="absolute top-3 right-3 text-2xs font-semibold uppercase tracking-wider bg-white/20 hover:bg-white/30 active:bg-white/25 rounded-full px-2.5 min-h-[44px] min-w-[44px] inline-flex items-center justify-center transition-colors shrink-0"
+          className="absolute top-5 right-5 text-2xs font-semibold uppercase tracking-wider bg-white/20 hover:bg-white/30 active:bg-white/25 rounded-full px-2.5 min-h-[44px] min-w-[44px] inline-flex items-center justify-center transition-colors shrink-0"
         >
           {t('active.morePill', { count: extraCount })}
         </button>
@@ -168,7 +176,15 @@ export default function ActiveSessionCard({
 
   return (
     <div
-      className={`w-full rounded-3xl p-5 text-white shadow-xl relative ${style.surface}`}
+      className={`gf-card-lg w-full p-5 text-white relative ${style.surface}`}
+      style={
+        style.glass
+          ? {
+              background: 'rgba(255,255,255,0.055)',
+              borderColor: 'rgba(123,227,164,0.22)',
+            }
+          : { borderColor: 'transparent' }
+      }
     >
       {morePill}
       {/* Top region — primary tap target = view session details. Right-pad
@@ -198,8 +214,8 @@ export default function ActiveSessionCard({
                   underneath is moving." Reduced-motion users get the
                   static dot via the global media query in index.css. */}
               <span className="relative flex w-2 h-2">
-                <span className="absolute inline-flex h-full w-full rounded-full bg-white opacity-75 animate-[ping_1.8s_cubic-bezier(0,0,0.2,1)_infinite]" />
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-white" />
+                <span className={`absolute inline-flex h-full w-full rounded-full opacity-75 animate-[ping_1.8s_cubic-bezier(0,0,0.2,1)_infinite] ${style.glass ? 'bg-[#7BE3A4]' : 'bg-white'}`} />
+                <span className={`relative inline-flex rounded-full h-2 w-2 ${style.glass ? 'bg-[#7BE3A4]' : 'bg-white'}`} />
               </span>
               {t('active.currentlyParked')}
             </p>
@@ -210,7 +226,10 @@ export default function ActiveSessionCard({
         </div>
 
         <div className="mt-4">
-          <p className="font-display text-3xl font-extrabold tracking-tight">
+          <p
+            className={`font-display tnum text-3xl font-extrabold tracking-tight ${style.glass ? 'text-[#7BE3A4]' : ''}`}
+            style={style.glass ? { textShadow: '0 0 18px rgba(123,227,164,0.45)' } : undefined}
+          >
             {hasExpiry ? countdown!.label : elapsed!.label}
           </p>
           <p className="mt-1 text-sm text-white font-semibold">
@@ -270,7 +289,7 @@ export default function ActiveSessionCard({
           <div className="flex-1 min-w-0">
             {walkBackVisible ? (
               <>
-                <p className="font-display text-lg font-bold leading-none">
+                <p className="font-display tnum text-lg font-bold leading-none">
                   {t('active.distanceAway', { distance: walkBack!.distanceLabel })}
                 </p>
                 <p className="text-xs text-white mt-1">

@@ -27,17 +27,18 @@ export default function RecentScansPicker({ sessions, onPick, onDismiss }: Props
   return (
     <section className="mb-6">
       <div className="flex items-baseline justify-between mb-2">
-        <h3 className="font-display font-bold text-ink-900 text-sm uppercase tracking-widest">
+        <h3 className="font-display font-bold text-paper-50 text-sm uppercase tracking-widest">
           {t('reuse.pickerHeader')}
         </h3>
         <button
           onClick={onDismiss}
-          className="text-xs text-ink-600 hover:text-ink-900 underline"
+          className="text-xs underline hover:opacity-80"
+          style={{ color: '#7BE3A4' }}
         >
           {t('reuse.dismiss')}
         </button>
       </div>
-      <p className="text-xs text-ink-600 mb-3">
+      <p className="text-xs mb-3" style={{ color: '#A9CFBE' }}>
         {t('reuse.pickerCopy')}
       </p>
       <div className="flex flex-col gap-2">
@@ -48,12 +49,12 @@ export default function RecentScansPicker({ sessions, onPick, onDismiss }: Props
             <button
               key={s.id}
               onClick={() => onPick(s)}
-              className="bg-white hover:bg-paper-50 border border-paper-300 hover:border-brand-300 rounded-2xl p-3 text-left flex items-center gap-3 transition-colors"
+              className="gf-card bg-white hover:bg-brand-50 p-3 text-left flex items-center gap-3 transition-colors"
             >
               <img
                 src={s.sign_photo ?? undefined}
                 alt=""
-                className="w-14 h-14 object-cover rounded-lg border border-paper-300 flex-none bg-white"
+                className="w-14 h-14 object-cover rounded-md border border-brand-900/10 flex-none bg-white"
               />
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-ink-900 truncate">{headline}</p>
@@ -62,7 +63,7 @@ export default function RecentScansPicker({ sessions, onPick, onDismiss }: Props
                   {s.chosen_label ? ` · ${s.chosen_label}` : ''}
                 </p>
               </div>
-              <span className="text-brand-500 text-xl leading-none" aria-hidden>
+              <span className="text-brand-600 text-xl leading-none" aria-hidden>
                 ›
               </span>
             </button>

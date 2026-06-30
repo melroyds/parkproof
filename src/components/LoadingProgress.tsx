@@ -43,7 +43,7 @@ export default function LoadingProgress() {
     <main className="min-h-screen flex flex-col items-center justify-center p-6 text-center">
       <BrandMark className="w-24 h-24 mb-6 animate-pulse" />
 
-      <p className="text-2xs uppercase tracking-[0.18em] text-ink-600 mb-2 font-semibold inline-flex items-center gap-1.5">
+      <p className="text-2xs uppercase tracking-[0.18em] mb-2 font-semibold inline-flex items-center gap-1.5" style={{ color: '#A9CFBE' }}>
         {/* Pulsing dot inline with the step counter — subtle liveness signal
             for a screen that otherwise updates only every ~3 seconds when
             the stage advances. The dot's "ping" expansion echoes outwards
@@ -60,7 +60,7 @@ export default function LoadingProgress() {
         key={stageIndex}
         role="status"
         aria-live="polite"
-        className="font-display text-2xl font-extrabold text-ink-900 max-w-xs animate-[fade-in_300ms_ease-out]"
+        className="font-display text-2xl font-extrabold text-paper-50 max-w-xs animate-[fade-in_300ms_ease-out]"
       >
         {STAGES[stageIndex].translated
           ? t(STAGES[stageIndex].labelKey)
@@ -78,7 +78,7 @@ export default function LoadingProgress() {
         aria-valuenow={Math.round(progressPct)}
         aria-valuemin={0}
         aria-valuemax={100}
-        className="w-64 mt-8 h-1.5 bg-paper-300 rounded-full overflow-hidden relative"
+        className="w-64 mt-8 h-1.5 bg-white/10 rounded-full overflow-hidden relative"
       >
         <div
           className="h-full bg-brand-500 transition-[width] duration-700 ease-out relative overflow-hidden"
@@ -93,7 +93,7 @@ export default function LoadingProgress() {
         </div>
       </div>
 
-      <p role="status" aria-live="polite" className="text-xs text-ink-600 mt-6">
+      <p role="status" aria-live="polite" className="text-xs mt-6" style={{ color: '#A9CFBE' }}>
         Usually takes about 10 seconds.
       </p>
 

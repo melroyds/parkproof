@@ -16,8 +16,6 @@ interface Props {
 export default function Card({ as: Tag = 'section', pad = 'md', className = '', children }: Props) {
   const p = pad === 'sm' ? 'p-4' : 'p-5'
   return (
-    <Tag className={`bg-white rounded-2xl border border-paper-300 ${p} ${className}`.trim()}>
-      {children}
-    </Tag>
+    <Tag className={`bg-white gf-card ${p} ${className}`.trim()}>{children}</Tag>
   )
 }

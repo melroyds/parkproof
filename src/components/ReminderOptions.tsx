@@ -132,7 +132,7 @@ function PushSubscriptionBanner({
 
   if (status === 'subscribed') {
     return (
-      <div className="mb-4 px-3 py-2 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-medium flex items-center gap-2">
+      <div className="mb-4 px-3 py-2 rounded-lg bg-brand-50 border border-brand-200 text-brand-800 text-xs font-medium flex items-center gap-2">
         <Icon name="check" className="w-4 h-4 shrink-0" strokeWidth={2.5} />
         <span className="leading-snug">{t('reminders.pushStatus.subscribed')}</span>
       </div>
@@ -140,7 +140,7 @@ function PushSubscriptionBanner({
   }
 
   return (
-    <div className="mb-4 p-3 rounded-xl bg-brand-50 border border-brand-100 flex items-start gap-3">
+    <div className="mb-4 p-3 rounded-lg bg-brand-50 border border-brand-100 flex items-start gap-3">
       <Icon name="bell" className="w-5 h-5 text-brand-600 shrink-0 mt-0.5" />
       <div className="flex-1 min-w-0">
         <p className="text-xs text-ink-700 leading-relaxed mb-2">
@@ -153,7 +153,7 @@ function PushSubscriptionBanner({
             type="button"
             onClick={handleEnable}
             disabled={status === 'requesting'}
-            className="text-xs bg-brand-500 hover:bg-brand-600 text-white px-3 py-1.5 rounded-lg disabled:opacity-50 font-semibold"
+            className="text-xs bg-brand-500 hover:bg-brand-600 text-white px-3 py-1.5 rounded-xl disabled:opacity-50 font-semibold"
           >
             {status === 'requesting'
               ? t('reminders.pushStatus.requesting')
@@ -380,20 +380,20 @@ export default function ReminderOptions({ session, onDone }: Props) {
   if (!anyFireable) {
     return (
       <div className="min-h-screen flex flex-col p-6 max-w-md mx-auto w-full">
-        <h2 className="font-display text-3xl font-extrabold text-ink-900 mb-2">{t('reminders.header')}</h2>
-        <p className="text-sm text-ink-700 mb-6 leading-relaxed">
+        <h2 className="font-display text-3xl font-extrabold text-paper-50 mb-2">{t('reminders.header')}</h2>
+        <p className="text-sm mb-6 leading-relaxed" style={{ color: '#A9CFBE' }}>
           {/* <Trans> renders the <strong> placeholder inside the JSON as a
               real React element, so the expiry-time stays visually anchored
               the way it was before i18n flattened everything. */}
           <Trans
             i18nKey="reminders.expired"
             values={{ when: expiresLabel }}
-            components={{ strong: <span className="font-display font-bold text-ink-900" /> }}
+            components={{ strong: <span className="font-display font-bold text-paper-50" /> }}
           />
         </p>
         <button
           onClick={onDone}
-          className="mt-auto bg-ink-900 hover:bg-ink-800 text-white font-semibold py-4 rounded-2xl shadow-md transition-colors"
+          className="mt-auto bg-brand-500 hover:bg-brand-600 active:bg-brand-700 text-white font-semibold py-4 rounded-xl transition-colors"
         >
           {t('common.done')}
         </button>
@@ -404,12 +404,12 @@ export default function ReminderOptions({ session, onDone }: Props) {
   // === Main flow ===
   return (
     <div className="min-h-screen flex flex-col p-6 max-w-md mx-auto w-full">
-      <h2 className="font-display text-3xl font-extrabold text-ink-900 mb-1">{t('reminders.header')}</h2>
-      <p className="text-sm text-ink-700 mb-6 leading-relaxed">
+      <h2 className="font-display text-3xl font-extrabold text-paper-50 mb-1">{t('reminders.header')}</h2>
+      <p className="text-sm mb-6 leading-relaxed" style={{ color: '#A9CFBE' }}>
         <Trans
           i18nKey="reminders.intro"
           values={{ when: expiresLabel }}
-          components={{ strong: <span className="font-display font-bold text-ink-900" /> }}
+          components={{ strong: <span className="font-display font-bold text-paper-50" /> }}
         />
       </p>
 
@@ -429,7 +429,7 @@ export default function ReminderOptions({ session, onDone }: Props) {
           if (isPast) {
             cls = `${base} bg-paper-100 border-paper-200 text-ink-400 line-through cursor-not-allowed`
           } else if (isSelected) {
-            cls = `${base} bg-brand-500 border-brand-500 text-white shadow-sm shadow-brand-500/30`
+            cls = `${base} bg-brand-500 border-brand-500 text-white`
           } else {
             cls = `${base} bg-white border-paper-300 text-ink-700 hover:border-brand-300`
           }
@@ -461,15 +461,15 @@ export default function ReminderOptions({ session, onDone }: Props) {
       </div>
 
       {/* Live summary of selected fire-times */}
-      <p className="text-xs text-ink-600 mb-6 leading-relaxed min-h-[2.25rem]">
+      <p className="text-xs mb-6 leading-relaxed min-h-[2.25rem]" style={{ color: '#A9CFBE' }}>
         {selectedTimesLabel ? (
           <Trans
             i18nKey="reminders.summaryWithSelections"
             values={{ times: selectedTimesLabel }}
-            components={{ strong: <span className="font-display font-bold text-ink-900" /> }}
+            components={{ strong: <span className="font-display font-bold text-paper-50" /> }}
           />
         ) : (
-          <span className="italic text-ink-600">
+          <span className="italic" style={{ color: '#A9CFBE' }}>
             {t('reminders.summaryEmpty')}
           </span>
         )}
@@ -525,7 +525,7 @@ export default function ReminderOptions({ session, onDone }: Props) {
             notifResult?.status === 'scheduled' ||
             selectedList.length === 0
           }
-          className="w-full bg-accent-500 hover:bg-accent-600 disabled:opacity-60 text-ink-900 font-semibold py-3 rounded-xl shadow-md shadow-accent-500/20 transition-colors"
+          className="w-full bg-accent-600 hover:bg-accent-700 disabled:opacity-60 text-white font-semibold py-3 rounded-xl transition-colors"
         >
           {notifBusy ? (
             <span>{t('reminders.browserRequesting')}</span>
@@ -545,7 +545,7 @@ export default function ReminderOptions({ session, onDone }: Props) {
         {pushScheduleFailed && (
           <p
             role="alert"
-            className="mt-3 px-3 py-2 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs font-medium leading-snug"
+            className="mt-3 px-3 py-2 rounded-lg bg-amber-50 border border-amber-200 text-amber-700 text-xs font-medium leading-snug"
           >
             {t('reminders.pushScheduleFailed')}
           </p>
@@ -554,7 +554,7 @@ export default function ReminderOptions({ session, onDone }: Props) {
 
       <button
         onClick={onDone}
-        className="mt-auto bg-ink-900 hover:bg-ink-800 text-white font-semibold py-4 rounded-2xl shadow-md transition-colors"
+        className="mt-auto bg-brand-500 hover:bg-brand-600 active:bg-brand-700 text-white font-semibold py-4 rounded-xl transition-colors"
       >
         {t('common.done')}
       </button>
@@ -686,10 +686,10 @@ function NoSignReminderPicker({ session, onDone }: Props) {
 
   return (
     <div className="min-h-screen flex flex-col p-6 max-w-md mx-auto w-full">
-      <h2 className="font-display text-3xl font-extrabold text-ink-900 mb-1">
+      <h2 className="font-display text-3xl font-extrabold text-paper-50 mb-1">
         {t('reminders.header')}
       </h2>
-      <p className="text-sm text-ink-700 mb-6 leading-relaxed">
+      <p className="text-sm mb-6 leading-relaxed" style={{ color: '#A9CFBE' }}>
         {t('reminders.noSign.intro')}
       </p>
 
@@ -702,7 +702,7 @@ function NoSignReminderPicker({ session, onDone }: Props) {
           const base =
             'px-4 py-2.5 min-h-[44px] rounded-full text-sm font-semibold border-2 transition-colors min-w-[88px] text-center'
           const cls = isSelected
-            ? `${base} bg-brand-500 border-brand-500 text-white shadow-sm shadow-brand-500/30`
+            ? `${base} bg-brand-500 border-brand-500 text-white`
             : `${base} bg-white border-paper-300 text-ink-700 hover:border-brand-300`
           return (
             <button
@@ -719,15 +719,15 @@ function NoSignReminderPicker({ session, onDone }: Props) {
       </div>
 
       {/* Live summary of selected fire-times */}
-      <p className="text-xs text-ink-600 mb-6 leading-relaxed min-h-[2.25rem]">
+      <p className="text-xs mb-6 leading-relaxed min-h-[2.25rem]" style={{ color: '#A9CFBE' }}>
         {selectedTimesLabel ? (
           <Trans
             i18nKey="reminders.summaryWithSelections"
             values={{ times: selectedTimesLabel }}
-            components={{ strong: <span className="font-display font-bold text-ink-900" /> }}
+            components={{ strong: <span className="font-display font-bold text-paper-50" /> }}
           />
         ) : (
-          <span className="italic text-ink-600">{t('reminders.summaryEmpty')}</span>
+          <span className="italic" style={{ color: '#A9CFBE' }}>{t('reminders.summaryEmpty')}</span>
         )}
       </p>
 
@@ -749,7 +749,7 @@ function NoSignReminderPicker({ session, onDone }: Props) {
         <button
           onClick={handleIcs}
           disabled={icsState === 'downloaded' || selectedList.length === 0}
-          className="w-full bg-gradient-to-r from-brand-500 via-brand-500 to-brand-700 hover:brightness-110 active:brightness-95 disabled:bg-none disabled:bg-brand-300 text-white font-semibold py-3 rounded-xl shadow-md shadow-brand-500/20 transition-[filter]"
+          className="w-full bg-brand-500 hover:bg-brand-600 active:bg-brand-700 disabled:bg-brand-300 text-white font-semibold py-3 rounded-xl transition-colors"
         >
           {icsState === 'downloaded'
             ? t('reminders.calendarDownloaded')
@@ -783,7 +783,7 @@ function NoSignReminderPicker({ session, onDone }: Props) {
             notifResult?.status === 'scheduled' ||
             selectedList.length === 0
           }
-          className="w-full bg-accent-500 hover:bg-accent-600 disabled:opacity-60 text-ink-900 font-semibold py-3 rounded-xl shadow-md shadow-accent-500/20 transition-colors"
+          className="w-full bg-accent-600 hover:bg-accent-700 disabled:opacity-60 text-white font-semibold py-3 rounded-xl transition-colors"
         >
           {notifBusy ? (
             <span>{t('reminders.browserRequesting')}</span>
@@ -801,7 +801,7 @@ function NoSignReminderPicker({ session, onDone }: Props) {
         {pushScheduleFailed && (
           <p
             role="alert"
-            className="mt-3 px-3 py-2 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs font-medium leading-snug"
+            className="mt-3 px-3 py-2 rounded-lg bg-amber-50 border border-amber-200 text-amber-700 text-xs font-medium leading-snug"
           >
             {t('reminders.pushScheduleFailed')}
           </p>
@@ -810,7 +810,7 @@ function NoSignReminderPicker({ session, onDone }: Props) {
 
       <button
         onClick={onDone}
-        className="mt-auto bg-ink-900 hover:bg-ink-800 text-white font-semibold py-4 rounded-2xl shadow-md transition-colors"
+        className="mt-auto bg-brand-500 hover:bg-brand-600 active:bg-brand-700 text-white font-semibold py-4 rounded-xl transition-colors"
       >
         {t('common.done')}
       </button>

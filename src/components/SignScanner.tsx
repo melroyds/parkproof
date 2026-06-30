@@ -274,13 +274,13 @@ export default function SignScanner({ onCapture, onReuseSession, onNoSignScan, o
     <div className="min-h-screen flex flex-col p-6 max-w-md mx-auto w-full">
       <BackButton onClick={onCancel}>{t('common.back')}</BackButton>
 
-      <h2 className="font-display text-3xl font-extrabold text-ink-900 mb-1">
+      <h2 className="font-display text-3xl font-extrabold text-paper-50 mb-1">
         {t('scanner.header')}
       </h2>
-      <p className="text-sm text-ink-600 mb-1 leading-relaxed">
+      <p className="text-sm mb-1 leading-relaxed" style={{ color: '#A9CFBE' }}>
         {t('scanner.instructions')}
       </p>
-      <p className="text-xs text-ink-600 mb-6 leading-relaxed">
+      <p className="text-xs mb-6 leading-relaxed" style={{ color: '#A9CFBE' }}>
         {t('scanner.privacyLine')}
       </p>
 
@@ -306,13 +306,13 @@ export default function SignScanner({ onCapture, onReuseSession, onNoSignScan, o
           <img
             src={preview}
             alt="Captured parking sign"
-            className="w-full rounded-2xl mb-4 border border-paper-300 object-contain max-h-[60vh] bg-white"
+            className="w-full rounded-lg mb-4 border border-brand-900/10 object-contain max-h-[60vh] bg-white"
           />
           {/* Pre-flight quality warning — doesn't block, just informs.
               Saves a wasted Claude call on obvious bad input AND helps the
               user understand why a result might be low-confidence. */}
           {quality && quality.verdict !== 'ok' && (
-            <div className="mb-3 bg-amber-50 border-2 border-amber-400 rounded-xl p-3">
+            <div className="gf-card mb-3 bg-amber-50 p-3">
               <div className="flex items-start gap-2">
                 <Icon
                   name="warning"
@@ -339,7 +339,7 @@ export default function SignScanner({ onCapture, onReuseSession, onNoSignScan, o
                 setPreview(null)
                 setQuality(null)
               }}
-              className="flex-1 bg-paper-200 hover:bg-paper-300 text-ink-900 font-medium py-3 rounded-xl transition-colors"
+              className="flex-1 bg-paper-200 hover:bg-paper-300 text-ink-900 font-medium py-3 rounded-xl transition-colors border border-brand-900/10"
             >
               {t('scanner.retake')}
             </button>
@@ -357,7 +357,7 @@ export default function SignScanner({ onCapture, onReuseSession, onNoSignScan, o
                 setCameraDenied(false)
                 cameraInputRef.current?.click()
               }}
-              className="border-2 border-dashed border-brand-300 hover:border-brand-500 hover:bg-brand-50/50 bg-white rounded-2xl py-8 px-4 flex flex-col items-center text-brand-600 transition-colors"
+              className="border-2 border-dashed border-brand-400 hover:border-brand-600 hover:bg-brand-50 bg-white rounded-xl py-8 px-4 flex flex-col items-center text-brand-600 transition-colors"
             >
               <Icon name="camera" className="w-10 h-10 mb-2" />
               <span className="text-sm font-semibold text-ink-900">{t('scanner.takePhoto')}</span>
@@ -365,7 +365,7 @@ export default function SignScanner({ onCapture, onReuseSession, onNoSignScan, o
             </button>
             <button
               onClick={() => libraryInputRef.current?.click()}
-              className="border-2 border-dashed border-accent-300 hover:border-accent-500 hover:bg-accent-50/50 bg-white rounded-2xl py-8 px-4 flex flex-col items-center text-accent-700 transition-colors"
+              className="border-2 border-dashed border-brand-900/15 hover:border-brand-400 hover:bg-brand-50 bg-white rounded-xl py-8 px-4 flex flex-col items-center text-ink-600 transition-colors"
             >
               <Icon name="gallery" className="w-10 h-10 mb-2" />
               <span className="text-sm font-semibold text-ink-900">{t('scanner.fromLibrary')}</span>
@@ -382,7 +382,7 @@ export default function SignScanner({ onCapture, onReuseSession, onNoSignScan, o
             </p>
           )}
           {cameraDenied && (
-            <div className="mt-3 bg-amber-50 border-2 border-amber-400 rounded-xl p-3">
+            <div className="gf-card mt-3 bg-amber-50 p-3">
               <div className="flex items-start gap-2">
                 <Icon
                   name="warning"
@@ -398,7 +398,7 @@ export default function SignScanner({ onCapture, onReuseSession, onNoSignScan, o
                 </div>
                 <button
                   onClick={() => setCameraDenied(false)}
-                  className="text-ink-600 hover:text-ink-900 shrink-0 text-lg leading-none transition-colors min-w-[44px] min-h-[44px] inline-flex items-center justify-center"
+                  className="text-ink-600 hover:text-ink-900 shrink-0 text-lg leading-none transition-colors min-w-[44px] min-h-[44px] inline-flex items-center justify-center mt-1 mr-1"
                   aria-label={t('common.back')}
                 >
                   <span aria-hidden="true">&times;</span>
@@ -412,7 +412,8 @@ export default function SignScanner({ onCapture, onReuseSession, onNoSignScan, o
               looking for. */}
           <button
             onClick={handleNoSignStart}
-            className="mt-6 text-sm text-ink-600 hover:text-ink-900 underline self-center transition-colors"
+            className="mt-6 text-sm underline self-center transition-colors hover:opacity-80"
+            style={{ color: '#7BE3A4' }}
           >
             {t('scanner.noSignHere')}
           </button>
@@ -422,7 +423,7 @@ export default function SignScanner({ onCapture, onReuseSession, onNoSignScan, o
         // a surroundings photo. Either path commits — the choice is purely
         // about evidence weight, not whether the session gets saved.
         <div className="flex flex-col gap-3">
-          <div className="bg-brand-50 border border-brand-200 rounded-2xl p-5">
+          <div className="gf-card bg-brand-50 p-5">
             <h3 className="font-display font-bold text-ink-900 mb-1">
               {t('scanner.noSignChooseHeader')}
             </h3>
@@ -432,7 +433,7 @@ export default function SignScanner({ onCapture, onReuseSession, onNoSignScan, o
           </div>
           <button
             onClick={() => ambientCameraRef.current?.click()}
-            className="border-2 border-dashed border-brand-300 hover:border-brand-500 hover:bg-brand-50/50 bg-white rounded-2xl py-6 px-4 flex flex-col items-center text-brand-600 transition-colors"
+            className="border-2 border-dashed border-brand-400 hover:border-brand-600 hover:bg-brand-50 bg-white rounded-xl py-6 px-4 flex flex-col items-center text-brand-600 transition-colors"
           >
             <Icon name="camera" className="w-8 h-8 mb-2" />
             <span className="text-sm font-semibold text-ink-900">
@@ -444,7 +445,7 @@ export default function SignScanner({ onCapture, onReuseSession, onNoSignScan, o
           </button>
           <button
             onClick={() => ambientLibraryRef.current?.click()}
-            className="border-2 border-dashed border-accent-300 hover:border-accent-500 hover:bg-accent-50/50 bg-white rounded-2xl py-6 px-4 flex flex-col items-center text-accent-700 transition-colors"
+            className="border-2 border-dashed border-brand-900/15 hover:border-brand-400 hover:bg-brand-50 bg-white rounded-xl py-6 px-4 flex flex-col items-center text-ink-600 transition-colors"
           >
             <Icon name="gallery" className="w-8 h-8 mb-2" />
             <span className="text-sm font-semibold text-ink-900">
@@ -453,13 +454,14 @@ export default function SignScanner({ onCapture, onReuseSession, onNoSignScan, o
           </button>
           <button
             onClick={handleNoSignSkip}
-            className="mt-1 bg-paper-200 hover:bg-paper-300 text-ink-900 font-medium py-3 rounded-2xl transition-colors"
+            className="mt-1 bg-paper-200 hover:bg-paper-300 text-ink-900 font-medium py-3 rounded-xl transition-colors border border-brand-900/10"
           >
             {t('scanner.noSignSkip')}
           </button>
           <button
             onClick={() => setNoSignStage('idle')}
-            className="text-sm text-ink-600 hover:text-ink-900 underline self-center transition-colors"
+            className="text-sm underline self-center transition-colors hover:opacity-80"
+            style={{ color: '#7BE3A4' }}
           >
             {t('common.back')}
           </button>
@@ -471,10 +473,10 @@ export default function SignScanner({ onCapture, onReuseSession, onNoSignScan, o
             <img
               src={ambientPhoto}
               alt={t('scanner.noSignAmbientAlt')}
-              className="w-full rounded-2xl border border-paper-300 object-contain max-h-[55vh] bg-white"
+              className="w-full rounded-lg border border-brand-900/10 object-contain max-h-[55vh] bg-white"
             />
           )}
-          <p className="text-xs text-ink-600 text-center">
+          <p className="text-xs text-center" style={{ color: '#A9CFBE' }}>
             {t('scanner.noSignAmbientCaption')}
           </p>
           <div className="flex gap-2">
@@ -483,7 +485,7 @@ export default function SignScanner({ onCapture, onReuseSession, onNoSignScan, o
                 setAmbientPhoto(null)
                 setNoSignStage('choosing')
               }}
-              className="flex-1 bg-paper-200 hover:bg-paper-300 text-ink-900 font-medium py-3 rounded-xl transition-colors"
+              className="flex-1 bg-paper-200 hover:bg-paper-300 text-ink-900 font-medium py-3 rounded-xl transition-colors border border-brand-900/10"
             >
               {t('scanner.retake')}
             </button>

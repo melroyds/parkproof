@@ -85,7 +85,7 @@ function Toast({ message, onClose }: { message: string | null; onClose: () => vo
   return (
     <div
       role="alert"
-      className="fixed bottom-4 inset-x-4 z-50 max-w-md mx-auto bg-ink-900 text-white rounded-2xl shadow-lg p-4 flex items-start gap-3"
+      className="fixed bottom-4 inset-x-4 z-50 max-w-md mx-auto bg-ink-900 text-white rounded-xl shadow-sm p-4 flex items-start gap-3"
     >
       <p className="text-sm leading-relaxed flex-1">{message}</p>
       <button
@@ -441,7 +441,7 @@ function App() {
     return (
       <main className="min-h-screen flex flex-col items-center justify-center p-6 text-center">
         <BrandMark className="w-20 h-20 mb-5 animate-pulse" />
-        <h2 className="font-display text-2xl font-extrabold text-ink-900">
+        <h2 className="font-display text-2xl font-extrabold text-paper-50">
           {t('auth.signingIn')}
         </h2>
       </main>
@@ -486,27 +486,27 @@ function App() {
   if (view.name === 'error') {
     return (
       <main className="min-h-screen flex flex-col items-center justify-center p-6 text-center max-w-md mx-auto">
-        <div className="w-16 h-16 rounded-full bg-accent-100 border-2 border-accent-500 text-accent-700 flex items-center justify-center mb-4">
+        <div className="w-16 h-16 rounded-full bg-amber-50 border-2 border-amber-400 text-amber-700 flex items-center justify-center mb-4">
           <Icon name="warning" className="w-8 h-8" />
         </div>
         <div role="alert">
-          <h2 className="font-display text-2xl font-extrabold text-ink-900">
+          <h2 className="font-display text-2xl font-extrabold text-paper-50">
             {view.offline ? t('errors.offlineTitle') : t('errors.somethingWrong')}
           </h2>
-          <p className="text-sm text-ink-700 mt-3 mb-6 break-words">
+          <p className="text-sm mt-3 mb-6 break-words" style={{ color: '#A9CFBE' }}>
             {view.offline ? t('errors.offlineBody') : view.message}
           </p>
         </div>
         <div className="flex flex-col gap-2 w-full">
           <button
             onClick={() => setView({ name: 'scan' })}
-            className="bg-gradient-to-r from-brand-500 via-brand-500 to-brand-700 hover:brightness-110 active:brightness-95 disabled:bg-none disabled:bg-brand-300 text-white font-semibold py-3 rounded-2xl shadow-md transition-colors"
+            className="bg-brand-500 hover:bg-brand-600 active:bg-brand-700 disabled:bg-brand-300 text-white font-semibold py-3 rounded-xl shadow-sm shadow-brand-900/10 transition-colors"
           >
             {t('errors.tryAgain')}
           </button>
           <button
             onClick={() => setView({ name: 'home' })}
-            className="bg-paper-200 hover:bg-paper-300 text-ink-900 font-medium py-3 rounded-2xl transition-colors"
+            className="bg-white border border-paper-300 hover:border-brand-500 hover:text-brand-700 text-ink-900 font-medium py-3 rounded-xl transition-colors"
           >
             {t('errors.backHome')}
           </button>
@@ -697,7 +697,13 @@ function App() {
   const primaryActive = activeSessions[0]
 
   return (
-    <main className="min-h-screen flex flex-col relative">
+    <main
+      className="min-h-screen flex flex-col relative bg-brand-800 text-paper-50"
+      style={{
+        backgroundImage:
+          'repeating-linear-gradient(115deg, rgba(123,227,164,0.055) 0 1px, transparent 1px 8px)',
+      }}
+    >
       <header className="px-6 pt-6 pb-2 text-center">
         {/* First-time visitors get LandingFeatures with its own hero block,
             so skip the default "ParkProof + hero illustration + tagline"
@@ -710,9 +716,12 @@ function App() {
           // Replace the decorative hero with the live status when there's an
           // active session — it's the most useful information on the screen
           // at that moment, and competes for the same visual real estate.
-          <h1 className="font-display text-3xl font-extrabold text-ink-900 tracking-tight">
-            ParkProof
-          </h1>
+          <div className="flex items-center justify-center gap-2.5">
+            <BrandMark variant="glyph" tone="paper" className="w-8 h-8" />
+            <h1 className="font-display text-3xl font-extrabold text-paper-50 tracking-tight">
+              ParkProof
+            </h1>
+          </div>
         ) : (
           <>
             <img
@@ -725,10 +734,13 @@ function App() {
               className="w-full max-w-[360px] mx-auto mb-2 select-none pointer-events-none"
               aria-hidden
             />
-            <h1 className="font-display text-4xl font-extrabold text-ink-900 tracking-tight">
-              ParkProof
-            </h1>
-            <p className="text-sm text-ink-600 mt-2 max-w-[20rem] mx-auto leading-relaxed">
+            <div className="flex items-center justify-center gap-2.5">
+              <BrandMark variant="glyph" tone="paper" className="w-9 h-9" />
+              <h1 className="font-display text-4xl font-extrabold text-paper-50 tracking-tight">
+                ParkProof
+              </h1>
+            </div>
+            <p className="text-sm mt-2 max-w-[20rem] mx-auto leading-relaxed" style={{ color: '#A9CFBE' }}>
               {t('home.tagline')}
             </p>
           </>
@@ -800,14 +812,14 @@ function App() {
           <>
             <button
               onClick={() => setView({ name: 'scan' })}
-              className="w-full bg-gradient-to-r from-brand-500 via-brand-500 to-brand-700 hover:brightness-110 active:brightness-95 disabled:bg-none disabled:bg-brand-300 text-white text-lg font-semibold py-5 rounded-2xl shadow-lg shadow-brand-500/25 flex items-center justify-center gap-3 transition-colors"
+              className="w-full bg-paper-50 hover:bg-white active:bg-paper-100 text-brand-800 text-lg font-semibold py-4 rounded-xl shadow-[0_4px_16px_rgba(0,0,0,0.25)] flex items-center justify-center gap-3 transition-colors"
             >
               <Icon name="camera" className="w-6 h-6" />
               {primaryActive ? t('home.scanAnother') : t('home.scanCta')}
             </button>
 
             {!primaryActive && (
-              <p className="text-xs text-ink-600/80 mt-4 text-center">
+              <p className="text-xs mt-4 text-center" style={{ color: '#A9CFBE' }}>
                 {t('home.scanHelp')}
               </p>
             )}
@@ -825,13 +837,14 @@ function App() {
         {!(sessionCount === 0 && !primaryActive) && (
           <button
             onClick={() => setView({ name: 'history' })}
-            className="mt-8 w-full bg-white hover:bg-paper-50 border border-paper-300 text-ink-900 font-medium py-3 rounded-2xl flex items-start justify-between gap-3 px-5 transition-colors"
+            className="gf-card mt-8 w-full text-paper-50 font-medium py-3 flex items-start justify-between gap-3 px-5 transition-colors hover:brightness-110"
+            style={{ background: 'rgba(255,255,255,0.055)' }}
           >
             <span className="flex items-start gap-2 min-w-0 flex-1">
-              <Icon name="list" className="w-5 h-5 text-ink-600 shrink-0 mt-px" />
+              <Icon name="list" className="w-5 h-5 shrink-0 mt-px text-[#A9CFBE]" />
               <span className="leading-snug text-left">{t('home.history')}</span>
             </span>
-            <span className="text-sm text-ink-600 shrink-0 mt-px">
+            <span className="text-sm shrink-0 mt-px pr-2" style={{ color: '#A9CFBE' }}>
               {sessionCount === 0 ? t('home.historyEmpty') : t('home.historyCount', { count: sessionCount })}
             </span>
           </button>
@@ -846,24 +859,26 @@ function App() {
           auth.user ? (
             <button
               onClick={() => setView({ name: 'settings' })}
-              className="mt-2 w-full bg-white hover:bg-paper-50 border border-paper-300 text-ink-900 font-medium py-3 rounded-2xl flex items-start justify-between gap-3 px-5 transition-colors"
+              className="gf-card mt-2 w-full text-paper-50 font-medium py-3 flex items-start justify-between gap-3 px-5 transition-colors hover:brightness-110"
+              style={{ background: 'rgba(255,255,255,0.055)' }}
             >
               <span className="flex items-start gap-2 min-w-0 flex-1">
-                <Icon name="check" className="w-5 h-5 text-brand-600 shrink-0 mt-px" strokeWidth={2.5} />
+                <Icon name="check" className="w-5 h-5 text-[#7BE3A4] shrink-0 mt-px" strokeWidth={2.5} />
                 <span className="truncate">{auth.user.email}</span>
               </span>
-              <span className="text-xs text-ink-600 shrink-0 mt-1">{t('home.account')}</span>
+              <span className="text-xs shrink-0 mt-1 pr-2" style={{ color: '#A9CFBE' }}>{t('home.account')}</span>
             </button>
           ) : (
             <button
               onClick={() => setView({ name: 'signin' })}
-              className="mt-2 w-full bg-white hover:bg-paper-50 border border-paper-300 text-ink-900 font-medium py-3 rounded-2xl flex items-start justify-between gap-3 px-5 transition-colors"
+              className="gf-card mt-2 w-full text-paper-50 font-medium py-3 flex items-start justify-between gap-3 px-5 transition-colors hover:brightness-110"
+              style={{ background: 'rgba(255,255,255,0.055)' }}
             >
               <span className="flex items-start gap-2 min-w-0 flex-1">
-                <Icon name="bell" className="w-5 h-5 text-ink-600 shrink-0 mt-px" />
+                <Icon name="bell" className="w-5 h-5 shrink-0 mt-px text-[#A9CFBE]" />
                 <span className="leading-snug text-left">{t('home.signInToSync')}</span>
               </span>
-              <span className="text-xs text-ink-600 shrink-0 mt-1">{t('common.optional')}</span>
+              <span className="text-xs shrink-0 mt-1 pr-2" style={{ color: '#A9CFBE' }}>{t('common.optional')}</span>
             </button>
           )
         )}
@@ -880,10 +895,10 @@ function App() {
               t('home.steps.remind'),
             ].map((text, i) => (
               <li key={i} className="flex gap-4 items-start">
-                <span className="font-display text-2xl font-extrabold text-brand-500 leading-none w-7 text-center shrink-0">
+                <span className="font-display text-2xl font-extrabold text-[#7BE3A4] leading-none w-7 text-center shrink-0">
                   {i + 1}
                 </span>
-                <span className="text-sm text-ink-700 leading-relaxed pt-1">{text}</span>
+                <span className="text-sm leading-relaxed pt-1" style={{ color: '#A9CFBE' }}>{text}</span>
               </li>
             ))}
           </ol>
@@ -895,7 +910,7 @@ function App() {
             the flow drafts from the infringement notice alone. */}
         <button
           onClick={() => setView({ name: 'appeal', session: null })}
-          className="mt-8 text-sm text-brand-700 hover:text-brand-800 font-medium underline self-center min-h-[44px] inline-flex items-center py-2.5"
+          className="mt-8 text-sm text-[#7BE3A4] hover:text-paper-50 font-medium underline self-center min-h-[44px] inline-flex items-center py-2.5"
         >
           {t('home.draftAppeal')}
         </button>
@@ -903,19 +918,22 @@ function App() {
         <div className="mt-6 flex items-center justify-center gap-6 self-center flex-wrap">
           <button
             onClick={() => setView({ name: 'about' })}
-            className="text-xs text-ink-700 hover:text-ink-900 underline min-h-[44px] inline-flex items-center -my-2.5"
+            className="text-xs hover:text-paper-50 underline min-h-[44px] inline-flex items-center -my-2.5"
+            style={{ color: '#A9CFBE' }}
           >
             {t('common.about')}
           </button>
           <button
             onClick={() => setView({ name: 'privacy' })}
-            className="text-xs text-ink-700 hover:text-ink-900 underline min-h-[44px] inline-flex items-center -my-2.5"
+            className="text-xs hover:text-paper-50 underline min-h-[44px] inline-flex items-center -my-2.5"
+            style={{ color: '#A9CFBE' }}
           >
             {t('common.privacy')}
           </button>
           <button
             onClick={() => setFeedbackOpen(true)}
-            className="text-xs text-ink-700 hover:text-ink-900 underline min-h-[44px] inline-flex items-center -my-2.5"
+            className="text-xs hover:text-paper-50 underline min-h-[44px] inline-flex items-center -my-2.5"
+            style={{ color: '#A9CFBE' }}
           >
             {t('common.sendFeedback')}
           </button>

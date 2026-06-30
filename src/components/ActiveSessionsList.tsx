@@ -19,10 +19,10 @@ interface Props {
  * as a coloured stripe + matching subtle background tint.
  */
 const URGENCY_STYLES = {
-  normal: { stripe: 'bg-emerald-500', tint: 'bg-emerald-50', text: 'text-emerald-900' },
+  normal: { stripe: 'bg-brand-600', tint: 'bg-brand-50', text: 'text-brand-700' },
   warning: { stripe: 'bg-amber-500', tint: 'bg-amber-50', text: 'text-amber-900' },
   urgent: { stripe: 'bg-red-600', tint: 'bg-red-50', text: 'text-red-900' },
-  expired: { stripe: 'bg-ink-700', tint: 'bg-paper-100', text: 'text-ink-900' },
+  expired: { stripe: 'bg-ink-900', tint: 'bg-paper-100', text: 'text-ink-900' },
 } as const
 
 /**
@@ -41,16 +41,16 @@ export default function ActiveSessionsList({ sessions, onBack, onOpen }: Props) 
 
   return (
     <div className="min-h-screen flex flex-col p-6 max-w-md mx-auto w-full">
-      <BackButton onClick={onBack}>
+      <BackButton onClick={onBack} className="text-[#7BE3A4] hover:text-paper-50">
         {t('common.back')}
       </BackButton>
 
-      <h2 className="font-display text-3xl font-extrabold text-ink-900 mb-1">
+      <h2 className="font-display text-3xl font-extrabold text-paper-50 mb-1">
         {t('active.allActiveHeader', {
           defaultValue: 'Currently parked',
         })}
       </h2>
-      <p className="text-sm text-ink-600 mb-6 leading-relaxed">
+      <p className="text-sm mb-6 leading-relaxed" style={{ color: '#A9CFBE' }}>
         {t('active.allActiveIntro', {
           count: sessions.length,
           defaultValue:
@@ -91,7 +91,7 @@ export default function ActiveSessionsList({ sessions, onBack, onOpen }: Props) 
             <li key={session.id}>
               <button
                 onClick={() => onOpen(session)}
-                className={`w-full text-left rounded-2xl border border-paper-300 ${style.tint} hover:brightness-95 active:brightness-90 transition-all overflow-hidden flex items-stretch`}
+                className={`gf-card w-full text-left ${style.tint} hover:brightness-95 active:brightness-90 transition-all overflow-hidden flex items-stretch`}
                 aria-label={t('active.listCardAria', {
                   address: addressLine,
                   status: hasExpiry ? countdown!.label : elapsed!.label,
@@ -109,7 +109,7 @@ export default function ActiveSessionsList({ sessions, onBack, onOpen }: Props) 
                     <p className="font-display text-base font-bold text-ink-900 truncate leading-tight">
                       {addressLine}
                     </p>
-                    <p className={`text-sm font-semibold mt-0.5 ${style.text}`}>
+                    <p className={`text-sm font-semibold mt-0.5 tnum ${style.text}`}>
                       {hasExpiry ? countdown!.label : elapsed!.label}
                     </p>
                     <p className="text-xs text-ink-600 mt-0.5">

@@ -6,6 +6,7 @@ import { loadSessions } from '../lib/storage'
 import { useNow } from '../lib/use-now'
 import { formatCountdownLocalized } from '../lib/countdown'
 import Icon from './Icon'
+import VerifiedSeal from './VerifiedSeal'
 import BackButton from './ui/BackButton'
 
 interface Props {
@@ -40,15 +41,15 @@ export default function SessionHistory({ onBack, onOpen }: Props) {
 
   return (
     <div className="min-h-screen flex flex-col p-6 max-w-md mx-auto w-full">
-      <BackButton onClick={onBack}>{t('common.backToHome')}</BackButton>
+      <BackButton onClick={onBack} className="text-[#7BE3A4] hover:text-paper-50">{t('common.backToHome')}</BackButton>
 
-      <h2 className="font-display text-3xl font-extrabold text-ink-900 mb-1">
+      <h2 className="font-display text-3xl font-extrabold text-paper-50 mb-1">
         {t('history.header')}
       </h2>
-      <p className="text-sm text-ink-600 mb-6 leading-relaxed">{t('history.intro')}</p>
+      <p className="text-sm mb-6 leading-relaxed" style={{ color: '#A9CFBE' }}>{t('history.intro')}</p>
 
       {sessions.length === 0 ? (
-        <div className="bg-white rounded-2xl border border-paper-300 p-8 text-center">
+        <div className="gf-card bg-white p-8 text-center">
           <img
             // BASE_URL-aware so the asset resolves correctly under the
             // /app/ mount after the two-app cutover.
@@ -69,7 +70,7 @@ export default function SessionHistory({ onBack, onOpen }: Props) {
               <button
                 key={s.id}
                 onClick={() => onOpen(s)}
-                className="text-left bg-white hover:bg-paper-50 border border-paper-300 hover:border-brand-300 rounded-2xl p-4 transition-colors"
+                className="gf-card text-left bg-white hover:bg-paper-50 p-4 transition-colors"
               >
                 <div className="flex items-start gap-3">
                   {/* Thumbnail priority for the row: sign_photo (translated
@@ -87,18 +88,23 @@ export default function SessionHistory({ onBack, onOpen }: Props) {
                     </div>
                   )}
                   <div className="flex-1 min-w-0">
-                    <p className="font-medium text-ink-900 truncate">
-                      {arrival.toLocaleDateString('en-AU', {
-                        weekday: 'short',
-                        day: 'numeric',
-                        month: 'short',
-                      })}
-                      {' · '}
-                      {arrival.toLocaleTimeString('en-AU', {
-                        hour: 'numeric',
-                        minute: '2-digit',
-                      })}
-                    </p>
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      {s.signature && (
+                        <VerifiedSeal size={16} glow={false} className="flex-none" />
+                      )}
+                      <p className="font-medium text-ink-900 truncate">
+                        {arrival.toLocaleDateString('en-AU', {
+                          weekday: 'short',
+                          day: 'numeric',
+                          month: 'short',
+                        })}
+                        {' · '}
+                        {arrival.toLocaleTimeString('en-AU', {
+                          hour: 'numeric',
+                          minute: '2-digit',
+                        })}
+                      </p>
+                    </div>
                     {s.location?.address && (
                       <p className="text-xs text-ink-700 mt-0.5 truncate">{s.location.address}</p>
                     )}

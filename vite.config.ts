@@ -425,8 +425,8 @@ export default defineConfig({
         short_name: 'ParkProof',
         description:
           'Aussie parking, decoded. Photograph a sign, get a plain-English answer, save evidence in case of a wrongful ticket.',
-        theme_color: '#275BFF',
-        background_color: '#F2F4F7',
+        theme_color: '#073B25',
+        background_color: '#073B25',
         display: 'standalone',
         orientation: 'portrait',
         // Two-app cutover: the PWA's installable surface lives under /app/.

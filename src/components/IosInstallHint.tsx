@@ -66,7 +66,7 @@ export default function IosInstallHint() {
   }
 
   return (
-    <div className="fixed bottom-4 inset-x-4 z-50 max-w-md mx-auto bg-white border border-paper-300 rounded-2xl shadow-lg p-4">
+    <div className="fixed bottom-4 inset-x-4 z-50 max-w-md mx-auto bg-white border border-brand-900/10 rounded-lg shadow-sm p-4">
       <div className="flex items-start gap-3">
         <div className="flex-1 min-w-0">
           <p className="font-display font-bold text-ink-900 text-sm">

@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import type { ParkingSession } from '../types'
 import { deleteSession, endSession, updateSession } from '../lib/storage'
 import ScheduledRemindersSection from './ScheduledRemindersSection'
+import VerifiedSeal from './VerifiedSeal'
 import Icon from './Icon'
 import Button from './ui/Button'
 import BackButton from './ui/BackButton'
@@ -234,42 +235,60 @@ export default function SessionDetail({
 
   return (
     <div className="min-h-screen flex flex-col p-6 max-w-md mx-auto w-full">
-      <BackButton onClick={onBack}>
+      <BackButton onClick={onBack} className="text-[#7BE3A4] hover:text-paper-50">
         {t('common.backToHistory')}
       </BackButton>
 
-      <h2 className="font-display text-3xl font-extrabold text-ink-900 mb-1">
+      <h2 className="font-display text-3xl font-extrabold tracking-tight text-paper-50 mb-1">
         {t('session.header')}
       </h2>
-      <p className="text-sm text-ink-600 mb-3 leading-relaxed">
+      <p className="text-sm mb-3 leading-relaxed" style={{ color: '#A9CFBE' }}>
         {t('session.arrived', { when: fmtLocal(session.arrived_at, timeZone, true) })}
       </p>
 
+      {/* Register A — the signed-record vault panel. The cryptographic proof
+          is the brand's hero moment, so it sits on vault green with a
+          banknote guilloché texture, a glowing mint Verified Seal, paper
+          text, and the signature hash in mono mint. */}
       {session.signature && (
-        <div className="mb-6 inline-flex items-center gap-2 self-start bg-brand-50 border border-brand-200 text-brand-800 text-xs font-semibold px-3 py-1.5 rounded-full">
-          <Icon name="check" className="w-4 h-4" strokeWidth={2.5} />
-          <span>{t('session.cryptoSigned')}</span>
-          <span className="text-brand-600 font-normal" aria-hidden="true">
-            ·
-          </span>
-          <span className="text-brand-700 font-mono text-2xs">
-            {new Date(session.signature.signed_at).toLocaleString('en-AU', {
-              day: 'numeric',
-              month: 'short',
-              hour: 'numeric',
-              minute: '2-digit',
-            })}
-          </span>
+        <div
+          className="gf-card-lg mb-5 p-5"
+          style={{
+            background: '#073B25',
+            backgroundImage:
+              'repeating-linear-gradient(115deg, rgba(123,227,164,0.055) 0 1px, transparent 1px 8px)',
+          }}
+        >
+          <div className="flex items-center gap-3.5">
+            <VerifiedSeal size={48} glow />
+            <div className="min-w-0">
+              <p className="text-sm font-display font-bold text-paper-50">
+                {t('session.cryptoSigned')}
+              </p>
+              <p className="text-2xs font-mono truncate text-[#7BE3A4]">
+                {session.signature.signature_base64.slice(0, 16)}
+                <span style={{ color: '#A9CFBE' }}>
+                  {' · '}
+                  {new Date(session.signature.signed_at).toLocaleString('en-AU', {
+                    day: 'numeric',
+                    month: 'short',
+                    hour: 'numeric',
+                    minute: '2-digit',
+                  })}
+                </span>
+              </p>
+            </div>
+          </div>
+          {/* Plain-English meaning of the "Cryptographically signed" badge —
+              what tamper-proof does and does NOT prove. On the vault panel it
+              reads in muted sage. */}
+          <p
+            className="text-xs leading-relaxed mt-3"
+            style={{ color: '#A9CFBE' }}
+          >
+            {t('about.sealCaveat')}
+          </p>
         </div>
-      )}
-
-      {/* Plain-English meaning of the "Cryptographically signed" badge — what
-          tamper-proof does and does NOT prove, in the one place the badge is
-          shown. Stops the wary user reading it as "this wins my dispute". */}
-      {session.signature && (
-        <p className="text-xs text-ink-600 leading-relaxed mb-5 -mt-3">
-          {t('about.sealCaveat')}
-        </p>
       )}
 
       {/* #3 — silent photo-sync failure made visible, with a retry. */}
@@ -289,7 +308,7 @@ export default function SessionDetail({
         </div>
       )}
 
-      <Card className="mb-3">
+      <Card className="mb-3 rounded-2xl border-transparent shadow-[0_14px_40px_rgba(7,59,37,0.16),0_2px_6px_rgba(7,59,37,0.08)]">
         <dl className="space-y-4 text-sm">
           <div>
             <dt className="text-xs uppercase tracking-widest font-semibold text-ink-600">
@@ -404,7 +423,7 @@ export default function SessionDetail({
 
       {/* Note — user-supplied context. Soft-asks for it on empty so people
           remember to add the WHY rather than just the WHEN-and-WHERE. */}
-      <Card className="mb-3">
+      <Card className="mb-3 rounded-2xl border-transparent shadow-[0_14px_40px_rgba(7,59,37,0.16),0_2px_6px_rgba(7,59,37,0.08)]">
         <div className="flex items-baseline justify-between mb-2">
           <h3
             id="session-note-label"
@@ -492,7 +511,7 @@ export default function SessionDetail({
       {/* Sign photo — only rendered for sign-translated sessions. No-sign
           sessions drop straight to the ambient/car photos below. */}
       {session.sign_photo && (
-        <Card className="mb-3">
+        <Card className="mb-3 rounded-2xl border-transparent shadow-[0_14px_40px_rgba(7,59,37,0.16),0_2px_6px_rgba(7,59,37,0.08)]">
           <h3 className="text-xs uppercase tracking-widest font-semibold text-ink-600 mb-2">
             {t('session.signPhotoLabel')}
           </h3>
@@ -508,7 +527,7 @@ export default function SessionDetail({
           optional ambient (surroundings) photo, which substitutes for the
           sign photo as the user-supplied visual evidence. */}
       {session.no_sign && (
-        <Card className="mb-3">
+        <Card className="mb-3 rounded-2xl border-transparent shadow-[0_14px_40px_rgba(7,59,37,0.16),0_2px_6px_rgba(7,59,37,0.08)]">
           <h3 className="text-xs uppercase tracking-widest font-semibold text-ink-600 mb-2">
             {t('session.noSignLabel')}
           </h3>
@@ -535,7 +554,7 @@ export default function SessionDetail({
       )}
 
       {session.car_photo && (
-        <Card className="mb-3">
+        <Card className="mb-3 rounded-2xl border-transparent shadow-[0_14px_40px_rgba(7,59,37,0.16),0_2px_6px_rgba(7,59,37,0.08)]">
           <h3 className="text-xs uppercase tracking-widest font-semibold text-ink-600 mb-2">
             {t('session.carPhotoLabel')}
           </h3>
@@ -564,7 +583,7 @@ export default function SessionDetail({
         {/* #9 — warn before exporting a cloud-pulled session whose photos may
             not embed, so a blank-evidence PDF doesn't leave silently. */}
         {hasRemotePhoto && (
-          <p className="text-xs text-ink-600 leading-relaxed text-center px-2">
+          <p className="text-xs leading-relaxed text-center px-2" style={{ color: '#A9CFBE' }}>
             {t('session.exportPhotoWarning')}
           </p>
         )}
@@ -574,13 +593,13 @@ export default function SessionDetail({
           href={verifyHref}
           target="_blank"
           rel="noreferrer"
-          className="text-xs text-brand-700 hover:text-brand-800 underline text-center min-h-[44px] inline-flex items-center justify-center py-2.5 -my-1.5"
+          className="text-xs text-[#7BE3A4] hover:text-paper-50 underline text-center min-h-[44px] inline-flex items-center justify-center py-2.5 -my-1.5"
         >
           {t('session.howToVerify')}
         </a>
         <button
           onClick={onDraftAppeal}
-          className="bg-white border border-ink-700 hover:bg-ink-900 hover:text-white text-ink-900 font-semibold py-3 rounded-2xl transition-colors"
+          className="bg-white border border-ink-700 hover:bg-ink-900 hover:text-white text-ink-900 font-semibold py-3 rounded-xl transition-colors"
         >
           {t('session.draftAppeal')}
         </button>
@@ -590,7 +609,7 @@ export default function SessionDetail({
         {canEnd && (
           <button
             onClick={handleEnd}
-            className="bg-white border border-brand-500 hover:bg-brand-50 active:bg-brand-100 text-brand-700 font-semibold py-3 rounded-2xl transition-colors"
+            className="bg-white border border-brand-500 hover:bg-brand-50 active:bg-brand-100 text-brand-700 font-semibold py-3 rounded-xl transition-colors"
           >
             {t('session.endSession')}
           </button>

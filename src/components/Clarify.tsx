@@ -17,14 +17,14 @@ export default function Clarify({ signPhoto, clarification, onPick, onCancel }: 
         {t('common.back')}
       </BackButton>
 
-      <h2 className="font-display text-4xl font-extrabold text-ink-900 leading-tight">
+      <h2 className="font-display text-4xl font-extrabold text-paper-50 leading-tight">
         {clarification.question}
       </h2>
 
       <img
         src={signPhoto}
         alt={t('clarify.imageAlt')}
-        className="w-full rounded-2xl mt-6 border border-paper-300 object-contain max-h-[32vh] bg-white"
+        className="w-full rounded-lg mt-6 border border-brand-900/10 object-contain max-h-[32vh] bg-white"
       />
 
       <div className="flex flex-col gap-3 mt-6">
@@ -32,7 +32,7 @@ export default function Clarify({ signPhoto, clarification, onPick, onCancel }: 
           <button
             key={i}
             onClick={() => onPick(option)}
-            className="bg-brand-500 hover:bg-brand-600 active:bg-brand-700 text-white text-2xl font-bold py-6 rounded-2xl shadow-lg shadow-brand-500/20 transition-colors font-display tracking-tight"
+            className="gf-card bg-white hover:bg-brand-50 text-brand-700 text-2xl font-bold py-6 transition-colors font-display tracking-tight"
           >
             {option.label}
           </button>
