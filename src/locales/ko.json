@@ -330,7 +330,9 @@
     "noSignBanner": "이 자리에 표지판이 보이지 않았다고 기록하는 중입니다. 암호 서명은 '언제'와 '어디서'만 보증하고, 표지판이 정말 없었는지까지는 보증하지 못해요. 정직하게 남겨주세요. 당신의 증거니까요.",
     "ambientHeader": "주변",
     "ambientCaption": "표지판이 게시되지 않았음을 보여주기 위해 촬영됨.",
-    "locationContext": "위치는 주차한 곳에 타임스탬프를 남기는 데에만 사용합니다. 로그인하지 않는 한 기기에 남아 있습니다."
+    "locationContext": "위치는 주차한 곳에 타임스탬프를 남기는 데에만 사용합니다. 로그인하지 않는 한 기기에 남아 있습니다.",
+    "photoSaveFailed": "이 사진을 휴대폰에 저장하지 못했습니다. 다시 시도하거나, 이 사진 없이 기록을 저장하세요.",
+    "saving": "저장 중…"
   },
   "reminders": {
     "header": "알림 설정",
@@ -445,7 +447,11 @@
     "exportPhotoWarning": "이 오래된 기록의 사진 일부를 클라우드에서 불러오지 못했습니다. 그대로 내보내셔도 되고, 처음 만든 기기에서 열어보셔도 됩니다.",
     "photoHashMismatch": "이 사진은 서명된 증거와 일치하지 않으며 저장 이후 변경되었을 수 있습니다.",
     "endConfirmLate": "지금 이 기록을 종료로 표시할까요? 누른 시각인 {{time}}(휴대폰 시계 기준)으로 기록됩니다. 차가 실제로 떠난 시각은 기록되지 않습니다.",
-    "devKeySigned": "개발용 키로 서명되었습니다. ParkProof가 공개한 키로는 확인할 수 없습니다."
+    "devKeySigned": "개발용 키로 서명되었습니다. ParkProof가 공개한 키로는 확인할 수 없습니다.",
+    "photoNotOnDevice": "이 기기에 사진이 없습니다. 서명된 디지털 지문: {{fingerprint}}.",
+    "photoNotOnDeviceUnsigned": "이 기기에 사진이 없습니다. 디지털 지문: {{fingerprint}}. 아직 서명되지 않았습니다.",
+    "signPhotoAlt": "스캔한 주차 표지판 사진",
+    "carPhotoAlt": "주차한 곳에 있는 차량 사진"
   },
   "appeal": {
     "captureHeader": "이의신청서 작성",
@@ -653,7 +659,9 @@
       "valueHeader": "값",
       "dash": "—",
       "notCaptured": "캡처되지 않음",
-      "imageEmbedFailed": "(이미지를 임베드할 수 없음)"
+      "imageEmbedFailed": "(이미지를 임베드할 수 없음)",
+      "photoNotOnDevice": "이 PDF를 만든 기기에 사진이 없습니다. 서명된 SHA-256 디지털 지문: {{fingerprint}}.",
+      "photoNotOnDeviceUnsigned": "이 PDF를 만든 기기에 사진이 없습니다. SHA-256 디지털 지문: {{fingerprint}}. 아직 서명되지 않았습니다."
     },
     "duration": {
       "minOnly_one": "1분",

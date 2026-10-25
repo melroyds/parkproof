@@ -338,7 +338,9 @@
     "noSignKicker": "EVIDENCE NOTE",
     "noSignBanner": "You're recording that no signs were visible at this spot. The cryptographic signature covers when and where, not whether signs were truly absent. Be honest, this is your evidence.",
     "ambientHeader": "Surroundings",
-    "ambientCaption": "Captured to demonstrate no signs were posted."
+    "ambientCaption": "Captured to demonstrate no signs were posted.",
+    "photoSaveFailed": "This photo couldn't be saved on your phone. Try again, or save the record without it.",
+    "saving": "Saving…"
   },
   "reminders": {
     "header": "Set reminders",
@@ -474,7 +476,11 @@
     "deleteSession": "Delete record",
     "deleteConfirm": "Delete this parking record? This cannot be undone.",
     "endConfirmLate": "Mark this record as ended now? It will record {{time}}, the time you tap, from your phone's clock. It won't show when the car actually left.",
-    "devKeySigned": "Signed with a development key. It can't be checked with ParkProof's published key."
+    "devKeySigned": "Signed with a development key. It can't be checked with ParkProof's published key.",
+    "photoNotOnDevice": "Photo not on this device. Signed fingerprint {{fingerprint}}.",
+    "photoNotOnDeviceUnsigned": "Photo not on this device. Fingerprint {{fingerprint}}. Not signed yet.",
+    "signPhotoAlt": "Photo of the parking sign you scanned",
+    "carPhotoAlt": "Photo of your car where you parked"
   },
   "appeal": {
     "captureHeader": "Draft an appeal letter",
@@ -682,7 +688,9 @@
       "valueHeader": "Value",
       "dash": "–",
       "notCaptured": "Not captured",
-      "imageEmbedFailed": "(Image could not be embedded)"
+      "imageEmbedFailed": "(Image could not be embedded)",
+      "photoNotOnDevice": "Photo not on the device that made this PDF. Its signed SHA-256 fingerprint is {{fingerprint}}.",
+      "photoNotOnDeviceUnsigned": "Photo not on the device that made this PDF. Its SHA-256 fingerprint is {{fingerprint}}. Not signed yet."
     },
     "duration": {
       "minOnly_one": "1 min",

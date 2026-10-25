@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNow } from './lib/use-now'
 import SignScanner from './components/SignScanner'
@@ -23,16 +23,21 @@ import Icon from './components/Icon'
 import LoadingProgress from './components/LoadingProgress'
 import { refreshInterpretation, translateSign } from './lib/claude'
 import {
+  deleteSession,
   endSession,
   getSession,
+  isDuplicateRecordError,
   isStorageFullError,
   loadActiveSessions,
+  loadSessionIdsForGc,
   loadSessions,
   notifyRecordsChanged,
   saveSession,
   subscribeStorageRecovered,
   updateSession,
 } from './lib/storage'
+import { deleteSessionPhotos, sweepOrphanPhotos } from './lib/photo-store'
+import { getSessionPhoto, reusedPhotoMeta, type PhotoCaptureMeta } from './lib/session-photos'
 import { useRecordsVersion } from './lib/use-records-version'
 import {
   installSigningTriggers,
@@ -45,6 +50,7 @@ import {
 import { emptyLogDraft } from './lib/evidence-chain'
 import { useAuth } from './lib/use-auth'
 import {
+  deleteCloudSession,
   mirrorSessionToCloud,
   mirrorSessionUpdateToCloud,
   performInitialSync,
@@ -57,6 +63,15 @@ import type { LogDraft, ParkingRules, ParkingSession, RuleVariant } from './type
 
 type Coords = { lat: number; lng: number } | null
 
+interface ScanView<N extends 'clarify' | 'result' | 'logging'> {
+  name: N
+  result: ParkingRules
+  signPhoto: string
+  signPhotoMeta: PhotoCaptureMeta
+  coords: Coords
+  draft: LogDraft
+}
+
 type View =
   | { name: 'home' }
   | { name: 'scan' }
@@ -66,16 +81,19 @@ type View =
    * so far for the record about to be logged. It starts empty for every
    * scan; later tasks add data to a new record only through it, and it
    * reaches the record's signed arrival_context at save.
+   *
+   * `signPhotoMeta` is when and how the sign photo was captured (camera or
+   * library), carried to the logger for the photo's PhotoRef.
    */
-  | { name: 'clarify'; result: ParkingRules; signPhoto: string; coords: Coords; draft: LogDraft }
-  | { name: 'result'; result: ParkingRules; signPhoto: string; coords: Coords; draft: LogDraft }
-  | { name: 'logging'; result: ParkingRules; signPhoto: string; coords: Coords; draft: LogDraft }
+  | ScanView<'clarify'>
+  | ScanView<'result'>
+  | ScanView<'logging'>
   /**
    * "No sign here" flow — user parked at a spot with no signage and wants a
    * GPS + time evidence record without the AI translation. The ambient photo
    * (optional, opt-in) demonstrates absence of signs.
    */
-  | { name: 'logNoSign'; coords: Coords; ambientPhoto: string | null }
+  | { name: 'logNoSign'; coords: Coords; ambientPhoto: string | null; ambientPhotoMeta: PhotoCaptureMeta | null }
   | { name: 'remind'; session: ParkingSession }
   | { name: 'history' }
   | { name: 'actives' }
@@ -226,6 +244,24 @@ function App() {
     return installSigningTriggers()
   }, [])
 
+  // Photo-store GC on app start: delete photos whose record no longer
+  // exists, once they are at least a day old (a logger open in another tab
+  // stores its photos before its record is saved). Skipped when the saved
+  // records can't be read right now: an unreadable list is not an empty
+  // one, and sweeping against it would delete every photo on the device.
+  useEffect(() => {
+    const knownIds = loadSessionIdsForGc()
+    if (!knownIds) {
+      console.warn('[photos] startup sweep skipped: the saved records could not be read')
+      return
+    }
+    void sweepOrphanPhotos(knownIds)
+      .then((n) => {
+        if (n > 0) console.info(`[photos] removed ${n} photo(s) of records that no longer exist`)
+      })
+      .catch((err) => console.warn('[photos] startup sweep failed:', err))
+  }, [])
+
   // If the browser landed here as a federated-sign-in callback (?code=…),
   // exchange the code for tokens and refresh the auth context. Runs once
   // per mount; the helper no-ops when there's no code in the URL.
@@ -311,16 +347,20 @@ function App() {
     dataUrl: string,
     mediaType: string,
     coords: { lat: number; lng: number } | null,
+    meta?: PhotoCaptureMeta,
   ) => {
+    // Without capture metadata, claim no more than we know: now, and not
+    // necessarily from the camera.
+    const signPhotoMeta: PhotoCaptureMeta = meta ?? { captured_at: new Date().toISOString(), source: 'library' }
     setView({ name: 'loading' })
     try {
       const base64 = stripDataUrlPrefix(dataUrl)
       const result = await translateSign(base64, mediaType, coords)
       const draft = emptyLogDraft()
       if (result.clarification && result.clarification.options.length > 1) {
-        setView({ name: 'clarify', result, signPhoto: dataUrl, coords, draft })
+        setView({ name: 'clarify', result, signPhoto: dataUrl, signPhotoMeta, coords, draft })
       } else {
-        setView({ name: 'result', result, signPhoto: dataUrl, coords, draft })
+        setView({ name: 'result', result, signPhoto: dataUrl, signPhotoMeta, coords, draft })
       }
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err)
@@ -332,6 +372,7 @@ function App() {
     variant: RuleVariant,
     base: ParkingRules,
     signPhoto: string,
+    signPhotoMeta: PhotoCaptureMeta,
     coords: Coords,
     draft: LogDraft,
   ) => {
@@ -361,19 +402,38 @@ function App() {
       chosen_label: variant.label,
       alternate_variants: alternates,
     }
-    setView({ name: 'result', result: merged, signPhoto, coords, draft })
+    setView({ name: 'result', result: merged, signPhoto, signPhotoMeta, coords, draft })
   }
 
+  // A re-check in progress. Reading the sign photo (an IndexedDB read)
+  // happens before the view switches to `loading`, and meanwhile the
+  // re-check buttons are still on screen: a second tap must not start a
+  // second refresh (another model call, and the later answer would win).
+  const reuseInFlight = useRef(false)
+
   const handleReuseSession = async (session: ParkingSession) => {
+    if (reuseInFlight.current) return
+    reuseInFlight.current = true
+    try {
+      await reuseSession(session)
+    } finally {
+      reuseInFlight.current = false
+    }
+  }
+
+  const reuseSession = async (session: ParkingSession) => {
     // A re-check needs the earlier sign photo for the result screen. Without
-    // one (no-sign record, or photo stripped by quota recovery) send the
-    // driver to a fresh scan instead. Checked BEFORE switching to `loading`:
-    // returning from the loading view used to leave the spinner up forever.
-    const signPhoto = session.sign_photo
+    // one (no-sign record, photo stripped by quota recovery, or photo-store
+    // bytes not on this device) send the driver to a fresh scan instead.
+    // Checked BEFORE switching to `loading`: returning from the loading view
+    // used to leave the spinner up forever.
+    const signPhoto = await getSessionPhoto(session, 'sign')
     if (!signPhoto) {
       setView({ name: 'scan' })
       return
     }
+    // The new record reuses this photo: carry its own capture time and source.
+    const signPhotoMeta = reusedPhotoMeta(session, 'sign')
     setView({ name: 'loading' })
     try {
       const fresh = await refreshInterpretation(
@@ -401,7 +461,7 @@ function App() {
       const reusedCoords: Coords = session.location
         ? { lat: session.location.lat, lng: session.location.lng }
         : null
-      setView({ name: 'result', result, signPhoto, coords: reusedCoords, draft: emptyLogDraft() })
+      setView({ name: 'result', result, signPhoto, signPhotoMeta, coords: reusedCoords, draft: emptyLogDraft() })
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err)
       setView({ name: 'error', message, offline: isOffline() })
@@ -455,6 +515,24 @@ function App() {
       // A closed tab or a network failure is picked up by the sweep.
       signNewRecord(session.id, draft)
     } catch (err) {
+      // The same record saved twice (a repeated save of one logger): the
+      // record IS saved, so leave it, and its photos, alone, and move on as
+      // a save does, to its reminders. (Staying here would leave the driver
+      // on a logger whose Save is disabled.)
+      if (isDuplicateRecordError(err)) {
+        console.warn('[storage] record already saved:', session.id)
+        const saved = getSession(session.id)
+        if (saved) setView({ name: 'remind', session: saved })
+        return
+      }
+      // Not saved, so nothing refers to the photos the logger stored. (Only
+      // when the record really isn't there: a failure after the save must
+      // never take a saved record's photos with it.)
+      if (!getSession(session.id)) {
+        void deleteSessionPhotos(session.id).catch((e) =>
+          console.warn('[photos] could not delete the photos of an unsaved record:', e),
+        )
+      }
       // Storage full after recovery: a translated message, not the English
       // log text the error carries.
       const message = isStorageFullError(err)
@@ -514,6 +592,33 @@ function App() {
     }
   }
 
+  /**
+   * The ONE delete path. The record screen only asks (after its confirm);
+   * this deletes the record and its photo-store photos, mirrors the delete
+   * to the cloud when signed in, cancels push and in-tab reminders, and
+   * goes back to History.
+   */
+  const handleDeleteRecord = (session: ParkingSession) => {
+    try {
+      // deleteSession also deletes the record's photos from the photo store.
+      deleteSession(session.id)
+    } catch (err) {
+      console.warn('[storage] could not delete record:', err)
+      return
+    }
+    // Fire-and-forget; the local delete is authoritative for this device.
+    if (auth.user) {
+      void deleteCloudSession(session.id).catch((err) => {
+        console.warn('[sync] cloud delete failed:', err)
+      })
+    }
+    // Stale pushes or in-tab alerts for a record the driver has thrown away
+    // would be jarring. Best-effort, as on the end path.
+    void cancelPushReminders(session.id)
+    cancelInTabReminders(session.id)
+    setView({ name: 'history' })
+  }
+
   // OAuth federation callback splash — first paint when ?code=/?state=
   // are present, replaces what would otherwise be a brief flash of the
   // home view (marketing landing for first-time visitors, session card
@@ -536,8 +641,8 @@ function App() {
         <SignScanner
           onCapture={handleCapture}
           onReuseSession={handleReuseSession}
-          onNoSignScan={(coords, ambientPhoto) =>
-            setView({ name: 'logNoSign', coords, ambientPhoto })
+          onNoSignScan={(coords, ambientPhoto, ambientPhotoMeta) =>
+            setView({ name: 'logNoSign', coords, ambientPhoto, ambientPhotoMeta })
           }
           onCancel={() => setView({ name: 'home' })}
         />
@@ -553,6 +658,7 @@ function App() {
           rules={null}
           signPhoto={null}
           ambientPhoto={view.ambientPhoto}
+          ambientPhotoMeta={view.ambientPhotoMeta}
           coords={view.coords}
           // The no-sign path has no scan views to carry a draft, so its
           // arrival_context starts from an empty one.
@@ -606,7 +712,7 @@ function App() {
           signPhoto={view.signPhoto}
           clarification={view.result.clarification!}
           onPick={(variant) =>
-            handlePickVariant(variant, view.result, view.signPhoto, view.coords, view.draft)
+            handlePickVariant(variant, view.result, view.signPhoto, view.signPhotoMeta, view.coords, view.draft)
           }
           onCancel={() => setView({ name: 'home' })}
         />
@@ -627,6 +733,7 @@ function App() {
               name: 'logging',
               result: view.result,
               signPhoto: view.signPhoto,
+              signPhotoMeta: view.signPhotoMeta,
               coords: view.coords,
               draft: view.draft,
             })
@@ -644,12 +751,14 @@ function App() {
         <SessionLogger
           rules={view.result}
           signPhoto={view.signPhoto}
+          signPhotoMeta={view.signPhotoMeta}
           onComplete={(session) => void handleSessionSaved(session, view.draft)}
           onCancel={() =>
             setView({
               name: 'result',
               result: view.result,
               signPhoto: view.signPhoto,
+              signPhotoMeta: view.signPhotoMeta,
               coords: view.coords,
               draft: view.draft,
             })
@@ -702,7 +811,7 @@ function App() {
         <SessionDetail
           session={view.session}
           onBack={() => setView({ name: 'history' })}
-          onDeleted={() => setView({ name: 'history' })}
+          onDelete={handleDeleteRecord}
           // Hand the appeal flow the stored copy, which may have gained a
           // signature or an end time since this view opened.
           onDraftAppeal={() =>

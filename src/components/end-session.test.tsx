@@ -11,6 +11,7 @@ import type { ReactNode } from 'react'
 import i18n from '../lib/i18n'
 import { AuthContext, type AuthContextValue } from '../lib/auth-context-shape'
 import { getSession, saveSession, updateSession } from '../lib/storage'
+import { createMemoryPhotoBackend, putPhoto, setPhotoBackendForTests } from '../lib/photo-store'
 import type { ParkingSession, SignatureBundle } from '../types'
 import ActiveSessionCard from './ActiveSessionCard'
 import SessionDetail from './SessionDetail'
@@ -216,7 +217,7 @@ describe('SessionDetail', () => {
         <SessionDetail
           session={session}
           onBack={() => {}}
-          onDeleted={() => {}}
+          onDelete={() => {}}
           onDraftAppeal={() => {}}
           onEndSession={onEndSession}
         />,
@@ -264,16 +265,16 @@ describe('SessionDetail', () => {
     expect(confirmMock).toHaveBeenCalledWith(i18n.t('session.endConfirm'))
   })
 
-  it('deleting a record cancels its push and in-tab reminders', () => {
+  it('Delete only asks App to delete the record, after the confirm (App.handleDeleteRecord owns it)', () => {
     const session = makeSession()
     saveSession(session)
-    const onDeleted = vi.fn()
+    const onDelete = vi.fn()
     render(
       withAuth(
         <SessionDetail
           session={session}
           onBack={() => {}}
-          onDeleted={onDeleted}
+          onDelete={onDelete}
           onDraftAppeal={() => {}}
           onEndSession={() => {}}
         />,
@@ -281,10 +282,32 @@ describe('SessionDetail', () => {
     )
     fireEvent.click(screen.getByRole('button', { name: i18n.t('session.deleteSession') }))
 
-    expect(getSession(session.id)).toBeUndefined()
-    expect(mocks.cancelPushReminders).toHaveBeenCalledWith(session.id)
-    expect(mocks.cancelInTabReminders).toHaveBeenCalledWith(session.id)
-    expect(onDeleted).toHaveBeenCalledTimes(1)
+    expect(onDelete).toHaveBeenCalledTimes(1)
+    expect(onDelete).toHaveBeenCalledWith(expect.objectContaining({ id: session.id }))
+    // The screen didn't delete, cancel or mirror anything itself.
+    expect(getSession(session.id)).toBeDefined()
+    expect(mocks.cancelPushReminders).not.toHaveBeenCalled()
+    expect(mocks.cancelInTabReminders).not.toHaveBeenCalled()
+  })
+
+  it('Delete does nothing when the confirm is declined', () => {
+    const session = makeSession()
+    saveSession(session)
+    setConfirm(false)
+    const onDelete = vi.fn()
+    render(
+      withAuth(
+        <SessionDetail
+          session={session}
+          onBack={() => {}}
+          onDelete={onDelete}
+          onDraftAppeal={() => {}}
+          onEndSession={() => {}}
+        />,
+      ),
+    )
+    fireEvent.click(screen.getByRole('button', { name: i18n.t('session.deleteSession') }))
+    expect(onDelete).not.toHaveBeenCalled()
   })
 
   it('offers I\'ve left on a record with no expiry that is not a no-sign record', () => {
@@ -336,5 +359,49 @@ describe('SessionDetail', () => {
     expect(screen.queryByText(i18n.t('session.cryptoSigned'))).toBeNull()
     expect(screen.getByText(i18n.t('session.devKeySigned'))).toBeTruthy()
     expect(document.querySelector('circle[stroke="#7BE3A4"]')).toBeNull()
+  })
+})
+
+describe('SessionDetail photos (T0b2)', () => {
+  const jpeg = (text: string) => 'data:image/jpeg;base64,' + btoa(text)
+  const ref = (role: 'sign' | 'car' | 'ambient', sha256: string) => ({
+    role,
+    sha256,
+    captured_at: '2026-10-25T00:58:00.000Z',
+    source: 'camera_input' as const,
+  })
+  beforeEach(() => setPhotoBackendForTests(createMemoryPhotoBackend()))
+  afterEach(() => setPhotoBackendForTests(null))
+
+  function renderDetail(session: ParkingSession) {
+    saveSession(session)
+    render(
+      withAuth(
+        <SessionDetail session={session} onBack={() => {}} onDelete={() => {}} onDraftAppeal={() => {}} onEndSession={() => {}} />,
+      ),
+    )
+  }
+
+  it('alt text describes each photo instead of repeating its heading', async () => {
+    const sign = await putPhoto('rec-alt', jpeg('sign'))
+    const car = await putPhoto('rec-alt', jpeg('car'))
+    renderDetail(makeSession({ id: 'rec-alt', sign_photo: null, photos: [ref('sign', sign), ref('car', car)] }))
+    expect(await screen.findByRole('img', { name: i18n.t('session.signPhotoAlt') })).toBeTruthy()
+    expect(await screen.findByRole('img', { name: i18n.t('session.carPhotoAlt') })).toBeTruthy()
+    expect(i18n.t('session.signPhotoAlt')).not.toBe(i18n.t('session.signPhotoLabel'))
+  })
+
+  it('the surroundings caption shows under the photo, not under the "not on this device" note', async () => {
+    const caption = i18n.t('session.ambientPhotoCaption')
+    renderDetail(
+      makeSession({ id: 'rec-gone', no_sign: true, sign_photo: null, expires_at: null, photos: [ref('ambient', 'a'.repeat(64))] }),
+    )
+    expect(await screen.findByText(/Photo not on this device/)).toBeTruthy()
+    expect(screen.queryByText(caption)).toBeNull()
+    cleanup()
+
+    const sha = await putPhoto('rec-here', jpeg('surroundings'))
+    renderDetail(makeSession({ id: 'rec-here', no_sign: true, sign_photo: null, expires_at: null, photos: [ref('ambient', sha)] }))
+    expect(await screen.findByText(caption)).toBeTruthy()
   })
 })

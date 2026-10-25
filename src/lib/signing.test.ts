@@ -24,6 +24,7 @@ import {
   SWEEP_THROTTLE_MS,
   arrivalSigningRejection,
   chainKeyHash,
+  computeV1Hashes,
   enqueueSigning,
   hashDataUrlImage,
   installSigningTriggers,
@@ -718,5 +719,48 @@ describe('departure catch-up', () => {
     vi.advanceTimersByTime(5_000)
     vi.useRealTimers()
     expect(getSession(s.id)!.addenda!.some((a) => a.kind === 'departure')).toBe(false)
+  })
+})
+
+describe('photo-store records (T0b2): hashes come from the PhotoRefs', () => {
+  const CAR_PHOTO = 'data:image/jpeg;base64,' + btoa('fake-car-bytes')
+  const AMBIENT_PHOTO = 'data:image/jpeg;base64,' + btoa('fake-ambient-bytes')
+  const photoRef = (role: 'sign' | 'car' | 'ambient', sha256: string) => ({
+    role,
+    sha256,
+    captured_at: new Date(Date.now() - 60_000).toISOString(),
+    source: 'camera_input' as const,
+  })
+
+  it('computeV1Hashes reads PhotoRef hashes without needing the bytes, legacy fields otherwise', async () => {
+    const signSha = 'a'.repeat(64)
+    // Sign from a ref (bytes not needed), ambient still a legacy data URL.
+    const mixed = record({ sign_photo: null, ambient_photo: AMBIENT_PHOTO, photos: [photoRef('sign', signSha)] })
+    expect(await computeV1Hashes(mixed)).toEqual({
+      sign: signSha,
+      car: null,
+      ambient: await hashDataUrlImage(AMBIENT_PHOTO),
+    })
+    // A legacy cloud URL still can't be hashed here; a ref for that role can.
+    expect(await computeV1Hashes(record({ car_photo: 'https://cdn/car.jpg' }))).toBeNull()
+    expect(
+      await computeV1Hashes(record({ car_photo: 'https://cdn/car.jpg', photos: [photoRef('car', 'b'.repeat(64))] })),
+    ).toMatchObject({ car: 'b'.repeat(64) })
+  })
+
+  it('a new record with null legacy fields signs link 0 and link 1 over its PhotoRefs', async () => {
+    const signSha = await hashDataUrlImage(SIGN_PHOTO)
+    const carSha = await hashDataUrlImage(CAR_PHOTO)
+    const refs = [photoRef('sign', signSha), photoRef('car', carSha)]
+    const s = await saveNew({ sign_photo: null, car_photo: null, photos: refs })
+    expect(s.v1_hashes).toEqual({ sign: signSha, car: carSha, ambient: null })
+    const p0 = payloadOf(s.signature!)
+    expect(p0.sign_photo_sha256).toBe(signSha)
+    expect(p0.car_photo_sha256).toBe(carSha)
+    expect(p0.ambient_photo_sha256).toBeNull()
+    expect(await verifies(s.signature!)).toBe(true)
+    // Link 1 signs the refs themselves (role, hash, capture time, source).
+    const link1 = s.addenda!.find((a) => a.kind === 'arrival_context')!
+    expect(payloadOf(link1.bundle!).data).toMatchObject({ photos: refs })
   })
 })

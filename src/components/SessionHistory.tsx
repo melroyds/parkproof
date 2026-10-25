@@ -8,6 +8,10 @@ import { sessionTimezone } from '../lib/timezone'
 import Icon from './Icon'
 import VerifiedSeal from './VerifiedSeal'
 import BackButton from './ui/BackButton'
+import { RecordThumbnail } from './RecordPhoto'
+
+/** Thumbnail priority for a row: the sign photo, then the surroundings photo, then the car photo. */
+const THUMB_ROLES = ['sign', 'ambient', 'car'] as const
 
 interface Props {
   onBack: () => void
@@ -76,20 +80,21 @@ export default function SessionHistory({ onBack, onOpen }: Props) {
                 className="gf-card text-left bg-white hover:bg-paper-50 p-4 transition-colors"
               >
                 <div className="flex items-start gap-3">
-                  {/* Thumbnail priority for the row: sign_photo (translated
-                      sessions) → ambient_photo (no-sign with surroundings) →
-                      car_photo → placeholder square (no images at all). */}
-                  {s.sign_photo || s.ambient_photo || s.car_photo ? (
-                    <img
-                      src={(s.sign_photo || s.ambient_photo || s.car_photo) ?? undefined}
-                      alt=""
-                      className="w-16 h-16 object-cover rounded-lg border border-paper-300 flex-none"
-                    />
-                  ) : (
-                    <div className="w-16 h-16 rounded-lg border border-paper-300 bg-paper-100 flex items-center justify-center flex-none">
-                      <Icon name="pin" className="w-7 h-7 text-ink-400" />
-                    </div>
-                  )}
+                  {/* Thumbnail priority for the row: sign photo (translated
+                      records) → surroundings photo (no-sign) → car photo →
+                      placeholder square (no photo, or its bytes aren't on
+                      this device). Read through the photo store for new
+                      records. */}
+                  <RecordThumbnail
+                    session={s}
+                    roles={THUMB_ROLES}
+                    className="w-16 h-16 object-cover rounded-lg border border-paper-300 flex-none"
+                    fallback={
+                      <div className="w-16 h-16 rounded-lg border border-paper-300 bg-paper-100 flex items-center justify-center flex-none">
+                        <Icon name="pin" className="w-7 h-7 text-ink-400" />
+                      </div>
+                    }
+                  />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-1.5 min-w-0">
                       {s.signature && (

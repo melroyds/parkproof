@@ -1,7 +1,11 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { ParkingSession } from '../types'
 import { formatRelativeLocalized } from '../lib/time-format'
+import { hasSessionPhoto, resolveSessionPhoto } from '../lib/session-photos'
+import { RecordThumbnail } from './RecordPhoto'
+
+const SIGN_ONLY = ['sign'] as const
 
 interface Props {
   sessions: ParkingSession[]
@@ -21,8 +25,27 @@ export default function RecentScansPicker({ sessions, onPick, onDismiss }: Props
     }
     return map
   })
+  // A re-check reuses the record's sign photo, so a row whose photo can't
+  // be read (none, or its bytes aren't on this device) would be a dead tap.
+  // Records with no sign photo at all are left out at once; photo-store
+  // photos are checked as the picker opens.
+  const [unusable, setUnusable] = useState<ReadonlySet<string>>(
+    () => new Set(sessions.filter((s) => !hasSessionPhoto(s, 'sign')).map((s) => s.id)),
+  )
+  useEffect(() => {
+    let cancelled = false
+    void Promise.all(
+      sessions.map(async (s) => ((await resolveSessionPhoto(s, 'sign')).kind === 'available' ? null : s.id)),
+    ).then((ids) => {
+      if (!cancelled) setUnusable(new Set(ids.filter((id): id is string => id !== null)))
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [sessions])
+  const usable = sessions.filter((s) => !unusable.has(s.id))
 
-  if (sessions.length === 0) return null
+  if (usable.length === 0) return null
 
   return (
     <section className="mb-6">
@@ -42,7 +65,7 @@ export default function RecentScansPicker({ sessions, onPick, onDismiss }: Props
         {t('reuse.pickerCopy')}
       </p>
       <div className="flex flex-col gap-2">
-        {sessions.map((s) => {
+        {usable.map((s) => {
           const age = agesById.get(s.id) ?? ''
           const headline = s.location?.address ?? 'Saved scan'
           return (
@@ -51,10 +74,11 @@ export default function RecentScansPicker({ sessions, onPick, onDismiss }: Props
               onClick={() => onPick(s)}
               className="gf-card bg-white hover:bg-brand-50 p-3 text-left flex items-center gap-3 transition-colors"
             >
-              <img
-                src={s.sign_photo ?? undefined}
-                alt=""
+              <RecordThumbnail
+                session={s}
+                roles={SIGN_ONLY}
                 className="w-14 h-14 object-cover rounded-md border border-brand-900/10 flex-none bg-white"
+                fallback={<div className="w-14 h-14 rounded-md border border-brand-900/10 flex-none bg-white" aria-hidden="true" />}
               />
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-ink-900 truncate">{headline}</p>

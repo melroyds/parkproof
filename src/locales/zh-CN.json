@@ -208,7 +208,9 @@
     "noSignBanner": "你正在记录这里没有可见的标志。加密签名覆盖的是时间和地点,而不是标志到底有没有。请如实填写,这是你自己的证据。",
     "ambientHeader": "周围环境",
     "ambientCaption": "拍下来证明这里没有张贴标志。",
-    "locationContext": "我们用你的位置,只是为了标记你停车的时间和地点。除非你登录,否则它只留在你的设备上。"
+    "locationContext": "我们用你的位置,只是为了标记你停车的时间和地点。除非你登录,否则它只留在你的设备上。",
+    "photoSaveFailed": "这张照片没能保存在你的手机上。请重试,或者不带这张照片保存记录。",
+    "saving": "正在保存…"
   },
   "reminders": {
     "header": "设置提醒",
@@ -323,7 +325,11 @@
     "exportPhotoWarning": "这条较旧的记录有一张或多张照片无法从云端加载。你可以照常导出,或在当初创建它的那台设备上打开。",
     "photoHashMismatch": "这张照片和已签名的证据对不上,可能在保存之后被改动过。",
     "endConfirmLate": "现在将此记录标记为已结束?记录的将是你点按的时间 {{time}}(手机时钟),而不是车辆实际离开的时间。",
-    "devKeySigned": "此记录使用开发密钥签名。无法用 ParkProof 公布的公钥核验。"
+    "devKeySigned": "此记录使用开发密钥签名。无法用 ParkProof 公布的公钥核验。",
+    "photoNotOnDevice": "这台设备上没有这张照片。已签名的指纹 {{fingerprint}}。",
+    "photoNotOnDeviceUnsigned": "这台设备上没有这张照片。指纹 {{fingerprint}}。尚未签名。",
+    "signPhotoAlt": "你扫描的停车标志的照片",
+    "carPhotoAlt": "你的车停在车位上的照片"
   },
   "appeal": {
     "captureHeader": "起草申诉信",
@@ -514,7 +520,9 @@
       "valueHeader": "值",
       "dash": "—",
       "notCaptured": "未记录",
-      "imageEmbedFailed": "(图片无法嵌入)"
+      "imageEmbedFailed": "(图片无法嵌入)",
+      "photoNotOnDevice": "生成此 PDF 的设备上没有这张照片。它已签名的 SHA-256 指纹是 {{fingerprint}}。",
+      "photoNotOnDeviceUnsigned": "生成此 PDF 的设备上没有这张照片。它的 SHA-256 指纹是 {{fingerprint}}。尚未签名。"
     },
     "evidence": {
       "title": "ParkProof:停车证据",

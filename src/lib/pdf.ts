@@ -7,6 +7,13 @@ import { sessionTimezone } from './timezone'
 import { registerPdfFonts } from './pdf-fonts'
 import { ACTIVE_AFTER_EXPIRY_MS } from './storage'
 import { DEV_KEY_ALIAS } from './evidence-chain'
+import {
+  LEGACY_PHOTO_ROLES,
+  legacyPhotoField,
+  photoHashSigned,
+  resolveSessionPhoto,
+  type LegacyPhotoRole,
+} from './session-photos'
 
 const MARGIN = 40
 
@@ -155,6 +162,39 @@ function buildGuidance(session: ParkingSession, timezone: string, t: TFunction):
 }
 
 // ─── Cross-device photo materialization ────────────────────────────────────
+
+/**
+ * Stand-in value for a photo field of the in-flight PDF copy when the
+ * record has the photo (a PhotoRef) but its bytes aren't on this device.
+ * The image helpers draw the "not on this device" line with the signed
+ * fingerprint instead of an image. Only ever set on the copy that
+ * `materializeRemotePhotos` returns for one PDF; never stored.
+ */
+const MISSING_PHOTO_PREFIX = 'parkproof-missing-photo:'
+
+export function missingPhotoMarker(sha256: string, signed: boolean): string {
+  return `${MISSING_PHOTO_PREFIX}${signed ? 'signed' : 'unsigned'}:${sha256}`
+}
+
+export function parseMissingPhotoMarker(value: string): { sha256: string; signed: boolean } | null {
+  if (!value.startsWith(MISSING_PHOTO_PREFIX)) return null
+  const [state, sha256] = value.slice(MISSING_PHOTO_PREFIX.length).split(':')
+  if (!sha256 || (state !== 'signed' && state !== 'unsigned')) return null
+  return { sha256, signed: state === 'signed' }
+}
+
+/**
+ * The PDF line for a photo whose bytes aren't on the device that made the
+ * PDF. It gives the full SHA-256 (plain ASCII hex), so a reader can match
+ * it against the photo hashes in the signature appendix.
+ */
+export function missingPhotoText(marker: { sha256: string; signed: boolean }, t: TFunction): string {
+  const fingerprint = marker.sha256
+  return marker.signed
+    ? t('pdf.common.photoNotOnDevice', { fingerprint })
+    : t('pdf.common.photoNotOnDeviceUnsigned', { fingerprint })
+}
+
 /**
  * Cross-device fix: when a signed-in user pulls sessions from the cloud,
  * `sign_photo` / `car_photo` / `ambient_photo` arrive as short-TTL presigned
@@ -173,35 +213,48 @@ function buildGuidance(session: ParkingSession, timezone: string, t: TFunction):
  * caller's localStorage copy should keep its HTTPS URLs (they'll be re-minted
  * with a fresh 1h TTL on the next /sessions/list call; the data URL we
  * generate here is only needed for the in-flight PDF).
+ *
+ * Photos are read through the photo store (`resolveSessionPhoto`): a new
+ * record's sign, car and ambient bytes come from IndexedDB and are put on
+ * the copy's legacy fields, so the drawing code below reads one shape for
+ * every record. A photo whose bytes aren't on this device gets a
+ * `missingPhotoMarker` instead, and the PDF says so with its fingerprint.
  */
 export async function materializeRemotePhotos(
   session: ParkingSession,
 ): Promise<ParkingSession> {
-  // Lazy-import sync.ts to keep its deps out of the PDF chunk when the
-  // session is fully same-device (every photo already a data URL).
-  const { materializePhotoFromCloud } = await import('./sync')
-
-  const fields = ['sign_photo', 'car_photo', 'ambient_photo'] as const
-  const fieldToRole: Record<(typeof fields)[number], 'sign' | 'car' | 'ambient'> = {
-    sign_photo: 'sign',
-    car_photo: 'car',
-    ambient_photo: 'ambient',
-  }
   const out: ParkingSession = { ...session }
   await Promise.all(
-    fields.map(async (field) => {
-      const value = session[field]
-      if (typeof value !== 'string') return
+    LEGACY_PHOTO_ROLES.map(async (role) => {
+      const field = legacyPhotoField(role)
+      const photo = await resolveSessionPhoto(session, role)
+      if (photo.kind === 'none') return
+      // A photo-store photo whose bytes aren't here locally: a signed-in
+      // user's cloud copy is used when its bytes match the ref's sha256.
+      // Otherwise the PDF says the photo isn't on this device.
+      const missing = (sha256: string) => missingPhotoMarker(sha256, photoHashSigned(session, sha256))
+      if (photo.kind === 'missing') {
+        out[field] = (await cloudCopyOf(session.id, role, photo.ref.sha256)) ?? missing(photo.ref.sha256)
+        return
+      }
+      const value = photo.src
+      out[field] = value
       if (value.startsWith('data:')) return // already inline; nothing to do
       if (!/^https?:/i.test(value)) return // not a remote URL we need to fetch
+      if (photo.ref) {
+        // A ref whose bytes aren't here, shown from the cloud URL the first
+        // sync put in the legacy field: only bytes matching the ref count.
+        out[field] = (await cloudCopyOf(session.id, role, photo.ref.sha256)) ?? missing(photo.ref.sha256)
+        return
+      }
       try {
-        // Server-side proxy fetches from S3 and returns base64. The direct
-        // browser-to-S3 path (previously here) worked on desktop but failed
-        // on some mobile carriers — see CLAUDE.md gotcha.
-        const dataUrl = await materializePhotoFromCloud(
-          session.id,
-          fieldToRole[field],
-        )
+        // Lazy-import sync.ts to keep its deps out of the PDF chunk when
+        // every photo is on this device. Server-side proxy fetches from S3
+        // and returns base64. The direct browser-to-S3 path (previously
+        // here) worked on desktop but failed on some mobile carriers — see
+        // CLAUDE.md gotcha.
+        const { materializePhotoFromCloud } = await import('./sync')
+        const dataUrl = await materializePhotoFromCloud(session.id, role)
         if (dataUrl) {
           out[field] = dataUrl
         }
@@ -214,6 +267,23 @@ export async function materializeRemotePhotos(
     }),
   )
   return out
+}
+
+/**
+ * The signed-in user's cloud copy of a photo-store photo, as a data URL,
+ * only when its bytes hash to `sha256`; null otherwise (signed out, no
+ * cloud copy, a mismatch, or a network failure). sync.ts is imported
+ * lazily so its dependencies stay out of the PDF chunk when every photo is
+ * on this device. Interim until T0b4 materialises photos by sha256.
+ */
+async function cloudCopyOf(sessionId: string, role: LegacyPhotoRole, sha256: string): Promise<string | null> {
+  try {
+    const { materializeRefPhotoFromCloud } = await import('./sync')
+    return await materializeRefPhotoFromCloud(sessionId, role, sha256)
+  } catch (err) {
+    console.warn(`[pdf] cloud copy of the ${role} photo unavailable:`, err)
+    return null
+  }
 }
 
 /**
@@ -247,6 +317,8 @@ function addImageWithOverlayCaption(
 ): number {
   const pageWidth = doc.internal.pageSize.getWidth()
   const maxWidth = pageWidth - 2 * MARGIN
+  const missing = parseMissingPhotoMarker(dataUrl)
+  if (missing) return drawMissingPhoto(doc, missing, y, t, activeFont)
   try {
     const props = doc.getImageProperties(dataUrl)
     const ratio = Math.min(maxWidth / props.width, maxHeight / props.height)
@@ -297,6 +369,28 @@ function addImageWithOverlayCaption(
   }
 }
 
+/**
+ * The "not on the device that made this PDF" line in place of a photo,
+ * with the photo's SHA-256 fingerprint (called signed only when a stored
+ * ParkProof signature contains it). Returns the new y.
+ */
+function drawMissingPhoto(
+  doc: jsPDF,
+  missing: { sha256: string; signed: boolean },
+  y: number,
+  t: TFunction,
+  activeFont: string,
+): number {
+  const maxWidth = doc.internal.pageSize.getWidth() - 2 * MARGIN
+  doc.setFontSize(10)
+  doc.setFont(activeFont, 'italic')
+  doc.setTextColor(80)
+  const lines = doc.splitTextToSize(missingPhotoText(missing, t), maxWidth) as string[]
+  doc.text(lines, MARGIN, y + 14)
+  doc.setTextColor(20)
+  return y + 14 + lines.length * 12
+}
+
 function addImageFitted(
   doc: jsPDF,
   dataUrl: string,
@@ -307,6 +401,8 @@ function addImageFitted(
 ): number {
   const pageWidth = doc.internal.pageSize.getWidth()
   const maxWidth = pageWidth - 2 * MARGIN
+  const missing = parseMissingPhotoMarker(dataUrl)
+  if (missing) return drawMissingPhoto(doc, missing, y, t, activeFont)
   try {
     const props = doc.getImageProperties(dataUrl)
     const ratio = Math.min(maxWidth / props.width, maxHeight / props.height)
@@ -453,12 +549,16 @@ export function downloadPdf(
       doc.text(t('pdf.evidence.ambientPhotoHeader'), MARGIN, y)
       y += 14
       y = addImageFitted(doc, session.ambient_photo, y, t, activeFont) + 6
-      doc.setFontSize(9)
-      doc.setFont(activeFont, 'italic')
-      doc.setTextColor(80)
-      doc.text(t('pdf.evidence.ambientPhotoCaption'), MARGIN, y, { maxWidth: doc.internal.pageSize.getWidth() - 2 * MARGIN })
-      doc.setTextColor(20)
-      y += 18
+      // The caption describes the photo, so it goes only under a photo that
+      // is in the PDF, not under the "not on this device" line.
+      if (!parseMissingPhotoMarker(session.ambient_photo)) {
+        doc.setFontSize(9)
+        doc.setFont(activeFont, 'italic')
+        doc.setTextColor(80)
+        doc.text(t('pdf.evidence.ambientPhotoCaption'), MARGIN, y, { maxWidth: doc.internal.pageSize.getWidth() - 2 * MARGIN })
+        doc.setTextColor(20)
+        y += 18
+      }
     } else {
       // No ambient photo captured. Stamp an explicit "no visual evidence"
       // line so the absence is documented rather than ambiguous.

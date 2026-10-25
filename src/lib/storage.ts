@@ -13,6 +13,7 @@ import {
   nextAddendumSeq,
   signedAddendumIdentity,
 } from './evidence-chain'
+import { deleteSessionPhotos } from './photo-store'
 
 const KEY = 'parkproof.sessions.v1'
 
@@ -83,6 +84,38 @@ export function loadSessions(): ParkingSession[] {
   }
 }
 
+/**
+ * The id of every saved record, for the photo store's startup GC. Strict,
+ * unlike `loadSessions` (which reads "couldn't read" as "no records"):
+ * null when the records can't be read right now (localStorage threw, the
+ * JSON doesn't parse, or it isn't a list), so the GC never mistakes an
+ * unreadable list for an empty one and deletes every photo on the device.
+ * [] only when nothing has been saved. Entries without a string id are
+ * skipped (no photo can be stored under them).
+ */
+export function loadSessionIdsForGc(): string[] | null {
+  let raw: string | null
+  try {
+    raw = localStorage.getItem(KEY)
+  } catch {
+    return null
+  }
+  if (raw === null) return []
+  let parsed: unknown
+  try {
+    parsed = JSON.parse(raw)
+  } catch {
+    return null
+  }
+  if (!Array.isArray(parsed)) return null
+  const ids: string[] = []
+  for (const s of parsed) {
+    const id = s && typeof s === 'object' ? (s as { id?: unknown }).id : undefined
+    if (typeof id === 'string') ids.push(id)
+  }
+  return ids
+}
+
 function isQuotaError(err: unknown): err is DOMException {
   return (
     err instanceof DOMException &&
@@ -109,6 +142,44 @@ export class StorageFullError extends Error {
     )
     this.name = 'StorageFullError'
   }
+}
+
+/** Error code on a DuplicateRecordError. */
+export const ERR_DUPLICATE_RECORD = 'ERR_DUPLICATE_RECORD'
+
+/**
+ * Thrown by `saveSession` when a record with the same id is already saved.
+ * The logger mints the record id when it opens (its photos are stored under
+ * it), so a second save of the same logger would otherwise store the record
+ * twice. Nothing is written.
+ */
+export class DuplicateRecordError extends Error {
+  readonly code = ERR_DUPLICATE_RECORD
+  readonly id: string
+  constructor(id: string) {
+    super(`A record with id ${id} is already saved.`)
+    this.name = 'DuplicateRecordError'
+    this.id = id
+  }
+}
+
+/** True for the duplicate-record error, however it was constructed. */
+export function isDuplicateRecordError(err: unknown): boolean {
+  return (
+    err instanceof DuplicateRecordError ||
+    (!!err && typeof err === 'object' && (err as { code?: unknown }).code === ERR_DUPLICATE_RECORD)
+  )
+}
+
+/**
+ * Delete a record's photo-store photos in the background, after the record
+ * itself is gone (deleted, or evicted by quota recovery). Never throws; a
+ * failure leaves orphans that the startup sweep removes later.
+ */
+function releaseRecordPhotos(id: string): void {
+  void deleteSessionPhotos(id).catch((err) => {
+    console.warn(`[storage] could not delete the photos of ${id}:`, err)
+  })
 }
 
 /** True for the storage-full error, however it was constructed. */
@@ -190,6 +261,9 @@ export function hasUnsignedEvidence(session: ParkingSession): boolean {
  *
  * Victims are tracked by id, never by array index, so evicting one record
  * can't shift the next victim onto a different (possibly active) record.
+ * An evicted record's photo-store photos are deleted too, once the write
+ * that dropped it has succeeded. Phases 1 and 2 only strip the legacy
+ * photo fields: photo-store bytes don't count against localStorage.
  *
  * Returns a report describing what was done. When anything was stripped or
  * evicted it also fires STORAGE_RECOVERED_EVENT, so the driver is told even
@@ -272,12 +346,17 @@ function persistWithQuotaRecovery(
   }
 
   // Phase 3: evict whole records, oldest first.
+  const evictedIds: string[] = []
   for (const id of victimIds) {
     sessions = sessions.filter((s) => s.id !== id)
     // An evicted record is counted once, as evicted, not also as trimmed.
     trimmed.delete(id)
     evicted++
-    if (tryWrite()) return recovered()
+    evictedIds.push(id)
+    if (tryWrite()) {
+      for (const gone of evictedIds) releaseRecordPhotos(gone)
+      return recovered()
+    }
   }
 
   // Genuinely full: even with every eligible record gone we can't fit.
@@ -285,18 +364,25 @@ function persistWithQuotaRecovery(
   throw new StorageFullError()
 }
 
+/**
+ * Save a new record (newest first). Refuses a record whose id is already
+ * saved: throws DuplicateRecordError and writes nothing.
+ */
 export function saveSession(session: ParkingSession): QuotaRecoveryReport {
   const sessions = loadSessions()
+  if (sessions.some((s) => s.id === session.id)) throw new DuplicateRecordError(session.id)
   sessions.unshift(session)
   const report = persistWithQuotaRecovery(sessions)
   notifyRecordsChanged(session.id)
   return report
 }
 
+/** Delete a record, and its photo-store photos in the background. */
 export function deleteSession(id: string): void {
   const sessions = loadSessions().filter((s) => s.id !== id)
   localStorage.setItem(KEY, JSON.stringify(sessions))
   notifyRecordsChanged(id)
+  releaseRecordPhotos(id)
 }
 
 /**

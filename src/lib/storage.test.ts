@@ -9,7 +9,7 @@
 // dev environments. A regression here = "I logged my park but it didn't
 // save and I didn't know" — the worst-case ParkProof failure mode.
 
-import { afterEach, beforeEach, describe, it, expect } from 'vitest'
+import { afterEach, beforeEach, describe, it, expect, vi } from 'vitest'
 import {
   ACTIVE_AFTER_EXPIRY_MS,
   RECORDS_CHANGED_EVENT,
@@ -32,7 +32,12 @@ import {
   setAddendumBundle,
   setArrivalSignature,
   subscribeStorageRecovered,
+  DuplicateRecordError,
+  ERR_DUPLICATE_RECORD,
+  isDuplicateRecordError,
+  loadSessionIdsForGc,
 } from './storage'
+import { createMemoryPhotoBackend, putPhoto, setPhotoBackendForTests } from './photo-store'
 import { AddendumValidationError } from '../../lambda/addendum-schema.js'
 import { MAX_ADDENDA } from './evidence-chain'
 import type { ParkingSession, SignatureBundle } from '../types'
@@ -1013,5 +1018,119 @@ describe('evidence chain writes', () => {
     quotaThrowsNTimes(99)
     expect(() => saveSession(makeSession({ id: 'fresh' }))).toThrow(StorageFullError)
     expect(getSession('old')!.car_photo).toBe('data:image/jpeg;base64,CAR')
+  })
+})
+
+describe('the photo store and the records (T0b2)', () => {
+  let photos: ReturnType<typeof createMemoryPhotoBackend>
+  const flush = () => new Promise((resolve) => setTimeout(resolve, 0))
+  const jpeg = (text: string) => 'data:image/jpeg;base64,' + btoa(text)
+  const keysOf = (id: string) => [...photos.records.keys()].filter((k) => k.startsWith(`${id}/`))
+
+  beforeEach(() => {
+    photos = createMemoryPhotoBackend()
+    setPhotoBackendForTests(photos)
+  })
+  afterEach(() => setPhotoBackendForTests(null))
+
+  it('saveSession refuses a duplicate id: throws, writes nothing, notifies nobody', () => {
+    saveSession(makeSession({ id: 'dup', rules: 'first' }))
+    const before = localStorage.getItem(KEY)
+    const heard = vi.fn()
+    const unsubscribe = subscribeRecordsChanged(heard)
+    let thrown: unknown
+    try {
+      saveSession(makeSession({ id: 'dup', rules: 'second' }))
+    } catch (err) {
+      thrown = err
+    }
+    unsubscribe()
+    expect(thrown).toBeInstanceOf(DuplicateRecordError)
+    expect(isDuplicateRecordError(thrown)).toBe(true)
+    expect(isDuplicateRecordError({ code: ERR_DUPLICATE_RECORD })).toBe(true)
+    expect(isDuplicateRecordError(new Error('other'))).toBe(false)
+    expect(localStorage.getItem(KEY)).toBe(before)
+    expect(loadSessions().filter((s) => s.id === 'dup')).toHaveLength(1)
+    expect(getSession('dup')?.rules).toBe('first')
+    expect(heard).not.toHaveBeenCalled()
+  })
+
+  it("deleteSession deletes that record's photos, and only them", async () => {
+    saveSession(makeSession({ id: 'gone' }))
+    saveSession(makeSession({ id: 'kept' }))
+    await putPhoto('gone', jpeg('g1'))
+    await putPhoto('gone', jpeg('g2'))
+    await putPhoto('kept', jpeg('k1'))
+    deleteSession('gone')
+    await vi.waitFor(() => expect(keysOf('gone')).toEqual([]))
+    expect(keysOf('kept')).toHaveLength(1)
+  })
+
+  it("quota eviction deletes the evicted record's photos; stripping legacy fields does not", async () => {
+    const expiredA = makeSession({
+      id: 'old-a',
+      arrived_at: '2026-05-18T08:00:00+10:00',
+      expires_at: '2026-05-18T18:00:00+10:00',
+      signature: SIGNED,
+    })
+    const expiredB = makeSession({
+      id: 'old-b',
+      arrived_at: '2026-05-19T08:00:00+10:00',
+      expires_at: '2026-05-19T18:00:00+10:00',
+      signature: SIGNED,
+    })
+    localStorage.setItem(KEY, JSON.stringify([expiredB, expiredA]))
+    await putPhoto('old-a', jpeg('a'))
+    await putPhoto('old-b', jpeg('b'))
+
+    // Initial write, 2 car strips and 2 sign strips fail; evicting old-a fits.
+    quotaThrowsNTimes(5)
+    expect(saveSession(makeSession({ id: 'fresh' }))).toEqual({ trimmedPhotosFrom: 1, evicted: 1 })
+    expect(getSession('old-a')).toBeUndefined()
+    await vi.waitFor(() => expect(keysOf('old-a')).toEqual([]))
+    // old-b was only stripped of its legacy fields: its photo-store bytes stay.
+    await flush()
+    expect(getSession('old-b')).toBeDefined()
+    expect(keysOf('old-b')).toHaveLength(1)
+  })
+
+  it('a write that still cannot fit deletes no photos', async () => {
+    localStorage.setItem(KEY, JSON.stringify([]))
+    await putPhoto('fresh', jpeg('f'))
+    quotaThrowsNTimes(10)
+    expect(() => saveSession(makeSession({ id: 'fresh' }))).toThrow(StorageFullError)
+    await flush()
+    expect(keysOf('fresh')).toHaveLength(1)
+  })
+})
+
+describe('loadSessionIdsForGc (the startup photo sweep reads records strictly)', () => {
+  it('lists the saved ids, and [] only when nothing has been saved', () => {
+    expect(loadSessionIdsForGc()).toEqual([])
+    saveSession(makeSession({ id: 'a' }))
+    saveSession(makeSession({ id: 'b' }))
+    expect(loadSessionIdsForGc()?.sort()).toEqual(['a', 'b'])
+  })
+
+  it('null (not []) when the records cannot be read: corrupt JSON, not a list, or a storage error', () => {
+    localStorage.setItem(KEY, '{not json')
+    expect(loadSessionIdsForGc()).toBeNull()
+    expect(loadSessions()).toEqual([]) // the lenient reader would have said "no records"
+    localStorage.setItem(KEY, JSON.stringify({ id: 'a' }))
+    expect(loadSessionIdsForGc()).toBeNull()
+    const realGetItem = fakeLocalStorage.getItem
+    fakeLocalStorage.getItem = () => {
+      throw new DOMException('The file is corrupted', 'NS_ERROR_FILE_CORRUPTED')
+    }
+    try {
+      expect(loadSessionIdsForGc()).toBeNull()
+    } finally {
+      fakeLocalStorage.getItem = realGetItem
+    }
+  })
+
+  it('skips entries without a string id', () => {
+    localStorage.setItem(KEY, JSON.stringify([{ id: 'a' }, null, 7, { id: 3 }, { id: 'b' }]))
+    expect(loadSessionIdsForGc()).toEqual(['a', 'b'])
   })
 })

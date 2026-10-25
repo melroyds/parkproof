@@ -330,7 +330,9 @@
     "noSignBanner": "Kamu mencatat bahwa tidak ada rambu yang terlihat di lokasi ini. Tanda tangan kriptografisnya mencakup kapan dan di mana, bukan benar-tidaknya rambu itu tidak ada. Jujurlah, ini buktimu sendiri.",
     "ambientHeader": "Sekitar",
     "ambientCaption": "Diambil untuk menunjukkan tidak ada rambu terpasang.",
-    "locationContext": "Kami pakai lokasimu cuma untuk menandai waktu dan tempat kamu parkir. Datanya tetap di perangkatmu kecuali kamu masuk."
+    "locationContext": "Kami pakai lokasimu cuma untuk menandai waktu dan tempat kamu parkir. Datanya tetap di perangkatmu kecuali kamu masuk.",
+    "photoSaveFailed": "Foto ini tidak bisa disimpan di ponselmu. Coba lagi, atau simpan catatan tanpa foto ini.",
+    "saving": "Menyimpan…"
   },
   "reminders": {
     "header": "Atur pengingat",
@@ -445,7 +447,11 @@
     "exportPhotoWarning": "Ada satu atau lebih foto yang tidak bisa dimuat dari cloud untuk sesi lama ini. Kamu tetap bisa mengekspor, atau buka di perangkat tempat sesi ini dibuat.",
     "photoHashMismatch": "Foto ini tidak cocok dengan bukti yang ditandatangani, dan mungkin sudah diubah sejak disimpan.",
     "endConfirmLate": "Tandai catatan ini selesai sekarang? Catatan akan menyimpan {{time}}, waktu kamu mengetuk, dari jam ponselmu. Catatan tidak menunjukkan kapan mobil benar-benar pergi.",
-    "devKeySigned": "Ditandatangani dengan kunci pengembangan. Tanda tangan ini tidak bisa dicek dengan kunci publik yang diterbitkan ParkProof."
+    "devKeySigned": "Ditandatangani dengan kunci pengembangan. Tanda tangan ini tidak bisa dicek dengan kunci publik yang diterbitkan ParkProof.",
+    "photoNotOnDevice": "Foto ini tidak ada di perangkat ini. Sidik jari yang ditandatangani: {{fingerprint}}.",
+    "photoNotOnDeviceUnsigned": "Foto ini tidak ada di perangkat ini. Sidik jari: {{fingerprint}}. Belum ditandatangani.",
+    "signPhotoAlt": "Foto rambu parkir yang kamu pindai",
+    "carPhotoAlt": "Foto mobilmu di tempat kamu parkir"
   },
   "appeal": {
     "captureHeader": "Buat draf surat banding",
@@ -653,7 +659,9 @@
       "valueHeader": "Nilai",
       "dash": "—",
       "notCaptured": "Tidak terekam",
-      "imageEmbedFailed": "(Gambar tidak bisa disematkan)"
+      "imageEmbedFailed": "(Gambar tidak bisa disematkan)",
+      "photoNotOnDevice": "Foto ini tidak ada di perangkat yang membuat PDF ini. Sidik jari SHA-256 yang ditandatangani: {{fingerprint}}.",
+      "photoNotOnDeviceUnsigned": "Foto ini tidak ada di perangkat yang membuat PDF ini. Sidik jari SHA-256: {{fingerprint}}. Belum ditandatangani."
     },
     "duration": {
       "minOnly_one": "1 mnt",

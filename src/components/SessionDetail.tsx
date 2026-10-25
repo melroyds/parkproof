@@ -1,11 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { ParkingSession } from '../types'
-import { deleteSession, isStorageFullError, updateSession } from '../lib/storage'
+import { isStorageFullError, updateSession } from '../lib/storage'
 import { useLiveRecord } from '../lib/use-records-version'
 import { canEndRecord, endConfirmText } from '../lib/record-status'
 import { DEV_KEY_ALIAS } from '../lib/evidence-chain'
+import { hasSessionPhoto } from '../lib/session-photos'
+import { useSessionPhoto } from '../lib/use-session-photo'
 import ScheduledRemindersSection from './ScheduledRemindersSection'
+import RecordPhoto from './RecordPhoto'
 import VerifiedSeal from './VerifiedSeal'
 import Icon from './Icon'
 import Button from './ui/Button'
@@ -16,9 +19,7 @@ import { formatCountdownLocalized } from '../lib/countdown'
 import { sessionTimezone } from '../lib/timezone'
 import { navigationUrl } from '../lib/walk-back'
 import { useAuth } from '../lib/use-auth'
-import { deleteCloudSession, mirrorSessionToCloud, mirrorSessionUpdateToCloud } from '../lib/sync'
-import { cancelPushReminders } from '../lib/push'
-import { cancelInTabReminders } from '../lib/notifications'
+import { mirrorSessionToCloud, mirrorSessionUpdateToCloud } from '../lib/sync'
 import { verifyUrlForLocale } from '../lib/verify-url'
 
 const NOTE_MAX_LENGTH = 280
@@ -30,7 +31,12 @@ interface Props {
    */
   session: ParkingSession
   onBack: () => void
-  onDeleted: () => void
+  /**
+   * Called when the driver confirms Delete. App.handleDeleteRecord owns the
+   * whole delete path (the record, its photos, the cloud copy, push and
+   * in-tab reminders) and leaves this screen; this screen only asks.
+   */
+  onDelete: (session: ParkingSession) => void
   onDraftAppeal: () => void
   /**
    * Called when the driver taps "I've left". App.handleEndSession owns the
@@ -55,7 +61,7 @@ function fmtLocal(iso: string, timeZone: string, full = false): string {
 export default function SessionDetail({
   session: initialSession,
   onBack,
-  onDeleted,
+  onDelete,
   onDraftAppeal,
   onEndSession,
 }: Props) {
@@ -65,6 +71,9 @@ export default function SessionDetail({
   // Live copy: background signing, a cloud pull or the end-session path
   // update storage, and this re-reads it, so the screen never goes stale.
   const session = useLiveRecord(initialSession)
+  // The surroundings photo's caption describes the photo, so it shows only
+  // when the photo itself does (not under the "not on this device" line).
+  const ambientPhoto = useSessionPhoto(session, 'ambient')
   const expiresMs = session.expires_at ? new Date(session.expires_at).getTime() : null
   const isExpired = expiresMs !== null && expiresMs < now
   const isEnded = !!session.ended_at
@@ -173,22 +182,9 @@ export default function SessionDetail({
 
   const handleDelete = () => {
     if (!window.confirm(t('session.deleteConfirm'))) return
-    deleteSession(session.id)
-    // Mirror the deletion to the cloud when signed in — fire-and-forget; the
-    // local delete is authoritative for this device regardless of network.
-    if (user) {
-      void deleteCloudSession(session.id).catch((err) => {
-        console.warn('[sync] cloud delete failed:', err)
-      })
-    }
-    // Cancel any pending Web Push reminders for the deleted session — same
-    // rationale as the end-session path: stale pushes for a session the user
-    // has thrown away would be jarring. Best-effort.
-    void cancelPushReminders(session.id)
-    // And reminders armed in this tab, or a "move your car" fires for a
-    // record that no longer exists (same as the end path).
-    cancelInTabReminders(session.id)
-    onDeleted()
+    // App owns deleting: the record and its photos, the cloud copy, push and
+    // in-tab reminders. It also leaves this screen.
+    onDelete(session)
   }
 
   const handleEnd = () => {
@@ -522,14 +518,18 @@ export default function SessionDetail({
 
       {/* Sign photo — only rendered for sign-translated sessions. No-sign
           sessions drop straight to the ambient/car photos below. */}
-      {session.sign_photo && (
+      {/* Photos read through the photo store for new records (the legacy
+          fields for old ones). A photo whose bytes aren't on this device
+          shows the one "not on this device" line with its fingerprint. */}
+      {hasSessionPhoto(session, 'sign') && (
         <Card className="mb-3 rounded-2xl border-transparent shadow-[0_14px_40px_rgba(7,59,37,0.16),0_2px_6px_rgba(7,59,37,0.08)]">
           <h3 className="text-xs uppercase tracking-widest font-semibold text-ink-600 mb-2">
             {t('session.signPhotoLabel')}
           </h3>
-          <img
-            src={session.sign_photo}
-            alt="Sign"
+          <RecordPhoto
+            session={session}
+            role="sign"
+            alt={t('session.signPhotoAlt')}
             className="w-full rounded-xl border border-paper-300"
           />
         </Card>
@@ -546,16 +546,19 @@ export default function SessionDetail({
           <p className="text-sm text-ink-700 leading-relaxed mb-3">
             {t('session.noSignDescription')}
           </p>
-          {session.ambient_photo ? (
+          {hasSessionPhoto(session, 'ambient') ? (
             <>
-              <img
-                src={session.ambient_photo}
+              <RecordPhoto
+                session={session}
+                role="ambient"
                 alt={t('session.ambientPhotoLabel')}
                 className="w-full rounded-xl border border-paper-300"
               />
-              <p className="text-xs text-ink-600 mt-2">
-                {t('session.ambientPhotoCaption')}
-              </p>
+              {ambientPhoto.status === 'available' && (
+                <p className="text-xs text-ink-600 mt-2">
+                  {t('session.ambientPhotoCaption')}
+                </p>
+              )}
             </>
           ) : (
             <p className="text-xs text-ink-600 italic">
@@ -565,14 +568,15 @@ export default function SessionDetail({
         </Card>
       )}
 
-      {session.car_photo && (
+      {hasSessionPhoto(session, 'car') && (
         <Card className="mb-3 rounded-2xl border-transparent shadow-[0_14px_40px_rgba(7,59,37,0.16),0_2px_6px_rgba(7,59,37,0.08)]">
           <h3 className="text-xs uppercase tracking-widest font-semibold text-ink-600 mb-2">
             {t('session.carPhotoLabel')}
           </h3>
-          <img
-            src={session.car_photo}
-            alt="Car"
+          <RecordPhoto
+            session={session}
+            role="car"
+            alt={t('session.carPhotoAlt')}
             className="w-full rounded-xl border border-paper-300"
           />
         </Card>

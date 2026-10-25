@@ -13,6 +13,7 @@ import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vite
 import i18n from './lib/i18n'
 import { AuthContext, type AuthContextValue } from './lib/auth-context-shape'
 import { getSession, saveSession } from './lib/storage'
+import { ORPHAN_PHOTO_AGE_MS, createMemoryPhotoBackend, putPhoto, setPhotoBackendForTests } from './lib/photo-store'
 import type { PushCancelResult } from './lib/push'
 import type { LogDraft, ParkingRules, ParkingSession, SignatureBundle } from './types'
 import App from './App'
@@ -22,6 +23,10 @@ const mocks = vi.hoisted(() => ({
   cancelInTabReminders: vi.fn(() => 0),
   mirrorSessionUpdateToCloud: vi.fn(),
   mirrorSessionToCloud: vi.fn(async () => ({ photoFailed: false })),
+  deleteCloudSession: vi.fn(async () => {}),
+  refreshInterpretation: vi.fn(async (): Promise<ParkingRules> => {
+    throw new Error('set per test')
+  }),
   performInitialSync: vi.fn(async () => ({ uploaded: 0, pulled: 0, alreadyInSync: 0, listFailed: false })),
   runSigningSweep: vi.fn(),
   uninstallSigningTriggers: vi.fn(),
@@ -39,6 +44,8 @@ const mocks = vi.hoisted(() => ({
 
 /** The bytes of the sign photo the fake scanner "captures". */
 const { SIGN_BYTES } = vi.hoisted(() => ({ SIGN_BYTES: 'fake-sign-photo-bytes' }))
+/** The props each render of the fake logger received (latest last). */
+const { loggerProps } = vi.hoisted(() => ({ loggerProps: [] as Array<Record<string, unknown>> }))
 
 vi.mock('./lib/push', async (importOriginal) => ({
   ...(await importOriginal<typeof import('./lib/push')>()),
@@ -53,6 +60,7 @@ vi.mock('./lib/sync', async (importOriginal) => ({
   mirrorSessionUpdateToCloud: mocks.mirrorSessionUpdateToCloud,
   mirrorSessionToCloud: mocks.mirrorSessionToCloud,
   performInitialSync: mocks.performInitialSync,
+  deleteCloudSession: mocks.deleteCloudSession,
 }))
 // No network on mount: the signing sweep and the OAuth callback are inert.
 // prepareNewRecord is the real one (chain key + photo hashes, no network).
@@ -73,6 +81,7 @@ vi.mock('./lib/evidence-chain', async (importOriginal) => ({
 vi.mock('./lib/claude', async (importOriginal) => ({
   ...(await importOriginal<typeof import('./lib/claude')>()),
   translateSign: mocks.translateSign,
+  refreshInterpretation: mocks.refreshInterpretation,
 }))
 // Stand-ins for the scan-to-save screens: each exposes the callbacks App
 // passes it as plain buttons.
@@ -81,14 +90,33 @@ vi.mock('./components/LandingFeatures', () => ({
 }))
 vi.mock('./components/SignScanner', () => ({
   default: (p: {
-    onCapture: (dataUrl: string, mediaType: string, coords: { lat: number; lng: number } | null) => void
-    onNoSignScan: (coords: { lat: number; lng: number } | null, ambientPhoto: string | null) => void
+    onCapture: (
+      dataUrl: string,
+      mediaType: string,
+      coords: { lat: number; lng: number } | null,
+      meta?: { captured_at: string; source: 'camera_input' | 'library' },
+    ) => void
+    onNoSignScan: (
+      coords: { lat: number; lng: number } | null,
+      ambientPhoto: string | null,
+      ambientMeta: { captured_at: string; source: 'camera_input' | 'library' } | null,
+    ) => void
   }) => (
     <div>
       <button onClick={() => p.onCapture('data:image/jpeg;base64,' + btoa(SIGN_BYTES), 'image/jpeg', { lat: -37.81, lng: 144.96 })}>
         Fake capture
       </button>
-      <button onClick={() => p.onNoSignScan({ lat: -37.81, lng: 144.96 }, null)}>Fake no sign</button>
+      <button
+        onClick={() =>
+          p.onCapture('data:image/jpeg;base64,' + btoa(SIGN_BYTES), 'image/jpeg', null, {
+            captured_at: '2026-10-20T00:58:00.000Z',
+            source: 'camera_input',
+          })
+        }
+      >
+        Fake capture with meta
+      </button>
+      <button onClick={() => p.onNoSignScan({ lat: -37.81, lng: 144.96 }, null, null)}>Fake no sign</button>
     </div>
   ),
 }))
@@ -102,13 +130,14 @@ vi.mock('./components/ParkingResult', () => ({
 }))
 vi.mock('./components/SessionLogger', () => ({
   default: (p: {
+    signPhotoMeta?: unknown
     mode?: 'sign' | 'no-sign'
     rules: ParkingRules | null
     signPhoto: string | null
     onComplete: (s: ParkingSession) => void
     onCancel: () => void
   }) => (
-    <div>
+    <div ref={() => void loggerProps.push(p as unknown as Record<string, unknown>)}>
       <button
         onClick={() =>
           p.onComplete({
@@ -200,6 +229,7 @@ beforeEach(() => {
   window.history.replaceState({}, '', '/app/')
   Object.defineProperty(window, 'confirm', { value: vi.fn(() => true), configurable: true, writable: true })
   for (const m of Object.values(mocks)) m.mockClear()
+  loggerProps.length = 0
   mocks.installSigningTriggers.mockImplementation(() => mocks.uninstallSigningTriggers)
   mocks.scheduleDepartureCatchUp.mockImplementation(() => () => {})
 })
@@ -432,5 +462,194 @@ describe('App save path: the draft and the prepared record', () => {
     expect(stored?.no_sign).toBe(true)
     expect(stored?.chain_key).toMatch(HEX64)
     expect(stored?.v1_hashes).toEqual({ sign: null, car: null, ambient: null })
+  })
+})
+
+describe('App and the photo store (T0b2)', () => {
+  let photos: ReturnType<typeof createMemoryPhotoBackend>
+  const jpeg = (text: string) => 'data:image/jpeg;base64,' + btoa(text)
+  const click = (name: string) => fireEvent.click(screen.getByRole('button', { name }))
+  const photoKeys = (id: string) => [...photos.records.keys()].filter((k) => k.startsWith(`${id}/`))
+  const RESULT: ParkingRules = {
+    rules: '2P',
+    observations: [],
+    can_park_now: true,
+    until: null,
+    duration_minutes: 120,
+    confidence: 'high',
+    clarification: null,
+  }
+
+  beforeEach(() => {
+    photos = createMemoryPhotoBackend()
+    setPhotoBackendForTests(photos)
+  })
+  afterEach(() => setPhotoBackendForTests(null))
+
+  it('Delete on the record screen runs the one delete path: record, photos, cloud copy, reminders', async () => {
+    const sha = await putPhoto('rec-1', jpeg('sign'))
+    await putPhoto('other', jpeg('other'))
+    saveSession(
+      makeSession({
+        sign_photo: null,
+        photos: [{ role: 'sign', sha256: sha, captured_at: '2026-10-20T00:58:00.000Z', source: 'camera_input' }],
+      }),
+    )
+    window.history.replaceState({}, '', '/app/?session=rec-1')
+    renderApp(true)
+
+    click(i18n.t('session.deleteSession'))
+
+    expect(getSession('rec-1')).toBeUndefined()
+    await waitFor(() => expect(photoKeys('rec-1')).toEqual([]))
+    expect(photoKeys('other')).toHaveLength(1)
+    expect(mocks.deleteCloudSession).toHaveBeenCalledWith('rec-1')
+    expect(mocks.cancelPushReminders).toHaveBeenCalledWith('rec-1')
+    expect(mocks.cancelInTabReminders).toHaveBeenCalledWith('rec-1')
+    // Back to History.
+    expect(await screen.findByText(i18n.t('history.header'))).toBeTruthy()
+  })
+
+  it('signed out, Delete leaves the cloud alone', () => {
+    saveSession(makeSession())
+    window.history.replaceState({}, '', '/app/?session=rec-1')
+    renderApp(false)
+    click(i18n.t('session.deleteSession'))
+    expect(getSession('rec-1')).toBeUndefined()
+    expect(mocks.deleteCloudSession).not.toHaveBeenCalled()
+  })
+
+  it('startup GC deletes old photos of records that no longer exist, and nothing else', async () => {
+    saveSession(makeSession({ id: 'rec-1' }))
+    const old = Date.now() - ORPHAN_PHOTO_AGE_MS - 60_000
+    const seeds: Array<[string, number]> = [
+      [`rec-1/${'1'.repeat(64)}`, old],
+      [`gone/${'2'.repeat(64)}`, old],
+      [`logging-now/${'3'.repeat(64)}`, Date.now()],
+    ]
+    for (const [key, created_at] of seeds) {
+      photos.records.set(key, {
+        key,
+        session_id: key.split('/')[0],
+        sha256: key.split('/')[1],
+        type: 'image/jpeg',
+        bytes: new Uint8Array([1]).buffer,
+        created_at,
+      })
+    }
+    renderApp(false)
+    await waitFor(() => expect(photos.records.has(`gone/${'2'.repeat(64)}`)).toBe(false))
+    expect(photos.records.has(`rec-1/${'1'.repeat(64)}`)).toBe(true)
+    expect(photos.records.has(`logging-now/${'3'.repeat(64)}`)).toBe(true)
+  })
+
+  it('startup GC is skipped when the saved records cannot be read: unreadable is not "no records"', async () => {
+    localStorage.setItem('parkproof.sessions.v1', '{"truncated": [')
+    const key = `rec-unreadable/${'4'.repeat(64)}`
+    photos.records.set(key, {
+      key,
+      session_id: 'rec-unreadable',
+      sha256: '4'.repeat(64),
+      type: 'image/jpeg',
+      bytes: new Uint8Array([1]).buffer,
+      created_at: Date.now() - ORPHAN_PHOTO_AGE_MS - 60_000,
+    })
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    try {
+      renderApp(false)
+      await waitFor(() => expect(warn).toHaveBeenCalledWith(expect.stringContaining('startup sweep skipped')))
+      await new Promise((resolve) => setTimeout(resolve, 20))
+      expect(photos.records.has(key)).toBe(true)
+    } finally {
+      warn.mockRestore()
+    }
+  })
+
+  it('the scan capture metadata reaches the logger', async () => {
+    mocks.translateSign.mockResolvedValueOnce(RESULT)
+    renderApp(false)
+    click('Fake start scan')
+    click('Fake capture with meta')
+    fireEvent.click(await screen.findByRole('button', { name: 'Fake log' }))
+    await screen.findByRole('button', { name: 'Fake save' })
+    expect(loggerProps.at(-1)?.signPhotoMeta).toEqual({ captured_at: '2026-10-20T00:58:00.000Z', source: 'camera_input' })
+  })
+
+  it('without capture metadata only "library" is claimed for the sign photo', async () => {
+    mocks.translateSign.mockResolvedValueOnce(RESULT)
+    renderApp(false)
+    click('Fake start scan')
+    click('Fake capture')
+    fireEvent.click(await screen.findByRole('button', { name: 'Fake log' }))
+    await screen.findByRole('button', { name: 'Fake save' })
+    expect(loggerProps.at(-1)?.signPhotoMeta).toMatchObject({ source: 'library' })
+  })
+
+  it('Re-check reads the sign photo through the photo store and keeps its capture metadata', async () => {
+    const url = jpeg('stored-sign')
+    const sha = await putPhoto('rec-1', url)
+    const ref = { role: 'sign' as const, sha256: sha, captured_at: '2026-10-20T00:58:00.000Z', source: 'camera_input' as const }
+    saveSession(makeSession({ sign_photo: null, photos: [ref] }))
+    mocks.refreshInterpretation.mockResolvedValueOnce({ ...RESULT, rules: 'x' })
+    renderApp(false)
+
+    click(i18n.t('active.recheckSub'))
+    fireEvent.click(await screen.findByRole('button', { name: 'Fake log' }))
+    await screen.findByRole('button', { name: 'Fake save' })
+    const props = loggerProps.at(-1)!
+    expect(props.signPhoto).toBe(url)
+    expect(props.signPhotoMeta).toEqual({ captured_at: ref.captured_at, source: 'camera_input' })
+  })
+
+  it('Re-check of a record whose sign photo bytes are not on this device goes to a fresh scan', async () => {
+    saveSession(
+      makeSession({
+        sign_photo: null,
+        photos: [{ role: 'sign', sha256: '9'.repeat(64), captured_at: '2026-10-20T00:58:00.000Z', source: 'camera_input' }],
+      }),
+    )
+    renderApp(false)
+    // Tapped before the card has found out the bytes are missing.
+    click(i18n.t('active.recheckSub'))
+    expect(await screen.findByRole('button', { name: 'Fake capture' })).toBeTruthy()
+    expect(mocks.refreshInterpretation).not.toHaveBeenCalled()
+  })
+
+  it('the home card stops offering Re-check once it knows the sign photo bytes are not on this device', async () => {
+    saveSession(
+      makeSession({
+        sign_photo: null,
+        photos: [{ role: 'sign', sha256: '8'.repeat(64), captured_at: '2026-10-20T00:58:00.000Z', source: 'camera_input' }],
+      }),
+    )
+    renderApp(false)
+    await waitFor(() => expect(screen.queryByRole('button', { name: i18n.t('active.recheckSub') })).toBeNull())
+  })
+
+  it('a double tap on Re-check starts one refresh', async () => {
+    saveSession(makeSession())
+    mocks.refreshInterpretation.mockResolvedValueOnce({ ...RESULT, rules: 'x' })
+    renderApp(false)
+    const button = screen.getByRole('button', { name: i18n.t('active.recheckSub') })
+    fireEvent.click(button)
+    fireEvent.click(button)
+    await screen.findByRole('button', { name: 'Fake log' })
+    expect(mocks.refreshInterpretation).toHaveBeenCalledTimes(1)
+  })
+
+  it('a second save of the same record id moves on like a save: no error screen, the first save stands', async () => {
+    saveSession(makeSession({ id: 'new-no-sign', rules: 'first' }))
+    const sha = await putPhoto('new-no-sign', jpeg('kept'))
+    renderApp(false)
+    click(i18n.t('home.scanAnother'))
+    click('Fake no sign')
+    click('Fake save')
+    // On to the saved record's reminders, not stuck on a logger whose Save is disabled.
+    expect(await screen.findByText('Fake reminders')).toBeTruthy()
+    expect(screen.queryByText(i18n.t('errors.somethingWrong'))).toBeNull()
+    expect(getSession('new-no-sign')?.rules).toBe('first')
+    expect(mocks.signNewRecord).not.toHaveBeenCalled()
+    await new Promise((resolve) => setTimeout(resolve, 20))
+    expect(photos.records.has(`new-no-sign/${sha}`)).toBe(true)
   })
 })

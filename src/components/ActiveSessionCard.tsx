@@ -7,6 +7,8 @@ import { formatExpiryAbsolute } from '../lib/time-format'
 import { sessionTimezone } from '../lib/timezone'
 import { estimateWalkBack, navigationUrl, type WalkBackEstimate } from '../lib/walk-back'
 import { endConfirmText } from '../lib/record-status'
+import { hasSessionPhoto } from '../lib/session-photos'
+import { useSessionPhoto } from '../lib/use-session-photo'
 import Icon from './Icon'
 
 interface Props {
@@ -108,6 +110,11 @@ export default function ActiveSessionCard({
   // human glancing at the card cares about.
   const now = useNow(30_000)
   const currentPosition = useCurrentPosition()
+  // Re-check reuses the sign photo: not offered when the record has none,
+  // or its bytes aren't on this device (the tap would only open the scan
+  // screen with no word why).
+  const signPhoto = useSessionPhoto(session, 'sign')
+  const canRecheckPhoto = hasSessionPhoto(session, 'sign') && signPhoto.status !== 'missing'
 
   // Two flavours of active session:
   //  - expiry-bearing: countdown + "Move by" line, traditional urgency colours
@@ -320,7 +327,7 @@ export default function ActiveSessionCard({
         </button>
       )}
 
-      {onRecheck && !isExpired && session.sign_photo && !session.no_sign && (
+      {onRecheck && !isExpired && canRecheckPhoto && !session.no_sign && (
         <button
           type="button"
           onClick={() => onRecheck(session)}

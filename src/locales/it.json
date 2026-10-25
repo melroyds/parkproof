@@ -208,7 +208,9 @@
     "noSignBanner": "Stai registrando che non c'erano cartelli in vista in questo posto. La firma crittografica copre quando e dove, non se i cartelli mancavano davvero. Sii onesto: questa è la tua prova.",
     "ambientHeader": "Area circostante",
     "ambientCaption": "Catturata per dimostrare l'assenza di cartelli affissi.",
-    "locationContext": "Usiamo la tua posizione solo per registrare con data e ora dove hai parcheggiato. Resta sul tuo dispositivo, a meno che tu non acceda."
+    "locationContext": "Usiamo la tua posizione solo per registrare con data e ora dove hai parcheggiato. Resta sul tuo dispositivo, a meno che tu non acceda.",
+    "photoSaveFailed": "Non è stato possibile salvare questa foto sul telefono. Riprova, oppure salva il record senza.",
+    "saving": "Salvataggio…"
   },
   "reminders": {
     "header": "Imposta promemoria",
@@ -323,7 +325,11 @@
     "exportPhotoWarning": "Una o più foto non sono state caricate dal cloud per questa vecchia sessione. Puoi esportare lo stesso, oppure aprirla sul dispositivo dov'è stata creata.",
     "photoHashMismatch": "Questa foto non corrisponde alla prova firmata e potrebbe essere stata modificata dopo il salvataggio.",
     "endConfirmLate": "Vuoi segnare questo record come concluso ora? Verrà registrato l'orario del tocco, {{time}}, secondo l'orologio del telefono. Non mostrerà quando l'auto è partita davvero.",
-    "devKeySigned": "Firmato con una chiave di sviluppo. Non si può verificare con la chiave pubblicata da ParkProof."
+    "devKeySigned": "Firmato con una chiave di sviluppo. Non si può verificare con la chiave pubblicata da ParkProof.",
+    "photoNotOnDevice": "Foto non presente su questo dispositivo. Impronta digitale firmata: {{fingerprint}}.",
+    "photoNotOnDeviceUnsigned": "Foto non presente su questo dispositivo. Impronta digitale: {{fingerprint}}. Non ancora firmata.",
+    "signPhotoAlt": "Foto del cartello di sosta che hai scansionato",
+    "carPhotoAlt": "Foto della tua auto dove hai parcheggiato"
   },
   "appeal": {
     "captureHeader": "Redigi una lettera di ricorso",
@@ -514,7 +520,9 @@
       "valueHeader": "Valore",
       "dash": "—",
       "notCaptured": "Non registrato",
-      "imageEmbedFailed": "(Immagine non incorporabile)"
+      "imageEmbedFailed": "(Immagine non incorporabile)",
+      "photoNotOnDevice": "Foto non presente sul dispositivo che ha creato questo PDF. La sua impronta digitale SHA-256 firmata è {{fingerprint}}.",
+      "photoNotOnDeviceUnsigned": "Foto non presente sul dispositivo che ha creato questo PDF. La sua impronta digitale SHA-256 è {{fingerprint}}. Non ancora firmata."
     },
     "evidence": {
       "title": "ParkProof — Prova di parcheggio",

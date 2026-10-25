@@ -34,6 +34,8 @@ import {
   setArrivalSignature,
 } from './storage'
 import { endpointUrl } from './api'
+import { hashDataUrlImage, sha256HexUtf8 } from './hash'
+import { LEGACY_PHOTO_ROLES, legacyPhotoField, photoRefFor } from './session-photos'
 import {
   DEPARTURE_CATCH_UP_GRACE_MS,
   MAX_ADDENDA,
@@ -119,29 +121,10 @@ function endedOnThisDevice(state: SigningState, sessionId: string): boolean {
 }
 
 // ─── Hashing ─────────────────────────────────────────────────────────────
-
-function toHex(buf: ArrayBuffer): string {
-  return Array.from(new Uint8Array(buf))
-    .map((b) => b.toString(16).padStart(2, '0'))
-    .join('')
-}
-
-/**
- * SHA-256 of a data-URL image's raw bytes (not the data-URL string itself).
- * Returns lowercase hex. The photo store (T0b2) hashes with this too.
- */
-export async function hashDataUrlImage(dataUrl: string): Promise<string> {
-  const base64 = dataUrl.replace(/^data:[^;]+;base64,/, '')
-  const raw = atob(base64)
-  const bytes = new Uint8Array(raw.length)
-  for (let i = 0; i < raw.length; i++) bytes[i] = raw.charCodeAt(i)
-  return toHex(await crypto.subtle.digest('SHA-256', bytes))
-}
-
-/** SHA-256 hex of a string's UTF-8 bytes. */
-export async function sha256HexUtf8(text: string): Promise<string> {
-  return toHex(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text)))
-}
+// `hashDataUrlImage` (the SHA-256 of a data-URL image's raw bytes, as
+// lowercase hex) and `sha256HexUtf8` live in hash.ts so the photo store can
+// use them without importing this module. Re-exported here as before.
+export { hashDataUrlImage, sha256HexUtf8 }
 
 /** A new record's chain key: 32 random bytes as 64 lowercase hex characters. */
 export function generateChainKey(): string {
@@ -174,22 +157,36 @@ export interface V1Hashes {
 }
 
 /**
- * The link-0 photo hashes from a record's data-URL photos. Null when a photo
- * isn't held on this device as bytes (a cloud URL), so it can't be hashed.
+ * The link-0 photo hashes of a record. For each of sign, car and ambient:
+ * the PhotoRef's sha256 when the record has one for that role (new records
+ * keep those photos in the photo store, and the ref's hash was taken from
+ * the stored bytes at capture), otherwise the hash of the legacy data-URL
+ * field. Null when a legacy photo isn't held on this device as bytes (a
+ * cloud URL), so it can't be hashed.
  */
 export async function computeV1Hashes(session: ParkingSession): Promise<V1Hashes | null> {
-  const fields = [session.sign_photo, session.car_photo, session.ambient_photo ?? null]
-  if (fields.some((p) => typeof p === 'string' && p.length > 0 && !p.startsWith('data:'))) return null
-  const hash = (p: string | null) => (p ? hashDataUrlImage(p) : Promise.resolve(null))
-  const [sign, car, ambient] = await Promise.all(fields.map(hash))
+  type Source = { kind: 'ref'; sha256: string } | { kind: 'legacy'; value: string } | { kind: 'none' }
+  const sources: Source[] = LEGACY_PHOTO_ROLES.map((role): Source => {
+    const ref = photoRefFor(session, role)
+    if (ref) return { kind: 'ref', sha256: ref.sha256 }
+    const field = session[legacyPhotoField(role)]
+    return typeof field === 'string' && field.length > 0 ? { kind: 'legacy', value: field } : { kind: 'none' }
+  })
+  if (sources.some((s) => s.kind === 'legacy' && !s.value.startsWith('data:'))) return null
+  const [sign, car, ambient] = await Promise.all(
+    sources.map((s): Promise<string | null> =>
+      s.kind === 'ref' ? Promise.resolve(s.sha256) : s.kind === 'legacy' ? hashDataUrlImage(s.value) : Promise.resolve(null),
+    ),
+  )
   return { sign, car, ambient }
 }
 
 /**
  * Get a freshly logged record ready to save: a new chain key and the
  * link-0 photo hashes (`v1_hashes`, stored at save so link 0 can always be
- * signed). Never throws: if hashing fails, `v1_hashes` is left out and
- * link 0 hashes the photos when it signs.
+ * signed; for photo-store photos they are the PhotoRefs' hashes). Never
+ * throws: if hashing fails, `v1_hashes` is left out and link 0 hashes the
+ * photos when it signs.
  *
  * The driver's own text (`driver_name`, `condition_note`) is shaped here
  * the way link 1 signs it (`fitText`: forbidden characters such as

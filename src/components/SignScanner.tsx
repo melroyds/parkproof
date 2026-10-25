@@ -4,6 +4,7 @@ import { resizeImageFile } from '../lib/image'
 import { haversineMeters } from '../lib/geo'
 import { loadSessions } from '../lib/storage'
 import { analyseSignPhoto, type QualityResult } from '../lib/photo-quality'
+import { captureMetaFor, type PhotoCaptureMeta } from '../lib/session-photos'
 import Icon from './Icon'
 import Button from './ui/Button'
 import BackButton from './ui/BackButton'
@@ -12,10 +13,16 @@ import RecentScansPicker from './RecentScansPicker'
 import type { ParkingSession } from '../types'
 
 interface Props {
+  /**
+   * `meta` is when and how the sign photo came in (camera or library),
+   * taken when the file was picked. The logger puts it on the photo's
+   * PhotoRef when it stores the photo.
+   */
   onCapture: (
     dataUrl: string,
     mediaType: string,
     coords: { lat: number; lng: number } | null,
+    meta: PhotoCaptureMeta,
   ) => void
   onReuseSession: (session: ParkingSession) => void
   /**
@@ -24,11 +31,12 @@ interface Props {
    * straight to the SessionLogger in `no-sign` mode.
    *
    * `ambientPhoto` is optional — null when the user explicitly chose to
-   * skip the surroundings photo.
+   * skip the surroundings photo. `ambientMeta` is its capture metadata.
    */
   onNoSignScan: (
     coords: { lat: number; lng: number } | null,
     ambientPhoto: string | null,
+    ambientMeta: PhotoCaptureMeta | null,
   ) => void
   onCancel: () => void
 }
@@ -94,7 +102,9 @@ export default function SignScanner({ onCapture, onReuseSession, onNoSignScan, o
   // SignScanner the single source of truth for the scan screen UX.
   const [noSignStage, setNoSignStage] = useState<'idle' | 'choosing' | 'captured'>('idle')
   const [ambientPhoto, setAmbientPhoto] = useState<string | null>(null)
+  const [ambientMeta, setAmbientMeta] = useState<PhotoCaptureMeta | null>(null)
   const [preview, setPreview] = useState<string | null>(null)
+  const [previewMeta, setPreviewMeta] = useState<PhotoCaptureMeta | null>(null)
   const [mediaType, setMediaType] = useState<string>('image/jpeg')
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null)
   const [match, setMatch] = useState<ProximityMatch | null>(null)
@@ -204,12 +214,14 @@ export default function SignScanner({ onCapture, onReuseSession, onNoSignScan, o
     !pickerDismissed &&
     recentSessions.length > 0
 
-  const handleFile = async (file: File) => {
+  const handleFile = async (file: File, input: 'camera' | 'library') => {
     // Run the quality check on the ORIGINAL file (full resolution) — the
     // resize step we do for storage drops detail we want to evaluate against.
     // The two operations run in parallel so the user sees the preview at the
     // normal speed; quality just lands a tick later.
     setFileError(null)
+    // Capture time and source (camera or library), taken as the file arrives.
+    const meta = captureMetaFor(file, input)
     try {
       const [{ dataUrl, mediaType: mt }, qualityResult] = await Promise.all([
         resizeImageFile(file),
@@ -220,6 +232,7 @@ export default function SignScanner({ onCapture, onReuseSession, onNoSignScan, o
       ])
       setMediaType(mt)
       setPreview(dataUrl)
+      setPreviewMeta(meta)
       setQuality(qualityResult)
     } catch (err) {
       // An undecodable file (corrupt, zero-byte, unsupported HEIC) would
@@ -230,7 +243,7 @@ export default function SignScanner({ onCapture, onReuseSession, onNoSignScan, o
   }
 
   const confirm = () => {
-    if (preview) onCapture(preview, mediaType, coords)
+    if (preview && previewMeta) onCapture(preview, mediaType, coords, previewMeta)
   }
 
   // ── No-sign flow handlers ─────────────────────────────────────────────
@@ -244,11 +257,13 @@ export default function SignScanner({ onCapture, onReuseSession, onNoSignScan, o
   // Used by both the camera and library inputs to ingest a file as an
   // ambient (surroundings) photo. Runs the same resize pipeline as the
   // sign-photo path so storage stays under the 5MB localStorage ceiling.
-  const handleAmbientFile = async (file: File) => {
+  const handleAmbientFile = async (file: File, input: 'camera' | 'library') => {
     setFileError(null)
+    const meta = captureMetaFor(file, input)
     try {
       const { dataUrl } = await resizeImageFile(file)
       setAmbientPhoto(dataUrl)
+      setAmbientMeta(meta)
       setNoSignStage('captured')
     } catch (err) {
       console.warn('[scanner] could not read ambient photo:', err)
@@ -261,13 +276,13 @@ export default function SignScanner({ onCapture, onReuseSession, onNoSignScan, o
   // signs were here" without visual backup; that's a valid evidence record,
   // just a weaker one in a dispute scenario.
   const handleNoSignSkip = () => {
-    onNoSignScan(coords, null)
+    onNoSignScan(coords, null, null)
   }
 
   // User captured an ambient photo and is ready to save. Hand off both the
   // coords and the photo to SessionLogger.
   const handleNoSignSave = () => {
-    onNoSignScan(coords, ambientPhoto)
+    onNoSignScan(coords, ambientPhoto, ambientPhoto ? ambientMeta : null)
   }
 
   return (
@@ -337,6 +352,7 @@ export default function SignScanner({ onCapture, onReuseSession, onNoSignScan, o
             <button
               onClick={() => {
                 setPreview(null)
+                setPreviewMeta(null)
                 setQuality(null)
               }}
               className="flex-1 bg-paper-200 hover:bg-paper-300 text-ink-900 font-medium py-3 rounded-xl transition-colors border border-brand-900/10"
@@ -483,6 +499,7 @@ export default function SignScanner({ onCapture, onReuseSession, onNoSignScan, o
             <button
               onClick={() => {
                 setAmbientPhoto(null)
+                setAmbientMeta(null)
                 setNoSignStage('choosing')
               }}
               className="flex-1 bg-paper-200 hover:bg-paper-300 text-ink-900 font-medium py-3 rounded-xl transition-colors border border-brand-900/10"
@@ -507,7 +524,7 @@ export default function SignScanner({ onCapture, onReuseSession, onNoSignScan, o
         className="hidden"
         onChange={(e) => {
           const file = e.target.files?.[0]
-          if (file) void handleAmbientFile(file)
+          if (file) void handleAmbientFile(file, 'camera')
           e.target.value = ''
         }}
       />
@@ -518,7 +535,7 @@ export default function SignScanner({ onCapture, onReuseSession, onNoSignScan, o
         className="hidden"
         onChange={(e) => {
           const file = e.target.files?.[0]
-          if (file) void handleAmbientFile(file)
+          if (file) void handleAmbientFile(file, 'library')
           e.target.value = ''
         }}
       />
@@ -537,7 +554,7 @@ export default function SignScanner({ onCapture, onReuseSession, onNoSignScan, o
             // denied detector never fires, and hide any stale hint.
             cameraPendingRef.current = false
             setCameraDenied(false)
-            handleFile(file)
+            void handleFile(file, 'camera')
           }
           e.target.value = ''
         }}
@@ -549,7 +566,7 @@ export default function SignScanner({ onCapture, onReuseSession, onNoSignScan, o
         className="hidden"
         onChange={(e) => {
           const file = e.target.files?.[0]
-          if (file) handleFile(file)
+          if (file) void handleFile(file, 'library')
           e.target.value = ''
         }}
       />

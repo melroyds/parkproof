@@ -1,6 +1,15 @@
 import type { ParkingSession } from '../types'
 import { getIdToken } from './auth'
 import { loadSessions, updateSession } from './storage'
+import { getPhotoBytes } from './photo-store'
+import { hashDataUrlImage } from './hash'
+import {
+  LEGACY_PHOTO_ROLES,
+  getSessionPhoto,
+  legacyPhotoField,
+  photoRefFor,
+  type LegacyPhotoRole,
+} from './session-photos'
 
 /**
  * Local↔cloud sync layer.
@@ -142,6 +151,11 @@ async function uploadPhoto(
  * Photo upload errors are warned-and-swallowed: the metadata is the
  * minimum-viable record (timestamp, GPS, sign rules, signature). Losing a
  * photo is worse than losing the whole session.
+ *
+ * Photos are read through `getSessionPhoto`, so a new record's sign, car
+ * and ambient photos (bytes in the photo store, legacy fields null) upload
+ * under the same per-role keys as an old record's. Content-addressed keys
+ * for photo refs are T0b4's.
  */
 export async function uploadSession(
   session: ParkingSession,
@@ -156,9 +170,8 @@ export async function uploadSession(
   // absence of signs).
   let photoFailed = false
   await Promise.all(
-    (['sign', 'car', 'ambient'] as const).map(async (role) => {
-      const field = `${role}_photo` as 'sign_photo' | 'car_photo' | 'ambient_photo'
-      const photo = session[field]
+    LEGACY_PHOTO_ROLES.map(async (role) => {
+      const photo = await getSessionPhoto(session, role)
       if (!photo || !photo.startsWith('data:')) return
       try {
         await uploadPhoto(session.id, role, photo)
@@ -215,6 +228,42 @@ export async function materializePhotoFromCloud(
   })
   const data = await expectJson<{ data_url: string | null }>(res)
   return data.data_url
+}
+
+/**
+ * The cloud copy of a photo-store photo whose bytes aren't on this device,
+ * checked against its PhotoRef: used only when the bytes' SHA-256 equals
+ * `sha256`, so a PDF never shows a different photo under a record's ref.
+ * Null when signed out (no request is made), when the cloud has no photo
+ * for the role, or when the bytes don't match. Never throws.
+ *
+ * Interim (T0b2): the cloud holds one photo per role at the per-role key
+ * that uploadSession writes. T0b4 replaces this with materialising by
+ * sha256 from the content-addressed key.
+ */
+export async function materializeRefPhotoFromCloud(
+  sessionId: string,
+  role: LegacyPhotoRole,
+  sha256: string,
+): Promise<string | null> {
+  try {
+    if (!(await getIdToken())) return null
+    const dataUrl = await materializePhotoFromCloud(sessionId, role)
+    if (!dataUrl || !dataUrl.startsWith('data:')) return null
+    return (await hashDataUrlImage(dataUrl)) === sha256 ? dataUrl : null
+  } catch (err) {
+    console.warn(`[sync] could not fetch the cloud copy of the ${role} photo:`, err)
+    return null
+  }
+}
+
+/** Are a PhotoRef's bytes on this device? A store that can't be read counts as no. */
+async function photoBytesOnDevice(sessionId: string, sha256: string): Promise<boolean> {
+  try {
+    return (await getPhotoBytes(sessionId, sha256)) !== null
+  } catch {
+    return false
+  }
 }
 
 /** Delete one session from the cloud (DDB row + S3 photos, best-effort). */
@@ -300,7 +349,16 @@ export async function performInitialSync(): Promise<InitialSyncResult> {
     const local = localById.get(cloudSession.id)
     if (!local) continue
     const patch: Partial<ParkingSession> = {}
-    for (const field of ['sign_photo', 'car_photo', 'ambient_photo'] as const) {
+    for (const role of LEGACY_PHOTO_ROLES) {
+      // A photo-store photo is read from this device's bytes; while they are
+      // here its legacy field stays null rather than taking the cloud's URL.
+      // When they aren't (IndexedDB cleared or evicted, the record kept),
+      // the cloud URL goes in the legacy field so the photo still shows;
+      // the PDF checks those bytes against the ref's sha256. Interim until
+      // T0b4's content-addressed photos.
+      const ref = photoRefFor(local, role)
+      if (ref && (await photoBytesOnDevice(local.id, ref.sha256))) continue
+      const field = legacyPhotoField(role)
       const localValue = local[field]
       const cloudValue = cloudSession[field]
       const localIsDataUrl = typeof localValue === 'string' && localValue.startsWith('data:')

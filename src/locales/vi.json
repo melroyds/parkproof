@@ -208,7 +208,9 @@
     "noSignBanner": "Bạn đang ghi nhận rằng không có biển báo nào tại vị trí này. Chữ ký mật mã bảo chứng cho thời điểm và nơi chốn, chứ không bảo chứng việc biển báo có thực sự vắng mặt hay không — hãy trung thực, đây là bằng chứng của bạn.",
     "ambientHeader": "Xung quanh",
     "ambientCaption": "Chụp để chứng minh không có biển báo.",
-    "locationContext": "Chúng tôi chỉ dùng vị trí của bạn để ghi dấu thời gian nơi bạn đỗ. Nó nằm trên thiết bị của bạn, trừ khi bạn đăng nhập."
+    "locationContext": "Chúng tôi chỉ dùng vị trí của bạn để ghi dấu thời gian nơi bạn đỗ. Nó nằm trên thiết bị của bạn, trừ khi bạn đăng nhập.",
+    "photoSaveFailed": "Không lưu được ảnh này trên điện thoại của bạn. Hãy thử lại, hoặc lưu bản ghi mà không có ảnh này.",
+    "saving": "Đang lưu…"
   },
   "reminders": {
     "header": "Đặt nhắc nhở",
@@ -323,7 +325,11 @@
     "exportPhotoWarning": "Có một vài ảnh không tải được từ đám mây cho bản ghi cũ này. Bạn vẫn xuất được, hoặc mở bản ghi trên thiết bị đã tạo ra nó.",
     "photoHashMismatch": "Ảnh này không khớp với bằng chứng đã ký và có thể đã bị thay đổi kể từ khi lưu.",
     "endConfirmLate": "Đánh dấu bản ghi này là đã kết thúc ngay bây giờ? Bản ghi sẽ lưu {{time}}, là lúc bạn nhấn, theo đồng hồ điện thoại. Bản ghi sẽ không cho thấy lúc xe thực sự rời đi.",
-    "devKeySigned": "Đã ký bằng khóa phát triển. Không thể kiểm tra chữ ký này bằng khóa công khai mà ParkProof đã công bố."
+    "devKeySigned": "Đã ký bằng khóa phát triển. Không thể kiểm tra chữ ký này bằng khóa công khai mà ParkProof đã công bố.",
+    "photoNotOnDevice": "Ảnh này không có trên thiết bị này. Dấu vân tay số đã ký: {{fingerprint}}.",
+    "photoNotOnDeviceUnsigned": "Ảnh này không có trên thiết bị này. Dấu vân tay số: {{fingerprint}}. Chưa được ký.",
+    "signPhotoAlt": "Ảnh biển báo đỗ xe bạn đã quét",
+    "carPhotoAlt": "Ảnh xe của bạn tại chỗ bạn đã đỗ"
   },
   "appeal": {
     "captureHeader": "Soạn thư khiếu nại",
@@ -514,7 +520,9 @@
       "valueHeader": "Giá trị",
       "dash": "—",
       "notCaptured": "Chưa ghi nhận",
-      "imageEmbedFailed": "(Không thể nhúng hình ảnh)"
+      "imageEmbedFailed": "(Không thể nhúng hình ảnh)",
+      "photoNotOnDevice": "Ảnh này không có trên thiết bị đã tạo tệp PDF này. Dấu vân tay số SHA-256 đã ký của ảnh là {{fingerprint}}.",
+      "photoNotOnDeviceUnsigned": "Ảnh này không có trên thiết bị đã tạo tệp PDF này. Dấu vân tay số SHA-256 của ảnh là {{fingerprint}}. Chưa được ký."
     },
     "evidence": {
       "title": "ParkProof — Bằng chứng đỗ xe",
