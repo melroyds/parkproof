@@ -200,7 +200,8 @@ describe('PDF strings are covered by the PDF fonts', () => {
     const sc = cmapCodePoints(await readFont('NotoSansSC.ttf'))
     expect(sc.has('签'.codePointAt(0)!)).toBe(true)
     expect(sc.has('A'.codePointAt(0)!)).toBe(true)
-    expect(sc.has('按'.codePointAt(0)!)).toBe(false)
+    // A rare character no locale string uses, so the subset never keeps it.
+    expect(sc.has('龘'.codePointAt(0)!)).toBe(false)
   })
 })
 

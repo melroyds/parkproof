@@ -46,3 +46,6 @@ public/pwa-*.png
 public/apple-touch-icon-*.png
 public/favicon.ico
 public/maskable-icon-*.png
+
+# Full-size source fonts for scripts/_subset_pdf_fonts.py (17 MB+, re-download with --fetch)
+fonts-src/
