@@ -808,5 +808,21 @@
     "iosTitle": "Installa ParkProof sul tuo iPhone",
     "iosBody": "Tocca il pulsante Condividi, poi scegli \"Aggiungi alla schermata Home\". Si apre a tutto schermo e funziona offline.",
     "iosDismiss": "Ho capito"
+  },
+  "verifier": {
+    "link": {
+      "valid": "Firma valida. I dati firmati non sono cambiati da quando ParkProof li ha firmati.",
+      "invalid": "Firma non valida. Questa parte non è quella che ParkProof ha firmato per questo record.",
+      "pending": "Non ancora firmata",
+      "rejected": "Non è stato possibile firmare questa parte",
+      "devKey": "Firmata con una chiave di sviluppo. Non si può verificare con la chiave pubblicata da ParkProof.",
+      "chainBroken": "Non si può verificare la posizione di questa parte nel record. La parte firmata prima di questa non è su questo dispositivo o non corrisponde."
+    },
+    "fork": "Aggiunta da due dispositivi",
+    "photo": {
+      "matches": "Questa foto corrisponde alla sua impronta digitale firmata.",
+      "differs": "Questa non è la foto che è stata firmata. L'impronta digitale non corrisponde.",
+      "notOnDeviceDevKey": "Foto non presente su questo dispositivo. Impronta digitale: {{fingerprint}}. Firmata con una chiave di sviluppo."
+    }
   }
 }

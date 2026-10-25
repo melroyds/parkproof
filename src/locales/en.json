@@ -808,5 +808,21 @@
     "hoursAgo_other": "{{count}} hours ago",
     "yesterday": "yesterday",
     "daysAgo_other": "{{count}} days ago"
+  },
+  "verifier": {
+    "link": {
+      "valid": "Signature valid. The signed details haven't changed since ParkProof signed them.",
+      "invalid": "Signature not valid. This part isn't what ParkProof signed for this record.",
+      "pending": "Not signed yet",
+      "rejected": "This part couldn't be signed",
+      "devKey": "Signed with a development key. It can't be checked with ParkProof's published key.",
+      "chainBroken": "Its place in the record can't be checked. The part signed before it is missing from this device or doesn't match."
+    },
+    "fork": "Added from two devices",
+    "photo": {
+      "matches": "This photo matches its signed fingerprint.",
+      "differs": "This isn't the photo that was signed. Its fingerprint doesn't match.",
+      "notOnDeviceDevKey": "Photo not on this device. Fingerprint {{fingerprint}}. Signed with a development key."
+    }
   }
 }

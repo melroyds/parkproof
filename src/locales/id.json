@@ -808,5 +808,21 @@
     "iosTitle": "Pasang ParkProof di iPhone-mu",
     "iosBody": "Ketuk tombol Share, lalu pilih 'Add to Home Screen'. Ia terbuka layar penuh dan jalan offline.",
     "iosDismiss": "Mengerti"
+  },
+  "verifier": {
+    "link": {
+      "valid": "Tanda tangan valid. Detail yang ditandatangani tidak berubah sejak ParkProof menandatanganinya.",
+      "invalid": "Tanda tangan tidak valid. Bagian ini bukan yang ditandatangani ParkProof untuk catatan ini.",
+      "pending": "Belum ditandatangani",
+      "rejected": "Bagian ini tidak bisa ditandatangani",
+      "devKey": "Ditandatangani dengan kunci pengembangan. Tanda tangan ini tidak bisa dicek dengan kunci publik yang diterbitkan ParkProof.",
+      "chainBroken": "Posisi bagian ini dalam catatan tidak bisa dicek. Bagian yang ditandatangani sebelum bagian ini tidak ada di perangkat ini atau tidak cocok."
+    },
+    "fork": "Ditambahkan dari dua perangkat",
+    "photo": {
+      "matches": "Foto ini cocok dengan sidik jari yang ditandatangani.",
+      "differs": "Ini bukan foto yang ditandatangani. Sidik jarinya tidak cocok.",
+      "notOnDeviceDevKey": "Foto ini tidak ada di perangkat ini. Sidik jari: {{fingerprint}}. Ditandatangani dengan kunci pengembangan."
+    }
   }
 }

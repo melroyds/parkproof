@@ -808,5 +808,21 @@
     "iosTitle": "Cài ParkProof trên iPhone của bạn",
     "iosBody": "Nhấn nút Chia sẻ, rồi chọn 'Thêm vào Màn hình chính'. Ứng dụng mở toàn màn hình và chạy được offline.",
     "iosDismiss": "Đã hiểu"
+  },
+  "verifier": {
+    "link": {
+      "valid": "Chữ ký hợp lệ. Các thông tin đã ký chưa thay đổi kể từ khi ParkProof ký.",
+      "invalid": "Chữ ký không hợp lệ. Phần này không phải là nội dung ParkProof đã ký cho bản ghi này.",
+      "pending": "Chưa được ký",
+      "rejected": "Không thể ký phần này",
+      "devKey": "Đã ký bằng khóa phát triển. Không thể kiểm tra chữ ký này bằng khóa công khai mà ParkProof đã công bố.",
+      "chainBroken": "Không thể kiểm tra vị trí của phần này trong bản ghi. Phần được ký trước nó không có trên thiết bị này hoặc không khớp."
+    },
+    "fork": "Được thêm từ hai thiết bị",
+    "photo": {
+      "matches": "Ảnh này khớp với dấu vân tay số đã ký.",
+      "differs": "Đây không phải là ảnh đã được ký. Dấu vân tay số không khớp.",
+      "notOnDeviceDevKey": "Ảnh này không có trên thiết bị này. Dấu vân tay số: {{fingerprint}}. Đã ký bằng khóa phát triển."
+    }
   }
 }

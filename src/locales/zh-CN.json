@@ -808,5 +808,21 @@
     "iosTitle": "在 iPhone 上安装 ParkProof",
     "iosBody": "点击分享按钮,然后选择\"添加到主屏幕\"。它会全屏打开,离线也能用。",
     "iosDismiss": "知道了"
+  },
+  "verifier": {
+    "link": {
+      "valid": "签名有效。已签名的内容自 ParkProof 签名以来没有改动。",
+      "invalid": "签名无效。这部分不是 ParkProof 为这条记录签名的内容。",
+      "pending": "尚未签名",
+      "rejected": "这部分无法签名",
+      "devKey": "这部分使用开发密钥签名。无法用 ParkProof 公布的公钥核验。",
+      "chainBroken": "无法核对这部分在记录中的位置。在它之前签名的那部分不在这台设备上,或者对不上。"
+    },
+    "fork": "从两台设备添加",
+    "photo": {
+      "matches": "这张照片与已签名的指纹一致。",
+      "differs": "这不是签名时的那张照片。指纹对不上。",
+      "notOnDeviceDevKey": "这台设备上没有这张照片。指纹 {{fingerprint}}。使用开发密钥签名。"
+    }
   }
 }
