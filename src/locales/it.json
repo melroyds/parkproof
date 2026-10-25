@@ -519,18 +519,19 @@
     "common": {
       "fieldHeader": "Campo",
       "valueHeader": "Valore",
-      "dash": "—",
+      "dash": "–",
       "notCaptured": "Non registrato",
       "imageEmbedFailed": "(Immagine non incorporabile)",
       "photoNotOnDevice": "Foto non presente sul dispositivo che ha creato questo PDF. La sua impronta digitale SHA-256 firmata è {{fingerprint}}.",
-      "photoNotOnDeviceUnsigned": "Foto non presente sul dispositivo che ha creato questo PDF. La sua impronta digitale SHA-256 è {{fingerprint}}. Non ancora firmata."
+      "photoNotOnDeviceUnsigned": "Foto non presente sul dispositivo che ha creato questo PDF. La sua impronta digitale SHA-256 è {{fingerprint}}. Non ancora firmata.",
+      "plusMinus": "±"
     },
     "evidence": {
-      "title": "ParkProof — Prova di parcheggio",
-      "sessionId": "ID sessione: {{id}}",
+      "title": "ParkProof: Prova di parcheggio",
+      "sessionId": "ID record: {{id}}",
       "generated": "PDF generato: {{when}}",
       "field": {
-        "arrivedAt": "Arrivato alle",
+        "arrivedAt": "Registrato (orologio del telefono)",
         "expiresAt": "Scade alle",
         "guidance": "Indicazioni ParkProof",
         "address": "Indirizzo",
@@ -541,56 +542,93 @@
         "signRules": "Regole del cartello",
         "aiConfidence": "Affidabilità AI",
         "endedAt": "Tocco su \"Ho lasciato il posto\" (orologio del telefono)",
-        "actualDuration": "Tempo dall'arrivo al tocco su \"Ho lasciato il posto\" (orologio del telefono)"
+        "actualDuration": "Tempo dall'arrivo al tocco su \"Ho lasciato il posto\" (orologio del telefono)",
+        "arrivalSigned": "Parte di arrivo firmata da ParkProof (orologio del server)",
+        "departureSigned": "Parte di partenza firmata da ParkProof (orologio del server)",
+        "departureLocation": "Posizione del telefono al tocco su \"Ho lasciato il posto\" (GPS)",
+        "departureDistance": "Distanza approssimativa dall'arrivo (GPS del telefono)",
+        "locationCoords": "Posizione (coordinate)"
       },
       "locationSourceValue": {
         "manuallyEntered": "Inserito manualmente",
-        "gpsWithAccuracy": "GPS — {{accuracy}}",
-        "gpsLowAccuracy": "GPS — PRECISIONE BASSA {{accuracy}} (vedi appendice)",
+        "gpsWithAccuracy": "GPS: {{accuracy}}",
+        "gpsLowAccuracy": "GPS: precisione bassa, {{accuracy}} (vedi l'avviso sulla precisione GPS più sotto)",
         "gps": "GPS",
         "captured": "Registrato",
-        "none": "—"
+        "none": "–"
       },
       "signPhotoHeader": "Foto del cartello",
       "carPhotoHeader": "Auto nello stallo",
       "driverNoteHeader": "Nota del conducente",
-      "gpsNoticeTitle": "⚠ Avviso sulla precisione GPS",
-      "gpsNoticeBody": "La lettura GPS al momento dell'acquisizione era {{accuracy}} — più ampia del consueto per scopi probatori. Le coordinate indicate identificano un punto all'interno di tale raggio, non un punto esatto. Cause comuni: parcheggi interni / multipiano, connessioni Starlink o VPN, o segnale satellitare debole. Chi valuta dovrebbe ponderare l'indirizzo registrato in base a questo raggio.",
-      "statement": "Questo documento è stato generato automaticamente da ParkProof al momento del parcheggio. L'orario di arrivo, le coordinate GPS, la traduzione del cartello e le fotografie costituiscono un registro probatorio contestuale, idoneo a essere allegato a una richiesta di revisione di una contravvenzione di sosta presso il comune australiano competente.",
+      "gpsNoticeTitle": "Avviso sulla precisione GPS",
+      "gpsNoticeBody": "La lettura GPS al momento dell'acquisizione era {{accuracy}}, più ampia del consueto per scopi probatori. Le coordinate indicate identificano un punto all'interno di tale raggio, non un punto esatto. Cause comuni: parcheggi interni / multipiano, connessioni Starlink o VPN, o segnale satellitare debole. Chi valuta dovrebbe ponderare l'indirizzo registrato in base a questo raggio.",
+      "statement": "Questo è un record di un parcheggio creato con ParkProof. Gli orari indicati come orari del telefono provengono dal telefono del conducente. Le dichiarazioni indicate come del conducente sono dichiarazioni del conducente stesso. Non è un accertamento legale di quanto accaduto. Lo decide il comune o il tribunale.",
       "guidanceFree": "Parcheggio consentito. Sposta l'auto entro le {{when}}.",
       "guidanceFreeNoExpiry": "Parcheggio consentito. Nessuna scadenza indicata sul cartello.",
-      "guidanceExpired": "Sessione scaduta alle {{when}}.",
+      "guidanceExpired": "Tempo di sosta terminato: {{when}}.",
       "ambientPhotoHeader": "Foto dell'area circostante",
-      "ambientPhotoCaption": "Catturata dal conducente al momento del parcheggio per dimostrare l'assenza di cartelli visibili.",
-      "noAmbientCaptured": "Nessuna foto dell'area è stata catturata per questa sessione.",
-      "noSignRules": "Nessuna restrizione affissa registrata. Il conducente afferma che non c'erano cartelli.",
+      "ambientPhotoCaption": "Scattata dal conducente quando è stato registrato il record, per mostrare la zona circostante. Non dimostra che nelle vicinanze non ci fossero cartelli.",
+      "noAmbientCaptured": "Per questo record non è stata scattata nessuna foto della zona circostante.",
+      "noSignRules": "Per questo record non è stato letto nessun cartello. Il conducente ha detto che in questo punto non c'erano cartelli di sosta.",
       "noSignConfidence": "Non applicabile (nessun cartello letto)",
-      "driverNoteUnsigned": "Aggiunta dal conducente. Questa nota non è coperta dalla firma crittografica."
+      "driverNoteUnsigned": "Aggiunta dal conducente. Questa nota non è coperta dalla firma crittografica.",
+      "signing": {
+        "devKey": "{{time}}, con una chiave di sviluppo. Non si può verificare con la chiave pubblicata da ParkProof.",
+        "pending": "Non ancora firmata",
+        "rejected": "Non è stato possibile firmare questa parte",
+        "none": "Non firmata"
+      },
+      "value": {
+        "coordsWithAccuracy": "{{coords}}, precisione {{accuracy}}",
+        "distanceUnavailable": "Non disponibile. La posizione all'arrivo non è un rilevamento GPS del telefono abbastanza preciso per il confronto.",
+        "distanceRough": "{{distance}}. Al momento del tocco la posizione del telefono era precisa solo entro {{accuracy}}, quindi questa distanza è approssimativa.",
+        "distanceRoughNoAccuracy": "{{distance}}. Il telefono non ha indicato quanto fosse precisa la sua posizione al momento del tocco, quindi questa distanza è approssimativa."
+      },
+      "carPhotoCaptionTime": "Registrato {{time}} (orologio del telefono)",
+      "confidence": {
+        "high": "Alta",
+        "medium": "Media",
+        "low": "Bassa"
+      }
     },
     "signature": {
       "title": "Firma crittografica",
-      "intro": "Questo documento probatorio è stato firmato dalla chiave privata gestita da AWS KMS di ParkProof al momento del salvataggio. La firma consente a qualsiasi terza parte (comune, tribunale, assicurazione) di verificare che i metadati e gli hash delle foto qui sotto non siano stati alterati dopo il timestamp signed_at. La chiave privata non lascia mai AWS; la chiave pubblica è pubblicata apertamente per consentire la verifica.",
+      "intro": "Ogni parte di questo record è stata firmata dal server di ParkProof quando il server l'ha ricevuta, all'orario signed_at indicato per quella parte. Una firma valida mostra che i dati firmati e le impronte delle foto non sono cambiati da allora. Non mostra che siano veri, chi guidava, né quando l'auto è arrivata o partita.",
       "algorithm": "Algoritmo",
       "keyAlias": "Alias della chiave",
-      "signedAt": "Firmato il (UTC)",
+      "signedAt": "Firmato da ParkProof (orologio del server)",
       "schema": "Schema",
       "publicKeyUrl": "URL chiave pubblica",
       "canonicalPayloadHeader": "Payload canonico (i byte esatti che sono stati firmati):",
-      "payloadB64Header": "Payload canonico, base64 (decodifica questo per verificare):",
-      "signatureBlobHeader": "Firma (DER, base64):",
+      "payloadB64Header": "Payload canonico, base64. Salvalo come {{file}} per verificarlo:",
+      "signatureBlobHeader": "Firma (DER, base64). Salvala come {{file}}:",
       "verifyHeader": "Per verificare con openssl (qualsiasi piattaforma):",
-      "verifyStep1": "1. Salva il blocco payload base64 qui sopra in un file: payload.b64, poi decodificalo nei byte esatti che sono stati firmati. base64 -d ignora gli a capo, quindi recuperi i byte precisi senza alcun a capo finale superfluo:",
-      "verifyStep2": "2. Salva la stringa base64 della firma qui sopra in un file: sig.base64",
+      "verifyStep1": "1. Salva il blocco payload base64 dell'anello 0 in un file chiamato link0-payload.b64, poi decodificalo nei byte esatti che sono stati firmati. base64 -d ignora gli a capo, quindi recuperi i byte precisi senza alcun a capo finale superfluo:",
+      "verifyStep2": "2. Salva il blocco della firma dell'anello 0 in un file chiamato link0-sig.b64.",
       "verifyStep3": "3. Scarica la chiave pubblica:",
       "verifyStep4": "4. Decodifica la firma:",
       "verifyStep5": "5. Verifica:",
-      "verifyStep6": "6. Output atteso: \"Verified OK\". Conferma che i metadati e gli hash delle foto registrati nel payload sono autentici e invariati dal momento signed_at.",
-      "verifyStep7": "7. Riguardo alle foto: le immagini mostrate in questo PDF sono una copia visiva, ricodificata per il documento, quindi i loro byte differiscono dagli originali e non riprodurranno gli hash nel payload. È normale e non è segno di manomissione. La firma vincola lo SHA-256 di ogni foto originale (i valori sign_photo_sha256, car_photo_sha256 e ambient_photo_sha256 all'interno del payload firmato), e il passaggio 6 ha già dimostrato che quei valori sono autentici. Per verificare in modo indipendente una specifica immagine, calcola l'hash del file originale acquisito (dal record ParkProof o dall'esportazione dei dati del tuo account), non della copia stampata qui, e confrontalo con il valore corrispondente sopra.",
-      "devKey": "Firmato con una chiave di sviluppo. Non si può verificare con la chiave pubblicata da ParkProof."
+      "verifyStep6": "6. Output atteso: \"Verified OK\". Mostra che i byte firmati non sono cambiati da quando ParkProof li ha firmati.",
+      "verifyStep7": "7. Riguardo alle foto: le immagini mostrate in questo PDF sono una copia visiva, ricodificata per il documento, quindi i loro byte differiscono dagli originali e non riprodurranno gli hash nel payload. È normale e non è segno di manomissione. La firma vincola lo SHA-256 di ogni foto originale (i valori sign_photo_sha256, car_photo_sha256 e ambient_photo_sha256 all'interno del payload firmato), e il passaggio 6 ha già mostrato che quei valori non sono cambiati dalla firma. Per verificare in modo indipendente una specifica immagine, calcola l'hash del file originale acquisito (dal record ParkProof o dall'esportazione dei dati del tuo account), non della copia stampata qui, e confrontalo con il valore corrispondente sopra.",
+      "devKey": "Firmato con una chiave di sviluppo. Non si può verificare con la chiave pubblicata da ParkProof.",
+      "linkHeading": "Anello {{link}}: {{kind}}",
+      "forkNote": "In questo punto del record sono state aggiunte due parti, da due dispositivi. Sono entrambe firmate e riportate qui.",
+      "verifyRepeat": "Ripeti i passaggi 1, 2, 4, 5 e 6 per ogni anello, con i suoi nomi di file (link1-payload.b64, link1-sig.b64 e così via).",
+      "verifyChain": "8. Controlla che gli anelli siano collegati in ordine. Ogni anello dopo l'anello 0 contiene parent_payload_sha256, lo SHA-256 del payload dell'anello precedente. Esegui ogni comando qui sotto sui file payload.txt del passaggio 1. Stampa lo SHA-256 del payload come valore esadecimale dopo il segno = (sha256sum, se lo hai, stampa lo stesso valore).",
+      "chainEquals": "Quel valore esadecimale deve essere uguale a parent_payload_sha256 nell'anello {{link}}.",
+      "chainEqualsOneOf": "Uno di questi valori esadecimali deve essere uguale a parent_payload_sha256 nell'anello {{link}}.",
+      "kind": {
+        "arrival": "Arrivo",
+        "arrivalContext": "Dettagli al parcheggio",
+        "condition": "Foto delle condizioni dell'auto",
+        "compliance": "Prova di pagamento o permesso",
+        "departure": "Partenza",
+        "handover": "Passaggio dell'auto"
+      }
     },
     "appeal": {
       "drafted": "Bozza del {{when}}",
-      "linkedSession": "Sessione ParkProof collegata: {{id}}",
+      "linkedSession": "Record ParkProof collegato: {{id}}",
       "supportingEvidence": "Prove a supporto (da ParkProof)",
       "fieldGps": "GPS",
       "fieldSideSelected": "Lato selezionato",
@@ -599,15 +637,15 @@
       "carPhotoHeader": "Auto nello stallo"
     },
     "fullExport": {
-      "title": "ParkProof — Esportazione account",
+      "title": "ParkProof: Esportazione account",
       "account": "Account: {{email}}",
       "userId": "ID utente: {{id}}",
       "exportedAt": "Esportato il: {{when}}",
       "sessionCount": "Record in questa esportazione: {{count}}",
-      "intro": "Questo documento raccoglie ogni record di parcheggio salvato in questo account ParkProof. Ogni record è stato acquisito al momento del parcheggio con GPS, fotografie e una lettura del cartello tradotta dall'AI. Se un record è stato firmato con la chiave KMS di ParkProof, il distintivo in quella sezione indica che esiste una firma crittografica verificabile (esporta il PDF del singolo record per l'appendice completa della firma).",
+      "intro": "Questo documento raccoglie ogni record di parcheggio salvato in questo account ParkProof, una sezione per record. Se un record ha parti firmate, le sue pagine di firma seguono la sezione, con i passaggi per verificare ogni firma. Una firma valida mostra che i dati firmati non sono cambiati da quando ParkProof li ha firmati. Non mostra che siano veri.",
       "emptyState": "Nessun record di parcheggio è ancora stato salvato in questo account.",
       "summaryColIndex": "#",
-      "summaryColArrived": "Arrivo",
+      "summaryColArrived": "Registrato (orologio del telefono)",
       "summaryColExpires": "Scadenza",
       "summaryColLocation": "Posizione",
       "sessionHeader": "Record {{n}} di {{total}}",
@@ -724,7 +762,7 @@
       "lead": "Ogni parcheggio che registri salva l'orario, il GPS, l'indirizzo, e (se vuoi) una foto della tua auto sul posto.",
       "items": [
         "Scarichi tutto in un PDF ordinato. Comodo se mai dovrai contestare una multa.",
-        "È firmato con un sigillo digitale, così nessuno può dire che è stato modificato dopo. Nemmeno noi.",
+        "Ogni record è firmato, così chiunque può controllare che non sia stato modificato da quando è stato firmato.",
         "Aggiungi una nota sul perché hai parcheggiato lì (mamma in ospedale, mercato del sabato): i comuni tengono conto del contesto."
       ]
     },

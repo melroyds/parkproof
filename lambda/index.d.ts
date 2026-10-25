@@ -70,3 +70,44 @@ export function handleSignSession(event: LambdaEvent, options?: SignSessionOptio
 
 /** The /sign-session HTTP response: 200 bundle, 400 `{ error: code, field, detail }`, or 500. */
 export function handleSignSessionRequest(event: LambdaEvent, options?: SignSessionOptions): Promise<LambdaResponse>
+
+/**
+ * The `session.evidence` object in a /draft-appeal body (build spec T1b),
+ * built by src/lib/record-times.ts appealEvidence. Every time is
+ * pre-formatted in the record's zone with the zone name.
+ */
+export interface AppealEvidenceInput {
+  time_zone?: string
+  arrival_phone?: string | null
+  arrival_signed?: string | null
+  arrival_signing?: 'signed' | 'dev_key' | 'pending' | 'rejected'
+  expires?: string | null
+  departure_tapped?: string | null
+  departure_signed?: string | null
+  departure_signing?: 'signed' | 'dev_key' | 'pending' | 'rejected' | 'none' | null
+  location_source?: 'gps' | 'manual' | null
+}
+
+/** The `session` object in a /draft-appeal body. */
+export interface AppealSessionInput {
+  arrived_at?: string
+  expires_at?: string | null
+  location?: { lat: number; lng: number; address?: string | null; source?: string; accuracy_meters?: number } | null
+  rules?: string
+  observations?: Array<{ scope: string; items: string[] }>
+  chosen_label?: string
+  confidence?: string
+  evidence?: AppealEvidenceInput | null
+}
+
+/** The appeal drafter's system prompt (exported for prompt guard tests). */
+export const APPEAL_SYSTEM_PROMPT: string
+
+/** An ISO time formatted as the client's formatInZone does (year and zone name), or null when it doesn't parse. */
+export function appealZonedTime(value: unknown, timeZone: string): string | null
+
+/** The record as labelled lines for the appeal drafter: phone-clock and server-clock times kept apart. */
+export function buildAppealEvidenceText(session: AppealSessionInput): string
+
+/** Draft an appeal letter (the async /draft-appeal worker). */
+export function handleDraftAppeal(event: LambdaEvent): Promise<unknown>

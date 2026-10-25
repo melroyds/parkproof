@@ -226,12 +226,19 @@ describe('departureSummary', () => {
           },
         }),
       ),
-    ).toEqual({ tapped_at: ENDED, signing: { state: 'pending' }, distance_from_arrival_m: 40, location_accuracy_m: 14 })
+    ).toEqual({
+      tapped_at: ENDED,
+      signing: { state: 'pending' },
+      distance_from_arrival_m: 40,
+      location_accuracy_m: 14,
+      location: { lat: -37.81, lng: 144.96, accuracy_meters: 14 },
+    })
     expect(departureSummary(session({ ended_at: ENDED }))).toEqual({
       tapped_at: ENDED,
       signing: { state: 'pending' },
       distance_from_arrival_m: null,
       location_accuracy_m: null,
+      location: null,
     })
   })
 
@@ -283,6 +290,7 @@ describe('departureSummary', () => {
       signing: { state: 'signed', signed_at: '2026-10-25T01:02:00.000Z' },
       distance_from_arrival_m: 512,
       location_accuracy_m: 9,
+      location: { lat: -37.81, lng: 144.96, accuracy_meters: 9 },
     })
   })
 
@@ -296,6 +304,7 @@ describe('departureSummary', () => {
       signing: { state: 'pending' },
       distance_from_arrival_m: 75,
       location_accuracy_m: 9,
+      location: { lat: -37.81, lng: 144.96, accuracy_meters: 9 },
     })
 
     const refused = session({ ended_at: ENDED, addenda: [addendum(2, 'departure', 'rejected', { data: data() })] })
@@ -305,6 +314,21 @@ describe('departureSummary', () => {
   it('ignores a nonsense distance', () => {
     const s = session({ ended_at: ENDED, addenda: [addendum(2, 'departure', 'pending', { data: data({ distance_from_arrival_m: -4 }) })] })
     expect(departureSummary(s)!.distance_from_arrival_m).toBeNull()
+  })
+
+  it('gives the signed departure location, and none for a missing or unreadable one', () => {
+    const none = session({ ended_at: ENDED, addenda: [addendum(2, 'departure', 'signed', { data: data({ location: null }) })] })
+    expect(departureSummary(none)!.location).toBeNull()
+    const garbled = session({
+      ended_at: ENDED,
+      addenda: [addendum(2, 'departure', 'pending', { data: data({ location: { lat: 'x', lng: 144.96, accuracy_meters: 9, source: 'gps' } }) })],
+    })
+    expect(departureSummary(garbled)!.location).toBeNull()
+    const unknownAccuracy = session({
+      ended_at: ENDED,
+      addenda: [addendum(2, 'departure', 'pending', { data: data({ location: { lat: -37.8, lng: 144.9, accuracy_meters: null, source: 'gps' } }) })],
+    })
+    expect(departureSummary(unknownAccuracy)!.location).toEqual({ lat: -37.8, lng: 144.9, accuracy_meters: null })
   })
 })
 

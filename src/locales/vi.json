@@ -519,18 +519,19 @@
     "common": {
       "fieldHeader": "Trường",
       "valueHeader": "Giá trị",
-      "dash": "—",
+      "dash": "–",
       "notCaptured": "Chưa ghi nhận",
       "imageEmbedFailed": "(Không thể nhúng hình ảnh)",
       "photoNotOnDevice": "Ảnh này không có trên thiết bị đã tạo tệp PDF này. Dấu vân tay số SHA-256 đã ký của ảnh là {{fingerprint}}.",
-      "photoNotOnDeviceUnsigned": "Ảnh này không có trên thiết bị đã tạo tệp PDF này. Dấu vân tay số SHA-256 của ảnh là {{fingerprint}}. Chưa được ký."
+      "photoNotOnDeviceUnsigned": "Ảnh này không có trên thiết bị đã tạo tệp PDF này. Dấu vân tay số SHA-256 của ảnh là {{fingerprint}}. Chưa được ký.",
+      "plusMinus": "±"
     },
     "evidence": {
-      "title": "ParkProof — Bằng chứng đỗ xe",
-      "sessionId": "Mã phiên: {{id}}",
+      "title": "ParkProof: Bằng chứng đỗ xe",
+      "sessionId": "Mã bản ghi: {{id}}",
       "generated": "PDF tạo lúc: {{when}}",
       "field": {
-        "arrivedAt": "Giờ đến",
+        "arrivedAt": "Ghi lúc (đồng hồ điện thoại)",
         "expiresAt": "Giờ hết hạn",
         "guidance": "Hướng dẫn ParkProof",
         "address": "Địa chỉ",
@@ -541,56 +542,93 @@
         "signRules": "Quy tắc trên biển báo",
         "aiConfidence": "Độ tin cậy AI",
         "endedAt": "Lúc nhấn \"Tôi đã đi\" (đồng hồ điện thoại)",
-        "actualDuration": "Thời gian từ lúc đến tới lúc nhấn \"Tôi đã đi\" (đồng hồ điện thoại)"
+        "actualDuration": "Thời gian từ lúc đến tới lúc nhấn \"Tôi đã đi\" (đồng hồ điện thoại)",
+        "arrivalSigned": "Phần lúc đến được ParkProof ký lúc (đồng hồ máy chủ)",
+        "departureSigned": "Phần rời đi được ParkProof ký lúc (đồng hồ máy chủ)",
+        "departureLocation": "Vị trí điện thoại lúc nhấn \"Tôi đã đi\" (GPS)",
+        "departureDistance": "Khoảng cách ước tính từ chỗ đến (GPS điện thoại)",
+        "locationCoords": "Vị trí (tọa độ)"
       },
       "locationSourceValue": {
         "manuallyEntered": "Nhập thủ công",
-        "gpsWithAccuracy": "GPS — {{accuracy}}",
-        "gpsLowAccuracy": "GPS — ĐỘ CHÍNH XÁC THẤP {{accuracy}} (xem phụ lục)",
+        "gpsWithAccuracy": "GPS: {{accuracy}}",
+        "gpsLowAccuracy": "GPS: độ chính xác thấp, {{accuracy}} (xem thông báo về độ chính xác GPS bên dưới)",
         "gps": "GPS",
         "captured": "Đã ghi nhận",
-        "none": "—"
+        "none": "–"
       },
       "signPhotoHeader": "Ảnh biển báo",
       "carPhotoHeader": "Xe tại chỗ đỗ",
       "driverNoteHeader": "Ghi chú của tài xế",
-      "gpsNoticeTitle": "⚠ Thông báo về độ chính xác GPS",
-      "gpsNoticeBody": "Tín hiệu GPS khi ghi nhận là {{accuracy}} — rộng hơn mức thông thường dùng làm bằng chứng. Tọa độ phía trên xác định một điểm trong bán kính đó, không phải vị trí chính xác. Nguyên nhân thường gặp: bãi đỗ trong nhà / nhiều tầng, kết nối Starlink hoặc VPN, hoặc tín hiệu vệ tinh yếu. Người xét duyệt nên cân nhắc địa chỉ ghi nhận trong phạm vi bán kính này.",
-      "statement": "Hồ sơ này được ParkProof tạo tự động tại thời điểm đỗ xe. Dấu thời gian đến nơi, tọa độ GPS, bản dịch biển báo và các ảnh chụp tạo thành một hồ sơ bằng chứng cùng thời điểm, phù hợp để đính kèm khi yêu cầu xem xét lại vé phạt đỗ xe gửi đến hội đồng địa phương Úc có thẩm quyền.",
+      "gpsNoticeTitle": "Thông báo về độ chính xác GPS",
+      "gpsNoticeBody": "Tín hiệu GPS khi ghi nhận là {{accuracy}}, rộng hơn mức thông thường dùng làm bằng chứng. Tọa độ phía trên xác định một điểm trong bán kính đó, không phải vị trí chính xác. Nguyên nhân thường gặp: bãi đỗ trong nhà / nhiều tầng, kết nối Starlink hoặc VPN, hoặc tín hiệu vệ tinh yếu. Người xét duyệt nên cân nhắc địa chỉ ghi nhận trong phạm vi bán kính này.",
+      "statement": "Đây là bản ghi một lần đỗ xe được tạo bằng ParkProof. Các thời điểm được ghi là giờ điện thoại lấy từ điện thoại của tài xế. Các nội dung được ghi là lời của tài xế là lời của chính tài xế. Đây không phải là kết luận pháp lý về những gì đã xảy ra. Việc đó do hội đồng địa phương hoặc tòa án quyết định.",
       "guidanceFree": "Được phép đỗ. Di chuyển trước {{when}}.",
       "guidanceFreeNoExpiry": "Được phép đỗ. Biển báo không ghi giờ hết hạn.",
-      "guidanceExpired": "Phiên đã hết hạn lúc {{when}}.",
+      "guidanceExpired": "Thời gian đỗ xe đã kết thúc lúc {{when}}.",
       "ambientPhotoHeader": "Ảnh xung quanh",
-      "ambientPhotoCaption": "Người lái xe chụp tại thời điểm đỗ xe để chứng minh không có biển báo nào.",
-      "noAmbientCaptured": "Không có ảnh xung quanh nào được chụp cho phiên này.",
-      "noSignRules": "Không có hạn chế nào được ghi nhận. Người lái xe khẳng định không có biển báo.",
+      "ambientPhotoCaption": "Do tài xế chụp lúc tạo bản ghi, để cho thấy khu vực xung quanh. Ảnh này không chứng tỏ gần đó không có biển báo.",
+      "noAmbientCaptured": "Bản ghi này không có ảnh khu vực xung quanh.",
+      "noSignRules": "Không có biển báo nào được đọc cho bản ghi này. Tài xế cho biết chỗ này không có biển báo đỗ xe.",
       "noSignConfidence": "Không áp dụng (không đọc biển báo)",
-      "driverNoteUnsigned": "Do tài xế bổ sung. Ghi chú này không được chữ ký mã hóa bảo vệ."
+      "driverNoteUnsigned": "Do tài xế bổ sung. Ghi chú này không được chữ ký mã hóa bảo vệ.",
+      "signing": {
+        "devKey": "{{time}}, bằng khóa phát triển. Không thể kiểm tra bằng khóa công khai mà ParkProof đã công bố.",
+        "pending": "Chưa được ký",
+        "rejected": "Không thể ký phần này",
+        "none": "Không được ký"
+      },
+      "value": {
+        "coordsWithAccuracy": "{{coords}}, độ chính xác {{accuracy}}",
+        "distanceUnavailable": "Không có. Vị trí lúc đến không phải là định vị GPS điện thoại đủ chính xác để so sánh.",
+        "distanceRough": "{{distance}}. Vị trí của điện thoại lúc nhấn chỉ chính xác trong khoảng {{accuracy}}, nên khoảng cách này chỉ là ước lượng thô.",
+        "distanceRoughNoAccuracy": "{{distance}}. Điện thoại không cho biết vị trí lúc nhấn chính xác đến đâu, nên khoảng cách này chỉ là ước lượng thô."
+      },
+      "carPhotoCaptionTime": "Ghi lúc {{time}} (đồng hồ điện thoại)",
+      "confidence": {
+        "high": "Cao",
+        "medium": "Trung bình",
+        "low": "Thấp"
+      }
     },
     "signature": {
       "title": "Chữ ký mã hóa",
-      "intro": "Hồ sơ bằng chứng này được ký bằng khóa riêng do AWS KMS của ParkProof quản lý tại thời điểm lưu. Chữ ký cho phép bất kỳ bên thứ ba nào (hội đồng địa phương, tòa án, công ty bảo hiểm) xác minh rằng siêu dữ liệu và mã băm ảnh bên dưới chưa bị thay đổi kể từ dấu thời gian signed_at. Khóa riêng không bao giờ rời khỏi AWS; khóa công khai được công bố rộng rãi để xác minh.",
+      "intro": "Mỗi phần của bản ghi này được máy chủ của ParkProof ký khi máy chủ nhận được, vào thời điểm signed_at ghi cho phần đó. Chữ ký hợp lệ cho thấy các thông tin đã ký và dấu vân tay của ảnh không thay đổi kể từ lúc đó. Chữ ký không cho thấy các thông tin đó là đúng, ai đang lái xe, hay xe đến và rời đi lúc nào.",
       "algorithm": "Thuật toán",
       "keyAlias": "Bí danh khóa",
-      "signedAt": "Ký lúc (UTC)",
+      "signedAt": "ParkProof ký lúc (đồng hồ máy chủ)",
       "schema": "Lược đồ",
       "publicKeyUrl": "URL khóa công khai",
       "canonicalPayloadHeader": "Tải trọng chuẩn (chuỗi byte chính xác đã được ký):",
-      "payloadB64Header": "Payload chuẩn hóa, dạng base64 (giải mã chuỗi này để xác minh):",
-      "signatureBlobHeader": "Chữ ký (DER, base64):",
+      "payloadB64Header": "Payload chuẩn hóa, dạng base64. Lưu thành {{file}} để kiểm tra:",
+      "signatureBlobHeader": "Chữ ký (DER, base64). Lưu thành {{file}}:",
       "verifyHeader": "Xác minh bằng openssl (mọi nền tảng):",
-      "verifyStep1": "1. Lưu khối payload base64 ở trên vào tệp: payload.b64, sau đó giải mã thành đúng các byte đã được ký. base64 -d bỏ qua việc xuống dòng, nên bạn khôi phục được chính xác các byte mà không có ký tự xuống dòng thừa:",
-      "verifyStep2": "2. Lưu chuỗi base64 chữ ký ở trên vào tệp: sig.base64",
+      "verifyStep1": "1. Lưu khối payload base64 của mắt xích 0 vào tệp tên link0-payload.b64, sau đó giải mã thành đúng các byte đã được ký. base64 -d bỏ qua việc xuống dòng, nên bạn khôi phục được chính xác các byte mà không có ký tự xuống dòng thừa:",
+      "verifyStep2": "2. Lưu khối chữ ký của mắt xích 0 vào tệp tên link0-sig.b64.",
       "verifyStep3": "3. Tải khóa công khai:",
       "verifyStep4": "4. Giải mã chữ ký:",
       "verifyStep5": "5. Xác minh:",
-      "verifyStep6": "6. Kết quả mong đợi: \"Verified OK\". Điều này xác nhận phần metadata và các giá trị băm ảnh được ghi trong payload là xác thực và không bị thay đổi kể từ thời điểm signed_at.",
-      "verifyStep7": "7. Về ảnh: các hình trong tệp PDF này là bản sao trực quan, được mã hóa lại cho tài liệu, nên các byte của chúng khác với bản gốc và sẽ không tái tạo được các giá trị băm trong payload. Đây là điều bình thường, không phải dấu hiệu bị giả mạo. Chữ ký cam kết với SHA-256 của từng ảnh gốc (các giá trị sign_photo_sha256, car_photo_sha256 và ambient_photo_sha256 trong payload đã ký), và bước 6 đã chứng minh các giá trị đó là xác thực. Để xác minh độc lập một hình cụ thể, hãy băm tệp ảnh gốc đã chụp (từ bản ghi ParkProof hoặc bản xuất dữ liệu tài khoản của bạn), không phải bản sao in ở đây, và so sánh với giá trị tương ứng ở trên.",
-      "devKey": "Đã ký bằng khóa phát triển. Không thể kiểm tra chữ ký này bằng khóa công khai mà ParkProof đã công bố."
+      "verifyStep6": "6. Kết quả mong đợi: \"Verified OK\". Điều này cho thấy các byte đã ký không thay đổi kể từ khi ParkProof ký.",
+      "verifyStep7": "7. Về ảnh: các hình trong tệp PDF này là bản sao trực quan, được mã hóa lại cho tài liệu, nên các byte của chúng khác với bản gốc và sẽ không tái tạo được các giá trị băm trong payload. Đây là điều bình thường, không phải dấu hiệu bị giả mạo. Chữ ký cam kết với SHA-256 của từng ảnh gốc (các giá trị sign_photo_sha256, car_photo_sha256 và ambient_photo_sha256 trong payload đã ký), và bước 6 đã cho thấy các giá trị đó không thay đổi kể từ khi ký. Để xác minh độc lập một hình cụ thể, hãy băm tệp ảnh gốc đã chụp (từ bản ghi ParkProof hoặc bản xuất dữ liệu tài khoản của bạn), không phải bản sao in ở đây, và so sánh với giá trị tương ứng ở trên.",
+      "devKey": "Đã ký bằng khóa phát triển. Không thể kiểm tra chữ ký này bằng khóa công khai mà ParkProof đã công bố.",
+      "linkHeading": "Mắt xích {{link}}: {{kind}}",
+      "forkNote": "Tại điểm này của bản ghi có hai phần được thêm từ hai thiết bị. Cả hai đều đã được ký và được trình bày ở đây.",
+      "verifyRepeat": "Làm các bước 1, 2, 4, 5 và 6 cho từng mắt xích, với tên tệp riêng của nó (link1-payload.b64, link1-sig.b64, v.v.).",
+      "verifyChain": "8. Kiểm tra các mắt xích được nối đúng thứ tự. Mỗi mắt xích sau mắt xích 0 mang parent_payload_sha256, tức SHA-256 của payload của mắt xích trước nó. Chạy từng lệnh dưới đây trên các tệp payload.txt từ bước 1. Lệnh sẽ in SHA-256 của payload dưới dạng giá trị hex sau dấu = (nếu bạn có sha256sum, lệnh đó in ra cùng giá trị).",
+      "chainEquals": "Giá trị hex đó phải bằng parent_payload_sha256 trong mắt xích {{link}}.",
+      "chainEqualsOneOf": "Một trong các giá trị hex này phải bằng parent_payload_sha256 trong mắt xích {{link}}.",
+      "kind": {
+        "arrival": "Lúc đến",
+        "arrivalContext": "Thông tin khi đỗ xe",
+        "condition": "Ảnh tình trạng xe",
+        "compliance": "Bằng chứng thanh toán hoặc giấy phép",
+        "departure": "Rời đi",
+        "handover": "Giao xe"
+      }
     },
     "appeal": {
       "drafted": "Soạn thảo lúc {{when}}",
-      "linkedSession": "Phiên ParkProof liên kết: {{id}}",
+      "linkedSession": "Bản ghi ParkProof liên kết: {{id}}",
       "supportingEvidence": "Bằng chứng hỗ trợ (từ ParkProof)",
       "fieldGps": "GPS",
       "fieldSideSelected": "Phía đã chọn",
@@ -599,15 +637,15 @@
       "carPhotoHeader": "Xe tại chỗ đỗ"
     },
     "fullExport": {
-      "title": "ParkProof — Xuất tài khoản",
+      "title": "ParkProof: Xuất tài khoản",
       "account": "Tài khoản: {{email}}",
       "userId": "Mã người dùng: {{id}}",
       "exportedAt": "Xuất lúc: {{when}}",
       "sessionCount": "Số bản ghi trong lần xuất này: {{count}}",
-      "intro": "Tài liệu này tập hợp mọi bản ghi đỗ xe đã lưu vào tài khoản ParkProof này. Mỗi bản ghi được ghi nhận ngay lúc đỗ xe kèm GPS, ảnh chụp và bản dịch biển báo do AI thực hiện. Nếu một bản ghi đã được ký bằng khóa KMS của ParkProof, huy hiệu trên mục đó cho biết có chữ ký mã hóa có thể xác minh (xuất PDF cho từng bản ghi để xem phụ lục chữ ký đầy đủ).",
+      "intro": "Tài liệu này tập hợp mọi bản ghi đỗ xe đã lưu vào tài khoản ParkProof này, mỗi bản ghi một mục. Nếu một bản ghi có các phần đã ký, các trang chữ ký nằm ngay sau mục đó, kèm các bước để kiểm tra từng chữ ký. Chữ ký hợp lệ cho thấy các thông tin đã ký không thay đổi kể từ khi ParkProof ký. Chữ ký không cho thấy các thông tin đó là đúng.",
       "emptyState": "Tài khoản này chưa có bản ghi đỗ xe nào được lưu.",
       "summaryColIndex": "#",
-      "summaryColArrived": "Giờ đến",
+      "summaryColArrived": "Ghi lúc (đồng hồ điện thoại)",
       "summaryColExpires": "Hết hạn",
       "summaryColLocation": "Vị trí",
       "sessionHeader": "Bản ghi {{n}} trên {{total}}",
@@ -724,7 +762,7 @@
       "lead": "Mỗi lần đỗ xe được ghi lại đều lưu thời gian, GPS, địa chỉ, và (nếu bạn muốn) một ảnh xe của bạn tại chỗ.",
       "items": [
         "Tải xuống toàn bộ dưới dạng PDF gọn gàng — tiện lợi nếu bạn cần khiếu nại vé phạt.",
-        "Hồ sơ được ký bằng dấu kỹ thuật số nên không ai có thể nói nó bị sửa về sau — kể cả chúng tôi.",
+        "Mỗi bản ghi đều được ký, nên ai cũng có thể kiểm tra rằng nó chưa bị thay đổi kể từ khi được ký.",
         "Thêm ghi chú về lý do bạn đỗ ở đó (đưa mẹ đi viện, đi chợ thứ Bảy) — hội đồng địa phương coi trọng bối cảnh."
       ]
     },

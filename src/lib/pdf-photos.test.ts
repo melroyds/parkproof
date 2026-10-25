@@ -164,11 +164,12 @@ describe('materializeRemotePhotos and the photo store', () => {
 })
 
 describe('only the photos a PDF draws, at most 4 at a time (T0b4 item 10)', () => {
-  it('pdfPhotoRoles: sign or surroundings, then car; the appeal draws sign and car', () => {
+  it('pdfPhotoRoles: sign or surroundings, then car, in every PDF (they all draw drawSessionBlock, T1b)', () => {
     expect(pdfPhotoRoles(record(), 'evidence')).toEqual(['sign', 'car'])
+    expect(pdfPhotoRoles(record(), 'appeal')).toEqual(['sign', 'car'])
     expect(pdfPhotoRoles(record({ no_sign: true }), 'evidence')).toEqual(['ambient', 'car'])
     expect(pdfPhotoRoles(record({ no_sign: true }), 'export')).toEqual(['ambient', 'car'])
-    expect(pdfPhotoRoles(record({ no_sign: true }), 'appeal')).toEqual(['sign', 'car'])
+    expect(pdfPhotoRoles(record({ no_sign: true }), 'appeal')).toEqual(['ambient', 'car'])
   })
 
   it('a photo the PDF does not draw is not fetched', async () => {

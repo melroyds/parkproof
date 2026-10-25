@@ -1,5 +1,6 @@
 import type { AppealDraft, ObservationGroup, ParkingRules, ParkingSession } from '../types'
 import { postJsonAndPoll } from './api'
+import { appealEvidence, deviceRecordContext } from './record-times'
 
 /**
  * Read a `dev_time` URL parameter and return it as an ISO 8601 string the
@@ -99,6 +100,27 @@ export async function refreshInterpretation(
   return postJsonAndPoll<ParkingRules>('/sign-translate', body)
 }
 
+/**
+ * The record as the appeal drafter receives it. `evidence` carries the
+ * separately labelled times (build spec T1b): when the record was logged and
+ * when I've left was tapped (phone clock), and when ParkProof's server signed
+ * each part (server clock), each pre-formatted in the record's zone with the
+ * zone name, plus `location_source` (gps or manual). The Lambda turns them
+ * into labelled lines and never presents a phone time as signed.
+ */
+export function appealSessionBody(session: ParkingSession, now: number = Date.now()) {
+  return {
+    arrived_at: session.arrived_at,
+    expires_at: session.expires_at,
+    location: session.location,
+    rules: session.rules,
+    observations: session.observations,
+    chosen_label: session.chosen_label,
+    confidence: session.confidence,
+    evidence: appealEvidence(session, deviceRecordContext(session.id, now)),
+  }
+}
+
 export async function draftAppeal(
   ticketImageBase64: string,
   ticketMediaType: string,
@@ -110,17 +132,7 @@ export async function draftAppeal(
   const body = {
     ticket_image_base64: ticketImageBase64,
     ticket_media_type: ticketMediaType,
-    session: session
-      ? {
-          arrived_at: session.arrived_at,
-          expires_at: session.expires_at,
-          location: session.location,
-          rules: session.rules,
-          observations: session.observations,
-          chosen_label: session.chosen_label,
-          confidence: session.confidence,
-        }
-      : null,
+    session: session ? appealSessionBody(session) : null,
   }
   return postJsonAndPoll<AppealDraft>('/draft-appeal', body)
 }

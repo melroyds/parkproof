@@ -182,26 +182,32 @@ function rateLimitedResponse() {
 }
 
 // ─── Appeal-letter drafter ────────────────────────────────────────────────
-const APPEAL_SYSTEM_PROMPT = `You are an Australian parking-law assistant. The user received a parking infringement notice and wants a draft appeal letter to send to the issuing council.
+export const APPEAL_SYSTEM_PROMPT = `You are an Australian parking-law assistant. The user received a parking infringement notice and wants a draft appeal letter to send to the issuing council.
 
 You will be given:
 - A photo of the infringement notice (read it carefully)
-- The user's previously-saved evidence of the parking session: sign rules, observations from the sign, GPS coordinates, address, and arrival timestamp
+- The driver's saved ParkProof record of the park: sign rules, observations from the sign, the address and coordinates with their location_source, and separately labelled times. Times marked "phone clock" come from the driver's phone: when the driver logged the park and when they tapped I've left. Times marked "server clock" are when ParkProof's server signed that part of the record. Every time is already in the record's local time with its zone name; quote it as given.
 
 Return a JSON object with these fields:
 - ticket_summary: ONE short sentence describing what you read from the notice (e.g. "Infringement notice #12345 from City of Yarra dated 14 May 2026, $99, for overstaying 2P parking on Lygon St"). If you cannot read the notice clearly, say so honestly.
-- appeal_subject: a short subject line like "Appeal — Infringement Notice [number]"
-- appeal_letter: the full body of the letter as plain text, with double newlines between paragraphs. Use formal Australian English. Cite the user's specific evidence (timestamp, GPS address, what the sign actually said) where it supports the appeal. Address it to the issuing council if known. Sign off with "Yours sincerely," followed by a literal placeholder "[Your full name]" on the next line. Do NOT include the user's address or contact details — they'll add those themselves.
-- evidence_strength: "strong", "moderate", or "weak" — your honest assessment of whether the user's evidence actually contradicts the offence. Don't oversell — councils respect calibrated arguments.
+- appeal_subject: a short subject line like "Appeal: Infringement Notice [number]"
+- appeal_letter: the full body of the letter as plain text, with double newlines between paragraphs. Use formal Australian English. Cite the user's specific evidence (the times in their record, the address, what the sign actually said) where it supports the appeal. Address it to the issuing council if known. Sign off with "Yours sincerely," followed by a literal placeholder "[Your full name]" on the next line. Do NOT include the user's address or contact details. They'll add those themselves.
+- evidence_strength: "strong", "moderate", or "weak": your honest assessment of whether the user's evidence actually contradicts the offence. Don't oversell. Councils respect calibrated arguments.
 - notes: 1-2 sentences explaining your strategy and what evidence you leaned on, OR (if evidence is weak) what specifically the user could try to find to strengthen the case.
 
 Letter construction principles:
 - Be factual and concise. Councils receive thousands of appeals; clarity beats verbosity.
-- Anchor every claim to specific evidence ("at 9:43 PM on Wednesday 14 May", "the sign clearly states '2P Mon–Fri 8am–6pm'", "GPS-verified location at 175 Lygon St, Carlton").
+- Anchor every claim to specific evidence ("my record shows I logged the park at 9:43 pm on Wednesday 14 May", "the sign clearly states '2P Mon–Fri 8am–6pm'", "the address in my record, 175 Lygon St, Carlton").
 - Avoid emotional language ("unfair", "ridiculous"). Stick to facts.
 - Acknowledge the council's role respectfully even when contesting.
 - If the evidence is weak, write a request for consideration of mitigating circumstances rather than a forceful denial.
-- Don't fabricate facts not present in the evidence. If something is unclear from the user's data (e.g. you can't tell if they had a permit), don't invent it.`
+- Don't fabricate facts not present in the evidence. If something is unclear from the user's data (e.g. you can't tell if they had a permit), don't invent it.
+- Don't use em-dashes. Use commas or full stops.
+
+About signatures, times and locations:
+- A ParkProof signature shows only that the record existed, unchanged, by its signed time. Never write that a signature proves when the car arrived or left, or where it was. Describe tapped times as the driver's own record. Call a location GPS-based only when location_source is gps, and never call it verified.
+- Never present a phone-clock time as a signed time. A part marked as not signed has no ParkProof signature at all.
+- If you say any part of the record existed before the time on the notice, base it on the server-clock signed time, never the phone-clock time. If the signed time is after the notice time, don't say the record shows the driver had left by then. When a signed time is more than 5 minutes after its phone-clock time, give both.`
 
 const APPEAL_RESPONSE_SCHEMA = {
   type: 'object',
@@ -216,6 +222,137 @@ const APPEAL_RESPONSE_SCHEMA = {
   additionalProperties: false,
 }
 
+// The record's times arrive pre-formatted by the client (build spec T1b),
+// e.g. "Sun 25 Oct 2026, 1:55 pm AEDT". They are untrusted input that goes
+// into a prompt, so each is a short single-line string or dropped.
+const APPEAL_TEXT_MAX = 80
+const APPEAL_TEXT_FORBIDDEN = /[\u0000-\u001f\u007f-\u009f\u2028\u2029\u202a-\u202e\u2066-\u2069]/g
+
+function appealText(value) {
+  if (typeof value !== 'string') return null
+  const s = value.replace(APPEAL_TEXT_FORBIDDEN, ' ').trim()
+  return s.length > 0 && s.length <= APPEAL_TEXT_MAX ? s : null
+}
+
+const APPEAL_SIGNING_STATES = new Set(['signed', 'dev_key', 'pending', 'rejected', 'none'])
+
+function appealSigning(value) {
+  return typeof value === 'string' && APPEAL_SIGNING_STATES.has(value) ? value : null
+}
+
+/** gps only for a phone GPS fix, manual for a typed address, unknown otherwise. */
+function appealLocationSource(session, evidence) {
+  const sent = evidence ? evidence.location_source : undefined
+  if (sent === 'gps' || sent === 'manual') return sent
+  const source = session.location && typeof session.location === 'object' ? session.location.source : undefined
+  return source === 'gps' || source === 'manual' ? source : 'unknown'
+}
+
+/** The "signed by ParkProof's server" line for one part of the record, or null for an unknown state. */
+function appealSignedLine(part, state, signedAt) {
+  switch (state) {
+    case 'signed':
+      return signedAt
+        ? `${part} record signed by ParkProof's server at (server clock): ${signedAt}`
+        : `${part} record: signed by ParkProof's server (signing time not readable).`
+    case 'dev_key':
+      return `${part} record: signed with a development key at ${signedAt ?? 'an unreadable time'}, not ParkProof's published key. Treat it as not signed by ParkProof.`
+    case 'rejected':
+      return `${part} record: ParkProof's server couldn't sign it. It is not signed.`
+    case 'none':
+      return `${part} record: not signed by ParkProof.`
+    case 'pending':
+      return `${part} record: not signed by ParkProof yet.`
+    default:
+      return null
+  }
+}
+
+/**
+ * An ISO time as the client formats it for the appeal (formatInZone with
+ * the year and zone name, src/lib/time-format.ts), e.g. "Sun 25 Oct 2026,
+ * 1:55 pm AEDT", or null when it doesn't parse. For old clients that send
+ * raw times only: the prompt says every time is already local.
+ */
+export function appealZonedTime(value, timeZone) {
+  if (typeof value !== 'string') return null
+  const date = new Date(value)
+  if (!Number.isFinite(date.getTime())) return null
+  let parts
+  try {
+    parts = new Intl.DateTimeFormat('en-AU', {
+      timeZone,
+      weekday: 'short',
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true,
+      timeZoneName: 'short',
+    }).formatToParts(date)
+  } catch {
+    return timeZone === DEFAULT_TIMEZONE ? null : appealZonedTime(value, DEFAULT_TIMEZONE)
+  }
+  const part = (type) => parts.find((p) => p.type === type)?.value ?? ''
+  return `${part('weekday')} ${part('day')} ${part('month')} ${part('year')}, ${part('hour')}:${part('minute')} ${part('dayPeriod').toLowerCase()} ${part('timeZoneName')}`
+}
+
+/**
+ * The record as the appeal drafter reads it (build spec T1b): separately
+ * labelled lines for each time (phone clock vs server clock, as the client
+ * pre-formatted them in the record's zone), the location and its
+ * location_source. Pure; exported for tests. An old client that sends no
+ * `evidence` gets its phone times formatted here, in the zone of the
+ * record's location, and no signing times.
+ */
+export function buildAppealEvidenceText(session) {
+  const evidence = session.evidence && typeof session.evidence === 'object' ? session.evidence : null
+  const lines = [
+    `Sign rules (what the parking sign said): ${session.rules ?? '(not recorded)'}`,
+    '',
+    `Observations from the sign:`,
+    formatObservationsForAppeal(session.observations),
+    '',
+    session.chosen_label ? `Side / variant the user selected: ${session.chosen_label}` : '',
+  ]
+  if (evidence) {
+    const arrival = appealText(evidence.arrival_phone)
+    const tapped = appealText(evidence.departure_tapped)
+    const expires = appealText(evidence.expires)
+    lines.push(
+      `Arrival: the driver logged the park at (phone clock): ${arrival ?? '(not recorded)'}`,
+      appealSignedLine('Arrival', appealSigning(evidence.arrival_signing), appealText(evidence.arrival_signed)) ?? '',
+      expires ? `The sign reading said parking would end at: ${expires}` : '',
+      tapped
+        ? `Departure: the driver tapped I've left at (phone clock): ${tapped}`
+        : `Departure: the driver hasn't tapped I've left on this record.`,
+      tapped
+        ? appealSignedLine('Departure', appealSigning(evidence.departure_signing), appealText(evidence.departure_signed)) ?? ''
+        : '',
+    )
+  } else {
+    // An old cached client: raw ISO times only. Format them in the record's
+    // zone, as the client would, so the model never quotes a UTC time as local.
+    const loc = session.location && typeof session.location === 'object' ? session.location : null
+    const tz = resolveTimezone(loc ? loc.lat : undefined, loc ? loc.lng : undefined)
+    const arrival = appealZonedTime(session.arrived_at, tz)
+    const expires = appealZonedTime(session.expires_at, tz)
+    lines.push(
+      `Arrival: the driver logged the park at (phone clock): ${arrival ?? '(not recorded)'}`,
+      expires ? `The sign reading said parking would end at: ${expires}` : '',
+      `Signing times: not sent with this record. Don't say any part of it is signed.`,
+    )
+  }
+  lines.push(
+    session.location?.address ? `Address: ${session.location.address}` : '',
+    session.location ? `Coordinates: ${session.location.lat}, ${session.location.lng}` : '',
+    session.location ? `location_source: ${appealLocationSource(session, evidence)}` : '',
+    `AI confidence at original scan: ${session.confidence ?? 'unknown'}`,
+  )
+  return lines.filter(Boolean).join('\n')
+}
+
 function formatObservationsForAppeal(groups) {
   if (!Array.isArray(groups) || groups.length === 0) return '(none recorded)'
   return groups
@@ -226,7 +363,7 @@ function formatObservationsForAppeal(groups) {
     .join('\n')
 }
 
-async function handleDraftAppeal(event) {
+export async function handleDraftAppeal(event) {
   const t0 = Date.now()
   const apiKey = process.env.ANTHROPIC_API_KEY
   if (!apiKey) throw new Error('ANTHROPIC_API_KEY is not configured')
@@ -253,28 +390,8 @@ async function handleDraftAppeal(event) {
   const hasSession = session && typeof session === 'object'
 
   const evidenceText = hasSession
-    ? [
-        `Sign rules (what the parking sign said): ${session.rules ?? '(not recorded)'}`,
-        '',
-        `Observations from the sign:`,
-        formatObservationsForAppeal(session.observations),
-        '',
-        session.chosen_label
-          ? `Side / variant the user selected: ${session.chosen_label}`
-          : '',
-        `Arrival timestamp: ${session.arrived_at ?? '(not recorded)'}`,
-        session.expires_at ? `Parking was due to expire at: ${session.expires_at}` : '',
-        session.location?.address
-          ? `Address: ${session.location.address}`
-          : '',
-        session.location
-          ? `GPS coordinates: ${session.location.lat}, ${session.location.lng}`
-          : '',
-        `AI confidence at original scan: ${session.confidence ?? 'unknown'}`,
-      ]
-        .filter(Boolean)
-        .join('\n')
-    : 'No saved ParkProof parking session is linked to this appeal. The user did not log a park for this spot in the app, so there is NO contemporaneous sign reading, GPS, address, or timestamp evidence on file.'
+    ? buildAppealEvidenceText(session)
+    : 'No saved ParkProof parking record is linked to this appeal. The user did not log a park for this spot in the app, so there is NO contemporaneous sign reading, GPS, address, or timestamp evidence on file.'
 
   const client = new Anthropic({ apiKey })
   const t1 = Date.now()
@@ -304,8 +421,8 @@ async function handleDraftAppeal(event) {
           {
             type: 'text',
             text: hasSession
-              ? `Please read the infringement notice in the attached photo and draft a concise appeal letter (target 250-400 words for the letter body) using the following parking-session evidence:\n\n${evidenceText}`
-              : `Please read the infringement notice in the attached photo and draft a concise appeal letter (target 250-400 words for the letter body). There is NO saved parking-session evidence for this appeal — draft from the infringement notice alone. Do NOT invent or assert evidence the user does not have: make no claims about saved photos, GPS coordinates, timestamps, or a recorded sign reading. Focus on procedural grounds, any inconsistencies or errors visible on the notice itself, and a courteous request for review or leniency. Set evidence_strength honestly (likely "weak" without saved evidence). Context:\n\n${evidenceText}`,
+              ? `Please read the infringement notice in the attached photo and draft a concise appeal letter (target 250-400 words for the letter body) using the following parking-record evidence:\n\n${evidenceText}`
+              : `Please read the infringement notice in the attached photo and draft a concise appeal letter (target 250-400 words for the letter body). There is NO saved parking-record evidence for this appeal. Draft from the infringement notice alone. Do NOT invent or assert evidence the user does not have: make no claims about saved photos, GPS coordinates, timestamps, or a recorded sign reading. Focus on procedural grounds, any inconsistencies or errors visible on the notice itself, and a courteous request for review or leniency. Set evidence_strength honestly (likely "weak" without saved evidence). Context:\n\n${evidenceText}`,
           },
         ],
       },

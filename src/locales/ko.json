@@ -47,7 +47,7 @@
       "lead": "기록하는 모든 주차에 시간, GPS, 주소, 그리고 (원하시면) 차량 사진이 저장됩니다.",
       "items": [
         "전체를 깔끔한 PDF로 내려받으세요. 나중에 벌금에 이의를 제기할 일이 생기면 요긴합니다.",
-        "디지털 봉인으로 서명되어 있어, 저장한 뒤에 누가 손댔다고 우길 수 없습니다. 저희조차도요.",
+        "각 기록에 서명이 되어 있어, 누구나 서명된 뒤로 기록이 바뀌지 않았는지 확인할 수 있습니다.",
         "왜 거기 주차했는지 메모를 남겨두세요 (어머니 병원 모시고, 토요일 시장 다녀오느라). 의회는 이런 맥락을 진지하게 봅니다."
       ]
     },
@@ -658,11 +658,12 @@
     "common": {
       "fieldHeader": "필드",
       "valueHeader": "값",
-      "dash": "—",
+      "dash": "–",
       "notCaptured": "캡처되지 않음",
       "imageEmbedFailed": "(이미지를 임베드할 수 없음)",
       "photoNotOnDevice": "이 PDF를 만든 기기에 사진이 없습니다. 서명된 SHA-256 디지털 지문: {{fingerprint}}.",
-      "photoNotOnDeviceUnsigned": "이 PDF를 만든 기기에 사진이 없습니다. SHA-256 디지털 지문: {{fingerprint}}. 아직 서명되지 않았습니다."
+      "photoNotOnDeviceUnsigned": "이 PDF를 만든 기기에 사진이 없습니다. SHA-256 디지털 지문: {{fingerprint}}. 아직 서명되지 않았습니다.",
+      "plusMinus": "±"
     },
     "duration": {
       "minOnly_one": "1분",
@@ -672,11 +673,11 @@
       "hoursAndMins": "{{hours}}시간 {{mins}}분"
     },
     "evidence": {
-      "title": "ParkProof — 주차 증거",
-      "sessionId": "세션 ID: {{id}}",
+      "title": "ParkProof: 주차 증거",
+      "sessionId": "기록 ID: {{id}}",
       "generated": "PDF 생성: {{when}}",
       "field": {
-        "arrivedAt": "도착",
+        "arrivedAt": "기록 시각 (휴대폰 시계)",
         "expiresAt": "만료",
         "endedAt": "\"떠났습니다\"를 누른 시각 (휴대폰 시계)",
         "actualDuration": "도착부터 \"떠났습니다\"를 누를 때까지 (휴대폰 시계)",
@@ -687,57 +688,94 @@
         "mapLink": "지도 링크",
         "sideVariant": "선택한 방향 / 변형",
         "signRules": "표지판 규칙",
-        "aiConfidence": "AI 신뢰도"
+        "aiConfidence": "AI 신뢰도",
+        "arrivalSigned": "도착 부분 ParkProof 서명 시각 (서버 시계)",
+        "departureSigned": "출차 부분 ParkProof 서명 시각 (서버 시계)",
+        "departureLocation": "\"떠났습니다\"를 누를 때 휴대폰 위치 (GPS)",
+        "departureDistance": "도착 위치와의 대략적 거리 (휴대폰 GPS)",
+        "locationCoords": "위치 (좌표)"
       },
       "locationSourceValue": {
         "manuallyEntered": "수동 입력",
-        "gpsWithAccuracy": "GPS — {{accuracy}}",
-        "gpsLowAccuracy": "GPS — 낮은 정확도 {{accuracy}} (부록 참조)",
+        "gpsWithAccuracy": "GPS: {{accuracy}}",
+        "gpsLowAccuracy": "GPS: 낮은 정확도, {{accuracy}} (아래 GPS 정확도 알림 참조)",
         "gps": "GPS",
         "captured": "캡처됨",
-        "none": "—"
+        "none": "–"
       },
       "signPhotoHeader": "표지판 사진",
       "carPhotoHeader": "주차 위치의 차량",
       "ambientPhotoHeader": "주변 사진",
-      "ambientPhotoCaption": "표지판이 보이지 않았음을 증명하기 위해 주차 시점에 운전자가 촬영함.",
-      "noAmbientCaptured": "이 세션에 대해 주변 사진이 캡처되지 않았습니다.",
-      "noSignRules": "표시된 제한 없음 캡처됨. 이 세션은 운전자가 표지판이 없다고 주장한 자리에서 기록되었습니다.",
+      "ambientPhotoCaption": "기록할 때 운전자가 주변을 보여 주려고 촬영함. 이 사진이 근처에 표지판이 없었다는 것을 보여 주지는 않습니다.",
+      "noAmbientCaptured": "이 기록에는 주변 사진이 촬영되지 않았습니다.",
+      "noSignRules": "이 기록에서는 표지판을 읽지 않았습니다. 운전자는 이 장소에 주차 표지판이 없었다고 말했습니다.",
       "noSignConfidence": "해당 없음 (표지판이 읽히지 않음)",
       "driverNoteHeader": "운전자 메모",
-      "gpsNoticeTitle": "⚠ GPS 정확도 알림",
-      "gpsNoticeBody": "캡처 시점의 GPS 판독값은 {{accuracy}}였습니다. 증거 용도로는 보통보다 넓은 값입니다. 위 좌표는 정확한 한 지점이 아니라 그 반경 안의 한 지점을 가리킵니다. 흔한 원인은 실내 또는 다층 주차장, Starlink나 VPN 연결, 약한 위성 신호입니다. 검토자는 이 반경을 감안해 캡처된 주소를 평가해야 합니다.",
-      "statement": "이 기록은 주차하는 순간에 ParkProof가 자동으로 생성했습니다. 도착 타임스탬프, GPS 좌표, 표지판 번역, 사진은 해당 호주 의회의 주차 위반 검토 제출에 첨부하기 적합한, 그 시점에 작성된 증거 기록을 이룹니다.",
+      "gpsNoticeTitle": "GPS 정확도 알림",
+      "gpsNoticeBody": "캡처 시점의 GPS 판독값은 {{accuracy}}였습니다. 증거 용도로는 보통보다 넓은 값입니다. 위 좌표는 정확한 한 지점이 아니라 그 반경 안의 한 지점을 나타냅니다. 흔한 원인은 실내 또는 다층 주차장, Starlink나 VPN 연결, 약한 위성 신호입니다. 검토자는 이 반경을 감안해 캡처된 주소를 평가해야 합니다.",
+      "statement": "이것은 ParkProof로 만든 주차 기록입니다. 휴대폰 시각으로 표시된 시각은 운전자의 휴대폰 시계에 따른 것입니다. 운전자의 말로 표시된 내용은 운전자 본인의 말입니다. 이 기록은 어떤 일이 있었는지에 대한 법적 판단이 아닙니다. 그 판단은 의회나 법원이 합니다.",
       "guidanceFree": "주차 무료. {{when}}까지 이동.",
       "guidanceFreeNoExpiry": "주차 무료. 표지판에 만료 시간 없음.",
-      "guidanceExpired": "세션이 {{when}}에 만료됨.",
-      "driverNoteUnsigned": "운전자가 추가함. 이 메모는 암호학적 서명의 보호 범위에 포함되지 않습니다."
+      "guidanceExpired": "주차 시간이 {{when}}에 끝났습니다.",
+      "driverNoteUnsigned": "운전자가 추가함. 이 메모는 암호학적 서명에 포함되지 않습니다.",
+      "signing": {
+        "devKey": "{{time}}, 개발용 키로 서명됨. ParkProof가 공개한 키로는 확인할 수 없습니다.",
+        "pending": "아직 서명되지 않음",
+        "rejected": "이 부분은 서명할 수 없었습니다",
+        "none": "서명되지 않음"
+      },
+      "value": {
+        "coordsWithAccuracy": "{{coords}}, 정확도 {{accuracy}}",
+        "distanceUnavailable": "알 수 없음. 도착 위치가 비교할 만큼 정확한 휴대폰 GPS 위치가 아닙니다.",
+        "distanceRough": "{{distance}}. 누를 때 휴대폰 위치의 정확도가 {{accuracy}}에 불과해, 이 거리는 대략적인 값입니다.",
+        "distanceRoughNoAccuracy": "{{distance}}. 휴대폰이 누를 때 위치의 정확도를 알려 주지 않아, 이 거리는 대략적인 값입니다."
+      },
+      "carPhotoCaptionTime": "{{time}} 기록 (휴대폰 시계)",
+      "confidence": {
+        "high": "높음",
+        "medium": "보통",
+        "low": "낮음"
+      }
     },
     "signature": {
       "title": "암호학적 서명",
-      "intro": "이 증거 기록은 저장 시 ParkProof의 AWS KMS 관리 개인 키로 서명되었습니다. 서명은 모든 제3자 (의회, 법원, 보험사)가 아래 메타데이터와 사진 해시가 signed_at 타임스탬프 이후 변경되지 않았음을 검증할 수 있게 합니다. 개인 키는 AWS를 떠나지 않습니다. 공개 키는 검증을 위해 공개적으로 게시됩니다.",
+      "intro": "이 기록의 각 부분은 ParkProof 서버가 받은 시점에 서버가 서명했으며, 그 시각은 각 부분에 표시된 signed_at입니다. 유효한 서명은 서명된 내용과 사진 지문이 그 뒤로 변경되지 않았음을 보여 줍니다. 그 내용이 사실인지, 누가 운전했는지, 차가 언제 도착하거나 떠났는지는 보여 주지 않습니다.",
       "algorithm": "알고리즘",
       "keyAlias": "키 별칭",
-      "signedAt": "서명 시점 (UTC)",
+      "signedAt": "ParkProof 서명 시각 (서버 시계)",
       "schema": "스키마",
       "publicKeyUrl": "공개 키 URL",
       "canonicalPayloadHeader": "표준 페이로드 (서명된 정확한 바이트):",
-      "payloadB64Header": "정규화된 페이로드, base64 (검증하려면 이 값을 디코딩하세요):",
-      "signatureBlobHeader": "서명 (DER, base64):",
+      "payloadB64Header": "정규화된 페이로드, base64. 확인하려면 {{file}} 파일로 저장하세요:",
+      "signatureBlobHeader": "서명 (DER, base64). {{file}} 파일로 저장하세요:",
       "verifyHeader": "openssl로 검증 (모든 플랫폼):",
-      "verifyStep1": "1. 위의 base64 페이로드 블록을 파일로 저장하세요: payload.b64. 그런 다음 서명된 정확한 바이트로 디코딩하세요. base64 -d는 줄바꿈을 무시하므로 불필요한 줄바꿈 없이 정확한 바이트를 복원합니다:",
-      "verifyStep2": "2. 위의 서명 base64 문자열을 파일에 저장: sig.base64",
+      "verifyStep1": "1. 링크 0의 base64 페이로드 블록을 link0-payload.b64라는 파일로 저장하세요. 그런 다음 서명된 정확한 바이트로 디코딩하세요. base64 -d는 줄 구분을 무시하므로 불필요한 개행 없이 정확한 바이트를 복원합니다:",
+      "verifyStep2": "2. 링크 0의 서명 블록을 link0-sig.b64라는 파일로 저장하세요.",
       "verifyStep3": "3. 공개 키 다운로드:",
       "verifyStep4": "4. 서명 디코딩:",
       "verifyStep5": "5. 검증:",
-      "verifyStep6": "6. 예상 출력: \"Verified OK\". 이는 페이로드에 기록된 메타데이터와 사진 해시가 signed_at 시각 이후 진본이며 변경되지 않았음을 증명합니다.",
-      "verifyStep7": "7. 사진에 관하여: 이 PDF에 표시된 이미지는 문서용으로 다시 인코딩된 시각적 사본이므로 바이트가 원본과 달라 페이로드의 해시를 재현하지 못합니다. 이는 정상이며 변조의 징후가 아닙니다. 서명은 각 원본 사진의 SHA-256(서명된 페이로드 안의 sign_photo_sha256, car_photo_sha256, ambient_photo_sha256 값)에 대한 것이며, 6단계에서 그 값들이 진본임을 이미 증명했습니다. 특정 이미지를 독립적으로 확인하려면 여기 인쇄된 사본이 아니라 원본 촬영 파일(ParkProof 기록 또는 계정 내보내기에서 가져온 것)의 해시를 계산하여 위의 해당 값과 비교하세요.",
-      "devKey": "개발용 키로 서명되었습니다. ParkProof가 공개한 키로는 확인할 수 없습니다."
+      "verifyStep6": "6. 예상 출력: \"Verified OK\". 이는 서명된 바이트가 ParkProof가 서명한 뒤로 변경되지 않았음을 보여 줍니다.",
+      "verifyStep7": "7. 사진에 관하여: 이 PDF에 표시된 이미지는 문서용으로 다시 인코딩된 시각적 사본이므로 바이트가 원본과 달라 페이로드의 해시를 재현하지 못합니다. 이는 정상이며 변조되었다는 뜻이 아닙니다. 서명은 각 원본 사진의 SHA-256(서명된 페이로드 안의 sign_photo_sha256, car_photo_sha256, ambient_photo_sha256 값)에 대한 것이며, 6단계에서 그 값들이 서명 이후 변경되지 않았음을 이미 보여 주었습니다. 어느 이미지를 직접 확인하려면 여기 인쇄된 사본이 아니라 원본 촬영 파일(ParkProof 기록 또는 계정 내보내기에 있는 것)의 해시를 계산하여 위의 해당 값과 비교하세요.",
+      "devKey": "개발용 키로 서명되었습니다. ParkProof가 공개한 키로는 확인할 수 없습니다.",
+      "linkHeading": "링크 {{link}}: {{kind}}",
+      "forkNote": "기록의 이 지점에 두 기기에서 각각 한 부분이 추가되었습니다. 두 부분 모두 서명되어 여기에 표시됩니다.",
+      "verifyRepeat": "각 링크마다 해당 파일 이름(예: link1-payload.b64, link1-sig.b64)으로 1, 2, 4, 5, 6단계를 반복하세요.",
+      "verifyChain": "8. 링크가 순서대로 이어져 있는지 확인하세요. 링크 0 다음의 각 링크에는 바로 앞 링크 페이로드의 SHA-256인 parent_payload_sha256이 들어 있습니다. 1단계에서 만든 payload.txt 파일에 아래 줄을 각각 실행하세요. = 기호 뒤에 페이로드의 SHA-256이 16진수 값으로 출력됩니다 (sha256sum이 있다면 동일한 값을 출력합니다).",
+      "chainEquals": "그 16진수 값이 링크 {{link}}의 parent_payload_sha256과 일치해야 합니다.",
+      "chainEqualsOneOf": "이 16진수 값 중 하나가 링크 {{link}}의 parent_payload_sha256과 일치해야 합니다.",
+      "kind": {
+        "arrival": "도착",
+        "arrivalContext": "주차할 때의 세부 정보",
+        "condition": "차량 상태 사진",
+        "compliance": "결제 또는 허가증 증명",
+        "departure": "출차",
+        "handover": "차량 인계"
+      }
     },
     "appeal": {
       "drafted": "초안 {{when}}",
-      "linkedSession": "연결된 ParkProof 세션: {{id}}",
-      "supportingEvidence": "뒷받침 증거 (ParkProof에서)",
+      "linkedSession": "연결된 ParkProof 기록: {{id}}",
+      "supportingEvidence": "관련 증거 (ParkProof에서)",
       "fieldGps": "GPS",
       "fieldSideSelected": "선택한 방향",
       "ticketPhotoHeader": "위반 통지서 (사진)",
@@ -745,15 +783,15 @@
       "carPhotoHeader": "주차 위치의 차량"
     },
     "fullExport": {
-      "title": "ParkProof — 계정 내보내기",
+      "title": "ParkProof: 계정 내보내기",
       "account": "계정: {{email}}",
       "userId": "사용자 ID: {{id}}",
       "exportedAt": "내보낸 시점: {{when}}",
       "sessionCount": "이 내보내기의 기록 수: {{count}}",
-      "intro": "이 문서는 이 ParkProof 계정에 저장된 모든 주차 기록을 모은 것입니다. 각 기록은 주차하는 순간에 GPS, 사진, AI가 번역한 주차 표지판 판독과 함께 캡처되었습니다. 기록이 ParkProof KMS 키로 서명된 경우, 해당 섹션의 배지는 검증 가능한 암호화 서명이 존재함을 나타냅니다 (전체 서명 부록을 보려면 개별 기록 PDF를 내보내세요).",
+      "intro": "이 문서는 이 ParkProof 계정에 저장된 모든 주차 기록을 기록마다 섹션 하나로 모은 것입니다. 기록에 서명된 부분이 있으면, 그 섹션 바로 뒤에 서명 페이지와 각 서명을 확인하는 방법이 나옵니다. 유효한 서명은 서명된 내용이 ParkProof가 서명한 뒤로 변경되지 않았음을 보여 줍니다. 그 내용이 사실인지는 보여 주지 않습니다.",
       "emptyState": "이 계정에 아직 저장된 주차 기록이 없습니다.",
       "summaryColIndex": "#",
-      "summaryColArrived": "도착",
+      "summaryColArrived": "기록 시각 (휴대폰 시계)",
       "summaryColExpires": "만료",
       "summaryColLocation": "위치",
       "sessionHeader": "{{total}}개 중 {{n}}번째 기록",

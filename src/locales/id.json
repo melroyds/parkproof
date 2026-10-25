@@ -47,7 +47,7 @@
       "lead": "Setiap parkir yang kamu catat menyimpan waktunya, GPS-nya, alamatnya, dan (kalau mau) foto mobilmu di lokasi.",
       "items": [
         "Unduh semuanya jadi satu PDF rapi. Berguna kalau suatu saat kamu perlu menyanggah denda.",
-        "Ada segel digitalnya, jadi tidak ada yang bisa bilang catatannya diubah belakangan. Kami pun tidak bisa.",
+        "Setiap catatan ditandatangani, jadi siapa pun bisa mengecek bahwa catatan itu tidak diubah sejak ditandatangani.",
         "Tambahkan catatan kenapa kamu parkir di situ (mengantar ibu ke rumah sakit, pasar Sabtu). Dewan kota memperhitungkan konteks seperti ini."
       ]
     },
@@ -658,11 +658,12 @@
     "common": {
       "fieldHeader": "Bidang",
       "valueHeader": "Nilai",
-      "dash": "—",
+      "dash": "–",
       "notCaptured": "Tidak terekam",
       "imageEmbedFailed": "(Gambar tidak bisa disematkan)",
       "photoNotOnDevice": "Foto ini tidak ada di perangkat yang membuat PDF ini. Sidik jari SHA-256 yang ditandatangani: {{fingerprint}}.",
-      "photoNotOnDeviceUnsigned": "Foto ini tidak ada di perangkat yang membuat PDF ini. Sidik jari SHA-256: {{fingerprint}}. Belum ditandatangani."
+      "photoNotOnDeviceUnsigned": "Foto ini tidak ada di perangkat yang membuat PDF ini. Sidik jari SHA-256: {{fingerprint}}. Belum ditandatangani.",
+      "plusMinus": "±"
     },
     "duration": {
       "minOnly_one": "1 mnt",
@@ -672,11 +673,11 @@
       "hoursAndMins": "{{hours}}j {{mins}}m"
     },
     "evidence": {
-      "title": "ParkProof — Bukti Parkir",
-      "sessionId": "ID Sesi: {{id}}",
+      "title": "ParkProof: Bukti Parkir",
+      "sessionId": "ID catatan: {{id}}",
       "generated": "PDF dibuat: {{when}}",
       "field": {
-        "arrivedAt": "Tiba pada",
+        "arrivedAt": "Dicatat (jam ponsel)",
         "expiresAt": "Berakhir pada",
         "endedAt": "Waktu mengetuk \"Sudah pergi\" (jam ponsel)",
         "actualDuration": "Waktu dari tiba sampai mengetuk \"Sudah pergi\" (jam ponsel)",
@@ -687,56 +688,93 @@
         "mapLink": "Tautan peta",
         "sideVariant": "Sisi / Varian dipilih",
         "signRules": "Aturan rambu",
-        "aiConfidence": "Keyakinan AI"
+        "aiConfidence": "Keyakinan AI",
+        "arrivalSigned": "Kedatangan ditandatangani ParkProof (jam server)",
+        "departureSigned": "Kepergian ditandatangani ParkProof (jam server)",
+        "departureLocation": "Lokasi ponsel saat mengetuk \"Sudah pergi\" (GPS)",
+        "departureDistance": "Perkiraan jarak dari lokasi kedatangan (GPS ponsel)",
+        "locationCoords": "Lokasi (koordinat)"
       },
       "locationSourceValue": {
         "manuallyEntered": "Dimasukkan manual",
-        "gpsWithAccuracy": "GPS — {{accuracy}}",
-        "gpsLowAccuracy": "GPS — AKURASI RENDAH {{accuracy}} (lihat lampiran)",
+        "gpsWithAccuracy": "GPS: {{accuracy}}",
+        "gpsLowAccuracy": "GPS: akurasi rendah, {{accuracy}} (lihat pemberitahuan akurasi GPS di bawah)",
         "gps": "GPS",
         "captured": "Terekam",
-        "none": "—"
+        "none": "–"
       },
       "signPhotoHeader": "Foto rambu",
       "carPhotoHeader": "Mobil di lokasi",
       "ambientPhotoHeader": "Foto sekitar",
-      "ambientPhotoCaption": "Diambil oleh pengemudi saat parkir untuk membuktikan tidak ada rambu yang terlihat.",
-      "noAmbientCaptured": "Tidak ada foto sekitar yang diambil untuk sesi ini.",
-      "noSignRules": "Tidak ada larangan terpasang terekam. Sesi ini dicatat di tempat yang dinyatakan pengemudi tidak punya rambu.",
+      "ambientPhotoCaption": "Diambil oleh pengemudi saat catatan dibuat, untuk menunjukkan sekitarnya. Foto ini tidak menunjukkan bahwa tidak ada rambu di dekatnya.",
+      "noAmbientCaptured": "Tidak ada foto sekitar yang diambil untuk catatan ini.",
+      "noSignRules": "Tidak ada rambu yang dibaca untuk catatan ini. Pengemudi menyatakan tidak ada rambu parkir di lokasi ini.",
       "noSignConfidence": "Tidak berlaku (tidak ada rambu yang dibaca)",
       "driverNoteHeader": "Catatan pengemudi",
-      "gpsNoticeTitle": "⚠ Pemberitahuan akurasi GPS",
-      "gpsNoticeBody": "Pembacaan GPS saat penangkapan adalah {{accuracy}} — lebih luas dari biasanya untuk tujuan bukti. Koordinat di atas mengidentifikasi titik dalam radius itu, bukan lokasi tepat. Penyebab umum: parkir dalam ruangan / berlantai, koneksi Starlink atau VPN, atau sinyal satelit lemah. Peninjau harus menimbang alamat yang ditangkap terhadap radius ini.",
-      "statement": "Catatan ini dibuat secara otomatis oleh ParkProof saat parkir. Stempel waktu kedatangan, koordinat GPS, terjemahan rambu, dan foto-foto merupakan catatan bukti kontemporer yang sesuai untuk dilampirkan ke pengajuan tinjauan denda parkir dengan dewan kota lokal Australia yang relevan.",
+      "gpsNoticeTitle": "Pemberitahuan akurasi GPS",
+      "gpsNoticeBody": "Pembacaan GPS saat penangkapan adalah {{accuracy}}, lebih luas dari biasanya untuk tujuan bukti. Koordinat di atas mengidentifikasi titik dalam radius itu, bukan lokasi tepat. Penyebab umum: parkir dalam ruangan / berlantai, koneksi Starlink atau VPN, atau sinyal satelit lemah. Peninjau harus menimbang alamat yang ditangkap terhadap radius ini.",
+      "statement": "Ini adalah catatan sebuah parkir yang dibuat dengan ParkProof. Waktu yang ditandai sebagai waktu ponsel berasal dari ponsel pengemudi. Pernyataan yang ditandai sebagai pernyataan pengemudi adalah pernyataan pengemudi sendiri. Catatan ini bukan putusan hukum tentang apa yang terjadi. Itu diputuskan oleh dewan kota atau pengadilan.",
       "guidanceFree": "Bebas parkir. Pindahkan sebelum {{when}}.",
       "guidanceFreeNoExpiry": "Bebas parkir. Tidak ada waktu berakhir di rambu.",
-      "guidanceExpired": "Sesi berakhir pada {{when}}.",
-      "driverNoteUnsigned": "Ditambahkan oleh pengemudi. Catatan ini tidak tercakup oleh tanda tangan kriptografis."
+      "guidanceExpired": "Waktu parkir berakhir pada {{when}}.",
+      "driverNoteUnsigned": "Ditambahkan oleh pengemudi. Catatan ini tidak tercakup oleh tanda tangan kriptografis.",
+      "signing": {
+        "devKey": "{{time}}, dengan kunci pengembangan. Tidak bisa dicek dengan kunci publik yang diterbitkan ParkProof.",
+        "pending": "Belum ditandatangani",
+        "rejected": "Bagian ini tidak bisa ditandatangani",
+        "none": "Tidak ditandatangani"
+      },
+      "value": {
+        "coordsWithAccuracy": "{{coords}}, akurasi {{accuracy}}",
+        "distanceUnavailable": "Tidak tersedia. Lokasi kedatangan bukan titik GPS ponsel yang cukup akurat untuk dibandingkan.",
+        "distanceRough": "{{distance}}. Lokasi ponsel saat mengetuk hanya akurat sampai {{accuracy}}, jadi jarak ini hanya perkiraan kasar.",
+        "distanceRoughNoAccuracy": "{{distance}}. Ponsel tidak melaporkan seberapa akurat lokasinya saat mengetuk, jadi jarak ini hanya perkiraan kasar."
+      },
+      "carPhotoCaptionTime": "Dicatat {{time}} (jam ponsel)",
+      "confidence": {
+        "high": "Tinggi",
+        "medium": "Sedang",
+        "low": "Rendah"
+      }
     },
     "signature": {
       "title": "Tanda tangan kriptografis",
-      "intro": "Catatan bukti ini ditandatangani oleh kunci privat AWS KMS ParkProof saat penyimpanan. Tanda tangan memungkinkan pihak ketiga mana pun (dewan kota, pengadilan, asuransi) memverifikasi bahwa metadata dan hash foto di bawah tidak diubah sejak stempel waktu signed_at. Kunci privat tidak pernah meninggalkan AWS; kunci publik diterbitkan terbuka untuk verifikasi.",
+      "intro": "Setiap bagian catatan ini ditandatangani oleh server ParkProof saat server menerimanya, pada waktu signed_at yang ditampilkan untuk bagian itu. Tanda tangan yang valid menunjukkan detail yang ditandatangani dan sidik jari foto tidak berubah sejak saat itu. Tanda tangan tidak menunjukkan bahwa isinya benar, siapa yang menyetir, atau kapan mobil tiba atau pergi.",
       "algorithm": "Algoritma",
       "keyAlias": "Alias kunci",
-      "signedAt": "Ditandatangani pada (UTC)",
+      "signedAt": "Ditandatangani ParkProof (jam server)",
       "schema": "Skema",
       "publicKeyUrl": "URL kunci publik",
       "canonicalPayloadHeader": "Payload kanonik (byte tepat yang ditandatangani):",
-      "payloadB64Header": "Payload kanonis, base64 (dekode ini untuk memverifikasi):",
-      "signatureBlobHeader": "Tanda tangan (DER, base64):",
+      "payloadB64Header": "Payload kanonis, base64. Simpan sebagai {{file}} untuk mengeceknya:",
+      "signatureBlobHeader": "Tanda tangan (DER, base64). Simpan sebagai {{file}}:",
       "verifyHeader": "Untuk memverifikasi dengan openssl (platform apa pun):",
-      "verifyStep1": "1. Simpan blok payload base64 di atas ke berkas: payload.b64, lalu dekode menjadi byte persis yang ditandatangani. base64 -d mengabaikan pembungkusan baris, sehingga Anda memperoleh byte yang tepat tanpa baris baru yang berlebih:",
-      "verifyStep2": "2. Simpan string base64 tanda tangan di atas ke file: sig.base64",
+      "verifyStep1": "1. Simpan blok payload base64 dari mata rantai 0 ke berkas bernama link0-payload.b64, lalu dekode menjadi byte persis yang ditandatangani. base64 -d mengabaikan pembungkusan baris, sehingga kamu memperoleh byte yang tepat tanpa baris baru yang berlebih:",
+      "verifyStep2": "2. Simpan blok tanda tangan dari mata rantai 0 ke berkas bernama link0-sig.b64.",
       "verifyStep3": "3. Unduh kunci publik:",
       "verifyStep4": "4. Dekode tanda tangan:",
       "verifyStep5": "5. Verifikasi:",
-      "verifyStep6": "6. Keluaran yang diharapkan: \"Verified OK\". Ini mengonfirmasi bahwa metadata dan hash foto yang tercatat dalam payload asli dan tidak berubah sejak waktu signed_at.",
-      "verifyStep7": "7. Tentang foto: gambar yang ditampilkan dalam PDF ini adalah salinan visual, dikodekan ulang untuk dokumen, sehingga byte-nya berbeda dari aslinya dan tidak akan menghasilkan hash dalam payload. Itu wajar dan bukan tanda pemalsuan. Tanda tangan berkomitmen pada SHA-256 dari setiap foto asli (nilai sign_photo_sha256, car_photo_sha256, dan ambient_photo_sha256 di dalam payload yang ditandatangani), dan langkah 6 sudah membuktikan nilai-nilai itu asli. Untuk memverifikasi gambar tertentu secara independen, hitung hash berkas asli yang diambil (dari catatan ParkProof atau ekspor data akun Anda), bukan salinan yang dicetak di sini, lalu bandingkan dengan nilai yang sesuai di atas.",
-      "devKey": "Ditandatangani dengan kunci pengembangan. Tanda tangan ini tidak bisa dicek dengan kunci publik yang diterbitkan ParkProof."
+      "verifyStep6": "6. Harapkan keluaran \"Verified OK\". Ini menunjukkan byte yang ditandatangani tidak berubah sejak ParkProof menandatanganinya.",
+      "verifyStep7": "7. Tentang foto: gambar yang ditampilkan dalam PDF ini adalah salinan visual, dikodekan ulang untuk dokumen, sehingga byte-nya berbeda dari aslinya dan tidak akan menghasilkan hash dalam payload. Itu wajar dan bukan tanda pemalsuan. Tanda tangan berkomitmen pada SHA-256 dari setiap foto asli (nilai sign_photo_sha256, car_photo_sha256, dan ambient_photo_sha256 di dalam payload yang ditandatangani), dan langkah 6 sudah menunjukkan nilai-nilai itu tidak berubah sejak ditandatangani. Untuk memverifikasi gambar tertentu secara independen, hitung hash berkas asli yang diambil (dari catatan ParkProof atau ekspor data akunmu), bukan salinan yang dicetak di sini, lalu bandingkan dengan nilai yang sesuai di atas.",
+      "devKey": "Ditandatangani dengan kunci pengembangan. Tanda tangan ini tidak bisa dicek dengan kunci publik yang diterbitkan ParkProof.",
+      "linkHeading": "Mata rantai {{link}}: {{kind}}",
+      "forkNote": "Di titik ini dalam catatan, dua bagian ditambahkan dari dua perangkat. Keduanya ditandatangani dan ditampilkan di sini.",
+      "verifyRepeat": "Lakukan langkah 1, 2, 4, 5, dan 6 untuk setiap mata rantai, dengan nama berkasnya sendiri (link1-payload.b64, link1-sig.b64, dan seterusnya).",
+      "verifyChain": "8. Cek bahwa mata rantai tersambung berurutan. Setiap mata rantai setelah mata rantai 0 memuat parent_payload_sha256, yaitu SHA-256 dari payload mata rantai sebelumnya. Jalankan setiap perintah di bawah pada berkas payload.txt dari langkah 1. Perintah itu mencetak SHA-256 payload sebagai nilai hex setelah tanda = (sha256sum, jika kamu punya, mencetak nilai yang sama).",
+      "chainEquals": "Nilai hex itu harus sama dengan parent_payload_sha256 di mata rantai {{link}}.",
+      "chainEqualsOneOf": "Salah satu nilai hex ini harus sama dengan parent_payload_sha256 di mata rantai {{link}}.",
+      "kind": {
+        "arrival": "Kedatangan",
+        "arrivalContext": "Detail saat parkir",
+        "condition": "Foto kondisi mobil",
+        "compliance": "Bukti pembayaran atau izin",
+        "departure": "Saat pergi",
+        "handover": "Serah terima mobil"
+      }
     },
     "appeal": {
       "drafted": "Disusun {{when}}",
-      "linkedSession": "Sesi ParkProof terkait: {{id}}",
+      "linkedSession": "Catatan ParkProof terkait: {{id}}",
       "supportingEvidence": "Bukti pendukung (dari ParkProof)",
       "fieldGps": "GPS",
       "fieldSideSelected": "Sisi dipilih",
@@ -745,15 +783,15 @@
       "carPhotoHeader": "Mobil di lokasi"
     },
     "fullExport": {
-      "title": "ParkProof — Ekspor Akun",
+      "title": "ParkProof: Ekspor Akun",
       "account": "Akun: {{email}}",
       "userId": "ID Pengguna: {{id}}",
       "exportedAt": "Diekspor: {{when}}",
       "sessionCount": "Catatan dalam ekspor ini: {{count}}",
-      "intro": "Dokumen ini mengumpulkan setiap catatan parkir yang disimpan ke akun ParkProof ini. Setiap catatan ditangkap saat parkir dengan GPS, foto, dan pembacaan rambu parkir yang diterjemahkan AI. Di mana catatan ditandatangani dengan kunci KMS ParkProof, lencana di bagian itu menunjukkan tanda tangan kriptografis yang dapat diverifikasi ada (ekspor PDF catatan individual untuk lampiran tanda tangan lengkap).",
+      "intro": "Dokumen ini mengumpulkan setiap catatan parkir yang disimpan ke akun ParkProof ini, satu bagian per catatan. Jika sebuah catatan punya bagian yang ditandatangani, halaman tanda tangannya ada setelah bagiannya, lengkap dengan langkah untuk mengecek setiap tanda tangan. Tanda tangan yang valid menunjukkan detail yang ditandatangani tidak berubah sejak ParkProof menandatanganinya. Tanda tangan tidak menunjukkan bahwa isinya benar.",
       "emptyState": "Belum ada catatan parkir yang disimpan ke akun ini.",
       "summaryColIndex": "#",
-      "summaryColArrived": "Tiba",
+      "summaryColArrived": "Dicatat (jam ponsel)",
       "summaryColExpires": "Berakhir",
       "summaryColLocation": "Lokasi",
       "sessionHeader": "Catatan {{n}} dari {{total}}",

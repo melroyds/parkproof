@@ -185,6 +185,8 @@ export interface DepartureSummary {
   distance_from_arrival_m: number | null
   /** The departure fix's accuracy in metres (signed once signed), or null without a location. */
   location_accuracy_m: number | null
+  /** Where the phone was at the tap (signed once signed), or null without a location. */
+  location: { lat: number; lng: number; accuracy_meters: number | null } | null
 }
 
 /** What departureSummary needs to know about this device. */
@@ -208,6 +210,16 @@ function accuracyOf(data: Partial<DepartureData> | null): number | null {
   return finiteDistance((location as { accuracy_meters?: unknown }).accuracy_meters)
 }
 
+/** The departure's phone location, or null when there is none or it can't be read. */
+function locationOf(data: Partial<DepartureData> | null): DepartureSummary['location'] {
+  const location = data?.location
+  if (!location || typeof location !== 'object') return null
+  const { lat, lng } = location as { lat?: unknown; lng?: unknown }
+  if (typeof lat !== 'number' || typeof lng !== 'number' || !Number.isFinite(lat) || !Number.isFinite(lng)) return null
+  if (Math.abs(lat) > 90 || Math.abs(lng) > 180) return null
+  return { lat, lng, accuracy_meters: accuracyOf(data) }
+}
+
 /**
  * True when no departure part will ever be added on this device: the chain
  * has a key this device doesn't hold (`saveDeparture` and the catch-up queue
@@ -227,8 +239,8 @@ function departureNeverAdded(session: ParkingSession, context: DepartureContext)
 /**
  * The departure row for an ended record, or null when it hasn't ended.
  * Uses the record's departure addendum: a signed one (the earliest signed,
- * should there be two) gives the signed tap time, distance, accuracy and
- * signing time; a refused or pending one gives its stored data. Without
+ * should there be two) gives the signed tap time, location, distance,
+ * accuracy and signing time; a refused or pending one gives its stored data. Without
  * one, the record's own `departure` field and `ended_at`: 'pending' while
  * a departure may still be added, 'none' once it won't be.
  */
@@ -244,6 +256,7 @@ export function departureSummary(session: ParkingSession, context: DepartureCont
   const field = departureDataOf(session.departure)
   const fallbackDistance = finiteDistance(field?.distance_from_arrival_m)
   const fallbackAccuracy = accuracyOf(field)
+  const fallbackLocation = locationOf(field)
 
   if (signed) {
     const bundle = signed.bundle as SignatureBundle
@@ -254,6 +267,7 @@ export function departureSummary(session: ParkingSession, context: DepartureCont
       signing: { state: state === 'dev_key' ? 'dev_key' : 'signed', signed_at: signedTimeOf(bundle) },
       distance_from_arrival_m: data ? finiteDistance(data.distance_from_arrival_m) : fallbackDistance,
       location_accuracy_m: data ? accuracyOf(data) : fallbackAccuracy,
+      location: data ? locationOf(data) : fallbackLocation,
     }
   }
   // A pending departure is still on its way; only when every one was refused is it "couldn't be signed".
@@ -270,6 +284,7 @@ export function departureSummary(session: ParkingSession, context: DepartureCont
     signing,
     distance_from_arrival_m: data ? finiteDistance(data.distance_from_arrival_m) : fallbackDistance,
     location_accuracy_m: data ? accuracyOf(data) : fallbackAccuracy,
+    location: data ? locationOf(data) : fallbackLocation,
   }
 }
 

@@ -68,8 +68,11 @@ export default function AuthSettings({ onBack, onOpenPrivacy, onDeleted }: Props
       const payload = data as Parameters<
         typeof pdfModule.downloadFullExportPdf
       >[0]
+      // This device's copy of each record is merged in first: the export
+      // strips chain keys and holds only uploaded parts, so a departure
+      // still being signed here would otherwise print as "Not signed".
       const sessionsForPdf = await pdfModule.materializeRemotePhotosBatch(
-        payload.sessions,
+        pdfModule.withLocalEvidence(payload.sessions),
       )
       pdfModule.downloadFullExportPdf(
         { ...payload, sessions: sessionsForPdf },
