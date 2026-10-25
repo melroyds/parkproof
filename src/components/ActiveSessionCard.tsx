@@ -6,7 +6,6 @@ import { useNow } from '../lib/use-now'
 import { formatExpiryAbsolute } from '../lib/time-format'
 import { sessionTimezone } from '../lib/timezone'
 import { estimateWalkBack, navigationUrl, type WalkBackEstimate } from '../lib/walk-back'
-import { endConfirmText } from '../lib/record-status'
 import { useSessionPhoto } from '../lib/use-session-photo'
 import Icon from './Icon'
 
@@ -23,8 +22,8 @@ interface Props {
   onShowMore?: () => void
   /**
    * Tapped when the user signals "I've left". The card calls this with the
-   * session ID; App.tsx handles the actual storage + cloud mirror so the
-   * card stays pure-presentation.
+   * record; App opens the departure sheet and, on "Confirm I've left", runs
+   * the one end path, so the card stays pure-presentation.
    */
   onEndSession?: (session: ParkingSession) => void
   /**
@@ -159,12 +158,10 @@ export default function ActiveSessionCard({
       ? `${session.location.lat.toFixed(4)}, ${session.location.lng.toFixed(4)}`
       : t('active.lastLoggedSpot'))
 
-  // The stored ended_at is the phone's tap time. Read the clock at the tap,
-  // not the 30 s tick, so a late tap names the exact time it will record.
+  // App's departure sheet asks before anything is stored (and names the
+  // time a late tap will record).
   const confirmEnd = () => {
-    if (window.confirm(endConfirmText(session, t, timeZone, 'active.iveLeftConfirm'))) {
-      onEndSession?.(session)
-    }
+    onEndSession?.(session)
   }
 
   // Only show a useful walk-back when we have both the user's current position
@@ -321,6 +318,7 @@ export default function ActiveSessionCard({
           type="button"
           onClick={confirmEnd}
           aria-label={t('active.iveLeftAria')}
+          aria-haspopup="dialog"
           className="mt-4 w-full bg-paper-50 hover:bg-white active:bg-paper-100 text-ink-900 font-semibold text-sm px-4 py-3 min-h-[44px] rounded-xl transition-colors inline-flex items-center justify-center gap-2"
         >
           <Icon name="check" className="w-4 h-4" strokeWidth={2.5} />
@@ -391,9 +389,8 @@ export default function ActiveSessionCard({
           no-sign sessions (they have no natural expiry) but useful on
           expiry-bearing sessions too when the user leaves early. Sits below
           walk-back so it's discoverable without competing with the more-
-          frequent "find my car" intent. confirm() rather than a full modal
-          because the action is undoable (the session record stays in
-          history, just with ended_at set). */}
+          frequent "find my car" intent. The tap opens App's departure
+          sheet, which asks first and captures where the phone is. */}
       {onEndSession && !isExpired && (
         <div
           className={`flex justify-end ${
@@ -405,6 +402,7 @@ export default function ActiveSessionCard({
             onClick={confirmEnd}
             className="text-white hover:text-white text-xs font-semibold uppercase tracking-wider px-3 py-2 rounded-lg bg-white/10 hover:bg-white/20 active:bg-white/15 transition-colors inline-flex items-center gap-1.5"
             aria-label={t('active.iveLeftAria')}
+            aria-haspopup="dialog"
           >
             <Icon name="check" className="w-3.5 h-3.5" strokeWidth={2.5} />
             {t('active.iveLeft')}

@@ -15,6 +15,7 @@ import AuthFlow from './components/AuthFlow'
 import AuthSettings from './components/AuthSettings'
 import PrivacyPolicy from './components/PrivacyPolicy'
 import FeedbackModal from './components/FeedbackModal'
+import DepartureSheet from './components/DepartureSheet'
 import LandingFeatures from './components/LandingFeatures'
 import AboutFeatures from './components/AboutFeatures'
 import LanguageSelector from './components/LanguageSelector'
@@ -56,6 +57,8 @@ import {
   signNewRecord,
 } from './lib/signing'
 import { emptyLogDraft } from './lib/evidence-chain'
+import { completeDeparture, requestDepartureFix, type DepartureFixRequest } from './lib/departure'
+import { HOME_SCAN_ID, RECORD_STATUS_ID, firstFocusTarget } from './lib/focus-targets'
 import { useAuth } from './lib/use-auth'
 import { authConfigured } from './lib/auth'
 import {
@@ -115,6 +118,17 @@ type View =
   | { name: 'about' }
   | { name: 'error'; message: string; offline?: boolean }
 
+/**
+ * The departure sheet while it is open: the record being ended, the GPS fix
+ * started when the sheet opened, and the on-time confirm text of the screen
+ * the driver came from.
+ */
+interface DepartureSheetState {
+  session: ParkingSession
+  fix: DepartureFixRequest
+  confirmKey: 'active.iveLeftConfirm' | 'session.endConfirm'
+}
+
 function stripDataUrlPrefix(dataUrl: string): string {
   return dataUrl.replace(/^data:image\/[a-zA-Z0-9+.-]+;base64,/, '')
 }
@@ -169,6 +183,8 @@ function App() {
   }, [initialLink])
   // Transient save-time notice (quota recovery, photo-sync failure). Auto-clears.
   const [notice, setNotice] = useState<string | null>(null)
+  // The "I've left" departure sheet, open over home or the record screen.
+  const [departureSheet, setDepartureSheet] = useState<DepartureSheetState | null>(null)
   // Set when a signed-in user's first cloud sync couldn't reach their sessions,
   // so the home view offers a retry instead of silently showing the first-time
   // landing as if they had no data.
@@ -581,21 +597,30 @@ function App() {
   }
 
   /**
-   * The ONE end-session path. The home card and the record screen only ask;
-   * this stamps ended_at, mirrors the change to cloud when signed in, and
-   * cancels push and in-tab reminders. The records-changed event from the
-   * write makes the home card disappear (and the record screen show
-   * "Ended ...") immediately rather than after the next 30s tick.
+   * The ONE end-session path, run by "Confirm I've left" on the departure
+   * sheet. The home card and the record screen only ask (they open the
+   * sheet); this stamps ended_at with the tap time, mirrors the change to
+   * cloud when signed in, and cancels push and in-tab reminders. The
+   * records-changed event from the write makes the home card disappear
+   * (and the record screen show "Ended ...") immediately rather than after
+   * the next 30s tick.
    *
    * Non-destructive: the record stays in history with the ended-at stamp
    * preserved for the evidence record. A record that is already ended, or
    * gone, is left alone, so a double tap can't move the first tap's time.
+   * Returns the stamped ended_at, or null when nothing was ended.
    */
-  const handleEndSession = (session: ParkingSession) => {
+  const handleEndSession = (session: ParkingSession): string | null => {
+    const current = getSession(session.id)
+    if (!current || current.ended_at) return null
+    const endedAt = new Date()
     try {
-      const current = getSession(session.id)
-      if (!current || current.ended_at) return
-      endSession(session.id)
+      endSession(session.id, endedAt)
+    } catch (err) {
+      console.warn('[storage] could not end session:', err)
+      return null
+    }
+    try {
       if (auth.user) mirrorSessionUpdateToCloud(session.id)
       // Fire-and-forget: cancel any pending Web Push reminders for this
       // session server-side. Without this, EventBridge would keep firing
@@ -619,14 +644,65 @@ function App() {
       // Same for reminders armed in this tab, or a stale "move your car"
       // fires after the driver has gone.
       cancelInTabReminders(session.id)
-      // Sign the departure: once the grace period has passed, queue a
-      // departure addendum for the tap time (no location yet) unless one
-      // was queued meanwhile. The sweep covers a tab that closes first.
+      // The departure catch-up: once the grace period has passed, queue a
+      // departure addendum for the tap time (no location) unless the
+      // departure flow queued its own meanwhile. Also marks the record as
+      // ended on this device, so the sweep covers a tab that closes first.
       scheduleDepartureCatchUp(session.id)
     } catch (err) {
-      console.warn('[storage] could not end session:', err)
+      console.warn('[storage] could not finish ending the record:', err)
     }
+    return endedAt.toISOString()
   }
+
+  /**
+   * "I've left" on the home card or the record screen: open the departure
+   * sheet and start the GPS fix straight away, so it is likely in by the
+   * time the driver confirms. Nothing is stored until "Confirm I've left".
+   */
+  const openDepartureSheet = (
+    session: ParkingSession,
+    confirmKey: DepartureSheetState['confirmKey'],
+  ) => {
+    const current = getSession(session.id)
+    if (!current || current.ended_at || departureSheet) return
+    setDepartureSheet({ session: current, fix: requestDepartureFix(), confirmKey })
+  }
+
+  /**
+   * "Confirm I've left": end the record now (the tap time is ended_at) and
+   * close the sheet at once. In the background, wait up to 8 s for the
+   * fix, then save the record's departure and queue the signed departure
+   * addendum (completeDeparture). A tab closed before that is covered by
+   * the departure catch-up.
+   */
+  const confirmDeparture = () => {
+    const sheet = departureSheet
+    setDepartureSheet(null)
+    if (!sheet) return
+    const endedAt = handleEndSession(sheet.session)
+    if (!endedAt) return
+    const signedIn = !!auth.user
+    void completeDeparture(sheet.session.id, endedAt, sheet.fix, {
+      onRecordUpdated: (id) => {
+        if (signedIn) mirrorSessionUpdateToCloud(id)
+      },
+    })
+  }
+
+  const departureSheetView = departureSheet ? (
+    <DepartureSheet
+      session={departureSheet.session}
+      fix={departureSheet.fix}
+      confirmKey={departureSheet.confirmKey}
+      onConfirm={confirmDeparture}
+      onCancel={() => setDepartureSheet(null)}
+      // Confirm ends the record, which removes the I've left button that
+      // opened the sheet: focus goes to the record screen's status ("Ended")
+      // or, on home, the scan button.
+      returnFocus={() => firstFocusTarget(RECORD_STATUS_ID, HOME_SCAN_ID)}
+    />
+  ) : null
 
   /**
    * The ONE delete path. The record screen only asks (after its confirm);
@@ -855,10 +931,11 @@ function App() {
           }
           // SessionDetail re-reads its record on the records-changed event,
           // so the "Ended ..." row shows without patching the view here.
-          onEndSession={handleEndSession}
+          onEndSession={(s) => openDepartureSheet(s, 'session.endConfirm')}
         />
-        {/* Background writes (the departure catch-up after I've left) can
-            free space while this screen is open. */}
+        {departureSheetView}
+        {/* Background writes (the departure after I've left) can free
+            space while this screen is open. */}
         <Toast message={notice} onClose={() => setNotice(null)} />
       </main>
     )
@@ -1012,7 +1089,7 @@ function App() {
               extraCount={activeSessions.length - 1}
               onOpen={(s) => setView({ name: 'session', session: s })}
               onShowMore={() => setView({ name: 'actives' })}
-              onEndSession={handleEndSession}
+              onEndSession={(s) => openDepartureSheet(s, 'active.iveLeftConfirm')}
               onRecheck={handleReuseSession}
             />
           </div>
@@ -1045,6 +1122,7 @@ function App() {
         ) : (
           <>
             <button
+              id={HOME_SCAN_ID}
               onClick={() => setView({ name: 'scan' })}
               className="w-full bg-paper-50 hover:bg-white active:bg-paper-100 text-brand-800 text-lg font-semibold py-4 rounded-xl gf-btn flex items-center justify-center gap-3 transition-colors"
             >
@@ -1184,6 +1262,7 @@ function App() {
           is_signed_in: !!auth.user,
         }}
       />
+      {departureSheetView}
       <Toast message={notice} onClose={() => setNotice(null)} />
     </main>
   )

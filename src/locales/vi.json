@@ -329,7 +329,8 @@
     "photoNotOnDevice": "Ảnh này không có trên thiết bị này. Dấu vân tay số đã ký: {{fingerprint}}.",
     "photoNotOnDeviceUnsigned": "Ảnh này không có trên thiết bị này. Dấu vân tay số: {{fingerprint}}. Chưa được ký.",
     "signPhotoAlt": "Ảnh biển báo đỗ xe bạn đã quét",
-    "carPhotoAlt": "Ảnh xe của bạn tại chỗ bạn đã đỗ"
+    "carPhotoAlt": "Ảnh xe của bạn tại chỗ bạn đã đỗ",
+    "ended": "Đã kết thúc"
   },
   "appeal": {
     "captureHeader": "Soạn thư khiếu nại",
@@ -778,7 +779,7 @@
       "body": "Tự tay làm một mình trong 10 ngày, miễn phí mãi mãi. Nếu nó giúp bạn tránh được một vé phạt, hãy góp một tay cho hoá đơn AWS.",
       "button": "☕ Mời tôi một ly cà phê"
     },
-    "sealCaveat": "Dấu niêm phong chứng minh bản ghi không bị thay đổi sau khi bạn lưu. Nó không chứng minh AI đọc đúng biển báo, và cũng không bảo đảm hội đồng địa phương sẽ chấp nhận."
+    "sealCaveat": "Dấu niêm phong cho thấy các thông tin đã ký không thay đổi kể từ khi ParkProof ký. Nó không cho thấy AI đọc đúng biển báo, cũng không cho thấy hội đồng địa phương sẽ chấp nhận."
   },
   "scheduledReminders": {
     "header": "Nhắc nhở đã lên lịch",
@@ -823,6 +824,70 @@
       "matches": "Ảnh này khớp với dấu vân tay số đã ký.",
       "differs": "Đây không phải là ảnh đã được ký. Dấu vân tay số không khớp.",
       "notOnDeviceDevKey": "Ảnh này không có trên thiết bị này. Dấu vân tay số: {{fingerprint}}. Đã ký bằng khóa phát triển."
+    }
+  },
+  "departure": {
+    "locating": "Đang lấy vị trí của bạn",
+    "located": "Đã lấy được vị trí, {{accuracy}}",
+    "noLocation": "Không có vị trí",
+    "confirm": "Xác nhận tôi đã đi",
+    "heading": "RỜI ĐI",
+    "tapped": "Bạn đã nhấn \"Tôi đã đi\" lúc {{time}} (đồng hồ điện thoại).",
+    "far": "Khi bạn nhấn \"Tôi đã đi\", điện thoại của bạn cách chỗ bạn đỗ xe {{distance}}. Bản ghi cho thấy lúc bạn nhấn, không phải lúc xe di chuyển.",
+    "notSigned": "Lần rời đi này không được ký."
+  },
+  "chain": {
+    "heading": "CÁC PHẦN ĐÃ KÝ CỦA BẢN GHI NÀY",
+    "intro": "Máy chủ của ParkProof ký từng phần khi nhận được. Chữ ký hợp lệ cho thấy các thông tin đã ký không thay đổi kể từ lúc đó. Chữ ký không cho thấy các thông tin đó là đúng, ai đang lái xe, xe ở đâu, hay xe đến và rời đi lúc nào.",
+    "kind": {
+      "arrival": "Lúc đến",
+      "arrivalContext": "Thông tin khi đỗ xe",
+      "condition": "Ảnh tình trạng xe",
+      "compliance": "Bằng chứng thanh toán hoặc giấy phép",
+      "departure": "Rời đi",
+      "handover": "Giao xe"
+    },
+    "covers": {
+      "arrival": "Thời gian và địa điểm bạn ghi lại trên điện thoại, kết quả đọc biển báo và dấu vân tay số của ảnh.",
+      "arrivalNoSign": "Thời gian và địa điểm bạn ghi lại trên điện thoại, và dấu vân tay số của ảnh.",
+      "arrivalContext": "Những gì bạn thêm khi đỗ xe, ví dụ tài xế mà bạn đã ghi, câu trả lời của bạn và dấu vân tay số của ảnh.",
+      "condition": "Dấu vân tay số của các ảnh tình trạng xe bạn chụp, và ghi chú của bạn.",
+      "compliance": "Dấu vân tay số của ảnh bạn chụp vé máy đỗ xe, xác nhận thanh toán hoặc giấy phép.",
+      "departure": "Lúc bạn nhấn \"Tôi đã đi\" (đồng hồ điện thoại), và vị trí của điện thoại khi đó nếu đã lấy được vị trí.",
+      "handover": "Người mà bạn ghi là đã nhận xe, và lúc bạn ghi lại việc đó."
+    },
+    "signedAt": "ParkProof đã ký lúc {{time}}.",
+    "devKeySignedAt": "Đã ký lúc {{time}} bằng khóa phát triển, không phải khóa công khai mà ParkProof đã công bố.",
+    "check": "Kiểm tra chữ ký",
+    "checking": "Đang kiểm tra…",
+    "checkValid_one": "Tất cả chữ ký đều hợp lệ ({{count}}). Không có gì thay đổi kể từ khi ParkProof ký. Điều đó không cho thấy nội dung bản ghi là đúng.",
+    "checkValid_other": "Tất cả chữ ký đều hợp lệ ({{count}}). Không có gì thay đổi kể từ khi ParkProof ký. Điều đó không cho thấy nội dung bản ghi là đúng.",
+    "checkValidPhotosUnchecked_one": "Tất cả chữ ký đều hợp lệ ({{count}}). Một số ảnh không có trên thiết bị này nên không thể so với dấu vân tay số của chúng. Điều đó không cho thấy nội dung bản ghi là đúng.",
+    "checkValidPhotosUnchecked_other": "Tất cả chữ ký đều hợp lệ ({{count}}). Một số ảnh không có trên thiết bị này nên không thể so với dấu vân tay số của chúng. Điều đó không cho thấy nội dung bản ghi là đúng.",
+    "checkProblem": "Có ít nhất một phần hoặc một ảnh không vượt qua bước kiểm tra. Kết quả của từng mục được hiển thị tại đây.",
+    "checkChanged": "Bản ghi đã thay đổi sau khi bắt đầu kiểm tra. Hãy kiểm tra lại.",
+    "summary_one": "Đã ký {{count}} phần",
+    "summary_other": "Đã ký {{count}} phần",
+    "checkDevKey": "Một số phần của bản ghi này được ký bằng khóa phát triển. Không thể kiểm tra chúng bằng khóa công khai mà ParkProof đã công bố.",
+    "checkUnsigned": "Bản ghi này chưa có phần nào được ký.",
+    "checkUnavailable": "Trình duyệt này không thể kiểm tra chữ ký. Hãy dùng một trình duyệt mới hơn.",
+    "checkFailed": "Việc kiểm tra chưa hoàn tất. Hãy thử lại.",
+    "photosHeading": "ẢNH",
+    "photoRole": {
+      "sign": "Ảnh biển báo",
+      "car": "Ảnh xe",
+      "ambient": "Ảnh xung quanh",
+      "conditionFront": "Tình trạng khi đỗ, phía trước",
+      "conditionRear": "Tình trạng khi đỗ, phía sau",
+      "conditionLeft": "Tình trạng khi đỗ, bên trái",
+      "conditionRight": "Tình trạng khi đỗ, bên phải",
+      "conditionDetail": "Tình trạng khi đỗ, cận cảnh",
+      "returnFront": "Tình trạng khi quay lại, phía trước",
+      "returnRear": "Tình trạng khi quay lại, phía sau",
+      "returnLeft": "Tình trạng khi quay lại, bên trái",
+      "returnRight": "Tình trạng khi quay lại, bên phải",
+      "returnDetail": "Tình trạng khi quay lại, cận cảnh",
+      "compliance": "Ảnh bằng chứng thanh toán hoặc giấy phép"
     }
   }
 }

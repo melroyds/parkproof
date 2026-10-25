@@ -3,19 +3,22 @@
 // App.handleEndSession is the ONE end-session path (T0a): whichever screen
 // the driver taps "I've left" on, App stamps ended_at, mirrors to the cloud
 // when signed in, and cancels both push and in-tab reminders, exactly once.
+// Since T1a the tap opens App's departure sheet first: its GPS fix starts at
+// once, "Confirm I've left" ends the record and closes the sheet, and the
+// departure (location, distance) is saved and queued for signing after.
 //
 // Also the save path (T0b1): the LogDraft made for a scan travels through
 // clarify, result and logging (and a logging cancel) to the save, the
 // record is prepared (chain key, v1_hashes) before it is stored, and the
 // same draft reaches signNewRecord after the save.
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import i18n from './lib/i18n'
 import { AuthContext, type AuthContextValue } from './lib/auth-context-shape'
-import { getSession, saveSession } from './lib/storage'
+import { appendAddendum, getSession, saveSession } from './lib/storage'
 import { ORPHAN_PHOTO_AGE_MS, createMemoryPhotoBackend, putPhoto, setPhotoBackendForTests } from './lib/photo-store'
 import type { PushCancelResult } from './lib/push'
-import type { LogDraft, ParkingRules, ParkingSession, SignatureBundle } from './types'
+import type { AddendumKind, LogDraft, ParkingRules, ParkingSession, SignatureBundle, SignedAddendum } from './types'
 import App from './App'
 
 const mocks = vi.hoisted(() => ({
@@ -34,6 +37,16 @@ const mocks = vi.hoisted(() => ({
   setSignedRecordListener: vi.fn(),
   signNewRecord: vi.fn<(id: string, draft: LogDraft) => void>(),
   scheduleDepartureCatchUp: vi.fn(),
+  // Stores the addendum (real appendAddendum) without starting a signing drain.
+  queueAddendum: vi.fn(
+    (id: string, kind: AddendumKind, data: unknown, options: { captured_at?: string; id?: string } = {}): SignedAddendum | null => {
+      void id
+      void kind
+      void data
+      void options
+      return null
+    },
+  ),
   emptyLogDraft: vi.fn((): LogDraft => {
     throw new Error('replaced in beforeEach')
   }),
@@ -71,6 +84,7 @@ vi.mock('./lib/signing', async (importOriginal) => ({
   setSignedRecordListener: mocks.setSignedRecordListener,
   signNewRecord: mocks.signNewRecord,
   scheduleDepartureCatchUp: mocks.scheduleDepartureCatchUp,
+  queueAddendum: mocks.queueAddendum,
 }))
 // emptyLogDraft is the real one behind a spy, so a test can tell which
 // draft object reached the save.
@@ -234,11 +248,44 @@ beforeEach(() => {
   loggerProps.length = 0
   mocks.installSigningTriggers.mockImplementation(() => mocks.uninstallSigningTriggers)
   mocks.scheduleDepartureCatchUp.mockImplementation(() => () => {})
+  mocks.queueAddendum.mockImplementation((id, kind, data, options = {}) => appendAddendum(id, { kind, data, ...options }))
+  // By default the phone refuses the location (the departure saves at once without one).
+  geo.next = (_ok, fail) => fail({ code: 1 })
+  geo.calls = 0
+  Object.defineProperty(navigator, 'geolocation', { value: geo.api, configurable: true })
 })
 
 afterEach(() => {
   cleanup()
 })
+
+/**
+ * The fake geolocation. `next` answers each high-accuracy request (the
+ * departure fix); the home card's low-accuracy walk-back request is never
+ * answered, so the card just shows no distance.
+ */
+type PositionAnswer = (
+  ok: (pos: { coords: { latitude: number; longitude: number; accuracy: number } }) => void,
+  fail: (err: { code: number }) => void,
+) => void
+const geo: {
+  next: PositionAnswer
+  calls: number
+  api: { getCurrentPosition: (ok: never, fail: never, options?: PositionOptions) => void }
+} = {
+  next: () => {},
+  calls: 0,
+  api: {
+    getCurrentPosition: (ok, fail, options) => {
+      if (!options?.enableHighAccuracy) return
+      geo.calls++
+      geo.next(ok, fail)
+    },
+  },
+}
+
+/** "Confirm I've left" on the departure sheet. */
+const confirmLeft = () => fireEvent.click(screen.getByRole('button', { name: i18n.t('departure.confirm') }))
 
 describe('App.handleEndSession — one end path', () => {
   it('from the home card: stamps ended_at and cancels push + in-tab reminders once', () => {
@@ -246,8 +293,15 @@ describe('App.handleEndSession — one end path', () => {
     renderApp(false)
 
     fireEvent.click(screen.getByRole('button', { name: i18n.t('active.iveLeftAria') }))
+    // The departure sheet asks first; nothing is stored yet.
+    expect(screen.getByRole('dialog')).toBeTruthy()
+    expect(getSession('rec-1')?.ended_at).toBeUndefined()
+    expect(mocks.cancelPushReminders).not.toHaveBeenCalled()
+    confirmLeft()
 
     expect(getSession('rec-1')?.ended_at).toEqual(expect.any(String))
+    // The sheet closes at once.
+    expect(screen.queryByRole('dialog')).toBeNull()
     expect(mocks.cancelPushReminders).toHaveBeenCalledTimes(1)
     expect(mocks.cancelPushReminders).toHaveBeenCalledWith('rec-1')
     expect(mocks.cancelInTabReminders).toHaveBeenCalledTimes(1)
@@ -267,17 +321,70 @@ describe('App.handleEndSession — one end path', () => {
 
     expect(screen.getByText(/^Expired at /)).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: i18n.t('active.iveLeftAria') }))
+    // A late tap: the sheet names the phone time that will be recorded.
+    expect(screen.getByRole('dialog').textContent).toMatch(/It will record .*won't show when the car actually left/)
+    confirmLeft()
 
     expect(getSession('rec-1')?.ended_at).toEqual(expect.any(String))
     expect(mocks.cancelPushReminders).toHaveBeenCalledTimes(1)
   })
 
-  it('mirrors the end to the cloud when signed in', () => {
+  it('mirrors the end to the cloud when signed in, then the saved departure', async () => {
     saveSession(makeSession())
     renderApp(true)
     fireEvent.click(screen.getByRole('button', { name: i18n.t('active.iveLeftAria') }))
+    confirmLeft()
     expect(mocks.mirrorSessionUpdateToCloud).toHaveBeenCalledTimes(1)
     expect(mocks.mirrorSessionUpdateToCloud).toHaveBeenCalledWith('rec-1')
+    await waitFor(() => expect(getSession('rec-1')?.departure).toBeDefined())
+    expect(mocks.mirrorSessionUpdateToCloud).toHaveBeenCalledTimes(2)
+  })
+
+  it('after Confirm the opener is gone: focus goes to the home scan button, not <body>', () => {
+    saveSession(makeSession())
+    renderApp(false)
+    const leave = screen.getByRole('button', { name: i18n.t('active.iveLeftAria') })
+    expect(leave.getAttribute('aria-haspopup')).toBe('dialog')
+    leave.focus()
+    fireEvent.click(leave)
+    confirmLeft()
+    expect(leave.isConnected).toBe(false)
+    expect(document.activeElement?.id).toBe('home-scan')
+  })
+
+  it('after Confirm on the record screen, focus goes to its status ("Ended")', () => {
+    saveSession(makeSession())
+    window.history.replaceState({}, '', '/app/?session=rec-1')
+    renderApp(false)
+    const leave = screen.getByRole('button', { name: i18n.t('session.endSession') })
+    expect(leave.getAttribute('aria-haspopup')).toBe('dialog')
+    leave.focus()
+    fireEvent.click(leave)
+    confirmLeft()
+    expect(document.activeElement?.id).toBe('record-status')
+    expect(document.activeElement?.textContent).toBe(i18n.t('session.ended'))
+  })
+
+  it('Cancel, Escape or a tap outside the sheet records nothing', () => {
+    saveSession(makeSession())
+    renderApp(false)
+    const open = () => fireEvent.click(screen.getByRole('button', { name: i18n.t('active.iveLeftAria') }))
+
+    open()
+    fireEvent.click(screen.getByRole('button', { name: i18n.t('common.cancel') }))
+    expect(screen.queryByRole('dialog')).toBeNull()
+    open()
+    fireEvent.keyDown(window, { key: 'Escape' })
+    expect(screen.queryByRole('dialog')).toBeNull()
+    open()
+    fireEvent.mouseDown(screen.getByRole('dialog'))
+    expect(screen.queryByRole('dialog')).toBeNull()
+
+    expect(getSession('rec-1')?.ended_at).toBeUndefined()
+    expect(getSession('rec-1')?.departure).toBeUndefined()
+    expect(mocks.cancelPushReminders).not.toHaveBeenCalled()
+    expect(mocks.scheduleDepartureCatchUp).not.toHaveBeenCalled()
+    expect(mocks.queueAddendum).not.toHaveBeenCalled()
   })
 
   it('from the record screen: the same path runs once and the screen shows "Ended"', () => {
@@ -287,11 +394,13 @@ describe('App.handleEndSession — one end path', () => {
     renderApp(false)
 
     fireEvent.click(screen.getByRole('button', { name: i18n.t('session.endSession') }))
+    expect(getSession('rec-1')?.ended_at).toBeUndefined()
+    confirmLeft()
 
     expect(getSession('rec-1')?.ended_at).toEqual(expect.any(String))
     expect(mocks.cancelPushReminders).toHaveBeenCalledTimes(1)
     expect(mocks.cancelInTabReminders).toHaveBeenCalledTimes(1)
-    expect(screen.getByText(/^Ended /)).toBeTruthy()
+    expect(screen.getByText(i18n.t('session.ended'))).toBeTruthy()
     expect(screen.queryByRole('button', { name: i18n.t('session.endSession') })).toBeNull()
   })
 
@@ -307,11 +416,30 @@ describe('App.handleEndSession — one end path', () => {
     raw[0].ended_at = firstTap
     localStorage.setItem('parkproof.sessions.v1', JSON.stringify(raw))
 
+    // The record is already ended: no sheet opens, nothing changes.
     fireEvent.click(screen.getByRole('button', { name: i18n.t('session.endSession') }))
+    expect(screen.queryByRole('dialog')).toBeNull()
 
     expect(getSession('rec-1')?.ended_at).toBe(firstTap)
     expect(mocks.cancelPushReminders).not.toHaveBeenCalled()
     expect(mocks.scheduleDepartureCatchUp).not.toHaveBeenCalled()
+  })
+
+  it('a record ended in another tab while the sheet is open: Confirm changes nothing', () => {
+    const firstTap = '2026-05-21T09:00:00.000Z'
+    saveSession(makeSession())
+    renderApp(false)
+    fireEvent.click(screen.getByRole('button', { name: i18n.t('active.iveLeftAria') }))
+    const raw = JSON.parse(localStorage.getItem('parkproof.sessions.v1')!) as ParkingSession[]
+    raw[0].ended_at = firstTap
+    localStorage.setItem('parkproof.sessions.v1', JSON.stringify(raw))
+
+    confirmLeft()
+
+    expect(screen.queryByRole('dialog')).toBeNull()
+    expect(getSession('rec-1')?.ended_at).toBe(firstTap)
+    expect(mocks.cancelPushReminders).not.toHaveBeenCalled()
+    expect(mocks.queueAddendum).not.toHaveBeenCalled()
   })
 
   it('clears the cached reminder list once the push cancel succeeded', async () => {
@@ -321,10 +449,11 @@ describe('App.handleEndSession — one end path', () => {
     renderApp(true)
 
     fireEvent.click(screen.getByRole('button', { name: i18n.t('active.iveLeftAria') }))
+    confirmLeft()
 
     await waitFor(() => expect(getSession('rec-1')?.push_reminders).toEqual([]))
-    // Mirrored twice: the end, then the cleared list.
-    expect(mocks.mirrorSessionUpdateToCloud).toHaveBeenCalledTimes(2)
+    // Mirrored three times: the end, the cleared list and the saved departure.
+    await waitFor(() => expect(mocks.mirrorSessionUpdateToCloud).toHaveBeenCalledTimes(3))
   })
 
   it('keeps the reminder list when another device owns the schedules (they may still fire)', async () => {
@@ -334,12 +463,100 @@ describe('App.handleEndSession — one end path', () => {
     renderApp(false)
 
     fireEvent.click(screen.getByRole('button', { name: i18n.t('active.iveLeftAria') }))
+    confirmLeft()
     await waitFor(() => expect(mocks.cancelPushReminders).toHaveBeenCalledTimes(1))
     // Let the cancel's .then() run before asserting nothing was cleared.
     await new Promise((resolve) => setTimeout(resolve, 0))
 
     expect(getSession('rec-1')?.ended_at).toEqual(expect.any(String))
     expect(getSession('rec-1')?.push_reminders).toEqual([{ fire_at: fireAt }])
+  })
+})
+
+describe('App departure flow (T1a)', () => {
+  /** Hold the next fix until the test answers it. */
+  function holdFix() {
+    const held: { answer: Parameters<PositionAnswer>[0] | null } = { answer: null }
+    geo.next = (ok) => {
+      held.answer = ok
+    }
+    return held
+  }
+  const GPS_ARRIVAL = { lat: -37.8136, lng: 144.9631, address: '12 King St', source: 'gps' as const, accuracy_meters: 8 }
+
+  it('the sheet starts one GPS fix when it opens and shows its status line', () => {
+    const held = holdFix()
+    saveSession(makeSession())
+    renderApp(false)
+    fireEvent.click(screen.getByRole('button', { name: i18n.t('active.iveLeftAria') }))
+
+    expect(geo.calls).toBe(1)
+    expect(screen.getByRole('status').textContent).toBe(i18n.t('departure.locating'))
+    act(() => held.answer!({ coords: { latitude: -37.8136, longitude: 144.9631, accuracy: 12 } }))
+    expect(screen.getByRole('status').textContent).toBe('Location captured, ±12m')
+  })
+
+  it('a refused location reads "No location", and Confirm still ends the record', async () => {
+    saveSession(makeSession())
+    renderApp(false)
+    fireEvent.click(screen.getByRole('button', { name: i18n.t('active.iveLeftAria') }))
+    expect(screen.getByRole('status').textContent).toBe(i18n.t('departure.noLocation'))
+    confirmLeft()
+    const endedAt = getSession('rec-1')?.ended_at
+    expect(endedAt).toEqual(expect.any(String))
+    await waitFor(() => expect(getSession('rec-1')?.departure).toBeDefined())
+    expect(getSession('rec-1')?.departure).toEqual({ ended_at: endedAt, location: null, distance_from_arrival_m: null })
+  })
+
+  it('Confirm closes the sheet at once; the departure waits for the fix, then is saved and queued for signing', async () => {
+    const held = holdFix()
+    saveSession(makeSession({ location: GPS_ARRIVAL }))
+    renderApp(false)
+    fireEvent.click(screen.getByRole('button', { name: i18n.t('active.iveLeftAria') }))
+    confirmLeft()
+
+    expect(screen.queryByRole('dialog')).toBeNull()
+    const endedAt = getSession('rec-1')?.ended_at as string
+    expect(endedAt).toEqual(expect.any(String))
+    // Still waiting for the fix in the background.
+    expect(getSession('rec-1')?.departure).toBeUndefined()
+    expect(mocks.queueAddendum).not.toHaveBeenCalled()
+
+    // About 200 m north of where the car was logged.
+    act(() => held.answer!({ coords: { latitude: -37.8118, longitude: 144.9631, accuracy: 12 } }))
+    await waitFor(() => expect(getSession('rec-1')?.departure).toBeDefined())
+
+    const departure = getSession('rec-1')!.departure!
+    expect(departure.ended_at).toBe(endedAt)
+    expect(departure.location).toEqual({ lat: -37.8118, lng: 144.9631, accuracy_meters: 12, source: 'gps' })
+    expect(departure.distance_from_arrival_m).toBeGreaterThan(190)
+    expect(departure.distance_from_arrival_m).toBeLessThan(210)
+    expect(mocks.queueAddendum).toHaveBeenCalledTimes(1)
+    expect(mocks.queueAddendum).toHaveBeenCalledWith('rec-1', 'departure', {
+      ended_at: endedAt,
+      location: departure.location,
+      distance_from_arrival_m: departure.distance_from_arrival_m,
+      return_photos: [],
+    })
+    const stored = getSession('rec-1')!.addenda!.filter((a) => a.kind === 'departure')
+    expect(stored).toHaveLength(1)
+    expect(stored[0].bundle).toBeUndefined()
+    // The catch-up is still scheduled for a tab that closes first.
+    expect(mocks.scheduleDepartureCatchUp).toHaveBeenCalledWith('rec-1')
+  })
+
+  it('the record screen shows the tap (phone clock), "Not signed yet", and the distance line over 150 m', async () => {
+    const held = holdFix()
+    saveSession(makeSession({ location: GPS_ARRIVAL }))
+    window.history.replaceState({}, '', '/app/?session=rec-1')
+    renderApp(false)
+    fireEvent.click(screen.getByRole('button', { name: i18n.t('session.endSession') }))
+    confirmLeft()
+    act(() => held.answer!({ coords: { latitude: -37.8118, longitude: 144.9631, accuracy: 12 } }))
+
+    expect(await screen.findByText(/^Your phone was 2\d\d m from where you parked/)).toBeTruthy()
+    expect(screen.getByText(/^You tapped I've left at .* \(phone clock\)\.$/)).toBeTruthy()
+    expect(screen.getAllByText(i18n.t('verifier.link.pending')).length).toBeGreaterThan(0)
   })
 })
 

@@ -3,13 +3,15 @@ import { useTranslation } from 'react-i18next'
 import type { ParkingSession } from '../types'
 import { isStorageFullError, updateSession } from '../lib/storage'
 import { useLiveRecord } from '../lib/use-records-version'
-import { canEndRecord, endConfirmText } from '../lib/record-status'
+import { canEndRecord } from '../lib/record-status'
 import { DEV_KEY_ALIAS } from '../lib/evidence-chain'
 import { LEGACY_PHOTO_ROLES, hasSessionPhoto, legacyPhotoValue, photoRefFor } from '../lib/session-photos'
 import { useSessionPhoto } from '../lib/use-session-photo'
 import ScheduledRemindersSection from './ScheduledRemindersSection'
 import RecordPhoto from './RecordPhoto'
 import VerifiedSeal from './VerifiedSeal'
+import ChainPanel from './ChainPanel'
+import DepartureRow from './DepartureRow'
 import Icon from './Icon'
 import Button from './ui/Button'
 import BackButton from './ui/BackButton'
@@ -21,6 +23,9 @@ import { navigationUrl } from '../lib/walk-back'
 import { useAuth } from '../lib/use-auth'
 import { mirrorSessionToCloud, mirrorSessionUpdateToCloud } from '../lib/sync'
 import { verifyUrlForLocale } from '../lib/verify-url'
+import { signedTimeOf } from '../lib/chain-view'
+import { formatInZone } from '../lib/time-format'
+import { RECORD_STATUS_ID } from '../lib/focus-targets'
 
 const NOTE_MAX_LENGTH = 280
 
@@ -39,9 +44,10 @@ interface Props {
   onDelete: (session: ParkingSession) => void
   onDraftAppeal: () => void
   /**
-   * Called when the driver taps "I've left". App.handleEndSession owns the
-   * whole end path (stamp ended_at, cloud mirror, push and in-tab cancels);
-   * this screen only asks. The record stays in history with ended_at set.
+   * Called when the driver taps "I've left". App opens the departure sheet
+   * and, on "Confirm I've left", runs the one end path (stamp ended_at,
+   * cloud mirror, push and in-tab cancels, the signed departure); this
+   * screen only asks. The record stays in history with ended_at set.
    */
   onEndSession: (session: ParkingSession) => void
 }
@@ -206,11 +212,10 @@ export default function SessionDetail({
   }
 
   const handleEnd = () => {
-    // A late tap (past expiry, or open over 12 h) names the time that will
-    // be stored. Read the clock at the tap, not the render tick.
-    if (!window.confirm(endConfirmText(session, t, timeZone, 'session.endConfirm'))) return
-    // App owns ending: ended_at, cloud mirror, push and in-tab cancels. We
-    // stay on this screen; the live record shows "Ended ..." once stored.
+    // App owns ending: its departure sheet asks (naming the time a late tap
+    // will store), then ended_at, cloud mirror, push and in-tab cancels and
+    // the signed departure. We stay on this screen; the live record shows
+    // "Ended ..." and the departure row once stored.
     onEndSession(session)
   }
 
@@ -295,12 +300,10 @@ export default function SessionDetail({
                 {session.signature.signature_base64.slice(0, 16)}
                 <span style={{ color: '#A9CFBE' }}>
                   {' · '}
-                  {new Date(session.signature.signed_at).toLocaleString('en-AU', {
-                    day: 'numeric',
-                    month: 'short',
-                    hour: 'numeric',
-                    minute: '2-digit',
-                  })}
+                  {/* ParkProof's signing time from the signed payload, in the
+                      record's zone with its name: the same as the chain
+                      panel's arrival part below. */}
+                  {formatInZone(signedTimeOf(session.signature) ?? session.signature.signed_at, timeZone)}
                 </span>
               </p>
             </div>
@@ -316,6 +319,11 @@ export default function SessionDetail({
           </p>
         </div>
       )}
+
+      {/* The evidence chain: each signed part, what it covers and when
+          ParkProof signed it, with "Check signatures" (the on-device
+          verifier). A read-only shared copy gets its own check (T7). */}
+      {!session.shared_from && <ChainPanel session={session} timeZone={timeZone} />}
 
       {/* #3 — silent photo-sync failure made visible, with a retry. */}
       {photoSyncFailed && user && (
@@ -341,14 +349,16 @@ export default function SessionDetail({
               {t('session.status')}
             </dt>
             <dd
-              className={`mt-1 font-display font-bold ${
+              id={RECORD_STATUS_ID}
+              tabIndex={-1}
+              className={`mt-1 font-display font-bold outline-none ${
                 isEnded || isExpired ? 'text-ink-600' : 'text-brand-700'
               }`}
             >
+              {/* An ended record's times are in the departure row below:
+                  the phone-clock tap time and ParkProof's signing time. */}
               {isEnded
-                ? t('session.endedAt', {
-                    when: fmtLocal(session.ended_at as string, timeZone),
-                  })
+                ? t('session.ended')
                 : session.expires_at
                   ? isExpired
                     ? t('history.expired')
@@ -371,6 +381,9 @@ export default function SessionDetail({
               </dd>
             )}
           </div>
+          {/* The I've left tap (phone clock) and, separately, when ParkProof
+              signed the departure. Shown once the record has ended. */}
+          <DepartureRow session={session} timeZone={timeZone} now={now} />
           <div>
             <dt className="text-xs uppercase tracking-widest font-semibold text-ink-600">
               {t('session.signRules')}
@@ -646,6 +659,7 @@ export default function SessionDetail({
         {canEnd && (
           <button
             onClick={handleEnd}
+            aria-haspopup="dialog"
             className="bg-white border border-brand-500 hover:bg-brand-50 active:bg-brand-100 text-brand-700 font-semibold py-3 rounded-xl transition-colors"
           >
             {t('session.endSession')}

@@ -502,7 +502,16 @@ describe('transient and rejected outcomes', () => {
 
   it('a 400 on link 0 is remembered and not retried', async () => {
     net.override = (body) => (body.schema === 'parkproof-evidence-v2' ? { status: 400, json: { error: 'ERR_BAD_VALUE' } } : null)
+    // Open screens hear about the refusal (it lives in the signing state, not on the record).
+    const seenWithRefusal: string[] = []
+    const onChange = (e: Event) => {
+      const id = (e as CustomEvent<{ id: string | null }>).detail?.id
+      if (id && arrivalSigningRejection(id)) seenWithRefusal.push(id)
+    }
+    window.addEventListener('parkproof:records-changed', onChange)
     const s = await saveNew()
+    window.removeEventListener('parkproof:records-changed', onChange)
+    expect(seenWithRefusal).toContain(s.id)
     expect(arrivalSigningRejection(s.id)).toBe('ERR_BAD_VALUE')
     net.override = null
     net.calls.length = 0

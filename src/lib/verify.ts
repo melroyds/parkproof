@@ -342,6 +342,13 @@ export interface VerifyOptions {
    * signing queue's record of it (`arrivalSigningRejection`).
    */
   arrivalRejection?: string | null
+  /**
+   * Bytes (data URLs) the caller fetched for a sign, car or ambient photo
+   * that the record holds only as a cloud URL (an older record on a second
+   * device). Used when the record has no bytes of its own for that role,
+   * hashed like the legacy field would be. Never written to the record.
+   */
+  localPhotos?: ReadonlyMap<PhotoRole, string>
 }
 
 // ─── Link checks ─────────────────────────────────────────────────────────
@@ -571,13 +578,17 @@ type LocalHash = string | 'unreadable' | null
  * of the photo the record actually shows (its PhotoRef's bytes, else the
  * legacy data URL): a record whose shown photo was swapped reads 'differs'
  * even if the signed bytes are still in the store. An HTTPS URL (a cloud
- * copy) isn't bytes on this device.
+ * copy) isn't bytes on this device, unless the caller fetched its bytes
+ * and passed them in `localPhotos`.
  *
  * Every other role can have several photos, so the store is read by the
  * signed fingerprint itself (it is content-addressed), and the bytes found
  * are re-hashed.
  */
-function makeLocalHasher(session: ParkingSession): (role: PhotoRole, signedSha: string) => Promise<LocalHash> {
+function makeLocalHasher(
+  session: ParkingSession,
+  localPhotos?: ReadonlyMap<PhotoRole, string>,
+): (role: PhotoRole, signedSha: string) => Promise<LocalHash> {
   const cache = new Map<string, Promise<string | null>>()
   const storeHash = (sha256: string): Promise<string | null> => {
     let hit = cache.get(sha256)
@@ -602,9 +613,10 @@ function makeLocalHasher(session: ParkingSession): (role: PhotoRole, signedSha: 
       if (fromStore) return fromStore
     }
     const legacy = legacyPhotoValue(session, role)
-    if (legacy && legacy.startsWith('data:')) {
+    const bytes = legacy && legacy.startsWith('data:') ? legacy : localPhotos?.get(role)
+    if (bytes && bytes.startsWith('data:')) {
       try {
-        return await hashDataUrlImage(legacy)
+        return await hashDataUrlImage(bytes)
       } catch {
         return 'unreadable'
       }
@@ -613,7 +625,11 @@ function makeLocalHasher(session: ParkingSession): (role: PhotoRole, signedSha: 
   }
 }
 
-async function checkPhotos(session: ParkingSession, links: readonly LinkCheck[]): Promise<PhotoCheck[]> {
+async function checkPhotos(
+  session: ParkingSession,
+  links: readonly LinkCheck[],
+  localPhotos?: ReadonlyMap<PhotoRole, string>,
+): Promise<PhotoCheck[]> {
   const entries = new Map<string, { role: PhotoRole; sha256: string; link_indexes: number[]; parkproof: boolean }>()
   links.forEach((link, index) => {
     if (!trusted(link.status)) return
@@ -625,7 +641,7 @@ async function checkPhotos(session: ParkingSession, links: readonly LinkCheck[])
       entries.set(key, entry)
     }
   })
-  const localHash = makeLocalHasher(session)
+  const localHash = makeLocalHasher(session, localPhotos)
   return Promise.all(
     [...entries.values()].map(async (e): Promise<PhotoCheck> => {
       const local = await localHash(e.role, e.sha256)
@@ -862,7 +878,7 @@ export async function verifyRecord(session: ParkingSession, options: VerifyOptio
     for (const i of indexes) links[i] = { ...links[i], forked: true }
   }
 
-  const photos = await checkPhotos(session, links)
+  const photos = await checkPhotos(session, links, shared ? undefined : options.localPhotos)
 
   const counts = emptyCounts()
   for (const link of links) counts[link.status]++

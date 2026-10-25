@@ -917,6 +917,19 @@ describe('verifyRecord: photos', () => {
     expect((await verify({ ...s, sign_photo: null })).photos[0].status).toBe('not_on_device')
   })
 
+  it('a legacy photo held only as a cloud URL is checked from bytes the caller fetched (localPhotos)', async () => {
+    const s = await newRecord({ photo: 'legacy' })
+    const cloud = { ...s, sign_photo: 'https://example.com/sign.jpg' }
+    expect((await verify(cloud, { localPhotos: new Map([['sign', SIGN_PHOTO]]) })).photos[0]).toMatchObject({
+      status: 'matches',
+      local_sha256: await hashDataUrlImage(SIGN_PHOTO),
+    })
+    expect((await verify(cloud, { localPhotos: new Map([['sign', OTHER_PHOTO]]) })).photos[0].status).toBe('differs')
+    // The record's own data URL wins over a fetched copy, and the record is not changed.
+    expect((await verify(s, { localPhotos: new Map([['sign', OTHER_PHOTO]]) })).photos[0].status).toBe('matches')
+    expect(cloud.sign_photo).toBe('https://example.com/sign.jpg')
+  })
+
   it('photos signed in addenda are looked up by their fingerprint', async () => {
     const s = await newRecord({ photo: 'none' })
     const sha = await putPhoto(s.id, CONDITION_PHOTO)

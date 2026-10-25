@@ -29,6 +29,7 @@ import {
   appendAddendum,
   getSession,
   loadSessions,
+  notifyRecordsChanged,
   rejectAddendum,
   setAddendumBundle,
   setArrivalSignature,
@@ -120,6 +121,15 @@ export function markEndedOnThisDevice(sessionId: string): void {
 
 function endedOnThisDevice(state: SigningState, sessionId: string): boolean {
   return state[sessionId]?.ended_here === true
+}
+
+/**
+ * Was this record ended on this device (`markEndedOnThisDevice`)? The record
+ * screen uses it to tell a departure that is still coming from one that
+ * never will be (`departureSummary`).
+ */
+export function isEndedOnThisDevice(sessionId: string): boolean {
+  return endedOnThisDevice(loadSigningState(), sessionId)
 }
 
 /**
@@ -594,6 +604,10 @@ async function drainRecord(sessionId: string): Promise<void> {
 function recordArrivalRejection(sessionId: string, code: string): void {
   console.warn(`[signing] link 0 of ${sessionId} was refused: ${code}`)
   updateSigningState(sessionId, (e) => ({ ...e, link0_rejected: { code, at: new Date().toISOString() } }))
+  // The refusal lives in the signing state, not on the record, so tell open
+  // screens to read again: the record screen's arrival part then says it
+  // couldn't be signed instead of "Not signed yet".
+  notifyRecordsChanged(sessionId)
 }
 
 // ─── Public entry points ─────────────────────────────────────────────────

@@ -9,6 +9,7 @@ export type IconName =
   | 'pin'
   | 'check'
   | 'warning'
+  | 'chevron'
 
 interface Props {
   name: IconName
@@ -80,4 +81,6 @@ const PATHS: Record<IconName, ReactNode> = {
       <path d="M12 8.5v4.8M12 17h.01" />
     </>
   ),
+  // Points down; a disclosure rotates it when open.
+  chevron: <path d="m6 9.5 6 6 6-6" />,
 }

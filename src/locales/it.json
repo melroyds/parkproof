@@ -329,7 +329,8 @@
     "photoNotOnDevice": "Foto non presente su questo dispositivo. Impronta digitale firmata: {{fingerprint}}.",
     "photoNotOnDeviceUnsigned": "Foto non presente su questo dispositivo. Impronta digitale: {{fingerprint}}. Non ancora firmata.",
     "signPhotoAlt": "Foto del cartello di sosta che hai scansionato",
-    "carPhotoAlt": "Foto della tua auto dove hai parcheggiato"
+    "carPhotoAlt": "Foto della tua auto dove hai parcheggiato",
+    "ended": "Terminata"
   },
   "appeal": {
     "captureHeader": "Redigi una lettera di ricorso",
@@ -778,7 +779,7 @@
       "body": "Creato da solo in 10 giorni, gratis per sempre. Se ti ha salvato da una multa, offrimi un caffè.",
       "button": "☕ Offrimi un caffè"
     },
-    "sealCaveat": "Il sigillo dimostra che il record non è stato modificato dopo averlo salvato. Non dimostra che l'AI abbia letto bene il cartello, né garantisce che un comune lo accetti."
+    "sealCaveat": "Il sigillo mostra che i dati firmati non sono cambiati da quando ParkProof li ha firmati. Non mostra che l'AI abbia letto bene il cartello, né che un comune lo accetterà."
   },
   "scheduledReminders": {
     "header": "Promemoria pianificati",
@@ -823,6 +824,70 @@
       "matches": "Questa foto corrisponde alla sua impronta digitale firmata.",
       "differs": "Questa non è la foto che è stata firmata. L'impronta digitale non corrisponde.",
       "notOnDeviceDevKey": "Foto non presente su questo dispositivo. Impronta digitale: {{fingerprint}}. Firmata con una chiave di sviluppo."
+    }
+  },
+  "departure": {
+    "locating": "Rilevamento della posizione",
+    "located": "Posizione rilevata, {{accuracy}}",
+    "noLocation": "Nessuna posizione",
+    "confirm": "Conferma: ho lasciato il posto",
+    "heading": "PARTENZA",
+    "tapped": "Hai toccato \"Ho lasciato il posto\": {{time}} (orologio del telefono).",
+    "far": "Quando hai toccato \"Ho lasciato il posto\", il telefono era a {{distance}} da dove avevi parcheggiato. Il record mostra quando hai toccato, non quando l'auto si è spostata.",
+    "notSigned": "Questa partenza non è firmata."
+  },
+  "chain": {
+    "heading": "PARTI FIRMATE DI QUESTO RECORD",
+    "intro": "Il server di ParkProof firma ogni parte quando la riceve. Una firma valida mostra che i dati firmati non sono cambiati da allora. Non mostra che siano veri, chi guidava, dove si trovava l'auto, né quando è arrivata o partita.",
+    "kind": {
+      "arrival": "Arrivo",
+      "arrivalContext": "Dettagli al parcheggio",
+      "condition": "Foto delle condizioni dell'auto",
+      "compliance": "Prova di pagamento o permesso",
+      "departure": "Partenza",
+      "handover": "Passaggio dell'auto"
+    },
+    "covers": {
+      "arrival": "L'ora e il luogo che hai registrato sul telefono, la lettura del cartello e le impronte digitali delle foto.",
+      "arrivalNoSign": "L'ora e il luogo che hai registrato sul telefono, e le impronte digitali delle foto.",
+      "arrivalContext": "Quello che hai aggiunto quando hai parcheggiato, ad esempio chi hai indicato come conducente, le tue risposte e le impronte digitali delle foto.",
+      "condition": "Le impronte digitali delle tue foto delle condizioni dell'auto e la tua nota.",
+      "compliance": "L'impronta digitale della tua foto di un tagliando del parchimetro, di una conferma di pagamento o di un permesso.",
+      "departure": "Quando hai toccato \"Ho lasciato il posto\" (orologio del telefono) e dove si trovava il telefono, se la posizione è stata rilevata.",
+      "handover": "A chi hai indicato di aver passato l'auto, e quando l'hai registrato."
+    },
+    "signedAt": "Firma di ParkProof: {{time}}.",
+    "devKeySignedAt": "Firma con una chiave di sviluppo, non con quella pubblicata da ParkProof: {{time}}.",
+    "check": "Verifica le firme",
+    "checking": "Verifica in corso…",
+    "checkValid_one": "{{count}} firma è valida. Nulla è cambiato da quando ParkProof l'ha firmato. Questo non mostra che quanto dice il record sia vero.",
+    "checkValid_other": "Tutte le {{count}} firme sono valide. Nulla è cambiato da quando ParkProof l'ha firmato. Questo non mostra che quanto dice il record sia vero.",
+    "checkValidPhotosUnchecked_one": "{{count}} firma è valida. Alcune foto non sono su questo dispositivo, quindi non è stato possibile confrontarle con le loro impronte digitali. Questo non mostra che quanto dice il record sia vero.",
+    "checkValidPhotosUnchecked_other": "Tutte le {{count}} firme sono valide. Alcune foto non sono su questo dispositivo, quindi non è stato possibile confrontarle con le loro impronte digitali. Questo non mostra che quanto dice il record sia vero.",
+    "checkProblem": "Almeno una parte o una foto non ha superato la verifica. Il risultato di ciascuna è mostrato qui.",
+    "checkChanged": "Il record è cambiato dopo l'inizio della verifica. Verifica di nuovo.",
+    "summary_one": "{{count}} parte firmata",
+    "summary_other": "{{count}} parti firmate",
+    "checkDevKey": "Alcune parti di questo record sono firmate con una chiave di sviluppo. Non si possono verificare con la chiave pubblicata da ParkProof.",
+    "checkUnsigned": "In questo record non c'è ancora nulla di firmato.",
+    "checkUnavailable": "Questo browser non può verificare le firme. Prova con un browser aggiornato.",
+    "checkFailed": "La verifica non è terminata. Riprova.",
+    "photosHeading": "FOTO",
+    "photoRole": {
+      "sign": "Foto del cartello",
+      "car": "Foto dell'auto",
+      "ambient": "Foto dei dintorni",
+      "conditionFront": "Condizioni al parcheggio, davanti",
+      "conditionRear": "Condizioni al parcheggio, dietro",
+      "conditionLeft": "Condizioni al parcheggio, lato sinistro",
+      "conditionRight": "Condizioni al parcheggio, lato destro",
+      "conditionDetail": "Condizioni al parcheggio, dettaglio",
+      "returnFront": "Condizioni al ritorno, davanti",
+      "returnRear": "Condizioni al ritorno, dietro",
+      "returnLeft": "Condizioni al ritorno, lato sinistro",
+      "returnRight": "Condizioni al ritorno, lato destro",
+      "returnDetail": "Condizioni al ritorno, dettaglio",
+      "compliance": "Foto della prova di pagamento o del permesso"
     }
   }
 }

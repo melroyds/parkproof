@@ -59,7 +59,7 @@
         "Add a note about why you parked there (mum's hospital visit, Saturday market). Councils take context seriously."
       ]
     },
-    "sealCaveat": "The seal proves the record wasn't changed after you saved it. It doesn't prove the AI read the sign correctly, or guarantee a council will accept it.",
+    "sealCaveat": "The seal shows the signed details haven't changed since ParkProof signed them. It doesn't show the AI read the sign correctly, or that a council will accept it.",
     "reminders": {
       "title": "A nudge before time runs out",
       "lead": "Pick when you want to be reminded: 30 minutes before, 15, 5, whatever feels right.",
@@ -480,7 +480,8 @@
     "photoNotOnDevice": "Photo not on this device. Signed fingerprint {{fingerprint}}.",
     "photoNotOnDeviceUnsigned": "Photo not on this device. Fingerprint {{fingerprint}}. Not signed yet.",
     "signPhotoAlt": "Photo of the parking sign you scanned",
-    "carPhotoAlt": "Photo of your car where you parked"
+    "carPhotoAlt": "Photo of your car where you parked",
+    "ended": "Ended"
   },
   "appeal": {
     "captureHeader": "Draft an appeal letter",
@@ -823,6 +824,70 @@
       "matches": "This photo matches its signed fingerprint.",
       "differs": "This isn't the photo that was signed. Its fingerprint doesn't match.",
       "notOnDeviceDevKey": "Photo not on this device. Fingerprint {{fingerprint}}. Signed with a development key."
+    }
+  },
+  "departure": {
+    "locating": "Getting your location",
+    "located": "Location captured, {{accuracy}}",
+    "noLocation": "No location",
+    "confirm": "Confirm I've left",
+    "heading": "DEPARTURE",
+    "tapped": "You tapped I've left at {{time}} (phone clock).",
+    "far": "Your phone was {{distance}} from where you parked when you tapped I've left. The record shows when you tapped, not when the car moved.",
+    "notSigned": "This departure isn't signed."
+  },
+  "chain": {
+    "heading": "SIGNED PARTS OF THIS RECORD",
+    "intro": "ParkProof's server signs each part when it receives it. A valid signature shows the signed details haven't changed since then. It doesn't show they are true, who was driving, where the car was, or when it arrived or left.",
+    "kind": {
+      "arrival": "Arrival",
+      "arrivalContext": "Details at parking",
+      "condition": "Condition photos",
+      "compliance": "Proof of payment or permit",
+      "departure": "Departure",
+      "handover": "Handover"
+    },
+    "covers": {
+      "arrival": "The time and place you logged on your phone, the sign reading and the photo fingerprints.",
+      "arrivalNoSign": "The time and place you logged on your phone, and the photo fingerprints.",
+      "arrivalContext": "What you added when you parked, such as who you said was driving, your answers and photo fingerprints.",
+      "condition": "Fingerprints of your photos of the car's condition, and your note.",
+      "compliance": "The fingerprint of your photo of a meter ticket, payment confirmation or permit.",
+      "departure": "When you tapped I've left (phone clock), and where your phone was if a location was captured.",
+      "handover": "Who you said you handed the car to, and when you recorded it."
+    },
+    "signedAt": "Signed by ParkProof at {{time}}.",
+    "devKeySignedAt": "Signed at {{time}} with a development key, not ParkProof's published key.",
+    "check": "Check signatures",
+    "checking": "Checking…",
+    "checkValid_one": "{{count}} signature is valid. Nothing has changed since ParkProof signed it. That doesn't show what the record says is true.",
+    "checkValid_other": "All {{count}} signatures are valid. Nothing has changed since ParkProof signed it. That doesn't show what the record says is true.",
+    "checkValidPhotosUnchecked_one": "{{count}} signature is valid. Some photos aren't on this device, so they couldn't be compared with their fingerprints. That doesn't show what the record says is true.",
+    "checkValidPhotosUnchecked_other": "All {{count}} signatures are valid. Some photos aren't on this device, so they couldn't be compared with their fingerprints. That doesn't show what the record says is true.",
+    "checkProblem": "At least one part or photo didn't pass the check. The result for each one is shown here.",
+    "checkChanged": "The record changed after the check started. Check again.",
+    "summary_one": "{{count}} part signed",
+    "summary_other": "{{count}} parts signed",
+    "checkDevKey": "Parts of this record were signed with a development key. They can't be checked with ParkProof's published key.",
+    "checkUnsigned": "Nothing on this record is signed yet.",
+    "checkUnavailable": "This browser can't check signatures. Try an up-to-date browser.",
+    "checkFailed": "The check didn't finish. Try again.",
+    "photosHeading": "PHOTOS",
+    "photoRole": {
+      "sign": "Sign photo",
+      "car": "Car photo",
+      "ambient": "Surroundings photo",
+      "conditionFront": "Condition when parked, front",
+      "conditionRear": "Condition when parked, rear",
+      "conditionLeft": "Condition when parked, left side",
+      "conditionRight": "Condition when parked, right side",
+      "conditionDetail": "Condition when parked, close-up",
+      "returnFront": "Condition on return, front",
+      "returnRear": "Condition on return, rear",
+      "returnLeft": "Condition on return, left side",
+      "returnRight": "Condition on return, right side",
+      "returnDetail": "Condition on return, close-up",
+      "compliance": "Proof of payment or permit photo"
     }
   }
 }

@@ -2,6 +2,7 @@ import type { TFunction } from 'i18next'
 import type { ParkingSession } from '../types'
 import { formatCountdownLocalized, type Urgency } from './countdown'
 import { ACTIVE_AFTER_EXPIRY_MS } from './storage'
+import { formatInZone } from './time-format'
 
 /**
  * "I've left" is offered on any record the driver hasn't ended yet,
@@ -25,16 +26,12 @@ export function isLateEnd(session: ParkingSession, now: number): boolean {
   return Number.isFinite(arrivedMs) && now - arrivedMs > ACTIVE_AFTER_EXPIRY_MS
 }
 
-/** "Sat 25 Oct, 3:05 pm" in the record's own time zone. */
+/**
+ * "Sat 25 Oct, 3:05 pm AEDT" in the record's own time zone, with its name:
+ * the same format the record screen's departure row shows the tap in.
+ */
 function tapWhen(ms: number, timeZone: string): string {
-  return new Date(ms).toLocaleString('en-AU', {
-    timeZone,
-    weekday: 'short',
-    day: 'numeric',
-    month: 'short',
-    hour: 'numeric',
-    minute: '2-digit',
-  })
+  return formatInZone(ms, timeZone)
 }
 
 /**

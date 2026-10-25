@@ -5,6 +5,8 @@
 // itself. Also covers "ending after expiry": an expired record that hasn't
 // been ended shows "Expired at ..." with "I've left" as the primary action,
 // and the record screen offers "I've left" on any record without ended_at.
+// Since T1a neither screen confirms itself: App's departure sheet asks
+// (departure-sheet.test.tsx covers its on-time and late texts).
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { ReactNode } from 'react'
@@ -117,12 +119,12 @@ describe('ActiveSessionCard', () => {
     expect(getSession(session.id)?.ended_at).toBeUndefined()
   })
 
-  it('does nothing when the driver cancels the confirm', () => {
-    setConfirm(false)
+  it('no browser confirm: the tap goes straight to App, whose departure sheet asks', () => {
     const onEndSession = vi.fn()
     render(<ActiveSessionCard session={makeSession()} extraCount={0} onOpen={() => {}} onEndSession={onEndSession} />)
     fireEvent.click(screen.getByRole('button', { name: i18n.t('active.iveLeftAria') }))
-    expect(onEndSession).not.toHaveBeenCalled()
+    expect(confirmMock).not.toHaveBeenCalled()
+    expect(onEndSession).toHaveBeenCalledTimes(1)
   })
 
   it('shows an expired, un-ended record as "Expired at" with I\'ve left as the primary action', () => {
@@ -148,10 +150,7 @@ describe('ActiveSessionCard', () => {
 
     fireEvent.click(leftButtons[0])
     expect(onEndSession).toHaveBeenCalledWith(session)
-    // A late tap: the confirm names the phone time that will be recorded.
-    const asked = confirmMock.mock.calls[0][0] as string
-    expect(asked).toMatch(/^Mark this record as ended now\? It will record /)
-    expect(asked).toMatch(/won't show when the car actually left/)
+    expect(confirmMock).not.toHaveBeenCalled()
   })
 
   it('keeps the expired big label to the time only (no date that would wrap)', () => {
@@ -171,12 +170,6 @@ describe('ActiveSessionCard', () => {
     } finally {
       vi.useRealTimers()
     }
-  })
-
-  it('an on-time tap asks with the phone-clock confirm', () => {
-    render(<ActiveSessionCard session={makeSession()} extraCount={0} onOpen={() => {}} onEndSession={() => {}} />)
-    fireEvent.click(screen.getByRole('button', { name: i18n.t('active.iveLeftAria') }))
-    expect(confirmMock).toHaveBeenCalledWith(i18n.t('active.iveLeftConfirm'))
   })
 
   it("the I've left button's accessible name starts with its visible label", () => {
@@ -237,32 +230,8 @@ describe('SessionDetail', () => {
     expect(onEndSession).toHaveBeenCalledWith(expect.objectContaining({ id: session.id }))
     // The screen didn't stamp ended_at itself: App.handleEndSession owns that.
     expect(getSession(session.id)?.ended_at).toBeUndefined()
-    // Past expiry: the confirm names the tap time that will be stored.
-    expect(confirmMock.mock.calls[0][0]).toMatch(/^Mark this record as ended now\? It will record /)
-  })
-
-  it('a weeks-old record gets the late confirm, naming today, not the record day', () => {
-    const session = makeSession({
-      arrived_at: new Date(Date.now() - 21 * 24 * 3600_000).toISOString(),
-      expires_at: new Date(Date.now() - 21 * 24 * 3600_000 + 2 * 3600_000).toISOString(),
-    })
-    saveSession(session)
-    renderDetail(session)
-    fireEvent.click(screen.getByRole('button', { name: i18n.t('session.endSession') }))
-    const today = new Date().toLocaleString('en-AU', {
-      timeZone: 'Australia/Melbourne',
-      day: 'numeric',
-      month: 'short',
-    })
-    expect(confirmMock.mock.calls[0][0]).toContain(today)
-  })
-
-  it('an on-time tap asks with the phone-clock confirm', () => {
-    const session = makeSession()
-    saveSession(session)
-    renderDetail(session)
-    fireEvent.click(screen.getByRole('button', { name: i18n.t('session.endSession') }))
-    expect(confirmMock).toHaveBeenCalledWith(i18n.t('session.endConfirm'))
+    // No browser confirm any more: App's departure sheet asks.
+    expect(confirmMock).not.toHaveBeenCalled()
   })
 
   it('Delete only asks App to delete the record, after the confirm (App.handleDeleteRecord owns it)', () => {
@@ -328,7 +297,9 @@ describe('SessionDetail', () => {
     })
 
     expect(screen.queryByRole('button', { name: i18n.t('session.endSession') })).toBeNull()
-    expect(screen.getByText(/^Ended /)).toBeTruthy()
+    // STATUS says "Ended"; the tap time (phone clock) is in the departure row below it.
+    expect(screen.getByText(i18n.t('session.ended'))).toBeTruthy()
+    expect(screen.getByText(/^You tapped I've left at .+ \(phone clock\)\.$/)).toBeTruthy()
   })
 
   it('shows a signature that lands in the background while the screen is open', () => {
