@@ -30,10 +30,19 @@ import {
   loadSessions,
   notifyRecordsChanged,
   saveSession,
+  subscribeStorageRecovered,
   updateSession,
 } from './lib/storage'
 import { useRecordsVersion } from './lib/use-records-version'
-import { retryUnsignedSessions, signSession } from './lib/signing'
+import {
+  installSigningTriggers,
+  prepareNewRecord,
+  runSigningSweep,
+  scheduleDepartureCatchUp,
+  setSignedRecordListener,
+  signNewRecord,
+} from './lib/signing'
+import { emptyLogDraft } from './lib/evidence-chain'
 import { useAuth } from './lib/use-auth'
 import {
   mirrorSessionToCloud,
@@ -44,7 +53,7 @@ import { handleCallback as handleFederatedCallback } from './lib/federated-auth'
 import { cancelPushReminders } from './lib/push'
 import { cancelInTabReminders } from './lib/notifications'
 import { clearDeepLinkParams, parseDeepLink } from './lib/deep-link'
-import type { ParkingRules, ParkingSession, RuleVariant } from './types'
+import type { LogDraft, ParkingRules, ParkingSession, RuleVariant } from './types'
 
 type Coords = { lat: number; lng: number } | null
 
@@ -52,9 +61,15 @@ type View =
   | { name: 'home' }
   | { name: 'scan' }
   | { name: 'loading' }
-  | { name: 'clarify'; result: ParkingRules; signPhoto: string; coords: Coords }
-  | { name: 'result'; result: ParkingRules; signPhoto: string; coords: Coords }
-  | { name: 'logging'; result: ParkingRules; signPhoto: string; coords: Coords }
+  /**
+   * The scan-to-save views carry a LogDraft: what the driver has told us
+   * so far for the record about to be logged. It starts empty for every
+   * scan; later tasks add data to a new record only through it, and it
+   * reaches the record's signed arrival_context at save.
+   */
+  | { name: 'clarify'; result: ParkingRules; signPhoto: string; coords: Coords; draft: LogDraft }
+  | { name: 'result'; result: ParkingRules; signPhoto: string; coords: Coords; draft: LogDraft }
+  | { name: 'logging'; result: ParkingRules; signPhoto: string; coords: Coords; draft: LogDraft }
   /**
    * "No sign here" flow — user parked at a spot with no signage and wants a
    * GPS + time evidence record without the AI translation. The ambient photo
@@ -139,6 +154,27 @@ function App() {
     return () => clearTimeout(id)
   }, [notice])
 
+  // Any write that only fitted after quota recovery stripped photos from or
+  // deleted older records tells the driver, including the background
+  // evidence-chain writes (link 0 and link 1 bundles, the departure
+  // catch-up) that land after the save itself. Silently deleting evidence
+  // contradicts the whole "your evidence is safe" promise. Whole records
+  // deleted is the bigger loss, so it gets its own message.
+  useEffect(
+    () =>
+      subscribeStorageRecovered((report) => {
+        console.info(
+          `[storage] freed space: stripped photos from ${report.trimmedPhotosFrom}, evicted ${report.evicted} old record(s).`,
+        )
+        setNotice(
+          report.evicted > 0
+            ? t('errors.storageEvicted', { count: report.evicted })
+            : t('errors.storageRecovered', { count: report.trimmedPhotosFrom }),
+        )
+      }),
+    [t],
+  )
+
   // OAuth federation callback splash. When Apple / Google sign-in completes,
   // the browser lands here with ?code=<auth-code>&state=<csrf-token> in the
   // URL. The token exchange + refresh runs in the useEffect below, which
@@ -181,11 +217,13 @@ function App() {
     [now, activesVersion],
   )
 
-  // On app start, sweep localStorage for sessions that landed unsigned (tab
-  // closed mid-signing) and retry them in the background. Throttled per
-  // session inside the helper — safe to invoke on every mount.
+  // The signing sweep: on app start, and again when the browser comes back
+  // online or the page becomes visible, sign anything still outstanding
+  // (link 0 left unsigned by a closed tab, pending addenda, a departure to
+  // catch up). Throttled per record inside the helper.
   useEffect(() => {
-    retryUnsignedSessions()
+    runSigningSweep()
+    return installSigningTriggers()
   }, [])
 
   // If the browser landed here as a federated-sign-in callback (?code=…),
@@ -262,6 +300,13 @@ function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId])
 
+  // Whenever signing stores a new bundle (at save or from a background
+  // retry), mirror the record to the cloud while signed in.
+  useEffect(() => {
+    setSignedRecordListener(userId ? (id) => mirrorSessionUpdateToCloud(id) : null)
+    return () => setSignedRecordListener(null)
+  }, [userId])
+
   const handleCapture = async (
     dataUrl: string,
     mediaType: string,
@@ -271,10 +316,11 @@ function App() {
     try {
       const base64 = stripDataUrlPrefix(dataUrl)
       const result = await translateSign(base64, mediaType, coords)
+      const draft = emptyLogDraft()
       if (result.clarification && result.clarification.options.length > 1) {
-        setView({ name: 'clarify', result, signPhoto: dataUrl, coords })
+        setView({ name: 'clarify', result, signPhoto: dataUrl, coords, draft })
       } else {
-        setView({ name: 'result', result, signPhoto: dataUrl, coords })
+        setView({ name: 'result', result, signPhoto: dataUrl, coords, draft })
       }
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err)
@@ -287,6 +333,7 @@ function App() {
     base: ParkingRules,
     signPhoto: string,
     coords: Coords,
+    draft: LogDraft,
   ) => {
     const alternates =
       base.clarification?.options.filter((o) => o.label !== variant.label) ?? []
@@ -314,7 +361,7 @@ function App() {
       chosen_label: variant.label,
       alternate_variants: alternates,
     }
-    setView({ name: 'result', result: merged, signPhoto, coords })
+    setView({ name: 'result', result: merged, signPhoto, coords, draft })
   }
 
   const handleReuseSession = async (session: ParkingSession) => {
@@ -354,34 +401,24 @@ function App() {
       const reusedCoords: Coords = session.location
         ? { lat: session.location.lat, lng: session.location.lng }
         : null
-      setView({ name: 'result', result, signPhoto, coords: reusedCoords })
+      setView({ name: 'result', result, signPhoto, coords: reusedCoords, draft: emptyLogDraft() })
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err)
       setView({ name: 'error', message, offline: isOffline() })
     }
   }
 
-  const handleSessionSaved = (session: ParkingSession) => {
+  const handleSessionSaved = async (logged: ParkingSession, draft: LogDraft) => {
+    // The record's chain key and link-0 photo hashes are set at save, so
+    // link 0 can always be signed later even if the photos are gone. Never
+    // throws; without hashes, link 0 hashes the photos when it signs.
+    const session = await prepareNewRecord(logged)
     try {
-      const report = saveSession(session)
-      // If the quota recovery had to evict or strip old sessions to fit, log
-      // it so the diagnostic surfaces in the console. We don't block the user
-      // — they get straight to the reminder screen — but the History view
-      // will reflect the cleanup on next render.
-      if (report.evicted > 0 || report.trimmedPhotosFrom > 0) {
-        console.info(
-          `[storage] freed space for this session — stripped photos from ${report.trimmedPhotosFrom}, evicted ${report.evicted} old session(s).`,
-        )
-        // Tell the user — silently deleting evidence photos to fit a new save
-        // contradicts the whole "your evidence is safe" promise. Point them at
-        // sign-in as the durable fix. Whole records deleted is the bigger
-        // loss, so it gets its own message rather than "photos removed".
-        setNotice(
-          report.evicted > 0
-            ? t('errors.storageEvicted', { count: report.evicted })
-            : t('errors.storageRecovered', { count: report.trimmedPhotosFrom }),
-        )
-      }
+      // If quota recovery had to strip or evict older records to fit, the
+      // storage-recovered listener above tells the driver. We don't block
+      // them: they get straight to the reminder screen, where the notice
+      // shows, and History reflects the cleanup on next render.
+      saveSession(session)
       // No-sign sessions skip the reminder step — there's no expiry to remind
       // about. They go straight back to the home screen, where the saved
       // session is visible in History.
@@ -410,23 +447,13 @@ function App() {
           }
         })
       }
-      // Sign the evidence asynchronously — never blocks the reminder flow.
-      // If it succeeds, patch the saved session with the signature bundle so
-      // the PDF + SessionDetail can show it. Errors are swallowed (best-effort
-      // enrichment); the signing-retry task handles the unsigned-tab-closed case.
-      void signSession(session)
-        .then((signature) => {
-          if (signature) {
-            try {
-              updateSession(session.id, { signature })
-              if (auth.user) {
-                mirrorSessionUpdateToCloud(session.id)
-              }
-            } catch (err) {
-              console.warn('[signing] could not persist signature:', err)
-            }
-          }
-        })
+      // Start the evidence chain in the background, never blocking the
+      // reminder flow: queue the arrival_context (link 1, from the record and
+      // the draft), then sign link 0 and link 1 on the record's queue. Each
+      // bundle lands in storage (records-changed re-renders the screens) and
+      // the signed-record listener mirrors it to the cloud when signed in.
+      // A closed tab or a network failure is picked up by the sweep.
+      signNewRecord(session.id, draft)
     } catch (err) {
       // Storage full after recovery: a translated message, not the English
       // log text the error carries.
@@ -478,6 +505,10 @@ function App() {
       // Same for reminders armed in this tab, or a stale "move your car"
       // fires after the driver has gone.
       cancelInTabReminders(session.id)
+      // Sign the departure: once the grace period has passed, queue a
+      // departure addendum for the tap time (no location yet) unless one
+      // was queued meanwhile. The sweep covers a tab that closes first.
+      scheduleDepartureCatchUp(session.id)
     } catch (err) {
       console.warn('[storage] could not end session:', err)
     }
@@ -523,7 +554,9 @@ function App() {
           signPhoto={null}
           ambientPhoto={view.ambientPhoto}
           coords={view.coords}
-          onComplete={handleSessionSaved}
+          // The no-sign path has no scan views to carry a draft, so its
+          // arrival_context starts from an empty one.
+          onComplete={(session) => void handleSessionSaved(session, emptyLogDraft())}
           onCancel={() => setView({ name: 'home' })}
         />
       </main>
@@ -573,7 +606,7 @@ function App() {
           signPhoto={view.signPhoto}
           clarification={view.result.clarification!}
           onPick={(variant) =>
-            handlePickVariant(variant, view.result, view.signPhoto, view.coords)
+            handlePickVariant(variant, view.result, view.signPhoto, view.coords, view.draft)
           }
           onCancel={() => setView({ name: 'home' })}
         />
@@ -595,6 +628,7 @@ function App() {
               result: view.result,
               signPhoto: view.signPhoto,
               coords: view.coords,
+              draft: view.draft,
             })
           }
           onRetake={() => setView({ name: 'scan' })}
@@ -610,13 +644,14 @@ function App() {
         <SessionLogger
           rules={view.result}
           signPhoto={view.signPhoto}
-          onComplete={handleSessionSaved}
+          onComplete={(session) => void handleSessionSaved(session, view.draft)}
           onCancel={() =>
             setView({
               name: 'result',
               result: view.result,
               signPhoto: view.signPhoto,
               coords: view.coords,
+              draft: view.draft,
             })
           }
         />
@@ -677,6 +712,9 @@ function App() {
           // so the "Ended ..." row shows without patching the view here.
           onEndSession={handleEndSession}
         />
+        {/* Background writes (the departure catch-up after I've left) can
+            free space while this screen is open. */}
+        <Toast message={notice} onClose={() => setNotice(null)} />
       </main>
     )
   }

@@ -320,4 +320,21 @@ describe('SessionDetail', () => {
 
     expect(screen.getByText(i18n.t('session.cryptoSigned'))).toBeTruthy()
   })
+
+  it('never presents a dev-key signature as a ParkProof signature (no glow, says so)', () => {
+    const session = makeSession({ signature: SIGNATURE })
+    saveSession(session)
+    renderDetail(session)
+    // The published key: the mint glow ring and the plain claim.
+    expect(document.querySelector('circle[stroke="#7BE3A4"]')).not.toBeNull()
+    expect(screen.getByText(i18n.t('session.cryptoSigned'))).toBeTruthy()
+
+    act(() => {
+      updateSession(session.id, { signature: { ...SIGNATURE, key_alias: 'dev-ephemeral' } })
+    })
+
+    expect(screen.queryByText(i18n.t('session.cryptoSigned'))).toBeNull()
+    expect(screen.getByText(i18n.t('session.devKeySigned'))).toBeTruthy()
+    expect(document.querySelector('circle[stroke="#7BE3A4"]')).toBeNull()
+  })
 })

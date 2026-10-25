@@ -322,7 +322,8 @@
     "photoSyncRetry": "Thử tải lên lại",
     "exportPhotoWarning": "Có một vài ảnh không tải được từ đám mây cho bản ghi cũ này. Bạn vẫn xuất được, hoặc mở bản ghi trên thiết bị đã tạo ra nó.",
     "photoHashMismatch": "Ảnh này không khớp với bằng chứng đã ký và có thể đã bị thay đổi kể từ khi lưu.",
-    "endConfirmLate": "Đánh dấu bản ghi này là đã kết thúc ngay bây giờ? Bản ghi sẽ lưu {{time}}, là lúc bạn nhấn, theo đồng hồ điện thoại. Bản ghi sẽ không cho thấy lúc xe thực sự rời đi."
+    "endConfirmLate": "Đánh dấu bản ghi này là đã kết thúc ngay bây giờ? Bản ghi sẽ lưu {{time}}, là lúc bạn nhấn, theo đồng hồ điện thoại. Bản ghi sẽ không cho thấy lúc xe thực sự rời đi.",
+    "devKeySigned": "Đã ký bằng khóa phát triển. Không thể kiểm tra chữ ký này bằng khóa công khai mà ParkProof đã công bố."
   },
   "appeal": {
     "captureHeader": "Soạn thư khiếu nại",
@@ -575,7 +576,8 @@
       "verifyStep4": "4. Giải mã chữ ký:",
       "verifyStep5": "5. Xác minh:",
       "verifyStep6": "6. Kết quả mong đợi: \"Verified OK\". Điều này xác nhận phần metadata và các giá trị băm ảnh được ghi trong payload là xác thực và không bị thay đổi kể từ thời điểm signed_at.",
-      "verifyStep7": "7. Về ảnh: các hình trong tệp PDF này là bản sao trực quan, được mã hóa lại cho tài liệu, nên các byte của chúng khác với bản gốc và sẽ không tái tạo được các giá trị băm trong payload. Đây là điều bình thường, không phải dấu hiệu bị giả mạo. Chữ ký cam kết với SHA-256 của từng ảnh gốc (các giá trị sign_photo_sha256, car_photo_sha256 và ambient_photo_sha256 trong payload đã ký), và bước 6 đã chứng minh các giá trị đó là xác thực. Để xác minh độc lập một hình cụ thể, hãy băm tệp ảnh gốc đã chụp (từ bản ghi ParkProof hoặc bản xuất dữ liệu tài khoản của bạn), không phải bản sao in ở đây, và so sánh với giá trị tương ứng ở trên."
+      "verifyStep7": "7. Về ảnh: các hình trong tệp PDF này là bản sao trực quan, được mã hóa lại cho tài liệu, nên các byte của chúng khác với bản gốc và sẽ không tái tạo được các giá trị băm trong payload. Đây là điều bình thường, không phải dấu hiệu bị giả mạo. Chữ ký cam kết với SHA-256 của từng ảnh gốc (các giá trị sign_photo_sha256, car_photo_sha256 và ambient_photo_sha256 trong payload đã ký), và bước 6 đã chứng minh các giá trị đó là xác thực. Để xác minh độc lập một hình cụ thể, hãy băm tệp ảnh gốc đã chụp (từ bản ghi ParkProof hoặc bản xuất dữ liệu tài khoản của bạn), không phải bản sao in ở đây, và so sánh với giá trị tương ứng ở trên.",
+      "devKey": "Đã ký bằng khóa phát triển. Không thể kiểm tra chữ ký này bằng khóa công khai mà ParkProof đã công bố."
     },
     "appeal": {
       "drafted": "Soạn thảo lúc {{when}}",

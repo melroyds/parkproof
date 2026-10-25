@@ -3,13 +3,18 @@
 // App.handleEndSession is the ONE end-session path (T0a): whichever screen
 // the driver taps "I've left" on, App stamps ended_at, mirrors to the cloud
 // when signed in, and cancels both push and in-tab reminders, exactly once.
+//
+// Also the save path (T0b1): the LogDraft made for a scan travels through
+// clarify, result and logging (and a logging cancel) to the save, the
+// record is prepared (chain key, v1_hashes) before it is stored, and the
+// same draft reaches signNewRecord after the save.
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import i18n from './lib/i18n'
 import { AuthContext, type AuthContextValue } from './lib/auth-context-shape'
 import { getSession, saveSession } from './lib/storage'
 import type { PushCancelResult } from './lib/push'
-import type { ParkingSession, SignatureBundle } from './types'
+import type { LogDraft, ParkingRules, ParkingSession, SignatureBundle } from './types'
 import App from './App'
 
 const mocks = vi.hoisted(() => ({
@@ -18,7 +23,22 @@ const mocks = vi.hoisted(() => ({
   mirrorSessionUpdateToCloud: vi.fn(),
   mirrorSessionToCloud: vi.fn(async () => ({ photoFailed: false })),
   performInitialSync: vi.fn(async () => ({ uploaded: 0, pulled: 0, alreadyInSync: 0, listFailed: false })),
+  runSigningSweep: vi.fn(),
+  uninstallSigningTriggers: vi.fn(),
+  installSigningTriggers: vi.fn(),
+  setSignedRecordListener: vi.fn(),
+  signNewRecord: vi.fn<(id: string, draft: LogDraft) => void>(),
+  scheduleDepartureCatchUp: vi.fn(),
+  emptyLogDraft: vi.fn((): LogDraft => {
+    throw new Error('replaced in beforeEach')
+  }),
+  translateSign: vi.fn(async (): Promise<ParkingRules> => {
+    throw new Error('set per test')
+  }),
 }))
+
+/** The bytes of the sign photo the fake scanner "captures". */
+const { SIGN_BYTES } = vi.hoisted(() => ({ SIGN_BYTES: 'fake-sign-photo-bytes' }))
 
 vi.mock('./lib/push', async (importOriginal) => ({
   ...(await importOriginal<typeof import('./lib/push')>()),
@@ -35,9 +55,84 @@ vi.mock('./lib/sync', async (importOriginal) => ({
   performInitialSync: mocks.performInitialSync,
 }))
 // No network on mount: the signing sweep and the OAuth callback are inert.
-vi.mock('./lib/signing', () => ({
-  retryUnsignedSessions: vi.fn(),
-  signSession: vi.fn(async () => null),
+// prepareNewRecord is the real one (chain key + photo hashes, no network).
+vi.mock('./lib/signing', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('./lib/signing')>()),
+  runSigningSweep: mocks.runSigningSweep,
+  installSigningTriggers: mocks.installSigningTriggers,
+  setSignedRecordListener: mocks.setSignedRecordListener,
+  signNewRecord: mocks.signNewRecord,
+  scheduleDepartureCatchUp: mocks.scheduleDepartureCatchUp,
+}))
+// emptyLogDraft is the real one behind a spy, so a test can tell which
+// draft object reached the save.
+vi.mock('./lib/evidence-chain', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('./lib/evidence-chain')>()),
+  emptyLogDraft: mocks.emptyLogDraft,
+}))
+vi.mock('./lib/claude', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('./lib/claude')>()),
+  translateSign: mocks.translateSign,
+}))
+// Stand-ins for the scan-to-save screens: each exposes the callbacks App
+// passes it as plain buttons.
+vi.mock('./components/LandingFeatures', () => ({
+  default: ({ onScanCta }: { onScanCta: () => void }) => <button onClick={onScanCta}>Fake start scan</button>,
+}))
+vi.mock('./components/SignScanner', () => ({
+  default: (p: {
+    onCapture: (dataUrl: string, mediaType: string, coords: { lat: number; lng: number } | null) => void
+    onNoSignScan: (coords: { lat: number; lng: number } | null, ambientPhoto: string | null) => void
+  }) => (
+    <div>
+      <button onClick={() => p.onCapture('data:image/jpeg;base64,' + btoa(SIGN_BYTES), 'image/jpeg', { lat: -37.81, lng: 144.96 })}>
+        Fake capture
+      </button>
+      <button onClick={() => p.onNoSignScan({ lat: -37.81, lng: 144.96 }, null)}>Fake no sign</button>
+    </div>
+  ),
+}))
+vi.mock('./components/Clarify', () => ({
+  default: (p: { clarification: { options: unknown[] }; onPick: (v: unknown) => void }) => (
+    <button onClick={() => p.onPick(p.clarification.options[0])}>Fake pick</button>
+  ),
+}))
+vi.mock('./components/ParkingResult', () => ({
+  default: (p: { onLogSession: () => void }) => <button onClick={p.onLogSession}>Fake log</button>,
+}))
+vi.mock('./components/SessionLogger', () => ({
+  default: (p: {
+    mode?: 'sign' | 'no-sign'
+    rules: ParkingRules | null
+    signPhoto: string | null
+    onComplete: (s: ParkingSession) => void
+    onCancel: () => void
+  }) => (
+    <div>
+      <button
+        onClick={() =>
+          p.onComplete({
+            id: p.mode === 'no-sign' ? 'new-no-sign' : 'new-1',
+            arrived_at: new Date().toISOString(),
+            location: { lat: -37.81, lng: 144.96, address: '1 Test St' },
+            sign_photo: p.signPhoto,
+            car_photo: null,
+            rules: p.rules?.rules ?? '',
+            observations: [],
+            expires_at: null,
+            confidence: p.rules?.confidence ?? 'low',
+            ...(p.mode === 'no-sign' ? { no_sign: true } : {}),
+          })
+        }
+      >
+        Fake save
+      </button>
+      <button onClick={p.onCancel}>Fake cancel logging</button>
+    </div>
+  ),
+}))
+vi.mock('./components/ReminderOptions', () => ({
+  default: () => <p>Fake reminders</p>,
 }))
 vi.mock('./lib/federated-auth', async (importOriginal) => ({
   ...(await importOriginal<typeof import('./lib/federated-auth')>()),
@@ -92,8 +187,12 @@ function renderApp(signedIn = false) {
   )
 }
 
+let realEmptyLogDraft: () => LogDraft
+
 beforeAll(async () => {
   await i18n.changeLanguage('en')
+  realEmptyLogDraft = (await vi.importActual<typeof import('./lib/evidence-chain')>('./lib/evidence-chain')).emptyLogDraft
+  mocks.emptyLogDraft.mockImplementation(() => realEmptyLogDraft())
 })
 
 beforeEach(() => {
@@ -101,6 +200,8 @@ beforeEach(() => {
   window.history.replaceState({}, '', '/app/')
   Object.defineProperty(window, 'confirm', { value: vi.fn(() => true), configurable: true, writable: true })
   for (const m of Object.values(mocks)) m.mockClear()
+  mocks.installSigningTriggers.mockImplementation(() => mocks.uninstallSigningTriggers)
+  mocks.scheduleDepartureCatchUp.mockImplementation(() => () => {})
 })
 
 afterEach(() => {
@@ -119,6 +220,9 @@ describe('App.handleEndSession — one end path', () => {
     expect(mocks.cancelPushReminders).toHaveBeenCalledWith('rec-1')
     expect(mocks.cancelInTabReminders).toHaveBeenCalledTimes(1)
     expect(mocks.cancelInTabReminders).toHaveBeenCalledWith('rec-1')
+    // The departure is signed once the grace period has passed.
+    expect(mocks.scheduleDepartureCatchUp).toHaveBeenCalledTimes(1)
+    expect(mocks.scheduleDepartureCatchUp).toHaveBeenCalledWith('rec-1')
     // Signed out: no cloud mirror.
     expect(mocks.mirrorSessionUpdateToCloud).not.toHaveBeenCalled()
     // The card leaves home straight away (records-changed re-derive).
@@ -175,6 +279,7 @@ describe('App.handleEndSession — one end path', () => {
 
     expect(getSession('rec-1')?.ended_at).toBe(firstTap)
     expect(mocks.cancelPushReminders).not.toHaveBeenCalled()
+    expect(mocks.scheduleDepartureCatchUp).not.toHaveBeenCalled()
   })
 
   it('clears the cached reminder list once the push cancel succeeded', async () => {
@@ -220,5 +325,112 @@ describe('Home card order', () => {
 
     expect(screen.queryByText(/^Expired at /)).toBeNull()
     expect(screen.getByText(i18n.t('active.morePill', { count: 1 }))).toBeTruthy()
+  })
+})
+
+describe('App and the signing queue', () => {
+  it('runs the signing sweep on mount, installs its triggers, and removes them on unmount', () => {
+    const { unmount } = renderApp(false)
+    expect(mocks.runSigningSweep).toHaveBeenCalledTimes(1)
+    expect(mocks.installSigningTriggers).toHaveBeenCalledTimes(1)
+    unmount()
+    expect(mocks.uninstallSigningTriggers).toHaveBeenCalledTimes(1)
+  })
+
+  it('mirrors newly signed records to the cloud only while signed in', () => {
+    renderApp(true)
+    const listener = mocks.setSignedRecordListener.mock.calls.at(-1)?.[0] as ((id: string) => void) | null
+    expect(typeof listener).toBe('function')
+    listener!('rec-9')
+    expect(mocks.mirrorSessionUpdateToCloud).toHaveBeenCalledWith('rec-9')
+    cleanup()
+
+    mocks.setSignedRecordListener.mockClear()
+    renderApp(false)
+    expect(mocks.setSignedRecordListener).toHaveBeenCalledWith(null)
+    expect(mocks.setSignedRecordListener.mock.calls.every((c) => c[0] === null)).toBe(true)
+  })
+})
+
+describe('App save path: the draft and the prepared record', () => {
+  const variant = (label: string) => ({
+    label,
+    rules: `2P ${label}`,
+    observations: [],
+    can_park_now: true,
+    until: null,
+    duration_minutes: 120,
+  })
+  const RESULT: ParkingRules = {
+    rules: '2P left, 1P right',
+    observations: [],
+    can_park_now: true,
+    until: null,
+    duration_minutes: 120,
+    confidence: 'high',
+    clarification: { question: 'Which side?', options: [variant('Left side'), variant('Right side')] },
+  }
+  const HEX64 = /^[0-9a-f]{64}$/
+  const click = (name: string) => fireEvent.click(screen.getByRole('button', { name }))
+
+  /** At the moment signNewRecord runs, the prepared record must already be stored. */
+  const storedAtSignTime: Array<ParkingSession | undefined> = []
+  beforeEach(() => {
+    storedAtSignTime.length = 0
+    mocks.signNewRecord.mockImplementation((id: string) => {
+      storedAtSignTime.push(getSession(id))
+    })
+  })
+
+  it('scan, clarify, result, logging (cancel and back), save: one draft all the way to signNewRecord', async () => {
+    mocks.translateSign.mockResolvedValueOnce(RESULT)
+    renderApp(false)
+    click('Fake start scan')
+    click('Fake capture')
+    // handleCapture makes the scan's draft once.
+    await screen.findByRole('button', { name: 'Fake pick' })
+    expect(mocks.emptyLogDraft).toHaveBeenCalledTimes(1)
+    const scanDraft = mocks.emptyLogDraft.mock.results[0].value as LogDraft
+
+    click('Fake pick') // clarify -> result
+    click('Fake log') // result -> logging
+    click('Fake cancel logging') // logging -> result
+    click('Fake log') // result -> logging again
+    click('Fake save')
+
+    await waitFor(() => expect(mocks.signNewRecord).toHaveBeenCalledTimes(1))
+    const [id, draft] = mocks.signNewRecord.mock.calls[0]
+    expect(id).toBe('new-1')
+    // The very draft made for this scan, still empty.
+    expect(draft).toBe(scanDraft)
+    expect(draft).toEqual(realEmptyLogDraft())
+    expect(mocks.emptyLogDraft).toHaveBeenCalledTimes(1)
+
+    // Prepared before it was stored: chain key and link-0 photo hashes.
+    const stored = storedAtSignTime[0]
+    expect(stored?.chain_key).toMatch(HEX64)
+    const digest = new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(SIGN_BYTES)))
+    const signHash = Array.from(digest, (b) => b.toString(16).padStart(2, '0')).join('')
+    expect(stored?.v1_hashes).toEqual({ sign: signHash, car: null, ambient: null })
+    // The picked side reached the logger.
+    expect(stored?.rules).toBe('2P Left side')
+    expect(getSession('new-1')?.chain_key).toBe(stored?.chain_key)
+    await screen.findByText('Fake reminders')
+  })
+
+  it('the no-sign path saves a prepared record with an empty draft', async () => {
+    renderApp(false)
+    click('Fake start scan')
+    click('Fake no sign')
+    click('Fake save')
+
+    await waitFor(() => expect(mocks.signNewRecord).toHaveBeenCalledTimes(1))
+    const [id, draft] = mocks.signNewRecord.mock.calls[0]
+    expect(id).toBe('new-no-sign')
+    expect(draft).toEqual(realEmptyLogDraft())
+    const stored = storedAtSignTime[0]
+    expect(stored?.no_sign).toBe(true)
+    expect(stored?.chain_key).toMatch(HEX64)
+    expect(stored?.v1_hashes).toEqual({ sign: null, car: null, ambient: null })
   })
 })

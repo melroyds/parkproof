@@ -98,6 +98,205 @@ export interface SignatureBundle {
   signature_base64: string
 }
 
+// ─── Evidence chain (build spec N1, N2) ─────────────────────────────────
+// Link 0 of a record is its arrival bundle (`ParkingSession.signature`).
+// Links 1, 2, 3... are signed addenda, each committing to its parent's
+// canonical payload. The shapes below are the data model every later task
+// fills in; they are all optional on a record so old records keep loading.
+
+export type PhotoRole =
+  | 'sign'
+  | 'car'
+  | 'ambient'
+  | 'condition-front'
+  | 'condition-rear'
+  | 'condition-left'
+  | 'condition-right'
+  | 'condition-detail'
+  | 'return-front'
+  | 'return-rear'
+  | 'return-left'
+  | 'return-right'
+  | 'return-detail'
+  | 'compliance'
+
+export interface PhotoRef {
+  role: PhotoRole
+  /** Hex sha256 of the exact JPEG bytes stored; computed at capture. */
+  sha256: string
+  /** Client ISO time. */
+  captured_at: string
+  /** 'library' when the file came from the library, or File.lastModified is more than 2 min old. */
+  source: 'camera_input' | 'library'
+}
+
+/** A photo reference inside signed addendum data (N2 `PhotoRefData`). */
+export type PhotoRefData = PhotoRef
+
+export type AddendumKind = 'arrival_context' | 'condition' | 'compliance' | 'departure' | 'handover'
+
+export interface SignedAddendum {
+  /** uuid, also inside the signed payload as addendum_id. */
+  id: string
+  /** 1, 2, 3...; link 0 is the arrival bundle. Assigned by appendAddendum, never by a caller. */
+  seq: number
+  kind: AddendumKind
+  /** Client ISO time, frozen at queue time. */
+  captured_at: string
+  /** Frozen at queue time, normalised by lambda/addendum-schema.js. */
+  data: Record<string, unknown>
+  /** Absent = pending. */
+  bundle?: SignatureBundle
+  /** The server said 400; never retried. */
+  rejected?: { code: string; at: string }
+}
+
+export type SignStatus = 'readable' | 'partially_obscured' | 'missing' | 'contradictory' | 'not_a_parking_sign'
+export type Jurisdiction = 'VIC' | 'QLD' | 'NSW' | 'ACT' | 'SA' | 'WA' | 'TAS' | 'NT'
+export type ComplianceType = 'meter_ticket' | 'payment_confirmation' | 'permit_displayed' | 'other'
+
+export interface GateAcks {
+  meter_ticket: boolean | null
+  permit_zone: boolean | null
+  accessible_permit: boolean | null
+}
+
+export interface RuleFlags {
+  requires_ticket: boolean
+  payment_methods: string[] | null
+  requires_disabled_permit: boolean
+  is_permit_zone: boolean
+  permit_area: string | null
+  is_area_sign: boolean
+}
+
+/** A phone GPS fix as signed in addenda (N2 `Location`). */
+export interface GpsLocation {
+  lat: number
+  lng: number
+  accuracy_meters: number | null
+  source: 'gps'
+}
+
+export interface PermitContext {
+  type: 'accessible' | 'resident' | 'business'
+  area: string | null
+  /** Accessible only; null for resident and business permits. */
+  holder_present: boolean | null
+  /** The sign itself prints an exception for this permit. */
+  sign_exception_applies: boolean
+  standard_until: string | null
+  permit_until: string | null
+  note: string | null
+}
+
+export type BoundaryAskedBecause =
+  | 'within_30m'
+  | 'same_street'
+  | 'same_sign_text'
+  | 'area_sign'
+  | 'location_unreliable'
+
+export type BoundaryAnswer =
+  | 'opposite_direction_sign'
+  | 'yellow_edge_line'
+  | 't_intersection_or_dead_end'
+  | 'left_parking_area'
+  | 'not_sure'
+  | 'not_asked'
+
+export interface BoundaryStatement {
+  previous_session_id: string
+  asked_because: BoundaryAskedBecause[]
+  answer: BoundaryAnswer
+  distance_from_previous_m: number | null
+}
+
+export type Weekday = 'MO' | 'TU' | 'WE' | 'TH' | 'FR' | 'SA' | 'SU'
+
+/** A weekly restriction read from the sign (T3 fills these in). */
+export interface RecurringRestriction {
+  kind: 'street_cleaning' | 'clearway' | 'no_stopping' | 'other'
+  days: Weekday[]
+  /** 'HH:MM' local time. */
+  start: string
+  /** 'HH:MM' local time. */
+  end: string
+  week_of_month: number[]
+  exceptions_text: string
+  label: string
+}
+
+/** The workday link inside arrival_context data. */
+export interface ArrivalWorkday {
+  workday_id: string
+  leg_index: number
+  stretch_deadline: string | null
+  previous_departure_payload_sha256: string | null
+}
+
+// Per-kind addendum data (N2). Every key is required; null when empty.
+
+export interface ArrivalContextData {
+  driver_name: string | null
+  sign_status: SignStatus | null
+  sign_issues: string[]
+  rule_flags: RuleFlags | null
+  gate_acks: GateAcks | null
+  /** sha256 hex of permit_salt + canonicalize(permit_context) (N3), never the permit itself. */
+  permit_commitment: string | null
+  photos: PhotoRefData[]
+  condition_note: string | null
+  compliance_type: ComplianceType | null
+  jurisdiction: Jurisdiction | null
+  workday: ArrivalWorkday | null
+  boundary: BoundaryStatement | null
+}
+
+export interface ConditionData {
+  when: 'parking' | 'return'
+  photos: PhotoRefData[]
+  note: string | null
+}
+
+export interface ComplianceData {
+  compliance_type: ComplianceType
+  photo: PhotoRefData
+}
+
+export interface DepartureData {
+  ended_at: string
+  location: GpsLocation | null
+  distance_from_arrival_m: number | null
+  return_photos: PhotoRefData[]
+}
+
+export interface HandoverData {
+  from_driver: string | null
+  to_driver: string
+  handed_over_at: string
+  location: GpsLocation | null
+}
+
+export interface AddendumDataByKind {
+  arrival_context: ArrivalContextData
+  condition: ConditionData
+  compliance: ComplianceData
+  departure: DepartureData
+  handover: HandoverData
+}
+
+/**
+ * What the clarify, result and logging views carry towards the logger.
+ * Later tasks add data to a new record only through this draft.
+ */
+export interface LogDraft {
+  gate_acks: GateAcks
+  permit_context: PermitContext | null
+  workday: { workday_id: string; leg_index: number; previous_session_id: string | null } | null
+  driver_name: string | null
+}
+
 export interface AppealDraft {
   ticket_summary: string
   appeal_subject: string
@@ -204,4 +403,56 @@ export interface ParkingSession {
    * a successful retry. Additive; absent ⇒ no known photo-sync failure.
    */
   photo_sync_failed?: boolean
+
+  // ── Evidence chain and later-task fields (build spec N1) ──
+  // All optional, so records saved before this build keep loading. Each one
+  // must also be in ALLOWED_SESSION_FIELDS (lambda/cloud-sync.js, T0b4) and
+  // the client merge before it syncs.
+
+  /**
+   * 32 random bytes as 64 lowercase hex characters, generated at save.
+   * Secret: lives on this device and the user's own cloud copy only. Link 0
+   * signs its sha256 (`chain_key_sha256`); every addendum request proves
+   * the key is known. Absent on records saved before the chain (their link
+   * 0 is a v1 bundle).
+   */
+  chain_key?: string
+  /** Every IndexedDB-backed photo of this record (from T0b2: sign, car and ambient too). */
+  photos?: PhotoRef[]
+  /** The link-0 photo hashes, stored at save so link 0 can always be signed. */
+  v1_hashes?: { sign: string | null; car: string | null; ambient: string | null }
+  /** Links 1, 2, 3... Written only through appendAddendum, setAddendumBundle and rejectAddendum. */
+  addenda?: SignedAddendum[]
+  /** Existing damage the driver noticed, at most 280 characters. */
+  condition_note?: string | null
+  compliance_type?: ComplianceType | null
+  gate_acks?: LogDraft['gate_acks']
+  rule_flags?: RuleFlags
+  sign_status?: SignStatus
+  sign_issues?: string[]
+  recurring_restrictions?: RecurringRestriction[]
+  /** Raw reverse-geocode parts. Unsigned, never edited. */
+  place?: { road: string | null; suburb: string | null; state_code: string | null }
+  departure?: {
+    ended_at: string
+    location: { lat: number; lng: number; accuracy_meters: number | null; source: 'gps' } | null
+    distance_from_arrival_m: number | null
+  }
+  driver_name?: string | null
+  permit_context?: PermitContext | null
+  /** Hex; lets the driver reveal permit_context later (N3). */
+  permit_salt?: string | null
+  jurisdiction?: Jurisdiction | null
+  workday_id?: string | null
+  leg_index?: number | null
+  boundary?: BoundaryStatement | null
+  stretch_deadline?: string | null
+  /** Set on a read-only copy imported from someone's share link (T7). */
+  shared_from?: {
+    original_session_id: string
+    received_at: string
+    shared_at: string | null
+    arrival_bundle: SignatureBundle | null
+    snapshot: Record<string, unknown>
+  } | null
 }

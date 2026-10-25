@@ -322,7 +322,8 @@
     "photoSyncRetry": "Riprova il caricamento",
     "exportPhotoWarning": "Una o più foto non sono state caricate dal cloud per questa vecchia sessione. Puoi esportare lo stesso, oppure aprirla sul dispositivo dov'è stata creata.",
     "photoHashMismatch": "Questa foto non corrisponde alla prova firmata e potrebbe essere stata modificata dopo il salvataggio.",
-    "endConfirmLate": "Vuoi segnare questo record come concluso ora? Verrà registrato l'orario del tocco, {{time}}, secondo l'orologio del telefono. Non mostrerà quando l'auto è partita davvero."
+    "endConfirmLate": "Vuoi segnare questo record come concluso ora? Verrà registrato l'orario del tocco, {{time}}, secondo l'orologio del telefono. Non mostrerà quando l'auto è partita davvero.",
+    "devKeySigned": "Firmato con una chiave di sviluppo. Non si può verificare con la chiave pubblicata da ParkProof."
   },
   "appeal": {
     "captureHeader": "Redigi una lettera di ricorso",
@@ -575,7 +576,8 @@
       "verifyStep4": "4. Decodifica la firma:",
       "verifyStep5": "5. Verifica:",
       "verifyStep6": "6. Output atteso: \"Verified OK\". Conferma che i metadati e gli hash delle foto registrati nel payload sono autentici e invariati dal momento signed_at.",
-      "verifyStep7": "7. Riguardo alle foto: le immagini mostrate in questo PDF sono una copia visiva, ricodificata per il documento, quindi i loro byte differiscono dagli originali e non riprodurranno gli hash nel payload. È normale e non è segno di manomissione. La firma vincola lo SHA-256 di ogni foto originale (i valori sign_photo_sha256, car_photo_sha256 e ambient_photo_sha256 all'interno del payload firmato), e il passaggio 6 ha già dimostrato che quei valori sono autentici. Per verificare in modo indipendente una specifica immagine, calcola l'hash del file originale acquisito (dal record ParkProof o dall'esportazione dei dati del tuo account), non della copia stampata qui, e confrontalo con il valore corrispondente sopra."
+      "verifyStep7": "7. Riguardo alle foto: le immagini mostrate in questo PDF sono una copia visiva, ricodificata per il documento, quindi i loro byte differiscono dagli originali e non riprodurranno gli hash nel payload. È normale e non è segno di manomissione. La firma vincola lo SHA-256 di ogni foto originale (i valori sign_photo_sha256, car_photo_sha256 e ambient_photo_sha256 all'interno del payload firmato), e il passaggio 6 ha già dimostrato che quei valori sono autentici. Per verificare in modo indipendente una specifica immagine, calcola l'hash del file originale acquisito (dal record ParkProof o dall'esportazione dei dati del tuo account), non della copia stampata qui, e confrontalo con il valore corrispondente sopra.",
+      "devKey": "Firmato con una chiave di sviluppo. Non si può verificare con la chiave pubblicata da ParkProof."
     },
     "appeal": {
       "drafted": "Bozza del {{when}}",

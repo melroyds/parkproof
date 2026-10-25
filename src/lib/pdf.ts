@@ -6,6 +6,7 @@ import { ACCURACY_USABLE_M, formatAccuracy } from './accuracy'
 import { sessionTimezone } from './timezone'
 import { registerPdfFonts } from './pdf-fonts'
 import { ACTIVE_AFTER_EXPIRY_MS } from './storage'
+import { DEV_KEY_ALIAS } from './evidence-chain'
 
 const MARGIN = 40
 
@@ -631,6 +632,19 @@ function base64Utf8(s: string): string {
   return btoa(bin)
 }
 
+/**
+ * The line that opens the signature appendix when the bundle was signed by
+ * the `npm run dev` key (key_alias 'dev-ephemeral'), or null. Such a
+ * signature can't be checked with ParkProof's published key, so the PDF
+ * must never present it as one.
+ */
+export function devKeyNotice(
+  sig: Pick<NonNullable<ParkingSession['signature']>, 'key_alias'>,
+  t: TFunction,
+): string | null {
+  return sig.key_alias === DEV_KEY_ALIAS ? t('pdf.signature.devKey') : null
+}
+
 function drawSignatureAppendix(
   doc: jsPDF,
   sig: NonNullable<ParkingSession['signature']>,
@@ -646,6 +660,18 @@ function drawSignatureAppendix(
   doc.setTextColor(15, 23, 42)
   doc.text(t('pdf.signature.title'), MARGIN, y)
   y += 26
+
+  // A local `npm run dev` signature: the KMS wording and the openssl steps
+  // below don't apply to it, so say so before anything else.
+  const devNotice = devKeyNotice(sig, t)
+  if (devNotice) {
+    doc.setFontSize(11)
+    doc.setFont(activeFont, 'bold')
+    doc.setTextColor(146, 64, 14)
+    const devWrapped = doc.splitTextToSize(devNotice, pageWidth - 2 * MARGIN)
+    doc.text(devWrapped, MARGIN, y)
+    y += devWrapped.length * 14 + 10
+  }
 
   doc.setFontSize(10)
   doc.setFont(activeFont, 'normal')

@@ -473,7 +473,8 @@
     "noExpiryRecorded": "No expiry recorded",
     "deleteSession": "Delete record",
     "deleteConfirm": "Delete this parking record? This cannot be undone.",
-    "endConfirmLate": "Mark this record as ended now? It will record {{time}}, the time you tap, from your phone's clock. It won't show when the car actually left."
+    "endConfirmLate": "Mark this record as ended now? It will record {{time}}, the time you tap, from your phone's clock. It won't show when the car actually left.",
+    "devKeySigned": "Signed with a development key. It can't be checked with ParkProof's published key."
   },
   "appeal": {
     "captureHeader": "Draft an appeal letter",
@@ -750,7 +751,8 @@
       "verifyStep4": "4. Decode the signature:",
       "verifyStep5": "5. Verify:",
       "verifyStep6": "6. Expect output: \"Verified OK\". This confirms the metadata and the photo hashes recorded in the payload are authentic and unchanged since the signed_at time.",
-      "verifyStep7": "7. About the photos: the images shown in this PDF are a visual copy, re-encoded for the document, so their bytes differ from the originals and will not reproduce the hashes in the payload. That is expected and is not a sign of tampering. The signature commits to the SHA-256 of each original photo (the sign_photo_sha256, car_photo_sha256 and ambient_photo_sha256 values inside the signed payload), and step 6 already proved those values are authentic. To independently confirm a specific image, hash the original captured file (from the ParkProof record or your account export), not the copy printed here, and compare it to the matching value above."
+      "verifyStep7": "7. About the photos: the images shown in this PDF are a visual copy, re-encoded for the document, so their bytes differ from the originals and will not reproduce the hashes in the payload. That is expected and is not a sign of tampering. The signature commits to the SHA-256 of each original photo (the sign_photo_sha256, car_photo_sha256 and ambient_photo_sha256 values inside the signed payload), and step 6 already proved those values are authentic. To independently confirm a specific image, hash the original captured file (from the ParkProof record or your account export), not the copy printed here, and compare it to the matching value above.",
+      "devKey": "Signed with a development key. It can't be checked with ParkProof's published key."
     },
     "appeal": {
       "drafted": "Drafted {{when}}",

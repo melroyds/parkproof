@@ -444,7 +444,8 @@
     "photoSyncRetry": "Coba unggah lagi",
     "exportPhotoWarning": "Ada satu atau lebih foto yang tidak bisa dimuat dari cloud untuk sesi lama ini. Kamu tetap bisa mengekspor, atau buka di perangkat tempat sesi ini dibuat.",
     "photoHashMismatch": "Foto ini tidak cocok dengan bukti yang ditandatangani, dan mungkin sudah diubah sejak disimpan.",
-    "endConfirmLate": "Tandai catatan ini selesai sekarang? Catatan akan menyimpan {{time}}, waktu kamu mengetuk, dari jam ponselmu. Catatan tidak menunjukkan kapan mobil benar-benar pergi."
+    "endConfirmLate": "Tandai catatan ini selesai sekarang? Catatan akan menyimpan {{time}}, waktu kamu mengetuk, dari jam ponselmu. Catatan tidak menunjukkan kapan mobil benar-benar pergi.",
+    "devKeySigned": "Ditandatangani dengan kunci pengembangan. Tanda tangan ini tidak bisa dicek dengan kunci publik yang diterbitkan ParkProof."
   },
   "appeal": {
     "captureHeader": "Buat draf surat banding",
@@ -721,7 +722,8 @@
       "verifyStep4": "4. Dekode tanda tangan:",
       "verifyStep5": "5. Verifikasi:",
       "verifyStep6": "6. Keluaran yang diharapkan: \"Verified OK\". Ini mengonfirmasi bahwa metadata dan hash foto yang tercatat dalam payload asli dan tidak berubah sejak waktu signed_at.",
-      "verifyStep7": "7. Tentang foto: gambar yang ditampilkan dalam PDF ini adalah salinan visual, dikodekan ulang untuk dokumen, sehingga byte-nya berbeda dari aslinya dan tidak akan menghasilkan hash dalam payload. Itu wajar dan bukan tanda pemalsuan. Tanda tangan berkomitmen pada SHA-256 dari setiap foto asli (nilai sign_photo_sha256, car_photo_sha256, dan ambient_photo_sha256 di dalam payload yang ditandatangani), dan langkah 6 sudah membuktikan nilai-nilai itu asli. Untuk memverifikasi gambar tertentu secara independen, hitung hash berkas asli yang diambil (dari catatan ParkProof atau ekspor data akun Anda), bukan salinan yang dicetak di sini, lalu bandingkan dengan nilai yang sesuai di atas."
+      "verifyStep7": "7. Tentang foto: gambar yang ditampilkan dalam PDF ini adalah salinan visual, dikodekan ulang untuk dokumen, sehingga byte-nya berbeda dari aslinya dan tidak akan menghasilkan hash dalam payload. Itu wajar dan bukan tanda pemalsuan. Tanda tangan berkomitmen pada SHA-256 dari setiap foto asli (nilai sign_photo_sha256, car_photo_sha256, dan ambient_photo_sha256 di dalam payload yang ditandatangani), dan langkah 6 sudah membuktikan nilai-nilai itu asli. Untuk memverifikasi gambar tertentu secara independen, hitung hash berkas asli yang diambil (dari catatan ParkProof atau ekspor data akun Anda), bukan salinan yang dicetak di sini, lalu bandingkan dengan nilai yang sesuai di atas.",
+      "devKey": "Ditandatangani dengan kunci pengembangan. Tanda tangan ini tidak bisa dicek dengan kunci publik yang diterbitkan ParkProof."
     },
     "appeal": {
       "drafted": "Disusun {{when}}",

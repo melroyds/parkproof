@@ -1,10 +1,25 @@
-import type { ParkingSession } from '../types'
+import type { AddendumKind, ParkingSession, SignatureBundle, SignedAddendum } from '../types'
+import {
+  AddendumValidationError,
+  ERR,
+  UUID_RE,
+  isIsoTime,
+  normalizeAddendumData,
+} from '../../lambda/addendum-schema.js'
+import {
+  MAX_ADDENDA,
+  SINGLETON_KINDS,
+  compactPendingSeqs,
+  nextAddendumSeq,
+  signedAddendumIdentity,
+} from './evidence-chain'
 
 const KEY = 'parkproof.sessions.v1'
 
 /**
  * Fired on `window` after any write to the saved records (save, update,
- * delete, end; later tasks add addendum writes). `useRecordsVersion()`
+ * delete, end, and the evidence-chain writes: appendAddendum,
+ * setAddendumBundle, rejectAddendum, setArrivalSignature). `useRecordsVersion()`
  * re-renders on it, so screens that show a record pick up background
  * changes such as a signature landing, without navigating away.
  */
@@ -112,12 +127,35 @@ export interface QuotaRecoveryReport {
 }
 
 /**
- * Structural view of the evidence-chain addenda added in a later task
- * (`SignedAddendum` in types.ts). Read here only to decide whether a record
- * still has signing work outstanding.
+ * Fired on `window` (detail: the QuotaRecoveryReport) whenever a write only
+ * fitted after quota recovery stripped photos from or deleted older
+ * records. Any write can trigger it, including the background evidence
+ * chain writes, so App listens once and tells the driver
+ * (`errors.storageEvicted` / `errors.storageRecovered`) instead of each
+ * caller having to.
  */
-type WithAddenda = {
-  addenda?: Array<{ bundle?: unknown; rejected?: unknown } | null | undefined>
+export const STORAGE_RECOVERED_EVENT = 'parkproof:storage-recovered'
+
+function notifyStorageRecovered(report: QuotaRecoveryReport): void {
+  if (typeof window === 'undefined' || typeof window.dispatchEvent !== 'function') return
+  try {
+    window.dispatchEvent(new CustomEvent(STORAGE_RECOVERED_EVENT, { detail: { ...report } }))
+  } catch {
+    /* a listener threw, or CustomEvent is missing: the write itself stands */
+  }
+}
+
+/** Subscribe to storage-recovered notifications. Returns the unsubscribe function. */
+export function subscribeStorageRecovered(listener: (report: QuotaRecoveryReport) => void): () => void {
+  if (typeof window === 'undefined' || typeof window.addEventListener !== 'function') {
+    return () => {}
+  }
+  const handler = (e: Event) => {
+    const detail = (e as CustomEvent<QuotaRecoveryReport>).detail
+    if (detail && typeof detail === 'object') listener(detail)
+  }
+  window.addEventListener(STORAGE_RECOVERED_EVENT, handler)
+  return () => window.removeEventListener(STORAGE_RECOVERED_EVENT, handler)
 }
 
 /**
@@ -128,7 +166,7 @@ type WithAddenda = {
  */
 export function hasUnsignedEvidence(session: ParkingSession): boolean {
   if (!session.signature) return true
-  const addenda = (session as ParkingSession & WithAddenda).addenda
+  const addenda = session.addenda
   if (!Array.isArray(addenda)) return false
   return addenda.some((a) => !!a && !a.bundle && !a.rejected)
 }
@@ -153,7 +191,9 @@ export function hasUnsignedEvidence(session: ParkingSession): boolean {
  * Victims are tracked by id, never by array index, so evicting one record
  * can't shift the next victim onto a different (possibly active) record.
  *
- * Returns a report describing what was done, so the caller can tell the user.
+ * Returns a report describing what was done. When anything was stripped or
+ * evicted it also fires STORAGE_RECOVERED_EVENT, so the driver is told even
+ * when the write happened in the background.
  */
 function persistWithQuotaRecovery(
   input: ParkingSession[],
@@ -163,6 +203,12 @@ function persistWithQuotaRecovery(
   const trimmed = new Set<string>()
   let evicted = 0
   const report = (): QuotaRecoveryReport => ({ trimmedPhotosFrom: trimmed.size, evicted })
+  // Every return after the first attempt has freed something.
+  const recovered = (): QuotaRecoveryReport => {
+    const r = report()
+    notifyStorageRecovered(r)
+    return r
+  }
 
   const tryWrite = (): boolean => {
     try {
@@ -209,7 +255,7 @@ function persistWithQuotaRecovery(
     if (!byId(id)?.car_photo) continue
     patchById(id, { car_photo: null })
     trimmed.add(id)
-    if (tryWrite()) return report()
+    if (tryWrite()) return recovered()
   }
 
   // Phase 2: strip sign_photo and ambient_photo (the last photos; the
@@ -222,7 +268,7 @@ function persistWithQuotaRecovery(
     if (s.ambient_photo) patch.ambient_photo = null
     patchById(id, patch)
     trimmed.add(id)
-    if (tryWrite()) return report()
+    if (tryWrite()) return recovered()
   }
 
   // Phase 3: evict whole records, oldest first.
@@ -231,7 +277,7 @@ function persistWithQuotaRecovery(
     // An evicted record is counted once, as evicted, not also as trimmed.
     trimmed.delete(id)
     evicted++
-    if (tryWrite()) return report()
+    if (tryWrite()) return recovered()
   }
 
   // Genuinely full: even with every eligible record gone we can't fit.
@@ -273,6 +319,129 @@ export function updateSession(id: string, patch: Partial<ParkingSession>): Quota
 
 export function getSession(id: string): ParkingSession | undefined {
   return loadSessions().find((s) => s.id === id)
+}
+
+// ─── Evidence chain writes (build spec N2) ────────────────────────────────
+// Every write below re-reads the stored records first, so a caller's stale
+// copy can never decide a seq or overwrite a bundle. Each successful write
+// dispatches records-changed for the record.
+
+export interface AppendAddendumInput {
+  kind: AddendumKind
+  /** Normalised here with the shared schema; invalid data throws. */
+  data: unknown
+  /** Client ISO time; defaults to now. Frozen once stored. */
+  captured_at?: string
+  /** uuid; defaults to a fresh one. */
+  id?: string
+}
+
+/**
+ * Append a pending addendum to a record. The data is normalised with
+ * `normalizeAddendumData` (so the stored copy is the copy that will be
+ * signed) and the seq is assigned here from a fresh read: one more than the
+ * highest seq that isn't rejected.
+ *
+ * Returns the stored addendum; for `arrival_context` and `departure`, which
+ * a record has at most one of, the existing one when there already is one.
+ * Returns null when the record is missing, is a read-only shared copy, or
+ * already holds MAX_ADDENDA. Throws AddendumValidationError for data that
+ * doesn't fit the schema, and StorageFullError when storage is full.
+ */
+export function appendAddendum(sessionId: string, input: AppendAddendumInput): SignedAddendum | null {
+  const data = normalizeAddendumData(input.kind, input.data)
+  const captured_at = input.captured_at ?? new Date().toISOString()
+  if (!isIsoTime(captured_at)) throw new AddendumValidationError(ERR.BAD_TIME, 'captured_at')
+  const id = input.id ?? crypto.randomUUID()
+  if (!UUID_RE.test(id)) throw new AddendumValidationError(ERR.BAD_VALUE, 'addendum_id')
+
+  const sessions = loadSessions()
+  const idx = sessions.findIndex((s) => s.id === sessionId)
+  if (idx === -1) return null
+  const session = sessions[idx]
+  if (session.shared_from) return null
+  const addenda = session.addenda ?? []
+  if (SINGLETON_KINDS.has(input.kind)) {
+    const existing = addenda.find((a) => a.kind === input.kind)
+    if (existing) return existing
+  }
+  if (addenda.some((a) => a.id === id)) return null
+  if (addenda.length >= MAX_ADDENDA) return null
+
+  const addendum: SignedAddendum = {
+    id,
+    seq: nextAddendumSeq(addenda),
+    kind: input.kind,
+    captured_at,
+    data,
+  }
+  sessions[idx] = { ...session, addenda: [...addenda, addendum] }
+  persistWithQuotaRecovery(sessions)
+  notifyRecordsChanged(sessionId)
+  return addendum
+}
+
+/**
+ * Store the signature bundle for a pending addendum. First write wins:
+ * returns false (and changes nothing) when the addendum is missing, already
+ * has a bundle, was rejected, or the bundle signs a different addendum id
+ * or seq than the one stored.
+ */
+export function setAddendumBundle(sessionId: string, addendumId: string, bundle: SignatureBundle): boolean {
+  const sessions = loadSessions()
+  const idx = sessions.findIndex((s) => s.id === sessionId)
+  if (idx === -1) return false
+  const addenda = sessions[idx].addenda ?? []
+  const target = addenda.find((a) => a.id === addendumId)
+  if (!target || target.bundle || target.rejected) return false
+  const signed = signedAddendumIdentity(bundle)
+  if (!signed || signed.addendum_id !== addendumId || signed.seq !== target.seq) return false
+  sessions[idx] = {
+    ...sessions[idx],
+    addenda: addenda.map((a) => (a.id === addendumId ? { ...a, bundle } : a)),
+  }
+  persistWithQuotaRecovery(sessions)
+  notifyRecordsChanged(sessionId)
+  return true
+}
+
+/**
+ * Mark a pending addendum rejected (the server answered 400 with `code`).
+ * It is never retried. The pending addenda after it are renumbered so the
+ * next one's parent is the last signed link. Returns false when the
+ * addendum is missing, signed, or already rejected.
+ */
+export function rejectAddendum(
+  sessionId: string,
+  addendumId: string,
+  code: string,
+  at: string = new Date().toISOString(),
+): boolean {
+  const sessions = loadSessions()
+  const idx = sessions.findIndex((s) => s.id === sessionId)
+  if (idx === -1) return false
+  const addenda = sessions[idx].addenda ?? []
+  const target = addenda.find((a) => a.id === addendumId)
+  if (!target || target.bundle || target.rejected) return false
+  const marked = addenda.map((a) => (a.id === addendumId ? { ...a, rejected: { code, at } } : a))
+  sessions[idx] = { ...sessions[idx], addenda: compactPendingSeqs(marked) }
+  persistWithQuotaRecovery(sessions)
+  notifyRecordsChanged(sessionId)
+  return true
+}
+
+/**
+ * Store a record's arrival bundle (link 0). First write wins: returns false
+ * when the record is missing or already signed.
+ */
+export function setArrivalSignature(sessionId: string, bundle: SignatureBundle): boolean {
+  const sessions = loadSessions()
+  const idx = sessions.findIndex((s) => s.id === sessionId)
+  if (idx === -1 || sessions[idx].signature) return false
+  sessions[idx] = { ...sessions[idx], signature: bundle }
+  persistWithQuotaRecovery(sessions)
+  notifyRecordsChanged(sessionId)
+  return true
 }
 
 /**

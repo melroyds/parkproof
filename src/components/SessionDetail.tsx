@@ -4,6 +4,7 @@ import type { ParkingSession } from '../types'
 import { deleteSession, isStorageFullError, updateSession } from '../lib/storage'
 import { useLiveRecord } from '../lib/use-records-version'
 import { canEndRecord, endConfirmText } from '../lib/record-status'
+import { DEV_KEY_ALIAS } from '../lib/evidence-chain'
 import ScheduledRemindersSection from './ScheduledRemindersSection'
 import VerifiedSeal from './VerifiedSeal'
 import Icon from './Icon'
@@ -266,10 +267,15 @@ export default function SessionDetail({
           }}
         >
           <div className="flex items-center gap-3.5">
-            <VerifiedSeal size={48} glow />
+            {/* A local `npm run dev` signature (key_alias 'dev-ephemeral')
+                can't be checked with the published key, so it never gets
+                the mint glow or the plain "signed" claim. */}
+            <VerifiedSeal size={48} glow={session.signature.key_alias !== DEV_KEY_ALIAS} />
             <div className="min-w-0">
               <p className="text-sm font-display font-bold text-paper-50">
-                {t('session.cryptoSigned')}
+                {session.signature.key_alias === DEV_KEY_ALIAS
+                  ? t('session.devKeySigned')
+                  : t('session.cryptoSigned')}
               </p>
               <p className="text-2xs font-mono truncate text-[#7BE3A4]">
                 {session.signature.signature_base64.slice(0, 16)}

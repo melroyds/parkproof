@@ -28,6 +28,23 @@ import {
   handleSessionsList,
   handleSessionsUpload,
 } from './cloud-sync.js'
+import {
+  ADDENDUM_SCHEMA,
+  AddendumValidationError,
+  CAPS,
+  ERR,
+  EVIDENCE_V1_SCHEMA,
+  EVIDENCE_V2_SCHEMA,
+  HEX64_RE,
+  buildAddendumPayload,
+  canonicalize,
+  clientTimesToCheck,
+  validateAddendumBody,
+} from './addendum-schema.js'
+
+// canonicalize lives in addendum-schema.js so the browser uses the very same
+// function; re-exported here for existing importers and tests.
+export { canonicalize }
 
 const MODEL = 'claude-sonnet-4-6'
 const DEFAULT_TIMEZONE = 'Australia/Melbourne'
@@ -747,13 +764,37 @@ const CORS_HEADERS = {
 }
 
 // ─── /sign-session handler ────────────────────────────────────────────────
-// Signs a canonical JSON payload of session metadata + photo hashes using the
-// KMS-managed asymmetric key. The private key never leaves AWS. Anyone can
-// verify the signature against the published public key.
+// Signs a canonical JSON payload using the KMS-managed asymmetric key. The
+// private key never leaves AWS. Anyone can verify the signature against the
+// published public key.
+//
+// Three request shapes (build spec N2), told apart by `body.schema`:
+//   - absent or 'parkproof-evidence-v1': link 0 of an old record. The
+//     payload is byte-identical to what this route has always signed.
+//   - 'parkproof-evidence-v2': link 0 of a new record, every v1 field plus
+//     `chain_key_sha256`.
+//   - 'parkproof-addendum-v1': link N >= 1. The request carries the parent
+//     bundle and the record's chain key; the payload carries only the
+//     key's hash and the parent payload's hash.
+//
+// Validation and every server check run before the KMS_KEY_ID check, so a
+// bad request is a 400 with an ERR code even where signing isn't set up.
 
-const SIGNING_SCHEMA = 'parkproof-evidence-v1'
+const SIGNING_SCHEMA = EVIDENCE_V1_SCHEMA
 const SIGNING_ALGORITHM = 'ECDSA_SHA_256'
 const KEY_ALIAS = 'alias/parkproof-evidence-signing'
+
+/**
+ * The published evidence-signing public key: the same key as
+ * public/parkproof-public-key.pem (a test keeps the two equal). Used to
+ * verify a parent link's signature locally, with no KMS call, before an
+ * addendum is signed on top of it.
+ */
+export const PARKPROOF_PUBLIC_KEY_PEM = `-----BEGIN PUBLIC KEY-----
+MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEyJg5vltZqi2tUU+ZMwmjfO/g3H3B
+1qS6tXZGe9Iyrnlopiy23AoRQ5JSUnol0YK4w6bSHQdYbLGoub//Xazv1Q==
+-----END PUBLIC KEY-----
+`
 
 let _kmsClient
 function getKmsClient() {
@@ -764,28 +805,108 @@ function getKmsClient() {
 }
 
 /**
- * Deterministic JSON canonicalisation: sorted keys, no whitespace, JSON.stringify
- * for primitives. Both sides (Lambda + verifier) must produce identical bytes
- * for the signature to validate.
+ * Production signer: KMS, DIGEST mode, ECDSA_SHA_256. Returns the DER
+ * signature. The KMS_KEY_ID check lives here, so it runs only after the
+ * request has passed validation. Never switch this to RAW.
  */
-export function canonicalize(value) {
-  if (value === null) return 'null'
-  if (typeof value === 'string') return JSON.stringify(value)
-  if (typeof value === 'number') return JSON.stringify(value)
-  if (typeof value === 'boolean') return value ? 'true' : 'false'
-  if (Array.isArray(value)) return '[' + value.map(canonicalize).join(',') + ']'
-  if (typeof value === 'object') {
-    const keys = Object.keys(value).sort()
-    return '{' + keys.map((k) => JSON.stringify(k) + ':' + canonicalize(value[k])).join(',') + '}'
-  }
-  throw new Error(`canonicalize: unsupported type ${typeof value}`)
-}
-
-export async function handleSignSession(event) {
+async function kmsSigner({ digest }) {
   const keyId = process.env.KMS_KEY_ID
   if (!keyId) throw new Error('KMS_KEY_ID env var not configured')
+  const result = await getKmsClient().send(
+    new SignCommand({
+      KeyId: keyId,
+      Message: digest,
+      MessageType: 'DIGEST',
+      SigningAlgorithm: SIGNING_ALGORITHM,
+    }),
+  )
+  return Buffer.from(result.Signature)
+}
 
-  const body = typeof event.body === 'string' ? JSON.parse(event.body) : event.body || {}
+/** A 400 for a request that can't be signed. `message` keeps the older wording. */
+function signRequestError(code, path, message) {
+  const err = new AddendumValidationError(code, path)
+  if (message) err.message = message
+  return err
+}
+
+function isPlainObject(v) {
+  return v !== null && typeof v === 'object' && !Array.isArray(v)
+}
+
+function sha256Hex(text) {
+  return crypto.createHash('sha256').update(text, 'utf8').digest('hex')
+}
+
+/**
+ * sha256 hex of a record's chain key. The key is the 64-char lowercase hex
+ * string the phone generated; this hashes that string's UTF-8 bytes (the
+ * same rule the browser uses in src/lib/signing.ts `chainKeyHash`).
+ */
+export function chainKeyHash(chain_key) {
+  return sha256Hex(chain_key)
+}
+
+/** Parse and size-check the request body. Always returns a plain object. */
+function parseSignBody(event) {
+  const raw = event?.body
+  let body
+  if (typeof raw === 'string') {
+    if (Buffer.byteLength(raw, 'utf8') > CAPS.bodyBytes) throw signRequestError(ERR.TOO_LARGE, '')
+    try {
+      body = JSON.parse(raw)
+    } catch {
+      throw signRequestError(ERR.BAD_REQUEST, '', 'body is not valid JSON')
+    }
+  } else if (raw === undefined || raw === null || raw === '') {
+    body = {}
+  } else {
+    if (Buffer.byteLength(JSON.stringify(raw), 'utf8') > CAPS.bodyBytes) {
+      throw signRequestError(ERR.TOO_LARGE, '')
+    }
+    body = raw
+  }
+  if (!isPlainObject(body)) throw signRequestError(ERR.BAD_REQUEST, '', 'body must be a JSON object')
+  return body
+}
+
+function checkPhotoHash(value, field, { required = false } = {}) {
+  if (value !== null && value !== undefined) {
+    if (typeof value !== 'string' || value.length !== 64) {
+      throw signRequestError(ERR.BAD_VALUE, field, `${field} must be 64-char hex or null`)
+    }
+  } else if (required) {
+    throw signRequestError(ERR.MISSING_FIELD, field, `${field} required for translated sessions`)
+  }
+}
+
+/** The link-0 checks this route has always made (v1 and v2 alike). */
+function validateEvidenceBody(body) {
+  const { session_id, arrived_at, rules, confidence, no_sign } = body
+  if (typeof session_id !== 'string' || !session_id) {
+    throw signRequestError(ERR.MISSING_FIELD, 'session_id', 'session_id required')
+  }
+  if (typeof arrived_at !== 'string' || !arrived_at) {
+    throw signRequestError(ERR.MISSING_FIELD, 'arrived_at', 'arrived_at required')
+  }
+  if (typeof rules !== 'string') throw signRequestError(ERR.MISSING_FIELD, 'rules', 'rules required')
+  if (typeof confidence !== 'string') {
+    throw signRequestError(ERR.MISSING_FIELD, 'confidence', 'confidence required')
+  }
+  // No-sign sessions have a null sign_photo_sha256 — that's fine, the
+  // (optional) ambient hash + car hash + signed metadata still constitute a
+  // tamper-evident bundle. Only enforce the 64-char hex shape when present.
+  checkPhotoHash(body.sign_photo_sha256, 'sign_photo_sha256', { required: !no_sign })
+  checkPhotoHash(body.ambient_photo_sha256, 'ambient_photo_sha256')
+  checkPhotoHash(body.car_photo_sha256, 'car_photo_sha256')
+}
+
+/**
+ * The v1 link-0 payload, exactly as this route has always built it. Its
+ * canonical bytes are golden-tested: changing them breaks every published
+ * verification walkthrough.
+ */
+export function buildEvidenceV1Payload(body, signed_at) {
   const {
     session_id,
     arrived_at,
@@ -799,35 +920,7 @@ export async function handleSignSession(event) {
     ambient_photo_sha256,
     car_photo_sha256,
   } = body
-
-  if (typeof session_id !== 'string' || !session_id) throw new Error('session_id required')
-  if (typeof arrived_at !== 'string' || !arrived_at) throw new Error('arrived_at required')
-  if (typeof rules !== 'string') throw new Error('rules required')
-  if (typeof confidence !== 'string') throw new Error('confidence required')
-  // No-sign sessions have a null sign_photo_sha256 — that's fine, the
-  // (optional) ambient hash + car hash + signed metadata still constitute a
-  // tamper-evident bundle. Only enforce the 64-char hex shape when present.
-  if (sign_photo_sha256 !== null && sign_photo_sha256 !== undefined) {
-    if (typeof sign_photo_sha256 !== 'string' || sign_photo_sha256.length !== 64) {
-      throw new Error('sign_photo_sha256 must be 64-char hex or null')
-    }
-  } else if (!no_sign) {
-    throw new Error('sign_photo_sha256 required for translated sessions')
-  }
-  if (ambient_photo_sha256 !== null && ambient_photo_sha256 !== undefined) {
-    if (typeof ambient_photo_sha256 !== 'string' || ambient_photo_sha256.length !== 64) {
-      throw new Error('ambient_photo_sha256 must be 64-char hex or null')
-    }
-  }
-  if (car_photo_sha256 !== null && car_photo_sha256 !== undefined) {
-    if (typeof car_photo_sha256 !== 'string' || car_photo_sha256.length !== 64) {
-      throw new Error('car_photo_sha256 must be 64-char hex or null')
-    }
-  }
-
-  const signed_at = new Date().toISOString()
-
-  const payload = {
+  return {
     schema: SIGNING_SCHEMA,
     session_id,
     arrived_at,
@@ -845,31 +938,195 @@ export async function handleSignSession(event) {
     car_photo_sha256: car_photo_sha256 || null,
     signed_at,
   }
+}
 
+/** The v2 link-0 payload: every v1 field plus the chain key's hash. */
+export function buildEvidenceV2Payload(body, signed_at) {
+  return {
+    ...buildEvidenceV1Payload(body, signed_at),
+    schema: EVIDENCE_V2_SCHEMA,
+    chain_key_sha256: body.chain_key_sha256,
+  }
+}
+
+/** True when `signature_base64` (DER) over the payload's UTF-8 bytes verifies with any key. */
+function verifiesWithAnyKey(canonical_payload, signature_base64, publicKeys) {
+  const message = Buffer.from(canonical_payload, 'utf8')
+  const signature = Buffer.from(signature_base64, 'base64')
+  for (const key of publicKeys) {
+    try {
+      if (crypto.verify('sha256', message, key, signature)) return true
+    } catch {
+      /* malformed signature or key: try the next key */
+    }
+  }
+  return false
+}
+
+/**
+ * The server checks for an addendum (N2), after validation:
+ *   1. the parent's signature verifies with a trusted public key
+ *   2. the parent belongs to this record and sits at seq - 1
+ *   3. the caller holds the chain key the parent committed to
+ *   4. no client time is more than 5 minutes ahead of the server clock
+ * Returns the fields the payload needs from the parent.
+ */
+function checkAddendumAgainstParent(req, parentPublicKeys, nowMs) {
+  if (!verifiesWithAnyKey(req.parent.canonical_payload, req.parent.signature_base64, parentPublicKeys)) {
+    throw signRequestError(ERR.PARENT_SIGNATURE, 'parent.signature_base64')
+  }
+
+  let parent
+  try {
+    parent = JSON.parse(req.parent.canonical_payload)
+  } catch {
+    throw signRequestError(ERR.PARENT_MISMATCH, 'parent.canonical_payload')
+  }
+  if (!isPlainObject(parent) || parent.session_id !== req.session_id) {
+    throw signRequestError(ERR.PARENT_MISMATCH, 'parent.session_id')
+  }
+
+  let parentChainHash
+  if (parent.schema === EVIDENCE_V1_SCHEMA || parent.schema === EVIDENCE_V2_SCHEMA) {
+    if (req.seq !== 1) throw signRequestError(ERR.PARENT_MISMATCH, 'seq')
+    parentChainHash = parent.schema === EVIDENCE_V2_SCHEMA ? parent.chain_key_sha256 : null
+  } else if (parent.schema === ADDENDUM_SCHEMA) {
+    if (parent.seq !== req.seq - 1) throw signRequestError(ERR.PARENT_MISMATCH, 'seq')
+    parentChainHash = parent.chain_key_sha256 ?? null
+  } else {
+    throw signRequestError(ERR.PARENT_MISMATCH, 'parent.schema')
+  }
+  if (parentChainHash !== null && (typeof parentChainHash !== 'string' || !HEX64_RE.test(parentChainHash))) {
+    throw signRequestError(ERR.PARENT_MISMATCH, 'parent.chain_key_sha256')
+  }
+
+  if (parentChainHash === null) {
+    // A v1 chain has no key. Sending one anyway means the client is
+    // confused about which chain it is extending.
+    if (req.chain_key !== null) throw signRequestError(ERR.CHAIN_KEY, 'chain_key')
+  } else if (req.chain_key === null || chainKeyHash(req.chain_key) !== parentChainHash) {
+    throw signRequestError(ERR.CHAIN_KEY, 'chain_key')
+  }
+
+  const latest = nowMs + CAPS.futureSkewMs
+  for (const [path, iso] of clientTimesToCheck(req)) {
+    if (Date.parse(iso) > latest) throw signRequestError(ERR.FUTURE_TIME, path)
+  }
+
+  return {
+    parent_payload_sha256: sha256Hex(req.parent.canonical_payload),
+    chain_key_sha256: parentChainHash,
+  }
+}
+
+async function signPayload(payload, signer, keyAlias) {
   const canonical_payload = canonicalize(payload)
+  const message = Buffer.from(canonical_payload, 'utf8')
   const digest = crypto.createHash('sha256').update(canonical_payload).digest()
 
   const t0 = Date.now()
-  const result = await getKmsClient().send(
-    new SignCommand({
-      KeyId: keyId,
-      Message: digest,
-      MessageType: 'DIGEST',
-      SigningAlgorithm: SIGNING_ALGORITHM,
-    }),
-  )
+  const der = await signer({ digest, message })
   const signMs = Date.now() - t0
-  console.log(`[parkproof.signing] kms_sign=${signMs}ms session_id=${session_id}`)
-
-  const signature_base64 = Buffer.from(result.Signature).toString('base64')
+  console.log(
+    `[parkproof.signing] sign=${signMs}ms key=${keyAlias} session_id=${payload.session_id} schema=${payload.schema}`,
+  )
 
   return {
-    schema: SIGNING_SCHEMA,
-    signed_at,
+    schema: payload.schema,
+    signed_at: payload.signed_at,
     algorithm: SIGNING_ALGORITHM,
-    key_alias: KEY_ALIAS,
+    key_alias: keyAlias,
     canonical_payload,
-    signature_base64,
+    signature_base64: Buffer.from(der).toString('base64'),
+  }
+}
+
+/**
+ * Sign one link. Throws AddendumValidationError (HTTP 400, with an ERR code)
+ * for a request that can't be signed; any other error is a 500.
+ *
+ * `options` exists for the local dev server and tests only; the Lambda
+ * dispatcher never passes it, so production always signs with KMS under
+ * KEY_ALIAS and trusts only the published key for parents.
+ *   - signer({ digest, message }) => DER signature bytes
+ *   - keyAlias: the key_alias written into the bundle
+ *   - parentPublicKeys: PEM keys a parent link may be signed with
+ */
+export async function handleSignSession(event, options = {}) {
+  const signer = options.signer ?? kmsSigner
+  const keyAlias = options.keyAlias ?? KEY_ALIAS
+  const parentPublicKeys = options.parentPublicKeys ?? [PARKPROOF_PUBLIC_KEY_PEM]
+
+  const body = parseSignBody(event)
+
+  if (body.schema === ADDENDUM_SCHEMA) {
+    const req = validateAddendumBody(body)
+    const fromParent = checkAddendumAgainstParent(req, parentPublicKeys, Date.now())
+    const signed_at = new Date().toISOString()
+    const payload = buildAddendumPayload(
+      {
+        addendum_id: req.addendum_id,
+        kind: req.kind,
+        session_id: req.session_id,
+        seq: req.seq,
+        parent_payload_sha256: fromParent.parent_payload_sha256,
+        chain_key_sha256: fromParent.chain_key_sha256,
+        captured_at: req.captured_at,
+        data: req.data,
+      },
+      signed_at,
+    )
+    return signPayload(payload, signer, keyAlias)
+  }
+
+  if (body.schema !== undefined && body.schema !== EVIDENCE_V1_SCHEMA && body.schema !== EVIDENCE_V2_SCHEMA) {
+    throw signRequestError(ERR.BAD_VALUE, 'schema', 'unknown schema')
+  }
+  validateEvidenceBody(body)
+  const isV2 = body.schema === EVIDENCE_V2_SCHEMA
+  if (isV2) {
+    if (body.chain_key_sha256 === undefined || body.chain_key_sha256 === null) {
+      throw signRequestError(ERR.MISSING_FIELD, 'chain_key_sha256', 'chain_key_sha256 required')
+    }
+    if (typeof body.chain_key_sha256 !== 'string' || !HEX64_RE.test(body.chain_key_sha256)) {
+      throw signRequestError(ERR.BAD_VALUE, 'chain_key_sha256', 'chain_key_sha256 must be 64-char lowercase hex')
+    }
+  }
+
+  const signed_at = new Date().toISOString()
+  const payload = isV2 ? buildEvidenceV2Payload(body, signed_at) : buildEvidenceV1Payload(body, signed_at)
+  return signPayload(payload, signer, keyAlias)
+}
+
+/**
+ * The /sign-session HTTP response: 200 with the bundle, 400 with
+ * `{ error: code, field, detail }` for a request that can't be signed (the
+ * phone marks that link rejected and stops retrying it), 500 otherwise.
+ * Logs the code and field only, never the submitted values.
+ */
+export async function handleSignSessionRequest(event, options = {}) {
+  try {
+    const result = await handleSignSession(event, options)
+    return {
+      statusCode: 200,
+      headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
+      body: JSON.stringify(result),
+    }
+  } catch (err) {
+    if (err instanceof AddendumValidationError) {
+      console.warn(`[parkproof.signing] rejected code=${err.code} field=${err.path || '-'}`)
+      return {
+        statusCode: 400,
+        headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ error: err.code, field: err.path, detail: err.message }),
+      }
+    }
+    console.error('sign-session handler error:', err)
+    return {
+      statusCode: 500,
+      headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ error: err?.message || String(err) }),
+    }
   }
 }
 
@@ -1967,12 +2224,10 @@ export async function handler(event) {
   if (path.endsWith('/sign-session')) {
     try {
       if (!(await checkRateLimit(event, 'sign', 30))) return rateLimitedResponse()
-      const result = await handleSignSession(event)
-      return {
-        statusCode: 200,
-        headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
-        body: JSON.stringify(result),
-      }
+      // No options: production always signs with KMS and trusts only the
+      // published key for parent links. Validation failures come back as
+      // 400 with an ERR code; the phone stops retrying those links.
+      return await handleSignSessionRequest(event)
     } catch (err) {
       console.error('sign-session handler error:', err)
       return {

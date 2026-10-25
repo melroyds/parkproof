@@ -27,7 +27,14 @@ import {
   ERR_STORAGE_FULL,
   StorageFullError,
   isStorageFullError,
+  appendAddendum,
+  rejectAddendum,
+  setAddendumBundle,
+  setArrivalSignature,
+  subscribeStorageRecovered,
 } from './storage'
+import { AddendumValidationError } from '../../lambda/addendum-schema.js'
+import { MAX_ADDENDA } from './evidence-chain'
 import type { ParkingSession, SignatureBundle } from '../types'
 
 const KEY = 'parkproof.sessions.v1'
@@ -823,5 +830,188 @@ describe('records-changed event', () => {
     window.dispatchEvent(new StorageEvent('storage', { key: 'some.other.key' }))
     unsubscribe()
     expect(calls).toBe(1)
+  })
+})
+
+describe('evidence chain writes', () => {
+  const T = '2026-05-21T08:00:00.000Z'
+  const departure = { ended_at: T, location: null, distance_from_arrival_m: null, return_photos: [] }
+  const condition = () => ({
+    when: 'parking',
+    photos: [{ role: 'condition-front', sha256: 'a'.repeat(64), captured_at: T, source: 'camera_input' }],
+    note: null,
+  })
+  /** A bundle that signs addendum `id` at `seq` (only its identity is read here). */
+  const bundleFor = (id: string, seq: number): SignatureBundle => ({
+    ...SIGNED,
+    schema: 'parkproof-addendum-v1',
+    canonical_payload: JSON.stringify({ schema: 'parkproof-addendum-v1', addendum_id: id, seq }),
+  })
+
+  let seen: Array<string | null>
+  let unsubscribe: () => void
+  beforeEach(() => {
+    seen = []
+    const listener = (e: Event) => seen.push((e as CustomEvent<{ id: string | null }>).detail.id)
+    window.addEventListener(RECORDS_CHANGED_EVENT, listener)
+    unsubscribe = () => window.removeEventListener(RECORDS_CHANGED_EVENT, listener)
+  })
+  afterEach(() => unsubscribe())
+
+  it('appendAddendum assigns seq from a fresh read, not from the caller', () => {
+    const stale = makeSession({ id: 'r', signature: SIGNED })
+    saveSession(stale)
+    const a = appendAddendum('r', { kind: 'condition', data: condition() })!
+    // The caller still holds the stale copy, with no addenda; storage decides.
+    const b = appendAddendum(stale.id, { kind: 'condition', data: condition() })!
+    expect([a.seq, b.seq]).toEqual([1, 2])
+    expect(getSession('r')!.addenda!.map((x) => x.seq)).toEqual([1, 2])
+    expect(seen).toEqual(['r', 'r', 'r'])
+  })
+
+  it('stores the normalised data and freezes the capture time', () => {
+    saveSession(makeSession({ id: 'r' }))
+    const reordered = { return_photos: [], distance_from_arrival_m: null, location: null, ended_at: T }
+    const a = appendAddendum('r', { kind: 'departure', data: reordered, captured_at: T })!
+    expect(Object.keys(a.data)).toEqual(['ended_at', 'location', 'distance_from_arrival_m', 'return_photos'])
+    expect(a.captured_at).toBe(T)
+    expect(a.id).toMatch(/^[0-9a-f-]{36}$/)
+    expect(a.bundle).toBeUndefined()
+    expect(getSession('r')!.addenda![0]).toEqual(a)
+  })
+
+  it('throws for invalid data and stores nothing', () => {
+    saveSession(makeSession({ id: 'r' }))
+    expect(() => appendAddendum('r', { kind: 'departure', data: { ...departure, extra: 1 } })).toThrow(AddendumValidationError)
+    expect(() => appendAddendum('r', { kind: 'departure', data: departure, captured_at: 'now' })).toThrow(AddendumValidationError)
+    expect(() => appendAddendum('r', { kind: 'departure', data: departure, id: 'not-a-uuid' })).toThrow(AddendumValidationError)
+    expect(getSession('r')!.addenda).toBeUndefined()
+  })
+
+  it('keeps one arrival_context and one departure per record', () => {
+    saveSession(makeSession({ id: 'r' }))
+    const first = appendAddendum('r', { kind: 'departure', data: departure })!
+    const second = appendAddendum('r', { kind: 'departure', data: { ...departure, ended_at: '2026-05-21T09:00:00.000Z' } })!
+    expect(second).toEqual(first)
+    expect(getSession('r')!.addenda).toHaveLength(1)
+  })
+
+  it('returns null for a missing record, a shared copy, a duplicate id, or a full record', () => {
+    expect(appendAddendum('missing', { kind: 'departure', data: departure })).toBeNull()
+    saveSession(
+      makeSession({
+        id: 'shared',
+        shared_from: { original_session_id: 'x', received_at: T, shared_at: null, arrival_bundle: null, snapshot: {} },
+      }),
+    )
+    expect(appendAddendum('shared', { kind: 'departure', data: departure })).toBeNull()
+
+    saveSession(makeSession({ id: 'r' }))
+    const id = '0b6f7c1e-2d3a-4b5c-8d9e-0f1a2b3c4d5e'
+    appendAddendum('r', { kind: 'condition', data: condition(), id })
+    expect(appendAddendum('r', { kind: 'condition', data: condition(), id })).toBeNull()
+    for (let i = 1; i < MAX_ADDENDA; i++) appendAddendum('r', { kind: 'condition', data: condition() })
+    expect(getSession('r')!.addenda).toHaveLength(MAX_ADDENDA)
+    expect(appendAddendum('r', { kind: 'condition', data: condition() })).toBeNull()
+  })
+
+  it('setAddendumBundle is first-write-wins', () => {
+    saveSession(makeSession({ id: 'r' }))
+    const a = appendAddendum('r', { kind: 'condition', data: condition() })!
+    const first = bundleFor(a.id, 1)
+    const second = { ...bundleFor(a.id, 1), signed_at: '2026-05-21T09:00:00.000Z' }
+    expect(setAddendumBundle('r', a.id, first)).toBe(true)
+    expect(setAddendumBundle('r', a.id, second)).toBe(false)
+    expect(getSession('r')!.addenda![0].bundle).toEqual(first)
+  })
+
+  it('setAddendumBundle refuses a bundle for another addendum or seq, a rejected addendum, or a missing one', () => {
+    saveSession(makeSession({ id: 'r' }))
+    const a = appendAddendum('r', { kind: 'condition', data: condition() })!
+    expect(setAddendumBundle('r', a.id, bundleFor(a.id, 2))).toBe(false)
+    expect(setAddendumBundle('r', a.id, bundleFor('someone-else', 1))).toBe(false)
+    expect(setAddendumBundle('r', a.id, { ...SIGNED, canonical_payload: 'garbage' })).toBe(false)
+    expect(setAddendumBundle('r', 'missing', bundleFor('missing', 1))).toBe(false)
+    expect(setAddendumBundle('nope', a.id, bundleFor(a.id, 1))).toBe(false)
+    rejectAddendum('r', a.id, 'ERR_BAD_STRING')
+    expect(setAddendumBundle('r', a.id, bundleFor(a.id, 1))).toBe(false)
+  })
+
+  it('rejectAddendum marks it, renumbers later pending addenda, and only once', () => {
+    saveSession(makeSession({ id: 'r', signature: SIGNED }))
+    const a = appendAddendum('r', { kind: 'condition', data: condition() })!
+    setAddendumBundle('r', a.id, bundleFor(a.id, 1))
+    const b = appendAddendum('r', { kind: 'condition', data: condition() })!
+    const c = appendAddendum('r', { kind: 'departure', data: departure })!
+    expect([b.seq, c.seq]).toEqual([2, 3])
+
+    expect(rejectAddendum('r', b.id, 'ERR_BAD_STRING', T)).toBe(true)
+    const after = getSession('r')!.addenda!
+    expect(after.find((x) => x.id === b.id)).toMatchObject({ seq: 2, rejected: { code: 'ERR_BAD_STRING', at: T } })
+    expect(after.find((x) => x.id === c.id)!.seq).toBe(2)
+    expect(rejectAddendum('r', b.id, 'ERR_BAD_STRING')).toBe(false)
+    // A signed addendum is never rejected after the fact.
+    expect(rejectAddendum('r', a.id, 'ERR_BAD_STRING')).toBe(false)
+  })
+
+  it('setArrivalSignature is first-write-wins', () => {
+    saveSession(makeSession({ id: 'r', signature: undefined }))
+    expect(setArrivalSignature('r', SIGNED)).toBe(true)
+    expect(setArrivalSignature('r', { ...SIGNED, signed_at: '2026-05-22T00:00:00.000Z' })).toBe(false)
+    expect(getSession('r')!.signature).toEqual(SIGNED)
+    expect(setArrivalSignature('missing', SIGNED)).toBe(false)
+  })
+
+  it('a background chain write that frees space fires storage-recovered with the report', () => {
+    const reports: unknown[] = []
+    const stop = subscribeStorageRecovered((r) => reports.push(r))
+    try {
+      saveSession(
+        makeSession({
+          id: 'old',
+          arrived_at: '2026-05-18T08:00:00+10:00',
+          expires_at: '2026-05-18T18:00:00+10:00',
+          ended_at: '2026-05-18T17:00:00+10:00',
+          signature: SIGNED,
+        }),
+      )
+      saveSession(makeSession({ id: 'r' }))
+      expect(reports).toEqual([]) // clean writes say nothing
+
+      // Initial write, the car-photo strip and the sign-photo strip all fail;
+      // evicting the old record fits.
+      quotaThrowsNTimes(3)
+      expect(appendAddendum('r', { kind: 'departure', data: departure })).not.toBeNull()
+      expect(getSession('old')).toBeUndefined()
+      expect(reports).toEqual([{ trimmedPhotosFrom: 0, evicted: 1 }])
+
+      // A write that can't fit at all changed nothing, so it fires nothing.
+      quotaThrowsNTimes(99)
+      expect(() => appendAddendum('r', { kind: 'condition', data: condition() })).toThrow(StorageFullError)
+      expect(reports).toHaveLength(1)
+    } finally {
+      stop()
+    }
+    // Unsubscribed: nothing more arrives.
+    quotaThrowsNTimes(0)
+    saveSession(makeSession({ id: 'old2', expires_at: '2026-05-18T18:00:00+10:00', ended_at: '2026-05-18T17:00:00+10:00', signature: SIGNED }))
+    quotaThrowsNTimes(1)
+    setArrivalSignature('r', SIGNED)
+    expect(reports).toHaveLength(1)
+  })
+
+  it('a record with a pending addendum is never a quota victim', () => {
+    const old = makeSession({
+      id: 'old',
+      arrived_at: '2026-05-18T08:00:00+10:00',
+      expires_at: '2026-05-18T18:00:00+10:00',
+      signature: SIGNED,
+    })
+    saveSession(old)
+    appendAddendum('old', { kind: 'departure', data: departure })
+    expect(hasUnsignedEvidence(getSession('old')!)).toBe(true)
+    quotaThrowsNTimes(99)
+    expect(() => saveSession(makeSession({ id: 'fresh' }))).toThrow(StorageFullError)
+    expect(getSession('old')!.car_photo).toBe('data:image/jpeg;base64,CAR')
   })
 })
