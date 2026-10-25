@@ -69,13 +69,18 @@
     "lastLoggedSpot": "Ultimo posto registrato",
     "noPostedRestrictions": "Nessuna restrizione segnalata",
     "iveLeft": "Ho lasciato il posto",
-    "iveLeftAria": "Segnala che hai lasciato questo parcheggio",
-    "iveLeftConfirm": "Segnare che sei andato via? Il parcheggio passa nella cronologia con l'ora di partenza.",
+    "iveLeftAria": "Ho lasciato il posto. Chiude questo record di parcheggio.",
+    "iveLeftConfirm": "Vuoi segnare questo record come concluso ora? Verrà salvato l'orario del tocco, secondo l'orologio del telefono. Un'eventuale partenza precedente non viene registrata.",
     "nextPing": "Prossimo promemoria: {{when}}",
     "recheckNow": "Ricontrolla ora",
     "recheckSub": "Ancora a posto? Riverifica in pochi secondi",
     "cardAria": "Record di parcheggio attivo in {{address}}, {{status}}. Tocca per i dettagli.",
-    "listCardAria": "Apri il record di parcheggio in {{address}}, {{status}}."
+    "listCardAria": "Apri il record di parcheggio in {{address}}, {{status}}.",
+    "expiredAt": "Scaduta alle {{time}}",
+    "expiredHint": "Sei ancora qui? Sposta l'auto ora. Hai già spostato l'auto? Tocca \"Ho lasciato il posto\".",
+    "walkBackAria": "Torna a piedi. Apre le indicazioni a piedi per la tua auto.",
+    "walkBackAriaDistance_one": "Torna a piedi. Apre le indicazioni a piedi per la tua auto, a {{distance}}, circa {{count}} minuto a piedi.",
+    "walkBackAriaDistance_other": "Torna a piedi. Apre le indicazioni a piedi per la tua auto, a {{distance}}, circa {{count}} minuti a piedi."
   },
   "scanner": {
     "header": "Scansiona cartello di parcheggio",
@@ -309,14 +314,15 @@
     "noAmbientCaptured": "Nessuna foto dell'area è stata catturata.",
     "noSignBadgeLong": "Nessuna restrizione affissa registrata. Registrato come posto senza cartelli.",
     "endSession": "Ho lasciato il posto",
-    "endConfirm": "Vuoi segnare che hai lasciato il posto? Il record resta nella cronologia con l'ora di partenza registrata.",
+    "endConfirm": "Vuoi segnare questo record come concluso ora? Verrà salvato l'orario del tocco, secondo l'orologio del telefono. Un'eventuale partenza precedente non viene registrata.",
     "endedAt": "Terminata {{when}}",
     "noExpiryRecorded": "Nessuna scadenza registrata",
     "howToVerify": "Come un comune può verificare questo record →",
     "photoSyncFailed": "Foto non salvata nel cloud",
     "photoSyncRetry": "Riprova il caricamento",
     "exportPhotoWarning": "Una o più foto non sono state caricate dal cloud per questa vecchia sessione. Puoi esportare lo stesso, oppure aprirla sul dispositivo dov'è stata creata.",
-    "photoHashMismatch": "Questa foto non corrisponde alla prova firmata e potrebbe essere stata modificata dopo il salvataggio."
+    "photoHashMismatch": "Questa foto non corrisponde alla prova firmata e potrebbe essere stata modificata dopo il salvataggio.",
+    "endConfirmLate": "Vuoi segnare questo record come concluso ora? Verrà registrato l'orario del tocco, {{time}}, secondo l'orologio del telefono. Non mostrerà quando l'auto è partita davvero."
   },
   "appeal": {
     "captureHeader": "Redigi una lettera di ricorso",
@@ -496,7 +502,10 @@
     "imageType": "Quel tipo di immagine non è supportato. Usa una foto JPEG o PNG.",
     "appealUndraftable": "Non siamo riusciti a redigere un ricorso da quella foto. Prova con una foto più chiara della multa.",
     "exportFailed": "Non siamo riusciti a creare il tuo export in questo momento. Riprova tra un momento.",
-    "genericRetry": "Qualcosa è andato storto. Riprova tra un momento."
+    "genericRetry": "Qualcosa è andato storto. Riprova tra un momento.",
+    "storageFull": "Lo spazio di ParkProof su questo dispositivo è pieno. I record in corso e quelli ancora in attesa di firma vengono conservati. Apri la cronologia, elimina un record vecchio che non ti serve più e riprova.",
+    "storageEvicted_one": "Lo storage del dispositivo era pieno, quindi {{count}} vecchio record di parcheggio è stato eliminato per fare spazio. Accedi per tenere i record al sicuro nel cloud.",
+    "storageEvicted_other": "Lo storage del dispositivo era pieno, quindi {{count}} vecchi record di parcheggio sono stati eliminati per fare spazio. Accedi per tenere i record al sicuro nel cloud."
   },
   "pdf": {
     "common": {
@@ -521,8 +530,8 @@
         "sideVariant": "Lato / Variante selezionata",
         "signRules": "Regole del cartello",
         "aiConfidence": "Affidabilità AI",
-        "endedAt": "Uscita (segnalata dal conducente)",
-        "actualDuration": "Durata effettiva"
+        "endedAt": "Tocco su \"Ho lasciato il posto\" (orologio del telefono)",
+        "actualDuration": "Tempo dall'arrivo al tocco su \"Ho lasciato il posto\" (orologio del telefono)"
       },
       "locationSourceValue": {
         "manuallyEntered": "Inserito manualmente",
@@ -597,7 +606,7 @@
     "duration": {
       "minOnly_one": "1 min",
       "minOnly_other": "{{count}} min",
-      "hourOnly_one": "1 ora",
+      "hoursOnly_one": "1 ora",
       "hoursOnly_other": "{{count}} ore",
       "hoursAndMins": "{{hours}}h {{mins}}m"
     }
@@ -606,19 +615,19 @@
     "moveNow": "Spostati ora",
     "minLeft_one": "1 min rimanente",
     "minLeft_other": "{{count}} min rimanenti",
-    "hourLeft_one": "1 ora rimanente",
+    "hoursLeft_one": "1 ora rimanente",
     "hoursLeft_other": "{{count}} ore rimanenti",
     "hoursMinsLeft": "{{hours}}h {{mins}}m rimanenti",
     "justNow": "proprio ora",
     "minAgo_one": "1 min fa",
     "minAgo_other": "{{count}} min fa",
-    "hourAgo_one": "1 ora fa",
+    "hoursAgo_one": "1 ora fa",
     "hoursAgo_other": "{{count}} ore fa",
     "yesterday": "ieri",
     "daysAgo_other": "{{count}} giorni fa",
     "parkedForMin_one": "Parcheggiato da 1 min",
     "parkedForMin_other": "Parcheggiato da {{count}} min",
-    "parkedForHour_one": "Parcheggiato da 1 ora",
+    "parkedForHours_one": "Parcheggiato da 1 ora",
     "parkedForHours_other": "Parcheggiato da {{count}} ore",
     "parkedForHoursMins": "Parcheggiato da {{hours}}h {{mins}}m"
   },
@@ -779,7 +788,8 @@
     "tooLateAll": "Nessuna opzione di promemoria è abbastanza in là nel tempo da poter essere pianificata. Tocca Termina sessione se sei già andato via.",
     "pushNotEnabled": "Attiva le notifiche push su questo dispositivo per aggiungere promemoria che suonano anche quando l'app è chiusa.",
     "saving": "Salvataggio…",
-    "errorRetry": "Impossibile aggiornare — riprova"
+    "errorRetry": "Impossibile aggiornare — riprova",
+    "otherDevice": "Questi promemoria sono stati impostati su un altro dispositivo. Modificali da quel dispositivo."
   },
   "installPrompt": {
     "available": "Installa ParkProof",

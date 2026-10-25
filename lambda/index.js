@@ -14,6 +14,7 @@ import {
   SchedulerClient,
   CreateScheduleCommand,
   DeleteScheduleCommand,
+  GetScheduleCommand,
 } from '@aws-sdk/client-scheduler'
 import webpush from 'web-push'
 import crypto from 'node:crypto'
@@ -1298,36 +1299,106 @@ export function pushSendOptions({ session_id, stale_at, nowMs }) {
   return opts
 }
 
+// ─── Push ownership (spec N6) ─────────────────────────────────────────────
+// Push schedules belong to the device that created them. session_id alone is
+// not a secret (it travels in share links and cloud rows), so before any
+// schedule is deleted or replaced the handler reads it and goes ahead only
+// when the device_id stored in its Target Input matches the caller's. A
+// mismatch is 403 ERR_NOT_OWNER and changes nothing.
+export const PUSH_ERR_NOT_OWNER = 'ERR_NOT_OWNER'
+
+const DEVICE_ID_RE = /^[a-f0-9-]+$/i
+
+/** The request's device_id when well formed (UUID shape, ≤64 chars), else ''. */
+function parseDeviceId(body) {
+  const device_id = typeof body?.device_id === 'string' ? body.device_id.trim() : ''
+  return device_id && device_id.length <= 64 && DEVICE_ID_RE.test(device_id) ? device_id : ''
+}
+
+/** The schedule names a session can occupy: one per reminder slot. */
+function pushScheduleNames(session_id) {
+  return Array.from(
+    { length: PUSH_MAX_REMINDERS_PER_SESSION },
+    (_, i) => `parkproof-push-${session_id}-${i}`,
+  )
+}
+
 /**
- * Defensively delete any existing schedules for this session. Used both at
- * cancel-time (user ended session early) AND at re-schedule time (user picks
- * different offsets for the same session), since CreateSchedule throws
- * ConflictException on a name collision. Idempotent — silently swallows
- * ResourceNotFoundException for slots that were never created or have
- * already fired.
- *
- * Returns the count of schedules actually deleted (excludes not-found).
+ * The device_id a schedule was created for, read from its Target Input, or
+ * null when the Input is missing, unparseable or has no device_id. Null
+ * never matches a caller, so a schedule we can't attribute is left alone.
  */
-async function deletePushSchedulesForSession(session_id) {
-  if (!isSafeSessionId(session_id)) return 0
+export function scheduleOwnerDeviceId(schedule) {
+  const input = schedule?.Target?.Input
+  if (typeof input !== 'string') return null
+  try {
+    const parsed = JSON.parse(input)
+    return typeof parsed?.device_id === 'string' && parsed.device_id ? parsed.device_id : null
+  } catch {
+    return null
+  }
+}
+
+/**
+ * Read every slot of a session's push schedules (GetSchedule per slot).
+ * Returns the names that exist and whether the caller owns all of them.
+ * Throws on any scheduler error other than not-found: ownership that can't
+ * be checked must not be assumed, so the caller then changes nothing.
+ */
+async function readSessionPushSchedules(session_id, device_id) {
+  const found = await Promise.all(
+    pushScheduleNames(session_id).map(async (Name) => {
+      try {
+        const schedule = await scheduler().send(new GetScheduleCommand({ Name }))
+        return { Name, owner: scheduleOwnerDeviceId(schedule) }
+      } catch (err) {
+        // Not-found is the happy path: slot never used, or already fired.
+        if (err?.name === 'ResourceNotFoundException') return null
+        throw err
+      }
+    }),
+  )
+  const existing = found.filter(Boolean)
+  return {
+    names: existing.map((s) => s.Name),
+    owned: existing.every((s) => s.owner === device_id),
+  }
+}
+
+/**
+ * Delete the named schedules (already read and owner-checked). Used both at
+ * cancel time (driver left early) and before a reschedule, since
+ * CreateSchedule throws ConflictException on a name collision. A schedule
+ * that fires between the read and the delete is not-found, which is fine.
+ *
+ * Returns the count actually deleted (excludes not-found).
+ */
+async function deletePushSchedules(names, session_id) {
   let deleted = 0
   await Promise.all(
-    Array.from({ length: PUSH_MAX_REMINDERS_PER_SESSION }, (_, i) =>
+    names.map((Name) =>
       scheduler()
-        .send(new DeleteScheduleCommand({ Name: `parkproof-push-${session_id}-${i}` }))
+        .send(new DeleteScheduleCommand({ Name }))
         .then(() => {
           deleted += 1
         })
         .catch((err) => {
-          // Not-found is the happy path — slot was never used or already fired.
           if (err?.name === 'ResourceNotFoundException') return
           console.error(
-            `[parkproof.push.cancel.slot_error] session=${session_id} slot=${i} ${err?.message || err}`,
+            `[parkproof.push.cancel.slot_error] session=${session_id} name=${Name} ${err?.message || err}`,
           )
         }),
     ),
   )
   return deleted
+}
+
+function notOwnerResponse() {
+  return {
+    statusCode: 403,
+    headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ error: PUSH_ERR_NOT_OWNER }),
+  }
 }
 
 async function handlePushSchedule(event) {
@@ -1342,9 +1413,9 @@ async function handlePushSchedule(event) {
   }
 
   const body = typeof event.body === 'string' ? JSON.parse(event.body) : event.body || {}
-  const device_id = typeof body.device_id === 'string' ? body.device_id.trim() : ''
+  const device_id = parseDeviceId(body)
   const session_id = typeof body.session_id === 'string' ? body.session_id.trim() : ''
-  if (!device_id || !/^[a-f0-9-]+$/i.test(device_id) || device_id.length > 64) {
+  if (!device_id) {
     return {
       statusCode: 400,
       headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
@@ -1382,11 +1453,20 @@ async function handlePushSchedule(event) {
     }
   }
 
-  // Reschedule support: defensively wipe any prior schedules for this session
-  // before creating new ones. CreateSchedule throws ConflictException on a
-  // name collision, so this is mandatory whenever the user re-picks offsets
-  // for the same session_id. No-op for first-time scheduling.
-  await deletePushSchedulesForSession(session_id)
+  // Reschedule support: wipe any prior schedules for this session before
+  // creating new ones. CreateSchedule throws ConflictException on a name
+  // collision, so this is mandatory whenever the user re-picks offsets for
+  // the same session_id. No-op for first-time scheduling.
+  //
+  // Ownership first (N6): every existing schedule must have been created by
+  // this device_id. If any wasn't, refuse and touch nothing, so a caller who
+  // only knows a session_id can't replace (or silence) someone's reminders.
+  const prior = await readSessionPushSchedules(session_id, device_id)
+  if (!prior.owned) {
+    console.log(`[parkproof.push.schedule.not_owner] ${JSON.stringify({ session_id })}`)
+    return notOwnerResponse()
+  }
+  await deletePushSchedules(prior.names, session_id)
 
   // Optional: the session's parking expiry, so each push can carry a TTL that
   // ends shortly after the parking does. Absent for no-sign sessions.
@@ -1484,17 +1564,26 @@ async function handlePushSchedule(event) {
 }
 
 /**
- * POST /push/cancel — `{ session_id }`. Deletes all pending push schedules
- * for a session. Called by the frontend when the user signals "I've left"
- * before parking expires — pushes for that session should no longer fire.
+ * POST /push/cancel — `{ device_id, session_id }`. Deletes all pending push
+ * schedules for a session. Called by the frontend when the user signals
+ * "I've left" before parking expires — pushes for that session should no
+ * longer fire.
  *
- * Anonymous, like /push/schedule. session_id is the only thing tying the
- * caller to the schedules; if you don't know it, you can't cancel — which
- * matches the existing privacy model (no auth on the push paths).
+ * Anonymous, like /push/schedule, and owner-checked the same way (N6): the
+ * schedules are deleted only when every one of them was created by this
+ * device_id. Otherwise 403 ERR_NOT_OWNER and nothing is deleted.
  */
 async function handlePushCancel(event) {
   const body = typeof event.body === 'string' ? JSON.parse(event.body) : event.body || {}
+  const device_id = parseDeviceId(body)
   const session_id = typeof body.session_id === 'string' ? body.session_id.trim() : ''
+  if (!device_id) {
+    return {
+      statusCode: 400,
+      headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ error: 'device_id is required (UUID, ≤64 chars)' }),
+    }
+  }
   if (!isSafeSessionId(session_id)) {
     return {
       statusCode: 400,
@@ -1504,7 +1593,12 @@ async function handlePushCancel(event) {
       }),
     }
   }
-  const deleted = await deletePushSchedulesForSession(session_id)
+  const existing = await readSessionPushSchedules(session_id, device_id)
+  if (!existing.owned) {
+    console.log(`[parkproof.push.cancel.not_owner] ${JSON.stringify({ session_id })}`)
+    return notOwnerResponse()
+  }
+  const deleted = await deletePushSchedules(existing.names, session_id)
   console.log(
     `[parkproof.push.cancel] ${JSON.stringify({ session_id, deleted })}`,
   )

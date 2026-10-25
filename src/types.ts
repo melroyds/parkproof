@@ -183,9 +183,10 @@ export interface ParkingSession {
    *   - ReminderOptions writes the initial set after /push/schedule succeeds
    *   - SessionDetail's "+ Add reminder" / per-row cancel re-call /push/schedule
    *     with the new desired union/difference, then overwrites this array
-   *   - cancelPushReminders (e.g. "I've left") doesn't currently clear this
-   *     array — the times are still "what was scheduled at the time", and the
-   *     session is over anyway. Stale fire_at after end-of-session is harmless.
+   *   - App.handleEndSession ("I've left") and "Cancel all" clear this array
+   *     only after /push/cancel succeeded. After a failure, or a 403
+   *     ERR_NOT_OWNER (another device created the schedules), it is left as
+   *     it is, because those pushes may still fire.
    *
    * Additive — old sessions saved pre-feature have no field, treated as []
    * by all readers.

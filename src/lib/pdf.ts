@@ -5,6 +5,7 @@ import type { AppealDraft, ParkingSession } from '../types'
 import { ACCURACY_USABLE_M, formatAccuracy } from './accuracy'
 import { sessionTimezone } from './timezone'
 import { registerPdfFonts } from './pdf-fonts'
+import { ACTIVE_AFTER_EXPIRY_MS } from './storage'
 
 const MARGIN = 40
 
@@ -74,15 +75,23 @@ function splitRules(rules: string): string {
 }
 
 /**
- * Build the two ended_at-conditional rows for the evidence table — only
- * included when the driver explicitly signalled "I've left" on this session.
- * Shared across all three PDF generators (single-session evidence, appeal
- * attachment, full account export) so the duration math stays consistent.
+ * Build the ended_at-conditional rows for the evidence table, only included
+ * when the driver tapped "I've left" on this record. Shared across all three
+ * PDF generators (single-record evidence, appeal attachment, full account
+ * export) so the duration maths stays consistent.
+ *
+ * ended_at is the phone's clock at the moment of the tap, not when the car
+ * left, so the row is labelled as a tap time. A driver who moves the car on
+ * time but taps "I've left" hours later (the home card keeps asking for 12 h
+ * after expiry, the record screen asks on any record) would otherwise get a
+ * duration row that shows an overstay nobody observed. The duration row is
+ * therefore left out when the tap came after the record's expiry, or, for a
+ * record with no expiry, more than ACTIVE_AFTER_EXPIRY_MS after arrival.
  *
  * Returns an empty array when no ended_at is set; callers just spread the
  * result inline.
  */
-function endedRows(
+export function endedRows(
   session: ParkingSession,
   timezone: string,
   t: TFunction,
@@ -91,12 +100,22 @@ function endedRows(
   const rows: [string, string][] = [
     [t('pdf.evidence.field.endedAt'), fmtLocal(session.ended_at, timezone)],
   ]
-  // Duration: arrived → ended. Only emit when both timestamps parse and the
+  // Duration: arrived → tap. Only emit when both timestamps parse, the
   // result is non-negative (defensive — a clock skew could in theory produce
-  // a negative). Show as "Xh Ym" with i18n-aware phrasing.
+  // a negative) and the tap wasn't late (see above). Show as "Xh Ym" with
+  // i18n-aware phrasing.
   const arrivedMs = new Date(session.arrived_at).getTime()
   const endedMs = new Date(session.ended_at).getTime()
-  if (Number.isFinite(arrivedMs) && Number.isFinite(endedMs) && endedMs >= arrivedMs) {
+  const expiresMs = session.expires_at ? new Date(session.expires_at).getTime() : NaN
+  const tappedLate = Number.isFinite(expiresMs)
+    ? endedMs > expiresMs
+    : endedMs - arrivedMs > ACTIVE_AFTER_EXPIRY_MS
+  if (
+    Number.isFinite(arrivedMs) &&
+    Number.isFinite(endedMs) &&
+    endedMs >= arrivedMs &&
+    !tappedLate
+  ) {
     const totalMins = Math.max(0, Math.round((endedMs - arrivedMs) / 60_000))
     const hours = Math.floor(totalMins / 60)
     const mins = totalMins % 60
@@ -107,10 +126,7 @@ function endedRows(
     if (hours === 0) {
       durationLabel = t('pdf.duration.minOnly', { count: mins })
     } else if (mins === 0) {
-      durationLabel =
-        hours === 1
-          ? t('pdf.duration.hourOnly', { count: hours })
-          : t('pdf.duration.hoursOnly', { count: hours })
+      durationLabel = t('pdf.duration.hoursOnly', { count: hours })
     } else {
       durationLabel = t('pdf.duration.hoursAndMins', { hours, mins })
     }

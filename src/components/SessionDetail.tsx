@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { ParkingSession } from '../types'
-import { deleteSession, endSession, updateSession } from '../lib/storage'
+import { deleteSession, isStorageFullError, updateSession } from '../lib/storage'
+import { useLiveRecord } from '../lib/use-records-version'
+import { canEndRecord, endConfirmText } from '../lib/record-status'
 import ScheduledRemindersSection from './ScheduledRemindersSection'
 import VerifiedSeal from './VerifiedSeal'
 import Icon from './Icon'
@@ -15,22 +17,26 @@ import { navigationUrl } from '../lib/walk-back'
 import { useAuth } from '../lib/use-auth'
 import { deleteCloudSession, mirrorSessionToCloud, mirrorSessionUpdateToCloud } from '../lib/sync'
 import { cancelPushReminders } from '../lib/push'
+import { cancelInTabReminders } from '../lib/notifications'
 import { verifyUrlForLocale } from '../lib/verify-url'
 
 const NOTE_MAX_LENGTH = 280
 
 interface Props {
+  /**
+   * The record to show. The screen re-reads it from storage on every
+   * records change, so this is only the starting copy.
+   */
   session: ParkingSession
   onBack: () => void
   onDeleted: () => void
   onDraftAppeal: () => void
   /**
-   * Called when the user signals "I've left" via the End session button.
-   * App.tsx mirrors the change to cloud (when signed in) and updates the
-   * activeSessions memo. The session itself stays in history with ended_at
-   * set, so this is non-destructive.
+   * Called when the driver taps "I've left". App.handleEndSession owns the
+   * whole end path (stamp ended_at, cloud mirror, push and in-tab cancels);
+   * this screen only asks. The record stays in history with ended_at set.
    */
-  onEndSession?: (session: ParkingSession) => void
+  onEndSession: (session: ParkingSession) => void
 }
 
 function fmtLocal(iso: string, timeZone: string, full = false): string {
@@ -46,7 +52,7 @@ function fmtLocal(iso: string, timeZone: string, full = false): string {
 }
 
 export default function SessionDetail({
-  session,
+  session: initialSession,
   onBack,
   onDeleted,
   onDraftAppeal,
@@ -55,6 +61,9 @@ export default function SessionDetail({
   const { t, i18n } = useTranslation()
   const { user } = useAuth()
   const now = useNow()
+  // Live copy: background signing, a cloud pull or the end-session path
+  // update storage, and this re-reads it, so the screen never goes stale.
+  const session = useLiveRecord(initialSession)
   const expiresMs = session.expires_at ? new Date(session.expires_at).getTime() : null
   const isExpired = expiresMs !== null && expiresMs < now
   const isEnded = !!session.ended_at
@@ -65,12 +74,9 @@ export default function SessionDetail({
     expiresMs !== null && !isExpired && !isEnded
       ? formatCountdownLocalized(expiresMs - now, t)
       : null
-  // Active means the user can still take the "End session" action. Two cases:
-  //   - no expiry (no-sign session) and not yet ended
-  //   - has expiry, still in the future, and not yet ended (leaving early)
-  const canEnd =
-    !isEnded &&
-    (session.expires_at == null || (expiresMs !== null && expiresMs > now))
+  // "I've left" is offered on any record that hasn't been ended, including
+  // one past its expiry (the driver may come back late).
+  const canEnd = canEndRecord(session)
   const timeZone = useMemo(() => sessionTimezone(session.location), [session.location])
   // Locale-aware link to the plain-English /verify walkthrough — surfaced at
   // the point the user exports evidence, the moment they most want to know how
@@ -79,7 +85,8 @@ export default function SessionDetail({
   // #3 — a silent photo-sync failure flagged on the session. The cloud row
   // exists but an image didn't reach S3, so it's missing cross-device and in
   // the PDF. Offer a retry (signed-in only — the only state a mirror runs in).
-  const [photoSyncFailed, setPhotoSyncFailed] = useState(!!session.photo_sync_failed)
+  // Read from the live record, so a flag set after save shows up here too.
+  const photoSyncFailed = !!session.photo_sync_failed
   const [retryingPhoto, setRetryingPhoto] = useState(false)
   // #9 — cloud-pulled sessions hold photos as remote HTTPS URLs that may fail to
   // materialize at export time (expired presign, pre-CORS-fix historical row).
@@ -153,8 +160,8 @@ export default function SessionDetail({
     try {
       const { photoFailed } = await mirrorSessionToCloud(session)
       if (!photoFailed) {
+        // The write re-renders this screen through the records-changed event.
         updateSession(session.id, { photo_sync_failed: false })
-        setPhotoSyncFailed(false)
       }
     } catch (err) {
       console.warn('[sync] photo re-upload failed:', err)
@@ -177,28 +184,24 @@ export default function SessionDetail({
     // rationale as the end-session path: stale pushes for a session the user
     // has thrown away would be jarring. Best-effort.
     void cancelPushReminders(session.id)
+    // And reminders armed in this tab, or a "move your car" fires for a
+    // record that no longer exists (same as the end path).
+    cancelInTabReminders(session.id)
     onDeleted()
   }
 
   const handleEnd = () => {
-    if (!window.confirm(t('session.endConfirm'))) return
-    endSession(session.id)
-    if (user) mirrorSessionUpdateToCloud(session.id)
-    // Fire-and-forget: clean up any pending Web Push reminders so they
-    // don't fire after the user has already left. See App.handleEndSession
-    // for the rationale; same call from both paths keeps behaviour consistent
-    // whether the user ends via the home card or the detail screen.
-    void cancelPushReminders(session.id)
-    // Notify parent so the home-screen active card can re-derive. We DON'T
-    // navigate away — staying on the detail view lets the user immediately
-    // see the "Ended {{when}}" status row.
-    onEndSession?.({ ...session, ended_at: new Date().toISOString() })
+    // A late tap (past expiry, or open over 12 h) names the time that will
+    // be stored. Read the clock at the tap, not the render tick.
+    if (!window.confirm(endConfirmText(session, t, timeZone, 'session.endConfirm'))) return
+    // App owns ending: ended_at, cloud mirror, push and in-tab cancels. We
+    // stay on this screen; the live record shows "Ended ..." once stored.
+    onEndSession(session)
   }
 
-  // Editable note — persists to localStorage on save. The committed value lives
-  // in `currentNote` so re-renders pick up the latest copy without re-reading
-  // session storage; `noteDraft` is the in-progress textarea state.
-  const [currentNote, setCurrentNote] = useState(session.note ?? '')
+  // Editable note — persists to localStorage on save. The committed value is
+  // the live record's note; `noteDraft` is the in-progress textarea state.
+  const currentNote = session.note ?? ''
   const [noteEditing, setNoteEditing] = useState(false)
   const [noteDraft, setNoteDraft] = useState(currentNote)
   const [noteError, setNoteError] = useState<string | null>(null)
@@ -217,7 +220,6 @@ export default function SessionDetail({
     const trimmed = noteDraft.trim()
     try {
       updateSession(session.id, { note: trimmed || undefined })
-      setCurrentNote(trimmed)
       setNoteEditing(false)
       setNoteError(null)
       // Mirror the patched session to the cloud — picks up the latest local
@@ -228,7 +230,11 @@ export default function SessionDetail({
     } catch (err) {
       // Quota error after recovery exhausted, or another storage failure.
       // Keep the user in edit mode so their text isn't lost.
-      const message = err instanceof Error ? err.message : String(err)
+      const message = isStorageFullError(err)
+        ? t('errors.storageFull')
+        : err instanceof Error
+          ? err.message
+          : String(err)
       setNoteError(message)
     }
   }

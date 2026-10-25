@@ -63,11 +63,12 @@ describe('formatRelativeLocalized', () => {
     }) as unknown as TFunction
   }
 
-  it('defers each case to the matching i18n key (justNow, minAgo, hourAgo, hoursAgo, yesterday, daysAgo)', () => {
+  it('defers each case to the matching i18n key (justNow, minAgo, hoursAgo, yesterday, daysAgo)', () => {
     const t = mockT()
     expect(formatRelativeLocalized(0, t)).toBe('time.justNow')
     expect(formatRelativeLocalized(5 * MIN, t)).toBe('time.minAgo:5')
-    expect(formatRelativeLocalized(HOUR, t)).toBe('time.hourAgo:1')
+    // One plural base for every hour count; i18next picks _one or _other.
+    expect(formatRelativeLocalized(HOUR, t)).toBe('time.hoursAgo:1')
     expect(formatRelativeLocalized(5 * HOUR, t)).toBe('time.hoursAgo:5')
     expect(formatRelativeLocalized(DAY, t)).toBe('time.yesterday')
     expect(formatRelativeLocalized(3 * DAY, t)).toBe('time.daysAgo:3')

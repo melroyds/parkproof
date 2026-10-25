@@ -191,13 +191,18 @@
     "lastLoggedSpot": "최근 기록 위치",
     "noPostedRestrictions": "표시된 제한 없음",
     "iveLeft": "떠났습니다",
-    "iveLeftAria": "이 주차 자리를 떠났다는 신호 전송",
-    "iveLeftConfirm": "지금 출차한 것으로 표시할까요? 떠난 시간이 기록되어 기록 목록으로 이동합니다.",
+    "iveLeftAria": "떠났습니다. 이 주차 기록을 종료합니다.",
+    "iveLeftConfirm": "지금 이 기록을 종료로 표시할까요? 누른 시각이 휴대폰 시계 기준으로 저장됩니다. 더 일찍 떠났다면 그 시각은 기록되지 않습니다.",
     "nextPing": "다음 알림: {{when}}",
     "recheckNow": "지금 다시 확인",
     "recheckSub": "아직 합법인가요? 몇 초 안에 재확인",
     "cardAria": "{{address}}의 활성 주차 기록, {{status}}. 자세히 보려면 탭하세요.",
-    "listCardAria": "{{address}}의 주차 기록 열기, {{status}}."
+    "listCardAria": "{{address}}의 주차 기록 열기, {{status}}.",
+    "expiredAt": "{{time}}에 만료됨",
+    "expiredHint": "아직 여기 있나요? 지금 이동하세요. 이미 이동했나요? \"떠났습니다\"를 누르세요.",
+    "walkBackAria": "걸어 돌아가기. 차까지 가는 도보 경로를 엽니다.",
+    "walkBackAriaDistance_one": "걸어 돌아가기. 차까지 가는 도보 경로를 엽니다. {{distance}} 거리, 걸어서 약 {{count}}분.",
+    "walkBackAriaDistance_other": "걸어 돌아가기. 차까지 가는 도보 경로를 엽니다. {{distance}} 거리, 걸어서 약 {{count}}분."
   },
   "scanner": {
     "header": "주차 표지판 스캔",
@@ -428,8 +433,8 @@
     "pdfErrorHeader": "PDF를 생성할 수 없습니다",
     "pdfErrorHelp": "오류가 브라우저 콘솔에 기록되었습니다. 계속 발생하면 콘솔 출력 스크린샷을 찍어 공유하세요.",
     "draftAppeal": "벌금를 받았나요? 이의신청서 작성",
-    "endSession": "출차했어요",
-    "endConfirm": "지금 출차한 것으로 표시할까요? 떠난 시간이 기록된 채로 기록은 목록에 남습니다.",
+    "endSession": "떠났습니다",
+    "endConfirm": "지금 이 기록을 종료로 표시할까요? 누른 시각이 휴대폰 시계 기준으로 저장됩니다. 더 일찍 떠났다면 그 시각은 기록되지 않습니다.",
     "endedAt": "종료 {{when}}",
     "noExpiryRecorded": "만료 시간 기록되지 않음",
     "deleteSession": "기록 삭제",
@@ -438,7 +443,8 @@
     "photoSyncFailed": "사진이 클라우드에 백업되지 않음",
     "photoSyncRetry": "업로드 다시 시도",
     "exportPhotoWarning": "이 오래된 기록의 사진 일부를 클라우드에서 불러오지 못했습니다. 그대로 내보내셔도 되고, 처음 만든 기기에서 열어보셔도 됩니다.",
-    "photoHashMismatch": "이 사진은 서명된 증거와 일치하지 않으며 저장 이후 변경되었을 수 있습니다."
+    "photoHashMismatch": "이 사진은 서명된 증거와 일치하지 않으며 저장 이후 변경되었을 수 있습니다.",
+    "endConfirmLate": "지금 이 기록을 종료로 표시할까요? 누른 시각인 {{time}}(휴대폰 시계 기준)으로 기록됩니다. 차가 실제로 떠난 시각은 기록되지 않습니다."
   },
   "appeal": {
     "captureHeader": "이의신청서 작성",
@@ -635,7 +641,10 @@
     "imageType": "지원하지 않는 이미지 형식입니다. JPEG 또는 PNG 사진을 사용해 주세요.",
     "appealUndraftable": "그 사진으로는 이의신청서를 작성할 수 없었습니다. 통지서를 더 선명하게 찍어 주세요.",
     "exportFailed": "지금 내보내기를 생성하지 못했습니다. 잠시 후 다시 시도해 주세요.",
-    "genericRetry": "문제가 발생했습니다. 잠시 후 다시 시도해 주세요."
+    "genericRetry": "문제가 발생했습니다. 잠시 후 다시 시도해 주세요.",
+    "storageFull": "이 기기의 ParkProof 저장 공간이 가득 찼습니다. 현재 기록과 서명을 기다리는 기록은 유지됩니다. 기록 목록을 열어 더 이상 필요 없는 오래된 기록을 삭제한 뒤 다시 시도하세요.",
+    "storageEvicted_one": "기기 저장 공간이 가득 차서, 공간 확보를 위해 오래된 주차 기록 {{count}}개가 삭제되었습니다. 기록을 클라우드에 안전하게 보관하려면 로그인하세요.",
+    "storageEvicted_other": "기기 저장 공간이 가득 차서, 공간 확보를 위해 오래된 주차 기록 {{count}}개가 삭제되었습니다. 기록을 클라우드에 안전하게 보관하려면 로그인하세요."
   },
   "pdf": {
     "common": {
@@ -648,7 +657,7 @@
     "duration": {
       "minOnly_one": "1분",
       "minOnly_other": "{{count}}분",
-      "hourOnly_one": "1시간",
+      "hoursOnly_one": "1시간",
       "hoursOnly_other": "{{count}}시간",
       "hoursAndMins": "{{hours}}시간 {{mins}}분"
     },
@@ -659,8 +668,8 @@
       "field": {
         "arrivedAt": "도착",
         "expiresAt": "만료",
-        "endedAt": "종료 (운전자 신호)",
-        "actualDuration": "실제 시간",
+        "endedAt": "\"떠났습니다\"를 누른 시각 (휴대폰 시계)",
+        "actualDuration": "도착부터 \"떠났습니다\"를 누를 때까지 (휴대폰 시계)",
         "guidance": "ParkProof 가이드",
         "address": "주소",
         "locationGps": "위치 (GPS)",
@@ -745,18 +754,18 @@
     "moveNow": "지금 이동",
     "minLeft_one": "1분 남음",
     "minLeft_other": "{{count}}분 남음",
-    "hourLeft_one": "1시간 남음",
+    "hoursLeft_one": "1시간 남음",
     "hoursLeft_other": "{{count}}시간 남음",
     "hoursMinsLeft": "{{hours}}시간 {{mins}}분 남음",
     "parkedForMin_one": "1분 주차",
     "parkedForMin_other": "{{count}}분 주차",
-    "parkedForHour_one": "1시간 주차",
+    "parkedForHours_one": "1시간 주차",
     "parkedForHours_other": "{{count}}시간 주차",
     "parkedForHoursMins": "{{hours}}시간 {{mins}}분 주차",
     "justNow": "방금",
     "minAgo_one": "1분 전",
     "minAgo_other": "{{count}}분 전",
-    "hourAgo_one": "1시간 전",
+    "hoursAgo_one": "1시간 전",
     "hoursAgo_other": "{{count}}시간 전",
     "yesterday": "어제",
     "daysAgo_other": "{{count}}일 전"
@@ -779,7 +788,8 @@
     "tooLateAll": "예약할 만큼 충분히 뒤로 떨어진 알림 옵션이 없습니다. 이미 떠나셨다면 '세션 종료'를 누르세요.",
     "pushNotEnabled": "앱이 닫혀 있을 때도 작동하는 알림을 추가하려면 이 기기에서 푸시 알림을 활성화하세요.",
     "saving": "저장 중…",
-    "errorRetry": "업데이트할 수 없음 — 다시 시도"
+    "errorRetry": "업데이트할 수 없음 — 다시 시도",
+    "otherDevice": "이 알림은 다른 기기에서 설정되었습니다. 해당 기기에서 변경하세요."
   },
   "installPrompt": {
     "available": "ParkProof 설치",

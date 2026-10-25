@@ -63,8 +63,8 @@
     "morePill": "+{{count}} 个",
     "noPostedRestrictions": "无标牌限制",
     "iveLeft": "我已离开",
-    "iveLeftAria": "标记你已离开这个停车位",
-    "iveLeftConfirm": "现在标记为已离开?它会移到历史记录里,并记下你离开的时间。",
+    "iveLeftAria": "我已离开。结束这条停车记录。",
+    "iveLeftConfirm": "现在将此记录标记为已结束?会保存你点按的时间(手机时钟)。如果你更早就离开了,更早的时间不会被记录。",
     "nextPing": "下次提醒:{{when}}",
     "recheckNow": "立即重新检查",
     "recheckSub": "还合法吗?几秒内重新确认",
@@ -75,7 +75,12 @@
     "allActiveIntro_one": "{{count}} 条进行中的停车记录。点击即可打开。",
     "allActiveIntro_other": "{{count}} 条进行中的停车记录。点击任一项即可打开。",
     "allActiveHeader": "正在停车",
-    "lastLoggedSpot": "最近记录的车位"
+    "lastLoggedSpot": "最近记录的车位",
+    "expiredAt": "已于 {{time}} 到期",
+    "expiredHint": "还在这里?请立即移车。已经开走了?点按「我已离开」。",
+    "walkBackAria": "走回。打开前往你车辆的步行路线。",
+    "walkBackAriaDistance_one": "走回。打开前往你车辆的步行路线,距离 {{distance}},步行约 {{count}} 分钟。",
+    "walkBackAriaDistance_other": "走回。打开前往你车辆的步行路线,距离 {{distance}},步行约 {{count}} 分钟。"
   },
   "scanner": {
     "header": "扫描停车标志",
@@ -309,14 +314,15 @@
     "noAmbientCaptured": "未拍摄周围环境照片。",
     "noSignBadgeLong": "未记录已张贴的限制。此处为无标志停车位。",
     "endSession": "我已离开",
-    "endConfirm": "现在标记为已离开?记录会保留在历史中,并记录你的离开时间。",
+    "endConfirm": "现在将此记录标记为已结束?会保存你点按的时间(手机时钟)。如果你更早就离开了,更早的时间不会被记录。",
     "endedAt": "已结束 {{when}}",
     "noExpiryRecorded": "未记录到期时间",
     "howToVerify": "市议会如何核验这份记录 →",
     "photoSyncFailed": "照片未备份到云端",
     "photoSyncRetry": "重试上传",
     "exportPhotoWarning": "这条较旧的记录有一张或多张照片无法从云端加载。你可以照常导出,或在当初创建它的那台设备上打开。",
-    "photoHashMismatch": "这张照片和已签名的证据对不上,可能在保存之后被改动过。"
+    "photoHashMismatch": "这张照片和已签名的证据对不上,可能在保存之后被改动过。",
+    "endConfirmLate": "现在将此记录标记为已结束?记录的将是你点按的时间 {{time}}(手机时钟),而不是车辆实际离开的时间。"
   },
   "appeal": {
     "captureHeader": "起草申诉信",
@@ -496,7 +502,10 @@
     "imageType": "不支持这种图片格式。请使用 JPEG 或 PNG 照片。",
     "appealUndraftable": "我们无法根据那张照片起草申诉。请拍一张更清晰的罚单照片。",
     "exportFailed": "刚才无法生成你的导出文件。请稍后再试一次。",
-    "genericRetry": "出了点问题。请稍后再试一次。"
+    "genericRetry": "出了点问题。请稍后再试一次。",
+    "storageFull": "ParkProof 在此设备上的存储空间已满。当前记录和仍在等待签名的记录都会保留。请打开记录列表,删除一条不再需要的旧记录,然后重试。",
+    "storageEvicted_one": "你的设备存储已满,因此为了腾出空间,删除了 {{count}} 条较旧的停车记录。登录即可把记录安全保存在云端。",
+    "storageEvicted_other": "你的设备存储已满,因此为了腾出空间,删除了 {{count}} 条较旧的停车记录。登录即可把记录安全保存在云端。"
   },
   "pdf": {
     "common": {
@@ -521,8 +530,8 @@
         "sideVariant": "所选方向 / 规则",
         "signRules": "标志规则",
         "aiConfidence": "AI 置信度",
-        "endedAt": "驾驶员标记的离开时间",
-        "actualDuration": "实际停车时长"
+        "endedAt": "点按\"我已离开\"的时间(手机时钟)",
+        "actualDuration": "从到达到点按\"我已离开\"的时长(手机时钟)"
       },
       "locationSourceValue": {
         "manuallyEntered": "手动输入",
@@ -597,7 +606,7 @@
     "duration": {
       "minOnly_one": "1 分钟",
       "minOnly_other": "{{count}} 分钟",
-      "hourOnly_one": "1 小时",
+      "hoursOnly_one": "1 小时",
       "hoursOnly_other": "{{count}} 小时",
       "hoursAndMins": "{{hours}} 小时 {{mins}} 分钟"
     }
@@ -606,19 +615,19 @@
     "moveNow": "立即移车",
     "minLeft_one": "剩余 1 分钟",
     "minLeft_other": "剩余 {{count}} 分钟",
-    "hourLeft_one": "剩余 1 小时",
+    "hoursLeft_one": "剩余 1 小时",
     "hoursLeft_other": "剩余 {{count}} 小时",
     "hoursMinsLeft": "剩余 {{hours}} 小时 {{mins}} 分钟",
     "justNow": "刚刚",
     "minAgo_one": "1 分钟前",
     "minAgo_other": "{{count}} 分钟前",
-    "hourAgo_one": "1 小时前",
+    "hoursAgo_one": "1 小时前",
     "hoursAgo_other": "{{count}} 小时前",
     "yesterday": "昨天",
     "daysAgo_other": "{{count}} 天前",
     "parkedForMin_one": "已停 1 分钟",
     "parkedForMin_other": "已停 {{count}} 分钟",
-    "parkedForHour_one": "已停 1 小时",
+    "parkedForHours_one": "已停 1 小时",
     "parkedForHours_other": "已停 {{count}} 小时",
     "parkedForHoursMins": "已停 {{hours}} 小时 {{mins}} 分钟"
   },
@@ -779,7 +788,8 @@
     "tooLateAll": "没有足够时间在未来安排任何提醒选项。如果你已离开,请点击「结束会话」。",
     "pushNotEnabled": "在此设备上启用推送通知以添加在应用关闭时也能触发的提醒。",
     "saving": "正在保存…",
-    "errorRetry": "无法更新,请重试"
+    "errorRetry": "无法更新,请重试",
+    "otherDevice": "这些提醒是在另一台设备上设置的。请在那台设备上更改。"
   },
   "installPrompt": {
     "available": "安装 ParkProof",

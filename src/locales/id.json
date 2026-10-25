@@ -191,13 +191,18 @@
     "lastLoggedSpot": "Lokasi terakhir dicatat",
     "noPostedRestrictions": "Tidak ada larangan terpasang",
     "iveLeft": "Sudah pergi",
-    "iveLeftAria": "Tandai bahwa kamu sudah meninggalkan tempat parkir ini",
-    "iveLeftConfirm": "Tandai bahwa kamu sudah pergi sekarang? Akan dipindahkan ke riwayat dengan waktu kepergianmu tercatat.",
+    "iveLeftAria": "Sudah pergi. Mengakhiri catatan parkir ini.",
+    "iveLeftConfirm": "Tandai catatan ini selesai sekarang? Waktu kamu mengetuk akan disimpan, dari jam ponselmu. Jika kamu pergi lebih awal, waktu itu tidak tercatat.",
     "nextPing": "Pengingat berikutnya: {{when}}",
     "recheckNow": "Cek ulang sekarang",
     "recheckSub": "Masih sah? Verifikasi ulang dalam hitungan detik",
     "cardAria": "Catatan parkir aktif di {{address}}, {{status}}. Ketuk untuk detail.",
-    "listCardAria": "Buka catatan parkir di {{address}}, {{status}}."
+    "listCardAria": "Buka catatan parkir di {{address}}, {{status}}.",
+    "expiredAt": "Waktu parkir habis pukul {{time}}",
+    "expiredHint": "Masih di sini? Pindahkan sekarang. Sudah pindah? Ketuk \"Sudah pergi\".",
+    "walkBackAria": "Jalan kembali. Membuka petunjuk jalan kaki ke mobilmu.",
+    "walkBackAriaDistance_one": "Jalan kembali. Membuka petunjuk jalan kaki ke mobilmu, berjarak {{distance}}, sekitar {{count}} menit jalan kaki.",
+    "walkBackAriaDistance_other": "Jalan kembali. Membuka petunjuk jalan kaki ke mobilmu, berjarak {{distance}}, sekitar {{count}} menit jalan kaki."
   },
   "scanner": {
     "header": "Pindai rambu parkir",
@@ -393,7 +398,7 @@
     "intro": "Setiap catatan parkir yang pernah kamu simpan. Ketuk salah satu untuk melihat buktinya atau ekspor PDF.",
     "emptyTitle": "Belum ada catatan",
     "emptyHelp": "Pindai rambu dan catat parkirmu. Nanti muncul di sini.",
-    "expired": "Berakhir",
+    "expired": "Waktu habis",
     "noExpiry": "Tanpa berakhir",
     "noSignBadge": "Tidak ada larangan terpasang terekam"
   },
@@ -429,8 +434,8 @@
     "pdfErrorHelp": "Errornya sudah dicatat ke konsol browser. Kalau ini terus terjadi, ambil tangkapan layar konsolnya lalu bagikan.",
     "draftAppeal": "Kena denda? Buat draf surat banding",
     "endSession": "Sudah pergi",
-    "endConfirm": "Tandai bahwa kamu sudah pergi sekarang? Catatan tetap di riwayat dengan waktu kepergianmu tercatat.",
-    "endedAt": "Berakhir {{when}}",
+    "endConfirm": "Tandai catatan ini selesai sekarang? Waktu kamu mengetuk akan disimpan, dari jam ponselmu. Jika kamu pergi lebih awal, waktu itu tidak tercatat.",
+    "endedAt": "Selesai {{when}}",
     "noExpiryRecorded": "Tidak ada waktu berakhir tercatat",
     "deleteSession": "Hapus catatan",
     "deleteConfirm": "Hapus catatan parkir ini? Tidak bisa dibatalkan.",
@@ -438,7 +443,8 @@
     "photoSyncFailed": "Foto belum tercadangkan ke cloud",
     "photoSyncRetry": "Coba unggah lagi",
     "exportPhotoWarning": "Ada satu atau lebih foto yang tidak bisa dimuat dari cloud untuk sesi lama ini. Kamu tetap bisa mengekspor, atau buka di perangkat tempat sesi ini dibuat.",
-    "photoHashMismatch": "Foto ini tidak cocok dengan bukti yang ditandatangani, dan mungkin sudah diubah sejak disimpan."
+    "photoHashMismatch": "Foto ini tidak cocok dengan bukti yang ditandatangani, dan mungkin sudah diubah sejak disimpan.",
+    "endConfirmLate": "Tandai catatan ini selesai sekarang? Catatan akan menyimpan {{time}}, waktu kamu mengetuk, dari jam ponselmu. Catatan tidak menunjukkan kapan mobil benar-benar pergi."
   },
   "appeal": {
     "captureHeader": "Buat draf surat banding",
@@ -635,7 +641,10 @@
     "imageType": "Jenis gambar itu tidak didukung. Gunakan foto JPEG atau PNG.",
     "appealUndraftable": "Kami tidak bisa menyusun banding dari foto itu. Coba foto surat denda yang lebih jelas.",
     "exportFailed": "Tidak bisa membuat ekspormu barusan. Coba lagi sebentar.",
-    "genericRetry": "Ada yang tidak beres. Coba lagi sebentar."
+    "genericRetry": "Ada yang tidak beres. Coba lagi sebentar.",
+    "storageFull": "Penyimpanan ParkProof di perangkat ini penuh. Catatan yang sedang berjalan dan catatan yang masih menunggu tanda tangan tetap disimpan. Buka Riwayat, hapus catatan lama yang tidak kamu perlukan lagi, lalu coba lagi.",
+    "storageEvicted_one": "Penyimpanan perangkatmu penuh, jadi {{count}} catatan parkir lama dihapus untuk memberi ruang. Masuk untuk menjaga catatan tetap aman di cloud.",
+    "storageEvicted_other": "Penyimpanan perangkatmu penuh, jadi {{count}} catatan parkir lama dihapus untuk memberi ruang. Masuk untuk menjaga catatan tetap aman di cloud."
   },
   "pdf": {
     "common": {
@@ -648,7 +657,7 @@
     "duration": {
       "minOnly_one": "1 mnt",
       "minOnly_other": "{{count}} mnt",
-      "hourOnly_one": "1 jam",
+      "hoursOnly_one": "1 jam",
       "hoursOnly_other": "{{count}} jam",
       "hoursAndMins": "{{hours}}j {{mins}}m"
     },
@@ -659,8 +668,8 @@
       "field": {
         "arrivedAt": "Tiba pada",
         "expiresAt": "Berakhir pada",
-        "endedAt": "Berakhir pada (sinyal pengemudi)",
-        "actualDuration": "Durasi sebenarnya",
+        "endedAt": "Waktu mengetuk \"Sudah pergi\" (jam ponsel)",
+        "actualDuration": "Waktu dari tiba sampai mengetuk \"Sudah pergi\" (jam ponsel)",
         "guidance": "Panduan ParkProof",
         "address": "Alamat",
         "locationGps": "Lokasi (GPS)",
@@ -745,18 +754,18 @@
     "moveNow": "Pindahkan sekarang",
     "minLeft_one": "1 mnt tersisa",
     "minLeft_other": "{{count}} mnt tersisa",
-    "hourLeft_one": "1 jam tersisa",
+    "hoursLeft_one": "1 jam tersisa",
     "hoursLeft_other": "{{count}} jam tersisa",
     "hoursMinsLeft": "{{hours}}j {{mins}}m tersisa",
     "parkedForMin_one": "Parkir 1 mnt",
     "parkedForMin_other": "Parkir {{count}} mnt",
-    "parkedForHour_one": "Parkir 1 jam",
+    "parkedForHours_one": "Parkir 1 jam",
     "parkedForHours_other": "Parkir {{count}} jam",
     "parkedForHoursMins": "Parkir {{hours}}j {{mins}}m",
     "justNow": "baru saja",
     "minAgo_one": "1 mnt lalu",
     "minAgo_other": "{{count}} mnt lalu",
-    "hourAgo_one": "1 jam lalu",
+    "hoursAgo_one": "1 jam lalu",
     "hoursAgo_other": "{{count}} jam lalu",
     "yesterday": "kemarin",
     "daysAgo_other": "{{count}} hari lalu"
@@ -779,7 +788,8 @@
     "tooLateAll": "Tidak ada opsi pengingat yang masih bisa dijadwalkan di masa depan. Ketuk Akhiri sesi jika kamu sudah pergi.",
     "pushNotEnabled": "Aktifkan notifikasi push di perangkat ini untuk menambah pengingat yang menyala saat aplikasi tertutup.",
     "saving": "Menyimpan…",
-    "errorRetry": "Tidak bisa memperbarui — coba lagi"
+    "errorRetry": "Tidak bisa memperbarui — coba lagi",
+    "otherDevice": "Pengingat ini diatur di perangkat lain. Ubah di perangkat itu."
   },
   "installPrompt": {
     "available": "Pasang ParkProof",

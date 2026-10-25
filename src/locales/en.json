@@ -203,9 +203,14 @@
     "lastLoggedSpot": "Last logged spot",
     "noPostedRestrictions": "No posted restrictions",
     "iveLeft": "I've left",
-    "iveLeftAria": "Signal that you've left this parking spot",
-    "iveLeftConfirm": "Mark this as left now? It'll move to history with the time you left recorded.",
-    "nextPing": "Next reminder: {{when}}"
+    "iveLeftAria": "I've left. Ends this parking record.",
+    "iveLeftConfirm": "Mark this record as ended now? It saves the time you tap, from your phone's clock. If you left earlier, that earlier time isn't recorded.",
+    "nextPing": "Next reminder: {{when}}",
+    "expiredAt": "Expired at {{time}}",
+    "expiredHint": "Still here? Move now. Already moved? Tap I've left.",
+    "walkBackAria": "Walk back. Opens walking directions to your car.",
+    "walkBackAriaDistance_one": "Walk back. Opens walking directions to your car, {{distance}} away, about {{count}} minute on foot.",
+    "walkBackAriaDistance_other": "Walk back. Opens walking directions to your car, {{distance}} away, about {{count}} minutes on foot."
   },
   "scanner": {
     "header": "Scan parking sign",
@@ -414,7 +419,8 @@
     "tooLateAll": "No reminder option is far enough in the future to schedule. Tap End session if you've already left.",
     "pushNotEnabled": "Enable push notifications on this device to add reminders that fire when the app is closed.",
     "saving": "Saving…",
-    "errorRetry": "Couldn't update. Try again"
+    "errorRetry": "Couldn't update. Try again",
+    "otherDevice": "These reminders were set on another device. Change them on that device."
   },
   "history": {
     "header": "Parking records",
@@ -462,11 +468,12 @@
     "photoHashMismatch": "This photo doesn't match the signed evidence and may have been altered since saving.",
     "exportPhotoWarning": "One or more photos couldn't be loaded from the cloud for this older session. You can export anyway, or open it on the device where it was created.",
     "endSession": "I've left",
-    "endConfirm": "Mark this as left now? The record stays in history with the time you left recorded.",
+    "endConfirm": "Mark this record as ended now? It saves the time you tap, from your phone's clock. If you left earlier, that earlier time isn't recorded.",
     "endedAt": "Ended {{when}}",
     "noExpiryRecorded": "No expiry recorded",
     "deleteSession": "Delete record",
-    "deleteConfirm": "Delete this parking record? This cannot be undone."
+    "deleteConfirm": "Delete this parking record? This cannot be undone.",
+    "endConfirmLate": "Mark this record as ended now? It will record {{time}}, the time you tap, from your phone's clock. It won't show when the car actually left."
   },
   "appeal": {
     "captureHeader": "Draft an appeal letter",
@@ -663,7 +670,10 @@
     "imageType": "That image type isn't supported. Use a JPEG or PNG photo.",
     "appealUndraftable": "We couldn't draft an appeal from that photo. Try a clearer photo of the notice.",
     "exportFailed": "Couldn't build your export just now. Please try again in a moment.",
-    "genericRetry": "Something went wrong. Please try again in a moment."
+    "genericRetry": "Something went wrong. Please try again in a moment.",
+    "storageFull": "ParkProof's storage on this device is full. Current records and records still waiting for a signature are kept. Open History, delete an old record you no longer need, then try again.",
+    "storageEvicted_one": "Your device storage was full, so {{count}} older parking record was deleted to make space. Sign in to keep records safe in the cloud.",
+    "storageEvicted_other": "Your device storage was full, so {{count}} older parking records were deleted to make space. Sign in to keep records safe in the cloud."
   },
   "pdf": {
     "common": {
@@ -676,7 +686,7 @@
     "duration": {
       "minOnly_one": "1 min",
       "minOnly_other": "{{count}} min",
-      "hourOnly_one": "1 hour",
+      "hoursOnly_one": "1 hour",
       "hoursOnly_other": "{{count}} hours",
       "hoursAndMins": "{{hours}}h {{mins}}m"
     },
@@ -687,8 +697,8 @@
       "field": {
         "arrivedAt": "Arrived at",
         "expiresAt": "Expires at",
-        "endedAt": "Ended at (driver-signalled)",
-        "actualDuration": "Actual duration",
+        "endedAt": "Tapped I've left (phone clock)",
+        "actualDuration": "Time from arrival to the I've left tap (phone clock)",
         "guidance": "ParkProof Guidance",
         "address": "Address",
         "locationGps": "Location (GPS)",
@@ -773,18 +783,18 @@
     "moveNow": "Move now",
     "minLeft_one": "1 min left",
     "minLeft_other": "{{count}} min left",
-    "hourLeft_one": "1 hour left",
+    "hoursLeft_one": "1 hour left",
     "hoursLeft_other": "{{count}} hours left",
     "hoursMinsLeft": "{{hours}}h {{mins}}m left",
     "parkedForMin_one": "Parked for 1 min",
     "parkedForMin_other": "Parked for {{count}} min",
-    "parkedForHour_one": "Parked for 1 hour",
+    "parkedForHours_one": "Parked for 1 hour",
     "parkedForHours_other": "Parked for {{count}} hours",
     "parkedForHoursMins": "Parked for {{hours}}h {{mins}}m",
     "justNow": "just now",
     "minAgo_one": "1 min ago",
     "minAgo_other": "{{count}} min ago",
-    "hourAgo_one": "1 hour ago",
+    "hoursAgo_one": "1 hour ago",
     "hoursAgo_other": "{{count}} hours ago",
     "yesterday": "yesterday",
     "daysAgo_other": "{{count}} days ago"

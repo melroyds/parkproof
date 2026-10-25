@@ -60,7 +60,8 @@ export function formatCountdown(msUntil: number): CountdownReadout {
  * `t` (from useTranslation) so this library file stays React-agnostic.
  *
  * Translation keys consumed: time.moveNow, time.minLeft (plural),
- * time.hourLeft (plural), time.hoursLeft (plural), time.hoursMinsLeft.
+ * time.hoursLeft (plural), time.hoursMinsLeft. One base name per plural,
+ * so every locale resolves its own _one / _other form.
  */
 export function formatCountdownLocalized(
   msUntil: number,
@@ -76,10 +77,7 @@ export function formatCountdownLocalized(
     const hours = Math.floor(raw.totalMinutes / 60)
     const mins = raw.totalMinutes % 60
     if (mins === 0) {
-      label =
-        hours === 1
-          ? t('time.hourLeft', { count: hours })
-          : t('time.hoursLeft', { count: hours })
+      label = t('time.hoursLeft', { count: hours })
     } else {
       label = t('time.hoursMinsLeft', { hours, mins })
     }
@@ -92,8 +90,8 @@ export function formatCountdownLocalized(
  * sessions. These have no expiry, so there's no urgency — the value is just
  * a "how long you've been parked" indicator. Always returns urgency: 'normal'.
  *
- * Translation keys consumed: time.parkedForMin (plural), time.parkedForHour
- * (plural), time.parkedForHours (plural), time.parkedForHoursMins.
+ * Translation keys consumed: time.parkedForMin (plural), time.parkedForHours
+ * (plural), time.parkedForHoursMins.
  */
 export function formatElapsedLocalized(
   msSince: number,
@@ -110,10 +108,7 @@ export function formatElapsedLocalized(
   const mins = totalMinutes % 60
   if (mins === 0) {
     return {
-      label:
-        hours === 1
-          ? t('time.parkedForHour', { count: hours })
-          : t('time.parkedForHours', { count: hours }),
+      label: t('time.parkedForHours', { count: hours }),
       totalMinutes,
     }
   }

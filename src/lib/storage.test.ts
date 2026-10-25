@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 //
 // storage — localStorage CRUD + 3-phase quota recovery + endSession +
-// loadActiveSessions.
+// loadActiveSessions + the records-changed event.
 //
 // The 3-phase recovery is the most important code in this file to test:
 // it's the kind of logic that only fires on a full localStorage, only
@@ -9,20 +9,43 @@
 // dev environments. A regression here = "I logged my park but it didn't
 // save and I didn't know" — the worst-case ParkProof failure mode.
 
-import { beforeEach, describe, it, expect } from 'vitest'
+import { afterEach, beforeEach, describe, it, expect } from 'vitest'
 import {
+  ACTIVE_AFTER_EXPIRY_MS,
+  RECORDS_CHANGED_EVENT,
+  getRecordsRevision,
+  hasUnsignedEvidence,
   loadSessions,
+  notifyRecordsChanged,
   saveSession,
   deleteSession,
   updateSession,
   endSession,
   loadActiveSessions,
   getSession,
+  subscribeRecordsChanged,
+  ERR_STORAGE_FULL,
+  StorageFullError,
+  isStorageFullError,
 } from './storage'
-import type { ParkingSession } from '../types'
+import type { ParkingSession, SignatureBundle } from '../types'
 
 const KEY = 'parkproof.sessions.v1'
 const FIXED_NOW = new Date('2026-05-21T10:00:00+10:00').getTime()
+
+/**
+ * An arrival signature. Quota recovery only strips or evicts records whose
+ * evidence is fully signed, so expired records in the recovery tests carry
+ * one.
+ */
+const SIGNED: SignatureBundle = {
+  schema: 'parkproof-evidence-v1',
+  signed_at: '2026-05-19T08:00:05.000Z',
+  algorithm: 'ECDSA_SHA_256',
+  key_alias: 'alias/parkproof-evidence-signing',
+  canonical_payload: '{}',
+  signature_base64: 'MEUCIQ==',
+}
 
 /**
  * Session factory — only the fields the storage layer ever inspects.
@@ -161,6 +184,7 @@ describe('updateSession (partial patch)', () => {
       id: 'expired',
       arrived_at: '2026-05-20T08:00:00+10:00',
       expires_at: '2026-05-20T18:00:00+10:00', // in the past relative to FIXED_NOW
+      signature: SIGNED,
     })
     const active = makeSession({
       id: 'active',
@@ -242,8 +266,8 @@ describe('loadActiveSessions', () => {
     expect(loadActiveSessions(FIXED_NOW).map((s) => s.id)).toEqual(['expiring', 'noSign'])
   })
 
-  it('excludes past-expiry sessions (auto-fall-off)', () => {
-    const past = makeSession({ id: 'past', expires_at: '2026-05-21T08:00:00+10:00' })
+  it('excludes sessions more than 12h past expiry (auto-fall-off)', () => {
+    const past = makeSession({ id: 'past', expires_at: '2026-05-20T21:59:00+10:00' })
     const live = makeSession({ id: 'live', expires_at: '2026-05-21T18:00:00+10:00' })
     localStorage.setItem(KEY, JSON.stringify([past, live]))
     expect(loadActiveSessions(FIXED_NOW).map((s) => s.id)).toEqual(['live'])
@@ -267,7 +291,7 @@ describe('loadActiveSessions', () => {
   })
 
   it('handles a mix correctly — expiry-bearing first by urgency, then no-sign by recency', () => {
-    const past = makeSession({ id: 'past', expires_at: '2026-05-21T08:00:00+10:00' })
+    const past = makeSession({ id: 'past', expires_at: '2026-05-20T08:00:00+10:00' })
     const noSignOld = makeSession({
       id: 'noSignOld',
       expires_at: null,
@@ -313,11 +337,13 @@ describe('persistWithQuotaRecovery — 3-phase eviction', () => {
       id: 'olderExpired',
       arrived_at: '2026-05-19T08:00:00+10:00',
       expires_at: '2026-05-19T18:00:00+10:00',
+      signature: SIGNED,
     })
     const newerExpired = makeSession({
       id: 'newerExpired',
       arrived_at: '2026-05-20T08:00:00+10:00',
       expires_at: '2026-05-20T18:00:00+10:00',
+      signature: SIGNED,
     })
     localStorage.setItem(KEY, JSON.stringify([newerExpired, olderExpired]))
 
@@ -340,6 +366,7 @@ describe('persistWithQuotaRecovery — 3-phase eviction', () => {
       id: 'expired',
       arrived_at: '2026-05-19T08:00:00+10:00',
       expires_at: '2026-05-19T18:00:00+10:00',
+      signature: SIGNED,
     })
     localStorage.setItem(KEY, JSON.stringify([expired]))
 
@@ -360,6 +387,7 @@ describe('persistWithQuotaRecovery — 3-phase eviction', () => {
       id: 'expired',
       arrived_at: '2026-05-19T08:00:00+10:00',
       expires_at: '2026-05-19T18:00:00+10:00',
+      signature: SIGNED,
     })
     localStorage.setItem(KEY, JSON.stringify([expired]))
 
@@ -377,11 +405,13 @@ describe('persistWithQuotaRecovery — 3-phase eviction', () => {
       id: 'older',
       arrived_at: '2026-05-19T08:00:00+10:00',
       expires_at: '2026-05-19T18:00:00+10:00',
+      signature: SIGNED,
     })
     const newer = makeSession({
       id: 'newer',
       arrived_at: '2026-05-20T08:00:00+10:00',
       expires_at: '2026-05-20T18:00:00+10:00',
+      signature: SIGNED,
     })
     localStorage.setItem(KEY, JSON.stringify([newer, older]))
 
@@ -424,6 +454,7 @@ describe('persistWithQuotaRecovery — 3-phase eviction', () => {
       arrived_at: '2026-05-21T08:00:00+10:00',
       expires_at: '2026-05-21T18:00:00+10:00', // still in the future…
       ended_at: '2026-05-21T11:00:00+10:00', // …but driver signalled "I've left"
+      signature: SIGNED,
     })
     localStorage.setItem(KEY, JSON.stringify([endedButFutureExpiry]))
 
@@ -434,12 +465,363 @@ describe('persistWithQuotaRecovery — 3-phase eviction', () => {
     expect(loadSessions().find((s) => s.id === 'endedFuture')?.car_photo).toBeNull()
   })
 
-  it('throws a friendly error when even full eviction cannot fit', () => {
+  it('throws a typed StorageFullError when even full eviction cannot fit', () => {
     localStorage.setItem(KEY, JSON.stringify([])) // no expired sessions to evict
 
     quotaThrowsNTimes(99)
-    expect(() => saveSession(makeSession({ id: 'fresh' }))).toThrow(
-      /storage is full.*delete an old session/i,
-    )
+    let caught: unknown
+    try {
+      saveSession(makeSession({ id: 'fresh' }))
+    } catch (err) {
+      caught = err
+    }
+    expect(caught).toBeInstanceOf(StorageFullError)
+    expect((caught as StorageFullError).code).toBe(ERR_STORAGE_FULL)
+    expect(isStorageFullError(caught)).toBe(true)
+    // The English message is for logs only, and uses the record noun.
+    expect((caught as Error).message).toMatch(/storage is full/i)
+    expect((caught as Error).message).not.toMatch(/session/i)
+  })
+
+  it('isStorageFullError recognises the code and nothing else', () => {
+    expect(isStorageFullError(Object.assign(new Error('x'), { code: ERR_STORAGE_FULL }))).toBe(true)
+    expect(isStorageFullError(new Error('storage is full'))).toBe(false)
+    expect(isStorageFullError(null)).toBe(false)
+  })
+})
+
+describe('loadActiveSessions — ending after expiry', () => {
+  it('keeps an expired, un-ended record for 12 hours after expires_at', () => {
+    const justExpired = makeSession({ id: 'justExpired', expires_at: '2026-05-21T09:30:00+10:00' })
+    const longAgo = makeSession({ id: 'longAgo', expires_at: '2026-05-20T21:00:00+10:00' })
+    localStorage.setItem(KEY, JSON.stringify([justExpired, longAgo]))
+    expect(loadActiveSessions(FIXED_NOW).map((s) => s.id)).toEqual(['justExpired'])
+  })
+
+  it('drops the record exactly at expires_at + 12h', () => {
+    const expiresMs = new Date('2026-05-21T09:00:00+10:00').getTime()
+    const s = makeSession({ id: 's', expires_at: new Date(expiresMs).toISOString() })
+    localStorage.setItem(KEY, JSON.stringify([s]))
+    expect(ACTIVE_AFTER_EXPIRY_MS).toBe(12 * 60 * 60 * 1000)
+    expect(loadActiveSessions(expiresMs + ACTIVE_AFTER_EXPIRY_MS - 1).map((x) => x.id)).toEqual(['s'])
+    expect(loadActiveSessions(expiresMs + ACTIVE_AFTER_EXPIRY_MS)).toEqual([])
+  })
+
+  it('never keeps an expired record the driver has ended', () => {
+    const ended = makeSession({
+      id: 'ended',
+      expires_at: '2026-05-21T09:30:00+10:00',
+      ended_at: '2026-05-21T09:45:00+10:00',
+    })
+    localStorage.setItem(KEY, JSON.stringify([ended]))
+    expect(loadActiveSessions(FIXED_NOW)).toEqual([])
+  })
+
+  it('puts live countdowns first, then open-ended records, then expired un-ended ones', () => {
+    const expired = makeSession({ id: 'expired', expires_at: '2026-05-21T09:00:00+10:00' })
+    const live = makeSession({ id: 'live', expires_at: '2026-05-21T12:00:00+10:00' })
+    const noSign = makeSession({ id: 'noSign', expires_at: null, no_sign: true })
+    localStorage.setItem(KEY, JSON.stringify([expired, noSign, live]))
+    expect(loadActiveSessions(FIXED_NOW).map((s) => s.id)).toEqual(['live', 'noSign', 'expired'])
+  })
+
+  it('a stale expired record never takes the main card from a live countdown', () => {
+    // Parked at 9 under 2P, moved at 10:55 without tapping I've left, then
+    // logged a 1P at 2 pm. At 2:30 pm the 1P countdown must be first.
+    const now = new Date('2026-05-21T14:30:00+10:00').getTime()
+    const morning = makeSession({
+      id: 'morning',
+      arrived_at: '2026-05-21T09:00:00+10:00',
+      expires_at: '2026-05-21T11:00:00+10:00',
+    })
+    const afternoon = makeSession({
+      id: 'afternoon',
+      arrived_at: '2026-05-21T14:00:00+10:00',
+      expires_at: '2026-05-21T15:00:00+10:00',
+    })
+    localStorage.setItem(KEY, JSON.stringify([morning, afternoon]))
+    expect(loadActiveSessions(now).map((s) => s.id)).toEqual(['afternoon', 'morning'])
+  })
+
+  it('orders several expired un-ended records most recently expired first', () => {
+    const now = new Date('2026-05-21T14:30:00+10:00').getTime()
+    const earlier = makeSession({ id: 'earlier', expires_at: '2026-05-21T09:00:00+10:00' })
+    const later = makeSession({ id: 'later', expires_at: '2026-05-21T13:00:00+10:00' })
+    localStorage.setItem(KEY, JSON.stringify([earlier, later]))
+    expect(loadActiveSessions(now).map((s) => s.id)).toEqual(['later', 'earlier'])
+  })
+
+  it('shows an expired record as the main card once nothing is live', () => {
+    const expired = makeSession({ id: 'expired', expires_at: '2026-05-21T09:00:00+10:00' })
+    localStorage.setItem(KEY, JSON.stringify([expired]))
+    expect(loadActiveSessions(FIXED_NOW).map((s) => s.id)).toEqual(['expired'])
+  })
+
+  it('ignores an unparseable expires_at', () => {
+    const broken = makeSession({ id: 'broken', expires_at: 'not a date' })
+    localStorage.setItem(KEY, JSON.stringify([broken]))
+    expect(loadActiveSessions(FIXED_NOW)).toEqual([])
+  })
+})
+
+describe('hasUnsignedEvidence', () => {
+  it('is true without an arrival signature', () => {
+    expect(hasUnsignedEvidence(makeSession({ signature: undefined }))).toBe(true)
+  })
+
+  it('is false for a signed record with no addenda', () => {
+    expect(hasUnsignedEvidence(makeSession({ signature: SIGNED }))).toBe(false)
+  })
+
+  it('is true while any addendum is neither signed nor rejected', () => {
+    const s = { ...makeSession({ signature: SIGNED }), addenda: [{ bundle: SIGNED }, { id: 'pending' }] }
+    expect(hasUnsignedEvidence(s as ParkingSession)).toBe(true)
+  })
+
+  it('is false when every addendum is signed or rejected', () => {
+    const s = {
+      ...makeSession({ signature: SIGNED }),
+      addenda: [{ bundle: SIGNED }, { rejected: { code: 'ERR_BAD_STRING', at: '2026-05-21T00:00:00Z' } }],
+    }
+    expect(hasUnsignedEvidence(s as ParkingSession)).toBe(false)
+  })
+})
+
+describe('persistWithQuotaRecovery — fixes and protections', () => {
+  it('Phase 3 evicts by id: removing one victim never shifts eviction onto an active record', () => {
+    // Storage order after the save: [fresh, e1, e2, active]. The old code
+    // remembered array indices, so after splicing e1 the "e2" index pointed
+    // at the active record and evicted it instead.
+    const e1 = makeSession({
+      id: 'e1',
+      arrived_at: '2026-05-18T08:00:00+10:00',
+      expires_at: '2026-05-18T18:00:00+10:00',
+      signature: SIGNED,
+    })
+    const e2 = makeSession({
+      id: 'e2',
+      arrived_at: '2026-05-19T08:00:00+10:00',
+      expires_at: '2026-05-19T18:00:00+10:00',
+      signature: SIGNED,
+    })
+    const active = makeSession({
+      id: 'active',
+      arrived_at: '2026-05-21T09:00:00+10:00',
+      expires_at: '2099-01-01T00:00:00+10:00',
+    })
+    localStorage.setItem(KEY, JSON.stringify([e1, e2, active]))
+
+    // Fails: initial, 2 car strips, 2 sign strips, the first eviction.
+    // The 7th write (after evicting e2 as well) succeeds.
+    quotaThrowsNTimes(6)
+    const report = saveSession(makeSession({ id: 'fresh', expires_at: '2099-01-01T00:00:00+10:00' }))
+
+    expect(report.evicted).toBe(2)
+    const ids = loadSessions().map((s) => s.id)
+    expect(ids).toEqual(['fresh', 'active'])
+    const kept = getSession('active')!
+    expect(kept.car_photo).toBe('data:image/jpeg;base64,CAR')
+    expect(kept.sign_photo).toBe('data:image/jpeg;base64,SIGN')
+  })
+
+  it('Phase 2 strips ambient_photo too', () => {
+    const noSign = makeSession({
+      id: 'noSign',
+      arrived_at: '2026-05-19T08:00:00+10:00',
+      expires_at: null,
+      no_sign: true,
+      sign_photo: null,
+      car_photo: null,
+      ambient_photo: 'data:image/jpeg;base64,AMBIENT',
+      ended_at: '2026-05-19T10:00:00+10:00',
+      signature: SIGNED,
+    })
+    localStorage.setItem(KEY, JSON.stringify([noSign]))
+
+    quotaThrowsNTimes(1) // initial fails; no car photo to strip, so Phase 2 runs
+    const report = saveSession(makeSession({ id: 'fresh' }))
+
+    expect(report).toEqual({ trimmedPhotosFrom: 1, evicted: 0 })
+    const after = getSession('noSign')!
+    expect(after.ambient_photo).toBeNull()
+    expect(after.sign_photo).toBeNull() // untouched: it had none
+    expect(after.signature).toEqual(SIGNED)
+  })
+
+  it('counts a record once even when both photo phases touched it', () => {
+    const expired = makeSession({
+      id: 'expired',
+      arrived_at: '2026-05-19T08:00:00+10:00',
+      expires_at: '2026-05-19T18:00:00+10:00',
+      signature: SIGNED,
+    })
+    localStorage.setItem(KEY, JSON.stringify([expired]))
+    quotaThrowsNTimes(2) // initial + Phase 1 fail, Phase 2 succeeds
+    expect(saveSession(makeSession({ id: 'fresh' }))).toEqual({ trimmedPhotosFrom: 1, evicted: 0 })
+  })
+
+  it('counts an evicted record as evicted only, not also as trimmed', () => {
+    const expired = makeSession({
+      id: 'expired',
+      arrived_at: '2026-05-19T08:00:00+10:00',
+      expires_at: '2026-05-19T18:00:00+10:00',
+      signature: SIGNED,
+    })
+    localStorage.setItem(KEY, JSON.stringify([expired]))
+    quotaThrowsNTimes(3)
+    expect(saveSession(makeSession({ id: 'fresh' }))).toEqual({ trimmedPhotosFrom: 0, evicted: 1 })
+  })
+
+  it('never strips or evicts an expired record whose arrival signature is missing', () => {
+    const unsigned = makeSession({
+      id: 'unsigned',
+      arrived_at: '2026-05-19T08:00:00+10:00',
+      expires_at: '2026-05-19T18:00:00+10:00',
+    })
+    localStorage.setItem(KEY, JSON.stringify([unsigned]))
+
+    quotaThrowsNTimes(99)
+    expect(() => saveSession(makeSession({ id: 'fresh' }))).toThrow(/storage is full/i)
+    const after = getSession('unsigned')!
+    expect(after.car_photo).toBe('data:image/jpeg;base64,CAR')
+    expect(after.sign_photo).toBe('data:image/jpeg;base64,SIGN')
+  })
+
+  it('never strips or evicts a record with a pending addendum, but still frees space elsewhere', () => {
+    const pending = {
+      ...makeSession({
+        id: 'pending',
+        arrived_at: '2026-05-18T08:00:00+10:00',
+        expires_at: '2026-05-18T18:00:00+10:00',
+        signature: SIGNED,
+      }),
+      addenda: [{ id: 'a1', seq: 1, kind: 'arrival_context' }],
+    } as ParkingSession
+    const signedOld = makeSession({
+      id: 'signedOld',
+      arrived_at: '2026-05-19T08:00:00+10:00',
+      expires_at: '2026-05-19T18:00:00+10:00',
+      signature: SIGNED,
+    })
+    localStorage.setItem(KEY, JSON.stringify([pending, signedOld]))
+
+    // `pending` is the oldest, so it would have been the first victim.
+    quotaThrowsNTimes(1)
+    const report = saveSession(makeSession({ id: 'fresh' }))
+    expect(report).toEqual({ trimmedPhotosFrom: 1, evicted: 0 })
+    expect(getSession('pending')!.car_photo).toBe('data:image/jpeg;base64,CAR')
+    expect(getSession('signedOld')!.car_photo).toBeNull()
+  })
+})
+
+describe('persistWithQuotaRecovery — records still on home are protected', () => {
+  const HOUR = 60 * 60 * 1000
+
+  it('never strips or evicts a signed record that expired 1 h ago and was not ended', () => {
+    const recent = makeSession({
+      id: 'recent',
+      arrived_at: new Date(Date.now() - 3 * HOUR).toISOString(),
+      expires_at: new Date(Date.now() - HOUR).toISOString(),
+      signature: SIGNED,
+    })
+    localStorage.setItem(KEY, JSON.stringify([recent]))
+
+    quotaThrowsNTimes(99)
+    expect(() => saveSession(makeSession({ id: 'fresh' }))).toThrow(StorageFullError)
+    const after = getSession('recent')!
+    expect(after.car_photo).toBe('data:image/jpeg;base64,CAR')
+    expect(after.sign_photo).toBe('data:image/jpeg;base64,SIGN')
+  })
+
+  it('frees space from a record that expired more than 12 h ago instead', () => {
+    const recent = makeSession({
+      id: 'recent',
+      arrived_at: new Date(Date.now() - 3 * HOUR).toISOString(),
+      expires_at: new Date(Date.now() - HOUR).toISOString(),
+      signature: SIGNED,
+    })
+    const old = makeSession({
+      id: 'old',
+      arrived_at: new Date(Date.now() - 15 * HOUR).toISOString(),
+      expires_at: new Date(Date.now() - 13 * HOUR).toISOString(),
+      signature: SIGNED,
+    })
+    localStorage.setItem(KEY, JSON.stringify([recent, old]))
+
+    quotaThrowsNTimes(1)
+    expect(saveSession(makeSession({ id: 'fresh' }))).toEqual({ trimmedPhotosFrom: 1, evicted: 0 })
+    expect(getSession('old')!.car_photo).toBeNull()
+    expect(getSession('recent')!.car_photo).toBe('data:image/jpeg;base64,CAR')
+  })
+
+  it('an expired record the driver ended is eligible straight away', () => {
+    const ended = makeSession({
+      id: 'ended',
+      arrived_at: new Date(Date.now() - 3 * HOUR).toISOString(),
+      expires_at: new Date(Date.now() - HOUR).toISOString(),
+      ended_at: new Date(Date.now() - 30 * 60_000).toISOString(),
+      signature: SIGNED,
+    })
+    localStorage.setItem(KEY, JSON.stringify([ended]))
+    quotaThrowsNTimes(1)
+    expect(saveSession(makeSession({ id: 'fresh' }))).toEqual({ trimmedPhotosFrom: 1, evicted: 0 })
+  })
+})
+
+describe('records-changed event', () => {
+  const seen: Array<string | null> = []
+  const onChange = (e: Event) => seen.push((e as CustomEvent<{ id: string | null }>).detail.id)
+
+  beforeEach(() => {
+    seen.length = 0
+    window.addEventListener(RECORDS_CHANGED_EVENT, onChange)
+  })
+  afterEach(() => {
+    window.removeEventListener(RECORDS_CHANGED_EVENT, onChange)
+  })
+
+  it('fires on save, update, end and delete, with the record id', () => {
+    saveSession(makeSession({ id: 'a' }))
+    updateSession('a', { note: 'n' })
+    endSession('a')
+    deleteSession('a')
+    expect(seen).toEqual(['a', 'a', 'a', 'a'])
+  })
+
+  it('does not fire when updateSession finds no record', () => {
+    updateSession('missing', { note: 'n' })
+    expect(seen).toEqual([])
+  })
+
+  it('does not fire when the write fails', () => {
+    quotaThrowsNTimes(99)
+    expect(() => saveSession(makeSession({ id: 'a' }))).toThrow()
+    expect(seen).toEqual([])
+  })
+
+  it('bumps the revision on every notification', () => {
+    const before = getRecordsRevision()
+    saveSession(makeSession({ id: 'a' }))
+    notifyRecordsChanged()
+    expect(getRecordsRevision()).toBe(before + 2)
+    expect(seen).toEqual(['a', null])
+  })
+
+  it('subscribeRecordsChanged delivers events until unsubscribed', () => {
+    let calls = 0
+    const unsubscribe = subscribeRecordsChanged(() => calls++)
+    saveSession(makeSession({ id: 'a' }))
+    unsubscribe()
+    saveSession(makeSession({ id: 'b' }))
+    expect(calls).toBe(1)
+  })
+
+  it('forwards a records write from another tab (storage event)', () => {
+    let calls = 0
+    const unsubscribe = subscribeRecordsChanged(() => calls++)
+    window.dispatchEvent(new StorageEvent('storage', { key: KEY }))
+    window.dispatchEvent(new StorageEvent('storage', { key: 'some.other.key' }))
+    unsubscribe()
+    expect(calls).toBe(1)
   })
 })

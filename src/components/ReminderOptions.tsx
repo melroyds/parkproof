@@ -340,7 +340,7 @@ export default function ReminderOptions({ session, onDone }: Props) {
         reminders,
         session.expires_at,
       )
-      if (pushResult && pushResult.created.length > 0) {
+      if (pushResult.ok && pushResult.created.length > 0) {
         try {
           updateSession(session.id, {
             push_reminders: pushResult.created.map((c) => ({
@@ -351,14 +351,12 @@ export default function ReminderOptions({ session, onDone }: Props) {
         } catch (err) {
           console.warn('[reminders] could not persist push_reminders:', err)
         }
-      } else if (pushResult === null) {
-        // null from schedulePushReminders is ambiguous: it's a legitimate skip
-        // when push isn't subscribed, but a real failure when it IS. Only the
-        // latter deserves a warning — otherwise the user trusts a background
-        // reminder that silently never got scheduled. Disambiguate by asking
-        // whether this device actually holds an active subscription.
-        const subscribed = await hasActiveSubscription()
-        if (subscribed) setPushScheduleFailed(true)
+      } else if (!pushResult.ok && pushResult.reason !== 'unsupported' && pushResult.reason !== 'not_subscribed') {
+        // Push not supported or not subscribed is a legitimate skip (the
+        // in-tab path above still runs). Anything else is a real failure that
+        // deserves a warning, otherwise the user trusts a background reminder
+        // that silently never got scheduled.
+        setPushScheduleFailed(true)
       }
     }
   }
@@ -649,7 +647,7 @@ function NoSignReminderPicker({ session, onDone }: Props) {
       // Same persistence as the expiry-path handleNotify above — see comment
       // there for why we await rather than fire-and-forget.
       const pushResult = await schedulePushReminders(session.id, reminders)
-      if (pushResult && pushResult.created.length > 0) {
+      if (pushResult.ok && pushResult.created.length > 0) {
         try {
           updateSession(session.id, {
             push_reminders: pushResult.created.map((c) => ({
@@ -660,11 +658,10 @@ function NoSignReminderPicker({ session, onDone }: Props) {
         } catch (err) {
           console.warn('[reminders] could not persist push_reminders:', err)
         }
-      } else if (pushResult === null) {
-        // Subscribed-but-null = real failure; not-subscribed null is a skip.
-        // Same disambiguation as the expiry-path handleNotify above.
-        const subscribed = await hasActiveSubscription()
-        if (subscribed) setPushScheduleFailed(true)
+      } else if (!pushResult.ok && pushResult.reason !== 'unsupported' && pushResult.reason !== 'not_subscribed') {
+        // Not supported / not subscribed is a skip; anything else is a real
+        // failure. Same rule as the expiry-path handleNotify above.
+        setPushScheduleFailed(true)
       }
     }
   }

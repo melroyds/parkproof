@@ -63,8 +63,8 @@
     "morePill": "+{{count}} nữa",
     "noPostedRestrictions": "Không có biển báo hạn chế",
     "iveLeft": "Tôi đã đi",
-    "iveLeftAria": "Báo hiệu bạn đã rời khỏi chỗ đỗ xe này",
-    "iveLeftConfirm": "Đánh dấu là đã rời đi? Bản ghi sẽ chuyển sang lịch sử kèm thời điểm bạn rời đi.",
+    "iveLeftAria": "Tôi đã đi. Kết thúc bản ghi đỗ xe này.",
+    "iveLeftConfirm": "Đánh dấu bản ghi này là đã kết thúc ngay bây giờ? Bản ghi sẽ lưu lúc bạn nhấn, theo đồng hồ điện thoại. Nếu bạn đã rời đi sớm hơn, thời điểm đó sẽ không được ghi lại.",
     "nextPing": "Lời nhắc tiếp theo: {{when}}",
     "recheckNow": "Kiểm tra lại ngay",
     "recheckSub": "Vẫn đỗ được chứ? Kiểm tra lại trong vài giây",
@@ -75,7 +75,12 @@
     "allActiveIntro_one": "{{count}} bản ghi đỗ xe đang hoạt động. Nhấn để mở.",
     "allActiveIntro_other": "{{count}} bản ghi đỗ xe đang hoạt động. Nhấn vào bất kỳ bản ghi nào để mở.",
     "allActiveHeader": "Đang đỗ xe",
-    "lastLoggedSpot": "Chỗ đỗ ghi gần nhất"
+    "lastLoggedSpot": "Chỗ đỗ ghi gần nhất",
+    "expiredAt": "Đã hết hạn lúc {{time}}",
+    "expiredHint": "Vẫn còn đỗ ở đây? Hãy di chuyển xe ngay. Đã di chuyển rồi? Nhấn \"Tôi đã đi\".",
+    "walkBackAria": "Đi bộ về. Mở chỉ đường đi bộ đến xe của bạn.",
+    "walkBackAriaDistance_one": "Đi bộ về. Mở chỉ đường đi bộ đến xe của bạn, cách {{distance}}, khoảng {{count}} phút đi bộ.",
+    "walkBackAriaDistance_other": "Đi bộ về. Mở chỉ đường đi bộ đến xe của bạn, cách {{distance}}, khoảng {{count}} phút đi bộ."
   },
   "scanner": {
     "header": "Quét biển báo đỗ xe",
@@ -309,14 +314,15 @@
     "noAmbientCaptured": "Không có ảnh xung quanh nào được chụp.",
     "noSignBadgeLong": "Không có hạn chế nào được ghi nhận. Phiên này được ghi nhận tại vị trí không có biển báo.",
     "endSession": "Tôi đã đi",
-    "endConfirm": "Đánh dấu là đã rời đi bây giờ? Bản ghi vẫn nằm trong lịch sử với thời gian bạn rời đi được ghi lại.",
+    "endConfirm": "Đánh dấu bản ghi này là đã kết thúc ngay bây giờ? Bản ghi sẽ lưu lúc bạn nhấn, theo đồng hồ điện thoại. Nếu bạn đã rời đi sớm hơn, thời điểm đó sẽ không được ghi lại.",
     "endedAt": "Đã kết thúc {{when}}",
     "noExpiryRecorded": "Chưa ghi nhận thời hạn",
     "howToVerify": "Cách hội đồng địa phương xác minh bản ghi này →",
     "photoSyncFailed": "Ảnh chưa sao lưu lên đám mây",
     "photoSyncRetry": "Thử tải lên lại",
     "exportPhotoWarning": "Có một vài ảnh không tải được từ đám mây cho bản ghi cũ này. Bạn vẫn xuất được, hoặc mở bản ghi trên thiết bị đã tạo ra nó.",
-    "photoHashMismatch": "Ảnh này không khớp với bằng chứng đã ký và có thể đã bị thay đổi kể từ khi lưu."
+    "photoHashMismatch": "Ảnh này không khớp với bằng chứng đã ký và có thể đã bị thay đổi kể từ khi lưu.",
+    "endConfirmLate": "Đánh dấu bản ghi này là đã kết thúc ngay bây giờ? Bản ghi sẽ lưu {{time}}, là lúc bạn nhấn, theo đồng hồ điện thoại. Bản ghi sẽ không cho thấy lúc xe thực sự rời đi."
   },
   "appeal": {
     "captureHeader": "Soạn thư khiếu nại",
@@ -496,7 +502,10 @@
     "imageType": "Định dạng ảnh đó không được hỗ trợ. Hãy dùng ảnh JPEG hoặc PNG.",
     "appealUndraftable": "Chúng tôi không soạn được thư khiếu nại từ ảnh đó. Hãy thử ảnh rõ hơn của tờ thông báo.",
     "exportFailed": "Chưa tạo được bản xuất của bạn lúc này. Vui lòng thử lại sau giây lát.",
-    "genericRetry": "Đã có lỗi xảy ra. Vui lòng thử lại sau giây lát."
+    "genericRetry": "Đã có lỗi xảy ra. Vui lòng thử lại sau giây lát.",
+    "storageFull": "Bộ nhớ của ParkProof trên thiết bị này đã đầy. Các bản ghi hiện tại và bản ghi đang chờ chữ ký vẫn được giữ lại. Hãy mở Lịch sử, xoá một bản ghi cũ không còn cần, rồi thử lại.",
+    "storageEvicted_one": "Bộ nhớ thiết bị của bạn đã đầy, nên {{count}} bản ghi đỗ xe cũ đã bị xoá để lấy chỗ trống. Đăng nhập để giữ bản ghi an toàn trên đám mây.",
+    "storageEvicted_other": "Bộ nhớ thiết bị của bạn đã đầy, nên {{count}} bản ghi đỗ xe cũ đã bị xoá để lấy chỗ trống. Đăng nhập để giữ bản ghi an toàn trên đám mây."
   },
   "pdf": {
     "common": {
@@ -521,8 +530,8 @@
         "sideVariant": "Phía / Phương án đã chọn",
         "signRules": "Quy tắc trên biển báo",
         "aiConfidence": "Độ tin cậy AI",
-        "endedAt": "Đã rời (do tài xế xác nhận)",
-        "actualDuration": "Thời gian đỗ xe thực tế"
+        "endedAt": "Lúc nhấn \"Tôi đã đi\" (đồng hồ điện thoại)",
+        "actualDuration": "Thời gian từ lúc đến tới lúc nhấn \"Tôi đã đi\" (đồng hồ điện thoại)"
       },
       "locationSourceValue": {
         "manuallyEntered": "Nhập thủ công",
@@ -597,7 +606,7 @@
     "duration": {
       "minOnly_one": "1 phút",
       "minOnly_other": "{{count}} phút",
-      "hourOnly_one": "1 giờ",
+      "hoursOnly_one": "1 giờ",
       "hoursOnly_other": "{{count}} giờ",
       "hoursAndMins": "{{hours}} giờ {{mins}} phút"
     }
@@ -606,19 +615,19 @@
     "moveNow": "Di chuyển ngay",
     "minLeft_one": "Còn 1 phút",
     "minLeft_other": "Còn {{count}} phút",
-    "hourLeft_one": "Còn 1 giờ",
+    "hoursLeft_one": "Còn 1 giờ",
     "hoursLeft_other": "Còn {{count}} giờ",
     "hoursMinsLeft": "Còn {{hours}}g {{mins}}p",
     "justNow": "vừa xong",
     "minAgo_one": "1 phút trước",
     "minAgo_other": "{{count}} phút trước",
-    "hourAgo_one": "1 giờ trước",
+    "hoursAgo_one": "1 giờ trước",
     "hoursAgo_other": "{{count}} giờ trước",
     "yesterday": "hôm qua",
     "daysAgo_other": "{{count}} ngày trước",
     "parkedForMin_one": "Đã đỗ 1 phút",
     "parkedForMin_other": "Đã đỗ {{count}} phút",
-    "parkedForHour_one": "Đã đỗ 1 giờ",
+    "parkedForHours_one": "Đã đỗ 1 giờ",
     "parkedForHours_other": "Đã đỗ {{count}} giờ",
     "parkedForHoursMins": "Đã đỗ {{hours}} giờ {{mins}} phút"
   },
@@ -779,7 +788,8 @@
     "tooLateAll": "Không còn tùy chọn nhắc nhở nào trong tương lai để lên lịch. Nhấn Kết thúc phiên nếu bạn đã đi.",
     "pushNotEnabled": "Bật thông báo đẩy trên thiết bị này để thêm nhắc nhở kêu khi ứng dụng đóng.",
     "saving": "Đang lưu…",
-    "errorRetry": "Không thể cập nhật — thử lại"
+    "errorRetry": "Không thể cập nhật — thử lại",
+    "otherDevice": "Các lời nhắc này được đặt trên một thiết bị khác. Hãy thay đổi chúng trên thiết bị đó."
   },
   "installPrompt": {
     "available": "Cài đặt ParkProof",

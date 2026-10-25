@@ -1,10 +1,10 @@
-import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { TFunction } from 'i18next'
 import type { ParkingSession } from '../types'
-import { loadSessions } from '../lib/storage'
 import { useNow } from '../lib/use-now'
-import { formatCountdownLocalized } from '../lib/countdown'
+import { useLiveRecords } from '../lib/use-records-version'
+import { recordStatus } from '../lib/record-status'
+import { sessionTimezone } from '../lib/timezone'
 import Icon from './Icon'
 import VerifiedSeal from './VerifiedSeal'
 import BackButton from './ui/BackButton'
@@ -18,25 +18,25 @@ function statusFor(
   session: ParkingSession,
   now: number,
   t: TFunction,
+  timeZone: string,
 ): { label: string; color: string } {
-  if (!session.expires_at) return { label: t('history.noExpiry'), color: 'text-ink-600' }
-  const expiresMs = new Date(session.expires_at).getTime()
-  if (expiresMs < now) return { label: t('history.expired'), color: 'text-ink-600' }
-  const countdown = formatCountdownLocalized(expiresMs - now, t)
+  // An ended record reads "Ended ..." even if its expiry is still ahead.
+  const status = recordStatus(session, now, t, timeZone)
+  if (status.kind !== 'counting') return { label: status.label, color: 'text-ink-600' }
   const color =
-    countdown.urgency === 'urgent' || countdown.urgency === 'expired'
+    status.urgency === 'urgent' || status.urgency === 'expired'
       ? 'text-accent-700 font-bold'
-      : countdown.urgency === 'warning'
+      : status.urgency === 'warning'
         ? 'text-accent-600'
         : 'text-brand-700'
-  return { label: countdown.label, color }
+  return { label: status.label, color }
 }
 
 export default function SessionHistory({ onBack, onOpen }: Props) {
   const { t } = useTranslation()
-  // Lazy init pulls the list from localStorage once at mount; no useEffect
-  // needed (avoids the rules-of-hooks "setState inside effect" gripe).
-  const [sessions] = useState<ParkingSession[]>(() => loadSessions())
+  // Re-read on every records change, so a signature or a cloud pull that
+  // lands while History is open shows up without leaving the screen.
+  const sessions = useLiveRecords()
   const now = useNow()
 
   return (
@@ -64,7 +64,10 @@ export default function SessionHistory({ onBack, onOpen }: Props) {
       ) : (
         <div className="flex flex-col gap-3">
           {sessions.map((s) => {
-            const status = statusFor(s, now, t)
+            // One zone for the whole row (the record's own, as on the record
+            // screen), so arrival and "Ended ..." can't disagree.
+            const timeZone = sessionTimezone(s.location)
+            const status = statusFor(s, now, t, timeZone)
             const arrival = new Date(s.arrived_at)
             return (
               <button
@@ -94,12 +97,14 @@ export default function SessionHistory({ onBack, onOpen }: Props) {
                       )}
                       <p className="font-medium text-ink-900 truncate">
                         {arrival.toLocaleDateString('en-AU', {
+                          timeZone,
                           weekday: 'short',
                           day: 'numeric',
                           month: 'short',
                         })}
                         {' · '}
                         {arrival.toLocaleTimeString('en-AU', {
+                          timeZone,
                           hour: 'numeric',
                           minute: '2-digit',
                         })}
