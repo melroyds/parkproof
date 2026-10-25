@@ -78,7 +78,9 @@ export function downloadIcs(session: ParkingSession, offsetsMinutes: number[]): 
       offset === 0
         ? 'Parking expires now — move your car'
         : `Parking expires in ${offset} ${offset === 1 ? 'min' : 'mins'} — move your car`,
-    trigger: { minutes: offset, before: true },
+    // A zero relative offset serialises as "TRIGGER:-PT", which is not a
+    // valid RFC 5545 duration, so the at-expiry alarm uses an absolute time.
+    trigger: offset === 0 ? utcParts(expires) : { minutes: offset, before: true },
   }))
 
   const { error, value } = createEvent({

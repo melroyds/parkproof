@@ -1235,6 +1235,69 @@ export function isSafeSessionId(s) {
   return typeof s === 'string' && /^[a-zA-Z0-9._-]{1,47}$/.test(s)
 }
 
+// How long after the parking expiry a reminder is still worth delivering.
+// "Your parking expired 10 min ago" still tells the driver to move now; an
+// hour later it is noise.
+const PUSH_STALE_AFTER_EXPIRY_MS = 15 * 60 * 1000
+// No-sign "check on your car" reminders have no expiry to anchor to.
+const PUSH_STALE_AFTER_FIRE_MS = 60 * 60 * 1000
+// Schedules created before stale_at existed still need a sane TTL.
+const PUSH_DEFAULT_TTL_S = 30 * 60
+const PUSH_MAX_TTL_S = 6 * 60 * 60
+
+/**
+ * Per-reminder delivery plan, computed when the schedule is created.
+ *
+ * - tag: unique per fire time. A notification with a NEW tag always alerts;
+ *   reusing one tag (the old behaviour) made Chrome replace the earlier
+ *   reminder silently, so the final "expires now" could arrive without a
+ *   sound. Same formula as the in-tab scheduler in src/lib/reminder-copy.ts,
+ *   so the in-tab and push copies of one reminder collapse into one alert.
+ * - kind: 'expiry' (fires at/after expiry), 'before', or 'check' (no-sign).
+ * - stale_at: after this the push is not worth delivering (drives TTL).
+ */
+export function pushReminderPlan({ session_id, fire_at, expires_at }) {
+  const fire_ms = new Date(fire_at).getTime()
+  const exp_ms = expires_at ? new Date(expires_at).getTime() : NaN
+  const tag = `pp-${session_id}-${fire_ms}`
+  if (Number.isFinite(exp_ms)) {
+    const kind = fire_ms >= exp_ms - 30_000 ? 'expiry' : 'before'
+    const stale_ms = Math.max(exp_ms, fire_ms) + PUSH_STALE_AFTER_EXPIRY_MS
+    return { tag, kind, stale_at: new Date(stale_ms).toISOString() }
+  }
+  return {
+    tag,
+    kind: 'check',
+    stale_at: new Date(fire_ms + PUSH_STALE_AFTER_FIRE_MS).toISOString(),
+  }
+}
+
+/**
+ * web-push send options for one dispatch, or null when the reminder is
+ * already stale (EventBridge fired late, or the stale window passed).
+ *
+ * - urgency 'high': the library default is 'normal', which lets Android hold
+ *   the message while the phone dozes. A parking reminder is time-critical.
+ * - TTL: the push service drops the message once it is useless, instead of
+ *   the 28-day default that could deliver "expires now" a day late.
+ * - topic: one per session, so if the phone is offline the push service
+ *   keeps only the newest undelivered reminder for that session.
+ */
+export function pushSendOptions({ session_id, stale_at, nowMs }) {
+  const stale_ms = stale_at ? new Date(stale_at).getTime() : NaN
+  let TTL = PUSH_DEFAULT_TTL_S
+  if (Number.isFinite(stale_ms)) {
+    if (stale_ms <= nowMs) return null
+    TTL = Math.min(PUSH_MAX_TTL_S, Math.max(60, Math.floor((stale_ms - nowMs) / 1000)))
+  }
+  const opts = { urgency: 'high', TTL }
+  if (session_id) {
+    // RFC 8030 topic: at most 32 URL-safe base64 characters.
+    opts.topic = crypto.createHash('sha256').update(String(session_id)).digest('base64url').slice(0, 32)
+  }
+  return opts
+}
+
 /**
  * Defensively delete any existing schedules for this session. Used both at
  * cancel-time (user ended session early) AND at re-schedule time (user picks
@@ -1325,6 +1388,13 @@ async function handlePushSchedule(event) {
   // for the same session_id. No-op for first-time scheduling.
   await deletePushSchedulesForSession(session_id)
 
+  // Optional: the session's parking expiry, so each push can carry a TTL that
+  // ends shortly after the parking does. Absent for no-sign sessions.
+  const expires_at =
+    typeof body.expires_at === 'string' && Number.isFinite(new Date(body.expires_at).getTime())
+      ? body.expires_at
+      : null
+
   const now = Date.now()
   const created = []
   const skipped = []
@@ -1354,6 +1424,7 @@ async function handlePushSchedule(event) {
     // setup-push-scheduler.sh — Lambda can only create/delete schedules
     // with this prefix.
     const name = `parkproof-push-${session_id}-${i}`
+    const plan = pushReminderPlan({ session_id, fire_at: r.fire_at, expires_at })
 
     try {
       await scheduler().send(
@@ -1382,7 +1453,9 @@ async function handlePushSchedule(event) {
               title,
               body: body_text,
               url,
-              tag: session_id || 'parkproof',
+              tag: plan.tag,
+              kind: plan.kind,
+              stale_at: plan.stale_at,
             }),
           },
         }),
@@ -1447,7 +1520,7 @@ async function handlePushCancel(event) {
 // top-level handler dispatcher when event._async_kind === 'push-dispatch'.
 // No HTTP response shape — EventBridge ignores it.
 async function handlePushDispatch(event) {
-  const { device_id, title, body, url, tag } = event
+  const { device_id, session_id, title, body, url, tag, kind, stale_at } = event
   if (!device_id) {
     console.error('[parkproof.push.dispatch] no device_id in payload')
     return { ok: false }
@@ -1467,6 +1540,12 @@ async function handlePushDispatch(event) {
   if (!item) {
     console.log(`[parkproof.push.dispatch] no subscription for device_id ${device_id}`)
     return { ok: false }
+  }
+
+  const sendOptions = pushSendOptions({ session_id, stale_at, nowMs: Date.now() })
+  if (!sendOptions) {
+    console.log(`[parkproof.push.dispatch.stale] ${JSON.stringify({ session_id, stale_at })}`)
+    return { ok: false, stale: true }
   }
 
   // Configure web-push with VAPID keys lazily (don't pay this cost on
@@ -1489,13 +1568,18 @@ async function handlePushDispatch(event) {
         title: title || 'ParkProof',
         body: body || '',
         url: url || '/',
-        tag: tag || 'parkproof',
+        tag: tag || `pp-${session_id || 'parkproof'}-${Date.now()}`,
+        session_id: session_id || null,
+        kind: kind || null,
       }),
+      sendOptions,
     )
     console.log(
       `[parkproof.push.dispatch.ok] ${JSON.stringify({
         device_id,
         endpoint_host: new URL(item.endpoint).host,
+        kind: kind || null,
+        ttl: sendOptions.TTL,
       })}`,
     )
     return { ok: true }

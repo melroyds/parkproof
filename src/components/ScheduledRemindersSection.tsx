@@ -4,6 +4,8 @@ import type { ParkingSession } from '../types'
 import { useNow } from '../lib/use-now'
 import { formatExpiryAbsolute } from '../lib/time-format'
 import { sessionTimezone } from '../lib/timezone'
+import { reminderCopy } from '../lib/reminder-copy'
+import { sessionLink } from '../lib/deep-link'
 import {
   cancelPushReminders,
   schedulePushReminders,
@@ -189,15 +191,9 @@ export default function ScheduledRemindersSection({ session }: Props) {
    * they're set to fire 30 min before. Same per-reminder logic as
    * ReminderOptions.tsx — keep them in lock-step. If they diverge, the
    * first edit silently rewrites the body text the user originally chose.
+   * reminderCopy() is the single source for that copy.
    */
-  const bodyForFireAt = (fireAt: Date): string => {
-    if (isNoSign || expiryMs === null) {
-      return t('reminders.pushBodyCheckOn')
-    }
-    const minsBefore = Math.round((expiryMs - fireAt.getTime()) / 60_000)
-    if (minsBefore <= 0) return t('reminders.pushBodyAtExpiry')
-    return t('reminders.pushBodyBefore', { count: minsBefore })
-  }
+  const copyForFireAt = (fireAt: Date) => reminderCopy(session, fireAt, t)
 
   /**
    * Persist the new fire-at list to localStorage + cloud, then notify parent.
@@ -224,29 +220,23 @@ export default function ScheduledRemindersSection({ session }: Props) {
     setBusy(true)
     setError(null)
     try {
-      const title = session.location?.address
-        ? session.location.address
-        : t('reminders.pushTitleFallback')
       // Build the union: existing future fire-times + the new one. Each entry
       // gets its OWN body string computed from its own fire_at — using one
       // shared body for the batch (the previous bug) would have rewritten
-      // existing reminders' copy on every add. bodyForFireAt keeps each
-      // entry honest to its actual offset.
+      // existing reminders' copy on every add.
       const desired: ScheduledReminder[] = [
         ...futureReminders.map((r) => ({
           fire_at: r.fire_at,
-          title,
-          body: bodyForFireAt(r.fireAt),
-          url: `/?session=${session.id}`,
+          ...copyForFireAt(r.fireAt),
+          url: sessionLink(session.id),
         })),
         {
           fire_at: fireAt.toISOString(),
-          title,
-          body: bodyForFireAt(fireAt),
-          url: `/?session=${session.id}`,
+          ...copyForFireAt(fireAt),
+          url: sessionLink(session.id),
         },
       ]
-      const result = await schedulePushReminders(session.id, desired)
+      const result = await schedulePushReminders(session.id, desired, session.expires_at)
       if (result === null) {
         setError(t('scheduledReminders.pushNotEnabled'))
         setBusy(false)
@@ -278,9 +268,6 @@ export default function ScheduledRemindersSection({ session }: Props) {
         persistReminders([])
         return
       }
-      const title = session.location?.address
-        ? session.location.address
-        : t('reminders.pushTitleFallback')
       // Per-reminder body — same bug-fix as handleAdd. Removing one row
       // shouldn't rewrite the surviving ones' "X min before expiry" copy
       // to a generic "Your parking expires now". Server stores whatever
@@ -288,11 +275,10 @@ export default function ScheduledRemindersSection({ session }: Props) {
       // honest body for each retained fire_at here.
       const desired: ScheduledReminder[] = remaining.map((r) => ({
         fire_at: r.fire_at,
-        title,
-        body: bodyForFireAt(r.fireAt),
-        url: `/?session=${session.id}`,
+        ...copyForFireAt(r.fireAt),
+        url: sessionLink(session.id),
       }))
-      const result = await schedulePushReminders(session.id, desired)
+      const result = await schedulePushReminders(session.id, desired, session.expires_at)
       if (result === null) {
         setError(t('scheduledReminders.errorRetry'))
         return

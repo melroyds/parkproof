@@ -38,6 +38,8 @@ import {
 } from './lib/sync'
 import { handleCallback as handleFederatedCallback } from './lib/federated-auth'
 import { cancelPushReminders } from './lib/push'
+import { cancelInTabReminders } from './lib/notifications'
+import { clearDeepLinkParams, parseDeepLink } from './lib/deep-link'
 import type { ParkingRules, ParkingSession, RuleVariant } from './types'
 
 type Coords = { lat: number; lng: number } | null
@@ -100,8 +102,24 @@ function Toast({ message, onClose }: { message: string | null; onClose: () => vo
 }
 
 function App() {
-  const [view, setView] = useState<View>({ name: 'home' })
-  const [feedbackOpen, setFeedbackOpen] = useState(false)
+  // Deep link from a reminder notification (?session=) or the landing footer
+  // (?privacy=open, ?feedback=open). Read once, at first render, so the first
+  // paint is the right screen; the effect below then cleans the URL.
+  const [initialLink] = useState(() =>
+    typeof window === 'undefined' ? null : parseDeepLink(window.location.search),
+  )
+  const [view, setView] = useState<View>(() => {
+    if (initialLink?.kind === 'session') {
+      const linked = loadSessions().find((s) => s.id === initialLink.sessionId)
+      if (linked) return { name: 'session', session: linked }
+    }
+    if (initialLink?.kind === 'privacy') return { name: 'privacy' }
+    return { name: 'home' }
+  })
+  const [feedbackOpen, setFeedbackOpen] = useState(() => initialLink?.kind === 'feedback')
+  useEffect(() => {
+    if (initialLink) clearDeepLinkParams()
+  }, [initialLink])
   // Transient save-time notice (quota recovery, photo-sync failure). Auto-clears.
   const [notice, setNotice] = useState<string | null>(null)
   // Set when a signed-in user's first cloud sync couldn't reach their sessions,
@@ -427,6 +445,9 @@ function App() {
       // the local ended_at stamp is the source of truth; if the cancel
       // network call fails, the worst case is a stale push fires later.
       void cancelPushReminders(session.id)
+      // Same for reminders armed in this tab, or a stale "move your car"
+      // fires after the driver has gone.
+      cancelInTabReminders(session.id)
     } catch (err) {
       console.warn('[storage] could not end session:', err)
     }

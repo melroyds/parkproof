@@ -289,6 +289,9 @@ export interface ScheduledFire {
 export async function schedulePushReminders(
   session_id: string,
   reminders: ScheduledReminder[],
+  /** The session's parking expiry. Lets the server give each push a TTL
+   *  that ends shortly after the parking does. Null for no-sign sessions. */
+  expires_at: string | null = null,
 ): Promise<{ created: ScheduledFire[]; skipped: number } | null> {
   if (!isPushSupported()) return null
   const subscribed = await hasActiveSubscription()
@@ -307,6 +310,7 @@ export async function schedulePushReminders(
         device_id: getOrCreateDeviceId(),
         session_id,
         reminders,
+        expires_at,
       }),
     })
     if (!resp.ok) {
