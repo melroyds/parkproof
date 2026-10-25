@@ -211,10 +211,13 @@ export type SessionPhoto =
   | { kind: 'missing'; ref: PhotoRef }
 
 /**
- * Decide a record's photo from what the photo store returned for its ref
- * (`stored`, a data URL or null). Pure, so the hook and the async resolver
- * agree. A ref without bytes falls back to a legacy value when there is one
- * (a cloud copy), and is otherwise 'missing'.
+ * Decide a record's photo from what the photo store (or the cloud) returned
+ * for its ref (`stored`, a data URL or null). Pure, so the hook and the
+ * async resolver agree. A ref without bytes falls back to a legacy data URL
+ * when there is one, and is otherwise 'missing'. A URL in the legacy field
+ * of a role that has a ref is ignored: refs are never hydrated with URLs
+ * (T0b4), so such a value is an interim leftover not tied to the ref's
+ * bytes.
  */
 export function settleSessionPhoto(
   session: ParkingSession,
@@ -224,12 +227,96 @@ export function settleSessionPhoto(
   const ref = photoRefFor(session, role)
   const legacy = legacyPhotoValue(session, role)
   if (ref && stored) return { kind: 'available', src: stored, ref }
-  if (legacy) return { kind: 'available', src: legacy, ref }
+  if (legacy && (!ref || legacy.startsWith('data:'))) return { kind: 'available', src: legacy, ref }
   if (ref) return { kind: 'missing', ref }
   return { kind: 'none' }
 }
 
-/** One photo of a record, read through the photo store for new records. Never throws. */
+// ─── Bytes from the cloud ────────────────────────────────────────────────
+
+/**
+ * Where a ref's bytes come from when they aren't on this device: the
+ * signed-in user's cloud copy (sync.ts `fetchRefPhotoFromCloud`, which
+ * checks them against the sha256 and caches them in the photo store).
+ * Resolves a data URL whose bytes hash to `sha256`, or null.
+ */
+export type RemotePhotoFetcher = (sessionId: string, sha256: string) => Promise<string | null>
+
+let remoteFetcher: RemotePhotoFetcher | null = null
+
+/**
+ * Set (App, once at start) or clear (null) the cloud source for missing
+ * ref bytes. Without one, a ref whose bytes aren't here stays 'missing'.
+ * The source itself answers null while signed out. Setting a different
+ * source counts as a photo source change (`notifyPhotoSourceChanged`).
+ */
+export function setRemotePhotoFetcher(fetcher: RemotePhotoFetcher | null): void {
+  if (fetcher === remoteFetcher) return
+  remoteFetcher = fetcher
+  notifyPhotoSourceChanged()
+}
+
+// ─── Photo source changes ────────────────────────────────────────────────
+// A photo that came out 'missing' can turn up later: a cloud source is
+// installed after the first paint, the driver signs in, or another reader
+// (a PDF export, the record screen) fetched the bytes and kept them here.
+// Each of those bumps this version, and `useSessionPhoto` asks again for
+// photos it hasn't got.
+
+let photoSourceGeneration = 0
+const photoSourceListeners = new Set<() => void>()
+
+/** The current photo source version (bumped by `notifyPhotoSourceChanged`). */
+export function photoSourceVersion(): number {
+  return photoSourceGeneration
+}
+
+/** Be told whenever the photo source version changes. Returns the unsubscribe function. */
+export function subscribePhotoSource(listener: () => void): () => void {
+  photoSourceListeners.add(listener)
+  return () => {
+    photoSourceListeners.delete(listener)
+  }
+}
+
+/**
+ * A missing photo may now be found: a cloud source was set, the sign-in
+ * state changed, or a photo's bytes were just kept on this device.
+ */
+export function notifyPhotoSourceChanged(): void {
+  photoSourceGeneration++
+  for (const listener of [...photoSourceListeners]) {
+    try {
+      listener()
+    } catch (err) {
+      console.warn('[photos] a photo source listener failed:', err)
+    }
+  }
+}
+
+/**
+ * A ref's bytes from the cloud, as a data URL that hashes to `sha256`, or
+ * null (no source set, nothing there, a mismatch, an error). Never throws.
+ * Callers skip read-only shared copies: their photos are in someone else's
+ * account.
+ */
+export async function fetchRemotePhoto(sessionId: string, sha256: string): Promise<string | null> {
+  const fetcher = remoteFetcher
+  if (!fetcher) return null
+  try {
+    return await fetcher(sessionId, sha256)
+  } catch (err) {
+    console.warn('[photos] could not fetch a photo from the cloud:', err)
+    return null
+  }
+}
+
+/**
+ * One photo of a record, read through the photo store for new records. A
+ * ref whose bytes aren't on this device is fetched from the signed-in
+ * user's cloud copy when there is one (checked against its sha256 and
+ * cached here). Never throws.
+ */
 export async function resolveSessionPhoto(session: ParkingSession, role: PhotoRole): Promise<SessionPhoto> {
   const ref = photoRefFor(session, role)
   let stored: string | null = null
@@ -239,6 +326,7 @@ export async function resolveSessionPhoto(session: ParkingSession, role: PhotoRo
     } catch (err) {
       console.warn(`[photos] could not read the ${role} photo:`, err)
     }
+    if (!stored && !session.shared_from) stored = await fetchRemotePhoto(session.id, ref.sha256)
   }
   return settleSessionPhoto(session, role, stored)
 }

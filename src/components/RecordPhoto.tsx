@@ -10,6 +10,11 @@ interface Props {
   role: PhotoRole
   alt: string
   className?: string
+  /**
+   * Called with the URL when a photo shown from a cloud URL (a legacy
+   * photo's hydrated link) fails to load. Not called for bytes held here.
+   */
+  onRemoteLoadError?: (src: string) => void
 }
 
 /**
@@ -18,14 +23,16 @@ interface Props {
  * photo for the role, a quiet placeholder while the bytes load, and the
  * one "bytes missing" state when they aren't on this device.
  */
-export default function RecordPhoto({ session, role, alt, className }: Props) {
+export default function RecordPhoto({ session, role, alt, className, onRemoteLoadError }: Props) {
   const photo = useSessionPhoto(session, role)
   if (photo.status === 'none') return null
   if (photo.status === 'loading') {
     return <div className="w-full h-40 rounded-xl border border-paper-300 bg-paper-100" aria-hidden="true" />
   }
   if (photo.status === 'missing') return <PhotoMissingNote sha256={photo.sha256} signed={photo.signed} />
-  return <img src={photo.src} alt={alt} className={className} />
+  const src = photo.src
+  const onError = onRemoteLoadError && /^https?:/i.test(src) ? () => onRemoteLoadError(src) : undefined
+  return <img src={src} alt={alt} className={className} onError={onError} />
 }
 
 /**
@@ -33,7 +40,9 @@ export default function RecordPhoto({ session, role, alt, className }: Props) {
  * (in that order) that it has at all. `fallback` shows while it loads,
  * when the record has none of them, and when the bytes aren't on this
  * device (a thumbnail is too small for the fingerprint line; the record
- * screen shows it).
+ * screen shows it). Thumbnails never fetch from the cloud: a list of them
+ * would queue one fetch per record ahead of the photos the driver opens.
+ * They show bytes once another screen has kept them here.
  */
 export function RecordThumbnail({
   session,
@@ -47,7 +56,7 @@ export function RecordThumbnail({
   fallback: ReactNode
 }) {
   const role = roles.find((r) => hasSessionPhoto(session, r)) ?? roles[0]
-  const photo = useSessionPhoto(session, role)
+  const photo = useSessionPhoto(session, role, { remote: false })
   if (photo.status !== 'available') return <>{fallback}</>
   return <img src={photo.src} alt="" className={className} />
 }

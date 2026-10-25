@@ -78,8 +78,9 @@ export default function AppealFlow({ session, onBack }: Props) {
       const { prefetchPdfFont } = await import('../lib/pdf-fonts')
       await prefetchPdfFont(i18n.language)
       // Cross-device: cloud-synced photos arrive as HTTPS presigned URLs.
-      // jsPDF's addImage only works with data URLs — materialize first.
-      const sessionForPdf = await pdfMod.materializeRemotePhotos(session)
+      // jsPDF's addImage only works with data URLs — materialize first
+      // (only the photos the appeal PDF draws).
+      const sessionForPdf = await pdfMod.materializeRemotePhotos(session, 'appeal')
       pdfMod.downloadAppealPdf({
         session: sessionForPdf,
         draft: stage.draft,

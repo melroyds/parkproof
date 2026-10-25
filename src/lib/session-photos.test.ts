@@ -19,6 +19,7 @@ import {
   photoSourceFor,
   resolveSessionPhoto,
   reusedPhotoMeta,
+  setRemotePhotoFetcher,
   settleSessionPhoto,
   shortFingerprint,
   storeSessionPhoto,
@@ -220,9 +221,41 @@ describe('getSessionPhoto / resolveSessionPhoto', () => {
     expect(await getSessionPhoto(s, 'car')).toBeNull()
   })
 
-  it('a ref without bytes falls back to a legacy value when there is one (a cloud copy)', async () => {
-    const s = record({ photos: [ref('sign', '6'.repeat(64))], sign_photo: 'https://cdn/sign.jpg' })
-    expect(await getSessionPhoto(s, 'sign')).toBe('https://cdn/sign.jpg')
+  it('a ref without bytes falls back to a legacy data URL, but never to a URL (refs are never hydrated, T0b4)', async () => {
+    const withData = record({ photos: [ref('sign', '6'.repeat(64))], sign_photo: jpeg('kept-in-field') })
+    expect(await getSessionPhoto(withData, 'sign')).toBe(jpeg('kept-in-field'))
+    const withUrl = record({ photos: [ref('sign', '6'.repeat(64))], sign_photo: 'https://cdn/sign.jpg' })
+    expect(await resolveSessionPhoto(withUrl, 'sign')).toEqual({ kind: 'missing', ref: ref('sign', '6'.repeat(64)) })
+  })
+
+  it('missing bytes come from the cloud source when one is set; shared copies never ask', async () => {
+    const sha = '9'.repeat(64)
+    const fetcher = vi.fn(async (sessionId: string, wanted: string) => (sessionId === ID && wanted === sha ? jpeg('from-cloud') : null))
+    setRemotePhotoFetcher(fetcher)
+    try {
+      expect(await getSessionPhoto(record({ photos: [ref('car', sha)] }), 'car')).toBe(jpeg('from-cloud'))
+      expect(fetcher).toHaveBeenCalledWith(ID, sha)
+      const shared = record({
+        photos: [ref('car', sha)],
+        shared_from: { original_session_id: 'x', received_at: 't', shared_at: null, arrival_bundle: null, snapshot: {} },
+      })
+      fetcher.mockClear()
+      expect(await getSessionPhoto(shared, 'car')).toBeNull()
+      expect(fetcher).not.toHaveBeenCalled()
+      // A source that throws reads as missing.
+      setRemotePhotoFetcher(async () => Promise.reject(new Error('offline')))
+      vi.spyOn(console, 'warn').mockImplementation(() => {})
+      expect((await resolveSessionPhoto(record({ photos: [ref('car', sha)] }), 'car')).kind).toBe('missing')
+      // Bytes on this device are never fetched again.
+      const local = jpeg('local-bytes')
+      const localSha = await putPhoto(ID, local)
+      fetcher.mockClear()
+      setRemotePhotoFetcher(fetcher)
+      expect(await getSessionPhoto(record({ photos: [ref('car', localSha)] }), 'car')).toBe(local)
+      expect(fetcher).not.toHaveBeenCalled()
+    } finally {
+      setRemotePhotoFetcher(null)
+    }
   })
 
   it('the ref wins over a legacy value when the bytes are here', async () => {

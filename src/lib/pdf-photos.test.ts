@@ -5,14 +5,17 @@
 // photo whose bytes aren't on this device is drawn as the one "not on
 // this device" line with its full SHA-256 fingerprint (signed only when a
 // stored signature contains it), never as a blank. A signed-in user's
-// cloud copy stands in for missing bytes when it hashes to the ref.
+// cloud copy stands in for missing bytes (T0b4: the readers' cloud source,
+// fetched by sha256 and checked against it). Only the photos a PDF draws
+// are materialised, at most 4 at a time.
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
-// The cloud copy lookup (the real one is tested in sync-photos.test.ts).
-const { materializeRefPhotoFromCloud } = vi.hoisted(() => ({
-  materializeRefPhotoFromCloud: vi.fn(async (): Promise<string | null> => null),
+// The legacy (per-role) cloud lookup; the ref lookup is the readers' cloud
+// source below (the real ones are tested in sync-photos.test.ts).
+const { materializePhotoFromCloud } = vi.hoisted(() => ({
+  materializePhotoFromCloud: vi.fn(async (): Promise<string | null> => null),
 }))
-vi.mock('./sync', () => ({ materializeRefPhotoFromCloud }))
+vi.mock('./sync', () => ({ materializePhotoFromCloud }))
 
 // Every string drawn into a PDF, and no real download.
 const { drawn } = vi.hoisted(() => ({ drawn: [] as string[] }))
@@ -37,12 +40,18 @@ import i18n from './i18n'
 import type { ParkingSession, PhotoRef, SignatureBundle } from '../types'
 import { createMemoryPhotoBackend, putPhoto, setPhotoBackendForTests } from './photo-store'
 import {
+  PDF_PHOTO_CONCURRENCY,
   downloadPdf,
   materializeRemotePhotos,
+  materializeRemotePhotosBatch,
   missingPhotoMarker,
   missingPhotoText,
   parseMissingPhotoMarker,
+  pdfPhotoRoles,
 } from './pdf'
+import { setRemotePhotoFetcher, type RemotePhotoFetcher } from './session-photos'
+
+const remoteFetcher = vi.fn<RemotePhotoFetcher>(async () => null)
 
 const ID = '5c4b3a29-1807-4f6e-9d5c-4b3a29180716'
 const jpeg = (text: string) => 'data:image/jpeg;base64,' + btoa(text)
@@ -84,10 +93,16 @@ beforeAll(async () => {
 })
 beforeEach(() => {
   setPhotoBackendForTests(createMemoryPhotoBackend())
-  materializeRefPhotoFromCloud.mockReset()
-  materializeRefPhotoFromCloud.mockImplementation(async () => null)
+  materializePhotoFromCloud.mockReset()
+  materializePhotoFromCloud.mockImplementation(async () => null)
+  remoteFetcher.mockReset()
+  remoteFetcher.mockImplementation(async () => null)
+  setRemotePhotoFetcher(remoteFetcher)
 })
-afterEach(() => setPhotoBackendForTests(null))
+afterEach(() => {
+  setPhotoBackendForTests(null)
+  setRemotePhotoFetcher(null)
+})
 
 describe('materializeRemotePhotos and the photo store', () => {
   it('puts a new record\'s photo-store photos on the PDF copy (the record itself is untouched)', async () => {
@@ -118,23 +133,72 @@ describe('materializeRemotePhotos and the photo store', () => {
     const out = await materializeRemotePhotos(s)
     expect(out.sign_photo).toBe(jpeg('legacy'))
     expect(out.car_photo).toBeNull()
-    expect(materializeRefPhotoFromCloud).not.toHaveBeenCalled()
+    expect(remoteFetcher).not.toHaveBeenCalled()
+    expect(materializePhotoFromCloud).not.toHaveBeenCalled()
   })
 
-  it('missing bytes: the cloud copy is used when it matches the ref (looked up by role and sha256)', async () => {
+  it('missing bytes: the cloud copy is used (looked up by sha256, never by role)', async () => {
     const sha = 'e'.repeat(64)
-    materializeRefPhotoFromCloud.mockImplementation(async () => jpeg('from-cloud'))
+    remoteFetcher.mockImplementation(async () => jpeg('from-cloud'))
     const out = await materializeRemotePhotos(record({ photos: [ref('sign', sha)] }))
     expect(out.sign_photo).toBe(jpeg('from-cloud'))
-    expect(materializeRefPhotoFromCloud).toHaveBeenCalledWith(ID, 'sign', sha)
+    expect(remoteFetcher).toHaveBeenCalledWith(ID, sha)
+    expect(materializePhotoFromCloud).not.toHaveBeenCalled()
   })
 
-  it('a ref shown from a cloud URL (put there by the first sync) embeds only bytes that match the ref', async () => {
+  it('a URL left on a ref\'s legacy field is never embedded: the ref\'s bytes, or the missing line', async () => {
     const sha = 'f'.repeat(64)
     const s = record({ sign_photo: 'https://cdn.test/sign.jpg', photos: [ref('sign', sha)] })
     const out = await materializeRemotePhotos(s)
-    expect(materializeRefPhotoFromCloud).toHaveBeenCalledWith(ID, 'sign', sha)
+    expect(remoteFetcher).toHaveBeenCalledWith(ID, sha)
     expect(parseMissingPhotoMarker(out.sign_photo!)).toEqual({ sha256: sha, signed: false })
+    expect(materializePhotoFromCloud).not.toHaveBeenCalled()
+  })
+
+  it('a legacy photo shown from its cloud URL is fetched by role through the proxy', async () => {
+    materializePhotoFromCloud.mockImplementation(async () => jpeg('legacy-from-cloud'))
+    const out = await materializeRemotePhotos(record({ sign_photo: 'https://s3.test/get/sign.jpg' }))
+    expect(materializePhotoFromCloud).toHaveBeenCalledWith(ID, 'sign')
+    expect(out.sign_photo).toBe(jpeg('legacy-from-cloud'))
+  })
+})
+
+describe('only the photos a PDF draws, at most 4 at a time (T0b4 item 10)', () => {
+  it('pdfPhotoRoles: sign or surroundings, then car; the appeal draws sign and car', () => {
+    expect(pdfPhotoRoles(record(), 'evidence')).toEqual(['sign', 'car'])
+    expect(pdfPhotoRoles(record({ no_sign: true }), 'evidence')).toEqual(['ambient', 'car'])
+    expect(pdfPhotoRoles(record({ no_sign: true }), 'export')).toEqual(['ambient', 'car'])
+    expect(pdfPhotoRoles(record({ no_sign: true }), 'appeal')).toEqual(['sign', 'car'])
+  })
+
+  it('a photo the PDF does not draw is not fetched', async () => {
+    const s = record({ photos: [ref('sign', '1'.repeat(64)), ref('car', '2'.repeat(64)), ref('ambient', '3'.repeat(64))] })
+    const out = await materializeRemotePhotos(s, 'evidence')
+    expect(remoteFetcher.mock.calls.map((c) => c[1]).sort()).toEqual(['1'.repeat(64), '2'.repeat(64)])
+    expect(out.ambient_photo).toBeUndefined()
+    remoteFetcher.mockClear()
+    await materializeRemotePhotos({ ...s, no_sign: true }, 'export')
+    expect(remoteFetcher.mock.calls.map((c) => c[1]).sort()).toEqual(['2'.repeat(64), '3'.repeat(64)])
+  })
+
+  it(`the full export fetches at most ${PDF_PHOTO_CONCURRENCY} photos at once across every record`, async () => {
+    let active = 0
+    let peak = 0
+    remoteFetcher.mockImplementation(async () => {
+      active++
+      peak = Math.max(peak, active)
+      await new Promise((r) => setTimeout(r, 5))
+      active--
+      return null
+    })
+    const sessions = Array.from({ length: 6 }, (_, i) =>
+      record({ id: `rec-${i}`, photos: [ref('sign', String(i).repeat(64)), ref('car', String(i + 1).repeat(64))] }),
+    )
+    const out = await materializeRemotePhotosBatch(sessions)
+    expect(out).toHaveLength(6)
+    expect(remoteFetcher).toHaveBeenCalledTimes(12)
+    expect(peak).toBeLessThanOrEqual(PDF_PHOTO_CONCURRENCY)
+    expect(peak).toBeGreaterThan(1)
   })
 })
 

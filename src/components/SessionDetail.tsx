@@ -5,7 +5,7 @@ import { isStorageFullError, updateSession } from '../lib/storage'
 import { useLiveRecord } from '../lib/use-records-version'
 import { canEndRecord, endConfirmText } from '../lib/record-status'
 import { DEV_KEY_ALIAS } from '../lib/evidence-chain'
-import { hasSessionPhoto } from '../lib/session-photos'
+import { LEGACY_PHOTO_ROLES, hasSessionPhoto, legacyPhotoValue, photoRefFor } from '../lib/session-photos'
 import { useSessionPhoto } from '../lib/use-session-photo'
 import ScheduledRemindersSection from './ScheduledRemindersSection'
 import RecordPhoto from './RecordPhoto'
@@ -98,12 +98,22 @@ export default function SessionDetail({
   // Read from the live record, so a flag set after save shows up here too.
   const photoSyncFailed = !!session.photo_sync_failed
   const [retryingPhoto, setRetryingPhoto] = useState(false)
-  // #9 — cloud-pulled sessions hold photos as remote HTTPS URLs that may fail to
-  // materialize at export time (expired presign, pre-CORS-fix historical row).
-  // Warn before the user hands a blank-evidence PDF to a council.
-  const hasRemotePhoto = (['sign_photo', 'car_photo', 'ambient_photo'] as const).some(
-    (f) => typeof session[f] === 'string' && /^https?:/i.test(session[f] as string),
-  )
+  // #9 — an older record pulled from the cloud shows its legacy photos from
+  // HTTPS URLs. Since T0b4 the list mints a fresh URL only for a photo that
+  // is in S3, so such a photo normally loads and embeds. The warning shows
+  // only after one actually failed: its <img> didn't load, or the last
+  // export couldn't fetch it. Keyed by URL, so a fresh URL from the next
+  // sync clears it. A role with a photo ref is never read from a URL.
+  const [failedPhotoUrls, setFailedPhotoUrls] = useState<ReadonlySet<string>>(() => new Set())
+  const noteFailedPhotoUrls = (urls: readonly string[]) => {
+    if (urls.length === 0) return
+    setFailedPhotoUrls((prev) => (urls.every((u) => prev.has(u)) ? prev : new Set([...prev, ...urls])))
+  }
+  const hasRemotePhoto = LEGACY_PHOTO_ROLES.some((role) => {
+    if (photoRefFor(session, role)) return false
+    const value = legacyPhotoValue(session, role)
+    return !!value && /^https?:/i.test(value) && failedPhotoUrls.has(value)
+  })
 
   // Pre-import the PDF chunk so the click → save chain stays inside the
   // user-gesture window (iOS Safari otherwise sometimes blocks the download
@@ -155,6 +165,14 @@ export default function SessionDetail({
       // jsPDF's addImage only works with data URLs — materialize first.
       // No-op for same-device sessions (photos already data URLs).
       const sessionForPdf = await mod.materializeRemotePhotos(session)
+      // A cloud URL still on a photo the PDF draws couldn't be fetched: it
+      // draws as "could not be embedded", so say why under the button.
+      noteFailedPhotoUrls(
+        mod.pdfPhotoRoles(session, 'evidence').flatMap((role) => {
+          const value = legacyPhotoValue(sessionForPdf, role)
+          return value && /^https?:/i.test(value) ? [value] : []
+        }),
+      )
       mod.downloadPdf(sessionForPdf, t, i18n.language)
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err)
@@ -531,6 +549,7 @@ export default function SessionDetail({
             role="sign"
             alt={t('session.signPhotoAlt')}
             className="w-full rounded-xl border border-paper-300"
+            onRemoteLoadError={(url) => noteFailedPhotoUrls([url])}
           />
         </Card>
       )}
@@ -553,6 +572,7 @@ export default function SessionDetail({
                 role="ambient"
                 alt={t('session.ambientPhotoLabel')}
                 className="w-full rounded-xl border border-paper-300"
+                onRemoteLoadError={(url) => noteFailedPhotoUrls([url])}
               />
               {ambientPhoto.status === 'available' && (
                 <p className="text-xs text-ink-600 mt-2">
@@ -578,6 +598,7 @@ export default function SessionDetail({
             role="car"
             alt={t('session.carPhotoAlt')}
             className="w-full rounded-xl border border-paper-300"
+            onRemoteLoadError={(url) => noteFailedPhotoUrls([url])}
           />
         </Card>
       )}
@@ -596,8 +617,8 @@ export default function SessionDetail({
             </p>
           </div>
         )}
-        {/* #9 — warn before exporting a cloud-pulled session whose photos may
-            not embed, so a blank-evidence PDF doesn't leave silently. */}
+        {/* #9 — say so when a cloud-pulled record's photo couldn't be
+            loaded, so a blank-evidence PDF doesn't leave silently. */}
         {hasRemotePhoto && (
           <p className="text-xs leading-relaxed text-center px-2" style={{ color: '#A9CFBE' }}>
             {t('session.exportPhotoWarning')}

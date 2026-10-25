@@ -405,9 +405,12 @@ export interface ParkingSession {
   photo_sync_failed?: boolean
 
   // ── Evidence chain and later-task fields (build spec N1) ──
-  // All optional, so records saved before this build keep loading. Each one
-  // must also be in ALLOWED_SESSION_FIELDS (lambda/cloud-sync.js, T0b4) and
-  // the client merge before it syncs.
+  // All optional, so records saved before this build keep loading. Every
+  // field of this interface is in ALLOWED_SESSION_FIELDS (lambda/cloud-sync.js;
+  // a test in lambda/cloud-sync.test.js fails when one is missing). A field
+  // that needs more than "this device's copy wins" when two copies meet
+  // also needs a rule in the client merge (src/lib/evidence-merge.ts) and
+  // the server merge (mergeSessionRows).
 
   /**
    * 32 random bytes as 64 lowercase hex characters, generated at save.
@@ -421,7 +424,12 @@ export interface ParkingSession {
   photos?: PhotoRef[]
   /** The link-0 photo hashes, stored at save so link 0 can always be signed. */
   v1_hashes?: { sign: string | null; car: string | null; ambient: string | null }
-  /** Links 1, 2, 3... Written only through appendAddendum, setAddendumBundle and rejectAddendum. */
+  /**
+   * Links 1, 2, 3... Written only through appendAddendum, setAddendumBundle,
+   * rejectAddendum and the cloud merge (mergeCloudEvidence). Only signed and
+   * rejected addenda are uploaded; a pending one stays on the device that
+   * queued it.
+   */
   addenda?: SignedAddendum[]
   /** Existing damage the driver noticed, at most 280 characters. */
   condition_note?: string | null

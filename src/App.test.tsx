@@ -168,7 +168,9 @@ vi.mock('./lib/federated-auth', async (importOriginal) => ({
   handleCallback: vi.fn(async () => false),
 }))
 vi.mock('./lib/pdf', () => ({
+  // A cloud URL stays on the copy: as if the proxy couldn't fetch it.
   materializeRemotePhotos: async (s: ParkingSession) => s,
+  pdfPhotoRoles: (s: ParkingSession) => [s.no_sign ? 'ambient' : 'sign', 'car'],
   downloadPdf: () => {},
 }))
 vi.mock('./lib/pdf-fonts', () => ({ prefetchPdfFont: async () => {} }))
@@ -593,7 +595,8 @@ describe('App and the photo store (T0b2)', () => {
     mocks.refreshInterpretation.mockResolvedValueOnce({ ...RESULT, rules: 'x' })
     renderApp(false)
 
-    click(i18n.t('active.recheckSub'))
+    // Offered once the photo has loaded (T0b4: loading can include a cloud fetch).
+    fireEvent.click(await screen.findByRole('button', { name: i18n.t('active.recheckSub') }))
     fireEvent.click(await screen.findByRole('button', { name: 'Fake log' }))
     await screen.findByRole('button', { name: 'Fake save' })
     const props = loggerProps.at(-1)!
@@ -601,18 +604,63 @@ describe('App and the photo store (T0b2)', () => {
     expect(props.signPhotoMeta).toEqual({ captured_at: ref.captured_at, source: 'camera_input' })
   })
 
-  it('Re-check of a record whose sign photo bytes are not on this device goes to a fresh scan', async () => {
+  it('Re-check of a record whose sign photo bytes are gone by the tap goes to a fresh scan', async () => {
+    const sha = await putPhoto('rec-1', jpeg('soon-gone'))
     saveSession(
       makeSession({
         sign_photo: null,
-        photos: [{ role: 'sign', sha256: '9'.repeat(64), captured_at: '2026-10-20T00:58:00.000Z', source: 'camera_input' }],
+        photos: [{ role: 'sign', sha256: sha, captured_at: '2026-10-20T00:58:00.000Z', source: 'camera_input' }],
       }),
     )
     renderApp(false)
-    // Tapped before the card has found out the bytes are missing.
-    click(i18n.t('active.recheckSub'))
+    const button = await screen.findByRole('button', { name: i18n.t('active.recheckSub') })
+    // The bytes go (another tab deleted the record's photos) after the card showed the button.
+    photos.records.delete(`rec-1/${sha}`)
+    fireEvent.click(button)
     expect(await screen.findByRole('button', { name: 'Fake capture' })).toBeTruthy()
     expect(mocks.refreshInterpretation).not.toHaveBeenCalled()
+  })
+
+  it('the home card offers Re-check only once the sign photo has loaded, never while it loads', async () => {
+    const sha = await putPhoto('rec-1', jpeg('slow-sign'))
+    saveSession(
+      makeSession({
+        sign_photo: null,
+        photos: [{ role: 'sign', sha256: sha, captured_at: '2026-10-20T00:58:00.000Z', source: 'camera_input' }],
+      }),
+    )
+    renderApp(false)
+    // First paint: the photo is still loading, so there is no button to tap.
+    expect(screen.queryByRole('button', { name: i18n.t('active.recheckSub') })).toBeNull()
+    expect(await screen.findByRole('button', { name: i18n.t('active.recheckSub') })).toBeTruthy()
+  })
+
+  it("the record screen's cloud-photo warning shows only once an older record's cloud photo failed to load", async () => {
+    saveSession(makeSession({ sign_photo: 'https://s3.test/get/user-1/rec-1/sign.jpg' }))
+    window.history.replaceState({}, '', '/app/?session=rec-1')
+    renderApp(true)
+    const img = await screen.findByRole('img', { name: i18n.t('session.signPhotoAlt') })
+    // A freshly minted URL normally loads: no warning above a photo that is there.
+    expect(screen.queryByText(i18n.t('session.exportPhotoWarning'))).toBeNull()
+    fireEvent.error(img)
+    expect(await screen.findByText(i18n.t('session.exportPhotoWarning'))).toBeTruthy()
+  })
+
+  it('the cloud-photo warning also shows after an export that could not fetch a photo it draws', async () => {
+    // The surroundings photo isn't drawn for a sign record, so its URL doesn't count.
+    saveSession(makeSession({ ambient_photo: 'https://s3.test/get/user-1/rec-1/ambient.jpg' }))
+    window.history.replaceState({}, '', '/app/?session=rec-1')
+    renderApp(true)
+    click(i18n.t('session.exportAsPdf'))
+    await waitFor(() => expect(screen.getByRole('button', { name: i18n.t('session.exportAsPdf') })).toBeTruthy())
+    expect(screen.queryByText(i18n.t('session.exportPhotoWarning'))).toBeNull()
+    cleanup()
+
+    saveSession({ ...makeSession({ car_photo: 'https://s3.test/get/user-1/rec-1/car.jpg' }), id: 'rec-2' })
+    window.history.replaceState({}, '', '/app/?session=rec-2')
+    renderApp(true)
+    click(i18n.t('session.exportAsPdf'))
+    expect(await screen.findByText(i18n.t('session.exportPhotoWarning'))).toBeTruthy()
   })
 
   it('the home card stops offering Re-check once it knows the sign photo bytes are not on this device', async () => {

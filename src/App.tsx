@@ -37,11 +37,19 @@ import {
   updateSession,
 } from './lib/storage'
 import { deleteSessionPhotos, sweepOrphanPhotos } from './lib/photo-store'
-import { getSessionPhoto, reusedPhotoMeta, type PhotoCaptureMeta } from './lib/session-photos'
+import {
+  getSessionPhoto,
+  notifyPhotoSourceChanged,
+  reusedPhotoMeta,
+  setRemotePhotoFetcher,
+  type PhotoCaptureMeta,
+} from './lib/session-photos'
 import { useRecordsVersion } from './lib/use-records-version'
 import {
+  holdAddendumSigning,
   installSigningTriggers,
   prepareNewRecord,
+  releaseAddendumSigning,
   runSigningSweep,
   scheduleDepartureCatchUp,
   setSignedRecordListener,
@@ -49,8 +57,10 @@ import {
 } from './lib/signing'
 import { emptyLogDraft } from './lib/evidence-chain'
 import { useAuth } from './lib/use-auth'
+import { authConfigured } from './lib/auth'
 import {
   deleteCloudSession,
+  fetchRefPhotoFromCloud,
   mirrorSessionToCloud,
   mirrorSessionUpdateToCloud,
   performInitialSync,
@@ -239,10 +249,20 @@ function App() {
   // online or the page becomes visible, sign anything still outstanding
   // (link 0 left unsigned by a closed tab, pending addenda, a departure to
   // catch up). Throttled per record inside the helper.
+  //
+  // Where sign-in is set up, addenda wait until the first cloud sync has
+  // merged in links signed on the driver's other devices (it can renumber
+  // this device's pending links on top of them); signing one first could
+  // fork the chain. Link 0 is signed at once. The hold ends when that sync
+  // settles, or as soon as it is clear nobody is signed in (both below).
   useEffect(() => {
+    if (authConfigured()) holdAddendumSigning()
     runSigningSweep()
     return installSigningTriggers()
   }, [])
+  useEffect(() => {
+    if (!auth.loading && !auth.user) releaseAddendumSigning()
+  }, [auth.loading, auth.user])
 
   // Photo-store GC on app start: delete photos whose record no longer
   // exists, once they are at least a day old (a logger open in another tab
@@ -327,8 +347,24 @@ function App() {
       .finally(() => {
         // Load-bearing (see CLAUDE.md gotchas): re-renders home after a pull.
         notifyRecordsChanged()
+        // The cloud copies are merged in: sign the addenda held since start.
+        releaseAddendumSigning()
       })
   }
+  // A photo whose bytes aren't on this device (a record pulled from the
+  // cloud, or IndexedDB cleared) is fetched from the signed-in driver's
+  // cloud copy, checked against its fingerprint and kept here. The source
+  // is installed once, not on sign-in: it waits for the sign-in itself
+  // (and answers "missing" while signed out), so a screen painted before
+  // sign-in resolves still gets its photos. A sign-in tells every photo
+  // that came out missing to ask again.
+  useEffect(() => {
+    setRemotePhotoFetcher(fetchRefPhotoFromCloud)
+    return () => setRemotePhotoFetcher(null)
+  }, [])
+  useEffect(() => {
+    if (userId) notifyPhotoSourceChanged()
+  }, [userId])
   useEffect(() => {
     runInitialSync()
     // Mount / sign-in only — keyed on userId. runInitialSync is recreated each

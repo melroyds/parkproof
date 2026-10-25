@@ -333,14 +333,14 @@ export function chainKeyForAddenda(session: ParkingSession): string | null | und
 /**
  * True when a record has `ended_at` but no departure addendum (in any
  * state), the grace period has passed, and this device is the one that
- * should add it. Shared copies never qualify. Neither does:
- *   - a v2 chain whose chain key isn't on this device (a pulled cloud
- *     copy): its departure could never be signed here, and would stay
- *     pending forever;
- *   - a record without a chain key (saved before the chain, or a v1 copy
- *     pulled from the cloud) unless `device.endedHere`: the departure
- *     belongs to the device where the driver tapped I've left, and a copy
- *     elsewhere adding its own would fork the chain.
+ * should add it: the device where the driver tapped I've left
+ * (`device.endedHere`). Since T0b4 syncs `ended_at`, `chain_key` and the
+ * signed addenda, every other copy of the record can see an `ended_at`
+ * whose departure hasn't reached it yet (it is pending on the device that
+ * ended the record, or still being uploaded). A copy adding its own
+ * departure then would fork the chain, so only the ending device does.
+ * Shared copies never qualify, and neither does a v2 chain whose chain key
+ * isn't on this device (its departure could never be signed here).
  */
 export function needsDepartureCatchUp(
   session: ParkingSession,
@@ -348,9 +348,9 @@ export function needsDepartureCatchUp(
   device: { endedHere?: boolean } = {},
 ): boolean {
   if (session.shared_from || !isIsoTime(session.ended_at)) return false
+  if (device.endedHere !== true) return false
   if ((session.addenda ?? []).some((a) => a.kind === 'departure')) return false
   if (chainKeyForAddenda(session) === undefined) return false
-  if (!session.chain_key && device.endedHere !== true) return false
   return Date.parse(session.ended_at) + DEPARTURE_CATCH_UP_GRACE_MS <= now
 }
 

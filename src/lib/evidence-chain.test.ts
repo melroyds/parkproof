@@ -344,12 +344,23 @@ describe('departure catch-up rule', () => {
   const link0v1 = bundle({ schema: 'parkproof-evidence-v1', session_id: 'rec-1' })
 
   it('is due once the grace period has passed after ended_at', () => {
+    const here = { endedHere: true }
     const s = record({ ended_at: ended, chain_key: H('e'), signature: link0v2 })
-    expect(needsDepartureCatchUp(s, endedMs + DEPARTURE_CATCH_UP_GRACE_MS - 1)).toBe(false)
-    expect(needsDepartureCatchUp(s, endedMs + DEPARTURE_CATCH_UP_GRACE_MS)).toBe(true)
+    expect(needsDepartureCatchUp(s, endedMs + DEPARTURE_CATCH_UP_GRACE_MS - 1, here)).toBe(false)
+    expect(needsDepartureCatchUp(s, endedMs + DEPARTURE_CATCH_UP_GRACE_MS, here)).toBe(true)
     // A record with its chain key here, link 0 not signed yet.
-    expect(needsDepartureCatchUp(record({ ended_at: ended, chain_key: H('e') }), endedMs + DEPARTURE_CATCH_UP_GRACE_MS)).toBe(true)
+    expect(needsDepartureCatchUp(record({ ended_at: ended, chain_key: H('e') }), endedMs + DEPARTURE_CATCH_UP_GRACE_MS, here)).toBe(true)
     expect(departureCatchUpData(s)).toEqual({ ended_at: ended, location: null, distance_from_arrival_m: null, return_photos: [] })
+  })
+
+  it('holding the chain key is not enough: only the device that ended the record adds its departure (T0b4)', () => {
+    // A synced copy: chain key, link 0 and ended_at all came from the cloud,
+    // while the departure is still pending on the device that ended it.
+    const synced = record({ ended_at: ended, chain_key: H('e'), signature: link0v2 })
+    const later = endedMs + 10 * DEPARTURE_CATCH_UP_GRACE_MS
+    expect(needsDepartureCatchUp(synced, later)).toBe(false)
+    expect(needsDepartureCatchUp(synced, later, { endedHere: false })).toBe(false)
+    expect(needsDepartureCatchUp(synced, later, { endedHere: true })).toBe(true)
   })
 
   it('is never due without ended_at, with any departure addendum, or on a shared copy', () => {

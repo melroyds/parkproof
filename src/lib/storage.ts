@@ -13,6 +13,7 @@ import {
   nextAddendumSeq,
   signedAddendumIdentity,
 } from './evidence-chain'
+import { mergeEvidence, sameEvidence } from './evidence-merge'
 import { deleteSessionPhotos } from './photo-store'
 
 const KEY = 'parkproof.sessions.v1'
@@ -20,7 +21,8 @@ const KEY = 'parkproof.sessions.v1'
 /**
  * Fired on `window` after any write to the saved records (save, update,
  * delete, end, and the evidence-chain writes: appendAddendum,
- * setAddendumBundle, rejectAddendum, setArrivalSignature). `useRecordsVersion()`
+ * setAddendumBundle, rejectAddendum, setArrivalSignature, and the cloud merge
+ * mergeCloudEvidence). `useRecordsVersion()`
  * re-renders on it, so screens that show a record pick up background
  * changes such as a signature landing, without navigating away.
  */
@@ -514,6 +516,31 @@ export function rejectAddendum(
   persistWithQuotaRecovery(sessions)
   notifyRecordsChanged(sessionId)
   return true
+}
+
+/**
+ * Merge the cloud copy's evidence into a saved record (`mergeEvidence`,
+ * T0b4): links signed on another device, a link 0 or an end this device
+ * didn't have, more photo refs. Reads the record fresh and writes in the
+ * same synchronous step, so a signature stored meanwhile is never lost.
+ * Pending addenda are renumbered to follow the highest signed link; a drain
+ * that was signing one of them at the old seq finds its bundle refused by
+ * `setAddendumBundle` (the seq differs) and signs it again at the new one.
+ *
+ * Returns the stored record (unchanged when the cloud had nothing new), or
+ * null when the record isn't saved here. Can throw StorageFullError.
+ */
+export function mergeCloudEvidence(sessionId: string, cloud: ParkingSession): ParkingSession | null {
+  const sessions = loadSessions()
+  const idx = sessions.findIndex((s) => s.id === sessionId)
+  if (idx === -1) return null
+  const local = sessions[idx]
+  const merged = mergeEvidence(local, cloud)
+  if (sameEvidence(local, merged)) return local
+  sessions[idx] = merged
+  persistWithQuotaRecovery(sessions)
+  notifyRecordsChanged(sessionId)
+  return merged
 }
 
 /**

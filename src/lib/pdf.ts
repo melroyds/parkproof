@@ -8,12 +8,12 @@ import { registerPdfFonts } from './pdf-fonts'
 import { ACTIVE_AFTER_EXPIRY_MS } from './storage'
 import { DEV_KEY_ALIAS } from './evidence-chain'
 import {
-  LEGACY_PHOTO_ROLES,
   legacyPhotoField,
   photoHashSigned,
   resolveSessionPhoto,
   type LegacyPhotoRole,
 } from './session-photos'
+import { createLimiter, type Limiter } from './concurrency'
 
 const MARGIN = 40
 
@@ -215,85 +215,89 @@ export function missingPhotoText(marker: { sha256: string; signed: boolean }, t:
  * generate here is only needed for the in-flight PDF).
  *
  * Photos are read through the photo store (`resolveSessionPhoto`): a new
- * record's sign, car and ambient bytes come from IndexedDB and are put on
- * the copy's legacy fields, so the drawing code below reads one shape for
- * every record. A photo whose bytes aren't on this device gets a
- * `missingPhotoMarker` instead, and the PDF says so with its fingerprint.
+ * record's sign, car and ambient bytes come from IndexedDB (or, for a
+ * signed-in user whose device doesn't have them, from the cloud, checked
+ * against the ref's sha256) and are put on the copy's legacy fields, so the
+ * drawing code below reads one shape for every record. A photo whose bytes
+ * can't be had gets a `missingPhotoMarker` instead, and the PDF says so
+ * with its fingerprint.
+ *
+ * Only the photos the PDF draws are materialised (`pdfPhotoRoles`); the
+ * other photo fields of the copy are left as they are.
  */
 export async function materializeRemotePhotos(
   session: ParkingSession,
+  kind: PdfKind = 'evidence',
+  limit: Limiter = createLimiter(PDF_PHOTO_CONCURRENCY),
 ): Promise<ParkingSession> {
   const out: ParkingSession = { ...session }
   await Promise.all(
-    LEGACY_PHOTO_ROLES.map(async (role) => {
-      const field = legacyPhotoField(role)
-      const photo = await resolveSessionPhoto(session, role)
-      if (photo.kind === 'none') return
-      // A photo-store photo whose bytes aren't here locally: a signed-in
-      // user's cloud copy is used when its bytes match the ref's sha256.
-      // Otherwise the PDF says the photo isn't on this device.
-      const missing = (sha256: string) => missingPhotoMarker(sha256, photoHashSigned(session, sha256))
-      if (photo.kind === 'missing') {
-        out[field] = (await cloudCopyOf(session.id, role, photo.ref.sha256)) ?? missing(photo.ref.sha256)
-        return
-      }
-      const value = photo.src
-      out[field] = value
-      if (value.startsWith('data:')) return // already inline; nothing to do
-      if (!/^https?:/i.test(value)) return // not a remote URL we need to fetch
-      if (photo.ref) {
-        // A ref whose bytes aren't here, shown from the cloud URL the first
-        // sync put in the legacy field: only bytes matching the ref count.
-        out[field] = (await cloudCopyOf(session.id, role, photo.ref.sha256)) ?? missing(photo.ref.sha256)
-        return
-      }
-      try {
-        // Lazy-import sync.ts to keep its deps out of the PDF chunk when
-        // every photo is on this device. Server-side proxy fetches from S3
-        // and returns base64. The direct browser-to-S3 path (previously
-        // here) worked on desktop but failed on some mobile carriers — see
-        // CLAUDE.md gotcha.
-        const { materializePhotoFromCloud } = await import('./sync')
-        const dataUrl = await materializePhotoFromCloud(session.id, role)
-        if (dataUrl) {
-          out[field] = dataUrl
+    pdfPhotoRoles(session, kind).map((role) =>
+      limit(async () => {
+        const field = legacyPhotoField(role)
+        const photo = await resolveSessionPhoto(session, role)
+        if (photo.kind === 'none') return
+        if (photo.kind === 'missing') {
+          out[field] = missingPhotoMarker(photo.ref.sha256, photoHashSigned(session, photo.ref.sha256))
+          return
         }
-        // null → S3 has no object at the canonical key (historical session
-        // from before the upload-CORS fix). Leave the field as the HTTPS
-        // URL; jsPDF will catch and render the "could not embed" fallback.
-      } catch (err) {
-        console.warn(`[pdf] photo materialize failed for ${field}:`, err)
-      }
-    }),
+        const value = photo.src
+        out[field] = value
+        if (value.startsWith('data:')) return // already inline; nothing to do
+        if (!/^https?:/i.test(value)) return // not a remote URL we need to fetch
+        // A legacy photo shown from its hydrated cloud URL (a ref is never
+        // read from a URL, see settleSessionPhoto).
+        try {
+          // Lazy-import sync.ts to keep its deps out of the PDF chunk when
+          // every photo is on this device. Server-side proxy fetches from S3
+          // and returns base64. The direct browser-to-S3 path (previously
+          // here) worked on desktop but failed on some mobile carriers — see
+          // CLAUDE.md gotcha.
+          const { materializePhotoFromCloud } = await import('./sync')
+          const dataUrl = await materializePhotoFromCloud(session.id, role)
+          if (dataUrl) {
+            out[field] = dataUrl
+          }
+          // null → S3 has no object at the canonical key (historical session
+          // from before the upload-CORS fix). Leave the field as the HTTPS
+          // URL; jsPDF will catch and render the "could not embed" fallback.
+        } catch (err) {
+          console.warn(`[pdf] photo materialize failed for ${field}:`, err)
+        }
+      }),
+    ),
   )
   return out
 }
 
+/** Which PDF a session's photos are being materialised for. */
+export type PdfKind = 'evidence' | 'appeal' | 'export'
+
+/** At most this many photos are fetched at once for one PDF (T0b4). */
+export const PDF_PHOTO_CONCURRENCY = 4
+
 /**
- * The signed-in user's cloud copy of a photo-store photo, as a data URL,
- * only when its bytes hash to `sha256`; null otherwise (signed out, no
- * cloud copy, a mismatch, or a network failure). sync.ts is imported
- * lazily so its dependencies stay out of the PDF chunk when every photo is
- * on this device. Interim until T0b4 materialises photos by sha256.
+ * The photos a PDF draws for a record. The evidence PDF and the full
+ * export draw the surroundings photo for a no-sign record and the sign
+ * photo otherwise, then the car photo. The appeal PDF draws the sign photo
+ * (when there is one) and the car photo.
  */
-async function cloudCopyOf(sessionId: string, role: LegacyPhotoRole, sha256: string): Promise<string | null> {
-  try {
-    const { materializeRefPhotoFromCloud } = await import('./sync')
-    return await materializeRefPhotoFromCloud(sessionId, role, sha256)
-  } catch (err) {
-    console.warn(`[pdf] cloud copy of the ${role} photo unavailable:`, err)
-    return null
-  }
+export function pdfPhotoRoles(session: ParkingSession, kind: PdfKind): LegacyPhotoRole[] {
+  if (kind === 'appeal') return ['sign', 'car']
+  return [session.no_sign ? 'ambient' : 'sign', 'car']
 }
 
 /**
  * Batch wrapper for the full-export PDF, which renders one block per session
- * and so needs every session's photos materialized up front.
+ * and so needs every session's photos materialized up front: only the
+ * photos the export draws, at most PDF_PHOTO_CONCURRENCY at a time across
+ * the whole export.
  */
 export async function materializeRemotePhotosBatch(
   sessions: ParkingSession[],
 ): Promise<ParkingSession[]> {
-  return Promise.all(sessions.map(materializeRemotePhotos))
+  const limit = createLimiter(PDF_PHOTO_CONCURRENCY)
+  return Promise.all(sessions.map((s) => materializeRemotePhotos(s, 'export', limit)))
 }
 
 // ─── PDF layout helpers ─────────────────────────────────────────────────────

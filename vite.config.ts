@@ -235,6 +235,7 @@ function signTranslateApi(): Plugin {
         { path: '/api/sessions/list',   methods: ['GET', 'POST'] },
         { path: '/api/sessions/delete', methods: ['POST'] },
         { path: '/api/photos/presign',  methods: ['POST'] },
+        { path: '/api/photos/materialize', methods: ['POST'] },
         { path: '/api/me/export',       methods: ['GET', 'POST'] },
         { path: '/api/me/delete',       methods: ['POST'] },
       ]

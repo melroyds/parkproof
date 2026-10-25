@@ -24,8 +24,10 @@ export default function ReuseCard({ session, distanceMeters, onReuse, onDismiss 
   const signPhoto = useSessionPhoto(session, 'sign')
   // A re-check reuses the sign photo. Without it (bytes not on this device,
   // or stripped by quota recovery) the button would do nothing, so it isn't
-  // offered; the card keeps the note and Dismiss.
-  const canReuse = signPhoto.status === 'available' || signPhoto.status === 'loading'
+  // offered; the card keeps the note and Dismiss. Nor while the photo is
+  // still loading: that can include a cloud fetch, and a tap then would
+  // look dead for seconds.
+  const canReuse = signPhoto.status === 'available'
 
   return (
     <section className="gf-card mb-6 bg-brand-50 p-5">

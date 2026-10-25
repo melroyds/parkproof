@@ -46,6 +46,7 @@ import {
   departureCatchUpData,
   fitText,
   hasPendingAddenda,
+  linkZeroSchema,
   needsDepartureCatchUp,
   nextPendingAddendum,
   parentBundleFor,
@@ -58,9 +59,10 @@ export const RETRY_HORIZON_MS = 30 * 24 * 60 * 60_000
 /**
  * Device-local signing state: when the sweep last looked at each record,
  * link-0 rejections (a 400 on the arrival bundle; link 0 has no `rejected`
- * field on the record itself), and which records were ended on this device
- * (the departure catch-up for a record without a chain key runs only
- * there). Best-effort.
+ * field on the record itself), which records were ended on this device
+ * (only that device adds the departure catch-up), and which records came to
+ * this device from the cloud (they never get a link 0 here). Best-effort,
+ * except the pulled mark, which is written before the pulled record.
  */
 const SIGNING_STATE_KEY = 'parkproof.signing.state.v2'
 /** The pre-chain retry log, whose attempt caps no longer apply. Removed on the first sweep. */
@@ -70,6 +72,7 @@ interface SigningStateEntry {
   last?: number
   link0_rejected?: { code: string; at: string }
   ended_here?: true
+  pulled?: true
 }
 type SigningState = Record<string, SigningStateEntry>
 
@@ -105,12 +108,11 @@ export function arrivalSigningRejection(sessionId: string): string | null {
 }
 
 /**
- * Remember that the driver ended this record on this device. A record
- * without a chain key (saved before the chain, or a copy pulled from the
- * cloud) gets its departure catch-up only on the device that ended it, so a
- * second device never adds a departure of its own to someone else's chain.
- * `scheduleDepartureCatchUp` calls this; anything else that stamps
- * `ended_at` locally should too.
+ * Remember that the driver ended this record on this device. A record gets
+ * its departure catch-up only on the device that ended it, so another copy
+ * (which syncs `ended_at` before the departure link reaches it) never adds
+ * a departure of its own and forks the chain. `scheduleDepartureCatchUp`
+ * calls this; anything else that stamps `ended_at` locally should too.
  */
 export function markEndedOnThisDevice(sessionId: string): void {
   updateSigningState(sessionId, (e) => ({ ...e, ended_here: true }))
@@ -118,6 +120,36 @@ export function markEndedOnThisDevice(sessionId: string): void {
 
 function endedOnThisDevice(state: SigningState, sessionId: string): boolean {
   return state[sessionId]?.ended_here === true
+}
+
+/**
+ * Remember that these records came to this device from the cloud (T0b4
+ * item 11). A pulled record never gets a link 0 signed here: if its cloud
+ * copy is unsigned, the device that saved it may still be signing it (or
+ * already has, and the upload hasn't landed), and a second link 0 would
+ * leave every addendum signed on the first one without its parent. This
+ * device can't vouch for photo hashes it only read from the cloud either.
+ * The record's addenda queued on this device are still signed (on top of
+ * the link 0 that came with it).
+ *
+ * Unlike the rest of the signing state this write is strict: returns false
+ * when it couldn't be stored, and the caller then doesn't pull the records.
+ */
+export function markPulledRecords(sessionIds: readonly string[]): boolean {
+  if (sessionIds.length === 0) return true
+  const state = loadSigningState()
+  for (const id of sessionIds) state[id] = { ...state[id], pulled: true }
+  try {
+    localStorage.setItem(SIGNING_STATE_KEY, JSON.stringify(state))
+    return true
+  } catch {
+    return false
+  }
+}
+
+/** Did this record come to this device from the cloud (`markPulledRecords`)? */
+export function isPulledRecord(sessionId: string): boolean {
+  return loadSigningState()[sessionId]?.pulled === true
 }
 
 // ─── Hashing ─────────────────────────────────────────────────────────────
@@ -373,6 +405,75 @@ function notifySigned(sessionId: string): void {
   }
 }
 
+// ─── Holding addenda until the first sync ────────────────────────────────
+// On a device that is signed in, the first sync after start merges the
+// cloud copies in (sync.ts `performInitialSync`): it can adopt links signed
+// on another device and renumber this device's pending addenda on top of
+// them. An addendum signed before that would be signed at the seq it had
+// when it was queued, beside a link another device already signed there,
+// and fork the chain. So App holds addendum signing from start until that
+// sync settles (or until it is clear nobody is signed in). Link 0 is still
+// signed meanwhile: only the device that saved a record signs it.
+
+/** A hold ends on its own after this long, so a sync that never settles can't stall signing. */
+export const ADDENDUM_HOLD_MAX_MS = 60_000
+let addendaHeld = false
+let holdTimer: ReturnType<typeof setTimeout> | null = null
+
+/** Hold addendum signing until `releaseAddendumSigning` (or ADDENDUM_HOLD_MAX_MS). */
+export function holdAddendumSigning(maxMs: number = ADDENDUM_HOLD_MAX_MS): void {
+  if (addendaHeld) return
+  addendaHeld = true
+  holdTimer = setTimeout(() => {
+    console.warn('[signing] the first sync has not settled; signing addenda anyway')
+    releaseAddendumSigning()
+  }, maxMs)
+}
+
+/** Is addendum signing held (`holdAddendumSigning`)? */
+export function addendumSigningHeld(): boolean {
+  return addendaHeld
+}
+
+/**
+ * End the hold and sign what it held back, without waiting for the sweep's
+ * throttle: for every record the sweep looks after, the departure catch-up
+ * when one is due, then a drain when it has a pending addendum. Does
+ * nothing when nothing is held.
+ */
+export function releaseAddendumSigning(now: number = Date.now()): void {
+  if (!addendaHeld) return
+  addendaHeld = false
+  if (holdTimer !== null) clearTimeout(holdTimer)
+  holdTimer = null
+  let sessions: ParkingSession[]
+  try {
+    sessions = loadSessions()
+  } catch {
+    return
+  }
+  for (const session of sessions) {
+    if (session.shared_from) continue
+    const age = now - Date.parse(session.arrived_at)
+    if (!Number.isFinite(age) || age > RETRY_HORIZON_MS) continue
+    catchUpDeparture(session.id, now)
+    const fresh = getSession(session.id)
+    if (fresh && hasPendingAddenda(fresh)) void enqueueSigning(session.id)
+  }
+}
+
+/**
+ * A record that came from the cloud with a v2 link 0 but without its
+ * arrival_context: the saving device signs that as link 1, and it hasn't
+ * reached this device yet. Until it does (signed, or refused), an addendum
+ * queued here would take seq 1 and fork link 1, so it waits; the merge
+ * that brings link 1 renumbers it onto seq 2.
+ */
+function awaitingArrivalContext(session: ParkingSession): boolean {
+  if (!isPulledRecord(session.id) || linkZeroSchema(session) !== EVIDENCE_V2_SCHEMA) return false
+  return !(session.addenda ?? []).some((a) => a.kind === 'arrival_context' && (a.bundle || a.rejected))
+}
+
 // ─── The per-record queue ────────────────────────────────────────────────
 
 const drains = new Map<string, Promise<void>>()
@@ -436,6 +537,8 @@ async function drainRecord(sessionId: string): Promise<void> {
 
     if (!session.signature) {
       if (arrivalSigningRejection(sessionId)) break
+      // A record pulled from the cloud: its link 0 is the saving device's.
+      if (isPulledRecord(sessionId)) break
       const request = await buildArrivalRequest(session)
       if (!request) break // photo bytes not on this device: nothing to sign here
       const outcome = await postSignRequest(request)
@@ -457,8 +560,11 @@ async function drainRecord(sessionId: string): Promise<void> {
       break
     }
 
+    // Held until the first sync has merged the cloud copies in (see above).
+    if (addendaHeld) break
     const next = nextPendingAddendum(session)
     if (!next) break
+    if (awaitingArrivalContext(session)) break
     const parent = parentBundleFor(session, next.seq)
     if (!parent) break // parent not signed yet: wait for it
     const chainKey = chainKeyForAddenda(session)
@@ -581,7 +687,9 @@ export function scheduleDepartureCatchUp(
  *
  * While the browser reports it is offline the sweep does nothing at all: no
  * request could go out, so stamping the throttle would only make the
- * `online` trigger that follows skip every record.
+ * `online` trigger that follows skip every record. While addendum signing
+ * is held (`holdAddendumSigning`) it only looks at records whose link 0 is
+ * outstanding; `releaseAddendumSigning` sweeps again for the rest.
  */
 export function runSigningSweep(now: number = Date.now()): void {
   try {
@@ -603,9 +711,11 @@ export function runSigningSweep(now: number = Date.now()): void {
     const age = now - Date.parse(session.arrived_at)
     if (!Number.isFinite(age) || age > RETRY_HORIZON_MS) continue
     const entry = state[session.id] ?? {}
-    const catchUp = needsDepartureCatchUp(session, now, { endedHere: entry.ended_here === true })
-    const work =
-      (!session.signature && !entry.link0_rejected) || hasPendingAddenda(session) || catchUp
+    const linkZeroWork = !session.signature && !entry.link0_rejected && !entry.pulled
+    // While held, a record with only addendum work isn't looked at (or
+    // throttled), so the sweep at the release takes it.
+    const catchUp = !addendaHeld && needsDepartureCatchUp(session, now, { endedHere: entry.ended_here === true })
+    const work = linkZeroWork || (!addendaHeld && hasPendingAddenda(session)) || catchUp
     if (!work) continue
     if (entry.last !== undefined && now - entry.last < SWEEP_THROTTLE_MS) continue
     state[session.id] = { ...entry, last: now }
@@ -647,10 +757,13 @@ export function installSigningTriggers(): () => void {
   }
 }
 
-/** Test-only: forget queued drains, the listener and the records it missed. */
+/** Test-only: forget queued drains, the listener, the records it missed, and any hold. */
 export function resetSigningQueueForTests(): void {
   drains.clear()
   waiting.clear()
   signedListener = null
   unmirrored.clear()
+  addendaHeld = false
+  if (holdTimer !== null) clearTimeout(holdTimer)
+  holdTimer = null
 }

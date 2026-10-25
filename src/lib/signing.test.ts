@@ -22,14 +22,18 @@ import { emptyLogDraft, ERR_SIGNED_DATA_MISMATCH } from './evidence-chain'
 import {
   RETRY_HORIZON_MS,
   SWEEP_THROTTLE_MS,
+  addendumSigningHeld,
   arrivalSigningRejection,
   chainKeyHash,
   computeV1Hashes,
   enqueueSigning,
   hashDataUrlImage,
+  holdAddendumSigning,
   installSigningTriggers,
+  markEndedOnThisDevice,
   prepareNewRecord,
   queueAddendum,
+  releaseAddendumSigning,
   resetSigningQueueForTests,
   runSigningSweep,
   scheduleDepartureCatchUp,
@@ -629,12 +633,68 @@ describe('the sweep', () => {
   })
 })
 
+describe('holding addenda until the first sync (T0b4)', () => {
+  it('while held, link 0 still signs and addenda wait; the release signs them at once, catch-ups included', async () => {
+    // Ended on this device a minute ago, before this start: its departure is due.
+    const ended = await saveNew()
+    const ended_at = new Date(Date.now() - 60_000).toISOString()
+    localStorage.setItem(KEY, JSON.stringify(loadSessions().map((r) => (r.id === ended.id ? { ...r, ended_at } : r))))
+    markEndedOnThisDevice(ended.id)
+    net.calls.length = 0
+
+    holdAddendumSigning()
+    expect(addendumSigningHeld()).toBe(true)
+    const prepared = await prepareNewRecord(record())
+    saveSession(prepared)
+    signNewRecord(prepared.id, emptyLogDraft())
+    await whenSigningIdle()
+    expect(kinds()).toEqual(['parkproof-evidence-v2'])
+    // The sweep (mount, online, visible) leaves addendum work alone while held.
+    runSigningSweep(Date.now() + SWEEP_THROTTLE_MS)
+    await whenSigningIdle()
+    expect(kinds()).toEqual(['parkproof-evidence-v2'])
+    expect(getSession(ended.id)!.addenda!.some((a) => a.kind === 'departure')).toBe(false)
+
+    releaseAddendumSigning()
+    expect(addendumSigningHeld()).toBe(false)
+    await whenSigningIdle()
+    expect(kinds().sort()).toEqual(['arrival_context#1', 'departure#2', 'parkproof-evidence-v2'])
+    expect(getSession(prepared.id)!.addenda![0].bundle).toBeDefined()
+    expect(getSession(ended.id)!.addenda!.find((a) => a.kind === 'departure')?.bundle).toBeDefined()
+  })
+
+  it('a hold ends on its own if the first sync never settles', async () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {})
+    holdAddendumSigning(5)
+    const prepared = await prepareNewRecord(record())
+    saveSession(prepared)
+    signNewRecord(prepared.id, emptyLogDraft())
+    await whenSigningIdle()
+    expect(kinds()).toEqual(['parkproof-evidence-v2'])
+    await vi.waitFor(() => expect(kinds()).toEqual(['parkproof-evidence-v2', 'arrival_context#1']))
+    expect(addendumSigningHeld()).toBe(false)
+  })
+
+  it('releasing without a hold does nothing', async () => {
+    const prepared = await prepareNewRecord(record())
+    saveSession(prepared)
+    releaseAddendumSigning()
+    await whenSigningIdle()
+    expect(net.calls).toHaveLength(0)
+  })
+})
+
 describe('departure catch-up', () => {
   it('queues and signs a location-less departure for a record ended past the grace period', async () => {
     const s = await saveNew()
     const ended_at = new Date(Date.now() - 60_000).toISOString()
     const rows = loadSessions().map((r) => (r.id === s.id ? { ...r, ended_at } : r))
     localStorage.setItem(KEY, JSON.stringify(rows))
+    // Without the ended-here mark (an end synced from another device) nothing is queued.
+    runSigningSweep(Date.now() + SWEEP_THROTTLE_MS)
+    await whenSigningIdle()
+    expect(getSession(s.id)!.addenda!.some((a) => a.kind === 'departure')).toBe(false)
+    markEndedOnThisDevice(s.id)
     net.calls.length = 0
     runSigningSweep(Date.now() + SWEEP_THROTTLE_MS)
     await whenSigningIdle()
@@ -649,6 +709,7 @@ describe('departure catch-up', () => {
     const s = await saveNew()
     const rows = loadSessions().map((r) => (r.id === s.id ? { ...r, ended_at: new Date(Date.now() - 5_000).toISOString() } : r))
     localStorage.setItem(KEY, JSON.stringify(rows))
+    markEndedOnThisDevice(s.id)
     runSigningSweep()
     await whenSigningIdle()
     expect(getSession(s.id)!.addenda!.some((a) => a.kind === 'departure')).toBe(false)
