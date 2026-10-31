@@ -28,13 +28,13 @@ Source fonts:
   DROP glyphs: a character added to the locale JSON after the last
   full-font run never comes back, and the PDF prints a blank box. Keep
   full sources in fonts-src/ for any font whose locale strings change.
-  `--fetch` downloads the full CJK fonts listed in FULL_FONT_URLS.
+  `--fetch` downloads every full font listed in FULL_FONT_URLS.
 
 Re-run after locale JSON edits.
 
 Run:
   python scripts/_subset_pdf_fonts.py                 # every font
-  python scripts/_subset_pdf_fonts.py --fetch         # download missing full CJK sources first
+  python scripts/_subset_pdf_fonts.py --fetch         # download missing full sources first
   python scripts/_subset_pdf_fonts.py --only NotoSansSC.ttf,NotoSansKR.ttf
 """
 import json
@@ -48,10 +48,13 @@ FONTS_DIR = ROOT / "public" / "fonts"
 SOURCE_DIR = ROOT / "fonts-src"
 
 # Full-size originals (Google Fonts, SIL Open Font License). Variable
-# fonts, the same files the committed subsets were first cut from.
+# fonts, the same families the committed subsets were first cut from.
 FULL_FONT_URLS = {
     "NotoSansSC.ttf": "https://github.com/google/fonts/raw/main/ofl/notosanssc/NotoSansSC%5Bwght%5D.ttf",
     "NotoSansKR.ttf": "https://github.com/google/fonts/raw/main/ofl/notosanskr/NotoSansKR%5Bwght%5D.ttf",
+    "NotoSans.ttf": "https://github.com/google/fonts/raw/main/ofl/notosans/NotoSans%5Bwdth,wght%5D.ttf",
+    "NotoSansDevanagari.ttf": "https://github.com/google/fonts/raw/main/ofl/notosansdevanagari/NotoSansDevanagari%5Bwdth,wght%5D.ttf",
+    "NotoSansGurmukhi.ttf": "https://github.com/google/fonts/raw/main/ofl/notosansgurmukhi/NotoSansGurmukhi%5Bwdth,wght%5D.ttf",
 }
 
 # Map of font filename → locale codes whose strings should be included.
