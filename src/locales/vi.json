@@ -64,7 +64,7 @@
     "noPostedRestrictions": "Không có biển báo hạn chế",
     "iveLeft": "Tôi đã đi",
     "iveLeftAria": "Tôi đã đi. Kết thúc bản ghi đỗ xe này.",
-    "iveLeftConfirm": "Đánh dấu bản ghi này là đã kết thúc ngay bây giờ? Bản ghi sẽ lưu lúc bạn nhấn, theo đồng hồ điện thoại. Nếu bạn đã rời đi sớm hơn, thời điểm đó sẽ không được ghi lại.",
+    "iveLeftConfirm": "Đánh dấu bản ghi này là đã kết thúc ngay bây giờ? Bản ghi sẽ lưu thời điểm bạn nhấn, theo đồng hồ điện thoại. Nếu bạn đã rời đi sớm hơn, thời điểm đó sẽ không được ghi lại.",
     "nextPing": "Lời nhắc tiếp theo: {{when}}",
     "recheckNow": "Kiểm tra lại ngay",
     "recheckSub": "Vẫn đỗ được chứ? Kiểm tra lại trong vài giây",
@@ -316,7 +316,7 @@
     "noAmbientCaptured": "Không có ảnh xung quanh nào được chụp.",
     "noSignBadgeLong": "Không có hạn chế nào được ghi nhận. Phiên này được ghi nhận tại vị trí không có biển báo.",
     "endSession": "Tôi đã đi",
-    "endConfirm": "Đánh dấu bản ghi này là đã kết thúc ngay bây giờ? Bản ghi sẽ lưu lúc bạn nhấn, theo đồng hồ điện thoại. Nếu bạn đã rời đi sớm hơn, thời điểm đó sẽ không được ghi lại.",
+    "endConfirm": "Đánh dấu bản ghi này là đã kết thúc ngay bây giờ? Bản ghi sẽ lưu thời điểm bạn nhấn, theo đồng hồ điện thoại. Nếu bạn đã rời đi sớm hơn, thời điểm đó sẽ không được ghi lại.",
     "endedAt": "Đã kết thúc {{when}}",
     "noExpiryRecorded": "Chưa ghi nhận thời hạn",
     "howToVerify": "Cách hội đồng địa phương xác minh bản ghi này →",
@@ -324,7 +324,7 @@
     "photoSyncRetry": "Thử tải lên lại",
     "exportPhotoWarning": "Có một vài ảnh không tải được từ đám mây cho bản ghi cũ này. Bạn vẫn xuất được, hoặc mở bản ghi trên thiết bị đã tạo ra nó.",
     "photoHashMismatch": "Ảnh này không khớp với bằng chứng đã ký và có thể đã bị thay đổi kể từ khi lưu.",
-    "endConfirmLate": "Đánh dấu bản ghi này là đã kết thúc ngay bây giờ? Bản ghi sẽ lưu {{time}}, là lúc bạn nhấn, theo đồng hồ điện thoại. Bản ghi sẽ không cho thấy lúc xe thực sự rời đi.",
+    "endConfirmLate": "Đánh dấu bản ghi này là đã kết thúc ngay bây giờ? Bản ghi sẽ lưu {{time}}, tức là thời điểm bạn nhấn, theo đồng hồ điện thoại. Bản ghi sẽ không cho thấy lúc xe thực sự rời đi.",
     "devKeySigned": "Đã ký bằng khóa phát triển. Không thể kiểm tra chữ ký này bằng khóa công khai mà ParkProof đã công bố.",
     "photoNotOnDevice": "Ảnh này không có trên thiết bị này. Dấu vân tay số đã ký: {{fingerprint}}.",
     "photoNotOnDeviceUnsigned": "Ảnh này không có trên thiết bị này. Dấu vân tay số: {{fingerprint}}. Chưa được ký.",
@@ -511,7 +511,7 @@
     "appealUndraftable": "Chúng tôi không soạn được thư khiếu nại từ ảnh đó. Hãy thử ảnh rõ hơn của tờ thông báo.",
     "exportFailed": "Chưa tạo được bản xuất của bạn lúc này. Vui lòng thử lại sau giây lát.",
     "genericRetry": "Đã có lỗi xảy ra. Vui lòng thử lại sau giây lát.",
-    "storageFull": "Bộ nhớ của ParkProof trên thiết bị này đã đầy. Các bản ghi hiện tại và bản ghi đang chờ chữ ký vẫn được giữ lại. Hãy mở Lịch sử, xoá một bản ghi cũ không còn cần, rồi thử lại.",
+    "storageFull": "Bộ nhớ của ParkProof trên thiết bị này đã đầy. Các bản ghi đỗ xe đang diễn ra và các bản ghi đang chờ chữ ký vẫn được giữ lại. Hãy mở Lịch sử, xoá một bản ghi cũ mà bạn không còn cần, rồi thử lại.",
     "storageEvicted_one": "Bộ nhớ thiết bị của bạn đã đầy, nên {{count}} bản ghi đỗ xe cũ đã bị xoá để lấy chỗ trống. Đăng nhập để giữ bản ghi an toàn trên đám mây.",
     "storageEvicted_other": "Bộ nhớ thiết bị của bạn đã đầy, nên {{count}} bản ghi đỗ xe cũ đã bị xoá để lấy chỗ trống. Đăng nhập để giữ bản ghi an toàn trên đám mây."
   },
@@ -543,10 +543,10 @@
         "aiConfidence": "Độ tin cậy AI",
         "endedAt": "Lúc nhấn \"Tôi đã đi\" (đồng hồ điện thoại)",
         "actualDuration": "Thời gian từ lúc đến tới lúc nhấn \"Tôi đã đi\" (đồng hồ điện thoại)",
-        "arrivalSigned": "Phần lúc đến được ParkProof ký lúc (đồng hồ máy chủ)",
-        "departureSigned": "Phần rời đi được ParkProof ký lúc (đồng hồ máy chủ)",
+        "arrivalSigned": "Thời điểm ParkProof ký phần lúc đến (đồng hồ máy chủ)",
+        "departureSigned": "Thời điểm ParkProof ký phần rời đi (đồng hồ máy chủ)",
         "departureLocation": "Vị trí điện thoại lúc nhấn \"Tôi đã đi\" (GPS)",
-        "departureDistance": "Khoảng cách ước tính từ chỗ đến (GPS điện thoại)",
+        "departureDistance": "Khoảng cách ước tính từ vị trí lúc đến (GPS điện thoại)",
         "locationCoords": "Vị trí (tọa độ)"
       },
       "locationSourceValue": {
@@ -561,8 +561,8 @@
       "carPhotoHeader": "Xe tại chỗ đỗ",
       "driverNoteHeader": "Ghi chú của tài xế",
       "gpsNoticeTitle": "Thông báo về độ chính xác GPS",
-      "gpsNoticeBody": "Tín hiệu GPS khi ghi nhận là {{accuracy}}, rộng hơn mức thông thường dùng làm bằng chứng. Tọa độ phía trên xác định một điểm trong bán kính đó, không phải vị trí chính xác. Nguyên nhân thường gặp: bãi đỗ trong nhà / nhiều tầng, kết nối Starlink hoặc VPN, hoặc tín hiệu vệ tinh yếu. Người xét duyệt nên cân nhắc địa chỉ ghi nhận trong phạm vi bán kính này.",
-      "statement": "Đây là bản ghi một lần đỗ xe được tạo bằng ParkProof. Các thời điểm được ghi là giờ điện thoại lấy từ điện thoại của tài xế. Các nội dung được ghi là lời của tài xế là lời của chính tài xế. Đây không phải là kết luận pháp lý về những gì đã xảy ra. Việc đó do hội đồng địa phương hoặc tòa án quyết định.",
+      "gpsNoticeBody": "Độ chính xác GPS lúc ghi nhận là {{accuracy}}, kém hơn mức thường thấy đối với mục đích làm bằng chứng. Tọa độ phía trên xác định một điểm trong bán kính đó, không phải vị trí chính xác. Nguyên nhân thường gặp: bãi đỗ trong nhà / nhiều tầng, kết nối Starlink hoặc VPN, hoặc tín hiệu vệ tinh yếu. Người xem xét nên đánh giá địa chỉ đã ghi nhận có tính đến bán kính này.",
+      "statement": "Đây là bản ghi một lần đỗ xe được tạo bằng ParkProof. Các thời điểm được đánh dấu là giờ điện thoại đều được lấy từ điện thoại của tài xế. Các nội dung được đánh dấu là lời của tài xế đều là lời của chính tài xế. Đây không phải là kết luận pháp lý về những gì đã xảy ra. Việc đó do hội đồng địa phương hoặc tòa án quyết định.",
       "guidanceFree": "Được phép đỗ. Di chuyển trước {{when}}.",
       "guidanceFreeNoExpiry": "Được phép đỗ. Biển báo không ghi giờ hết hạn.",
       "guidanceExpired": "Thời gian đỗ xe đã kết thúc lúc {{when}}.",
@@ -576,7 +576,7 @@
         "devKey": "{{time}}, bằng khóa phát triển. Không thể kiểm tra bằng khóa công khai mà ParkProof đã công bố.",
         "pending": "Chưa được ký",
         "rejected": "Không thể ký phần này",
-        "none": "Không được ký"
+        "none": "Không có chữ ký"
       },
       "value": {
         "coordsWithAccuracy": "{{coords}}, độ chính xác {{accuracy}}",
@@ -593,7 +593,7 @@
     },
     "signature": {
       "title": "Chữ ký mã hóa",
-      "intro": "Mỗi phần của bản ghi này được máy chủ của ParkProof ký khi máy chủ nhận được, vào thời điểm signed_at ghi cho phần đó. Chữ ký hợp lệ cho thấy các thông tin đã ký và dấu vân tay của ảnh không thay đổi kể từ lúc đó. Chữ ký không cho thấy các thông tin đó là đúng, ai đang lái xe, hay xe đến và rời đi lúc nào.",
+      "intro": "Mỗi phần của bản ghi này được máy chủ của ParkProof ký khi máy chủ nhận được, vào thời điểm signed_at ghi cho phần đó. Chữ ký hợp lệ cho thấy các thông tin đã ký và dấu vân tay số của ảnh không thay đổi kể từ lúc đó. Chữ ký không cho thấy các thông tin đó là đúng, ai là người lái xe, hay xe đến và rời đi lúc nào.",
       "algorithm": "Thuật toán",
       "keyAlias": "Bí danh khóa",
       "signedAt": "ParkProof ký lúc (đồng hồ máy chủ)",
@@ -609,7 +609,7 @@
       "verifyStep4": "4. Giải mã chữ ký:",
       "verifyStep5": "5. Xác minh:",
       "verifyStep6": "6. Kết quả mong đợi: \"Verified OK\". Điều này cho thấy các byte đã ký không thay đổi kể từ khi ParkProof ký.",
-      "verifyStep7": "7. Về ảnh: các hình trong tệp PDF này là bản sao trực quan, được mã hóa lại cho tài liệu, nên các byte của chúng khác với bản gốc và sẽ không tái tạo được các giá trị băm trong payload. Đây là điều bình thường, không phải dấu hiệu bị giả mạo. Chữ ký cam kết với SHA-256 của từng ảnh gốc (các giá trị sign_photo_sha256, car_photo_sha256 và ambient_photo_sha256 trong payload đã ký), và bước 6 đã cho thấy các giá trị đó không thay đổi kể từ khi ký. Để xác minh độc lập một hình cụ thể, hãy băm tệp ảnh gốc đã chụp (từ bản ghi ParkProof hoặc bản xuất dữ liệu tài khoản của bạn), không phải bản sao in ở đây, và so sánh với giá trị tương ứng ở trên.",
+      "verifyStep7": "7. Về ảnh: các hình trong tệp PDF này là bản sao trực quan, được mã hóa lại cho tài liệu, nên các byte của chúng khác với bản gốc và sẽ không tái tạo được các giá trị băm trong payload. Đây là điều bình thường, không phải dấu hiệu bị giả mạo. Chữ ký áp dụng cho giá trị SHA-256 của từng ảnh gốc (các giá trị sign_photo_sha256, car_photo_sha256 và ambient_photo_sha256 trong payload đã ký), và bước 6 đã cho thấy các giá trị đó không thay đổi kể từ khi ký. Để xác minh độc lập một hình cụ thể, hãy băm tệp ảnh gốc đã chụp (từ bản ghi ParkProof hoặc bản xuất dữ liệu tài khoản của bạn), không phải bản sao in ở đây, và so sánh với giá trị tương ứng ở trên.",
       "devKey": "Đã ký bằng khóa phát triển. Không thể kiểm tra chữ ký này bằng khóa công khai mà ParkProof đã công bố.",
       "linkHeading": "Mắt xích {{link}}: {{kind}}",
       "forkNote": "Tại điểm này của bản ghi có hai phần được thêm từ hai thiết bị. Cả hai đều đã được ký và được trình bày ở đây.",
@@ -637,7 +637,7 @@
       "carPhotoHeader": "Xe tại chỗ đỗ"
     },
     "fullExport": {
-      "title": "ParkProof: Xuất tài khoản",
+      "title": "ParkProof: Bản xuất dữ liệu tài khoản",
       "account": "Tài khoản: {{email}}",
       "userId": "Mã người dùng: {{id}}",
       "exportedAt": "Xuất lúc: {{when}}",
@@ -872,11 +872,11 @@
     "heading": "RỜI ĐI",
     "tapped": "Bạn đã nhấn \"Tôi đã đi\" lúc {{time}} (đồng hồ điện thoại).",
     "far": "Khi bạn nhấn \"Tôi đã đi\", điện thoại của bạn cách chỗ bạn đỗ xe {{distance}}. Bản ghi cho thấy lúc bạn nhấn, không phải lúc xe di chuyển.",
-    "notSigned": "Lần rời đi này không được ký."
+    "notSigned": "Lần rời đi này không có chữ ký."
   },
   "chain": {
     "heading": "CÁC PHẦN ĐÃ KÝ CỦA BẢN GHI NÀY",
-    "intro": "Máy chủ của ParkProof ký từng phần khi nhận được. Chữ ký hợp lệ cho thấy các thông tin đã ký không thay đổi kể từ lúc đó. Chữ ký không cho thấy các thông tin đó là đúng, ai đang lái xe, xe ở đâu, hay xe đến và rời đi lúc nào.",
+    "intro": "Máy chủ của ParkProof ký từng phần khi nhận được. Chữ ký hợp lệ cho thấy các thông tin đã ký không thay đổi kể từ lúc đó. Chữ ký không cho thấy các thông tin đó là đúng, ai là người lái xe, xe ở đâu, hay xe đến và rời đi lúc nào.",
     "kind": {
       "arrival": "Lúc đến",
       "arrivalContext": "Thông tin khi đỗ xe",
@@ -888,7 +888,7 @@
     "covers": {
       "arrival": "Thời gian và địa điểm bạn ghi lại trên điện thoại, kết quả đọc biển báo và dấu vân tay số của ảnh.",
       "arrivalNoSign": "Thời gian và địa điểm bạn ghi lại trên điện thoại, và dấu vân tay số của ảnh.",
-      "arrivalContext": "Những gì bạn thêm khi đỗ xe, ví dụ tài xế mà bạn đã ghi, câu trả lời của bạn và dấu vân tay số của ảnh.",
+      "arrivalContext": "Những gì bạn thêm khi đỗ xe, ví dụ người mà bạn ghi là tài xế, các câu trả lời của bạn và dấu vân tay số của ảnh.",
       "condition": "Dấu vân tay số của các ảnh tình trạng xe bạn chụp, và ghi chú của bạn.",
       "compliance": "Dấu vân tay số của ảnh bạn chụp vé máy đỗ xe, xác nhận thanh toán hoặc giấy phép.",
       "departure": "Lúc bạn nhấn \"Tôi đã đi\" (đồng hồ điện thoại), và vị trí của điện thoại khi đó nếu đã lấy được vị trí.",

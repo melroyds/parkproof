@@ -1,0 +1,167 @@
+# Translations: what a human should still read
+
+Every string this build added or changed in the 8 non-English locales was reviewed by two AI language specialists per locale (a reviewer that fixed problems, then an independent second reviewer that checked those fixes). That is not the same as a native speaker or a lawyer. This list is what they said a person should still read, with their reasons.
+
+Strings marked **legal** carry a claim about what a signature, a time or a statement shows. Read those first. The English source is in `src/locales/en.json`; `node scripts/_i18n_inject_<task>.mjs --list` prints each task's keys.
+
+Legally sensitive keys across the build: 34.
+
+## Simplified Chinese (`zh-CN`): 10 strings
+
+| Key | Legal | Why a person should read it |
+|---|---|---|
+| `about.sealCaveat` | yes | Not changed. 也不能说明市议会一定会采信 adds 一定 ('necessarily'), which softens 'doesn't show a council will accept it' toward 'not guaranteed'. It promises no outcome, but a human should decide whether to drop 一定 for a strict match. |
+| `chain.covers.arrivalContext` | yes | Not changed. 你填写的驾驶员 stands for 'who you said was driving'. Check that it reads as the driver's own entry and not as a confirmed fact. 你填写的驾驶员姓名 is an alternative. |
+| `chain.intro` | yes | This is the on-screen signature caveat and includes 车停在哪里. Not changed, and I read it as correct. It is legally sensitive. |
+| `pdf.evidence.ambientPhotoCaption` | yes | Not changed and correct (它不能说明附近没有标志). The out-of-scope screen captions session.ambientPhotoCaption (以证明无标志存在), logger.ambientCaption and scanner.noSignAmbientCaption (证明这里没有张贴标志) still say the photo PROVES there was no sign. That follows their English source, so it is an English-copy issue to fix upstream. They now contradict this PDF caption. |
+| `pdf.evidence.noSignRules` | yes | Not changed, and the meaning is right: the driver's claim is attributed to the driver. 驾驶员说 is casual next to the more formal 陈述 now used in pdf.evidence.statement. 驾驶员表示 would be more document-like. |
+| `pdf.evidence.statement` | yes | This is the legal statement on the evidence PDF, and I changed 说法 to 陈述 and reworded the last sentence. A native legal reader should confirm 本记录不是对事情经过的法律认定,这由市议会或法院决定 reads as 'not a legal finding, the council or court decides' and not as advice. |
+| `pdf.signature.intro` | yes | This is the most important signature claim (detection, not prevention). Not changed. I read it as correct (表明...没有改动 / 不能说明...属实, 是谁在开车, 何时到达、何时离开), but it is the highest-stakes string. |
+| `pdf.signature.verifyStep7` | yes | This long legal and technical string mixes full-width ，（） with an ASCII colon after 关于照片. I kept the colon because the file never uses a full-width colon, and adding one would need a new font glyph. A human may want the punctuation normalised. |
+| `pdf.fullExport.signedBadge` |  | Out of scope and not changed. It still says 加密签名 while the PDF appendix title says 数字签名. logger.noSignBanner, privacy.signedInSessions and the landing strings also use 加密签名. It is consistent within each screen but not across the file, so a human may want to sweep these to 数字签名. |
+| `session.endConfirmLate` |  | This phone-clock wording is legally sensitive. I read 记录的将是你点击的时间 {{time}}(手机时钟),而不是车辆实际离开的时间 as matching 'It won't show when the car actually left'. Worth one more read. |
+
+## Vietnamese (`vi`): 11 strings
+
+| Key | Legal | Why a person should read it |
+|---|---|---|
+| `chain.checkValid_other` | yes | Vietnamese has only the _other plural form, so for one signature this shows 'Tất cả chữ ký đều hợp lệ (1).' I left it because it is acceptable and avoids a plural problem, but a native speaker may prefer another neutral shape. |
+| `chain.covers.arrivalContext` | yes | I changed this so the driver's name reads as the user's own statement. A native speaker should confirm 'người mà bạn ghi là tài xế' carries 'who you said was driving' without suggesting the app confirmed it. |
+| `chain.intro` | yes | This is the on-screen version of the signature limits. It should be read next to pdf.signature.intro so the two stay aligned. |
+| `pdf.evidence.ambientPhotoCaption` | yes | I left this unchanged. It uses 'không chứng tỏ' (does not demonstrate). That is fine because it is negated, but the rest of the file uses 'không cho thấy' for 'doesn't show'. Note that the out-of-scope ambient captions (logger.ambientCaption, session.ambientPhotoCaption, scanner.noSignAmbientCaption) still say 'để chứng minh không có biển báo'. They match their English source, but that English itself overclaims. |
+| `pdf.evidence.gpsNoticeBody` | yes | I rewrote the first and last sentences. Confirm that 'kém hơn mức thường thấy đối với mục đích làm bằng chứng' carries 'wider than typical for evidence purposes'. |
+| `pdf.evidence.statement` | yes | This is the evidence statement printed on every PDF that goes to a council. I rewrote it to stop a parse that claimed all times are phone times. A native speaker should confirm that 'Các thời điểm được đánh dấu là giờ điện thoại đều được lấy từ...' reads naturally in a formal PDF and cannot be misread. 'hội đồng địa phương' is the worksheet-verified council term. |
+| `pdf.signature.intro` | yes | This is the main signature claim (worksheet item 1). It now says detection, not prevention ('không thay đổi kể từ lúc đó'), and lists what a signature does not show. A precision read is still the worksheet's top residual risk. |
+| `active.iveLeftConfirm / session.endConfirm / session.endConfirmLate` |  | These are legally sensitive phone-clock disclaimers. Check that 'lưu thời điểm bạn nhấn, theo đồng hồ điện thoại' and 'thời điểm đó sẽ không được ghi lại' are clear that only the tap time is stored, not the real departure time. |
+| `pdf.evidence.field.arrivalSigned / pdf.evidence.field.departureSigned` |  | I left these unchanged. They are correct (server-clock signing time, kept separate from phone time), but 'Phần lúc đến được ParkProof ký lúc' uses 'lúc' twice. A native speaker may want a smoother label, for example 'Giờ ParkProof ký phần lúc đến (đồng hồ máy chủ)'. |
+| `session.devKeySigned / verifier.link.devKey / chain.checkDevKey and siblings` |  | 'khóa phát triển' (development key) is a calque that ordinary users may not understand. It only shows in dev builds, so I left it consistent across all strings. |
+| `tài xế (file-wide)` |  | The whole file uses 'tài xế' for 'driver', and I kept it for consistency. In Vietnamese, 'tài xế' leans toward a professional driver, and Fines Victoria-style legal Vietnamese often uses 'người lái xe'. A native speaker could decide whether to sweep the whole file. Changing only the new strings would create drift. |
+
+## Indonesian (`id`): 12 strings
+
+| Key | Legal | Why a person should read it |
+|---|---|---|
+| `chain.checkValid_other` | yes | Indonesian uses only the _other plural form, so with one signature this renders 'Semua tanda tangan valid (1)'. I judged this acceptable. A native reader should confirm it does not sound odd for count=1. The same applies to chain.checkValidPhotosUnchecked_other. |
+| `chain.covers.arrivalContext` | yes | Driver statement. Check that 'pengemudi yang kamu sebutkan' keeps 'who YOU said was driving' as the driver's own claim. The same applies to chain.covers.handover ('Siapa yang kamu sebut menerima mobil'). |
+| `chain.intro` | yes | Legal, in-app twin of pdf.signature.intro. Confirm it matches the PDF wording and the claim limits. |
+| `departure.far` | yes | Legal. Confirm 'Catatan ini menunjukkan kapan kamu mengetuk, bukan kapan mobil bergerak' keeps the tap-time vs car-movement distinction sharp. |
+| `departure.notSigned` | yes | Uses 'Kepergian', as does pdf.evidence.field.departureSigned. chain.kind.departure, pdf.signature.kind.departure and departure.heading use 'Saat pergi'. Both are correct, but the naming is inconsistent, and 'kepergian' can carry the 'passing away' euphemism. A native reader should pick one term for 'departure' and sweep it. I left both unchanged to avoid churn. |
+| `pdf.evidence.field.departureSigned` | yes | Legal label. See the departure.notSigned note on 'Kepergian' vs 'Saat pergi'. Also confirm the label reads as 'the departure part, signed by ParkProof at server time', not 'the car departed at server time'. |
+| `pdf.evidence.gpsNoticeBody` | yes | Rewritten to remove 'penangkapan' and 'ditangkap' (arrest sense) and the wrong 'berlantai'. Confirm that 'lebih lebar dari biasanya' fits an accuracy radius, and that 'Peninjau sebaiknya menilai ... dengan mempertimbangkan radius ini' keeps the advisory tone without becoming an instruction to the council. |
+| `pdf.evidence.statement` | yes | Legal. Check that 'putusan hukum' (legal ruling) is the right weight for 'legal finding'. 'kesimpulan hukum' is the alternative if a reader feels 'putusan' implies a court judgment. Also confirm 'pernyataan pengemudi sendiri' reads as the driver's own statement, not one the app endorses. |
+| `pdf.signature.intro` | yes | The most important legal claim on the PDF. Check that 'menunjukkan bahwa ... tidak berubah sejak saat itu' reads as detection only, and that the 'does not show' list (true, who was driving, when it arrived or left) feels complete and natural to a council reader. |
+| `chain.covers.condition` |  | 'dan catatanmu' (your note). The file uses 'catatan' for both 'record' and 'note' (session.noteLabel = CATATAN), so this can momentarily read as 'your record'. It is consistent with the file, but 'catatan singkatmu' or 'keteranganmu' may be clearer. |
+| `pdf.common.plusMinus` |  | The value is '±', identical to English, and this key exists to supply that glyph. The task's PDF rule lists ± as banned, while the build spec allows WinAnsi punctuation (± is WinAnsi 0xB1). I left it, and someone should confirm that is intended. |
+| `session.endConfirmLate` |  | Legal. Confirm the phone-clock time ('menurut jam ponselmu') and the 'does not show when the car actually left' caveat both land clearly. Same check for active.iveLeftConfirm and session.endConfirm. |
+
+## Korean (`ko`): 13 strings
+
+| Key | Legal | Why a person should read it |
+|---|---|---|
+| `chain.intro` | yes | On-screen version of the signature claim. 받는 즉시 (immediately on receipt) slightly strengthens 'when it receives it'. I left it, but a lawyer may prefer 받을 때. |
+| `pdf.evidence.statement` | yes | The most legally sensitive line in the PDF. Check that 밝힌 (stated) reads right for 'driver's own statements' to a council officer, that 법적 판단 is the right term for 'legal finding', and that 의회 is the right body here. 진술 is the more standard legal word but its glyph 술 (U+C220) is missing from the PDF font subset. |
+| `pdf.fullExport.intro` | yes | Legal. Left unchanged. 기록마다 섹션 하나로 is acceptable but a little stiff. Confirm the 'doesn't show they are true' sentence is clear. |
+| `pdf.signature.intro` | yes | The main signature claim. Confirm it reads as detection only (the record has not changed since signing) and never as prevention, and that the 'does not show it is true, who drove, when it arrived or left' list reads clearly. |
+| `active.iveLeftConfirm / session.endConfirm / session.endConfirmLate` |  | Legal phone-clock wording. Check that '종료로 표시할까요' and '누른 시각' make clear only the tap time from the phone clock is saved, not the real departure time. |
+| `chain.checkValid_other / chain.checkValidPhotosUnchecked_other` |  | Korean only uses the _other form, so this string also shows for a count of 1, as '서명이 모두 유효합니다(1개)'. Check this reads acceptably. '그렇다고 기록 내용이 사실이라는 뜻은 아닙니다' renders 'doesn't show it is true' as 'doesn't mean it is true'. |
+| `chain.covers.arrivalContext / chain.covers.handover` |  | Driver statements must read as the driver's own claims ('운전자라고 직접 적은 사람', '차를 넘겨주었다고 직접 적은 상대'). Check they don't sound like something ParkProof confirmed. |
+| `departure.far / departure.tapped / chain.covers.departure` |  | Legal. The difference between tap time and when the car moved must stay clear. I used 수신 instead of 확인 so a captured location never reads as 'verified'. Confirm that is how a native speaker reads it. |
+| `departure.far / departure.tapped / departure.located / chain.covers.departure` |  | Legal. The difference between tap time and when the car moved must stay clear. 수신 (received) is used instead of 확인 so a captured location never reads as 'verified'. Confirm '위치 수신됨' reads naturally on the departure sheet. |
+| `landing.bullet.defensible / result.firstSaveValue` |  | Out of scope and only particle-fixed. Both still say 변조 여부를 입증할 수 있는 (can PROVE whether tampered). That is stronger than 'tamper-evident' and close to a proof claim. Worth a legal and native read. |
+| `pdf.appeal.supportingEvidence` |  | I chose 증빙 자료. The earlier native review preferred 뒷받침 증거, but its glyph 뒷 (U+B4B7) is not in the current Korean PDF font subset. Either works if the fonts are re-cut. |
+| `pdf.evidence.ambientPhotoCaption / pdf.evidence.noSignRules` |  | Legal. Must not suggest the photo proves there was no sign, and the driver's 'no signs' must read as their own statement (말했습니다). |
+| `pdf.signature.verifyStep6 / verifyStep7` |  | Legal. Check 'Verified OK' is explained as 'unchanged since signing' and nowhere as authentic or proven. |
+
+## Italian (`it`): 15 strings
+
+| Key | Legal | Why a person should read it |
+|---|---|---|
+| `chain.intro` | yes | On-screen signature disclaimer (truth, driver, place, arrival/departure). Unchanged and looks correct. Worth a legal-nuance read with pdf.signature.intro. |
+| `pdf.evidence.ambientPhotoCaption` | yes | Legal, unchanged. It uses 'Non dimostra' (does not prove/demonstrate) where EN says 'doesn't show'. As a negation that is safe and arguably clearer, but it differs from the 'mostra' used elsewhere. |
+| `pdf.evidence.field.arrivalSigned` | yes | 'Parte di arrivo firmata da ParkProof (orologio del server)' is precise: it is the arrival PART that is signed, not the arrival event. But 'Parte di arrivo' is a little unnatural. A native may prefer 'Parte relativa all'arrivo, firmata da ParkProof (orologio del server)'. Left unchanged because it keeps the legal distinction. |
+| `pdf.evidence.field.departureDistance` | yes | Changed twice: 'dall'arrivo', then 'dalla posizione all'arrivo', now 'dalla posizione di arrivo' to avoid the from-to reading. Check it reads naturally beside pdf.evidence.value.distanceUnavailable ('La posizione all'arrivo'), which can stay as it is because no 'da' comes before it. |
+| `pdf.evidence.field.departureSigned` | yes | Same pattern and same concern as arrivalSigned. |
+| `pdf.evidence.gpsNoticeBody` | yes | Rewritten opening (legal). Check 'un raggio più ampio del consueto per scopi probatori' and that 'Chi valuta dovrebbe ponderare l'indirizzo registrato in base a questo raggio' is not read as advice to the council. |
+| `pdf.evidence.statement` | yes | The core legal statement on every evidence PDF. Check that 'Le dichiarazioni indicate come del conducente sono dichiarazioni del conducente stesso' clearly says the app did not confirm them (I kept it, it is a bit stiff), and that 'accertamento legale' is the right word for 'legal finding' to an Australian council reader. |
+| `pdf.signature.intro` | yes | The most important signature claim. It says signed by the server on receipt, at signed_at, shows no change since then, doesn't show truth, driver or arrival/departure. It looks correct and is unchanged. A native should confirm that 'mostra' reads as 'shows' and not 'proves' in a legal context. |
+| `active.iveLeftConfirm` |  | Changed (legal). Check that 'quell'orario precedente non viene registrato' reads naturally and keeps the phone-clock point. session.endConfirm is identical. |
+| `chain.devKeySignedAt` |  | Changed to 'Firmata ...: {{time}}'. It sits next to chain.signedAt ('Firma di ParkProof: {{time}}.'), which uses a noun form. A native may want the pair to match (e.g. 'Firmata da ParkProof: {{time}}.'). |
+| `chain.kind.handover` |  | Changed 'Passaggio' to 'Consegna dell'auto' to avoid the ownership-transfer reading. Check that it fits the T7 handover flow (handing the car to another driver). |
+| `logger.ambientCaption` |  | Out of scope and not changed. The English source itself ('Captured to demonstrate no signs were posted.', Italian 'Catturata per dimostrare l'assenza di cartelli affissi.') claims what the new PDF caption explicitly denies ('It doesn't show there was no sign nearby'). That is a copy-rule conflict in en.json for the English owner to fix in all locales, not a translation error. |
+| `pdf.evidence.title` |  | 'ParkProof: Prova di parcheggio'. 'Prova' is the standard Italian legal word for evidence, but it also means 'proof', so the title could read as 'proof of parking'. A native legal read should confirm it is not an overclaim. 'Documentazione del parcheggio' would be a safer alternative. |
+| `session.endConfirmLate` |  | Legal, unchanged. 'Non mostrerà quando l'auto è partita davvero' looks right. Check its tone matches the changed iveLeftConfirm. |
+| `time.parkedForHours_one` |  | Out of scope for edits. 'Parcheggiato da 1 ora' (and the existing parkedForMin / parkedForHours_other / parkedForHoursMins) is masculine. It most likely reads as describing the vehicle, but a gender-neutral 'In sosta da ...' across all five keys would remove any doubt. Not changed because it is not plainly wrong and the siblings are out of scope. |
+
+## Greek (`el`): 16 strings
+
+| Key | Legal | Why a person should read it |
+|---|---|---|
+| `about.sealCaveat` | yes | I fixed a pronoun that made it say a council would 'accept the sign'. The seal metaphor and 'θα αποδεχτεί την εγγραφή' are worth a native read, since this is an outcome disclaimer. |
+| `chain.checkValidPhotosUnchecked_one` | yes | I replaced 'Αυτό' with 'Η έγκυρη υπογραφή' so the 'does not show it is true' line attaches to the signature, not to the photo comparison that could not run. The English 'That doesn't show...' has the same ambiguity, so the en owner may want it too. |
+| `chain.checkValidPhotosUnchecked_other` | yes | Same as chain.checkValidPhotosUnchecked_one. |
+| `chain.checkValid_one` | yes | Deliberately a little narrower than the English 'Nothing has changed': it says the signed details have not changed, because unsigned items such as the driver note are not covered. A human or the en owner should confirm this. The English may want the same tightening. |
+| `chain.checkValid_other` | yes | Same as chain.checkValid_one. |
+| `chain.covers.arrival` | yes | Out of scope for edits, but a native reader should know about a file-wide term split. UI strings call the record 'αρχείο (στάθμευσης)' and the chain, verifier and PDF strings call it 'εγγραφή'. Both can appear on the same session screen (session.endConfirm vs chain.heading). This build did not cause it, and 'εγγραφή' avoids clashing with 'αρχείο' = file in the verify steps. Unifying it should be a deliberate whole-file decision. |
+| `chain.covers.arrivalContext` | yes | Legal key, unchanged. 'ποιον δήλωσες ως οδηγό' keeps the driver's identity as the driver's own statement. The generic masculine 'ποιον' is standard Greek but worth a gender-neutrality glance. |
+| `chain.intro` | yes | Legal key, unchanged. It reads correctly and covers all four things the signature does not show (truth, who drove, where the car was, when it arrived or left). Worth a native confirmation. |
+| `chain.signedAt` | yes | Legal key. Check that 'Υπογράφηκε από το ParkProof στις {{time}}' reads well when {{time}} is an English-format value like 'Sun 1 Nov, 1:55 pm AEDT' (formatInZone always formats in en-AU). |
+| `departure.tapped` | yes | Legal key, so the phone time must not be called signed. Same check as chain.signedAt for 'στις' before an English-format date-time. |
+| `pdf.evidence.field.arrivalSigned` | yes | Legal key, unchanged. It is a noun-style label ('Υπογραφή της άφιξης από το ParkProof (ρολόι διακομιστή)') shown next to a time value. Check that it reads as a signing time and not as 'the signature'. departureSigned has the same pattern. |
+| `pdf.evidence.statement` | yes | I changed it to point at the exact '«ρολόι κινητού»' label and named the subject of the 'not a legal finding' sentence. A human should confirm the tone suits a council or court reader. 'του ίδιου του οδηγού' uses the generic masculine 'ο οδηγός', the same as the rest of el.json. |
+| `pdf.evidence.value.distanceUnavailable` | yes | Legal key. I rewrote the second sentence for grammar. Confirm it still covers both cases (address typed in, or a GPS fix too imprecise to compare). |
+| `pdf.signature.intro` | yes | This is the most important legal claim. It reads correctly as detection, not prevention, and lists what the signature does not show. It is unchanged, but a native speaker should confirm the wording 'όταν ο διακομιστής το έλαβε, την ώρα signed_at που φαίνεται για εκείνο το τμήμα'. |
+| `active.iveLeftConfirm` |  | Legal key, unchanged. It distinguishes the tap time (phone clock) from the actual departure time. The same text is in session.endConfirm, and session.endConfirmLate is close to it. A native speaker should confirm 'Θα αποθηκευτεί η ώρα που πατάς' is unambiguous. |
+| `reminders.pushBodyBefore_one` |  | I changed reviewer 1's 'η υπενθύμισή σου 1 λεπτό πριν' to '1 λεπτό πριν από τη λήξη', because a bare 'X λεπτό πριν' means 'X minute ago' in el.json (time.hoursAgo_one = '1 ώρα πριν'). Confirm it reads well as a lock-screen push body. |
+
+## Hindi (`hi`): 23 strings
+
+| Key | Legal | Why a person should read it |
+|---|---|---|
+| `about.sealCaveat` | yes | Legal overwrite, left unchanged. It uses मुहर ('seal') and 'कि कोई परिषद इसे मानेगी'. Confirm it reads as a caveat, not a guarantee in either direction. |
+| `chain.checkValid_one` | yes | Legal key. 'इससे यह पता नहीं चलता कि रिकॉर्ड में लिखी बातें सच हैं' looks right. Because hi uses _one for 0 as well, '0 हस्ताक्षर मान्य है' is possible in theory, though unlikely to appear on screen. |
+| `chain.covers.arrivalContext` | yes | Legal key, left unchanged. 'आपने चालक के रूप में किसका नाम लिखा' keeps 'who you said was driving' as the driver's own statement. Confirm it doesn't read as app-confirmed. |
+| `chain.covers.handover` | yes | Legal key, left unchanged. 'आपने कार किसे सौंपने की बात बताई' keeps the handover as the user's own statement. Confirm the tone is right. |
+| `chain.intro` | yes | Same signature-limits claim on screen, with my grammar fix to 'हर हिस्सा मिलते ही'. Check that मिलते ही ('as soon as received') doesn't add an immediacy claim a native reader would object to. |
+| `departure.far` | yes | Legal key. I fixed हिली to 'वहाँ से हटी'. Confirm the sentence says the record shows the tap time, not when the car moved. |
+| `departure.notSigned` | yes | Legal key, left unchanged ('यह प्रस्थान हस्ताक्षरित नहीं है'). Confirm it reads as 'this departure part is not signed' and not as something stronger. |
+| `departure.tapped` | yes | Legal key, left unchanged. '{{time}} पर "..." पर टैप किया' has two पर close together. It is acceptable, but a native reader may prefer a smoother order. The phone-clock label must stay. |
+| `pdf.evidence.field.arrivalSigned` | yes | I changed 'आगमन पर' to 'आगमन विवरण पर' so the label can't read as 'signed upon arrival'. Confirm a native reader takes it as ParkProof's server signing time and not the car's arrival time. |
+| `pdf.evidence.field.departureSigned` | yes | Same reasoning as arrivalSigned, for departure. |
+| `pdf.evidence.gpsNoticeBody` | yes | Legal PDF string. The second reviewer replaced 'रीडिंग ... चौड़ी है' with 'जिसकी त्रिज्या सबूत के लिहाज़ से सामान्य से बड़ी है'. Confirm it says only that the radius is wider than typical, with no hint that the evidence is invalid. Also check that the PDF layout box still fits, since pdf-layout.test checks the line count. |
+| `pdf.evidence.statement` | yes | Legal statement on the evidence PDF. Check that 'फ़ोन के समय के रूप में चिह्नित समय' and 'चालक के बयान के रूप में चिह्नित बातें' read naturally. Also check that 'यह परिषद या अदालत तय करती है' clearly hands the decision to the council or court with no outcome promise. |
+| `pdf.fullExport.intro` | yes | Legal key. I made a small grammar fix. The ending 'यह नहीं दिखाता कि वे सच हैं' carries the not-proof-of-truth caveat. |
+| `pdf.signature.intro` | yes | The most important signature-claim string on the PDF. Confirm it reads as detection only: unchanged since signed_at. It must not read as proof of truth, of who drove (चालक कौन था), or of arrival or departure times. Also confirm the 'तब ... जब वह हिस्सा सर्वर को मिला' rewrite reads naturally. |
+| `pdf.signature.verifyStep6` | yes | Legal key, left unchanged. Confirm 'हस्ताक्षरित बाइट्स ... नहीं बदले हैं' claims only that the bytes are unchanged. |
+| `pdf.signature.verifyStep7` | yes | I replaced 'के लिए प्रतिबद्ध है' with 'हस्ताक्षर के दायरे में ... आता है' and सत्यापित with जाँचने. Confirm the rewrite reads cleanly as technical-legal Hindi and still says step 6 showed only that the hashes are unchanged, not that they are authentic. |
+| `active.expiredAt` |  | I shortened this to '{{time}} पर समय खत्म' for the big countdown slot. The same string also feeds the card's aria label with the full date and time. Confirm it reads well in both places. |
+| `active.iveLeft` |  | Left unchanged. 'मैंने जगह खाली कर दी' ('I vacated the spot') is gender-neutral and used everywhere as the button label. Confirm a native reader finds it natural as a one-tap button, and that the quoted label inside other strings reads well. |
+| `active.iveLeftConfirm` |  | Legal key, left unchanged. 'If you left earlier' is rendered as 'अगर जगह पहले ही खाली हो गई थी' ('if the spot was already vacated'), which avoids gender. Confirm it still clearly means the earlier real departure time is not recorded, and that the tap time comes from the phone clock. |
+| `active.walkBackAriaDistance_other` |  | Screen-reader-only string, restructured to 'कार {{distance}} दूर है, पैदल लगभग {{count}} मिनट।'. Confirm it sounds natural when read aloud (the _one form is the same). |
+| `errors.storageFull` |  | The second reviewer changed चालू to सक्रिय to match the file's term for active records. Confirm 'सक्रिय रिकॉर्ड' doesn't suggest that every saved record is kept. |
+| `session.endConfirm` |  | Same text as active.iveLeftConfirm. Left unchanged. Read it for the same nuance. |
+| `session.endConfirmLate` |  | Left unchanged. Confirm 'इससे यह पता नहीं चलेगा कि कार असल में कब गई' clearly says the record does not show when the car actually left. |
+
+## Punjabi (`pa`): 20 strings
+
+| Key | Legal | Why a person should read it |
+|---|---|---|
+| `about.evidence.items[1]` | yes | Not changed. 'ਕੋਈ ਵੀ ਜਾਂਚ ਸਕਦਾ ਹੈ ਕਿ ਹਸਤਾਖਰ ਤੋਂ ਬਾਅਦ ਇਸ ਨੂੰ ਬਦਲਿਆ ਨਹੀਂ ਗਿਆ' follows the English literally. A reader might prefer '...ਬਦਲਿਆ ਗਿਆ ਹੈ ਜਾਂ ਨਹੀਂ' (check whether it was changed) as a clearer detection-only phrasing. |
+| `chain.checkValid_one` | yes | Not changed. 'ParkProof ਦੇ ਹਸਤਾਖਰ ਕਰਨ ਤੋਂ ਬਾਅਦ ਕੁਝ ਨਹੀਂ ਬਦਲਿਆ' is as broad as the English 'Nothing has changed'. Check that this, together with the 'not true' disclaimer, is acceptable. The same applies to _other and the PhotosUnchecked variants. |
+| `chain.covers.arrivalContext` | yes | The driver name must read as what the user wrote, not a confirmed fact. Check 'ਡਰਾਈਵਰ ਵਜੋਂ ਤੁਹਾਡੇ ਵੱਲੋਂ ਲਿਖਿਆ ਨਾਮ'. |
+| `chain.covers.handover` | yes | Not changed. 'ਤੁਸੀਂ ਕਾਰ ਕਿਸ ਨੂੰ ਸੌਂਪਣ ਦੀ ਗੱਲ ਦੱਸੀ' keeps the handover as the driver's claim. Confirm it reads naturally. |
+| `chain.intro` | yes | The on-screen version of the same claim, also rewritten. Check that 'ਜਦੋਂ ਉਸ ਨੂੰ ਉਹ ਹਿੱਸਾ ਮਿਲਦਾ ਹੈ' reads naturally and that the five 'does not show' items (truth, driver, where, arrived, left) are all present. |
+| `departure.far` | yes | Legally sensitive tap-time-versus-car-movement wording. I changed 'ਹਿੱਲੀ' to 'ਉੱਥੋਂ ਗਈ'. |
+| `pdf.evidence.ambientPhotoCaption` | yes | Legally sensitive disclaimer: the photo doesn't show there was no sign. Check the reworded first sentence. |
+| `pdf.evidence.field.arrivalSigned` | yes | I changed this label so it no longer reads 'upon arrival', which implied the signing time was the arrival time. Check that 'ਆਮਦ ਵਾਲਾ ਹਿੱਸਾ ParkProof ਵੱਲੋਂ ਹਸਤਾਖਰਿਤ (ਸਰਵਰ ਦੀ ਘੜੀ)' works as a field label next to a time. |
+| `pdf.evidence.field.departureSigned` | yes | Same change as arrivalSigned. It must not suggest the car left at the server signing time. |
+| `pdf.evidence.gpsNoticeBody` | yes | I replaced 'ਘਰ ਅੰਦਰ' with 'ਛੱਤ ਵਾਲੇ' for 'indoor carparks'. Confirm this is the natural Australian-Punjabi way to say covered or indoor carparks. |
+| `pdf.evidence.noSignRules` | yes | Must stay the driver's own statement. I changed it to 'ਡਰਾਈਵਰ ਨੇ ਦੱਸਿਆ ਕਿ ...' and to ਚਿੰਨ੍ਹ. The sibling pdf.evidence.noSignConfidence (out of scope) still says ਸਾਈਨ. |
+| `pdf.evidence.statement` | yes | The evidence statement that drivers attach to council disputes. Check that it claims nothing beyond the English, that the driver statements stay attributed to the driver, and that the new last sentence ('ਇਹ ਫ਼ੈਸਲਾ ਕੌਂਸਲ ਜਾਂ ਅਦਾਲਤ ਕਰਦੀ ਹੈ') carries no legal-advice tone. |
+| `pdf.signature.intro` | yes | This is the most important signature claim on the PDF, and I rewrote its first sentence. A native reader should confirm it says the server signed each part when it received it, that this shows detection of change and not prevention, and that the 'does not show' list matches the English exactly. |
+| `pdf.signature.signedAt` | yes | Server-time label, changed so the three server-time labels in the PDF read the same way. Check that it is not confused with the phone-clock labels. |
+| `pdf.signature.verifyStep7` | yes | I replaced 'ਵਚਨਬੱਧ' (pledged) with 'ਸ਼ਾਮਲ ਹੈ' (includes) for 'the signature commits to the SHA-256'. A reader with some technical background should confirm this does not understate what the signature covers. |
+| `active.iveLeftConfirm` |  | Not changed. It says phone-clock time and that an earlier departure isn't recorded, using the gender-neutral 'ਜੇ ਥਾਂ ਪਹਿਲਾਂ ਹੀ ਖਾਲੀ ਹੋ ਗਈ ਸੀ, ਤਾਂ ਉਹ ਸਮਾਂ ਦਰਜ ਨਹੀਂ ਹੋਵੇਗਾ'. Confirm a reader takes 'ਉਹ ਸਮਾਂ' to mean the earlier departure time, not the tap time. session.endConfirm has the same text. |
+| `chain.covers.compliance` |  | Not changed. 'ਪਾਰਕਿੰਗ ਮੀਟਰ ਦੀ ਪਰਚੀ' (meter slip) is used for 'meter ticket', while older strings use 'ਟਿਕਟ' for both meter tickets and fines. ਪਰਚੀ avoids that ambiguity, but confirm it is the word drivers actually use. |
+| `chain.kind.departure` |  | Register check. The chain uses Urdu-register 'ਆਮਦ' (arrival) and 'ਰਵਾਨਗੀ' (departure), plus the Sanskritised 'ਹਸਤਾਖਰਿਤ'. All are correct, but a diaspora reader should confirm they are easy to read on a phone. pdf.signature.kind.* and departure.heading use the same terms. |
+| `logger.noSignBanner` |  | Out of scope, not edited. The Punjabi says the signature 'ਸਿਰਫ਼ ਕਦੋਂ ਅਤੇ ਕਿੱਥੇ ਦੀ ਪੁਸ਼ਟੀ ਕਰਦਾ ਹੈ' (confirms when and where), which goes further than the English 'covers'. It also contains an em-dash and the old term ਦਸਤਖਤ. The English source ('The cryptographic signature covers when and where') itself breaks the copy rule that a signature does not show where the car was or when it arrived. So the English needs fixing first, then all locales should be re-translated. |
+| `session.endConfirmLate` |  | Not changed. It is legally sensitive because it must say the record shows the tap time, not when the car actually left. It reads correctly to me, but a native reader should confirm. |
