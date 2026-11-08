@@ -780,8 +780,11 @@ export async function performInitialSync(options: SyncOptions = {}): Promise<Ini
   const result: InitialSyncResult = { uploaded: 0, pulled: 0, alreadyInSync: 0, merged: 0, listFailed }
 
   // Cloud-only → into local storage. The pulled mark goes first: a pulled
-  // record must never be signed as if it were saved here.
-  const toPull = cloudSessions.filter((s) => !localById.has(s.id) && !s.shared_from)
+  // record must never be signed as if it were saved here. A record deleted
+  // here while the listing was in flight is still in that listing: skip it
+  // (its tombstone), or it comes back here and the next full sync uploads
+  // it again.
+  const toPull = cloudSessions.filter((s) => !localById.has(s.id) && !s.shared_from && !isTombstoned(s.id))
   if (toPull.length > 0) {
     if (!markPulledRecords(toPull.map((s) => s.id))) {
       console.warn('[sync] could not mark records as pulled; they are pulled on the next sync')
@@ -838,12 +841,14 @@ export async function performInitialSync(options: SyncOptions = {}): Promise<Ini
  * Insert a session into localStorage at index 0 (newest-first ordering),
  * preserving the rest. Used by the cloud-pull path during initial sync.
  * Returns false (and writes nothing) when a record with the id is already
- * saved, or the write failed. A write tells open screens through
+ * saved, the record was deleted here moments ago (its tombstone), or the
+ * write failed. A write tells open screens through
  * `scheduleRecordsChanged`, so the list shows a pulled record as soon as it
  * lands, with one re-render for a whole pull.
  */
 function writeNewLocalSession(session: ParkingSession): boolean {
   const KEY = 'parkproof.sessions.v1'
+  if (isTombstoned(session.id)) return false
   try {
     const raw = localStorage.getItem(KEY)
     const all: ParkingSession[] = raw ? JSON.parse(raw) : []

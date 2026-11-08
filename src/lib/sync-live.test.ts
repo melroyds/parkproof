@@ -19,7 +19,9 @@
 //     it again would undo the delete (the app start and sign-in syncs still
 //     upload, as before);
 //   - a return inside the minute is not dropped: one pull follows when the
-//     minute ends, if the page is still on screen.
+//     minute ends, if the page is still on screen;
+//   - a record deleted here while a pull's listing is in flight is not
+//     written back (its tombstone), so the next app start can't upload it.
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { ParkingSession } from '../types'
 
@@ -30,13 +32,21 @@ vi.mock('./api', () => ({ endpointUrl: (p: string) => `/api${p}` }))
 import {
   SYNC_ON_RETURN_INTERVAL_MS,
   createSyncRunner,
+  deleteCloudSession,
   installSyncOnReturn,
   performInitialSync,
   resetSyncForTests,
   type InitialSyncResult,
   type SyncOptions,
 } from './sync'
-import { RECORDS_CHANGED_EVENT, getSession, loadSessions, saveSession, scheduleRecordsChanged } from './storage'
+import {
+  RECORDS_CHANGED_EVENT,
+  deleteSession,
+  getSession,
+  loadSessions,
+  saveSession,
+  scheduleRecordsChanged,
+} from './storage'
 import { resetSigningQueueForTests, whenSigningIdle } from './signing'
 import { createFakeCloud, fakeIdToken, type FakeCloud } from './test-support/fake-cloud'
 
@@ -350,6 +360,51 @@ describe('pull on return: a record deleted on another device stays deleted', () 
     const result = await performInitialSync()
     expect(result.uploaded).toBe(1)
     expect(cloud.rows.has(localOnly)).toBe(true)
+  })
+
+  it('a record deleted here while the listing is in flight is not pulled back, nor uploaded at the next start', async () => {
+    const deleted = crypto.randomUUID()
+    const kept = crypto.randomUUID()
+    for (const id of [deleted, kept]) {
+      cloud.rows.set(id, { ...record(id) })
+      saveSession(record(id))
+    }
+    // The listing is read on the server first, then held on its way back.
+    let releaseList!: () => void
+    const listHeld = new Promise<void>((resolve) => {
+      releaseList = resolve
+    })
+    let listRead = false
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: string, init?: RequestInit) => {
+        const response = await cloud.fetch(input, init)
+        if (input.endsWith('/sessions/list')) {
+          listRead = true
+          await listHeld
+        }
+        return response
+      }),
+    )
+
+    const run = performInitialSync({ uploadLocalOnly: false })
+    await vi.waitFor(() => expect(listRead).toBe(true))
+    // The driver deletes the record now, the way App does: here, then in the cloud.
+    deleteSession(deleted)
+    await deleteCloudSession(deleted)
+    expect(cloud.rows.has(deleted)).toBe(false)
+    releaseList()
+    const result = await run
+
+    expect(getSession(deleted)).toBeUndefined()
+    expect(getSession(kept)).toBeDefined()
+    expect(result.pulled).toBe(0)
+
+    // The next app start (a full sync) has nothing to put back.
+    await performInitialSync()
+    expect(getSession(deleted)).toBeUndefined()
+    expect(cloud.rows.has(deleted)).toBe(false)
+    expect(cloud.uploads().some((row) => row.id === deleted)).toBe(false)
   })
 
   it('the runner asks for no local-only upload on a pull on return, and a full sync otherwise', async () => {

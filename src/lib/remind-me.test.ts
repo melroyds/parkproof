@@ -2,10 +2,11 @@
 //
 // The one "Remind me" action (field-test fix list, item 2). One tap must:
 // ask for permission first and synchronously (iOS only prompts inside the
-// tap), subscribe and register, arm the in-tab reminders and book the push
-// ones, and report exactly what got booked. "Not registered" is never a
-// quiet success: the result says the reminder only works while ParkProof is
-// open, and why.
+// tap), arm the in-tab reminders before any network work (a weak signal
+// must not leave the driver with nothing), subscribe and register, book the
+// push ones, and report exactly what got booked. "Not registered" or "no
+// answer in time" is never a quiet success: the result says the reminder
+// only works while ParkProof is open, and why.
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { ScheduleResult } from './notifications'
 import type { PushScheduleResult, SubscribeResult } from './push'
@@ -83,7 +84,55 @@ describe('remindMe()', () => {
     // Nothing has been awaited yet: the prompt must already be on its way.
     expect(requestPermission).toHaveBeenCalledTimes(1)
     await pending
-    expect(order).toEqual(['permission', 'subscribe', 'inTab', 'schedule'])
+    // In-tab first: it needs no connection, so a weak signal can't hold it up.
+    expect(order).toEqual(['permission', 'inTab', 'subscribe', 'schedule'])
+  })
+
+  it('arms the in-tab reminders before any push network work, even when push never answers', async () => {
+    stubNotification('granted')
+    mocks.subscribeToPush.mockImplementation(() => new Promise(() => {}))
+
+    void run()
+    await new Promise((resolve) => setTimeout(resolve, 0))
+
+    expect(armInTab).toHaveBeenCalledTimes(1)
+    expect(mocks.subscribeToPush).toHaveBeenCalledTimes(1)
+    expect(mocks.schedulePushReminders).not.toHaveBeenCalled()
+  })
+
+  it('push timed out: in-tab only, "try again" as the step, no booking and no second arming', async () => {
+    stubNotification('granted')
+    subscribeResult({ ok: false, reason: 'timeout' })
+
+    const result = await run()
+
+    expect(result).toEqual({ background: { ok: false, reason: 'failed' }, inTab: ARMED })
+    expect(armInTab).toHaveBeenCalledTimes(1)
+    expect(mocks.schedulePushReminders).not.toHaveBeenCalled()
+    expect(summariseRemindMe(result)).toEqual({ kind: 'openOnly', times: [new Date(FIRE)], step: 'failed' })
+  })
+
+  it('the booking timed out after a good registration: in-tab only, "try again"', async () => {
+    stubNotification('granted')
+    subscribeResult({ ok: true })
+    // schedulePushReminders reports a timed-out request as network.
+    scheduleResult({ ok: false, reason: 'network' })
+
+    const result = await run()
+
+    expect(armInTab).toHaveBeenCalledTimes(1)
+    expect(summariseRemindMe(result)).toEqual({ kind: 'openOnly', times: [new Date(FIRE)], step: 'failed' })
+  })
+
+  it('a push step that throws anyway still reports the in-tab reminders it armed', async () => {
+    stubNotification('granted')
+    vi.spyOn(console, 'error').mockImplementation(() => {})
+    mocks.subscribeToPush.mockRejectedValue(new Error('boom'))
+
+    const result = await run()
+
+    expect(result).toEqual({ background: { ok: false, reason: 'failed' }, inTab: ARMED })
+    expect(summariseRemindMe(result).kind).toBe('openOnly')
   })
 
   it('books push and in-tab, and passes the full reminder set and expiry through', async () => {

@@ -14,9 +14,15 @@
 // A dead registration: when the server refuses the endpoint with 409
 // ERR_ENDPOINT_GONE (the push service said 410 Gone for it), the app drops
 // it and registers a fresh one, rather than re-sending the dead one.
+//
+// A weak signal: every push request (and the browser's subscribe) gives up
+// after PUSH_REQUEST_TIMEOUT_MS, with AbortSignal.timeout or an
+// AbortController fallback, so "Remind me" always finishes and says what it
+// set; a booking stops at the first timeout instead of waiting out another.
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   ERR_ENDPOINT_GONE,
+  PUSH_REQUEST_TIMEOUT_MS,
   cancelPushReminders,
   hasPushDeviceId,
   installPushRegistrationRefresh,
@@ -348,6 +354,158 @@ describe('reconnectPush (fix list item 5)', () => {
     vi.stubGlobal('Notification', { permission: 'denied' })
     expect(await reconnectPush()).toEqual({ ok: false, reason: 'denied' })
     expect(fetchMock).not.toHaveBeenCalled()
+  })
+
+  it('not asked yet: asks first, inside the tap, before anything is awaited', async () => {
+    stubSubscribedBrowser('https://fcm.googleapis.com/fcm/send/abc')
+    const requestPermission = vi.fn(async () => 'denied' as const)
+    vi.stubGlobal('Notification', { permission: 'default', requestPermission })
+
+    const pending = reconnectPush()
+    expect(requestPermission).toHaveBeenCalledTimes(1)
+    expect(await pending).toEqual({ ok: false, reason: 'denied' })
+    expect(fetchMock).not.toHaveBeenCalled()
+  })
+})
+
+describe('every push request gives up after PUSH_REQUEST_TIMEOUT_MS', () => {
+  const ENDPOINT = 'https://fcm.googleapis.com/fcm/send/abc'
+  const REMINDER = { fire_at: '2099-01-01T00:00:00.000Z', body: 'Your parking ends soon' }
+
+  /** A server that never answers; the request ends only when its signal aborts. */
+  function serverNeverAnswers() {
+    fetchMock.mockImplementation(
+      (_url: string, init: RequestInit = {}) =>
+        new Promise((_resolve, reject) => {
+          init.signal?.addEventListener('abort', () => reject(new DOMException('The operation was aborted.', 'AbortError')))
+        }),
+    )
+  }
+
+  beforeEach(() => {
+    vi.useFakeTimers()
+    localStorage.setItem(DEVICE_ID_KEY, DEVICE)
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+    delete (navigator as { serviceWorker?: unknown }).serviceWorker
+    vi.unstubAllEnvs()
+  })
+
+  it('is about 10 s', () => {
+    expect(PUSH_REQUEST_TIMEOUT_MS).toBe(10_000)
+  })
+
+  it('a cancel that never answers ends as network after the timeout, with an abort signal on the request', async () => {
+    serverNeverAnswers()
+    let settled = false
+    const pending = cancelPushReminders('session-1').finally(() => {
+      settled = true
+    })
+
+    await vi.advanceTimersByTimeAsync(PUSH_REQUEST_TIMEOUT_MS - 1)
+    expect(settled).toBe(false)
+    await vi.advanceTimersByTimeAsync(1)
+
+    expect(await pending).toEqual({ ok: false, reason: 'network' })
+    const [, init] = fetchMock.mock.calls[0] as [string, RequestInit]
+    expect(init.signal).toBeInstanceOf(AbortSignal)
+  })
+
+  it('uses AbortSignal.timeout where the browser has it', async () => {
+    const native = new AbortController().signal
+    const timeout = vi.fn(() => native)
+    const original = Object.getOwnPropertyDescriptor(AbortSignal, 'timeout')
+    Object.defineProperty(AbortSignal, 'timeout', { value: timeout, configurable: true, writable: true })
+    try {
+      fetchMock.mockResolvedValue(jsonResponse(200, { deleted: 1 }))
+      expect(await cancelPushReminders('session-1')).toEqual({ ok: true, deleted: 1 })
+      expect(timeout).toHaveBeenCalledWith(PUSH_REQUEST_TIMEOUT_MS)
+      expect((fetchMock.mock.calls[0] as [string, RequestInit])[1].signal).toBe(native)
+    } finally {
+      if (original) Object.defineProperty(AbortSignal, 'timeout', original)
+      else delete (AbortSignal as { timeout?: unknown }).timeout
+    }
+  })
+
+  it('falls back to an AbortController (aborted at the timeout) where AbortSignal.timeout is missing', async () => {
+    const original = Object.getOwnPropertyDescriptor(AbortSignal, 'timeout')
+    Object.defineProperty(AbortSignal, 'timeout', { value: undefined, configurable: true, writable: true })
+    try {
+      serverNeverAnswers()
+      const pending = cancelPushReminders('session-1')
+      await vi.advanceTimersByTimeAsync(PUSH_REQUEST_TIMEOUT_MS)
+      expect(await pending).toEqual({ ok: false, reason: 'network' })
+      const signal = (fetchMock.mock.calls[0] as [string, RequestInit])[1].signal
+      expect(signal).toBeInstanceOf(AbortSignal)
+      expect(signal?.aborted).toBe(true)
+    } finally {
+      if (original) Object.defineProperty(AbortSignal, 'timeout', original)
+      else delete (AbortSignal as { timeout?: unknown }).timeout
+    }
+  })
+
+  it('still stops waiting when a fetch ignores the signal', async () => {
+    fetchMock.mockImplementation(() => new Promise(() => {}))
+    const pending = cancelPushReminders('session-1')
+    await vi.advanceTimersByTimeAsync(PUSH_REQUEST_TIMEOUT_MS)
+    expect(await pending).toEqual({ ok: false, reason: 'network' })
+  })
+
+  it('registration that never answers: subscribeToPush says timeout and does not mark it sent', async () => {
+    vi.stubEnv('VITE_VAPID_PUBLIC_KEY', 'AAAA')
+    stubSubscribedBrowser(ENDPOINT)
+    serverNeverAnswers()
+
+    const pending = subscribeToPush()
+    await vi.advanceTimersByTimeAsync(PUSH_REQUEST_TIMEOUT_MS)
+
+    expect(await pending).toMatchObject({ ok: false, reason: 'timeout' })
+    expect(localStorage.getItem(REGISTRATION_SENT_KEY)).toBeNull()
+  })
+
+  it("a browser push service that never answers subscribe(): timeout, and nothing is sent", async () => {
+    vi.stubEnv('VITE_VAPID_PUBLIC_KEY', 'AAAA')
+    vi.stubGlobal('PushManager', class {})
+    vi.stubGlobal('Notification', { permission: 'granted' })
+    Object.defineProperty(navigator, 'serviceWorker', {
+      configurable: true,
+      value: {
+        ready: Promise.resolve({
+          pushManager: { getSubscription: async () => null, subscribe: () => new Promise(() => {}) },
+        }),
+      },
+    })
+
+    const pending = subscribeToPush()
+    await vi.advanceTimersByTimeAsync(PUSH_REQUEST_TIMEOUT_MS)
+
+    expect(await pending).toEqual({ ok: false, reason: 'timeout' })
+    expect(fetchMock).not.toHaveBeenCalled()
+  })
+
+  it('booking: a registration re-send that never answers stops there, without a booking request', async () => {
+    stubSubscribedBrowser(ENDPOINT)
+    serverNeverAnswers()
+
+    const pending = schedulePushReminders('session-1', [REMINDER])
+    await vi.advanceTimersByTimeAsync(PUSH_REQUEST_TIMEOUT_MS)
+
+    expect(await pending).toEqual({ ok: false, reason: 'network' })
+    expect(fetchMock.mock.calls.map(([url]) => String(url).replace(/^.*\/push\//, ''))).toEqual(['subscribe'])
+  })
+
+  it('booking: a schedule request that never answers is network, never success', async () => {
+    stubSubscribedBrowser(ENDPOINT)
+    localStorage.setItem(REGISTRATION_SENT_KEY, JSON.stringify({ at: Date.now(), endpoint: ENDPOINT }))
+    serverNeverAnswers()
+
+    const pending = schedulePushReminders('session-1', [REMINDER])
+    await vi.advanceTimersByTimeAsync(PUSH_REQUEST_TIMEOUT_MS)
+
+    expect(await pending).toEqual({ ok: false, reason: 'network' })
+    expect(fetchMock).toHaveBeenCalledTimes(1)
   })
 })
 

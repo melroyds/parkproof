@@ -13,7 +13,14 @@
 //   - a dead endpoint (the push service answered 410 Gone) leaves a
 //     tombstone: /push/subscribe refuses that same endpoint with 409
 //     ERR_ENDPOINT_GONE, so the app registers a fresh one instead of putting
-//     the dead one back and booking reminders that are dropped in silence.
+//     the dead one back and booking reminders that are dropped in silence;
+//   - that refusal is the write's own condition, not a read before it, so a
+//     dispatch that tombstones the endpoint in between still wins;
+//   - dispatch reads the registration consistently, so a reminder firing
+//     right after Reconnect goes to the new endpoint;
+//   - a reminder due within 30 s is not booked again, so replacing the set
+//     keeps its schedule (when the new set still has it) instead of
+//     deleting it and dropping the push.
 //
 // DynamoDB and EventBridge Scheduler are in-memory fakes; no test can reach
 // AWS. SDK mocks use real classes, because the code does `new X(...)`.
@@ -26,7 +33,7 @@ const fake = vi.hoisted(() => {
   const schedules = new Map()
   const subs = new Map()
   const calls = []
-  const state = { getFailure: null, updateFailure: null, pushStatus: 201 }
+  const state = { getFailure: null, updateFailure: null, putFailure: null, pushStatus: 201 }
   const pushes = []
   const error = (name) => Object.assign(new Error(name), { name })
 
@@ -42,7 +49,12 @@ const fake = vi.hoisted(() => {
     }
     if (cmd.op === 'create') {
       if (schedules.has(cmd.input.Name)) return Promise.reject(error('ConflictException'))
-      schedules.set(cmd.input.Name, { Name: cmd.input.Name, Target: cmd.input.Target })
+      // GetSchedule returns the expression too, as the real service does.
+      schedules.set(cmd.input.Name, {
+        Name: cmd.input.Name,
+        ScheduleExpression: cmd.input.ScheduleExpression,
+        Target: cmd.input.Target,
+      })
       return Promise.resolve({})
     }
     return Promise.reject(new Error(`unexpected scheduler op ${cmd.op}`))
@@ -58,9 +70,15 @@ const fake = vi.hoisted(() => {
       return Promise.resolve({ Item: item === undefined ? undefined : structuredClone(item) })
     }
     if (cmd.op === 'put') {
+      if (state.putFailure) return Promise.reject(error(state.putFailure))
+      const current = subs.get(input.Item.device_id)
       if (input.ConditionExpression === '#ep = :dead') {
-        const current = subs.get(input.Item.device_id)
         if (current?.[input.ExpressionAttributeNames['#ep']] !== input.ExpressionAttributeValues[':dead']) {
+          return Promise.reject(error('ConditionalCheckFailedException'))
+        }
+      } else if (input.ConditionExpression === 'attribute_not_exists(#gone) OR #gone <> :gone') {
+        const gone = current?.[input.ExpressionAttributeNames['#gone']]
+        if (gone !== undefined && gone === input.ExpressionAttributeValues[':gone']) {
           return Promise.reject(error('ConditionalCheckFailedException'))
         }
       } else if (input.ConditionExpression) {
@@ -142,7 +160,14 @@ vi.mock('@aws-sdk/client-scheduler', () => {
   }
 })
 
-import { handler, PUSH_ERR_ENDPOINT_GONE, PUSH_ERR_NOT_SUBSCRIBED } from './index.js'
+import {
+  handler,
+  PUSH_ERR_ENDPOINT_GONE,
+  PUSH_ERR_NOT_SUBSCRIBED,
+  schedulerAtExprMs,
+  toSchedulerAtExpr,
+} from './index.js'
+import { pushEndpointHash } from './push-tombstone.js'
 
 const DEVICE = '11111111-1111-4111-8111-111111111111'
 const SID = 'session-abc'
@@ -193,6 +218,7 @@ beforeEach(() => {
   fake.calls.length = 0
   fake.state.getFailure = null
   fake.state.updateFailure = null
+  fake.state.putFailure = null
   fake.state.pushStatus = 201
   fake.pushes.length = 0
   vi.spyOn(console, 'log').mockImplementation(() => {})
@@ -420,5 +446,161 @@ describe('a dead endpoint (410 Gone) is not registered again', () => {
   it('a live row with the same endpoint is re-registered as before (only a tombstone refuses)', async () => {
     registerRow(nowSec() + 30 * DAY_S)
     expect((await post('/push/subscribe', { device_id: DEVICE, subscription: deadSubscription })).statusCode).toBe(204)
+  })
+
+  it('/push/subscribe checks the tombstone in one conditional write, with no separate read', async () => {
+    registerRow(nowSec() + 30 * DAY_S)
+    expect((await post('/push/subscribe', { device_id: DEVICE, subscription: freshSubscription })).statusCode).toBe(204)
+    const ddb = fake.calls.filter((c) => c.service === 'ddb')
+    expect(ddb.map((c) => c.op)).toEqual(['put'])
+    expect(ddb[0].input.ConditionExpression).toBe('attribute_not_exists(#gone) OR #gone <> :gone')
+    expect(ddb[0].input.ExpressionAttributeValues[':gone']).toBe(pushEndpointHash(freshSubscription.endpoint))
+  })
+
+  it('a dispatch that tombstones the endpoint while /push/subscribe is in flight wins: 409, no keys put back', async () => {
+    registerRow(nowSec() + 30 * DAY_S)
+    // The 410 and its tombstone land just before the re-sent registration is written.
+    const send = fake.ddbSend
+    let raced = false
+    fake.ddbSend = async (cmd) => {
+      if (!raced && cmd.op === 'put' && cmd.input.ConditionExpression?.startsWith('attribute_not_exists')) {
+        raced = true
+        fake.state.pushStatus = 410
+        expect(await dispatch()).toEqual({ ok: false })
+      }
+      return send(cmd)
+    }
+    let res
+    try {
+      res = await post('/push/subscribe', { device_id: DEVICE, subscription: deadSubscription })
+    } finally {
+      fake.ddbSend = send
+    }
+    expect(raced).toBe(true)
+    expect(res.statusCode).toBe(409)
+    expect(JSON.parse(res.body)).toEqual({ error: PUSH_ERR_ENDPOINT_GONE })
+    const row = fake.subs.get(DEVICE)
+    expect(row.endpoint).toBeUndefined()
+    expect(row.p256dh).toBeUndefined()
+    expect(row.gone_endpoint_sha256).toBe(pushEndpointHash(DEAD))
+  })
+
+  it('any other storage failure on /push/subscribe is still a 500', async () => {
+    fake.state.putFailure = 'ProvisionedThroughputExceededException'
+    const res = await post('/push/subscribe', { device_id: DEVICE, subscription: freshSubscription })
+    expect(res.statusCode).toBe(500)
+  })
+
+  it('dispatch reads the registration with a consistent read (a reminder right after Reconnect)', async () => {
+    registerRow(nowSec() + 30 * DAY_S)
+    expect(await dispatch()).toEqual({ ok: true })
+    const get = fake.calls.find((c) => c.service === 'ddb' && c.op === 'get')
+    expect(get.input.ConsistentRead).toBe(true)
+    expect(get.input.Key).toEqual({ device_id: DEVICE })
+  })
+})
+
+describe('POST /push/schedule: a reminder about to fire is kept, not dropped', () => {
+  const name = (slot) => `parkproof-push-${SID}-${slot}`
+  const inMs = (ms) => new Date(Date.now() + ms).toISOString()
+  const reminder = (fire_at) => ({ fire_at, title: 'Parking reminder', body: 'b', url: '/' })
+
+  /** An existing schedule of this device, as /push/schedule created it earlier. */
+  function seedSchedule(slot, fire_at) {
+    fake.schedules.set(name(slot), {
+      Name: name(slot),
+      ScheduleExpression: toSchedulerAtExpr(fire_at),
+      Target: { Input: JSON.stringify({ device_id: DEVICE, session_id: SID, fire_at }) },
+    })
+  }
+  const book = (reminders) =>
+    post('/push/schedule', { device_id: DEVICE, session_id: SID, expires_at: inMs(60 * 60_000), reminders })
+  const ops = (op) => fake.calls.filter((c) => c.service === 'scheduler' && c.op === op).map((c) => c.name)
+
+  beforeEach(() => {
+    registerRow(nowSec() + 30 * DAY_S)
+  })
+
+  it('adding a reminder 20 s before another fires: that one stays, is not created twice, and is reported as booked', async () => {
+    const imminent = inMs(20_000)
+    const later = inMs(20 * 60_000)
+    const added = inMs(30 * 60_000)
+    seedSchedule(0, imminent)
+    seedSchedule(1, later)
+    const before = structuredClone(fake.schedules.get(name(0)))
+
+    const res = await book([reminder(imminent), reminder(later), reminder(added)])
+
+    expect(res.statusCode).toBe(200)
+    const { created, skipped } = JSON.parse(res.body)
+    expect(created).toEqual([
+      { name: name(0), fire_at: imminent },
+      { name: name(1), fire_at: later },
+      { name: name(2), fire_at: added },
+    ])
+    expect(skipped).toEqual([])
+    expect(ops('delete')).toEqual([name(1)])
+    expect(ops('create')).toEqual([name(1), name(2)])
+    expect(fake.schedules.get(name(0))).toEqual(before)
+  })
+
+  it('removing another reminder within 30 s of one firing keeps the one about to fire', async () => {
+    const later = inMs(20 * 60_000)
+    const imminent = inMs(20_000)
+    seedSchedule(0, later)
+    seedSchedule(1, imminent)
+
+    const res = await book([reminder(imminent)])
+
+    expect(res.statusCode).toBe(200)
+    expect(JSON.parse(res.body).created).toEqual([{ name: name(1), fire_at: imminent }])
+    expect(ops('delete')).toEqual([name(0)])
+    expect(ops('create')).toEqual([])
+    expect([...fake.schedules.keys()]).toEqual([name(1)])
+  })
+
+  it('a new reminder whose slot a kept schedule holds goes to a free slot (no ConflictException)', async () => {
+    const imminent = inMs(15_000)
+    const added = inMs(30 * 60_000)
+    seedSchedule(0, imminent)
+
+    const res = await book([reminder(added), reminder(imminent)])
+
+    const { created, skipped } = JSON.parse(res.body)
+    expect(skipped).toEqual([])
+    expect(created).toEqual([
+      { name: name(1), fire_at: added },
+      { name: name(0), fire_at: imminent },
+    ])
+    expect(fake.schedules.size).toBe(2)
+    expect(fake.schedules.get(name(1)).ScheduleExpression).toBe(toSchedulerAtExpr(added))
+  })
+
+  it('an imminent schedule the new set no longer asks for is deleted, as before', async () => {
+    const imminent = inMs(20_000)
+    const later = inMs(20 * 60_000)
+    seedSchedule(0, imminent)
+
+    const res = await book([reminder(later)])
+
+    expect(JSON.parse(res.body).created).toEqual([{ name: name(0), fire_at: later }])
+    expect(ops('delete')).toEqual([name(0)])
+    expect(fake.schedules.get(name(0)).ScheduleExpression).toBe(toSchedulerAtExpr(later))
+  })
+
+  it('a schedule further out than 30 s is still replaced with a fresh copy', async () => {
+    const later = inMs(20 * 60_000)
+    seedSchedule(0, later)
+    const res = await book([reminder(later)])
+    expect(JSON.parse(res.body).created).toEqual([{ name: name(0), fire_at: later }])
+    expect(ops('delete')).toEqual([name(0)])
+    expect(ops('create')).toEqual([name(0)])
+  })
+
+  it('schedulerAtExprMs reads back what toSchedulerAtExpr writes, and nothing else', () => {
+    const iso = '2026-11-09T05:30:15.700Z'
+    expect(schedulerAtExprMs(toSchedulerAtExpr(iso))).toBe(Date.parse('2026-11-09T05:30:15.000Z'))
+    expect(schedulerAtExprMs('rate(5 minutes)')).toBeNull()
+    expect(schedulerAtExprMs(undefined)).toBeNull()
   })
 })
