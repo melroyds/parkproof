@@ -5,6 +5,13 @@ import { useNow } from '../lib/use-now'
 import { formatExpiryAbsolute } from '../lib/time-format'
 import { sessionTimezone } from '../lib/timezone'
 import { reminderCopy } from '../lib/reminder-copy'
+import {
+  MAX_PUSH_REMINDERS,
+  isStandardLimitReminder,
+  permitAdjustedUntil,
+  reminderAnchor,
+  reminderFireTimes,
+} from '../lib/permit-answer'
 import { sessionLink } from '../lib/deep-link'
 import {
   cancelPushReminders,
@@ -130,7 +137,14 @@ export default function ScheduledRemindersSection({ session: initialSession }: P
   // For active sessions WITH no scheduled reminders, we still show the
   // "+ Add reminder" affordance so the surface is discoverable.
   const isEnded = !!session.ended_at
-  const expiryMs = session.expires_at ? new Date(session.expires_at).getTime() : null
+  // What the reminders count down to: the permit time the driver read off
+  // the sign when the sign's exception gives a later time (T4), else the
+  // expiry.
+  const anchor = useMemo(() => reminderAnchor(session), [session])
+  // Set when the anchor is that permit time: the driver's own reading, so
+  // the labels say "the permit time you entered", never "expiry".
+  const permitUntil = useMemo(() => permitAdjustedUntil(session), [session])
+  const expiryMs = anchor ? new Date(anchor).getTime() : null
   const isExpiryPast = expiryMs !== null && expiryMs < now
   const isNoSign = !!session.no_sign
   const canAdd = !isEnded && (isNoSign || !isExpiryPast)
@@ -151,11 +165,20 @@ export default function ScheduledRemindersSection({ session: initialSession }: P
       alreadyScheduled: boolean
       /** True if would fire before now + safety margin. */
       isPast: boolean
+      /**
+       * True if adding it would take the record past MAX_PUSH_REMINDERS
+       * (counting the standard-limit reminder an add also sets): the
+       * server would refuse the whole set.
+       */
+      overLimit: boolean
     }
     const chips: Chip[] = []
     const existingFireAtMs = new Set(
       futureReminders.map((r) => Math.round(r.fireAt.getTime() / 1000))
     )
+    const existingAts = futureReminders.map((r) => r.fireAt)
+    const overLimit = (fireAt: Date) =>
+      reminderFireTimes(session, [...existingAts, fireAt], now).length > MAX_PUSH_REMINDERS
     if (isNoSign) {
       for (const dur of NOSIGN_DURATIONS_MIN) {
         const fireAt = new Date(now + dur * 60 * 1000)
@@ -169,6 +192,7 @@ export default function ScheduledRemindersSection({ session: initialSession }: P
           fireAt,
           alreadyScheduled: existingFireAtMs.has(Math.round(ms / 1000)),
           isPast: ms - now < SAFETY_MARGIN_MS,
+          overLimit: overLimit(fireAt),
         })
       }
     } else if (expiryMs !== null) {
@@ -179,18 +203,19 @@ export default function ScheduledRemindersSection({ session: initialSession }: P
           key: `expiry-${off}`,
           label:
             off === 0
-              ? t('reminders.chipAtExpiry')
+              ? t(permitUntil ? 'reminders.chipAtPermitTime' : 'reminders.chipAtExpiry')
               : t('reminders.chipMin', { count: off }),
           fireAt,
           alreadyScheduled: existingFireAtMs.has(Math.round(ms / 1000)),
           isPast: ms - now < SAFETY_MARGIN_MS,
+          overLimit: overLimit(fireAt),
         })
       }
     }
     return chips
-  }, [futureReminders, now, isNoSign, expiryMs, t])
+  }, [futureReminders, now, isNoSign, expiryMs, permitUntil, session, t])
 
-  const anyChipViable = chipOptions.some((c) => !c.isPast && !c.alreadyScheduled)
+  const anyChipViable = chipOptions.some((c) => !c.isPast && !c.alreadyScheduled && !c.overLimit)
 
   /**
    * Compute the notification body for a given fire-at, per-reminder.
@@ -240,23 +265,22 @@ export default function ScheduledRemindersSection({ session: initialSession }: P
     setBusy(true)
     setError(null)
     try {
-      // Build the union: existing future fire-times + the new one. Each entry
-      // gets its OWN body string computed from its own fire_at — using one
-      // shared body for the batch (the previous bug) would have rewritten
-      // existing reminders' copy on every add.
-      const desired: ScheduledReminder[] = [
-        ...futureReminders.map((r) => ({
-          fire_at: r.fire_at,
-          ...copyForFireAt(r.fireAt),
-          url: sessionLink(session.id),
-        })),
-        {
-          fire_at: fireAt.toISOString(),
-          ...copyForFireAt(fireAt),
-          url: sessionLink(session.id),
-        },
-      ]
-      const result = await schedulePushReminders(session.id, desired, session.expires_at)
+      // Build the union: existing future fire-times + the new one, plus the
+      // standard-limit reminder on a record whose permit allows a later
+      // time (T4 item 6), one per moment. Each entry gets its OWN body
+      // string computed from its own fire_at: one shared body for the
+      // batch (the previous bug) would have rewritten existing reminders'
+      // copy on every add.
+      const times = reminderFireTimes(session, [...futureReminders.map((r) => r.fireAt), fireAt], now)
+      // The chips above never offer an add past the limit; the server
+      // would refuse the whole set.
+      if (times.length > MAX_PUSH_REMINDERS) return
+      const desired: ScheduledReminder[] = times.map((at) => ({
+        fire_at: at.toISOString(),
+        ...copyForFireAt(at),
+        url: sessionLink(session.id),
+      }))
+      const result = await schedulePushReminders(session.id, desired, anchor)
       if (!result.ok) {
         if (result.reason === 'not_owner') showOtherDevice()
         else if (result.reason === 'network') setError(t('scheduledReminders.errorRetry'))
@@ -302,7 +326,7 @@ export default function ScheduledRemindersSection({ session: initialSession }: P
         ...copyForFireAt(r.fireAt),
         url: sessionLink(session.id),
       }))
-      const result = await schedulePushReminders(session.id, desired, session.expires_at)
+      const result = await schedulePushReminders(session.id, desired, anchor)
       if (!result.ok) {
         if (result.reason === 'not_owner') showOtherDevice()
         else setError(t('scheduledReminders.errorRetry'))
@@ -347,9 +371,11 @@ export default function ScheduledRemindersSection({ session: initialSession }: P
 
   return (
     <Card className="mb-3">
-      <h3 className="text-xs uppercase tracking-widest font-semibold text-ink-600 mb-3">
+      <h3 className="text-xs uppercase tracking-widest font-semibold text-ink-600 mb-1">
         {t('scheduledReminders.header')}
       </h3>
+      {/* Copy rule: every reminder feature carries the reliability line. */}
+      <p className="text-xs text-ink-600 mb-3 leading-relaxed">{t('reminders.reliability')}</p>
 
       {futureReminders.length === 0 ? (
         <p className="text-sm text-ink-600 mb-3">
@@ -364,12 +390,16 @@ export default function ScheduledRemindersSection({ session: initialSession }: P
             }).combined
             // Label format: "4:30 PM — 30 min before expiry" or "in 30 min"
             let label = absolute
-            if (!isNoSign && expiryMs !== null) {
+            if (!isNoSign && isStandardLimitReminder(session, fireAt)) {
+              label = t('scheduledReminders.firesAtStandardEnd', { when: absolute })
+            } else if (!isNoSign && expiryMs !== null) {
               const offsetMins = Math.round((expiryMs - fireAt.getTime()) / 60_000)
               if (offsetMins <= 0) {
-                label = t('scheduledReminders.firesAtExpiry', { when: absolute })
+                label = t(permitUntil ? 'scheduledReminders.firesAtPermitTime' : 'scheduledReminders.firesAtExpiry', {
+                  when: absolute,
+                })
               } else {
-                label = t('scheduledReminders.firesBefore', {
+                label = t(permitUntil ? 'scheduledReminders.firesBeforePermitTime' : 'scheduledReminders.firesBefore', {
                   when: absolute,
                   count: offsetMins,
                 })
@@ -456,7 +486,7 @@ export default function ScheduledRemindersSection({ session: initialSession }: P
           ) : (
             <div className="flex flex-wrap gap-2">
               {chipOptions.map((chip) => {
-                const disabled = chip.isPast || chip.alreadyScheduled || busy
+                const disabled = chip.isPast || chip.alreadyScheduled || chip.overLimit || busy
                 const base =
                   'px-3 py-2.5 min-h-[44px] inline-flex items-center justify-center rounded-full text-xs font-semibold border-2 transition-colors min-w-[72px] text-center'
                 const cls = disabled

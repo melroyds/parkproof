@@ -166,7 +166,7 @@
     "scanAnother": "Scan another sign",
     "scanHelp": "We'll read the sign, tell you if you can park now, and offer a reminder before time runs out.",
     "draftAppeal": "Got a ticket? Draft an appeal",
-    "history": "Session history",
+    "history": "History",
     "historyEmpty": "empty",
     "historyCount_one": "{{count}} saved",
     "historyCount_other": "{{count}} saved",
@@ -177,7 +177,12 @@
       "translate": "Photo the sign → AI translates the rules",
       "log": "Photo your car → timestamped evidence record",
       "remind": "Get a calendar reminder before parking expires"
-    }
+    },
+    "weeklyReminders": "Street sweeping and weekly reminders",
+    "settings": "Settings",
+    "settingsSignIn": "Sign in to sync",
+    "startWorkday": "Parking all day? Start a workday",
+    "fineStart": "Got a fine? Start here"
   },
   "active": {
     "currentlyParked": "CURRENTLY PARKED",
@@ -210,7 +215,8 @@
     "expiredHint": "Still here? Move now. Already moved? Tap I've left.",
     "walkBackAria": "Walk back. Opens walking directions to your car.",
     "walkBackAriaDistance_one": "Walk back. Opens walking directions to your car, {{distance}} away, about {{count}} minute on foot.",
-    "walkBackAriaDistance_other": "Walk back. Opens walking directions to your car, {{distance}} away, about {{count}} minutes on foot."
+    "walkBackAriaDistance_other": "Walk back. Opens walking directions to your car, {{distance}} away, about {{count}} minutes on foot.",
+    "shareAria": "Share where the car is"
   },
   "scanner": {
     "header": "Scan parking sign",
@@ -303,7 +309,27 @@
       "ack": "Yes, I hold a valid permit for this area",
       "ackWithArea": "Yes, I hold a valid permit for Permit Area {{area}}"
     },
-    "weeklyRestrictionHint": "This sign has a weekly restriction. You can set a reminder after you save."
+    "weeklyRestrictionHint": "This sign has a weekly restriction. You can set a reminder after you save.",
+    "permit": {
+      "standardKicker": "Standard answer",
+      "kicker": "With your permit",
+      "signPrints": "The sign prints an exception for this permit:",
+      "checkConditions": "ParkProof only reads what the sign prints. Check the conditions on your permit too.",
+      "areaMatch": "Your saved permit for {{area}} matches this zone.",
+      "areaMismatch": "Your saved permit is for {{area}}. This zone is Permit Area {{zone}}.",
+      "mayAllowMore": "Your permit may allow more time under {{state}} rules. ParkProof doesn't calculate that. Check the conditions on your permit or with your council.",
+      "mayAllowMoreNoState": "Your permit may allow more time under the rules where you've parked. ParkProof doesn't calculate that. Check the conditions on your permit or with your council.",
+      "accessibleQuestion": "The permit holder is in the car with me and getting out here, and their permit is displayed.",
+      "accessibleNo": "Then the permit can't be used for this park. Don't park in the accessible bay.",
+      "forThisCarQuestion": "Is this permit for this car, and displayed or registered to it?",
+      "forThisCarNo": "Then the permit can't be used for this park. Don't park in this permit zone without a valid permit for it.",
+      "noStandardApplies": "Then the permit can't be used for this park. Only the standard answer applies.",
+      "timeToggle": "Does the sign give your permit a later time?",
+      "timeLabel": "Your permit time on this sign ends at",
+      "timeHint": "Read it from the sign. ParkProof doesn't work out permit times.",
+      "timeSet": "Your reminders will count down to {{time}}, the time you entered, with one more when the standard limit ends.",
+      "timeNotLater": "That time isn't later than the standard limit, so your reminders stay with the standard limit."
+    }
   },
   "logger": {
     "header": "Log this parking record",
@@ -402,7 +428,19 @@
       "multiple": "You'll be pushed at {{times}}."
     },
     "chipMin_one": "{{count}} min",
-    "chipMin_other": "{{count}} min"
+    "chipMin_other": "{{count}} min",
+    "permitIntro": "Your permit time runs to <strong>{{when}}</strong>, the time you entered from the sign. Pick when you want to be reminded, choose as many as you like.",
+    "permitExtra": "You'll also get a reminder at {{time}}, when the standard limit on this sign ends.",
+    "permitStandardEnds": "The standard limit on this sign ends now. Your permit time runs to {{time}}.",
+    "reliability": "Reminders can be delayed or silenced, for example by Focus or battery saving. Don't rely on them alone.",
+    "chipAtPermitTime": "At permit time",
+    "permitChipLimit_one": "You can pick up to {{count}} reminder here, plus the one when the standard limit ends.",
+    "permitChipLimit_other": "You can pick up to {{count}} reminders here, plus the one when the standard limit ends.",
+    "permitBodyAt": "The permit time you entered from the sign ends at {{time}}. Time to move the car.",
+    "permitBodyBefore_one": "The permit time you entered from the sign ends at {{time}}. This is your {{count}}-minute reminder.",
+    "permitBodyBefore_other": "The permit time you entered from the sign ends at {{time}}. This is your {{count}}-minute reminder.",
+    "calendarPermitTitle": "ParkProof: the permit time you entered ends",
+    "calendarPermitSummary": "The permit time you entered from the sign ends at {{time}}. ParkProof doesn't work out permit times."
   },
   "scheduledReminders": {
     "header": "Scheduled reminders",
@@ -423,7 +461,11 @@
     "pushNotEnabled": "Enable push notifications on this device to add reminders that fire when the app is closed.",
     "saving": "Saving…",
     "errorRetry": "Couldn't update. Try again",
-    "otherDevice": "These reminders were set on another device. Change them on that device."
+    "otherDevice": "These reminders were set on another device. Change them on that device.",
+    "firesAtStandardEnd": "{{when}}: the standard limit ends",
+    "firesAtPermitTime": "{{when}}: when the permit time you entered ends",
+    "firesBeforePermitTime_one": "{{when}}: {{count}} min before the permit time you entered",
+    "firesBeforePermitTime_other": "{{when}}: {{count}} min before the permit time you entered"
   },
   "history": {
     "header": "Parking records",
@@ -596,9 +638,9 @@
     "header": "Privacy",
     "lastUpdated": "Last updated: {{date}}",
     "anonymousHeader": "What you give us when you use ParkProof without an account",
-    "anonymousIntro": "ParkProof works fully anonymously by default. We do not require sign-in, we do not record an account, and the parking records you log live in your own browser's <code>localStorage</code>. They never leave your device.",
-    "anonymousThings": "Three things do leave your device, even in anonymous mode:",
-    "anonymousAnthropic": "<strong>Sign photos + GPS coordinates</strong> are sent to <strong>Anthropic</strong> (Claude vision) to translate the sign. We don't store them server-side; Anthropic's retention policy applies.",
+    "anonymousIntro": "ParkProof works without an account. Your records are stored in this browser. To sign a record, your phone sends its details (times, location, what you entered, and photo fingerprints, not the photos) to ParkProof's server, which signs them and doesn't keep a copy.",
+    "anonymousThings": "These also leave your device, even without an account:",
+    "anonymousAnthropic": "<strong>Each sign photo you scan</strong> is sent to <strong>Anthropic</strong> (Claude) to read the sign, with its location and the type of each permit you've saved (plus the area or zone of a resident or business permit). A re-check sends the earlier reading instead of the photo. We don't keep the photo or the location. The answer, which can mention your permit types, stays on our server briefly so your phone can collect it. Anthropic's retention policy applies.",
     "anonymousNominatim": "<strong>GPS coordinates</strong> are sent to <strong>OpenStreetMap Nominatim</strong> to resolve the street address. Nominatim does not require a key and applies their public retention policy.",
     "anonymousCloudwatch": "<strong>A random per-result UUID</strong> + a \"correct / retake\" verdict are logged to <strong>AWS CloudWatch</strong> when you tap the verification card. No PII; aggregate signal for prompt tuning.",
     "signedInHeader": "What you give us when you sign in",
@@ -632,7 +674,11 @@
     "verifyLinkLabel": "See how to verify a record →",
     "contactHeader": "Contact + complaints",
     "contactCopy": "For questions or to exercise your rights outside of the in-app controls, email <a>hello@parkproof.com.au</a>.",
-    "complaintCopy": "Unhappy with our response? You can complain to the <a>Office of the Australian Information Commissioner (OAIC)</a>."
+    "complaintCopy": "Unhappy with our response? You can complain to the <a>Office of the Australian Information Commissioner (OAIC)</a>.",
+    "anonymousFineNotice": "<strong>Photos of an infringement notice</strong> (a parking fine) are sent to <strong>Anthropic</strong> to read the notice, for example when you draft an appeal. Drafting an appeal also sends the details of the parking record you chose. We don't keep the photo.",
+    "anonymousPush": "<strong>Push reminders</strong>, if you turn them on: the record's address, each reminder's time and its text (which can mention a permit time you entered) go to <strong>ParkProof's server</strong>, which keeps each one until it is sent, then deletes it.",
+    "anonymousPermits": "<strong>A permit you use for a park</strong>: its type, its area or zone and any permit time you entered are kept with that record. Signing the record sends a fingerprint of these details, not the details, along with your answers to the permit questions. Deleting a permit in Settings doesn't change records already saved. Deleting the record removes them.",
+    "signedInPermits": "<strong>Permit details</strong> kept with a record (the type, area or zone and any permit time you entered, for a park where you used a saved permit) are stored with that record in AWS DynamoDB. Your saved permits in Settings aren't. Deleting the record removes them."
   },
   "loading": {
     "step1": "Reading the sign…",
@@ -956,5 +1002,56 @@
     "recordNoSignRead": "No sign read. ParkProof found no readable parking sign in the photo, and you logged this park without one.",
     "noSignReadLabel": "No sign read",
     "remindIntro": "No sign was read for this park, so there's no expiry to remind you of. You can still ask for a check-in reminder. Pick how long from now, choose as many as you like."
+  },
+  "prefs": {
+    "header": "Settings",
+    "intro": "Saved in this browser only, not in your account.",
+    "driverNameLabel": "Your name on records you share",
+    "driverNameHint": "New parking records list this as the driver. Leave it blank to leave it off.",
+    "saveName": "Save name",
+    "saved": "Saved",
+    "saveFailed": "Couldn't save. Try again.",
+    "permitsHeader": "My permits",
+    "permitsIntro": "Saved permits are sent with each sign you scan or re-check, so the answer can include what the sign says about them. Only the permit type is sent, plus the area or zone of a resident or business permit.",
+    "permitsEmpty": "No permits saved.",
+    "addPermit": "Add a permit",
+    "permitsLimit_one": "You can save up to {{count}} permit.",
+    "permitsLimit_other": "You can save up to {{count}} permits.",
+    "permitTypeLabel": "Permit type",
+    "permitType": {
+      "accessible": "Accessible parking permit",
+      "resident": "Resident parking permit",
+      "business": "Business parking permit"
+    },
+    "issuingStateLabel": "State or territory that issued it",
+    "stateNotSet": "Not set",
+    "state": {
+      "VIC": "Victoria",
+      "NSW": "New South Wales",
+      "QLD": "Queensland",
+      "ACT": "Australian Capital Territory",
+      "SA": "South Australia",
+      "WA": "Western Australia",
+      "TAS": "Tasmania",
+      "NT": "Northern Territory"
+    },
+    "areaLabel": "Area or zone on the permit",
+    "areaPlaceholder": "For example, Area 25",
+    "expiryLabel": "Expiry date",
+    "savePermit": "Save permit",
+    "accessibleWarning": "Saving this permit means its type is sent with each sign photo you scan, so the answer can include what the sign says about permits. Accessible permit details are health information. You can delete them any time.",
+    "accessibleConfirm": "Save this permit",
+    "permitArea": "Area or zone: {{area}}",
+    "permitExpires": "Expires {{date}}",
+    "permitExpired": "Expired {{date}}. It isn't sent with your scans.",
+    "deletePermitLabel": "Delete {{permit}}",
+    "pushUnsupported": "This browser can't show reminders while ParkProof is closed. On an iPhone, add ParkProof to your Home Screen first. Calendar reminders still work.",
+    "remindersReliability": "Reminders can be delayed or silenced, for example by Focus or battery saving. Don't rely on them alone.",
+    "accountHeader": "Account",
+    "accountCopy": "Cloud sync, data export, signing out and deleting your account.",
+    "openAccount": "Open account",
+    "signInCopy": "Sign in to back up your records and see them on your other devices. Nothing on this page needs an account.",
+    "signIn": "Sign in",
+    "privacyCta": "Open privacy policy"
   }
 }

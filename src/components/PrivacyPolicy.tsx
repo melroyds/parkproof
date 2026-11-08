@@ -35,16 +35,17 @@ export default function PrivacyPolicy({ onBack }: Props) {
 
       <article className="prose space-y-4 text-sm leading-relaxed" style={{ color: '#D7E8DF' }}>
         <Section title={t('privacy.anonymousHeader')}>
-          <p>
-            <Trans
-              i18nKey="privacy.anonymousIntro"
-              components={{ code: <code className="font-mono text-xs" /> }}
-            />
-          </p>
+          <p>{t('privacy.anonymousIntro')}</p>
           <p>{t('privacy.anonymousThings')}</p>
           <ul className="list-disc pl-6 space-y-1">
+            {/* What the AI is sent (T4 item 8): with each scan, the photo,
+                its location and the saved permit types; and fine notice
+                photos (the appeal draft now, the notice lookup in T8). */}
             <li>
               <Trans i18nKey="privacy.anonymousAnthropic" components={{ strong: <strong /> }} />
+            </li>
+            <li>
+              <Trans i18nKey="privacy.anonymousFineNotice" components={{ strong: <strong /> }} />
             </li>
             <li>
               <Trans i18nKey="privacy.anonymousNominatim" components={{ strong: <strong /> }} />
@@ -52,7 +53,15 @@ export default function PrivacyPolicy({ onBack }: Props) {
             <li>
               <Trans i18nKey="privacy.anonymousCloudwatch" components={{ strong: <strong /> }} />
             </li>
+            {/* Push reminders: their text can mention a permit time (T4 item 6). */}
+            <li>
+              <Trans i18nKey="privacy.anonymousPush" components={{ strong: <strong /> }} />
+            </li>
           </ul>
+          {/* A permit used for a park stays with its record (T4 item 6, N3). */}
+          <p>
+            <Trans i18nKey="privacy.anonymousPermits" components={{ strong: <strong /> }} />
+          </p>
         </Section>
 
         <Section title={t('privacy.signedInHeader')}>
@@ -64,6 +73,9 @@ export default function PrivacyPolicy({ onBack }: Props) {
             </li>
             <li>
               <Trans i18nKey="privacy.signedInSessions" components={{ strong: <strong /> }} />
+            </li>
+            <li>
+              <Trans i18nKey="privacy.signedInPermits" components={{ strong: <strong /> }} />
             </li>
             <li>
               <Trans i18nKey="privacy.signedInPhotos" components={{ strong: <strong /> }} />

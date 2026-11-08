@@ -10,6 +10,8 @@ export type IconName =
   | 'check'
   | 'warning'
   | 'chevron'
+  | 'settings'
+  | 'share'
 
 interface Props {
   name: IconName
@@ -83,4 +85,19 @@ const PATHS: Record<IconName, ReactNode> = {
   ),
   // Points down; a disclosure rotates it when open.
   chevron: <path d="m6 9.5 6 6 6-6" />,
+  // Two sliders: the home screen's Settings row.
+  settings: (
+    <>
+      <path d="M4 7.5h9M17.5 7.5H20M4 16.5h2.5M11 16.5h9" />
+      <circle cx="15.2" cy="7.5" r="2.2" />
+      <circle cx="8.8" cy="16.5" r="2.2" />
+    </>
+  ),
+  // A box with an arrow out of it: share (T7 uses it on the home card).
+  share: (
+    <>
+      <path d="M12 14.5v-11M8 7.5l4-4 4 4" />
+      <path d="M8 10.5H6.5A2.5 2.5 0 0 0 4 13v5a2.5 2.5 0 0 0 2.5 2.5h11A2.5 2.5 0 0 0 20 18v-5a2.5 2.5 0 0 0-2.5-2.5H16" />
+    </>
+  ),
 }

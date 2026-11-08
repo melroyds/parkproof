@@ -47,7 +47,12 @@
       "remind": "停车到期前获得日历提醒"
     },
     "seeEverything": "查看 ParkProof 的所有功能 →",
-    "draftAppeal": "收到罚单?起草申诉信"
+    "draftAppeal": "收到罚单?起草申诉信",
+    "weeklyReminders": "街道清扫和每周提醒",
+    "settings": "设置",
+    "settingsSignIn": "登录以同步",
+    "startWorkday": "要停一整天?开始工作日",
+    "fineStart": "收到罚款?从这里开始"
   },
   "active": {
     "currentlyParked": "正在停车",
@@ -80,7 +85,8 @@
     "expiredHint": "还在这里?请立即移车。已经开走了?点击\"我已离开\"。",
     "walkBackAria": "走回。打开前往你车辆的步行路线。",
     "walkBackAriaDistance_one": "走回。打开前往你车辆的步行路线,距离 {{distance}},步行约 {{count}} 分钟。",
-    "walkBackAriaDistance_other": "走回。打开前往你车辆的步行路线,距离 {{distance}},步行约 {{count}} 分钟。"
+    "walkBackAriaDistance_other": "走回。打开前往你车辆的步行路线,距离 {{distance}},步行约 {{count}} 分钟。",
+    "shareAria": "分享车停在哪里"
   },
   "scanner": {
     "header": "扫描停车标志",
@@ -173,7 +179,27 @@
     "cantParkOverride": "觉得这判断有误?你仍然可以把此处记录为证据。",
     "cantParkOverrideCta": "仍然记录",
     "firstSaveValue": "保存会留下一份带时间戳、可验证是否被改动的记录。万一被错误开罚单,这就是你的证据。",
-    "weeklyRestrictionHint": "这个标志有每周重复的限制。保存后,你可以设置提醒。"
+    "weeklyRestrictionHint": "这个标志有每周重复的限制。保存后,你可以设置提醒。",
+    "permit": {
+      "standardKicker": "标准答复",
+      "kicker": "使用你的许可证",
+      "signPrints": "标志上印有针对这类许可证的例外:",
+      "checkConditions": "ParkProof 只读取标志上印的内容。也请查看你许可证上的使用条件。",
+      "areaMatch": "你保存的 {{area}} 许可证与这个区域相符。",
+      "areaMismatch": "你保存的许可证适用于 {{area}}。这个区域是许可证区域 {{zone}}。",
+      "mayAllowMore": "根据{{state}}的规定,你的许可证可能允许停更长时间。ParkProof 不会计算这一点。请查看许可证上的条件,或向你的市议会咨询。",
+      "mayAllowMoreNoState": "根据你停车所在地的规定,你的许可证可能允许停更长时间。ParkProof 不会计算这一点。请查看许可证上的条件,或向你的市议会咨询。",
+      "accessibleQuestion": "许可证持有人和我同在车上,会在这里下车,而且其许可证已展示。",
+      "accessibleNo": "那么这次停车不能使用该许可证。请不要停在无障碍车位。",
+      "forThisCarQuestion": "这张许可证是给这辆车的吗?它是否展示在车上,或登记在这辆车名下?",
+      "forThisCarNo": "那么这次停车不能使用该许可证。没有适用于这个许可证区域的有效许可证,请不要在这里停车。",
+      "noStandardApplies": "那么这次停车不能使用该许可证。只适用标准答复。",
+      "timeToggle": "标志是否给你的许可证更晚的时限?",
+      "timeLabel": "按这块标志,你的许可证时间截止于",
+      "timeHint": "请从标志上读取。ParkProof 不计算许可证时间。",
+      "timeSet": "你的提醒会以你输入的 {{time}} 为准,并在标准时限结束时再提醒一次。",
+      "timeNotLater": "这个时间不晚于标准时限,所以提醒仍按标准时限设置。"
+    }
   },
   "logger": {
     "header": "记录这次停车",
@@ -272,7 +298,19 @@
     },
     "pushScheduleFailed": "无法设置后台提醒。它可能只在此标签页打开时才会触发。点击重试。",
     "chipMin_one": "{{count}} 分钟",
-    "chipMin_other": "{{count}} 分钟"
+    "chipMin_other": "{{count}} 分钟",
+    "permitIntro": "你的许可证时间到 <strong>{{when}}</strong>,这是你根据标志输入的时间。挑一下你想什么时候收到提醒,可以多选。",
+    "permitExtra": "在 {{time}},也就是这块标志的标准时限结束时,你还会收到一条提醒。",
+    "permitStandardEnds": "这块标志的标准时限现在结束。你的许可证时间到 {{time}}。",
+    "reliability": "提醒可能会延迟或被静音,例如因为专注模式或省电模式。不要只依赖提醒。",
+    "chipAtPermitTime": "许可证时间结束时",
+    "permitChipLimit_one": "这里最多可以选 {{count}} 个提醒,另外还有标准时限结束时的那一个。",
+    "permitChipLimit_other": "这里最多可以选 {{count}} 个提醒,另外还有标准时限结束时的那一个。",
+    "permitBodyAt": "你根据标志输入的许可证时间在 {{time}} 结束。该挪车了。",
+    "permitBodyBefore_one": "你根据标志输入的许可证时间将于 {{time}} 结束。这是提前 {{count}} 分钟的提醒。",
+    "permitBodyBefore_other": "你根据标志输入的许可证时间将于 {{time}} 结束。这是提前 {{count}} 分钟的提醒。",
+    "calendarPermitTitle": "ParkProof:你输入的许可证时间结束",
+    "calendarPermitSummary": "你根据标志输入的许可证时间在 {{time}} 结束。ParkProof 不计算许可证时间。"
   },
   "history": {
     "header": "停车记录",
@@ -445,9 +483,9 @@
     "header": "隐私",
     "lastUpdated": "最后更新:{{date}}",
     "anonymousHeader": "你在不使用账户时给我们的数据",
-    "anonymousIntro": "ParkProof 默认完全匿名工作。我们不要求登录,不记录账户,你记录的停车记录保存在你自己浏览器的 <code>localStorage</code> 中。它们从不离开你的设备。",
-    "anonymousThings": "即便在匿名模式下,以下三样东西确实会离开你的设备:",
-    "anonymousAnthropic": "<strong>标志照片 + GPS 坐标</strong>会发给 <strong>Anthropic</strong>(Claude 视觉)来翻译标志。我们不在服务器上存储它们;适用 Anthropic 的保留政策。",
+    "anonymousIntro": "ParkProof 不需要账户也能使用。你的记录保存在这个浏览器里。为了给记录签名,你的手机会把记录的详细信息(时间、位置、你填写的内容,以及照片指纹,但不包括照片本身)发送到 ParkProof 的服务器,服务器签名后不会保留副本。",
+    "anonymousThings": "即使没有账户,下面这些也会离开你的设备:",
+    "anonymousAnthropic": "<strong>你扫描的每张标志照片</strong>都会发送给 <strong>Anthropic</strong>(Claude)来读取标志,同时发送拍摄位置和你保存的每个许可证的类型(居民或商户许可证还会附上区域)。重新检查时发送的是之前的读取结果,而不是照片。我们不保留照片或位置。答案中可能提到你的许可证类型,它会在我们的服务器上短暂保留,好让你的手机取回。适用 Anthropic 的保留政策。",
     "anonymousNominatim": "<strong>GPS 坐标</strong>发送给 <strong>OpenStreetMap Nominatim</strong> 以解析街道地址。Nominatim 不需要密钥,适用其公开的保留政策。",
     "anonymousCloudwatch": "当你点击验证卡片时,<strong>每个结果的随机 UUID</strong> 加上一个\"正确/重拍\"判定会记录到 <strong>AWS CloudWatch</strong>。不含个人身份信息;聚合后的信号用于调整提示词。",
     "signedInHeader": "你登录后给我们的数据",
@@ -481,7 +519,11 @@
     "verifyLinkLabel": "查看如何验证记录 →",
     "contactHeader": "联系 + 投诉",
     "contactCopy": "如果遇到应用内控制之外的问题,或要行使你的权利,请发邮件到 <a>hello@parkproof.com.au</a>。",
-    "complaintCopy": "对我们的回复不满意?你可以向 <a>澳大利亚信息专员办公室(OAIC)</a> 投诉。"
+    "complaintCopy": "对我们的回复不满意?你可以向 <a>澳大利亚信息专员办公室(OAIC)</a> 投诉。",
+    "anonymousFineNotice": "<strong>违章通知书的照片</strong>(停车罚款)会发送给 <strong>Anthropic</strong> 来读取通知书,例如在你起草申诉时。起草申诉还会发送你所选停车记录的详细信息。我们不保留照片。",
+    "anonymousPush": "<strong>推送提醒</strong>(如果你开启):记录的地址、每条提醒的时间和内容(内容可能提到你输入的许可证时间)会发送到 <strong>ParkProof 的服务器</strong>。服务器会保留每条提醒直到发出,然后删除。",
+    "anonymousPermits": "<strong>你在某次停车中使用的许可证</strong>:它的类型、区域以及你输入的许可证时间会和这条记录保存在一起。为记录签名时,发送的是这些信息的指纹,而不是信息本身,同时还会发送你对许可证问题的回答。在设置里删除许可证不会改变已保存的记录。删除这条记录才会删除这些信息。",
+    "signedInPermits": "记录里保存的<strong>许可证信息</strong>(你在某次停车中使用已保存许可证时的类型、区域以及你输入的许可证时间)会随这条记录存储在 AWS DynamoDB 中。设置里保存的许可证不会上传。删除这条记录就会删除这些信息。"
   },
   "loading": {
     "step1": "正在读取标志…",
@@ -849,7 +891,11 @@
     "pushNotEnabled": "在此设备上启用推送通知以添加在应用关闭时也能触发的提醒。",
     "saving": "正在保存…",
     "errorRetry": "无法更新,请重试",
-    "otherDevice": "这些提醒是在另一台设备上设置的。请在那台设备上更改。"
+    "otherDevice": "这些提醒是在另一台设备上设置的。请在那台设备上更改。",
+    "firesAtStandardEnd": "{{when}}:标准时限结束",
+    "firesAtPermitTime": "{{when}}:你输入的许可证时间结束时",
+    "firesBeforePermitTime_one": "{{when}}:你输入的许可证时间结束前 {{count}} 分钟",
+    "firesBeforePermitTime_other": "{{when}}:你输入的许可证时间结束前 {{count}} 分钟"
   },
   "installPrompt": {
     "available": "安装 ParkProof",
@@ -956,5 +1002,56 @@
     "recordNoSignRead": "未读取标志。ParkProof 在照片里没有找到可读的停车标志,你在没有标志的情况下记录了这次停车。",
     "noSignReadLabel": "未读取标志",
     "remindIntro": "这次停车没有读取到标志,所以没有到期时间可以提醒你。你仍然可以设一个查看提醒。挑一下从现在起多久后提醒,可以多选。"
+  },
+  "prefs": {
+    "header": "设置",
+    "intro": "只保存在这个浏览器里,不会存进你的账户。",
+    "driverNameLabel": "你分享的记录上显示的名字",
+    "driverNameHint": "新的停车记录会把这个名字填为驾驶员。留空就不会填写。",
+    "saveName": "保存名字",
+    "saved": "已保存",
+    "saveFailed": "无法保存。请再试一次。",
+    "permitsHeader": "我的许可证",
+    "permitsIntro": "已保存的许可证会随你扫描或重新检查的每个标志一起发送,这样答案就能包含标志上关于这些许可证的内容。只会发送许可证类型,居民或商户许可证还会附上区域。",
+    "permitsEmpty": "还没有保存许可证。",
+    "addPermit": "添加许可证",
+    "permitsLimit_one": "最多可以保存 {{count}} 个许可证。",
+    "permitsLimit_other": "最多可以保存 {{count}} 个许可证。",
+    "permitTypeLabel": "许可证类型",
+    "permitType": {
+      "accessible": "无障碍停车许可证",
+      "resident": "居民停车许可证",
+      "business": "商户停车许可证"
+    },
+    "issuingStateLabel": "签发的州或领地",
+    "stateNotSet": "未设置",
+    "state": {
+      "VIC": "维多利亚州",
+      "NSW": "新南威尔士州",
+      "QLD": "昆士兰州",
+      "ACT": "澳大利亚首都领地",
+      "SA": "南澳大利亚州",
+      "WA": "西澳大利亚州",
+      "TAS": "塔斯马尼亚州",
+      "NT": "北领地"
+    },
+    "areaLabel": "许可证上的区域",
+    "areaPlaceholder": "例如 Area 25",
+    "expiryLabel": "到期日期",
+    "savePermit": "保存许可证",
+    "accessibleWarning": "保存这个许可证后,你扫描的每张标志照片都会附带发送它的类型,这样答案就能包含标志上关于许可证的内容。无障碍停车许可证的信息属于健康信息。你可以随时删除这些信息。",
+    "accessibleConfirm": "保存这个许可证",
+    "permitArea": "区域:{{area}}",
+    "permitExpires": "{{date}} 到期",
+    "permitExpired": "已于 {{date}} 到期。扫描时不会再发送它。",
+    "deletePermitLabel": "删除{{permit}}",
+    "pushUnsupported": "这个浏览器无法在 ParkProof 关闭时显示提醒。在 iPhone 上,请先把 ParkProof 添加到主屏幕。日历提醒仍然可以使用。",
+    "remindersReliability": "提醒可能会延迟或被静音,例如因为专注模式或省电模式。不要只依赖提醒。",
+    "accountHeader": "账户",
+    "accountCopy": "云同步、导出数据、退出登录和删除账户。",
+    "openAccount": "打开账户",
+    "signInCopy": "登录后可以备份你的记录,并在你的其他设备上查看。这个页面上的设置都不需要账户。",
+    "signIn": "登录",
+    "privacyCta": "打开隐私政策"
   }
 }

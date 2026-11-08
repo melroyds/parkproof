@@ -157,7 +157,7 @@
     "scanCta": "Pindai rambu parkir",
     "scanAnother": "Pindai rambu lain",
     "scanHelp": "Kami akan membaca rambunya, memberitahu kamu bisa parkir sekarang atau tidak, dan menawarkan pengingat sebelum waktunya habis.",
-    "history": "Riwayat sesi",
+    "history": "Riwayat",
     "historyEmpty": "kosong",
     "historyCount_one": "{{count}} tersimpan",
     "historyCount_other": "{{count}} tersimpan",
@@ -169,7 +169,12 @@
       "log": "Foto mobil → catatan bukti bertanda waktu",
       "remind": "Dapatkan pengingat kalender sebelum parkir habis"
     },
-    "draftAppeal": "Kena denda? Buat draf surat banding"
+    "draftAppeal": "Kena denda? Buat draf surat banding",
+    "weeklyReminders": "Penyapuan jalan dan pengingat mingguan",
+    "settings": "Pengaturan",
+    "settingsSignIn": "Masuk untuk sinkronisasi",
+    "startWorkday": "Parkir seharian? Mulai hari kerja",
+    "fineStart": "Kena denda? Mulai di sini"
   },
   "active": {
     "currentlyParked": "SEDANG PARKIR",
@@ -202,7 +207,8 @@
     "expiredHint": "Masih di sini? Pindahkan sekarang. Sudah pindah? Ketuk \"Sudah pergi\".",
     "walkBackAria": "Jalan kembali. Membuka petunjuk jalan kaki ke mobilmu.",
     "walkBackAriaDistance_one": "Jalan kembali. Membuka petunjuk jalan kaki ke mobilmu, berjarak {{distance}}, sekitar {{count}} menit jalan kaki.",
-    "walkBackAriaDistance_other": "Jalan kembali. Membuka petunjuk jalan kaki ke mobilmu, berjarak {{distance}}, sekitar {{count}} menit jalan kaki."
+    "walkBackAriaDistance_other": "Jalan kembali. Membuka petunjuk jalan kaki ke mobilmu, berjarak {{distance}}, sekitar {{count}} menit jalan kaki.",
+    "shareAria": "Bagikan lokasi mobil"
   },
   "scanner": {
     "header": "Pindai rambu parkir",
@@ -295,7 +301,27 @@
     "cantParkOverride": "Menurutmu ini keliru? Kamu tetap bisa mencatat tempat ini sebagai bukti.",
     "cantParkOverrideCta": "Catat saja",
     "firstSaveValue": "Menyimpan berarti menjaga catatan bertanda waktu yang terbukti tak diubah. Inilah buktimu seandainya suatu saat kamu kena denda tidak adil.",
-    "weeklyRestrictionHint": "Rambu ini punya larangan mingguan. Kamu bisa memasang pengingat setelah menyimpan."
+    "weeklyRestrictionHint": "Rambu ini punya larangan mingguan. Kamu bisa memasang pengingat setelah menyimpan.",
+    "permit": {
+      "standardKicker": "Jawaban standar",
+      "kicker": "Dengan izinmu",
+      "signPrints": "Rambu ini mencantumkan pengecualian untuk izin ini:",
+      "checkConditions": "ParkProof hanya membaca apa yang tercetak di rambu. Periksa juga ketentuan di izinmu.",
+      "areaMatch": "Izin yang kamu simpan untuk {{area}} cocok dengan zona ini.",
+      "areaMismatch": "Izin yang kamu simpan berlaku untuk {{area}}. Zona ini adalah Area Izin {{zone}}.",
+      "mayAllowMore": "Menurut aturan {{state}}, izinmu mungkin membolehkan waktu lebih lama. ParkProof tidak menghitungnya. Periksa ketentuan di izinmu atau tanyakan ke dewan kota.",
+      "mayAllowMoreNoState": "Menurut aturan di tempatmu parkir, izinmu mungkin membolehkan waktu lebih lama. ParkProof tidak menghitungnya. Periksa ketentuan di izinmu atau tanyakan ke dewan kota.",
+      "accessibleQuestion": "Pemegang izin ada di mobil bersamaku dan turun di sini, dan izinnya terpasang dan terlihat.",
+      "accessibleNo": "Kalau begitu, izin ini tidak bisa dipakai untuk parkir kali ini. Jangan parkir di tempat parkir aksesibel.",
+      "forThisCarQuestion": "Apakah izin ini untuk mobil ini, dan dipasang di mobil atau terdaftar untuk mobil ini?",
+      "forThisCarNo": "Kalau begitu, izin ini tidak bisa dipakai untuk parkir kali ini. Jangan parkir di zona izin ini tanpa izin yang berlaku untuk zona ini.",
+      "noStandardApplies": "Kalau begitu, izin ini tidak bisa dipakai untuk parkir kali ini. Hanya jawaban standar yang berlaku.",
+      "timeToggle": "Apakah rambu ini memberi izinmu batas waktu yang lebih lama?",
+      "timeLabel": "Waktu izinmu di rambu ini berakhir pukul",
+      "timeHint": "Baca dari rambunya. ParkProof tidak menghitung waktu izin.",
+      "timeSet": "Pengingatmu akan menghitung mundur ke {{time}}, waktu yang kamu isi, ditambah satu pengingat saat batas standar berakhir.",
+      "timeNotLater": "Waktu itu tidak lebih lama dari batas standar, jadi pengingatmu tetap mengikuti batas standar."
+    }
   },
   "logger": {
     "header": "Catat catatan parkir ini",
@@ -394,7 +420,19 @@
     },
     "pushScheduleFailed": "Tidak bisa mengatur pengingat latar belakang. Mungkin cuma akan bunyi saat tab ini terbuka. Ketuk untuk coba lagi.",
     "chipMin_one": "{{count}} mnt",
-    "chipMin_other": "{{count}} mnt"
+    "chipMin_other": "{{count}} mnt",
+    "permitIntro": "Waktu izinmu berlaku sampai <strong>{{when}}</strong>, waktu yang kamu isi dari rambu. Pilih kapan kamu mau diingatkan, sebanyak yang kamu mau.",
+    "permitExtra": "Kamu juga akan mendapat pengingat pukul {{time}}, saat batas standar di rambu ini berakhir.",
+    "permitStandardEnds": "Batas standar di rambu ini berakhir sekarang. Waktu izinmu berlaku sampai {{time}}.",
+    "reliability": "Pengingat bisa tertunda atau dibisukan, misalnya oleh mode Fokus atau penghemat baterai. Jangan hanya mengandalkan pengingat.",
+    "chipAtPermitTime": "Saat waktu izin berakhir",
+    "permitChipLimit_one": "Kamu bisa memilih sampai {{count}} pengingat di sini, ditambah satu saat batas standar berakhir.",
+    "permitChipLimit_other": "Kamu bisa memilih sampai {{count}} pengingat di sini, ditambah satu saat batas standar berakhir.",
+    "permitBodyAt": "Waktu izin yang kamu isi dari rambu berakhir pukul {{time}}. Saatnya memindahkan mobil.",
+    "permitBodyBefore_one": "Waktu izin yang kamu isi dari rambu berakhir pukul {{time}}. Ini pengingat {{count}} menit sebelumnya.",
+    "permitBodyBefore_other": "Waktu izin yang kamu isi dari rambu berakhir pukul {{time}}. Ini pengingat {{count}} menit sebelumnya.",
+    "calendarPermitTitle": "ParkProof: waktu izin yang kamu isi berakhir",
+    "calendarPermitSummary": "Waktu izin yang kamu isi dari rambu berakhir pukul {{time}}. ParkProof tidak menghitung waktu izin."
   },
   "history": {
     "header": "Catatan parkir",
@@ -567,9 +605,9 @@
     "header": "Privasi",
     "lastUpdated": "Terakhir diperbarui: {{date}}",
     "anonymousHeader": "Apa yang kamu berikan saat menggunakan ParkProof tanpa akun",
-    "anonymousIntro": "ParkProof jalan sepenuhnya anonim secara default. Kami tidak mewajibkan masuk, kami tidak menyimpan akun, dan catatan parkir yang kamu buat ada di <code>localStorage</code> browsermu sendiri. Tidak pernah meninggalkan perangkatmu.",
-    "anonymousThings": "Tiga hal meninggalkan perangkatmu, bahkan dalam mode anonim:",
-    "anonymousAnthropic": "<strong>Foto rambu + koordinat GPS</strong> dikirim ke <strong>Anthropic</strong> (Claude vision) untuk menerjemahkan rambunya. Kami tidak menyimpannya di sisi server; kebijakan penyimpanan Anthropic yang berlaku.",
+    "anonymousIntro": "ParkProof bisa dipakai tanpa akun. Catatanmu disimpan di browser ini. Untuk menandatangani catatan, ponselmu mengirim detailnya (waktu, lokasi, apa yang kamu isi, dan sidik jari foto, bukan fotonya) ke server ParkProof, yang menandatanganinya dan tidak menyimpan salinannya.",
+    "anonymousThings": "Hal-hal ini juga meninggalkan perangkatmu, bahkan tanpa akun:",
+    "anonymousAnthropic": "<strong>Setiap foto rambu yang kamu pindai</strong> dikirim ke <strong>Anthropic</strong> (Claude) untuk membaca rambunya, bersama lokasinya dan jenis setiap izin yang kamu simpan (ditambah area atau zona untuk izin penghuni atau usaha). Cek ulang mengirim hasil bacaan sebelumnya, bukan fotonya. Kami tidak menyimpan foto atau lokasinya. Jawabannya, yang bisa menyebut jenis izinmu, disimpan sebentar di server kami supaya ponselmu bisa mengambilnya. Kebijakan penyimpanan Anthropic yang berlaku.",
     "anonymousNominatim": "<strong>Koordinat GPS</strong> dikirim ke <strong>OpenStreetMap Nominatim</strong> untuk menyelesaikan alamat jalan. Nominatim tidak memerlukan kunci dan menerapkan kebijakan penyimpanan publiknya.",
     "anonymousCloudwatch": "<strong>UUID acak per hasil</strong> + putusan \"benar / foto ulang\" dicatat ke <strong>AWS CloudWatch</strong> saat kamu ketuk kartu verifikasi. Tanpa PII; sinyal agregat untuk penyetelan prompt.",
     "signedInHeader": "Apa yang kamu berikan saat masuk",
@@ -603,7 +641,11 @@
     "verifyLinkLabel": "Lihat cara memverifikasi catatan →",
     "contactHeader": "Kontak + keluhan",
     "contactCopy": "Untuk pertanyaan atau untuk menggunakan hakmu di luar kontrol dalam aplikasi, email <a>hello@parkproof.com.au</a>.",
-    "complaintCopy": "Tidak puas dengan respons kami? Kamu bisa mengeluh ke <a>Office of the Australian Information Commissioner (OAIC)</a>."
+    "complaintCopy": "Tidak puas dengan respons kami? Kamu bisa mengeluh ke <a>Office of the Australian Information Commissioner (OAIC)</a>.",
+    "anonymousFineNotice": "<strong>Foto surat denda</strong> (denda parkir) dikirim ke <strong>Anthropic</strong> untuk membaca suratnya, misalnya saat kamu menyusun banding. Menyusun banding juga mengirim detail catatan parkir yang kamu pilih. Kami tidak menyimpan fotonya.",
+    "anonymousPush": "<strong>Pengingat push</strong>, kalau kamu menyalakannya: alamat catatan, waktu setiap pengingat dan isinya (yang bisa menyebut waktu izin yang kamu isi) dikirim ke <strong>server ParkProof</strong>, yang menyimpan setiap pengingat sampai terkirim, lalu menghapusnya.",
+    "anonymousPermits": "<strong>Izin yang kamu pakai untuk suatu parkir</strong>: jenisnya, area atau zonanya, dan waktu izin yang kamu isi disimpan bersama catatan itu. Saat catatan ditandatangani, yang dikirim adalah sidik jari detail ini, bukan detailnya, bersama jawabanmu atas pertanyaan tentang izin. Menghapus izin di Pengaturan tidak mengubah catatan yang sudah disimpan. Menghapus catatannya akan menghapus detail ini.",
+    "signedInPermits": "<strong>Detail izin</strong> yang disimpan bersama catatan (jenis, area atau zona, dan waktu izin yang kamu isi, untuk parkir yang memakai izin tersimpan) disimpan bersama catatan itu di AWS DynamoDB. Izin yang kamu simpan di Pengaturan tidak. Menghapus catatannya akan menghapus detail ini."
   },
   "loading": {
     "step1": "Membaca rambu…",
@@ -849,7 +891,11 @@
     "pushNotEnabled": "Aktifkan notifikasi push di perangkat ini untuk menambah pengingat yang menyala saat aplikasi tertutup.",
     "saving": "Menyimpan…",
     "errorRetry": "Tidak bisa memperbarui — coba lagi",
-    "otherDevice": "Pengingat ini diatur di perangkat lain. Ubah di perangkat itu."
+    "otherDevice": "Pengingat ini diatur di perangkat lain. Ubah di perangkat itu.",
+    "firesAtStandardEnd": "{{when}}: batas standar berakhir",
+    "firesAtPermitTime": "{{when}}: saat waktu izin yang kamu isi berakhir",
+    "firesBeforePermitTime_one": "{{when}}: {{count}} menit sebelum waktu izin yang kamu isi berakhir",
+    "firesBeforePermitTime_other": "{{when}}: {{count}} menit sebelum waktu izin yang kamu isi berakhir"
   },
   "installPrompt": {
     "available": "Pasang ParkProof",
@@ -956,5 +1002,56 @@
     "recordNoSignRead": "Tidak ada rambu yang terbaca. ParkProof tidak menemukan rambu parkir yang bisa dibaca di foto, dan kamu mencatat parkir ini tanpa rambu.",
     "noSignReadLabel": "Tidak ada rambu yang terbaca",
     "remindIntro": "Tidak ada rambu yang terbaca untuk parkir ini, jadi tidak ada waktu berakhir untuk diingatkan. Kamu tetap bisa minta pengingat untuk mengecek. Pilih berapa lama lagi dari sekarang, sebanyak yang kamu mau."
+  },
+  "prefs": {
+    "header": "Pengaturan",
+    "intro": "Hanya disimpan di browser ini, tidak di akunmu.",
+    "driverNameLabel": "Namamu di catatan yang kamu bagikan",
+    "driverNameHint": "Catatan parkir baru mencantumkan nama ini sebagai pengemudi. Kosongkan kalau tidak mau dicantumkan.",
+    "saveName": "Simpan nama",
+    "saved": "Tersimpan",
+    "saveFailed": "Gagal menyimpan. Coba lagi.",
+    "permitsHeader": "Izin saya",
+    "permitsIntro": "Izin yang tersimpan dikirim bersama setiap rambu yang kamu pindai atau cek ulang, supaya jawabannya bisa menyebut apa yang tertulis di rambu tentang izin itu. Hanya jenis izin yang dikirim, ditambah area atau zona untuk izin penghuni atau usaha.",
+    "permitsEmpty": "Belum ada izin yang disimpan.",
+    "addPermit": "Tambah izin",
+    "permitsLimit_one": "Kamu bisa menyimpan paling banyak {{count}} izin.",
+    "permitsLimit_other": "Kamu bisa menyimpan paling banyak {{count}} izin.",
+    "permitTypeLabel": "Jenis izin",
+    "permitType": {
+      "accessible": "Izin parkir aksesibel",
+      "resident": "Izin parkir penghuni",
+      "business": "Izin parkir usaha"
+    },
+    "issuingStateLabel": "Negara bagian atau wilayah penerbit",
+    "stateNotSet": "Belum dipilih",
+    "state": {
+      "VIC": "Victoria",
+      "NSW": "New South Wales",
+      "QLD": "Queensland",
+      "ACT": "Wilayah Ibu Kota Australia",
+      "SA": "Australia Selatan",
+      "WA": "Australia Barat",
+      "TAS": "Tasmania",
+      "NT": "Wilayah Utara"
+    },
+    "areaLabel": "Area atau zona di izin",
+    "areaPlaceholder": "Contoh: Area 25",
+    "expiryLabel": "Tanggal kedaluwarsa",
+    "savePermit": "Simpan izin",
+    "accessibleWarning": "Menyimpan izin ini berarti jenisnya dikirim bersama setiap foto rambu yang kamu pindai, supaya jawabannya bisa menyebut apa yang tertulis di rambu tentang izin. Detail izin parkir aksesibel adalah informasi kesehatan. Kamu bisa menghapusnya kapan saja.",
+    "accessibleConfirm": "Simpan izin ini",
+    "permitArea": "Area atau zona: {{area}}",
+    "permitExpires": "Berlaku sampai {{date}}",
+    "permitExpired": "Kedaluwarsa sejak {{date}}. Izin ini tidak dikirim saat kamu memindai.",
+    "deletePermitLabel": "Hapus {{permit}}",
+    "pushUnsupported": "Browser ini tidak bisa menampilkan pengingat saat ParkProof ditutup. Di iPhone, tambahkan ParkProof ke Layar Utama dulu. Pengingat kalender tetap berfungsi.",
+    "remindersReliability": "Pengingat bisa tertunda atau dibisukan, misalnya oleh mode Fokus atau penghemat baterai. Jangan hanya mengandalkan pengingat.",
+    "accountHeader": "Akun",
+    "accountCopy": "Sinkronisasi cloud, ekspor data, keluar, dan menghapus akun.",
+    "openAccount": "Buka akun",
+    "signInCopy": "Masuk untuk mencadangkan catatanmu dan melihatnya di perangkatmu yang lain. Semua yang ada di halaman ini bisa dipakai tanpa akun.",
+    "signIn": "Masuk",
+    "privacyCta": "Buka kebijakan privasi"
   }
 }

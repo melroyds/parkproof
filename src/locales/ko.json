@@ -157,7 +157,7 @@
     "scanCta": "주차 표지판 스캔",
     "scanAnother": "다른 표지판 스캔",
     "scanHelp": "표지판을 읽고, 지금 주차 가능한지 알려드리고, 시간이 끝나기 전에 알림을 제공합니다.",
-    "history": "세션 기록",
+    "history": "주차 기록",
     "historyEmpty": "비어 있음",
     "historyCount_one": "{{count}}개 저장됨",
     "historyCount_other": "{{count}}개 저장됨",
@@ -169,7 +169,12 @@
       "log": "차량 사진 → 타임스탬프가 찍힌 증거 기록",
       "remind": "주차 만료 전 캘린더 알림 받기"
     },
-    "draftAppeal": "벌금을 받았나요? 이의신청서 작성"
+    "draftAppeal": "벌금을 받았나요? 이의신청서 작성",
+    "weeklyReminders": "거리 청소 및 매주 알림",
+    "settings": "설정",
+    "settingsSignIn": "동기화하려면 로그인",
+    "startWorkday": "하루 종일 주차하나요? 근무일 시작하기",
+    "fineStart": "벌금을 받았나요? 여기서 시작하세요"
   },
   "active": {
     "currentlyParked": "현재 주차 중",
@@ -202,7 +207,8 @@
     "expiredHint": "아직 주차 중인가요? 지금 차를 옮기세요. 이미 옮겼나요? \"떠났습니다\"를 누르세요.",
     "walkBackAria": "걸어 돌아가기. 차까지 가는 도보 경로를 엽니다.",
     "walkBackAriaDistance_one": "걸어 돌아가기. 차까지 가는 도보 경로를 엽니다. {{distance}} 거리, 걸어서 약 {{count}}분.",
-    "walkBackAriaDistance_other": "걸어 돌아가기. 차까지 가는 도보 경로를 엽니다. {{distance}} 거리, 걸어서 약 {{count}}분."
+    "walkBackAriaDistance_other": "걸어 돌아가기. 차까지 가는 도보 경로를 엽니다. {{distance}} 거리, 걸어서 약 {{count}}분.",
+    "shareAria": "차량 위치 공유"
   },
   "scanner": {
     "header": "주차 표지판 스캔",
@@ -295,7 +301,27 @@
     "cantParkOverride": "이게 틀렸다고 생각하시나요? 그래도 이 자리를 증거로 기록할 수 있습니다.",
     "cantParkOverrideCta": "그래도 기록하기",
     "firstSaveValue": "저장해두면 타임스탬프가 찍힌, 변조 여부를 입증할 수 있는 기록이 남습니다. 부당하게 벌금을 받았을 때 당신의 증거가 됩니다.",
-    "weeklyRestrictionHint": "이 표지판에는 매주 반복되는 제한이 있습니다. 저장한 뒤 알림을 설정할 수 있습니다."
+    "weeklyRestrictionHint": "이 표지판에는 매주 반복되는 제한이 있습니다. 저장한 뒤 알림을 설정할 수 있습니다.",
+    "permit": {
+      "standardKicker": "일반 기준 답변",
+      "kicker": "내 허가증으로",
+      "signPrints": "표지판에 이 허가증에 대한 예외가 적혀 있습니다:",
+      "checkConditions": "ParkProof는 표지판에 적힌 내용만 읽습니다. 허가증의 사용 조건도 확인하세요.",
+      "areaMatch": "저장한 {{area}} 허가증이 이 구역과 일치합니다.",
+      "areaMismatch": "저장한 허가증은 {{area}}용입니다. 이 구역은 허가 구역 {{zone}}입니다.",
+      "mayAllowMore": "{{state}} 규정에 따라 허가증으로 더 오래 주차할 수 있을지도 모릅니다. ParkProof는 이를 계산하지 않습니다. 허가증의 조건을 확인하거나 의회에 문의하세요.",
+      "mayAllowMoreNoState": "주차한 곳의 규정에 따라 허가증으로 더 오래 주차할 수 있을지도 모릅니다. ParkProof는 이를 계산하지 않습니다. 허가증의 조건을 확인하거나 의회에 문의하세요.",
+      "accessibleQuestion": "허가증 소지자가 저와 함께 차에 타고 있고 여기서 내리며, 그 허가증이 보이게 놓여 있습니다.",
+      "accessibleNo": "그렇다면 이번 주차에는 허가증을 사용할 수 없습니다. 장애인 주차 구역에 주차하지 마세요.",
+      "forThisCarQuestion": "이 허가증이 이 차량용이며, 차량에 보이게 놓여 있거나 이 차량으로 등록되어 있나요?",
+      "forThisCarNo": "그렇다면 이번 주차에는 허가증을 사용할 수 없습니다. 이 허가 구역에 유효한 허가증 없이 주차하지 마세요.",
+      "noStandardApplies": "그렇다면 이번 주차에는 허가증을 사용할 수 없습니다. 일반 기준 답변만 적용됩니다.",
+      "timeToggle": "표지판에 허가증 소지자를 위한 더 늦은 시간이 적혀 있나요?",
+      "timeLabel": "이 표지판에서 허가증 주차 시간이 끝나는 시각",
+      "timeHint": "표지판을 보고 입력하세요. ParkProof는 허가증 주차 시간을 계산하지 않습니다.",
+      "timeSet": "알림은 입력한 시각 {{time}}까지를 기준으로 하며, 일반 기준 시간이 끝날 때 한 번 더 알려 드립니다.",
+      "timeNotLater": "그 시각은 일반 기준 시간보다 늦지 않으므로 알림은 일반 기준 시간에 맞춰집니다."
+    }
   },
   "logger": {
     "header": "이 주차 기록 남기기",
@@ -394,7 +420,19 @@
     },
     "pushScheduleFailed": "백그라운드 알림을 설정할 수 없었습니다. 이 탭이 열려 있을 때만 울릴 수 있습니다. 다시 시도하려면 누르세요.",
     "chipMin_one": "{{count}}분",
-    "chipMin_other": "{{count}}분"
+    "chipMin_other": "{{count}}분",
+    "permitIntro": "허가증 주차 시간은 표지판을 보고 입력한 <strong>{{when}}</strong>까지입니다. 언제 알림을 받을지 고르세요. 원하는 만큼 여러 개 선택해도 됩니다.",
+    "permitExtra": "{{time}}, 이 표지판의 일반 기준 시간이 끝날 때도 알림을 받습니다.",
+    "permitStandardEnds": "이 표지판의 일반 기준 시간이 지금 끝납니다. 허가증 주차 시간은 {{time}}까지입니다.",
+    "reliability": "알림은 집중 모드나 배터리 절약 등으로 늦어지거나 무음이 될 수 있습니다. 알림에만 의존하지 마세요.",
+    "chipAtPermitTime": "허가증 시간 종료 시점",
+    "permitChipLimit_one": "여기서는 알림을 최대 {{count}}개까지 고를 수 있으며, 일반 기준 시간이 끝날 때의 알림이 따로 하나 더 있습니다.",
+    "permitChipLimit_other": "여기서는 알림을 최대 {{count}}개까지 고를 수 있으며, 일반 기준 시간이 끝날 때의 알림이 따로 하나 더 있습니다.",
+    "permitBodyAt": "표지판을 보고 입력한 허가증 주차 시간이 {{time}}에 끝납니다. 이제 차를 옮길 시간입니다.",
+    "permitBodyBefore_one": "표지판을 보고 입력한 허가증 주차 시간이 {{time}}에 끝납니다. {{count}}분 전 알림입니다.",
+    "permitBodyBefore_other": "표지판을 보고 입력한 허가증 주차 시간이 {{time}}에 끝납니다. {{count}}분 전 알림입니다.",
+    "calendarPermitTitle": "ParkProof: 입력한 허가증 주차 시간 종료",
+    "calendarPermitSummary": "표지판을 보고 입력한 허가증 주차 시간이 {{time}}에 끝납니다. ParkProof는 허가증 주차 시간을 계산하지 않습니다."
   },
   "history": {
     "header": "주차 기록",
@@ -567,9 +605,9 @@
     "header": "개인정보",
     "lastUpdated": "마지막 업데이트: {{date}}",
     "anonymousHeader": "계정 없이 ParkProof를 사용할 때 제공하는 정보",
-    "anonymousIntro": "ParkProof는 기본적으로 완전히 익명으로 작동합니다. 로그인을 요구하지 않으며, 계정을 기록하지 않으며, 남기는 주차 기록은 자체 브라우저의 <code>localStorage</code>에 있습니다. 기기를 떠나지 않습니다.",
-    "anonymousThings": "세 가지가 익명 모드에서도 기기를 떠납니다:",
-    "anonymousAnthropic": "<strong>표지판 사진 + GPS 좌표</strong>는 <strong>Anthropic</strong> (Claude 비전)으로 보내져 표지판을 번역합니다. 서버 측에 저장하지 않습니다. Anthropic의 보관 정책이 적용됩니다.",
+    "anonymousIntro": "ParkProof는 계정 없이도 작동합니다. 기록은 이 브라우저에 저장됩니다. 기록에 서명하기 위해 휴대폰이 기록의 세부 정보(시간, 위치, 입력한 내용, 그리고 사진 자체가 아닌 사진 지문)를 ParkProof 서버로 보내며, 서버는 서명한 뒤 사본을 보관하지 않습니다.",
+    "anonymousThings": "계정이 없어도 다음 항목은 기기 밖으로 전송됩니다:",
+    "anonymousAnthropic": "<strong>스캔하는 표지판 사진</strong>은 표지판을 읽기 위해 <strong>Anthropic</strong>(Claude)으로 전송되며, 촬영 위치와 저장한 허가증의 종류(거주자 또는 사업자 허가증은 구역 포함)도 함께 전송됩니다. 다시 확인할 때는 사진 대신 이전 판독 결과가 전송됩니다. 사진과 위치는 보관하지 않습니다. 허가증 종류가 언급될 수 있는 답은 휴대폰이 가져갈 수 있도록 서버에 잠시 보관됩니다. Anthropic의 보관 정책이 적용됩니다.",
     "anonymousNominatim": "<strong>GPS 좌표</strong>는 <strong>OpenStreetMap Nominatim</strong>으로 보내져 거리 주소를 확인합니다. Nominatim은 키가 필요하지 않으며 공개 보관 정책을 적용합니다.",
     "anonymousCloudwatch": "<strong>임의의 결과별 UUID</strong> + \"맞음 / 다시 찍기\" 판정이 확인 카드를 누를 때 <strong>AWS CloudWatch</strong>에 기록됩니다. PII 없음. 프롬프트 튜닝을 위한 집계 신호.",
     "signedInHeader": "로그인할 때 제공하는 정보",
@@ -603,7 +641,11 @@
     "verifyLinkLabel": "기록 검증 방법 보기 →",
     "contactHeader": "연락처 + 불만",
     "contactCopy": "질문이나 앱 내 컨트롤 외부에서 권리를 행사하려면 <a>hello@parkproof.com.au</a>로 이메일을 보내주세요.",
-    "complaintCopy": "응답에 불만족스러우신가요? <a>Office of the Australian Information Commissioner (OAIC)</a>에 불만을 제기할 수 있습니다."
+    "complaintCopy": "응답에 불만족스러우신가요? <a>Office of the Australian Information Commissioner (OAIC)</a>에 불만을 제기할 수 있습니다.",
+    "anonymousFineNotice": "<strong>위반 통지서 사진</strong>(주차 벌금)은 통지서를 읽기 위해 <strong>Anthropic</strong>으로 전송됩니다. 예를 들어 이의신청서를 작성할 때입니다. 이의신청서를 작성하면 선택한 주차 기록의 세부 정보도 함께 전송됩니다. 사진은 보관하지 않습니다.",
+    "anonymousPush": "<strong>푸시 알림</strong>을 켜면 기록의 주소, 각 알림의 시간과 내용(입력한 허가증 주차 시간이 언급될 수 있음)이 <strong>ParkProof 서버</strong>로 전송됩니다. 서버는 각 알림을 보낼 때까지 보관한 뒤 삭제합니다.",
+    "anonymousPermits": "<strong>주차에 사용한 허가증</strong>: 허가증 종류, 구역, 입력한 허가증 주차 시간이 그 기록과 함께 보관됩니다. 기록에 서명할 때는 이 세부 정보 자체가 아니라 그 지문이 전송되며, 허가증 질문에 대한 답도 함께 전송됩니다. 설정에서 허가증을 삭제해도 이미 저장된 기록은 바뀌지 않습니다. 기록을 삭제하면 이 정보도 삭제됩니다.",
+    "signedInPermits": "기록과 함께 보관되는 <strong>허가증 세부 정보</strong>(저장한 허가증을 사용한 주차의 허가증 종류, 구역, 입력한 허가증 주차 시간)는 그 기록과 함께 AWS DynamoDB에 저장됩니다. 설정에 저장한 허가증은 저장되지 않습니다. 기록을 삭제하면 이 정보도 삭제됩니다."
   },
   "loading": {
     "step1": "표지판 읽는 중…",
@@ -849,7 +891,11 @@
     "pushNotEnabled": "앱이 닫혀 있을 때도 작동하는 알림을 추가하려면 이 기기에서 푸시 알림을 활성화하세요.",
     "saving": "저장 중…",
     "errorRetry": "업데이트할 수 없음 — 다시 시도",
-    "otherDevice": "이 알림은 다른 기기에서 설정되었습니다. 해당 기기에서 변경하세요."
+    "otherDevice": "이 알림은 다른 기기에서 설정되었습니다. 해당 기기에서 변경하세요.",
+    "firesAtStandardEnd": "{{when}}: 일반 기준 시간 종료",
+    "firesAtPermitTime": "{{when}}: 입력한 허가증 주차 시간 종료 시점",
+    "firesBeforePermitTime_one": "{{when}}: 입력한 허가증 주차 시간 종료 {{count}}분 전",
+    "firesBeforePermitTime_other": "{{when}}: 입력한 허가증 주차 시간 종료 {{count}}분 전"
   },
   "installPrompt": {
     "available": "ParkProof 설치",
@@ -956,5 +1002,56 @@
     "recordNoSignRead": "읽은 표지판 없음. ParkProof가 사진에서 읽을 수 있는 주차 표지판을 찾지 못했습니다. 이번 주차는 표지판 없이 직접 기록했습니다.",
     "noSignReadLabel": "읽은 표지판 없음",
     "remindIntro": "이번 주차에서는 읽은 표지판이 없어서 알려 드릴 만료 시간이 없습니다. 그래도 확인 알림은 받을 수 있어요. 지금부터 얼마 뒤에 받을지 고르세요. 원하는 만큼 선택해도 됩니다."
+  },
+  "prefs": {
+    "header": "설정",
+    "intro": "이 브라우저에만 저장되며 계정에는 저장되지 않습니다.",
+    "driverNameLabel": "공유하는 기록에 표시될 이름",
+    "driverNameHint": "새 주차 기록에 이 이름이 운전자로 표시됩니다. 표시하지 않으려면 비워 두세요.",
+    "saveName": "이름 저장",
+    "saved": "저장됨",
+    "saveFailed": "저장하지 못했습니다. 다시 시도해 주세요.",
+    "permitsHeader": "내 허가증",
+    "permitsIntro": "저장한 허가증은 스캔하거나 다시 확인하는 표지판마다 함께 전송되어, 답에 표지판이 그 허가증에 대해 적은 내용이 포함될 수 있습니다. 허가증 종류만 전송되며, 거주자 또는 사업자 허가증은 구역도 함께 전송됩니다.",
+    "permitsEmpty": "저장된 허가증이 없습니다.",
+    "addPermit": "허가증 추가",
+    "permitsLimit_one": "허가증은 최대 {{count}}개까지 저장할 수 있습니다.",
+    "permitsLimit_other": "허가증은 최대 {{count}}개까지 저장할 수 있습니다.",
+    "permitTypeLabel": "허가증 종류",
+    "permitType": {
+      "accessible": "장애인 주차 허가증",
+      "resident": "거주자 주차 허가증",
+      "business": "사업자 주차 허가증"
+    },
+    "issuingStateLabel": "발급한 주 또는 준주",
+    "stateNotSet": "선택 안 함",
+    "state": {
+      "VIC": "빅토리아주",
+      "NSW": "뉴사우스웨일스주",
+      "QLD": "퀸즐랜드주",
+      "ACT": "오스트레일리아 수도 준주",
+      "SA": "사우스오스트레일리아주",
+      "WA": "웨스턴오스트레일리아주",
+      "TAS": "태즈메이니아주",
+      "NT": "노던 준주"
+    },
+    "areaLabel": "허가증에 적힌 구역",
+    "areaPlaceholder": "예: Area 25",
+    "expiryLabel": "만료일",
+    "savePermit": "허가증 저장",
+    "accessibleWarning": "이 허가증을 저장하면 스캔하는 표지판 사진마다 허가증 종류가 함께 전송되어, 답에 표지판이 허가증에 대해 적은 내용이 포함될 수 있습니다. 장애인 주차 허가증 정보는 건강 정보입니다. 언제든지 삭제할 수 있습니다.",
+    "accessibleConfirm": "이 허가증 저장",
+    "permitArea": "구역: {{area}}",
+    "permitExpires": "{{date}} 만료",
+    "permitExpired": "{{date}}에 만료되었습니다. 스캔할 때 전송되지 않습니다.",
+    "deletePermitLabel": "{{permit}} 삭제",
+    "pushUnsupported": "이 브라우저에서는 ParkProof가 닫혀 있을 때 알림을 표시할 수 없습니다. iPhone에서는 먼저 ParkProof를 홈 화면에 추가하세요. 캘린더 알림은 계속 사용할 수 있습니다.",
+    "remindersReliability": "알림은 집중 모드나 배터리 절약 등으로 늦어지거나 무음이 될 수 있습니다. 알림에만 의존하지 마세요.",
+    "accountHeader": "계정",
+    "accountCopy": "클라우드 동기화, 데이터 내보내기, 로그아웃, 계정 삭제.",
+    "openAccount": "계정 열기",
+    "signInCopy": "로그인하면 기록을 백업하고 다른 기기에서도 볼 수 있습니다. 이 페이지의 설정은 계정 없이도 사용할 수 있습니다.",
+    "signIn": "로그인",
+    "privacyCta": "개인정보 정책 열기"
   }
 }

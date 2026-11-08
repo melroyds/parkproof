@@ -340,6 +340,35 @@ export interface LogDraft {
   driver_name: string | null
 }
 
+/**
+ * A permit the driver saved in Settings (T4). Kept in this browser only
+ * (`parkproof.profile.v1`), never synced. Only `type`, and `area` for a
+ * resident or business permit, is sent to the sign reader, and only while
+ * the permit hasn't expired (see src/lib/profile.ts).
+ */
+export interface SavedPermit {
+  /** Local id (uuid), for editing and deleting. */
+  id: string
+  type: UserPermitType
+  /** The state or territory that issued it; null when not given. */
+  state: Jurisdiction | null
+  /**
+   * The area or zone label as printed on the permit, e.g. "Area 25". Always
+   * null for an accessible permit, which isn't tied to an area.
+   */
+  area: string | null
+  /** The expiry date printed on the permit, 'YYYY-MM-DD'; null when not given. */
+  expires_on: string | null
+}
+
+/** What Settings keeps about the driver (T4). Stored in this browser only. */
+export interface DriverProfile {
+  /** "Your name on records you share": new records start with it as the driver. At most 60 characters. */
+  driver_name: string | null
+  /** At most 3 (the sign reader's limit). */
+  permits: SavedPermit[]
+}
+
 export interface AppealDraft {
   ticket_summary: string
   appeal_subject: string

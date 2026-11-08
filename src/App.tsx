@@ -13,6 +13,7 @@ import ActiveSessionCard from './components/ActiveSessionCard'
 import ActiveSessionsList from './components/ActiveSessionsList'
 import AuthFlow from './components/AuthFlow'
 import AuthSettings from './components/AuthSettings'
+import Settings from './components/Settings'
 import PrivacyPolicy from './components/PrivacyPolicy'
 import FeedbackModal from './components/FeedbackModal'
 import DepartureSheet from './components/DepartureSheet'
@@ -23,6 +24,7 @@ import BrandMark from './components/BrandMark'
 import Icon from './components/Icon'
 import LoadingProgress from './components/LoadingProgress'
 import NoReadableSign from './components/NoReadableSign'
+import HomeMenu from './components/HomeMenu'
 import { refreshInterpretation, translateSign } from './lib/claude'
 import {
   deleteSession,
@@ -31,6 +33,7 @@ import {
   isDuplicateRecordError,
   isStorageFullError,
   loadActiveSessions,
+  loadProfile,
   loadSessionIdsForGc,
   loadSessions,
   notifyRecordsChanged,
@@ -50,6 +53,7 @@ import { useRecordsVersion } from './lib/use-records-version'
 import {
   holdAddendumSigning,
   installSigningTriggers,
+  permitCommitmentFor,
   prepareNewRecord,
   releaseAddendumSigning,
   runSigningSweep,
@@ -57,7 +61,10 @@ import {
   setSignedRecordListener,
   signNewRecord,
 } from './lib/signing'
-import { emptyLogDraft } from './lib/evidence-chain'
+import { applyLogDraftDefaults } from './lib/evidence-chain'
+import { logDraftFromProfile, signReaderExtras, usablePermits } from './lib/profile'
+import { withResultAnswers } from './lib/permit-answer'
+import { parkingStateForCoords, parkingStateForRecord } from './lib/parking-state'
 import {
   applyRefreshOverride,
   mergeChosenVariant,
@@ -139,8 +146,15 @@ type View =
   | { name: 'session'; session: ParkingSession }
   | { name: 'appeal'; session: ParkingSession | null }
   | { name: 'signin' }
+  /**
+   * Settings (T4): the driver's name, saved permits and notifications.
+   * Works without an account and links to Account when signed in.
+   */
   | { name: 'settings' }
-  | { name: 'privacy' }
+  /** Account (AuthSettings): cloud sync, export, sign out, delete. Signed in only. */
+  | { name: 'account' }
+  /** `back`: the screen the policy was opened from, when not home. */
+  | { name: 'privacy'; back?: 'settings' | 'account' }
   | { name: 'about' }
   | { name: 'error'; message: string; offline?: boolean }
 
@@ -445,8 +459,13 @@ function App() {
     setView({ name: 'loading' })
     try {
       const base64 = stripDataUrlPrefix(dataUrl)
-      const result = await translateSign(base64, mediaType, coords)
-      const draft = emptyLogDraft()
+      // The driver's saved permits (type, and the area of a resident or
+      // business permit) and the state the car is parked in, when the
+      // coordinates place it without doubt (T4 item 3).
+      const profile = loadProfile()
+      const result = await translateSign(base64, mediaType, coords, signReaderExtras(profile, parkingStateForCoords(coords)))
+      // The new record's driver defaults to the name saved in Settings.
+      const draft = logDraftFromProfile(profile)
       // 'missing' and 'not_a_parking_sign' have no answer to show (T3).
       setView(scanViewFor(viewForReading(result), { result, signPhoto: dataUrl, signPhotoMeta, coords, draft }))
     } catch (err) {
@@ -502,8 +521,14 @@ function App() {
     setView({ name: 'loading' })
     try {
       // The earlier reading, with what it saw in the photo (T3: the sign's
-      // condition and the area flag), which the server echoes back.
-      const fresh = await refreshInterpretation(refreshPriorOf(session), session.location)
+      // condition and the area flag), which the server echoes back, and the
+      // driver's saved permits and the record's state (T4 item 3).
+      const profile = loadProfile()
+      const fresh = await refreshInterpretation(
+        refreshPriorOf(session),
+        session.location,
+        signReaderExtras(profile, parkingStateForRecord(session)),
+      )
       // Trust the model only for current-time fields. Everything else is the
       // user-verified prior reading — we don't want the model to "re-creatively"
       // change observations, rules text, the chosen variant, or what the
@@ -516,7 +541,13 @@ function App() {
         ? { lat: session.location.lat, lng: session.location.lng }
         : null
       setView(
-        scanViewFor(viewForReading(result), { result, signPhoto, signPhotoMeta, coords: reusedCoords, draft: emptyLogDraft() }),
+        scanViewFor(viewForReading(result), {
+          result,
+          signPhoto,
+          signPhotoMeta,
+          coords: reusedCoords,
+          draft: logDraftFromProfile(profile),
+        }),
       )
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err)
@@ -528,7 +559,16 @@ function App() {
     // The record's chain key and link-0 photo hashes are set at save, so
     // link 0 can always be signed later even if the photos are gone. Never
     // throws; without hashes, link 0 hashes the photos when it signs.
-    const session = await prepareNewRecord(logged)
+    // A record that doesn't say who was driving takes the draft's driver
+    // (the name saved in Settings, T4 item 7), which link 1 then signs.
+    // The draft also brings the result screen's gate answers and the permit
+    // the driver confirmed (T4 items 4 to 6); prepareNewRecord gives a
+    // permit its salt.
+    const session = await prepareNewRecord(applyLogDraftDefaults(logged, draft))
+    // N3: link 1 signs only a commitment to the permit details, never the
+    // details. Worked out before the save, so nothing waits between the
+    // save and queueing link 1. Null when no permit was used.
+    const permitCommitment = await permitCommitmentFor(session)
     try {
       // If quota recovery had to strip or evict older records to fit, the
       // storage-recovered listener above tells the driver. We don't block
@@ -569,7 +609,7 @@ function App() {
       // bundle lands in storage (records-changed re-renders the screens) and
       // the signed-record listener mirrors it to the cloud when signed in.
       // A closed tab or a network failure is picked up by the sweep.
-      signNewRecord(session.id, draft)
+      signNewRecord(session.id, draft, { permit_commitment: permitCommitment })
     } catch (err) {
       // The same record saved twice (a repeated save of one logger): the
       // record IS saved, so leave it, and its photos, alone, and move on as
@@ -778,9 +818,11 @@ function App() {
           noSignReading={view.unread?.reading ?? null}
           coords={view.coords}
           // The no-sign path has no scan views to carry a draft, so its
-          // arrival_context starts from an empty one. From the "no readable
-          // sign" screen it is that scan's draft.
-          onComplete={(session) => void handleSessionSaved(session, view.unread?.back.draft ?? emptyLogDraft())}
+          // arrival_context starts from a fresh one (only the driver saved in
+          // Settings). From the "no readable sign" screen it is that scan's draft.
+          onComplete={(session) =>
+            void handleSessionSaved(session, view.unread?.back.draft ?? logDraftFromProfile(loadProfile()))
+          }
           onCancel={() => setView(view.unread ? view.unread.back : { name: 'home' })}
         />
       </main>
@@ -871,18 +913,26 @@ function App() {
           signPhoto={view.signPhoto}
           coords={view.coords}
           onScanAnother={() => setView({ name: 'scan' })}
-          onLogSession={() =>
+          // The gate answers and the permit the driver confirmed (T4) go
+          // into the draft, and from there onto the record and link 1.
+          onLogSession={(answers) =>
             setView({
               name: 'logging',
               result: view.result,
               signPhoto: view.signPhoto,
               signPhotoMeta: view.signPhotoMeta,
               coords: view.coords,
-              draft: view.draft,
+              draft: withResultAnswers(view.draft, answers),
             })
           }
           onRetake={() => setView({ name: 'scan' })}
           isFirstSave={loadSessions().length === 0}
+          // The saved permits the scan was read with (T4 item 4), and the
+          // state for "under {{state}} rules", only when the coordinates
+          // place it for sure. Seam: once T6a lands, the reverse-geocoded
+          // jurisdiction can take over here too.
+          permits={usablePermits(loadProfile())}
+          parkingState={parkingStateForCoords(view.coords)}
         />
       </main>
     )
@@ -1003,9 +1053,22 @@ function App() {
   if (view.name === 'settings') {
     return (
       <main className="min-h-screen">
-        <AuthSettings
+        <Settings
           onBack={() => setView({ name: 'home' })}
-          onOpenPrivacy={() => setView({ name: 'privacy' })}
+          onOpenAccount={() => setView({ name: 'account' })}
+          onSignIn={() => setView({ name: 'signin' })}
+          onOpenPrivacy={() => setView({ name: 'privacy', back: 'settings' })}
+        />
+      </main>
+    )
+  }
+
+  if (view.name === 'account') {
+    return (
+      <main className="min-h-screen">
+        <AuthSettings
+          onBack={() => setView({ name: 'settings' })}
+          onOpenPrivacy={() => setView({ name: 'privacy', back: 'account' })}
           onDeleted={() => setView({ name: 'home' })}
         />
       </main>
@@ -1013,9 +1076,14 @@ function App() {
   }
 
   if (view.name === 'privacy') {
+    const back = view.back
     return (
       <main className="min-h-screen">
-        <PrivacyPolicy onBack={() => setView({ name: 'home' })} />
+        <PrivacyPolicy
+          onBack={() =>
+            setView(back === 'settings' ? { name: 'settings' } : back === 'account' ? { name: 'account' } : { name: 'home' })
+          }
+        />
       </main>
     )
   }
@@ -1113,6 +1181,10 @@ function App() {
             </button>
           </div>
         )}
+        {/* Home layout (T4 item 9), first: the active card, or the workday
+            card while a workday is active (T6b puts it here, in place of
+            this one). The card gains only a Share icon, which shows once T7
+            passes onShare. */}
         {primaryActive && (
           <div className="w-full mb-6">
             <ActiveSessionCard
@@ -1169,94 +1241,26 @@ function App() {
           </>
         )}
 
-        {/* Long translations (Italian / Hindi / Punjabi) wrap to two lines.
-            Use items-start + flex-1 min-w-0 so the icon anchors to the first
-            line and the right-side label sits flush with it, instead of all
-            three drifting to the vertical centre of the 2-line text block. */}
-        {/* Session-history affordance — hidden for first-time visitors
-            (sessionCount === 0 AND no active session): the empty "Session
-            history (empty)" row is just clutter under the new LandingFeatures
-            and competes for visual attention with the gradient CTA above. */}
-        {!(sessionCount === 0 && !primaryActive) && (
-          <button
-            onClick={() => setView({ name: 'history' })}
-            className="gf-card mt-8 w-full text-paper-50 font-medium py-3 flex items-start justify-between gap-3 px-5 transition-colors hover:brightness-110"
-            style={{ background: 'rgba(255,255,255,0.055)' }}
-          >
-            <span className="flex items-start gap-2 min-w-0 flex-1">
-              <Icon name="list" className="w-5 h-5 shrink-0 mt-px text-[#A9CFBE]" />
-              <span className="leading-snug text-left">{t('home.history')}</span>
-            </span>
-            <span className="text-sm shrink-0 mt-px pr-2" style={{ color: '#A9CFBE' }}>
-              {sessionCount === 0 ? t('home.historyEmpty') : t('home.historyCount', { count: sessionCount })}
-            </span>
-          </button>
-        )}
-
-        {/* Auth affordance — only renders when Cognito is wired in AND the
-            user isn't a brand-new visitor. Anonymous returning users see a
-            "Sign in to sync" CTA; signed-in users see their email + a cog
-            icon that opens settings. Hidden for first-time visitors so the
-            new landing's gradient CTA owns the primary action. */}
-        {auth.configured && !(sessionCount === 0 && !primaryActive) && (
-          auth.user ? (
-            <button
-              onClick={() => setView({ name: 'settings' })}
-              className="gf-card mt-2 w-full text-paper-50 font-medium py-3 flex items-start justify-between gap-3 px-5 transition-colors hover:brightness-110"
-              style={{ background: 'rgba(255,255,255,0.055)' }}
-            >
-              <span className="flex items-start gap-2 min-w-0 flex-1">
-                <Icon name="check" className="w-5 h-5 text-[#7BE3A4] shrink-0 mt-px" strokeWidth={2.5} />
-                <span className="truncate">{auth.user.email}</span>
-              </span>
-              <span className="text-xs shrink-0 mt-1 pr-2" style={{ color: '#A9CFBE' }}>{t('home.account')}</span>
-            </button>
-          ) : (
-            <button
-              onClick={() => setView({ name: 'signin' })}
-              className="gf-card mt-2 w-full text-paper-50 font-medium py-3 flex items-start justify-between gap-3 px-5 transition-colors hover:brightness-110"
-              style={{ background: 'rgba(255,255,255,0.055)' }}
-            >
-              <span className="flex items-start gap-2 min-w-0 flex-1">
-                <Icon name="bell" className="w-5 h-5 shrink-0 mt-px text-[#A9CFBE]" />
-                <span className="leading-snug text-left">{t('home.signInToSync')}</span>
-              </span>
-              <span className="text-xs shrink-0 mt-1 pr-2" style={{ color: '#A9CFBE' }}>{t('common.optional')}</span>
-            </button>
-          )
-        )}
-
-        {/* The 3-step "Photo the sign → log → reminder" list. Shown to
-            returning users with no active session as a quick re-orientation,
-            but hidden for first-time visitors — LandingFeatures' "How it
-            works" grid already covers the same ground with better visuals. */}
-        {!primaryActive && sessionCount > 0 && (
-          <ol className="mt-10 space-y-4 self-stretch">
-            {[
-              t('home.steps.translate'),
-              t('home.steps.log'),
-              t('home.steps.remind'),
-            ].map((text, i) => (
-              <li key={i} className="flex gap-4 items-start">
-                <span className="font-display text-2xl font-extrabold text-[#7BE3A4] leading-none w-7 text-center shrink-0">
-                  {i + 1}
-                </span>
-                <span className="text-sm leading-relaxed pt-1" style={{ color: '#A9CFBE' }}>{text}</span>
-              </li>
-            ))}
-          </ol>
-        )}
-
-        {/* Standalone appeal entry — reachable for the highest-intent user:
-            someone who got a ticket and found ParkProof to fight it, but never
-            logged a park here. Routes into AppealFlow with no linked session;
-            the flow drafts from the infringement notice alone. */}
-        <button
-          onClick={() => setView({ name: 'appeal', session: null })}
-          className="mt-8 text-sm text-[#7BE3A4] hover:text-paper-50 font-medium underline self-center min-h-[44px] inline-flex items-center py-2.5"
-        >
-          {t('home.draftAppeal')}
-        </button>
+        {/* The home layout below the scan button (T4 item 9): History,
+            "Street sweeping and weekly reminders" and Settings as glass rows,
+            then "Parking all day? Start a workday", then "Got a fine? Start
+            here". The returning-user 3-step list is gone. Rows whose screens
+            live on other branches render only when their handler is passed
+            here: onOpenWeeklyReminders with weeklyRemindersNext and
+            weeklyRemindersDetail (T5a), onStartWorkday (T6b) and
+            onOpenNoticeLookup (T8). Until T8 is in, the appeal flow keeps its
+            own entry in the fine link's place. History stays hidden for
+            first-time visitors (nothing saved, nothing active); Settings
+            works without an account, so it is always there. */}
+        <HomeMenu
+          showHistory={!(sessionCount === 0 && !primaryActive)}
+          recordCount={sessionCount}
+          onOpenHistory={() => setView({ name: 'history' })}
+          onOpenSettings={() => setView({ name: 'settings' })}
+          syncAvailable={auth.configured}
+          accountEmail={auth.user?.email ?? null}
+          onDraftAppeal={() => setView({ name: 'appeal', session: null })}
+        />
 
         <div className="mt-6 flex items-center justify-center gap-6 self-center flex-wrap">
           <button
