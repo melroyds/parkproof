@@ -137,6 +137,39 @@ export function proofGates(flags: ProofFlags | null | undefined, acks: GateAcks 
   return out
 }
 
+/** The result screen's gate order: the accessible permit, the permit zone, then paying. */
+const PROOF_GATE_ORDER: readonly ProofGate[] = ['accessible_permit', 'permit_zone', 'meter_ticket']
+
+/**
+ * The proof gates with the gate of a permit the driver confirmed on the
+ * result screen (T4: the saved permit's question answered yes, kept as
+ * `permit_context`). That permit was asked about even where no gate showed
+ * (a sign that prints an exception for the permit, or a permit zone when
+ * the standard answer was "can't park"), so its gate counts: the
+ * accessible-permit gate for an accessible permit, the permit-zone gate for
+ * a resident or business one. Nothing is added when no permit was
+ * confirmed, or the accessible permit's holder wasn't there.
+ *
+ * Gates keep the result screen's order, so a confirmed permit comes before
+ * a ticked "paid": the permit on the dash is then the proof the type is
+ * preselected for. The save screen and the record screen both read the
+ * gates through here, so the same park preselects the same type on both.
+ */
+export function withPermitGate(
+  gates: readonly ProofGate[],
+  permit: Pick<PermitContext, 'type' | 'holder_present'> | null | undefined,
+): ProofGate[] {
+  if (!permit || typeof permit !== 'object' || permit.holder_present === false) return [...gates]
+  const permitGate: ProofGate | null =
+    permit.type === 'accessible'
+      ? 'accessible_permit'
+      : permit.type === 'resident' || permit.type === 'business'
+        ? 'permit_zone'
+        : null
+  if (!permitGate || gates.includes(permitGate)) return [...gates]
+  return PROOF_GATE_ORDER.filter((g) => g === permitGate || gates.includes(g))
+}
+
 /**
  * The proof gates of a saved record (the record screen's "Add a photo of
  * your ticket or permit"). A record keeps the result screen's answers as
@@ -144,15 +177,8 @@ export function proofGates(flags: ProofFlags | null | undefined, acks: GateAcks 
  * its `rule_flags` don't say whether parking was allowed (they hold no
  * can_park_now), and on a "can't park" record the flags would otherwise
  * preselect a proof type the driver was never asked about. Only a record
- * saved without acknowledgements falls back to its flags.
- *
- * A permit the driver confirmed on the result screen (T4: the saved
- * permit's question answered yes, kept as `permit_context`) was asked about
- * too, even where no gate showed (a sign that prints an exception for the
- * permit, or a permit zone when the standard answer was "can't park"), so
- * its gate counts: the accessible-permit gate for an accessible permit, the
- * permit-zone gate for a resident or business one. Gates keep the result
- * screen's order.
+ * saved without acknowledgements falls back to its flags. A permit the
+ * driver confirmed counts as its gate (`withPermitGate`).
  */
 export function recordProofGates(session: {
   rule_flags?: ProofFlags | null
@@ -161,13 +187,7 @@ export function recordProofGates(session: {
 }): ProofGate[] {
   const acks = session.gate_acks
   const gates = acks && typeof acks === 'object' ? proofGates(null, acks) : proofGates(session.rule_flags, acks)
-  const pc = session.permit_context
-  if (!pc || typeof pc !== 'object' || pc.holder_present === false) return gates
-  const permitGate: ProofGate | null =
-    pc.type === 'accessible' ? 'accessible_permit' : pc.type === 'resident' || pc.type === 'business' ? 'permit_zone' : null
-  if (!permitGate || gates.includes(permitGate)) return gates
-  const order: readonly ProofGate[] = ['accessible_permit', 'permit_zone', 'meter_ticket']
-  return order.filter((g) => g === permitGate || gates.includes(g))
+  return withPermitGate(gates, session.permit_context)
 }
 
 /** The proof type to preselect for the first gate, or null when no gate applies. */

@@ -24,6 +24,7 @@ import {
   recordProofGates,
   referencedPhotoHashes,
   signedPhotoRef,
+  withPermitGate,
 } from './evidence-photos'
 import { MAX_ADDENDA } from './evidence-chain'
 import { MAX_PHOTO_REFS } from '../../lambda/cloud-sync.js'
@@ -138,6 +139,34 @@ describe('proof of payment or permit', () => {
     // No permit used, or the accessible permit's holder wasn't there.
     expect(recordProofGates({ gate_acks: NOT_ASKED, permit_context: null })).toEqual([])
     expect(recordProofGates({ gate_acks: NOT_ASKED, permit_context: permit('accessible', false) })).toEqual([])
+  })
+
+  it("a confirmed permit adds its gate in the result screen's order, ahead of a ticked paid gate (both screens use this)", () => {
+    const permit = (type: 'accessible' | 'resident' | 'business', holder_present: boolean | null = null) => ({
+      type,
+      holder_present,
+    })
+    // A "can't park" permit zone where the driver confirmed their resident permit: no gate showed.
+    expect(withPermitGate([], permit('resident'))).toEqual(['permit_zone'])
+    // A paid sign with an exception for business permits: the permit comes first.
+    expect(withPermitGate(['meter_ticket'], permit('business'))).toEqual(['permit_zone', 'meter_ticket'])
+    expect(preselectedComplianceType(withPermitGate(['meter_ticket'], permit('business')))).toBe('permit_displayed')
+    expect(withPermitGate(['permit_zone', 'meter_ticket'], permit('accessible', true))).toEqual([
+      'accessible_permit',
+      'permit_zone',
+      'meter_ticket',
+    ])
+    // Already a gate, no permit, or the accessible permit's holder wasn't there: the gates as they were.
+    expect(withPermitGate(['permit_zone'], permit('resident'))).toEqual(['permit_zone'])
+    expect(withPermitGate(['meter_ticket'], null)).toEqual(['meter_ticket'])
+    expect(withPermitGate(['meter_ticket'], undefined)).toEqual(['meter_ticket'])
+    expect(withPermitGate(['meter_ticket'], permit('accessible', false))).toEqual(['meter_ticket'])
+    // The save screen's gates (from the draft) and the saved record's agree.
+    const acks = { meter_ticket: true, permit_zone: null, accessible_permit: null }
+    const flags = { requires_ticket: true, is_permit_zone: false, requires_disabled_permit: false, can_park_now: true }
+    expect(withPermitGate(proofGates(flags, acks), permit('business'))).toEqual(
+      recordProofGates({ rule_flags: flags, gate_acks: acks, permit_context: permit('business') }),
+    )
   })
 
   it('a library photo can only be a payment confirmation', () => {

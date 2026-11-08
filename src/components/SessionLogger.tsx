@@ -24,6 +24,7 @@ import {
   gridRoles,
   preselectedComplianceType,
   proofGates,
+  withPermitGate,
 } from '../lib/evidence-photos'
 import { discardUnreferencedPhotos } from '../lib/record-photos'
 import { usePhotoSlots } from '../lib/use-photo-slots'
@@ -197,9 +198,11 @@ export default function SessionLogger({
   const [conditionOpen, setConditionOpen] = useState(false)
   const [conditionNote, setConditionNote] = useState('')
   // Proof of payment or permit. When the result screen asked a gate (or the
-  // sign reading calls for one), the section is open with one button and
-  // the type preselected from the gate; otherwise it is collapsed.
-  const gates = proofGates(rules, draft?.gate_acks)
+  // sign reading calls for one, or the driver confirmed a saved permit
+  // there), the section is open with one button and the type preselected
+  // from the gate; otherwise it is collapsed. The record screen reads its
+  // gates the same way (recordProofGates), so both preselect the same type.
+  const gates = withPermitGate(proofGates(rules, draft?.gate_acks), draft?.permit_context)
   const proofGated = gates.length > 0
   const proofSlots = usePhotoSlots(recordId, trackWrite)
   const [proofOpen, setProofOpen] = useState(false)

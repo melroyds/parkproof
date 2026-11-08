@@ -13,8 +13,9 @@ import i18n from '../lib/i18n'
 import { createMemoryPhotoBackend, putPhoto, setPhotoBackendForTests } from '../lib/photo-store'
 import { PHOTO_WRITE_TIMEOUT_MS } from '../lib/session-photos'
 import { hashDataUrlImage } from '../lib/hash'
-import { buildArrivalContext, emptyLogDraft } from '../lib/evidence-chain'
-import type { LogDraft, ParkingRules, ParkingSession } from '../types'
+import { applyLogDraftDefaults, buildArrivalContext, emptyLogDraft } from '../lib/evidence-chain'
+import { preselectedComplianceType, recordProofGates } from '../lib/evidence-photos'
+import type { LogDraft, ParkingRules, ParkingSession, PermitContext } from '../types'
 import SessionLogger from './SessionLogger'
 
 vi.mock('../lib/image', () => ({
@@ -298,6 +299,48 @@ describe('proof of payment or permit', () => {
     expect(saved.compliance_type).toBeUndefined()
     expect(saved.photos!.map((p) => p.role)).toEqual(['sign'])
     expect(saved.gate_acks).toEqual({ meter_ticket: null, permit_zone: true, accessible_permit: null })
+  })
+
+  describe('a saved permit the driver confirmed on the result screen preselects the type the record screen would', () => {
+    const permitContext = (type: PermitContext['type']): PermitContext => ({
+      type,
+      area: type === 'accessible' ? null : 'Area 7',
+      holder_present: type === 'accessible' ? true : null,
+      sign_exception_applies: true,
+      standard_until: null,
+      permit_until: null,
+      note: null,
+    })
+
+    /** The type the save screen preselects for a proof photo, and the one the saved record's screen would. */
+    async function preselectedOnBothScreens(rules: ParkingRules, draft: LogDraft) {
+      const { container, onComplete } = renderLogger({ rules, draft })
+      // Open with one button, as for a gate.
+      expect(screen.queryByRole('button', { name: i18n.t('logger.proof.toggle') })).toBeNull()
+      expect(screen.getByText(i18n.t('logger.proof.heading'))).toBeTruthy()
+      pickInto(container, 'compliance', 'proof-on-dash')
+      await screen.findByText(i18n.t('photoGrid.saved'))
+      const onSave = (screen.getAllByRole('radio') as HTMLInputElement[]).find((r) => r.checked)?.value ?? null
+      await save()
+      await waitFor(() => expect(onComplete).toHaveBeenCalled())
+      // App adds the draft's permit to the logged record before keeping it.
+      const record = applyLogDraftDefaults(onComplete.mock.calls[0][0], draft)
+      return { onSave, onRecord: preselectedComplianceType(recordProofGates(record)) }
+    }
+
+    it('a permit zone whose standard answer is "can\'t park": no gate showed, the resident permit was confirmed', async () => {
+      const rules: ParkingRules = { ...RULES, can_park_now: false, until: null, duration_minutes: null, is_permit_zone: true }
+      const draft: LogDraft = { ...emptyLogDraft(), permit_context: permitContext('resident') }
+      expect(await preselectedOnBothScreens(rules, draft)).toEqual({ onSave: 'permit_displayed', onRecord: 'permit_displayed' })
+    })
+
+    it('a paid sign with an exception for business permits: "paid" ticked and the permit confirmed, the permit comes first', async () => {
+      const draft: LogDraft = { ...draftWith({ meter_ticket: true }), permit_context: permitContext('business') }
+      expect(await preselectedOnBothScreens({ ...RULES, requires_ticket: true }, draft)).toEqual({
+        onSave: 'permit_displayed',
+        onRecord: 'permit_displayed',
+      })
+    })
   })
 })
 
