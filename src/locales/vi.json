@@ -927,5 +927,152 @@
       "returnDetail": "Tình trạng khi quay lại, cận cảnh",
       "compliance": "Ảnh bằng chứng thanh toán hoặc giấy phép"
     }
+  },
+  "recurring": {
+    "title": "Nhắc nhở hằng tuần",
+    "intro": "Quét đường, clearway và các hạn chế khác lặp lại vào cùng những ngày. Đặt một lần là được nhắc trước mỗi lần.",
+    "homeRow": "Quét đường và nhắc nhở hằng tuần",
+    "homeNext": "Lần tới: {{what}}, {{time}}",
+    "homeOnNow": "{{what}} đang diễn ra, đến {{time}}",
+    "homeCount_one": "{{count}} đã đặt",
+    "homeCount_other": "{{count}} đã đặt",
+    "homeNone": "Chưa có",
+    "empty": "Chưa có nhắc nhở hằng tuần",
+    "emptyHelp": "Thêm một nhắc nhở cho lịch quét đường hoặc clearway ở nơi bạn hay đỗ xe.",
+    "add": "Thêm nhắc nhở hằng tuần",
+    "editTitleNew": "Nhắc nhở hằng tuần mới",
+    "editTitle": "Sửa nhắc nhở hằng tuần",
+    "kind": {
+      "street_cleaning": "Quét đường",
+      "clearway": "Clearway",
+      "no_stopping": "Cấm dừng xe",
+      "other": "Hạn chế khác"
+    },
+    "field": {
+      "kind": "Đây là gì?",
+      "label": "Tên",
+      "days": "Ngày",
+      "start": "Bắt đầu",
+      "end": "Kết thúc",
+      "frequency": "Bao lâu một lần",
+      "anchor": "Ngày của lần tới",
+      "nth": "Những tuần nào trong tháng",
+      "address": "Ở đâu",
+      "addressPlaceholder": "Đường hoặc địa điểm (không bắt buộc)",
+      "remind": "Nhắc tôi",
+      "push": "Thông báo cho tôi trên điện thoại này"
+    },
+    "frequency": {
+      "weekly": "Hằng tuần",
+      "fortnightly": "Hai tuần một lần",
+      "monthly_nth": "Một số tuần trong tháng"
+    },
+    "remind": {
+      "evening": "Tối hôm trước, lúc",
+      "before": "Trước khi bắt đầu",
+      "minutes_one": "Trước {{count}} phút",
+      "minutes_other": "Trước {{count}} phút",
+      "hours_one": "Trước {{count}} giờ",
+      "hours_other": "Trước {{count}} giờ"
+    },
+    "pushHint": "Để được nhắc chắc chắn nhất, hãy thêm vào lịch của bạn nữa.",
+    "zoneNote": "Ngày và giờ theo giờ địa phương tại {{place}}.",
+    "days": {
+      "MO": "Thứ Hai",
+      "TU": "Thứ Ba",
+      "WE": "Thứ Tư",
+      "TH": "Thứ Năm",
+      "FR": "Thứ Sáu",
+      "SA": "Thứ Bảy",
+      "SU": "Chủ Nhật"
+    },
+    "daysShort": {
+      "MO": "T2",
+      "TU": "T3",
+      "WE": "T4",
+      "TH": "T5",
+      "FR": "T6",
+      "SA": "T7",
+      "SU": "CN"
+    },
+    "dayRange": "{{from}} đến {{to}}",
+    "nth": {
+      "n1": "thứ nhất",
+      "n2": "thứ hai",
+      "n3": "thứ ba",
+      "n4": "thứ tư",
+      "n5": "thứ năm"
+    },
+    "schedule": {
+      "weekly": "Hằng tuần vào {{days}}",
+      "fortnightly": "Hai tuần một lần vào {{days}}",
+      "monthly_nth": "{{days}} {{nths}} của mỗi tháng"
+    },
+    "timeRange": "{{start}} đến {{end}}",
+    "summary": "{{schedule}}, {{range}}",
+    "next": "Lần tới: {{time}}",
+    "onNow": "Đang diễn ra, đến {{time}}",
+    "paused": "Đã tạm dừng",
+    "noNext": "Không có ngày sắp tới",
+    "pause": "Tạm dừng",
+    "resume": "Tiếp tục",
+    "pausedHint": "Nhắc nhở đã tạm dừng sẽ không báo bạn ở đây. Lịch mà bạn đã thêm vẫn giữ báo thức của nó.",
+    "delete": "Xóa nhắc nhở",
+    "deleteConfirm": "Xóa nhắc nhở hằng tuần này? Lịch mà bạn đã thêm vẫn giữ bản của nó.",
+    "calendar": "Thêm vào lịch",
+    "calendarDone": "Đã tải xuống. Mở tệp để thêm vào.",
+    "saved": "Đã lưu nhắc nhở hằng tuần.",
+    "errors": {
+      "days": "Hãy chọn ít nhất một ngày.",
+      "times": "Hãy chọn giờ bắt đầu và giờ kết thúc khác nhau.",
+      "nth": "Hãy chọn ít nhất một tuần trong tháng.",
+      "anchor": "Hãy chọn ngày của lần tới.",
+      "saveFailed": "Không lưu được nhắc nhở này. Hãy thử lại."
+    },
+    "councilNote": "Hội đồng có thể thay đổi các lịch này, và ngày lễ có thể khác. Hãy xem biển báo nơi bạn đỗ xe.",
+    "reliability": "Nhắc nhở có thể bị trễ hoặc bị tắt tiếng, ví dụ do chế độ Tập trung hoặc tiết kiệm pin. Đừng chỉ dựa vào nhắc nhở.",
+    "notifyDenied": "Thông báo của ParkProof đang bị chặn, nên các nhắc nhở này không thể báo bạn trên điện thoại này. Hãy cho phép thông báo trong cài đặt trang web của trình duyệt, hoặc thêm chúng vào lịch.",
+    "offer": {
+      "heading": "Biển báo này có hạn chế lặp lại hằng tuần",
+      "body": "ParkProof có thể nhắc bạn trước mỗi lần bắt đầu.",
+      "line": "{{what}}. {{summary}}.",
+      "cta": "Nhắc tôi hằng tuần",
+      "already": "Bạn đã có nhắc nhở hằng tuần cho việc này."
+    },
+    "sheet": {
+      "title": "Nhắc tôi hằng tuần",
+      "check": "Hãy đối chiếu những ngày và giờ này với biển báo",
+      "signSays": "Biển báo cũng ghi: {{text}}"
+    },
+    "notify": {
+      "moveTonight": "{{what}} vào {{day}}, {{range}}. Hãy dời xe ngay tối nay.",
+      "moveBefore": "{{what}} vào {{day}}, {{range}}. Hãy dời xe trước {{start}}."
+    },
+    "ics": {
+      "alarmTonight": "{{what}} vào ngày mai, {{range}}. Hãy dời xe ngay tối nay.",
+      "alarmTomorrow": "{{what}} vào ngày mai, {{range}}. Hãy dời xe trước {{start}}.",
+      "alarmSoon": "{{what}} bắt đầu lúc {{start}}. Hãy dời xe trước giờ đó.",
+      "move": "Hãy dời xe trước khi bắt đầu.",
+      "footer": "Nhắc nhở được đặt trong ParkProof."
+    },
+    "pushStatus": {
+      "closed": "Đã đặt để nhắc trên điện thoại này ngay cả khi ParkProof đang đóng. Hãy mở ParkProof ít nhất hai tháng một lần để giữ cài đặt này.",
+      "openOnly": "Chỉ nhắc trên điện thoại này khi ParkProof đang mở. Hãy thêm vào lịch của bạn nữa.",
+      "none": "Điện thoại này hiện chưa thể báo nhắc nhở này. Hãy thêm vào lịch của bạn."
+    },
+    "zone": {
+      "melbourne": "Melbourne",
+      "sydney": "Sydney",
+      "canberra": "Canberra",
+      "brisbane": "Brisbane",
+      "lindeman": "đảo Lindeman",
+      "adelaide": "Adelaide",
+      "brokenHill": "Broken Hill",
+      "darwin": "Darwin",
+      "perth": "Perth",
+      "eucla": "Eucla",
+      "hobart": "Hobart",
+      "lordHowe": "đảo Lord Howe"
+    }
   }
 }

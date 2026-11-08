@@ -22,6 +22,8 @@ import LanguageSelector from './components/LanguageSelector'
 import BrandMark from './components/BrandMark'
 import Icon from './components/Icon'
 import LoadingProgress from './components/LoadingProgress'
+import RecurringReminders from './components/RecurringReminders'
+import RecurringHomeRow from './components/RecurringHomeRow'
 import { refreshInterpretation, translateSign } from './lib/claude'
 import {
   deleteSession,
@@ -46,6 +48,8 @@ import {
   type PhotoCaptureMeta,
 } from './lib/session-photos'
 import { useRecordsVersion } from './lib/use-records-version'
+import { useRecurringInTabReminders, useRecurringRules } from './lib/use-recurring-rules'
+import { useRecurringPushSync } from './lib/use-recurring-push'
 import {
   holdAddendumSigning,
   installSigningTriggers,
@@ -116,6 +120,8 @@ type View =
   | { name: 'settings' }
   | { name: 'privacy' }
   | { name: 'about' }
+  /** Street sweeping and weekly reminders: the list and its editor (T5a). */
+  | { name: 'recurring' }
   | { name: 'error'; message: string; offline?: boolean }
 
 /**
@@ -175,6 +181,7 @@ function App() {
       if (linked) return { name: 'session', session: linked }
     }
     if (initialLink?.kind === 'privacy') return { name: 'privacy' }
+    if (initialLink?.kind === 'recurring') return { name: 'recurring' }
     return { name: 'home' }
   })
   const [feedbackOpen, setFeedbackOpen] = useState(() => initialLink?.kind === 'feedback')
@@ -260,6 +267,12 @@ function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [now, activesVersion],
   )
+  // Weekly reminders (T5a): the home row reads them, and while the app is
+  // open their next 24 hours of reminders stay armed in this tab. T5b keeps
+  // the server's push schedules for them in step, for when the app is closed.
+  const recurringRules = useRecurringRules()
+  useRecurringInTabReminders(recurringRules)
+  useRecurringPushSync(recurringRules)
 
   // The signing sweep: on app start, and again when the browser comes back
   // online or the page becomes visible, sign anything still outstanding
@@ -989,6 +1002,14 @@ function App() {
     )
   }
 
+  if (view.name === 'recurring') {
+    return (
+      <main className="min-h-screen">
+        <RecurringReminders onBack={() => setView({ name: 'home' })} />
+      </main>
+    )
+  }
+
   if (view.name === 'about') {
     return (
       <main className="min-h-screen">
@@ -1160,6 +1181,19 @@ function App() {
               {sessionCount === 0 ? t('home.historyEmpty') : t('home.historyCount', { count: sessionCount })}
             </span>
           </button>
+        )}
+
+        {/* Street sweeping and weekly reminders (T5a). The smallest entry
+            point on today's home: T4's home layout moves this row into its
+            place under History. Hidden for first-time visitors, like
+            History, unless a reminder is already set. */}
+        {(!(sessionCount === 0 && !primaryActive) || recurringRules.length > 0) && (
+          <RecurringHomeRow
+            rules={recurringRules}
+            now={now}
+            onOpen={() => setView({ name: 'recurring' })}
+            className={sessionCount === 0 && !primaryActive ? 'mt-8' : 'mt-2'}
+          />
         )}
 
         {/* Auth affordance — only renders when Cognito is wired in AND the

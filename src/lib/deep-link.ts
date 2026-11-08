@@ -15,8 +15,9 @@ export type DeepLink =
   | { kind: 'session'; sessionId: string }
   | { kind: 'privacy' }
   | { kind: 'feedback' }
+  | { kind: 'recurring' }
 
-const DEEP_LINK_PARAMS = ['session', 'privacy', 'feedback'] as const
+const DEEP_LINK_PARAMS = ['session', 'privacy', 'feedback', 'recurring'] as const
 
 /** App-relative URL carrying the given query params. */
 export function appUrl(params: Record<string, string> = {}): string {
@@ -29,6 +30,14 @@ export function sessionLink(sessionId: string): string {
   return appUrl({ session: sessionId })
 }
 
+/**
+ * Link that opens the street sweeping and weekly reminders view: the
+ * target of a weekly reminder's notification (T5b's push uses it too).
+ */
+export function recurringLink(): string {
+  return appUrl({ recurring: 'open' })
+}
+
 /** Parse the deep link in a query string, if any. */
 export function parseDeepLink(search: string): DeepLink | null {
   const params = new URLSearchParams(search)
@@ -38,6 +47,7 @@ export function parseDeepLink(search: string): DeepLink | null {
   }
   if (params.get('privacy') === 'open') return { kind: 'privacy' }
   if (params.get('feedback') === 'open') return { kind: 'feedback' }
+  if (params.get('recurring') === 'open') return { kind: 'recurring' }
   return null
 }
 

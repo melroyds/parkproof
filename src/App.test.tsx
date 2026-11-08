@@ -918,3 +918,49 @@ describe('App and the photo store (T0b2)', () => {
     expect(photos.records.has(`new-no-sign/${sha}`)).toBe(true)
   })
 })
+
+describe('Street sweeping and weekly reminders (T5a)', () => {
+  // Every day, so its next occurrence is always within 24 hours.
+  const DAILY = {
+    id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+    label: '',
+    kind: 'street_cleaning',
+    days: ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'],
+    start: '07:00',
+    end: '09:00',
+    frequency: 'weekly',
+    nth: [],
+    anchor_date: '2026-01-01',
+    timezone: 'Australia/Melbourne',
+    address: null,
+    remind_evening_before: null,
+    remind_minutes_before: 60,
+    push: false,
+    paused: false,
+    sequence: 0,
+  }
+
+  it('home has a row that opens the recurring view, and shows the next occurrence inline', () => {
+    saveSession(makeSession({ ended_at: new Date().toISOString() }))
+    localStorage.setItem('parkproof.recurring.v1', JSON.stringify([DAILY]))
+    renderApp(false)
+    const row = screen.getByRole('button', { name: /Street sweeping and weekly reminders/ })
+    expect(row.textContent).toMatch(/Next: Street sweeping|Street sweeping is on now/)
+    fireEvent.click(row)
+    expect(screen.getByRole('heading', { name: 'Weekly reminders' })).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: i18n.t('common.backToHome') }))
+    expect(screen.getByRole('button', { name: /Street sweeping and weekly reminders/ })).toBeTruthy()
+  })
+
+  it('keeps the row off a first visit with nothing saved, like History', () => {
+    renderApp(false)
+    expect(screen.queryByRole('button', { name: /Street sweeping and weekly reminders/ })).toBeNull()
+  })
+
+  it('opens the recurring view from its notification link', () => {
+    window.history.replaceState({}, '', '/app/?recurring=open')
+    renderApp(false)
+    expect(screen.getByRole('heading', { name: 'Weekly reminders' })).toBeTruthy()
+    expect(window.location.search).toBe('')
+  })
+})

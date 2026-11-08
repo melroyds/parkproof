@@ -10,6 +10,7 @@ export type IconName =
   | 'check'
   | 'warning'
   | 'chevron'
+  | 'repeat'
 
 interface Props {
   name: IconName
@@ -83,4 +84,13 @@ const PATHS: Record<IconName, ReactNode> = {
   ),
   // Points down; a disclosure rotates it when open.
   chevron: <path d="m6 9.5 6 6 6-6" />,
+  // Two arrows chasing round a loop: something that comes back every week.
+  repeat: (
+    <>
+      <path d="M17 3.5 20 6.5l-3 3" />
+      <path d="M4 12v-1.5a4 4 0 0 1 4-4h12" />
+      <path d="M7 20.5 4 17.5l3-3" />
+      <path d="M20 12v1.5a4 4 0 0 1-4 4H4" />
+    </>
+  ),
 }

@@ -319,6 +319,93 @@ function signTranslateApi(): Plugin {
         }
       })
 
+      // Dev stubs for the weekly reminder push routes (T5b). No scheduler
+      // in dev: the body is checked with the Lambda's own parser and the
+      // cron schedules it would book are logged and returned, so the app's
+      // create, edit, pause and delete paths run end to end. Cancel first:
+      // middleware matches by prefix, and /api/push/recurring would
+      // otherwise catch /api/push/recurring/cancel.
+      const readJsonBody = async (req: import('node:http').IncomingMessage) => {
+        const chunks: Buffer[] = []
+        for await (const chunk of req) chunks.push(chunk as Buffer)
+        return JSON.parse(Buffer.concat(chunks).toString('utf8') || '{}') as Record<string, unknown>
+      }
+      const sendJson = (res: import('node:http').ServerResponse, status: number, body: unknown) => {
+        res.statusCode = status
+        res.setHeader('Content-Type', 'application/json')
+        res.end(JSON.stringify(body))
+      }
+      const DEV_DEVICE_ID_RE = /^[a-f0-9-]{1,64}$/i
+      server.middlewares.use('/api/push/recurring/cancel', async (req, res) => {
+        if (req.method === 'OPTIONS') {
+          res.statusCode = 204
+          res.end()
+          return
+        }
+        if (req.method !== 'POST') {
+          res.statusCode = 405
+          res.end()
+          return
+        }
+        try {
+          const body = await readJsonBody(req)
+          const { UUID_RE } = await import('./lambda/addendum-schema.js')
+          if (typeof body.device_id !== 'string' || !DEV_DEVICE_ID_RE.test(body.device_id)) {
+            sendJson(res, 400, { error: 'device_id is required' })
+            return
+          }
+          if (typeof body.rule_id !== 'string' || !UUID_RE.test(body.rule_id)) {
+            sendJson(res, 400, { error: 'rule_id must be a lowercase uuid' })
+            return
+          }
+          console.log(`[parkproof.push.recurring_cancel] dev stub rule=${body.rule_id}`)
+          sendJson(res, 200, { deleted: 0 })
+        } catch (err) {
+          console.error('[/api/push/recurring/cancel]', err)
+          sendJson(res, 500, { error: String(err) })
+        }
+      })
+      server.middlewares.use('/api/push/recurring', async (req, res) => {
+        if (req.method === 'OPTIONS') {
+          res.statusCode = 204
+          res.end()
+          return
+        }
+        if (req.method !== 'POST') {
+          res.statusCode = 405
+          res.end()
+          return
+        }
+        try {
+          const body = await readJsonBody(req)
+          if (typeof body.device_id !== 'string' || !DEV_DEVICE_ID_RE.test(body.device_id)) {
+            sendJson(res, 400, { error: 'device_id is required' })
+            return
+          }
+          const { parseRecurringPushRequest, recurringCronPlans } = await import('./lambda/recurring-schedule.js')
+          const parsed = parseRecurringPushRequest(body)
+          if (!parsed.ok) {
+            sendJson(res, 400, { error: parsed.error })
+            return
+          }
+          const created = recurringCronPlans(parsed.rule).map((p) => ({
+            name: p.name,
+            reminder: p.reminder,
+            expression: p.expression,
+            fire_time: p.fire_time,
+          }))
+          console.log(
+            `[parkproof.push.recurring] dev stub rule=${parsed.rule.id} tz=${parsed.rule.timezone} ${created
+              .map((c) => `${c.reminder}=${c.expression}`)
+              .join(' ')}`,
+          )
+          sendJson(res, 200, { created, skipped: [] })
+        } catch (err) {
+          console.error('[/api/push/recurring]', err)
+          sendJson(res, 500, { error: String(err) })
+        }
+      })
+
       // Dev proxy for /api/user-feedback — must register BEFORE /api/feedback
       // so the more-specific path wins (Vite's middleware matches by prefix).
       server.middlewares.use('/api/user-feedback', async (req, res) => {

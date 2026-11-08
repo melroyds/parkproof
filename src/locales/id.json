@@ -927,5 +927,152 @@
       "returnDetail": "Kondisi saat kembali, jarak dekat",
       "compliance": "Foto bukti pembayaran atau izin"
     }
+  },
+  "recurring": {
+    "title": "Pengingat mingguan",
+    "intro": "Penyapuan jalan, clearway, dan larangan lain yang berulang di hari yang sama. Atur sekali, lalu dapatkan pengingat sebelum setiap kali dimulai.",
+    "homeRow": "Penyapuan jalan dan pengingat mingguan",
+    "homeNext": "Berikutnya: {{what}}, {{time}}",
+    "homeOnNow": "{{what}} sedang berlaku, sampai {{time}}",
+    "homeCount_one": "{{count}} diatur",
+    "homeCount_other": "{{count}} diatur",
+    "homeNone": "Belum ada",
+    "empty": "Belum ada pengingat mingguan",
+    "emptyHelp": "Tambahkan satu untuk penyapuan jalan atau clearway di tempat kamu biasa parkir.",
+    "add": "Tambah pengingat mingguan",
+    "editTitleNew": "Pengingat mingguan baru",
+    "editTitle": "Ubah pengingat mingguan",
+    "kind": {
+      "street_cleaning": "Penyapuan jalan",
+      "clearway": "Clearway",
+      "no_stopping": "Dilarang berhenti",
+      "other": "Larangan lain"
+    },
+    "field": {
+      "kind": "Apa ini?",
+      "label": "Nama",
+      "days": "Hari",
+      "start": "Mulai",
+      "end": "Selesai",
+      "frequency": "Seberapa sering",
+      "anchor": "Tanggal berikutnya",
+      "nth": "Minggu ke berapa dalam sebulan",
+      "address": "Lokasi",
+      "addressPlaceholder": "Jalan atau tempat (opsional)",
+      "remind": "Ingatkan saya",
+      "push": "Beri tahu saya di ponsel ini"
+    },
+    "frequency": {
+      "weekly": "Setiap minggu",
+      "fortnightly": "Setiap dua minggu",
+      "monthly_nth": "Minggu tertentu tiap bulan"
+    },
+    "remind": {
+      "evening": "Malam sebelumnya, pukul",
+      "before": "Sebelum dimulai",
+      "minutes_one": "{{count}} menit sebelumnya",
+      "minutes_other": "{{count}} menit sebelumnya",
+      "hours_one": "{{count}} jam sebelumnya",
+      "hours_other": "{{count}} jam sebelumnya"
+    },
+    "pushHint": "Supaya pengingatnya paling andal, tambahkan juga ke kalendermu.",
+    "zoneNote": "Hari dan jam mengikuti waktu setempat di {{place}}.",
+    "days": {
+      "MO": "Senin",
+      "TU": "Selasa",
+      "WE": "Rabu",
+      "TH": "Kamis",
+      "FR": "Jumat",
+      "SA": "Sabtu",
+      "SU": "Minggu"
+    },
+    "daysShort": {
+      "MO": "Sen",
+      "TU": "Sel",
+      "WE": "Rab",
+      "TH": "Kam",
+      "FR": "Jum",
+      "SA": "Sab",
+      "SU": "Min"
+    },
+    "dayRange": "{{from}} sampai {{to}}",
+    "nth": {
+      "n1": "pertama",
+      "n2": "kedua",
+      "n3": "ketiga",
+      "n4": "keempat",
+      "n5": "kelima"
+    },
+    "schedule": {
+      "weekly": "Setiap minggu pada hari {{days}}",
+      "fortnightly": "Setiap dua minggu pada hari {{days}}",
+      "monthly_nth": "Hari {{days}} {{nths}} setiap bulan"
+    },
+    "timeRange": "{{start}} sampai {{end}}",
+    "summary": "{{schedule}}, {{range}}",
+    "next": "Berikutnya: {{time}}",
+    "onNow": "Sedang berlaku, sampai {{time}}",
+    "paused": "Dijeda",
+    "noNext": "Tidak ada tanggal mendatang",
+    "pause": "Jeda",
+    "resume": "Lanjutkan",
+    "pausedHint": "Pengingat yang dijeda tidak akan memberi tahu kamu di sini. Kalender yang sudah kamu tambahkan tetap menyimpan alarmnya sendiri.",
+    "delete": "Hapus pengingat",
+    "deleteConfirm": "Hapus pengingat mingguan ini? Kalender yang sudah kamu tambahkan tetap menyimpan salinannya.",
+    "calendar": "Tambah ke kalender",
+    "calendarDone": "Sudah diunduh. Buka file untuk menambahkannya.",
+    "saved": "Pengingat mingguan disimpan.",
+    "errors": {
+      "days": "Pilih setidaknya satu hari.",
+      "times": "Pilih jam mulai dan jam selesai yang berbeda.",
+      "nth": "Pilih setidaknya satu minggu dalam sebulan.",
+      "anchor": "Pilih tanggal berikutnya.",
+      "saveFailed": "Pengingat ini tidak bisa disimpan. Coba lagi."
+    },
+    "councilNote": "Dewan kota bisa mengubah jadwal ini, dan hari libur nasional bisa berbeda. Periksa rambu di tempat kamu parkir.",
+    "reliability": "Pengingat bisa tertunda atau dibisukan, misalnya oleh mode Fokus atau penghemat baterai. Jangan hanya mengandalkan pengingat.",
+    "notifyDenied": "Notifikasi untuk ParkProof diblokir, jadi pengingat ini tidak bisa memberi tahu kamu di ponsel ini. Izinkan notifikasi di pengaturan situs browsermu, atau tambahkan ke kalendermu.",
+    "offer": {
+      "heading": "Rambu ini punya larangan mingguan",
+      "body": "ParkProof bisa mengingatkanmu setiap kali sebelum dimulai.",
+      "line": "{{what}}. {{summary}}.",
+      "cta": "Ingatkan saya setiap minggu",
+      "already": "Kamu sudah punya pengingat mingguan untuk ini."
+    },
+    "sheet": {
+      "title": "Ingatkan saya setiap minggu",
+      "check": "Cocokkan hari dan jam ini dengan rambu",
+      "signSays": "Rambu juga bertuliskan: {{text}}"
+    },
+    "notify": {
+      "moveTonight": "{{what}} pada hari {{day}}, {{range}}. Pindahkan mobilmu malam ini.",
+      "moveBefore": "{{what}} pada hari {{day}}, {{range}}. Pindahkan mobilmu sebelum {{start}}."
+    },
+    "ics": {
+      "alarmTonight": "{{what}} besok, {{range}}. Pindahkan mobilmu malam ini.",
+      "alarmTomorrow": "{{what}} besok, {{range}}. Pindahkan mobilmu sebelum {{start}}.",
+      "alarmSoon": "{{what}} mulai pukul {{start}}. Pindahkan mobilmu sebelum itu.",
+      "move": "Pindahkan mobilmu sebelum dimulai.",
+      "footer": "Pengingat diatur di ParkProof."
+    },
+    "pushStatus": {
+      "closed": "Diatur untuk mengingatkanmu di ponsel ini meskipun ParkProof sedang ditutup. Buka ParkProof setidaknya sekali setiap dua bulan agar tetap aktif.",
+      "openOnly": "Hanya mengingatkanmu di ponsel ini saat ParkProof terbuka. Tambahkan juga ke kalendermu.",
+      "none": "Ponsel ini belum bisa menampilkan pengingat ini. Tambahkan ke kalendermu."
+    },
+    "zone": {
+      "melbourne": "Melbourne",
+      "sydney": "Sydney",
+      "canberra": "Canberra",
+      "brisbane": "Brisbane",
+      "lindeman": "Pulau Lindeman",
+      "adelaide": "Adelaide",
+      "brokenHill": "Broken Hill",
+      "darwin": "Darwin",
+      "perth": "Perth",
+      "eucla": "Eucla",
+      "hobart": "Hobart",
+      "lordHowe": "Pulau Lord Howe"
+    }
   }
 }

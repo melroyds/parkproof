@@ -227,6 +227,47 @@ export interface RecurringRestriction {
   label: string
 }
 
+export type RecurringFrequency = 'weekly' | 'fortnightly' | 'monthly_nth'
+
+/**
+ * A street sweeping or other weekly reminder (T5a), stored on this device
+ * under `parkproof.recurring.v1` (helpers in storage.ts, maths in
+ * recurring.ts). Not part of any record and never signed.
+ */
+export interface RecurringRule {
+  /** uuid. Also the calendar UID and, from T5b, part of the push schedule names. */
+  id: string
+  /** The driver's name for it ("Street sweeping"); '' shows the kind's name. */
+  label: string
+  kind: RecurringRestriction['kind']
+  /** At least one, in MO..SU order. */
+  days: Weekday[]
+  /** 'HH:MM' local time in `timezone`. */
+  start: string
+  /** 'HH:MM' local time in `timezone`. At or before `start` means it ends the next day. */
+  end: string
+  frequency: RecurringFrequency
+  /** monthly_nth only: which of the month's weekdays (1 = first ... 5 = fifth). [] otherwise. */
+  nth: number[]
+  /**
+   * 'YYYY-MM-DD' in `timezone`. No occurrence falls before it. For
+   * fortnightly rules its week (Monday to Sunday) is an "on" week.
+   */
+  anchor_date: string
+  /** IANA zone the days and times are read in. */
+  timezone: string
+  address: string | null
+  /** 'HH:MM' on the day before each occurrence, or null for none. */
+  remind_evening_before: string | null
+  /** Minutes before each start, or null for none. */
+  remind_minutes_before: number | null
+  /** Notify on this phone (in-tab while open; T5b adds Web Push). */
+  push: boolean
+  paused: boolean
+  /** The calendar SEQUENCE: bumped on every edit that changes the calendar event. */
+  sequence: number
+}
+
 /** The workday link inside arrival_context data. */
 export interface ArrivalWorkday {
   workday_id: string

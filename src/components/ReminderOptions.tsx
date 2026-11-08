@@ -22,6 +22,7 @@ import { reminderCopy } from '../lib/reminder-copy'
 import { sessionLink } from '../lib/deep-link'
 import { sessionTimezone } from '../lib/timezone'
 import Icon from './Icon'
+import RecurringOffer from './RecurringOffer'
 import Button from './ui/Button'
 import Card from './ui/Card'
 
@@ -382,6 +383,8 @@ export default function ReminderOptions({ session, onDone }: Props) {
             components={{ strong: <span className="font-display font-bold text-paper-50" /> }}
           />
         </p>
+        {/* A weekly restriction on the sign still deserves its reminder after this park expired (T5a). */}
+        <RecurringOffer session={session} className="mb-6" />
         <button
           onClick={onDone}
           className="mt-auto bg-brand-500 hover:bg-brand-600 active:bg-brand-700 text-white font-semibold py-4 rounded-xl transition-colors"
@@ -542,6 +545,9 @@ export default function ReminderOptions({ session, onDone }: Props) {
           </p>
         )}
       </Card>
+
+      {/* "Remind me every week" when the sign has a weekly restriction (T5a). */}
+      <RecurringOffer session={session} className="mb-6" />
 
       <button
         onClick={onDone}
@@ -794,6 +800,11 @@ function NoSignReminderPicker({ session, onDone }: Props) {
           </p>
         )}
       </Card>
+
+      {/* A record with no expiry (a permit zone outside its hours, a sign
+          that says you can't park now) can still carry a weekly
+          restriction, such as street sweeping (T5a). */}
+      <RecurringOffer session={session} className="mb-6" />
 
       <button
         onClick={onDone}

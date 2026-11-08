@@ -275,6 +275,9 @@ ensure_route "user-feedback"
 ensure_route "push/subscribe"
 ensure_route "push/schedule"
 ensure_route "push/cancel"
+# Weekly reminders by push (T5b): book and cancel one rule's cron schedules.
+ensure_route "push/recurring"
+ensure_route "push/recurring/cancel"
 ensure_route "draft-appeal"
 ensure_route "sign-session"
 

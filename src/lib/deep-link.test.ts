@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { appUrl, parseDeepLink, sessionLink } from './deep-link'
+import { appUrl, parseDeepLink, recurringLink, sessionLink } from './deep-link'
 
 describe('deep links', () => {
   it('points inside the PWA scope, not at the marketing landing', () => {
@@ -18,6 +18,12 @@ describe('deep links', () => {
   it('parses the landing footer links', () => {
     expect(parseDeepLink('?privacy=open')).toEqual({ kind: 'privacy' })
     expect(parseDeepLink('?feedback=open')).toEqual({ kind: 'feedback' })
+  })
+
+  it('opens the weekly reminders view from its link (T5a)', () => {
+    expect(recurringLink()).toBe(`${import.meta.env.BASE_URL}?recurring=open`)
+    expect(parseDeepLink(new URL(recurringLink(), 'https://x.test').search)).toEqual({ kind: 'recurring' })
+    expect(parseDeepLink('?recurring=1')).toBeNull()
   })
 
   it('ignores unrelated params, including the OAuth ones', () => {

@@ -927,5 +927,152 @@
       "returnDetail": "돌아왔을 때 상태, 근접 촬영",
       "compliance": "결제 또는 허가증 증빙 사진"
     }
+  },
+  "recurring": {
+    "title": "매주 알림",
+    "intro": "도로 청소, 클리어웨이 등 같은 요일마다 반복되는 제한입니다. 한 번 설정하면 매번 시작 전에 알려 드립니다.",
+    "homeRow": "도로 청소 및 매주 알림",
+    "homeNext": "다음: {{what}}, {{time}}",
+    "homeOnNow": "{{what}} 진행 중, {{time}}까지",
+    "homeCount_one": "{{count}}개 설정됨",
+    "homeCount_other": "{{count}}개 설정됨",
+    "homeNone": "아직 없음",
+    "empty": "아직 매주 알림이 없습니다",
+    "emptyHelp": "자주 주차하는 곳의 도로 청소나 클리어웨이 알림을 추가하세요.",
+    "add": "매주 알림 추가",
+    "editTitleNew": "새 매주 알림",
+    "editTitle": "매주 알림 수정",
+    "kind": {
+      "street_cleaning": "도로 청소",
+      "clearway": "클리어웨이",
+      "no_stopping": "정차 금지",
+      "other": "기타 제한"
+    },
+    "field": {
+      "kind": "어떤 제한인가요?",
+      "label": "이름",
+      "days": "요일",
+      "start": "시작",
+      "end": "종료",
+      "frequency": "반복",
+      "anchor": "다음 날짜",
+      "nth": "매월 몇째 주",
+      "address": "장소",
+      "addressPlaceholder": "도로 또는 장소 (선택)",
+      "remind": "알림 시간",
+      "push": "이 휴대폰에서 알림 받기"
+    },
+    "frequency": {
+      "weekly": "매주",
+      "fortnightly": "격주",
+      "monthly_nth": "매월 특정 주"
+    },
+    "remind": {
+      "evening": "전날 저녁, 시간",
+      "before": "시작 전",
+      "minutes_one": "{{count}}분 전",
+      "minutes_other": "{{count}}분 전",
+      "hours_one": "{{count}}시간 전",
+      "hours_other": "{{count}}시간 전"
+    },
+    "pushHint": "가장 확실하게 알림을 받으려면 캘린더에도 추가하세요.",
+    "zoneNote": "요일과 시간은 {{place}} 현지 시간 기준입니다.",
+    "days": {
+      "MO": "월요일",
+      "TU": "화요일",
+      "WE": "수요일",
+      "TH": "목요일",
+      "FR": "금요일",
+      "SA": "토요일",
+      "SU": "일요일"
+    },
+    "daysShort": {
+      "MO": "월",
+      "TU": "화",
+      "WE": "수",
+      "TH": "목",
+      "FR": "금",
+      "SA": "토",
+      "SU": "일"
+    },
+    "dayRange": "{{from}}~{{to}}",
+    "nth": {
+      "n1": "첫째",
+      "n2": "둘째",
+      "n3": "셋째",
+      "n4": "넷째",
+      "n5": "다섯째"
+    },
+    "schedule": {
+      "weekly": "매주 {{days}}",
+      "fortnightly": "격주 {{days}}",
+      "monthly_nth": "매월 {{nths}} {{days}}"
+    },
+    "timeRange": "{{start}}~{{end}}",
+    "summary": "{{schedule}}, {{range}}",
+    "next": "다음: {{time}}",
+    "onNow": "진행 중, {{time}}까지",
+    "paused": "일시 중지됨",
+    "noNext": "예정된 날짜 없음",
+    "pause": "일시 중지",
+    "resume": "다시 시작",
+    "pausedHint": "일시 중지된 알림은 여기서 알려 주지 않습니다. 이미 추가한 캘린더에는 자체 알람이 남아 있습니다.",
+    "delete": "알림 삭제",
+    "deleteConfirm": "이 매주 알림을 삭제할까요? 이미 추가한 캘린더에는 사본이 남습니다.",
+    "calendar": "캘린더에 추가",
+    "calendarDone": "다운로드했습니다. 파일을 열어 추가하세요.",
+    "saved": "매주 알림을 저장했습니다.",
+    "errors": {
+      "days": "요일을 하나 이상 고르세요.",
+      "times": "서로 다른 시작 시간과 종료 시간을 고르세요.",
+      "nth": "매월 주를 하나 이상 고르세요.",
+      "anchor": "다음 날짜를 고르세요.",
+      "saveFailed": "이 알림을 저장하지 못했습니다. 다시 시도하세요."
+    },
+    "councilNote": "의회는 이 일정을 바꿀 수 있으며, 공휴일에는 다를 수 있습니다. 주차하는 곳의 표지판을 확인하세요.",
+    "reliability": "알림은 집중 모드나 배터리 절약 모드 등으로 늦어지거나 무음이 될 수 있습니다. 알림에만 의존하지 마세요.",
+    "notifyDenied": "ParkProof 알림이 차단되어 이 휴대폰에서 알려 드릴 수 없습니다. 브라우저의 사이트 설정에서 알림을 허용하거나 캘린더에 추가하세요.",
+    "offer": {
+      "heading": "이 표지판에 매주 반복되는 제한이 있습니다",
+      "body": "ParkProof가 매번 시작 전에 알려 드릴 수 있습니다.",
+      "line": "{{what}}. {{summary}}.",
+      "cta": "매주 알려 주세요",
+      "already": "이미 이 제한에 대한 매주 알림이 있습니다."
+    },
+    "sheet": {
+      "title": "매주 알려 주세요",
+      "check": "이 요일과 시간을 표지판과 대조해 확인하세요",
+      "signSays": "표지판에 이런 내용도 있습니다: {{text}}"
+    },
+    "notify": {
+      "moveTonight": "{{day}} {{range}} {{what}}. 오늘 밤에 차를 옮기세요.",
+      "moveBefore": "{{day}} {{range}} {{what}}. {{start}} 전에 차를 옮기세요."
+    },
+    "ics": {
+      "alarmTonight": "내일 {{range}} {{what}}. 오늘 밤에 차를 옮기세요.",
+      "alarmTomorrow": "내일 {{range}} {{what}}. {{start}} 전에 차를 옮기세요.",
+      "alarmSoon": "{{what}} 시작: {{start}}. 그 전에 차를 옮기세요.",
+      "move": "시작 전에 차를 옮기세요.",
+      "footer": "ParkProof에서 설정한 알림입니다."
+    },
+    "pushStatus": {
+      "closed": "ParkProof가 닫혀 있어도 이 휴대폰에서 알림을 받도록 설정되었습니다. 계속 유지하려면 적어도 두 달에 한 번은 ParkProof를 여세요.",
+      "openOnly": "ParkProof가 열려 있을 때만 이 휴대폰에서 알림을 받습니다. 캘린더에도 추가하세요.",
+      "none": "지금은 이 휴대폰에서 이 알림을 표시할 수 없습니다. 캘린더에 추가하세요."
+    },
+    "zone": {
+      "melbourne": "멜버른",
+      "sydney": "시드니",
+      "canberra": "캔버라",
+      "brisbane": "브리즈번",
+      "lindeman": "린드먼섬",
+      "adelaide": "애들레이드",
+      "brokenHill": "브로큰힐",
+      "darwin": "다윈",
+      "perth": "퍼스",
+      "eucla": "유클라",
+      "hobart": "호바트",
+      "lordHowe": "로드하우섬"
+    }
   }
 }

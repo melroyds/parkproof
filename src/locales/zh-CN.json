@@ -927,5 +927,152 @@
       "returnDetail": "返回时车况:特写",
       "compliance": "付款或许可证凭证照片"
     }
+  },
+  "recurring": {
+    "title": "每周提醒",
+    "intro": "街道清扫、清道和其他在固定日子重复的限制。设置一次,每次开始前都会提醒你。",
+    "homeRow": "街道清扫和每周提醒",
+    "homeNext": "下一次:{{what}},{{time}}",
+    "homeOnNow": "{{what}}正在进行,到 {{time}} 结束",
+    "homeCount_one": "已设 {{count}} 个",
+    "homeCount_other": "已设 {{count}} 个",
+    "homeNone": "暂无",
+    "empty": "还没有每周提醒",
+    "emptyHelp": "为你常停车地方的街道清扫或清道时段添加一个提醒。",
+    "add": "添加每周提醒",
+    "editTitleNew": "新的每周提醒",
+    "editTitle": "编辑每周提醒",
+    "kind": {
+      "street_cleaning": "街道清扫",
+      "clearway": "清道",
+      "no_stopping": "禁止停车",
+      "other": "其他限制"
+    },
+    "field": {
+      "kind": "是什么?",
+      "label": "名称",
+      "days": "星期",
+      "start": "开始",
+      "end": "结束",
+      "frequency": "频率",
+      "anchor": "下一次的日期",
+      "nth": "每月哪几周",
+      "address": "地点",
+      "addressPlaceholder": "街道或地点(可选)",
+      "remind": "提醒我",
+      "push": "在这部手机上通知我"
+    },
+    "frequency": {
+      "weekly": "每周",
+      "fortnightly": "每两周",
+      "monthly_nth": "每月某几周"
+    },
+    "remind": {
+      "evening": "前一天晚上,时间",
+      "before": "开始前",
+      "minutes_one": "提前 {{count}} 分钟",
+      "minutes_other": "提前 {{count}} 分钟",
+      "hours_one": "提前 {{count}} 小时",
+      "hours_other": "提前 {{count}} 小时"
+    },
+    "pushHint": "想要最可靠的提醒,也请把它加到你的日历里。",
+    "zoneNote": "日期和时间均为{{place}}当地时间。",
+    "days": {
+      "MO": "星期一",
+      "TU": "星期二",
+      "WE": "星期三",
+      "TH": "星期四",
+      "FR": "星期五",
+      "SA": "星期六",
+      "SU": "星期日"
+    },
+    "daysShort": {
+      "MO": "周一",
+      "TU": "周二",
+      "WE": "周三",
+      "TH": "周四",
+      "FR": "周五",
+      "SA": "周六",
+      "SU": "周日"
+    },
+    "dayRange": "{{from}}至{{to}}",
+    "nth": {
+      "n1": "第一个",
+      "n2": "第二个",
+      "n3": "第三个",
+      "n4": "第四个",
+      "n5": "第五个"
+    },
+    "schedule": {
+      "weekly": "每周{{days}}",
+      "fortnightly": "每两周{{days}}",
+      "monthly_nth": "每月{{nths}}{{days}}"
+    },
+    "timeRange": "{{start}} 至 {{end}}",
+    "summary": "{{schedule}},{{range}}",
+    "next": "下一次:{{time}}",
+    "onNow": "正在进行,到 {{time}} 结束",
+    "paused": "已暂停",
+    "noNext": "没有即将到来的日期",
+    "pause": "暂停",
+    "resume": "恢复",
+    "pausedHint": "已暂停的提醒不会在这里提醒你。已加到日历里的那份会保留自己的闹钟。",
+    "delete": "删除提醒",
+    "deleteConfirm": "删除这个每周提醒?已加到日历里的那份会保留。",
+    "calendar": "添加到日历",
+    "calendarDone": "已下载。打开文件即可添加。",
+    "saved": "每周提醒已保存。",
+    "errors": {
+      "days": "请至少选一天。",
+      "times": "请选择不同的开始和结束时间。",
+      "nth": "请至少选每月的一周。",
+      "anchor": "请选择下一次的日期。",
+      "saveFailed": "无法保存这个提醒。请再试一次。"
+    },
+    "councilNote": "市议会会调整这些时间安排,公众假期也可能不同。请留意你停车处的标志。",
+    "reliability": "提醒可能会延迟或被静音,例如因为专注模式或省电模式。不要只依赖提醒。",
+    "notifyDenied": "ParkProof 的通知已被阻止,这些提醒无法在这部手机上通知你。请在浏览器的网站设置中允许通知,或把它们加到你的日历里。",
+    "offer": {
+      "heading": "这个标志有每周重复的限制",
+      "body": "ParkProof 可以在每次开始前提醒你。",
+      "line": "{{what}}。{{summary}}。",
+      "cta": "每周提醒我",
+      "already": "你已经为此设置了每周提醒。"
+    },
+    "sheet": {
+      "title": "每周提醒我",
+      "check": "请对照标志核对这些日子和时间",
+      "signSays": "标志上还写着:{{text}}"
+    },
+    "notify": {
+      "moveTonight": "{{what}}:{{day}} {{range}}。今晚就把车挪走。",
+      "moveBefore": "{{what}}:{{day}} {{range}}。请在 {{start}} 前把车挪走。"
+    },
+    "ics": {
+      "alarmTonight": "{{what}}:明天 {{range}}。今晚就把车挪走。",
+      "alarmTomorrow": "{{what}}:明天 {{range}}。请在 {{start}} 前把车挪走。",
+      "alarmSoon": "{{what}}将于 {{start}} 开始。请在那之前把车挪走。",
+      "move": "请在开始前把车挪走。",
+      "footer": "在 ParkProof 中设置的提醒。"
+    },
+    "pushStatus": {
+      "closed": "已设置为即使 ParkProof 关闭,也会在这部手机上提醒你。请至少每两个月打开一次 ParkProof,让它保持有效。",
+      "openOnly": "只有在 ParkProof 打开时才会在这部手机上提醒你。也请把它加到你的日历里。",
+      "none": "这部手机目前无法显示这个提醒。请把它加到你的日历里。"
+    },
+    "zone": {
+      "melbourne": "墨尔本",
+      "sydney": "悉尼",
+      "canberra": "堪培拉",
+      "brisbane": "布里斯班",
+      "lindeman": "林德曼岛",
+      "adelaide": "阿德莱德",
+      "brokenHill": "布罗肯希尔",
+      "darwin": "达尔文",
+      "perth": "珀斯",
+      "eucla": "尤克拉",
+      "hobart": "霍巴特",
+      "lordHowe": "豪勋爵岛"
+    }
   }
 }
