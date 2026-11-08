@@ -86,7 +86,7 @@ describe('the record screen names its record (fix list item 6)', () => {
     const session = testD()
     saveSession(session)
     renderDetail(session)
-    expect(screen.getByText('Arrived Sun 8 Nov 2026, 5:08 pm AEDT')).toBeTruthy()
+    expect(screen.getByText('Logged Sun 8 Nov 2026, 5:08 pm AEDT (phone clock)')).toBeTruthy()
     expect(statusText()).toBe('Ended 5:23 pm AEDT')
     // The departure row below still labels the same time as the phone's tap.
     expect(screen.getByText(/You tapped I've left at Sun 8 Nov, 5:23 pm AEDT \(phone clock\)/)).toBeTruthy()
@@ -100,7 +100,7 @@ describe('the record screen names its record (fix list item 6)', () => {
     })
     saveSession(earlier)
     renderDetail(earlier)
-    expect(screen.getByText('Arrived Sun 8 Nov 2026, 5:02 pm AEDT')).toBeTruthy()
+    expect(screen.getByText('Logged Sun 8 Nov 2026, 5:02 pm AEDT (phone clock)')).toBeTruthy()
     expect(statusText()).toBe('Ended 5:03 pm AEDT')
   })
 
@@ -108,7 +108,7 @@ describe('the record screen names its record (fix list item 6)', () => {
     const session = testD({ location: PERTH })
     saveSession(session)
     renderDetail(session)
-    expect(screen.getByText('Arrived Sun 8 Nov 2026, 2:08 pm AWST')).toBeTruthy()
+    expect(screen.getByText('Logged Sun 8 Nov 2026, 2:08 pm AWST (phone clock)')).toBeTruthy()
     expect(statusText()).toBe('Ended 2:23 pm AWST')
     // Not the device's reading of the same instants (when the device isn't in Perth).
     const deviceTime = new Date(session.ended_at as string).toLocaleTimeString('en-AU', {

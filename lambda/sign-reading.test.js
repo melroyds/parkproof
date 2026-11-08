@@ -26,6 +26,7 @@ const {
   normalizeModelOutput,
   plainNoteText,
   readPriorSignContext,
+  readRecurringRestrictions,
   validateParkingState,
   validateUserPermits,
 } = await import('./sign-reading.js')
@@ -768,6 +769,24 @@ describe('normalizeModelOutput (T3 item 4)', () => {
       expect(normalizeModelOutput(fullAnswer({ recurring_restrictions: undefined })).recurring_restrictions).toEqual([])
       expect(normalizeModelOutput(fullAnswer({ recurring_restrictions: base })).recurring_restrictions).toEqual([])
     })
+
+    it('answers only restrictions the app keeps as they are: the one check, readRecurringRestrictions (polish list)', () => {
+      const out = normalizeModelOutput(
+        fullAnswer({
+          recurring_restrictions: [
+            { ...base, start: '7:00', end: '24:00', week_of_month: [3, 1] },
+            { ...base, kind: 'parade', days: ['SA', 'MO'] },
+            { ...base, week_of_month: 'first' },
+            { ...base, end: '07:00' },
+          ],
+        }),
+      ).recurring_restrictions
+      expect(out).toEqual([
+        { ...base, start: '07:00', end: '23:59', week_of_month: [1, 3] },
+        { ...base, kind: 'other', days: ['MO', 'SA'] },
+      ])
+      expect(readRecurringRestrictions(out)).toEqual(out)
+    })
   })
 
   describe('sign notes in plain characters', () => {
@@ -790,6 +809,24 @@ describe('normalizeModelOutput (T3 item 4)', () => {
         refresh: { sign_status: 'partially_obscured', sign_issues: ['\u2192 plate faded'], is_area_sign: null },
       })
       expect(out.sign_issues).toEqual(['-> plate faded'])
+    })
+
+    it('writes comparison signs as ASCII and drops other maths signs the en, it and id fonts lack (polish list)', () => {
+      expect(plainNoteText('Limit ≤ 2P')).toBe('Limit <= 2P')
+      expect(plainNoteText('≥ 1 hour, ≈ 50 m away')).toBe('>= 1 hour, ~ 50 m away')
+      expect(plainNoteText('Left plate ≠ right plate')).toBe('Left plate != right plate')
+      expect(plainNoteText('Hours 8−6, 2′ high')).toBe("Hours 8-6, 2' high")
+      expect(plainNoteText('Sum ∑ and ∞ and ⨀ and ⟂ gone')).toBe('Sum and and and gone')
+      const notes = [
+        '≤≥≠≈≦≧⩽⩾≃≅∼−‐‑‒―∕⁄∗′″‴',
+        'a ∀∃∈∑√∞∫∴⋅⋯⟀⟨⦀⧿⨀⫿ b',
+      ].map(plainNoteText)
+      for (const n of notes) expect(isWinAnsi(n), n).toBe(true)
+      // Through the model answer too, so the signed notes are drawable.
+      const out = normalizeModelOutput(fullAnswer({ sign_status: 'partially_obscured', sign_issues: ['Time limit ≤ 2P faded'] }))
+      expect(out.sign_issues).toEqual(['Time limit <= 2P faded'])
+      // WinAnsi signs that the fonts draw stay as they are.
+      expect(plainNoteText('± 5 min, 2 × 1P, 90° – angle')).toBe('± 5 min, 2 × 1P, 90° – angle')
     })
 
     it('leaves letters of any script alone', () => {
@@ -1056,6 +1093,39 @@ describe('normalizeModelOutput (T3 item 4)', () => {
       })
       expect(out.sign_status).toBe('readable')
       expect(out.is_area_sign).toBe(true)
+    })
+
+    it('re-checking a record saved before T3 never blanks the answer, whatever status the model gives (polish list)', () => {
+      // The model was sent no photo and calls the sign missing, but the
+      // re-check answers from the recorded rules.
+      const answer = fullAnswer({
+        can_park_now: true,
+        requires_ticket: true,
+        is_permit_zone: true,
+        permit_area: '25',
+      })
+      for (const status of ['missing', 'not_a_parking_sign', 'partially_obscured', 'contradictory', 'nonsense']) {
+        const out = normalizeModelOutput(
+          { ...answer, sign_status: status, sign_issues: ['No photo was provided'] },
+          { refresh: { sign_status: null, sign_issues: [], is_area_sign: null } },
+        )
+        expect(out.sign_status, status).toBe('readable')
+        expect(out.sign_issues, status).toEqual([])
+        expect(out.can_park_now, status).toBe(true)
+        expect(out.until, status).toBe(answer.until)
+        expect(out.rules, status).toBe(answer.rules)
+        expect(out.requires_ticket, status).toBe(true)
+        expect(out.is_permit_zone, status).toBe(true)
+        expect(out.permit_area, status).toBe('25')
+      }
+      // A recorded status is still echoed as recorded.
+      const recorded = normalizeModelOutput(
+        { ...answer, sign_status: 'missing' },
+        { refresh: { sign_status: 'contradictory', sign_issues: ['Plates disagree'], is_area_sign: null } },
+      )
+      expect(recorded.sign_status).toBe('contradictory')
+      expect(recorded.sign_issues).toEqual(['Plates disagree'])
+      expect(recorded.can_park_now).toBe(true)
     })
   })
 

@@ -26,9 +26,11 @@ import { canShowInTabNotifications } from './notifications'
 import {
   ERR_NOT_SUBSCRIBED,
   errorCodeOf,
+  PUSH_STATE_EVENT,
   getDeviceId,
   hasPushDeviceId,
   isPushSupported,
+  isPushTurnedOff,
   pushPost,
   reRegisterPush,
   subscribeToPush,
@@ -216,10 +218,28 @@ export function getRecurringPushRevision(): number {
   return statusRevision
 }
 
+/** The last push on/off event counted into the revision (each subscriber hears it). */
+let countedPushStateEvent: Event | null = null
+
+/**
+ * Hear every status change, and push being turned off in Settings or
+ * registered again (what the line under a rule may say changes then too).
+ */
 export function subscribeRecurringPushStatus(listener: () => void): () => void {
   if (typeof window === 'undefined' || typeof window.addEventListener !== 'function') return () => {}
+  const onPushState = (event: Event) => {
+    if (event !== countedPushStateEvent) {
+      countedPushStateEvent = event
+      statusRevision++
+    }
+    listener()
+  }
   window.addEventListener(RECURRING_PUSH_EVENT, listener)
-  return () => window.removeEventListener(RECURRING_PUSH_EVENT, listener)
+  window.addEventListener(PUSH_STATE_EVENT, onPushState)
+  return () => {
+    window.removeEventListener(RECURRING_PUSH_EVENT, listener)
+    window.removeEventListener(PUSH_STATE_EVENT, onPushState)
+  }
 }
 
 /**
@@ -245,8 +265,8 @@ export function recurringPushStatusOf(rule: RecurringRule, t: TFunction, now: nu
 
 /**
  * What the line under a rule can truthfully say about this phone:
- *  - 'closed': booked for push and notifications are allowed, so it alerts
- *    even when ParkProof is closed;
+ *  - 'closed': booked for push, notifications are allowed and push hasn't
+ *    been turned off in Settings, so it alerts even when ParkProof is closed;
  *  - 'open_only': not on push, but this browser can show an alert while
  *    ParkProof is open;
  *  - 'none': nothing on this phone can alert for it right now (no
@@ -261,18 +281,27 @@ export interface AlertEnvironment {
   permission: NotificationPermission | 'unsupported'
   /** canShowInTabNotifications(): can an open tab show an alert here? */
   inTab: boolean
+  /**
+   * push.ts isPushTurnedOff(): push was turned off in Settings on this
+   * browser and hasn't been registered again. Absent counts as false.
+   */
+  pushOff?: boolean
 }
 
 export function alertEnvironment(): AlertEnvironment {
   const permission = typeof window !== 'undefined' && 'Notification' in window ? Notification.permission : 'unsupported'
-  return { permission, inTab: canShowInTabNotifications() }
+  const env: AlertEnvironment = { permission, inTab: canShowInTabNotifications() }
+  if (isPushTurnedOff()) env.pushOff = true
+  return env
 }
 
 /**
  * The rule's reach on this phone, or null when there is nothing to say
  * (notifications off, paused, no reminders) or its push status hasn't been
  * worked out yet. A booked rule only counts as 'closed' while notification
- * permission is still granted: a revoked permission silences push too.
+ * permission is still granted (a revoked permission silences push too) and
+ * while push is on in Settings: turning it off drops the subscription the
+ * server's pushes go to, even though the bookings stand.
  */
 export function recurringAlertReach(
   rule: RecurringRule,
@@ -282,7 +311,7 @@ export function recurringAlertReach(
 ): RecurringAlertReach | null {
   const status = recurringPushStatusOf(rule, t, now)
   if (status === null) return null
-  if (status === 'push' && env.permission === 'granted') return 'closed'
+  if (status === 'push' && env.permission === 'granted' && env.pushOff !== true) return 'closed'
   if (env.inTab) return 'open_only'
   return 'none'
 }

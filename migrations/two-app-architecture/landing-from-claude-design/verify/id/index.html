@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Verifikasi catatan bukti ParkProof | ParkProof</title>
+<title>Cek tanda tangan pada catatan ParkProof | ParkProof</title>
 <meta name="description" content="Panduan langkah demi langkah openssl untuk mengecek bahwa catatan bukti ParkProof tidak berubah sejak ditandatangani ParkProof. Penandatanganan kriptografis melalui AWS KMS ECDSA P-256.">
 <meta name="robots" content="index, follow">
 <link rel="icon" href="../../assets/parkproof-icon.svg" type="image/svg+xml">
@@ -284,15 +284,15 @@
 
   <nav class="locale-switcher" aria-label="Language"><span class="marker">🌏</span> <a href="/verify/" hreflang="en">English</a> <span class="sep">·</span> <a href="/verify/zh-CN/" hreflang="zh-CN">简体中文</a> <span class="sep">·</span> <a href="/verify/vi/" hreflang="vi">Tiếng Việt</a> <span class="sep">·</span> <span class="active">Bahasa Indonesia</span> <span class="sep">·</span> <a href="/verify/ko/" hreflang="ko">한국어</a> <span class="sep">·</span> <a href="/verify/it/" hreflang="it">Italiano</a> <span class="sep">·</span> <a href="/verify/el/" hreflang="el">Ελληνικά</a> <span class="sep">·</span> <a href="/verify/hi/" hreflang="hi">हिन्दी</a> <span class="sep">·</span> <a href="/verify/pa/" hreflang="pa">ਪੰਜਾਬੀ</a></nav>
 
-  <div class="eyebrow">Verifikasi</div>
-  <h1>Verifikasi sebuah <span class="accent">catatan bukti</span> ParkProof.</h1>
+  <div class="eyebrow">Cek tanda tangan</div>
+  <h1>Cek tanda tangan pada <span class="accent">catatan ParkProof</span>.</h1>
   <p class="lede">Setiap PDF bukti ParkProof memuat lampiran tanda tangan kriptografis, dan setiap catatan bisa disimpan sebagai berkas bukti. Halaman ini menunjukkan kepada siapa pun, misalnya petugas dewan kota, perusahaan asuransi, panitera pengadilan, atau pengemudi sendiri, cara mengecek secara offline bahwa sebuah catatan tidak berubah sejak ParkProof menandatanganinya.</p>
 
   <div class="callout">
     <strong>Bingkai jujur.</strong> Tanda tangan yang sah menunjukkan <em>integritas</em>: detail dan sidik jari foto yang ditandatangani persis sama dengan yang ditandatangani ParkProof, pada waktu penandatanganan. Tanda tangan tidak menunjukkan bahwa catatan itu <em>benar</em> (AI bisa salah membaca rambu), siapa yang mengemudi, di mana mobil berada, atau kapan mobil tiba atau pergi, dan tidak menentukan seberapa besar bobot catatan itu. Itu keputusan orang yang meninjaunya.
   </div>
 
-  <h2>Apa yang kamu verifikasi</h2>
+  <h2>Apa yang kamu cek</h2>
   <p>Catatan ParkProof ditandatangani per bagian, yang disebut mata rantai. Mata rantai 0 ditandatangani saat ParkProof menerima catatan yang disimpan. Setiap mata rantai berikutnya, misalnya detail saat parkir, foto kondisi mobil, foto bukti pembayaran, atau saat pergi, ditandatangani saat diterima ParkProof dan memuat SHA-256 mata rantai sebelumnya, sehingga semua mata rantai membentuk rantai. Setiap mata rantai punya <strong>payload</strong> (teks persis yang ditandatangani, termasuk sidik jari SHA-256 foto-fotonya) dan <strong>tanda tangan</strong> yang dibuat dengan kunci privat ParkProof (ECDSA P-256), yang tidak pernah keluar dari AWS KMS. PDF bukti mencetak setiap mata rantai di lampiran tanda tangannya. <strong>Berkas bukti</strong> catatan (berkas .json yang bisa diunduh pengemudi dari catatan di aplikasi) berisi payload dan tanda tangan yang sama, ditambah foto aslinya.</p>
   <p><strong>Kunci publik</strong> yang diperlukan untuk mengecek tanda tangan diterbitkan di <a class="link" href="/parkproof-public-key.pem"><code>/parkproof-public-key.pem</code></a>. Buka di browser untuk memastikan kunci itu dimuat, lalu simpan.</p>
 
@@ -351,7 +351,7 @@ openssl dgst -sha256 photo1.jpg
 <span class="comment"># 8. Lihat mata rantai dan kolom mana yang menandatanganinya.</span>
 jq '.photos[0].signed_in' evidence.json</pre>
 
-  <p>Nilai hex itu harus sama dengan <code>sha256</code> foto tersebut di dalam payload yang ditandatangani dari setiap mata rantai di <code>signed_in</code>: <code>sign_photo_sha256</code>, <code>car_photo_sha256</code>, atau <code>ambient_photo_sha256</code> di mata rantai 0, atau sebuah <code>sha256</code> di bawah <code>photos</code>, <code>photo</code>, atau <code>return_photos</code> di mata rantai berikutnya. Cocokkan dengan payload yang sudah kamu cek, bukan hanya dengan <code>sha256</code> di sebelah foto dalam berkas, yang tidak ditandatangani. Gunakan <code>.photos[1]</code> untuk foto kedua, dan seterusnya.</p>
+  <p>Nilai hex itu harus sama dengan <code>sha256</code> foto tersebut di dalam payload yang ditandatangani dari setiap mata rantai di <code>signed_in</code>: <code>sign_photo_sha256</code>, <code>car_photo_sha256</code>, atau <code>ambient_photo_sha256</code> di mata rantai 0, atau sebuah <code>sha256</code> di bawah <code>photos</code>, <code>photo</code>, atau <code>return_photos</code> di mata rantai berikutnya. Cocokkan dengan payload yang tanda tangannya sudah kamu cek di langkah 4, bukan hanya dengan <code>sha256</code> di sebelah foto dalam berkas, yang tidak ditandatangani. Gunakan <code>.photos[1]</code> untuk foto kedua, dan seterusnya.</p>
   <p>Tanpa jq, buka berkas di editor teks, salin nilai <code>bytes_base64</code> sebuah foto ke berkas bernama <code>photo1.b64</code>, lalu jalankan <code>base64 -d photo1.b64 &gt; photo1.jpg</code>.</p>
 
   <h3>Di Windows</h3>
@@ -382,7 +382,7 @@ jq -r '.links[0].signature_base64' evidence.json | base64 -d > link0-sig.bin</pr
 
   <div class="grid-2">
     <div class="card ok">
-      <h3>Terverifikasi <span class="label">LOLOS</span></h3>
+      <h3>Tanda tangan valid <span class="label">LOLOS</span></h3>
       <p><code>Verified OK</code>: payload itu persis yang ditandatangani ParkProof. Detail dan sidik jari foto di dalamnya tidak berubah sejak ParkProof menandatanganinya, pada waktu <code>signed_at</code> di dalamnya. Foto-fotonya sendiri dicek di langkah 6 sampai 8.</p>
     </div>
     <div class="card fail">
@@ -392,7 +392,7 @@ jq -r '.links[0].signature_base64' evidence.json | base64 -d > link0-sig.bin</pr
   </div>
 
   <h2>Lebih dari "apakah byte berubah?"</h2>
-  <p>Verifikasi yang berhasil mengkonfirmasi <em>integritas</em>. Itu tidak mengkonfirmasi:</p>
+  <p>Tanda tangan yang valid menunjukkan <em>integritas</em>. Tanda tangan tidak menunjukkan:</p>
   <ul>
     <li><strong>Bahwa AI membaca rambu dengan benar.</strong> Pemindaian ParkProof adalah pembacaan mesin dari rambu parkir, dan mesin bisa salah. Teks putusan dan aturan dalam catatan adalah pembacaan terbaik AI pada saat pemindaian, bukan kebenaran absolut.</li>
     <li><strong>Bahwa foto menggambarkan apa yang orang itu katakan.</strong> Tanda tangan yang valid menunjukkan sidik jari foto tidak berubah sejak ditandatangani ParkProof, dan menghitung ulang hash menunjukkan apakah sebuah foto cocok dengan sidik jarinya. Keduanya tidak menunjukkan bahwa foto diambil dengan jujur.</li>
@@ -402,13 +402,13 @@ jq -r '.links[0].signature_base64' evidence.json | base64 -d > link0-sig.bin</pr
 
   <h2>Mengapa ini ada</h2>
   <p>Sebagian besar aplikasi parkir yang menghasilkan "bukti" hanya menghasilkan tangkapan layar. Tangkapan layar bisa saja diedit kapan pun antara saat diambil dan saat dikirim. Tanda tangan kriptografis adalah perbedaan antara <em>"inilah yang aku lihat"</em> dan <em>"inilah yang aku lihat, dan siapa pun bisa mengecek bahwa itu tidak berubah sejak ParkProof menandatanganinya."</em></p>
-  <p>Kunci publik diterbitkan sehingga pengecekan bisa dilakukan sepenuhnya offline. Kamu tidak perlu memercayai ParkProof, menghubungi server kami, atau menjalankan aplikasi kami. Pengecekan bisa dilakukan bertahun-tahun dari sekarang, bahkan jika ParkProof sudah tidak berjalan, selama <code>openssl</code> masih ada.</p>
+  <p>Kunci publik diterbitkan, jadi setelah kamu menyimpannya, pengecekan bisa dilakukan offline, tanpa aplikasi kami. Waktu penandatanganan berasal dari jam server ParkProof, jadi untuk waktu itu kamu memercayai ParkProof. Pengecekan bisa dilakukan bertahun-tahun dari sekarang, bahkan jika ParkProof sudah tidak berjalan, selama kamu punya salinan kunci publik yang tersimpan dan <code>openssl</code>.</p>
 
   <h2>Pertanyaan?</h2>
   <p>Email <a class="link" href="mailto:hello@parkproof.com.au">hello@parkproof.com.au</a>. Kami menjawab.</p>
 
   <footer>
-    <span>parkproof.com.au · halaman verifikasi</span>
+    <span>parkproof.com.au · cek tanda tangan</span>
     <span><a href="/parkproof-public-key.pem">/parkproof-public-key.pem</a> <span class="sep">·</span> <a href="/">← Kembali ke ParkProof</a></span>
   </footer>
 </div>

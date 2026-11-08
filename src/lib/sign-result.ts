@@ -18,10 +18,9 @@ import type {
   RuleFlags,
   RuleVariant,
   SignStatus,
-  Weekday,
 } from '../types'
 import { CAPS, SIGN_STATUSES } from '../../lambda/addendum-schema.js'
-import { NO_READABLE_SIGN_STATUSES, RECURRING_KINDS, SIGN_READING_CAPS, WEEKDAYS } from '../../lambda/sign-reading.js'
+import { NO_READABLE_SIGN_STATUSES, readRecurringRestrictions } from '../../lambda/sign-reading.js'
 import { fitText } from './evidence-chain'
 
 /** Anything that may carry a sign reading: an answer, a variant-merged answer or a saved record. */
@@ -64,48 +63,15 @@ export function isUnclearSign(value: MaybeSignReading | null | undefined): boole
   return s === 'partially_obscured' || s === 'contradictory'
 }
 
-const HHMM_RE = /^([01]\d|2[0-3]):[0-5]\d$/
-
-function isRecurringRestriction(value: unknown): value is RecurringRestriction {
-  if (!value || typeof value !== 'object' || Array.isArray(value)) return false
-  const r = value as Record<string, unknown>
-  return (
-    typeof r.kind === 'string' &&
-    RECURRING_KINDS.includes(r.kind as RecurringRestriction['kind']) &&
-    Array.isArray(r.days) &&
-    r.days.length > 0 &&
-    r.days.every((d) => typeof d === 'string' && WEEKDAYS.includes(d as Weekday)) &&
-    typeof r.start === 'string' &&
-    HHMM_RE.test(r.start) &&
-    typeof r.end === 'string' &&
-    HHMM_RE.test(r.end) &&
-    Array.isArray(r.week_of_month) &&
-    r.week_of_month.every((w) => Number.isInteger(w) && (w as number) >= 1 && (w as number) <= SIGN_READING_CAPS.weekOfMonthMax) &&
-    typeof r.exceptions_text === 'string' &&
-    typeof r.label === 'string'
-  )
-}
-
 /**
- * The weekly restrictions of an answer or record: only well-formed ones,
- * copied to exactly the RecurringRestriction keys, at most
- * SIGN_READING_CAPS.recurringRestrictions. [] when there are none.
+ * The weekly restrictions of an answer or record, as the app keeps them:
+ * lambda/sign-reading.js readRecurringRestrictions, the one check the
+ * server's answer, the result screen, the record and the weekly reminders
+ * (recurring.ts) all use, so they can't disagree about which restrictions
+ * there are. [] when there are none.
  */
 export function recurringRestrictionsOf(value: MaybeSignReading | null | undefined): RecurringRestriction[] {
-  const list: unknown = value?.recurring_restrictions
-  if (!Array.isArray(list)) return []
-  return list
-    .filter(isRecurringRestriction)
-    .slice(0, SIGN_READING_CAPS.recurringRestrictions)
-    .map((r) => ({
-      kind: r.kind,
-      days: [...r.days],
-      start: r.start,
-      end: r.end,
-      week_of_month: [...r.week_of_month],
-      exceptions_text: r.exceptions_text,
-      label: r.label,
-    }))
+  return readRecurringRestrictions(value?.recurring_restrictions)
 }
 
 /** The result screen's weekly restriction hint (T3 item 7) shows for these. */

@@ -170,6 +170,77 @@ export function formatInZone(
   return `${day}, ${time}${zone}`
 }
 
+/** A zone's wall clock at one moment, as numbers (month 1 to 12, hour 0 to 23). */
+export interface ZonedClockReading {
+  year: number
+  month: number
+  day: number
+  hour: number
+  minute: number
+  second: number
+}
+
+const wallClockFormatters = new Map<string, Intl.DateTimeFormat>()
+
+/** Throws RangeError for an unknown zone. */
+function wallClockFormatter(timeZone: string): Intl.DateTimeFormat {
+  let f = wallClockFormatters.get(timeZone)
+  if (!f) {
+    f = new Intl.DateTimeFormat('en-US', {
+      timeZone,
+      hourCycle: 'h23',
+      year: 'numeric',
+      month: 'numeric',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: 'numeric',
+      second: 'numeric',
+    })
+    wallClockFormatters.set(timeZone, f)
+  }
+  return f
+}
+
+/**
+ * The clock in `timeZone` at `value`: the one place the app reads a zone's
+ * wall clock (hourInZone here, wallClockAt in notice-match.ts). Some
+ * engines print midnight as "24" even when asked for a 0 to 23 hour; that
+ * reads as hour 0 here, so every caller sees the same midnight. Throws
+ * RangeError for an unknown zone or an invalid time.
+ */
+export function wallClockInZone(value: string | number | Date, timeZone: string): ZonedClockReading {
+  const date = value instanceof Date ? value : new Date(value)
+  const parts = wallClockFormatter(timeZone).formatToParts(date)
+  const num = (type: Intl.DateTimeFormatPartTypes) => Number(parts.find((p) => p.type === type)?.value)
+  return {
+    year: num('year'),
+    month: num('month'),
+    day: num('day'),
+    hour: num('hour') % 24,
+    minute: num('minute'),
+    second: num('second'),
+  }
+}
+
+/**
+ * The zone's short name at a moment, as formatInZone prints it ("AEST",
+ * "AEDT", "AWST"), or '' for an unknown zone or an invalid time. Two
+ * moments with different names have a daylight saving change between them.
+ */
+export function zoneNameInZone(value: string | number | Date, timeZone: string): string {
+  const date = value instanceof Date ? value : new Date(value)
+  if (!Number.isFinite(date.getTime())) return ''
+  try {
+    return (
+      new Intl.DateTimeFormat('en-AU', { timeZone, timeZoneName: 'short' })
+        .formatToParts(date)
+        .find((p) => p.type === 'timeZoneName')?.value ?? ''
+    )
+  } catch {
+    return ''
+  }
+}
+
 /**
  * The hour of the day (0 to 23) at `value` in the record's zone, not the
  * phone's: a scan in Perth reads as Perth time whatever zone the phone is
@@ -179,16 +250,13 @@ export function formatInZone(
 export function hourInZone(value: string | number | Date, timeZone: string): number | null {
   const date = value instanceof Date ? value : new Date(value)
   if (!Number.isFinite(date.getTime())) return null
-  let hour: string | undefined
+  let hour: number
   try {
-    hour = new Intl.DateTimeFormat('en-AU', { timeZone, hour: 'numeric', hourCycle: 'h23' })
-      .formatToParts(date)
-      .find((p) => p.type === 'hour')?.value
+    hour = wallClockInZone(date, timeZone).hour
   } catch {
     return timeZone === DEFAULT_TZ ? null : hourInZone(date, DEFAULT_TZ)
   }
-  const n = Number(hour)
-  return Number.isInteger(n) && n >= 0 && n <= 23 ? n : null
+  return Number.isInteger(hour) && hour >= 0 && hour <= 23 ? hour : null
 }
 
 /**

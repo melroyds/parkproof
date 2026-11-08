@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>ParkProof ਸਬੂਤ ਰਿਕਾਰਡ ਦੀ ਪੁਸ਼ਟੀ ਕਰੋ | ParkProof</title>
+<title>ParkProof ਰਿਕਾਰਡ ਦੇ ਹਸਤਾਖਰਾਂ ਦੀ ਜਾਂਚ ਕਰੋ | ParkProof</title>
 <meta name="description" content="ਇਹ ਜਾਂਚਣ ਲਈ ਕਦਮ-ਦਰ-ਕਦਮ openssl ਗਾਈਡ ਕਿ ParkProof ਸਬੂਤ ਰਿਕਾਰਡ ParkProof ਦੇ ਹਸਤਾਖਰ ਕਰਨ ਤੋਂ ਬਾਅਦ ਨਹੀਂ ਬਦਲਿਆ। AWS KMS ECDSA P-256 ਰਾਹੀਂ ਕ੍ਰਿਪਟੋਗ੍ਰਾਫਿਕ ਹਸਤਾਖਰ।">
 <meta name="robots" content="index, follow">
 <link rel="icon" href="../../assets/parkproof-icon.svg" type="image/svg+xml">
@@ -284,15 +284,15 @@
 
   <nav class="locale-switcher" aria-label="Language"><span class="marker">🌏</span> <a href="/verify/" hreflang="en">English</a> <span class="sep">·</span> <a href="/verify/zh-CN/" hreflang="zh-CN">简体中文</a> <span class="sep">·</span> <a href="/verify/vi/" hreflang="vi">Tiếng Việt</a> <span class="sep">·</span> <a href="/verify/id/" hreflang="id">Bahasa Indonesia</a> <span class="sep">·</span> <a href="/verify/ko/" hreflang="ko">한국어</a> <span class="sep">·</span> <a href="/verify/it/" hreflang="it">Italiano</a> <span class="sep">·</span> <a href="/verify/el/" hreflang="el">Ελληνικά</a> <span class="sep">·</span> <a href="/verify/hi/" hreflang="hi">हिन्दी</a> <span class="sep">·</span> <span class="active">ਪੰਜਾਬੀ</span></nav>
 
-  <div class="eyebrow">ਪੁਸ਼ਟੀਕਰਣ</div>
-  <h1>ParkProof <span class="accent">ਸਬੂਤ ਰਿਕਾਰਡ</span> ਦੀ ਪੁਸ਼ਟੀ ਕਰੋ।</h1>
+  <div class="eyebrow">ਹਸਤਾਖਰ ਜਾਂਚ</div>
+  <h1>ParkProof <span class="accent">ਰਿਕਾਰਡ ਦੇ ਹਸਤਾਖਰਾਂ</span> ਦੀ ਜਾਂਚ ਕਰੋ।</h1>
   <p class="lede">ਹਰ ParkProof ਸਬੂਤ PDF ਵਿੱਚ ਇੱਕ ਕ੍ਰਿਪਟੋਗ੍ਰਾਫਿਕ ਹਸਤਾਖਰ ਅੰਤਿਕਾ ਹੁੰਦੀ ਹੈ, ਅਤੇ ਹਰ ਰਿਕਾਰਡ ਨੂੰ ਸਬੂਤ ਫ਼ਾਈਲ ਵਜੋਂ ਸੰਭਾਲਿਆ ਜਾ ਸਕਦਾ ਹੈ। ਇਹ ਪੰਨਾ ਕਿਸੇ ਨੂੰ ਵੀ, ਜਿਵੇਂ ਕੌਂਸਲ ਦੇ ਅਧਿਕਾਰੀ, ਬੀਮਾਕਰਤਾ, ਅਦਾਲਤ ਦੇ ਕਲਰਕ ਜਾਂ ਖੁਦ ਡਰਾਈਵਰ ਨੂੰ, ਦੱਸਦਾ ਹੈ ਕਿ ਔਫਲਾਈਨ ਕਿਵੇਂ ਜਾਂਚਣਾ ਹੈ ਕਿ ParkProof ਦੇ ਹਸਤਾਖਰ ਕਰਨ ਤੋਂ ਬਾਅਦ ਕੋਈ ਰਿਕਾਰਡ ਬਦਲਿਆ ਨਹੀਂ।</p>
 
   <div class="callout">
     <strong>ਇਮਾਨਦਾਰ ਫਰੇਮ।</strong> ਵੈਧ ਹਸਤਾਖਰ <em>ਅਖੰਡਤਾ</em> ਦਿਖਾਉਂਦਾ ਹੈ: ਹਸਤਾਖਰਿਤ ਵੇਰਵੇ ਅਤੇ ਫੋਟੋਆਂ ਦੇ ਫਿੰਗਰਪ੍ਰਿੰਟ ਬਿਲਕੁਲ ਉਹੀ ਹਨ ਜਿਨ੍ਹਾਂ 'ਤੇ ParkProof ਨੇ ਹਸਤਾਖਰ ਦੇ ਸਮੇਂ ਹਸਤਾਖਰ ਕੀਤੇ ਸਨ। ਇਹ ਨਹੀਂ ਦਿਖਾਉਂਦਾ ਕਿ ਰਿਕਾਰਡ <em>ਸੱਚ</em> ਹੈ (AI ਚਿੰਨ੍ਹ ਨੂੰ ਗਲਤ ਪੜ੍ਹ ਸਕਦੀ ਹੈ), ਡਰਾਈਵਰ ਕੌਣ ਸੀ, ਕਾਰ ਕਿੱਥੇ ਸੀ, ਜਾਂ ਉਹ ਕਦੋਂ ਪਹੁੰਚੀ ਜਾਂ ਕਦੋਂ ਗਈ, ਅਤੇ ਇਹ ਤੈਅ ਨਹੀਂ ਕਰਦਾ ਕਿ ਰਿਕਾਰਡ ਦੀ ਕਿੰਨੀ ਅਹਿਮੀਅਤ ਹੈ। ਇਹ ਸਮੀਖਿਆ ਕਰਨ ਵਾਲੇ 'ਤੇ ਹੈ।
   </div>
 
-  <h2>ਤੁਸੀਂ ਕੀ ਪੁਸ਼ਟੀ ਕਰ ਰਹੇ ਹੋ</h2>
+  <h2>ਤੁਸੀਂ ਕੀ ਜਾਂਚ ਰਹੇ ਹੋ</h2>
   <p>ParkProof ਰਿਕਾਰਡ 'ਤੇ ਹਿੱਸਿਆਂ ਵਿੱਚ ਹਸਤਾਖਰ ਹੁੰਦੇ ਹਨ, ਜਿਨ੍ਹਾਂ ਨੂੰ ਕੜੀਆਂ ਕਹਿੰਦੇ ਹਨ। ParkProof ਨੂੰ ਸੰਭਾਲਿਆ ਰਿਕਾਰਡ ਮਿਲਣ 'ਤੇ ਕੜੀ 0 'ਤੇ ਹਸਤਾਖਰ ਹੁੰਦੇ ਹਨ। ਬਾਅਦ ਦੀ ਹਰ ਕੜੀ, ਜਿਵੇਂ ਪਾਰਕ ਕਰਦੇ ਸਮੇਂ ਦੇ ਵੇਰਵੇ, ਕਾਰ ਦੀ ਹਾਲਤ ਦੀਆਂ ਫੋਟੋਆਂ, ਭੁਗਤਾਨ ਦੇ ਸਬੂਤ ਦੀ ਫੋਟੋ ਜਾਂ ਰਵਾਨਗੀ, ParkProof ਨੂੰ ਮਿਲਣ 'ਤੇ ਹਸਤਾਖਰਿਤ ਹੁੰਦੀ ਹੈ ਅਤੇ ਉਸ ਵਿੱਚ ਪਿਛਲੀ ਕੜੀ ਦਾ SHA-256 ਹੁੰਦਾ ਹੈ, ਇਸ ਲਈ ਕੜੀਆਂ ਮਿਲ ਕੇ ਇੱਕ ਲੜੀ ਬਣਾਉਂਦੀਆਂ ਹਨ। ਹਰ ਕੜੀ ਵਿੱਚ ਇੱਕ <strong>ਪੇਲੋਡ</strong> (ਉਹ ਸਹੀ ਲਿਖਤ ਜਿਸ 'ਤੇ ਹਸਤਾਖਰ ਹੋਏ, ਉਸ ਦੀਆਂ ਫੋਟੋਆਂ ਦੇ SHA-256 ਫਿੰਗਰਪ੍ਰਿੰਟਾਂ ਸਮੇਤ) ਅਤੇ ParkProof ਦੀ ਨਿੱਜੀ ਕੁੰਜੀ (ECDSA P-256) ਨਾਲ ਬਣਿਆ ਇੱਕ <strong>ਹਸਤਾਖਰ</strong> ਹੁੰਦਾ ਹੈ, ਅਤੇ ਇਹ ਕੁੰਜੀ ਕਦੇ AWS KMS ਤੋਂ ਬਾਹਰ ਨਹੀਂ ਜਾਂਦੀ। ਸਬੂਤ PDF ਆਪਣੀ ਹਸਤਾਖਰ ਅੰਤਿਕਾ ਵਿੱਚ ਹਰ ਕੜੀ ਛਾਪਦੀ ਹੈ। ਰਿਕਾਰਡ ਦੀ <strong>ਸਬੂਤ ਫ਼ਾਈਲ</strong> (ਇੱਕ .json ਫ਼ਾਈਲ, ਜਿਸ ਨੂੰ ਐਪ ਵਿੱਚ ਰਿਕਾਰਡ ਤੋਂ ਡਾਊਨਲੋਡ ਕੀਤਾ ਜਾ ਸਕਦਾ ਹੈ) ਵਿੱਚ ਉਹੀ ਪੇਲੋਡ ਅਤੇ ਹਸਤਾਖਰ ਹੁੰਦੇ ਹਨ, ਨਾਲ ਹੀ ਅਸਲ ਫੋਟੋਆਂ ਵੀ।</p>
   <p>ਹਸਤਾਖਰਾਂ ਦੀ ਜਾਂਚ ਲਈ ਲੋੜੀਂਦੀ <strong>ਜਨਤਕ ਕੁੰਜੀ</strong> <a class="link" href="/parkproof-public-key.pem"><code>/parkproof-public-key.pem</code></a> 'ਤੇ ਪ੍ਰਕਾਸ਼ਿਤ ਹੈ। ਇਹ ਪੁਸ਼ਟੀ ਕਰਨ ਲਈ ਕਿ ਇਹ ਲੋਡ ਹੁੰਦੀ ਹੈ, ਇਸ ਨੂੰ ਬ੍ਰਾਊਜ਼ਰ ਵਿੱਚ ਖੋਲ੍ਹੋ, ਫਿਰ ਸੰਭਾਲੋ।</p>
 
@@ -351,7 +351,7 @@ openssl dgst -sha256 photo1.jpg
 <span class="comment"># 8. ਦੇਖੋ ਕਿ ਕਿਸ ਕੜੀ ਅਤੇ ਕਿਸ ਫੀਲਡ ਵਿੱਚ ਉਸ 'ਤੇ ਹਸਤਾਖਰ ਹਨ।</span>
 jq '.photos[0].signed_in' evidence.json</pre>
 
-  <p>ਇਹ ਹੈਕਸ ਮੁੱਲ <code>signed_in</code> ਵਿੱਚ ਦਿੱਤੀ ਹਰ ਕੜੀ ਦੇ ਹਸਤਾਖਰਿਤ ਪੇਲੋਡ ਵਿੱਚ ਉਸ ਫੋਟੋ ਦੇ <code>sha256</code> ਦੇ ਬਰਾਬਰ ਹੋਣਾ ਚਾਹੀਦਾ ਹੈ: ਕੜੀ 0 ਵਿੱਚ <code>sign_photo_sha256</code>, <code>car_photo_sha256</code> ਜਾਂ <code>ambient_photo_sha256</code>, ਜਾਂ ਬਾਅਦ ਦੀ ਕੜੀ ਵਿੱਚ <code>photos</code>, <code>photo</code> ਜਾਂ <code>return_photos</code> ਹੇਠ ਕੋਈ <code>sha256</code>। ਇਸ ਦੀ ਤੁਲਨਾ ਉਸ ਪੇਲੋਡ ਨਾਲ ਕਰੋ ਜਿਸ ਦੀ ਤੁਸੀਂ ਜਾਂਚ ਕੀਤੀ ਹੈ, ਨਾ ਕਿ ਸਿਰਫ਼ ਫ਼ਾਈਲ ਵਿੱਚ ਫੋਟੋ ਦੇ ਕੋਲ ਲਿਖੇ <code>sha256</code> ਨਾਲ, ਜਿਸ 'ਤੇ ਹਸਤਾਖਰ ਨਹੀਂ ਹਨ। ਦੂਜੀ ਫੋਟੋ ਲਈ <code>.photos[1]</code> ਵਰਤੋ, ਅਤੇ ਇਸੇ ਤਰ੍ਹਾਂ ਅੱਗੇ।</p>
+  <p>ਇਹ ਹੈਕਸ ਮੁੱਲ <code>signed_in</code> ਵਿੱਚ ਦਿੱਤੀ ਹਰ ਕੜੀ ਦੇ ਹਸਤਾਖਰਿਤ ਪੇਲੋਡ ਵਿੱਚ ਉਸ ਫੋਟੋ ਦੇ <code>sha256</code> ਦੇ ਬਰਾਬਰ ਹੋਣਾ ਚਾਹੀਦਾ ਹੈ: ਕੜੀ 0 ਵਿੱਚ <code>sign_photo_sha256</code>, <code>car_photo_sha256</code> ਜਾਂ <code>ambient_photo_sha256</code>, ਜਾਂ ਬਾਅਦ ਦੀ ਕੜੀ ਵਿੱਚ <code>photos</code>, <code>photo</code> ਜਾਂ <code>return_photos</code> ਹੇਠ ਕੋਈ <code>sha256</code>। ਇਸ ਦੀ ਤੁਲਨਾ ਉਸ ਪੇਲੋਡ ਨਾਲ ਕਰੋ ਜਿਸ ਦੇ ਹਸਤਾਖਰ ਦੀ ਤੁਸੀਂ ਕਦਮ 4 ਵਿੱਚ ਜਾਂਚ ਕੀਤੀ ਹੈ, ਨਾ ਕਿ ਸਿਰਫ਼ ਫ਼ਾਈਲ ਵਿੱਚ ਫੋਟੋ ਦੇ ਕੋਲ ਲਿਖੇ <code>sha256</code> ਨਾਲ, ਜਿਸ 'ਤੇ ਹਸਤਾਖਰ ਨਹੀਂ ਹਨ। ਦੂਜੀ ਫੋਟੋ ਲਈ <code>.photos[1]</code> ਵਰਤੋ, ਅਤੇ ਇਸੇ ਤਰ੍ਹਾਂ ਅੱਗੇ।</p>
   <p>jq ਤੋਂ ਬਿਨਾਂ, ਫ਼ਾਈਲ ਨੂੰ ਟੈਕਸਟ ਐਡੀਟਰ ਵਿੱਚ ਖੋਲ੍ਹੋ, ਕਿਸੇ ਫੋਟੋ ਦਾ <code>bytes_base64</code> ਮੁੱਲ <code>photo1.b64</code> ਨਾਂ ਦੀ ਫ਼ਾਈਲ ਵਿੱਚ ਕਾਪੀ ਕਰੋ, ਫਿਰ <code>base64 -d photo1.b64 &gt; photo1.jpg</code> ਚਲਾਓ।</p>
 
   <h3>Windows 'ਤੇ</h3>
@@ -382,7 +382,7 @@ jq -r '.links[0].signature_base64' evidence.json | base64 -d > link0-sig.bin</pr
 
   <div class="grid-2">
     <div class="card ok">
-      <h3>ਪੁਸ਼ਟੀ ਹੋਈ <span class="label">ਪਾਸ</span></h3>
+      <h3>ਹਸਤਾਖਰ ਵੈਧ <span class="label">ਪਾਸ</span></h3>
       <p><code>Verified OK</code>: ਪੇਲੋਡ ਬਿਲਕੁਲ ਉਹੀ ਹੈ ਜਿਸ 'ਤੇ ParkProof ਨੇ ਹਸਤਾਖਰ ਕੀਤੇ ਸਨ। ਇਸ ਵਿੱਚ ਦਿੱਤੇ ਵੇਰਵੇ ਅਤੇ ਫੋਟੋਆਂ ਦੇ ਫਿੰਗਰਪ੍ਰਿੰਟ, ਪੇਲੋਡ ਵਿੱਚ ਦਿੱਤੇ <code>signed_at</code> ਸਮੇਂ 'ਤੇ ParkProof ਦੇ ਹਸਤਾਖਰ ਕਰਨ ਤੋਂ ਬਾਅਦ ਨਹੀਂ ਬਦਲੇ। ਫੋਟੋਆਂ ਦੀ ਜਾਂਚ ਖੁਦ ਕਦਮ 6 ਤੋਂ 8 ਵਿੱਚ ਹੁੰਦੀ ਹੈ।</p>
     </div>
     <div class="card fail">
@@ -392,7 +392,7 @@ jq -r '.links[0].signature_base64' evidence.json | base64 -d > link0-sig.bin</pr
   </div>
 
   <h2>"ਕੀ ਬਾਈਟ ਬਦਲੇ?" ਤੋਂ ਪਰੇ</h2>
-  <p>ਇੱਕ ਸਫਲ ਪੁਸ਼ਟੀਕਰਣ <em>ਅਖੰਡਤਾ</em> ਦੀ ਪੁਸ਼ਟੀ ਕਰਦਾ ਹੈ। ਇਹ ਪੁਸ਼ਟੀ ਨਹੀਂ ਕਰਦਾ:</p>
+  <p>ਵੈਧ ਹਸਤਾਖਰ <em>ਅਖੰਡਤਾ</em> ਦਿਖਾਉਂਦਾ ਹੈ। ਇਹ ਨਹੀਂ ਦਿਖਾਉਂਦਾ:</p>
   <ul>
     <li><strong>ਕਿ AI ਨੇ ਚਿੰਨ੍ਹ ਨੂੰ ਸਹੀ ਪੜ੍ਹਿਆ।</strong> ParkProof ਸਕੈਨ ਇੱਕ ਪਾਰਕਿੰਗ ਚਿੰਨ੍ਹ ਦੀ ਮਸ਼ੀਨ ਪੜ੍ਹਨ ਹੈ, ਅਤੇ ਮਸ਼ੀਨਾਂ ਗਲਤ ਹੋ ਸਕਦੀਆਂ ਹਨ। ਰਿਕਾਰਡ ਵਿੱਚ ਫੈਸਲੇ ਦਾ ਟੈਕਸਟ ਅਤੇ ਨਿਯਮ ਸਕੈਨ ਦੇ ਸਮੇਂ AI ਦੀ ਸਭ ਤੋਂ ਵਧੀਆ ਪੜ੍ਹਨ ਹੈ, ਅੰਤਮ ਸੱਚ ਨਹੀਂ।</li>
     <li><strong>ਕਿ ਫੋਟੋਆਂ ਉਹੀ ਦਿਖਾਉਂਦੀਆਂ ਹਨ ਜੋ ਉਹ ਵਿਅਕਤੀ ਕਹਿੰਦਾ ਹੈ।</strong> ਇੱਕ ਯੋਗ ਹਸਤਾਖਰ ਦਿਖਾਉਂਦਾ ਹੈ ਕਿ ParkProof ਦੇ ਹਸਤਾਖਰ ਕਰਨ ਤੋਂ ਬਾਅਦ ਫੋਟੋਆਂ ਦੇ ਫਿੰਗਰਪ੍ਰਿੰਟ ਨਹੀਂ ਬਦਲੇ, ਅਤੇ ਹੈਸ਼ ਮੁੜ ਕੱਢਣ ਨਾਲ ਪਤਾ ਲੱਗਦਾ ਹੈ ਕਿ ਕੋਈ ਫੋਟੋ ਆਪਣੇ ਫਿੰਗਰਪ੍ਰਿੰਟ ਨਾਲ ਮੇਲ ਖਾਂਦੀ ਹੈ ਜਾਂ ਨਹੀਂ। ਇਨ੍ਹਾਂ ਵਿੱਚੋਂ ਕੋਈ ਵੀ ਇਹ ਨਹੀਂ ਦਿਖਾਉਂਦਾ ਕਿ ਫੋਟੋਆਂ ਇਮਾਨਦਾਰੀ ਨਾਲ ਲਈਆਂ ਗਈਆਂ ਸਨ।</li>
@@ -402,13 +402,13 @@ jq -r '.links[0].signature_base64' evidence.json | base64 -d > link0-sig.bin</pr
 
   <h2>ਇਹ ਕਿਉਂ ਮੌਜੂਦ ਹੈ</h2>
   <p>"ਸਬੂਤ" ਬਣਾਉਣ ਵਾਲੇ ਜ਼ਿਆਦਾਤਰ ਪਾਰਕਿੰਗ ਐਪ ਸਕ੍ਰੀਨਸ਼ਾਟ ਬਣਾਉਂਦੇ ਹਨ। ਸਕ੍ਰੀਨਸ਼ਾਟ ਨੂੰ ਲੈਣ ਅਤੇ ਭੇਜਣ ਦੇ ਵਿਚਕਾਰ ਕਿਸੇ ਵੀ ਸਮੇਂ ਸੰਪਾਦਿਤ ਕੀਤਾ ਜਾ ਸਕਦਾ ਹੈ। ਕ੍ਰਿਪਟੋਗ੍ਰਾਫਿਕ ਹਸਤਾਖਰ <em>"ਇਹ ਮੈਂ ਦੇਖਿਆ"</em> ਅਤੇ <em>"ਇਹ ਮੈਂ ਦੇਖਿਆ, ਅਤੇ ਕੋਈ ਵੀ ਜਾਂਚ ਸਕਦਾ ਹੈ ਕਿ ParkProof ਦੇ ਹਸਤਾਖਰ ਤੋਂ ਬਾਅਦ ਇਹ ਬਦਲਿਆ ਨਹੀਂ"</em> ਵਿਚਕਾਰ ਫਰਕ ਹੈ।</p>
-  <p>ਜਨਤਕ ਕੁੰਜੀ ਪ੍ਰਕਾਸ਼ਿਤ ਹੈ, ਤਾਂ ਜੋ ਜਾਂਚ ਪੂਰੀ ਤਰ੍ਹਾਂ ਔਫਲਾਈਨ ਹੋ ਸਕੇ। ਤੁਹਾਨੂੰ ParkProof 'ਤੇ ਭਰੋਸਾ ਕਰਨ, ਸਾਡੇ ਸਰਵਰ ਨਾਲ ਸੰਪਰਕ ਕਰਨ ਜਾਂ ਸਾਡੀ ਐਪ ਚਲਾਉਣ ਦੀ ਲੋੜ ਨਹੀਂ। ParkProof ਬੰਦ ਹੋ ਜਾਣ 'ਤੇ ਵੀ, ਜਦੋਂ ਤੱਕ <code>openssl</code> ਮੌਜੂਦ ਹੈ, ਜਾਂਚ ਕਈ ਸਾਲਾਂ ਬਾਅਦ ਵੀ ਕੀਤੀ ਜਾ ਸਕਦੀ ਹੈ।</p>
+  <p>ਜਨਤਕ ਕੁੰਜੀ ਪ੍ਰਕਾਸ਼ਿਤ ਹੈ, ਇਸ ਲਈ ਇਸ ਨੂੰ ਸੰਭਾਲ ਲੈਣ ਤੋਂ ਬਾਅਦ ਜਾਂਚ ਔਫਲਾਈਨ, ਸਾਡੀ ਐਪ ਤੋਂ ਬਿਨਾਂ ਹੋ ਸਕਦੀ ਹੈ। ਹਸਤਾਖਰ ਦਾ ਸਮਾਂ ParkProof ਦੇ ਸਰਵਰ ਦੀ ਘੜੀ ਤੋਂ ਆਉਂਦਾ ਹੈ, ਇਸ ਲਈ ਉਸ ਸਮੇਂ ਲਈ ਤੁਸੀਂ ParkProof 'ਤੇ ਭਰੋਸਾ ਕਰ ਰਹੇ ਹੋ। ParkProof ਬੰਦ ਹੋ ਜਾਣ 'ਤੇ ਵੀ, ਜਦੋਂ ਤੱਕ ਤੁਹਾਡੇ ਕੋਲ ਜਨਤਕ ਕੁੰਜੀ ਦੀ ਸੰਭਾਲੀ ਹੋਈ ਕਾਪੀ ਅਤੇ <code>openssl</code> ਹੈ, ਜਾਂਚ ਕਈ ਸਾਲਾਂ ਬਾਅਦ ਵੀ ਕੀਤੀ ਜਾ ਸਕਦੀ ਹੈ।</p>
 
   <h2>ਸਵਾਲ?</h2>
   <p><a class="link" href="mailto:hello@parkproof.com.au">hello@parkproof.com.au</a> ਤੇ ਈਮੇਲ ਕਰੋ। ਅਸੀਂ ਜਵਾਬ ਦਿੰਦੇ ਹਾਂ।</p>
 
   <footer>
-    <span>parkproof.com.au · ਪੁਸ਼ਟੀਕਰਣ ਪੰਨਾ</span>
+    <span>parkproof.com.au · ਹਸਤਾਖਰ ਜਾਂਚ</span>
     <span><a href="/parkproof-public-key.pem">/parkproof-public-key.pem</a> <span class="sep">·</span> <a href="/">← ParkProof ਤੇ ਵਾਪਸ</a></span>
   </footer>
 </div>

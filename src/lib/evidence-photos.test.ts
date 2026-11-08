@@ -21,6 +21,7 @@ import {
   proofGates,
   proofInputOf,
   recordHasSignedPhoto,
+  recordProofGates,
   referencedPhotoHashes,
   signedPhotoRef,
 } from './evidence-photos'
@@ -105,6 +106,38 @@ describe('proof of payment or permit', () => {
     expect(preselectedComplianceType(['meter_ticket'])).toBe('meter_ticket')
     expect(preselectedComplianceType(['permit_zone', 'meter_ticket'])).toBe('permit_displayed')
     expect(preselectedComplianceType([])).toBeNull()
+  })
+
+  it("a saved record's gates: its acknowledgements decide alone, and a permit it confirmed counts (T4 permit_context)", () => {
+    const NOT_ASKED = { meter_ticket: null, permit_zone: null, accessible_permit: null }
+    const flags = { requires_ticket: true, is_permit_zone: true, requires_disabled_permit: false }
+    // A "can't park" record asked no gate: its flags don't bring one back.
+    expect(recordProofGates({ rule_flags: flags, gate_acks: NOT_ASKED })).toEqual([])
+    // A record saved without acknowledgements falls back to its flags.
+    expect(recordProofGates({ rule_flags: flags })).toEqual(['permit_zone', 'meter_ticket'])
+    const permit = (type: 'accessible' | 'resident' | 'business', holder_present: boolean | null = null) => ({
+      type,
+      holder_present,
+    })
+    // The permit question answered yes where no gate showed.
+    expect(recordProofGates({ rule_flags: flags, gate_acks: NOT_ASKED, permit_context: permit('resident') })).toEqual([
+      'permit_zone',
+    ])
+    expect(
+      recordProofGates({ gate_acks: { ...NOT_ASKED, meter_ticket: true }, permit_context: permit('accessible', true) }),
+    ).toEqual(['accessible_permit', 'meter_ticket'])
+    expect(
+      preselectedComplianceType(
+        recordProofGates({ gate_acks: { ...NOT_ASKED, meter_ticket: true }, permit_context: permit('business') }),
+      ),
+    ).toBe('permit_displayed')
+    // Already asked as a gate: not listed twice.
+    expect(
+      recordProofGates({ gate_acks: { ...NOT_ASKED, permit_zone: true }, permit_context: permit('resident') }),
+    ).toEqual(['permit_zone'])
+    // No permit used, or the accessible permit's holder wasn't there.
+    expect(recordProofGates({ gate_acks: NOT_ASKED, permit_context: null })).toEqual([])
+    expect(recordProofGates({ gate_acks: NOT_ASKED, permit_context: permit('accessible', false) })).toEqual([])
   })
 
   it('a library photo can only be a payment confirmation', () => {

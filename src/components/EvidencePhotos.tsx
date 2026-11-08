@@ -155,8 +155,9 @@ function MissingBytes({ sha256, signing }: { sha256: string; signing: PhotoSigni
 /**
  * The lines under a photo: when it was added (phone clock), its short
  * fingerprint, where its signature stands, and, for a photo from the photo
- * library, that the signature shows when it was added, not when it was
- * taken. `signing` defaults to the record's own state for the photo.
+ * library, that the signature shows the photo existed by ParkProof's
+ * signing time, not when it was taken. `signing` defaults to the record's
+ * own state for the photo.
  */
 export function PhotoRefMeta({
   photoRef,

@@ -7,6 +7,36 @@ import { PRICES_AS_OF } from './stats.mjs'
 export const RESULTS_SCHEMA = 'parkproof-accuracy-v1'
 
 /**
+ * While test outcomes are hidden, a rate over a group of photos that the
+ * labels pick out (a sign detail, the sign condition, the position
+ * question) is published only when the group has at least this many test
+ * photos. A smaller group would point at single held-out photos: the
+ * labels say which photos are in it, so its rate says how each one went.
+ */
+export const MIN_SIGNS_PER_LABELLED_GROUP = 5
+
+/** A rate whose outcome is withheld: how many signs and reads it covers, not how they went. */
+function withheldRate(rate) {
+  return { signs: rate.signs, runs: rate.runs, run_successes: null, rate: null, ci95: null, withheld: true }
+}
+
+/**
+ * The metrics with every rate over a labelled group of fewer than
+ * MIN_SIGNS_PER_LABELLED_GROUP signs withheld (per-detail rates, the sign
+ * condition and the position question). Rates over the whole split stay.
+ */
+export function withholdSmallGroups(metrics) {
+  const small = (rate) => !!rate && rate.signs > 0 && rate.signs < MIN_SIGNS_PER_LABELLED_GROUP
+  const keep = (rate) => (small(rate) ? withheldRate(rate) : rate)
+  return {
+    ...metrics,
+    flags: Object.fromEntries(Object.entries(metrics.flags ?? {}).map(([key, rate]) => [key, keep(rate)])),
+    sign_status: metrics.sign_status ? keep(metrics.sign_status) : metrics.sign_status,
+    position: keep(metrics.position),
+  }
+}
+
+/**
  * True when a test photo's own results must stay hidden: always, unless
  * --show-failures. Which held-out photo failed is enough to tune a prompt
  * against, so neither the report, the progress line nor the JSON says.
@@ -54,7 +84,9 @@ export function buildResults({ entries, trials, meta }) {
     fingerprint: fingerprint ?? null,
     pricing: price ? { usd_per_million_tokens: price, as_of: PRICES_AS_OF } : null,
     corpus: { signs: entries.length, by_split: bySplit, tags: tagCounts },
-    metrics: summarize(trials, { runs, price }),
+    // A detail labelled on one or two test photos would name them, so
+    // those rates are withheld while test results are hidden.
+    metrics: anyHidden ? withholdSmallGroups(summarize(trials, { runs, price })) : summarize(trials, { runs, price }),
     // A tag with one or two test photos would name them, so rates by tag
     // are left out while test results are hidden.
     by_tag: anyHidden ? null : summarizeByTag(trials),
@@ -75,6 +107,9 @@ export function buildResultsFile({ entries, trials, meta }) {
 const pct = (x) => (x === null || x === undefined ? 'n/a' : `${Math.round(x * 100)}%`)
 
 function rateLine(label, rate, { unit = 'runs' } = {}) {
+  if (rate && rate.withheld) {
+    return `${label.padEnd(50)} withheld: ${rate.signs} test sign${rate.signs === 1 ? '' : 's'}, under ${MIN_SIGNS_PER_LABELLED_GROUP}, would point at single photos`
+  }
   if (!rate || !rate.signs) return `${label.padEnd(50)} not measured`
   const range = rate.ci95 ? `(95% range ${pct(rate.ci95[0])} to ${pct(rate.ci95[1])})` : ''
   const count = `${rate.run_successes}/${rate.runs} ${unit}, ${rate.signs} sign${rate.signs === 1 ? '' : 's'}`

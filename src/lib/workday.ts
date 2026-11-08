@@ -11,7 +11,7 @@ import { ACCURACY_USABLE_M } from './accuracy'
 import { sessionLink } from './deep-link'
 import { haversineMeters } from './geo'
 import type { ScheduledReminder } from './push'
-import { formatExpiryAbsolute } from './time-format'
+import { formatInZone, isSameDayInZone, zoneNameInZone } from './time-format'
 import { sessionTimezone } from './timezone'
 
 /**
@@ -700,33 +700,23 @@ export interface WorkdayReminderCopy {
   body: string
 }
 
-/** The zone's short name at a moment ("AEST", "AEDT"), or '' when Intl can't say. */
-function zoneNameAt(ms: number, timeZone: string): string {
-  try {
-    return (
-      new Intl.DateTimeFormat('en-AU', { timeZone, timeZoneName: 'short' })
-        .formatToParts(new Date(ms))
-        .find((p) => p.type === 'timeZoneName')?.value ?? ''
-    )
-  } catch {
-    return ''
-  }
-}
-
 /**
  * The deadline as a reminder names it: an absolute time in the leg's zone,
- * with the day when it isn't the day the reminder fires. When a daylight
- * saving change falls between the reminder and the deadline (the zone's
- * name differs at the two moments), the zone's name is added ("2:20 am
- * AEST"), so a deadline in the repeated hour of the April change can't be
- * read as the other 2:20 am.
+ * written by formatInZone like every other time in the app, with the day
+ * when it isn't the day the reminder fires ("Tue 10 Nov, 12:20 am"). When a
+ * daylight saving change falls between the reminder and the deadline (the
+ * zone's name differs at the two moments), the zone's name is added
+ * ("2:20 am AEST"), so a deadline in the repeated hour of the April change
+ * can't be read as the other 2:20 am.
  */
 function reminderTime(reminder: WorkdayReminder, timeZone: string): string {
-  const fire = new Date(reminder.fire_at)
-  const f = formatExpiryAbsolute(reminder.deadline, { timeZone, now: fire })
-  const zone = zoneNameAt(Date.parse(reminder.deadline), timeZone)
-  const time = zone && zone !== zoneNameAt(fire.getTime(), timeZone) ? `${f.time} ${zone}` : f.time
-  return f.dayDate ? `${time}, ${f.dayDate}` : time
+  const fire = Date.parse(reminder.fire_at)
+  const deadline = Date.parse(reminder.deadline)
+  const zone = zoneNameInZone(deadline, timeZone)
+  return formatInZone(deadline, timeZone, {
+    withDate: !isSameDayInZone(deadline, fire, timeZone),
+    withZone: zone !== '' && zone !== zoneNameInZone(fire, timeZone),
+  })
 }
 
 /**

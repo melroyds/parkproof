@@ -151,6 +151,21 @@ describe('normalizeEntry: the leave-by time and the minutes', () => {
     expect(errors.join('\n')).toMatch(/duration_minutes is 500, but until is 90 minutes after scanContext\.datetime/)
   })
 
+  it('a leave-by time with no minutes is an error, as in the rubric (polish list)', () => {
+    const { entry, errors } = v2({ can_park_now: true, until: '2026-05-20T16:00:00+10:00', duration_minutes: null })
+    expect(entry).toBeNull()
+    expect(errors.join('\n')).toMatch(/duration_minutes must be the minutes from scanContext\.datetime to until when until is set/)
+    // Version 1 labels may still leave the minutes out (not scored).
+    const v1 = normalizeEntry({ ...V1, expected: { can_park_now: true, until: '2026-05-20T16:00:00+10:00' } }, 'v1.json')
+    expect(v1.errors).toEqual([])
+    // But not state "no minutes" next to a leave-by time.
+    const v1Null = normalizeEntry(
+      { ...V1, expected: { can_park_now: true, until: '2026-05-20T16:00:00+10:00', duration_minutes: null } },
+      'v1.json',
+    )
+    expect(v1Null.entry).toBeNull()
+  })
+
   it('minutes with no leave-by time is an error', () => {
     const { errors } = v2({ can_park_now: true, until: null, duration_minutes: 30 })
     expect(errors.join('\n')).toMatch(/duration_minutes must be null when until is null/)

@@ -15,7 +15,7 @@ import i18next, { type TFunction } from 'i18next'
 import en from '../locales/en.json'
 import type { BoundaryAnswer, BoundaryAskedBecause, ParkingSession } from '../types'
 import { ISO_TIME_RE } from '../../lambda/addendum-schema.js'
-import { formatExpiryAbsolute } from './time-format'
+import { formatExpiryAbsolute, formatInZone } from './time-format'
 import { sessionLink } from './deep-link'
 import {
   DEFAULT_WALK_MIN,
@@ -1011,7 +1011,16 @@ describe('workdayReminderCopy', () => {
   it('adds the day when the deadline is on a different day from the reminder', () => {
     const deadline = '2026-11-09T13:20:00.000Z' // 12:20 am on Tue 10 Nov in Melbourne
     const body = workdayReminderCopy(r('heads_up', '2026-11-09T12:35:00.000Z', deadline), legAt(MELB), echo).body
-    expect(body).toMatch(/"time":"12:20\s?am, Tue 10\/11\/2026"/i)
+    // Written by formatInZone, like every other time in the app (polish list).
+    expect(body).toMatch(/"time":"Tue 10 Nov, 12:20 am"/)
+  })
+
+  it('names the day and the zone together when the deadline is past midnight and a daylight saving change', () => {
+    // Clocks back, 4 Apr 2027: a heads-up at 11:35 pm AEDT on Sat 3 Apr for the second 2:20 am (AEST) on Sun 4 Apr.
+    const body = workdayReminderCopy(r('heads_up', '2027-04-03T12:35:00.000Z', '2027-04-03T16:20:00.000Z'), legAt(MELB), echo).body
+    expect(body).toMatch(/"time":"Sun 4 Apr, 2:20 am AEST"/)
+    // The same words formatInZone gives a record's times.
+    expect(body).toContain(formatInZone('2027-04-03T16:20:00.000Z', 'Australia/Melbourne'))
   })
 
   it('under an area sign, the heads-up and at-deadline lines say to leave the whole area', () => {

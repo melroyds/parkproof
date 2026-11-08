@@ -17,8 +17,11 @@ import {
   formatExpiryAbsolute,
   formatReminderTimesLine,
   formatInZone,
+  hourInZone,
   isSameDayInZone,
+  wallClockInZone,
 } from './time-format'
+import { wallClockAt } from './notice-match'
 
 // Convenience — ms in higher units.
 const MIN = 60_000
@@ -329,5 +332,42 @@ describe('formatInZone without the date, and isSameDayInZone (fix list item 6)',
   it('answers false for an unreadable time or an unknown zone', () => {
     expect(isSameDayInZone('not a time', '2026-11-08T06:00:00.000Z', 'Australia/Melbourne')).toBe(false)
     expect(isSameDayInZone('2026-11-08T06:00:00.000Z', '2026-11-08T06:01:00.000Z', 'Mars/Olympus')).toBe(false)
+  })
+})
+
+describe("one reading of a zone's clock: hourInZone and wallClockAt agree at midnight (polish list)", () => {
+  // 13:00Z on Sun 8 Nov 2026 is midnight (12:00 am AEDT, Mon 9 Nov) in Melbourne.
+  const MIDNIGHT = '2026-11-08T13:00:00.000Z'
+  const MEL = 'Australia/Melbourne'
+
+  it('reads midnight as hour 0, the start of the new day', () => {
+    expect(hourInZone(MIDNIGHT, MEL)).toBe(0)
+    expect(wallClockAt(Date.parse(MIDNIGHT), MEL)).toEqual({ year: 2026, month: 11, day: 9, hour: 0, minute: 0 })
+    expect(wallClockInZone(MIDNIGHT, MEL)).toEqual({ year: 2026, month: 11, day: 9, hour: 0, minute: 0, second: 0 })
+  })
+
+  it('an engine that prints midnight as "24" still gives hour 0 to both helpers', () => {
+    const real = Intl.DateTimeFormat.prototype.formatToParts
+    const spy = vi.spyOn(Intl.DateTimeFormat.prototype, 'formatToParts').mockImplementation(function (
+      this: Intl.DateTimeFormat,
+      date?: Date | number,
+    ) {
+      return real.call(this, date).map((p) => (p.type === 'hour' && Number(p.value) === 0 ? { ...p, value: '24' } : p))
+    })
+    try {
+      expect(hourInZone(MIDNIGHT, MEL)).toBe(0)
+      expect(wallClockAt(Date.parse(MIDNIGHT), MEL).hour).toBe(0)
+      expect(wallClockInZone(MIDNIGHT, MEL).hour).toBe(0)
+      // Not only midnight on the dot: 12:30 am too.
+      expect(hourInZone('2026-11-08T13:30:00.000Z', MEL)).toBe(0)
+      expect(wallClockAt(Date.parse('2026-11-08T13:30:00.000Z'), MEL)).toEqual({ year: 2026, month: 11, day: 9, hour: 0, minute: 30 })
+    } finally {
+      spy.mockRestore()
+    }
+  })
+
+  it('throws for an unknown zone, where hourInZone falls back to Melbourne', () => {
+    expect(() => wallClockInZone(MIDNIGHT, 'Mars/Olympus')).toThrow(RangeError)
+    expect(hourInZone(MIDNIGHT, 'Mars/Olympus')).toBe(0)
   })
 })

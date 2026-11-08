@@ -30,6 +30,7 @@ vi.mock('./auth', () => ({ getIdToken }))
 vi.mock('./api', () => ({ endpointUrl: (p: string) => `/api${p}` }))
 
 import {
+  DELETE_SETTLE_GRACE_MS,
   SYNC_ON_RETURN_INTERVAL_MS,
   createSyncRunner,
   deleteCloudSession,
@@ -405,6 +406,122 @@ describe('pull on return: a record deleted on another device stays deleted', () 
     expect(getSession(deleted)).toBeUndefined()
     expect(cloud.rows.has(deleted)).toBe(false)
     expect(cloud.uploads().some((row) => row.id === deleted)).toBe(false)
+  })
+
+  describe('decided by the order of events, plus a short grace after the delete settles (polish list)', () => {
+    /** Holds every request to `path` after the server answered it, until released. */
+    function holdAfterServer(path: string) {
+      let release!: () => void
+      const held = new Promise<void>((resolve) => {
+        release = resolve
+      })
+      let reached = false
+      const inner = cloud.fetch
+      vi.stubGlobal(
+        'fetch',
+        vi.fn(async (input: string, init?: RequestInit) => {
+          const response = await inner(input, init)
+          if (input.endsWith(path)) {
+            reached = true
+            await held
+          }
+          return response
+        }),
+      )
+      return { release, reached: () => reached }
+    }
+
+    beforeEach(() => {
+      // Only the clock moves; timers stay real so the sync's awaits run.
+      vi.useFakeTimers({ toFake: ['Date'] })
+      vi.setSystemTime(new Date('2026-11-09T01:00:00.000Z'))
+    })
+    afterEach(() => {
+      vi.useRealTimers()
+    })
+
+    it('a listing that comes back more than 30 s after the delete still does not bring the record back', async () => {
+      const deleted = crypto.randomUUID()
+      cloud.rows.set(deleted, { ...record(deleted) })
+      saveSession(record(deleted))
+      const list = holdAfterServer('/sessions/list')
+
+      const run = performInitialSync({ uploadLocalOnly: false })
+      await vi.waitFor(() => expect(list.reached()).toBe(true))
+      deleteSession(deleted)
+      await deleteCloudSession(deleted)
+      // Weak signal, or the app suspended: the listing is answered long after.
+      vi.setSystemTime(Date.now() + 5 * 60_000)
+      list.release()
+      const result = await run
+
+      expect(result.pulled).toBe(0)
+      expect(getSession(deleted)).toBeUndefined()
+      // And the next full sync has nothing to put back.
+      await performInitialSync()
+      expect(cloud.rows.has(deleted)).toBe(false)
+      expect(cloud.uploads().some((row) => row.id === deleted)).toBe(false)
+    })
+
+    it('a listing that starts while the delete is still in flight skips it, however long the delete takes', async () => {
+      const deleted = crypto.randomUUID()
+      cloud.rows.set(deleted, { ...record(deleted) })
+      saveSession(record(deleted))
+      // The delete request is sent but its answer is slow; meanwhile the
+      // server still answers a listing with the row in it.
+      let releaseDelete!: () => void
+      const deleteHeld = new Promise<void>((resolve) => {
+        releaseDelete = resolve
+      })
+      vi.stubGlobal(
+        'fetch',
+        vi.fn(async (input: string, init?: RequestInit) => {
+          if (input.endsWith('/sessions/delete')) await deleteHeld
+          return cloud.fetch(input, init)
+        }),
+      )
+      deleteSession(deleted)
+      const deleting = deleteCloudSession(deleted)
+      vi.setSystemTime(Date.now() + 45_000)
+      const result = await performInitialSync({ uploadLocalOnly: false })
+      expect(result.pulled).toBe(0)
+      expect(getSession(deleted)).toBeUndefined()
+      releaseDelete()
+      await deleting
+      expect(cloud.rows.has(deleted)).toBe(false)
+    })
+
+    it('a listing that starts just after the delete settled skips a row a lagging read still returns', async () => {
+      const deleted = crypto.randomUUID()
+      cloud.rows.set(deleted, { ...record(deleted) })
+      saveSession(record(deleted))
+      deleteSession(deleted)
+      await deleteCloudSession(deleted)
+      // The delete was answered, but the next read still lists the row (an
+      // eventually consistent read, or a delete that failed here and landed
+      // on the server late): a pull on return a moment later.
+      cloud.rows.set(deleted, { ...record(deleted) })
+      vi.setSystemTime(Date.now() + DELETE_SETTLE_GRACE_MS - 1_000)
+      const result = await performInitialSync({ uploadLocalOnly: false })
+      expect(result.pulled).toBe(0)
+      expect(getSession(deleted)).toBeUndefined()
+      expect(cloud.uploads().some((row) => row.id === deleted)).toBe(false)
+    })
+
+    it('a listing that starts once the grace after the delete is over reads the server as it is', async () => {
+      const id = crypto.randomUUID()
+      cloud.rows.set(id, { ...record(id) })
+      saveSession(record(id))
+      deleteSession(id)
+      await deleteCloudSession(id)
+      expect(cloud.rows.has(id)).toBe(false)
+      // Another device that still held the record uploads it again.
+      cloud.rows.set(id, { ...record(id) })
+      vi.setSystemTime(Date.now() + DELETE_SETTLE_GRACE_MS)
+      const result = await performInitialSync({ uploadLocalOnly: false })
+      expect(result.pulled).toBe(1)
+      expect(getSession(id)).toBeDefined()
+    })
   })
 
   it('the runner asks for no local-only upload on a pull on return, and a full sync otherwise', async () => {

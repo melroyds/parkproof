@@ -9,7 +9,7 @@
  */
 import type { RecurringFrequency, RecurringRestriction, RecurringRule, Weekday } from '../types'
 import { UUID_RE } from '../../lambda/addendum-schema.js'
-import type { MaybeSignReading } from './sign-result'
+import { recurringRestrictionsOf } from './sign-result'
 // The calendar and zone maths live in a plain-JS module the server's push
 // dispatcher (T5b) imports too, so "does this rule occur on this date" is
 // one piece of code on both sides.
@@ -379,42 +379,12 @@ export function normalizeRecurringRule(raw: unknown): RecurringRule | null {
 
 /**
  * The weekly restrictions on a saved record or a sign result, checked for
- * scheduling. The field is T3's `recurring_restrictions` (on ParkingSession
- * and ParkingRules; read through T3's MaybeSignReading shape). It comes from
- * storage, the cloud or a server of any age, so every entry is still checked
- * here. Entries without a valid day or time are
- * dropped. So is an entry whose week_of_month holds anything but the whole
- * numbers 1 to 5 (a "last week" -1, a 0): the offer would otherwise
- * describe the sign wrongly, as weekly or with fewer weeks, on the very
- * screen that asks the driver to check it against the sign.
+ * scheduling: T3's `recurringRestrictionsOf` (sign-result.ts), which reads
+ * them with lambda/sign-reading.js readRecurringRestrictions. One check for
+ * the result screen's hint, the record and the offer here, so a
+ * restriction the hint promises a reminder for is one the offer shows.
  */
-export function recurringRestrictionsOf(source: MaybeSignReading | null | undefined): RecurringRestriction[] {
-  if (!source || typeof source !== 'object') return []
-  const list: unknown = source.recurring_restrictions
-  if (!Array.isArray(list)) return []
-  const out: RecurringRestriction[] = []
-  for (const item of list.slice(0, 8)) {
-    if (!item || typeof item !== 'object') continue
-    const r = item as Record<string, unknown>
-    const days = cleanDays(r.days)
-    if (days.length === 0) continue
-    if (typeof r.start !== 'string' || !HHMM_RE.test(r.start)) continue
-    if (typeof r.end !== 'string' || !HHMM_RE.test(r.end) || r.end === r.start) continue
-    if (r.week_of_month !== undefined && r.week_of_month !== null && !Array.isArray(r.week_of_month)) continue
-    const weeks: unknown[] = Array.isArray(r.week_of_month) ? r.week_of_month : []
-    if (weeks.some((w) => !(NTH_VALUES as readonly unknown[]).includes(w))) continue
-    out.push({
-      kind: RECURRING_KINDS.includes(r.kind as RecurringRule['kind']) ? (r.kind as RecurringRule['kind']) : 'other',
-      days,
-      start: r.start,
-      end: r.end,
-      week_of_month: cleanNth(r.week_of_month),
-      exceptions_text: cleanText(r.exceptions_text, 200),
-      label: cleanText(r.label, LABEL_MAX),
-    })
-  }
-  return out
-}
+export { recurringRestrictionsOf }
 
 /**
  * The first local date, today or later in `timeZone`, that falls on one of

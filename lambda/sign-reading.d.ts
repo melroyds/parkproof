@@ -11,6 +11,8 @@ export declare const USER_PERMIT_TYPES: readonly UserPermitType[]
 export declare const CONFIDENCE_LEVELS: readonly ('low' | 'medium' | 'high')[]
 export declare const RECURRING_KINDS: readonly RecurringKind[]
 export declare const WEEKDAYS: readonly WeekdayCode[]
+/** A 24-hour 'HH:MM' local time, 00:00 to 23:59. */
+export declare const HHMM_RE: RegExp
 export declare const NO_READABLE_SIGN_STATUSES: readonly SignStatusName[]
 
 export declare const SIGN_READING_CAPS: Readonly<{
@@ -154,7 +156,16 @@ export interface NormalizeContext {
 
 /** One entry per permit type, applies false ("the sign prints nothing for these"). */
 export function noPermitExceptions(permitTypes: readonly UserPermitType[]): PermitExceptionShape[]
-/** A note in characters every PDF font can draw: arrows as ASCII, other symbols and emoji removed. */
+/**
+ * One weekly restriction as the app keeps it, checked (days in MO..SU order,
+ * 'HH:MM' times that differ, weeks 1 to 5 or none, an unknown kind as
+ * 'other', text fitted to its caps), or null when it can't be one. The one
+ * check for answers, stored records and the weekly reminders.
+ */
+export function readRecurringRestriction(value: unknown): RecurringRestrictionShape | null
+/** Each restriction checked, duplicates kept once, at most SIGN_READING_CAPS.recurringRestrictions. */
+export function readRecurringRestrictions(value: unknown): RecurringRestrictionShape[]
+/** A note in characters every PDF font can draw: arrows and comparison signs as ASCII, other symbols and emoji removed. */
 export function plainNoteText(value: unknown): string
 export function fitModelText(value: unknown, max: number): string
 /** Enums and caps enforced. Throws Error('ERR_SIGN_UNREADABLE') for an answer that can't be trusted. */

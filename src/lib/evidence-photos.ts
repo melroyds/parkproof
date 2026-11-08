@@ -16,6 +16,7 @@ import type {
   ComplianceType,
   GateAcks,
   ParkingSession,
+  PermitContext,
   PhotoRef,
   PhotoRole,
   SignatureBundle,
@@ -134,6 +135,39 @@ export function proofGates(flags: ProofFlags | null | undefined, acks: GateAcks 
   if (asked(acks?.permit_zone, flags?.is_permit_zone)) out.push('permit_zone')
   if (asked(acks?.meter_ticket, flags?.requires_ticket)) out.push('meter_ticket')
   return out
+}
+
+/**
+ * The proof gates of a saved record (the record screen's "Add a photo of
+ * your ticket or permit"). A record keeps the result screen's answers as
+ * `gate_acks`, null for every gate it didn't ask, so those decide alone:
+ * its `rule_flags` don't say whether parking was allowed (they hold no
+ * can_park_now), and on a "can't park" record the flags would otherwise
+ * preselect a proof type the driver was never asked about. Only a record
+ * saved without acknowledgements falls back to its flags.
+ *
+ * A permit the driver confirmed on the result screen (T4: the saved
+ * permit's question answered yes, kept as `permit_context`) was asked about
+ * too, even where no gate showed (a sign that prints an exception for the
+ * permit, or a permit zone when the standard answer was "can't park"), so
+ * its gate counts: the accessible-permit gate for an accessible permit, the
+ * permit-zone gate for a resident or business one. Gates keep the result
+ * screen's order.
+ */
+export function recordProofGates(session: {
+  rule_flags?: ProofFlags | null
+  gate_acks?: GateAcks | null
+  permit_context?: Pick<PermitContext, 'type' | 'holder_present'> | null
+}): ProofGate[] {
+  const acks = session.gate_acks
+  const gates = acks && typeof acks === 'object' ? proofGates(null, acks) : proofGates(session.rule_flags, acks)
+  const pc = session.permit_context
+  if (!pc || typeof pc !== 'object' || pc.holder_present === false) return gates
+  const permitGate: ProofGate | null =
+    pc.type === 'accessible' ? 'accessible_permit' : pc.type === 'resident' || pc.type === 'business' ? 'permit_zone' : null
+  if (!permitGate || gates.includes(permitGate)) return gates
+  const order: readonly ProofGate[] = ['accessible_permit', 'permit_zone', 'meter_ticket']
+  return order.filter((g) => g === permitGate || gates.includes(g))
 }
 
 /** The proof type to preselect for the first gate, or null when no gate applies. */

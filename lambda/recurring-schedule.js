@@ -25,12 +25,12 @@
  * day in UTC.
  */
 import { UUID_RE } from './addendum-schema.js'
-// One list of weekday codes for the sign reader (T3) and the reminders (T5).
-import { WEEKDAYS } from './sign-reading.js'
+// One list of weekday codes, and one 'HH:MM' check, for the sign reader
+// (T3) and the reminders (T5).
+import { HHMM_RE, WEEKDAYS } from './sign-reading.js'
 
-export { WEEKDAYS }
+export { HHMM_RE, WEEKDAYS }
 export const RECURRING_FREQUENCIES = Object.freeze(['weekly', 'fortnightly', 'monthly_nth'])
-export const HHMM_RE = /^([01]\d|2[0-3]):[0-5]\d$/
 
 const DATE_RE = /^(\d{4})-(\d{2})-(\d{2})$/
 const DAY_MS = 86_400_000

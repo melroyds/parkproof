@@ -220,6 +220,12 @@ export function normalizeEntry(raw, file) {
       } else {
         durationOk = true
       }
+    } else if (exp.duration_minutes === null && exp.can_park_now === true && typeof exp.until === 'string') {
+      // The minutes are the time to the leave-by time, so a leave-by time
+      // with "no minutes" would mark every right answer's minutes wrong.
+      errors.push(
+        `${where}: expected.duration_minutes must be the minutes from scanContext.datetime to until when until is set`,
+      )
     }
     // The leave-by time and the minutes describe one answer: a leave-by in
     // the future, and the minutes from the scan time to it.

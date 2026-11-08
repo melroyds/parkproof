@@ -271,6 +271,27 @@ describe('noticeLocalTime', () => {
     expect(other.time_disagrees).toBe(true)
   })
 
+  it('a zero-padded 24-hour "02:10" is 2:10 am: a model reading of 14:10 is flagged, not taken (polish list)', () => {
+    for (const offence_time_raw of ['02:10', '02.10', '02:10:00']) {
+      const t = noticeLocalTime(noticeFields({ offence_time_raw, offence_datetime_local: '2027-05-04T14:10' }))
+      expect(t.local, offence_time_raw).toEqual(wc(2027, 5, 4, 2, 10))
+      expect(t.time_source, offence_time_raw).toBe('printed')
+      expect(t.time_disagrees, offence_time_raw).toBe(true)
+      expect(t.disagrees, offence_time_raw).toBe(true)
+    }
+    // In the date field too.
+    const inDate = noticeLocalTime(
+      noticeFields({ offence_date_raw: '04/05/2027 02:10', offence_time_raw: null, offence_datetime_local: '2027-05-04T14:10' }),
+    )
+    expect(inDate.local).toEqual(wc(2027, 5, 4, 2, 10))
+    expect(inDate.time_disagrees).toBe(true)
+    // An unpadded "2:10" and a two-digit "12:10" still leave the half of the day open.
+    expect(noticeLocalTime(noticeFields({ offence_time_raw: '2:10', offence_datetime_local: '2027-05-04T14:10' })).time_disagrees).toBe(false)
+    expect(noticeLocalTime(noticeFields({ offence_time_raw: '12:10', offence_datetime_local: '2027-05-04T00:10' })).time_disagrees).toBe(false)
+    // A padded time that agrees with the model is simply right.
+    expect(noticeLocalTime(noticeFields({ offence_time_raw: '02:10', offence_datetime_local: '2027-05-04T02:10' })).disagrees).toBe(false)
+  })
+
   it('has no local time without both a date and a time', () => {
     const t = noticeLocalTime(noticeFields({ offence_time_raw: null, offence_datetime_local: null }))
     expect(t.raw_date).toEqual({ year: 2027, month: 5, day: 4 })

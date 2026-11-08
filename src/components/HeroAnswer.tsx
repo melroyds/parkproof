@@ -3,11 +3,11 @@ interface Props {
 }
 
 /**
- * The landing hero — "the sign resolves into a verified record". An illustrated
+ * The landing hero: the sign resolves into a signed record. An illustrated
  * Aussie parking sign (pine on paper, the real signage colour) feeds a stamped,
- * tamper-evident verdict card: VERIFIED RECORD, a plain-English answer, the
+ * tamper-evident verdict card: SIGNED RECORD, a plain-English answer, the
  * leave-by time, the KMS hash, and the Datum-notch seal pressing on. It says
- * what ParkProof actually is (a verified answer, not just an answer) in one
+ * what ParkProof actually is (a signed record, not just an answer) in one
  * fully-designed image, replacing the old stock photo.
  *
  * Animates once on mount (scan → record rises → seal stamps + mint pulse); the
@@ -20,7 +20,7 @@ export default function HeroAnswer({ className = '' }: Props) {
       xmlns="http://www.w3.org/2000/svg"
       className={className}
       role="img"
-      aria-label="A parking sign resolving into a verified parking record: you can park until 4:00 PM."
+      aria-label="A parking sign turning into a signed parking record: you can park until 4:00 PM."
     >
       <defs>
         <filter id="hero-ds" x="-30%" y="-30%" width="160%" height="160%">
@@ -53,10 +53,10 @@ export default function HeroAnswer({ className = '' }: Props) {
         </g>
       </g>
 
-      {/* the verified record card */}
+      {/* the signed record card */}
       <g className="gf-hero-card">
         <path d="M196 84 H432 L456 108 V232 H196 Z" fill="url(#hero-gl)" filter="url(#hero-ds)" />
-        <text x="218" y="116" fontFamily="'IBM Plex Mono', monospace" fontWeight="500" fontSize="11" fill="#0E5C3A" letterSpacing="1.5">VERIFIED RECORD</text>
+        <text x="218" y="116" fontFamily="'IBM Plex Mono', monospace" fontWeight="500" fontSize="11" fill="#0E5C3A" letterSpacing="1.5">SIGNED RECORD</text>
         <text x="218" y="152" fontFamily="'Space Grotesk', sans-serif" fontWeight="700" fontSize="26" fill="#0B1A14" letterSpacing="-0.5">You can park</text>
         <rect x="218" y="166" width="150" height="32" rx="8" fill="#0E5C3A" />
         <text x="234" y="188" fontFamily="'Inter', sans-serif" fontWeight="600" fontSize="15" fill="#EAF7EF">until 4:00 PM</text>

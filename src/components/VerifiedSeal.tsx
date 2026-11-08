@@ -25,7 +25,7 @@ export default function VerifiedSeal({ size = 48, glow = true, className = '' }:
       viewBox="0 0 48 48"
       className={className}
       role="img"
-      aria-label="Verified, tamper-evident record"
+      aria-label="Signed, tamper-evident record"
     >
       {/* Mint spark — the one rare use of mint, a glow ring around the seal. */}
       {glow && <circle cx="24" cy="24" r="22.5" fill="none" stroke="#7BE3A4" strokeWidth="2" />}

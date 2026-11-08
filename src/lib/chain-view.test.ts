@@ -357,7 +357,7 @@ describe('copy keys', () => {
       key: 'chain.checkValid',
       count: 3,
     })
-    // A signed photo whose bytes were never compared: no "Nothing has changed".
+    // A signed photo whose bytes were never compared: no "haven't changed".
     expect(checkSummary({ overall: 'valid', counts, photos: [{ ...photo, status: 'not_on_device' }] })).toEqual({
       key: 'chain.checkValidPhotosUnchecked',
       count: 3,
@@ -385,7 +385,7 @@ describe('copy keys', () => {
 
   it('the success copy is the spec sentence', () => {
     expect(en.chain.checkValid_other).toBe(
-      "All {{count}} signatures are valid. Nothing has changed since ParkProof signed it. That doesn't show what the record says is true.",
+      "All {{count}} signatures are valid. The signed details haven't changed since ParkProof signed them. That doesn't show they're true.",
     )
     // Plurals carry {{count}} in both forms.
     expect(en.chain.checkValid_one).toContain('{{count}}')
