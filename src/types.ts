@@ -297,6 +297,42 @@ export interface LogDraft {
   driver_name: string | null
 }
 
+/**
+ * Raw reverse-geocode parts saved on a record as `place` (T6a). Unsigned and
+ * never edited. `state_code` is Nominatim's raw `ISO3166-2-lvl4` value (for
+ * example "AU-VIC"); a record's jurisdiction is read from it and nothing else.
+ */
+export type PlaceParts = NonNullable<ParkingSession['place']>
+
+/**
+ * Workday mode (T6a, behind VITE_FEATURE_WORKDAY). Stored on this device
+ * only under `parkproof.workday.v1` (helpers in storage.ts). At most one
+ * workday is active (status other than 'ended') at a time.
+ *   - 'parked': the car is at `current_session_id`, the leg in progress.
+ *   - 'between_moves': the driver tapped "I'm moving the car now" (that leg
+ *     has ended), or the workday has no leg yet; the next scan makes a leg.
+ *   - 'ended': the driver ended the workday at `ended_at`.
+ * The legs themselves are ordinary records carrying `workday_id` and
+ * `leg_index`, so they sync and sign like any other record.
+ */
+export type WorkdayStatus = 'parked' | 'between_moves' | 'ended'
+
+export interface WorkdayState {
+  /** uuid (lower case), the `workday_id` every leg carries. */
+  id: string
+  /** Phone time the driver started the workday (ISO, UTC). */
+  started_at: string
+  /** Where the workday was started. Only 'VIC' and 'QLD' can start one. */
+  jurisdiction: Jurisdiction
+  status: WorkdayStatus
+  /** The leg the car is at ('parked'), or the leg just left ('between_moves'). */
+  current_session_id: string | null
+  /** The leg before `current_session_id`. */
+  previous_session_id: string | null
+  /** Phone time the workday ended (ISO, UTC); null while active. */
+  ended_at: string | null
+}
+
 export interface AppealDraft {
   ticket_summary: string
   appeal_subject: string

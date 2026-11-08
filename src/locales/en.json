@@ -958,5 +958,14 @@
       "returnDetail": "Condition on return, close-up",
       "compliance": "Proof of payment or permit photo"
     }
+  },
+  "workday": {
+    "reminder": {
+      "headsUp": "Your time limit on this stretch ends at {{time}}. Move off this signed stretch, not just to another bay.",
+      "goNow": "Leave now to move the car before {{time}}.",
+      "ended": "Your time on this stretch ended at {{time}}.",
+      "headsUpArea": "Your time limit in this parking area ends at {{time}}. Move the car out of the whole area, not just to another street inside it.",
+      "endedArea": "Your time in this parking area ended at {{time}}."
+    }
   }
 }

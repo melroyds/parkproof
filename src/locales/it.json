@@ -958,5 +958,14 @@
       "returnDetail": "Condizioni al ritorno, dettaglio",
       "compliance": "Foto della prova di pagamento o del permesso"
     }
+  },
+  "workday": {
+    "reminder": {
+      "headsUp": "Il limite di tempo su questo tratto scade alle {{time}}. Sposta l'auto fuori dal tratto indicato dal cartello, non solo in un altro posto.",
+      "goNow": "Parti ora per spostare l'auto prima delle {{time}}.",
+      "ended": "Il tuo tempo su questo tratto è scaduto alle {{time}}.",
+      "headsUpArea": "Il limite di tempo in quest'area di parcheggio scade alle {{time}}. Sposta l'auto fuori da tutta l'area, non solo in un'altra via al suo interno.",
+      "endedArea": "Il tuo tempo in quest'area di parcheggio è scaduto alle {{time}}."
+    }
   }
 }

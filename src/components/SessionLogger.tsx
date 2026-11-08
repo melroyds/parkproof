@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { Trans, useTranslation } from 'react-i18next'
-import type { ParkingRules, ParkingSession, PhotoRef } from '../types'
-import { forwardGeocode, reverseGeocode } from '../lib/geocode'
+import type { ParkingRules, ParkingSession, PhotoRef, PlaceParts } from '../types'
+import { forwardGeocode, reverseGeocodeDetails } from '../lib/geocode'
+import { jurisdictionOfPlace } from '../lib/jurisdiction'
 import { resizeImageFile } from '../lib/image'
 import { deleteSessionPhotos, deleteSessionPhotosExcept, isPhotoStoreAvailable } from '../lib/photo-store'
 import {
@@ -87,6 +88,13 @@ type GpsState =
       coords: { lat: number; lng: number }
       accuracy: number
       address: string | null
+      /**
+       * Raw reverse-geocode parts for the record's `place` (T6a), from the
+       * reverse lookup of this GPS fix only. Null until it arrives, for a
+       * fix too inaccurate to look up, and always for a typed address (a
+       * typed address never supplies a place or a jurisdiction).
+       */
+      place: PlaceParts | null
       addressLoading: boolean
       source: 'gps' | 'manual'
     }
@@ -180,6 +188,10 @@ export default function SessionLogger({
       coords: { lat: result.lat, lng: result.lng },
       accuracy: 0,
       address: result.address,
+      // The record's place and jurisdiction come only from the reverse
+      // lookup of a GPS fix (T6a item 2), so a typed address leaves both
+      // unknown, and drops any place the earlier fix had.
+      place: null,
       addressLoading: false,
       source: 'manual',
     })
@@ -205,15 +217,27 @@ export default function SessionLogger({
           coords,
           accuracy,
           address: null,
+          place: null,
           addressLoading: trustworthy,
           source: 'gps',
         })
         // Don't reverse-geocode an unreliable coord — Nominatim would return
         // whatever happens to be at the (wrong) point and mislead the user.
         if (trustworthy) {
-          reverseGeocode(coords.lat, coords.lng).then((address) => {
+          void reverseGeocodeDetails(coords.lat, coords.lng).then((details) => {
+            // Only onto this fix: a typed address or a newer fix entered
+            // meanwhile keeps its own address and place.
             setGps((curr) =>
-              curr.status === 'ok' ? { ...curr, address, addressLoading: false } : curr,
+              curr.status === 'ok' && curr.coords === coords
+                ? {
+                    ...curr,
+                    address: details?.address ?? null,
+                    place: details
+                      ? { road: details.road, suburb: details.suburb, state_code: details.state_code }
+                      : null,
+                    addressLoading: false,
+                  }
+                : curr,
             )
           })
         }
@@ -352,6 +376,13 @@ export default function SessionLogger({
             accuracy_meters: gps.source === 'gps' ? gps.accuracy : undefined,
           }
         : null
+    // The raw reverse-geocode parts of the GPS fix, and the jurisdiction read
+    // from their state code alone (T6a). Left off when the lookup hadn't
+    // answered, and for a typed address.
+    const place = gps.status === 'ok' && gps.source === 'gps' ? gps.place : null
+    const placeFields: Pick<ParkingSession, 'place' | 'jurisdiction'> = place
+      ? { place, jurisdiction: jurisdictionOfPlace(place) }
+      : {}
     // Wait for every photo write to land, so each ref has its bytes stored.
     // Each write settles within PHOTO_WRITE_TIMEOUT_MS (a stuck IndexedDB
     // write counts as failed), so Save never hangs.
@@ -387,6 +418,7 @@ export default function SessionLogger({
           no_sign: true,
           ambient_photo: ambientRef ? null : ambientPhoto,
           photos,
+          ...placeFields,
         }
       : {
           id: recordId,
@@ -401,6 +433,7 @@ export default function SessionLogger({
           chosen_label: rules!.chosen_label,
           alternate_variants: rules!.alternate_variants,
           photos,
+          ...placeFields,
         }
     onComplete(session)
     // Photos taken and then replaced or removed don't stay on the device,

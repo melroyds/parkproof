@@ -1,4 +1,12 @@
-import type { AddendumKind, ParkingSession, SignatureBundle, SignedAddendum } from '../types'
+import type {
+  AddendumKind,
+  Jurisdiction,
+  ParkingSession,
+  SignatureBundle,
+  SignedAddendum,
+  WorkdayState,
+  WorkdayStatus,
+} from '../types'
 import {
   AddendumValidationError,
   ERR,
@@ -15,14 +23,19 @@ import {
 } from './evidence-chain'
 import { mergeEvidence, sameEvidence } from './evidence-merge'
 import { deleteSessionPhotos } from './photo-store'
+import { isWorkdayJurisdiction } from './jurisdiction'
 
 const KEY = 'parkproof.sessions.v1'
+
+/** Workday mode's state (T6a). See the workday section at the end of this file. */
+export const WORKDAY_KEY = 'parkproof.workday.v1'
 
 /**
  * Fired on `window` after any write to the saved records (save, update,
  * delete, end, and the evidence-chain writes: appendAddendum,
  * setAddendumBundle, rejectAddendum, setArrivalSignature, and the cloud merge
- * mergeCloudEvidence). `useRecordsVersion()`
+ * mergeCloudEvidence), and after any write to the workday state
+ * (startWorkday, setWorkdayLeg, markWorkdayMoving, endWorkday). `useRecordsVersion()`
  * re-renders on it, so screens that show a record pick up background
  * changes such as a signature landing, without navigating away.
  */
@@ -97,7 +110,7 @@ export function subscribeRecordsChanged(listener: () => void): () => void {
   if (!crossTabListenerInstalled) {
     crossTabListenerInstalled = true
     window.addEventListener('storage', (e: StorageEvent) => {
-      if (e.key === KEY || e.key === null) notifyRecordsChanged()
+      if (e.key === KEY || e.key === WORKDAY_KEY || e.key === null) notifyRecordsChanged()
     })
   }
   window.addEventListener(RECORDS_CHANGED_EVENT, listener)
@@ -635,4 +648,207 @@ export function loadActiveSessions(now: number = Date.now()): ParkingSession[] {
  */
 export function endSession(id: string, when: Date = new Date()): QuotaRecoveryReport {
   return updateSession(id, { ended_at: when.toISOString() })
+}
+
+// ─── Workday mode (build spec T6a) ────────────────────────────────────────
+// The workday state lives under WORKDAY_KEY, on this device only (it is
+// never synced; the legs are ordinary records carrying workday_id and
+// leg_index, and those sync). The key holds a list, newest first: every
+// workday that hasn't ended plus up to MAX_ENDED_WORKDAYS ended ones. At most
+// one workday is active (status other than 'ended'): startWorkday refuses
+// while one is. Every write re-reads the list first and dispatches
+// records-changed, so the home screen follows a workday changed in the
+// background or in another tab.
+
+/** Ended workdays kept on the device, newest first. Active ones are never dropped. */
+export const MAX_ENDED_WORKDAYS = 30
+
+/** startWorkday: a workday is already active. */
+export const ERR_WORKDAY_ACTIVE = 'ERR_WORKDAY_ACTIVE'
+/** startWorkday: workday mode isn't available in that jurisdiction (only VIC and QLD). */
+export const ERR_WORKDAY_JURISDICTION = 'ERR_WORKDAY_JURISDICTION'
+
+export type WorkdayErrorCode = typeof ERR_WORKDAY_ACTIVE | typeof ERR_WORKDAY_JURISDICTION
+
+/** Thrown by startWorkday. Nothing is written. The message is English for logs only. */
+export class WorkdayError extends Error {
+  readonly code: WorkdayErrorCode
+  constructor(code: WorkdayErrorCode, message: string) {
+    super(message)
+    this.name = 'WorkdayError'
+    this.code = code
+  }
+}
+
+const WORKDAY_STATUSES: readonly WorkdayStatus[] = ['parked', 'between_moves', 'ended']
+
+const isTime = (v: unknown): v is string => typeof v === 'string' && Number.isFinite(Date.parse(v))
+const isIdOrNull = (v: unknown): v is string | null => v === null || (typeof v === 'string' && v.length > 0)
+
+/**
+ * A stored workday that can be trusted. Anything else is dropped on read,
+ * including a workday in a jurisdiction where workday mode isn't available.
+ */
+function isWorkdayState(v: unknown): v is WorkdayState {
+  if (!v || typeof v !== 'object') return false
+  const w = v as Record<string, unknown>
+  if (typeof w.id !== 'string' || !UUID_RE.test(w.id)) return false
+  if (!isTime(w.started_at)) return false
+  if (!isWorkdayJurisdiction(w.jurisdiction as Jurisdiction)) return false
+  if (!WORKDAY_STATUSES.includes(w.status as WorkdayStatus)) return false
+  if (!isIdOrNull(w.current_session_id) || !isIdOrNull(w.previous_session_id)) return false
+  if (w.status === 'ended') return isTime(w.ended_at)
+  return w.ended_at === null
+}
+
+const byStartedDesc = (a: WorkdayState, b: WorkdayState): number =>
+  Date.parse(b.started_at) - Date.parse(a.started_at)
+
+/** Every stored workday that reads cleanly, newest first. [] when none or unreadable. */
+export function loadWorkdays(): WorkdayState[] {
+  try {
+    const raw = localStorage.getItem(WORKDAY_KEY)
+    if (!raw) return []
+    const parsed: unknown = JSON.parse(raw)
+    if (!Array.isArray(parsed)) return []
+    return parsed.filter(isWorkdayState).sort(byStartedDesc)
+  } catch {
+    return []
+  }
+}
+
+/**
+ * The active workday (status 'parked' or 'between_moves'), or null. Should
+ * two ever be stored (two tabs starting one at the same moment), the most
+ * recently started one is the active one.
+ */
+export function getActiveWorkday(): WorkdayState | null {
+  return loadWorkdays().find((w) => w.status !== 'ended') ?? null
+}
+
+export function getWorkday(id: string): WorkdayState | null {
+  return loadWorkdays().find((w) => w.id === id) ?? null
+}
+
+function persistWorkdays(list: WorkdayState[]): void {
+  const sorted = [...list].sort(byStartedDesc)
+  const active = sorted.filter((w) => w.status !== 'ended')
+  const ended = sorted.filter((w) => w.status === 'ended').slice(0, MAX_ENDED_WORKDAYS)
+  const kept = [...active, ...ended].sort(byStartedDesc)
+  try {
+    localStorage.setItem(WORKDAY_KEY, JSON.stringify(kept))
+  } catch (err) {
+    if (isQuotaError(err)) throw new StorageFullError()
+    throw err
+  }
+  notifyRecordsChanged(null)
+}
+
+/**
+ * Apply `change` to one stored workday and save it. Returns the workday as
+ * stored afterwards (unchanged when `change` returned it as it was, and
+ * then nothing is written), or null when it isn't stored.
+ */
+function writeWorkday(id: string, change: (w: WorkdayState) => WorkdayState): WorkdayState | null {
+  const list = loadWorkdays()
+  const idx = list.findIndex((w) => w.id === id)
+  if (idx === -1) return null
+  const next = change(list[idx])
+  if (next === list[idx]) return next
+  list[idx] = next
+  persistWorkdays(list)
+  return next
+}
+
+export interface StartWorkdayInput {
+  /** From the start fix's `place.state_code` (jurisdiction.ts). Only VIC and QLD can start one. */
+  jurisdiction: Jurisdiction | null
+  /**
+   * The record that becomes leg 0 when the car is already parked ("Use the
+   * car's current park as the first stop"). The workday starts 'parked' on
+   * it. Without one it starts 'between_moves': the next scan makes leg 0.
+   */
+  current_session_id?: string | null
+  /** Phone time of the Start tap; defaults to now. */
+  now?: Date
+  /** Lower-case uuid; defaults to a fresh one. */
+  id?: string
+}
+
+/**
+ * Start a workday. Throws WorkdayError (and writes nothing) when a workday
+ * is already active (ERR_WORKDAY_ACTIVE) or the jurisdiction isn't one
+ * where workday mode is available (ERR_WORKDAY_JURISDICTION; the start
+ * screen gates on it first, this is the backstop). Can throw
+ * StorageFullError.
+ */
+export function startWorkday(input: StartWorkdayInput): WorkdayState {
+  const jurisdiction = input.jurisdiction
+  if (!isWorkdayJurisdiction(jurisdiction)) {
+    throw new WorkdayError(ERR_WORKDAY_JURISDICTION, `Workday mode isn't available in ${String(jurisdiction)}.`)
+  }
+  const list = loadWorkdays()
+  const active = list.find((w) => w.status !== 'ended')
+  if (active) throw new WorkdayError(ERR_WORKDAY_ACTIVE, `Workday ${active.id} is already active.`)
+  const id = input.id ?? crypto.randomUUID()
+  if (!UUID_RE.test(id)) throw new Error(`Workday id ${id} is not a lower-case uuid.`)
+  const current = input.current_session_id ?? null
+  const workday: WorkdayState = {
+    id,
+    started_at: (input.now ?? new Date()).toISOString(),
+    jurisdiction,
+    status: current ? 'parked' : 'between_moves',
+    current_session_id: current,
+    previous_session_id: null,
+    ended_at: null,
+  }
+  persistWorkdays([workday, ...list])
+  return workday
+}
+
+/**
+ * A new leg was saved: it becomes the current leg, the leg it replaced
+ * becomes the previous one, and the workday is 'parked'. Passing the
+ * current leg again changes nothing and writes nothing, whatever the
+ * status: while 'between_moves' the current leg is the one the car just
+ * left, so a repeated save of it must not mark the car parked there again.
+ * Null when the workday isn't stored or has ended (an ended workday never
+ * gains legs).
+ */
+export function setWorkdayLeg(workdayId: string, sessionId: string): WorkdayState | null {
+  const stored = getWorkday(workdayId)
+  if (!stored || stored.status === 'ended') return null
+  return writeWorkday(workdayId, (w) => {
+    if (w.current_session_id === sessionId) return w
+    return {
+      ...w,
+      status: 'parked',
+      previous_session_id: w.current_session_id ?? w.previous_session_id,
+      current_session_id: sessionId,
+    }
+  })
+}
+
+/**
+ * The driver tapped "I'm moving the car now" and the current leg's
+ * departure has been recorded: the workday is 'between_moves' until the
+ * next leg is saved. `current_session_id` stays on the leg just left (it
+ * is the next leg's previous leg). Null when the workday isn't stored, has
+ * ended, or has no current leg.
+ */
+export function markWorkdayMoving(workdayId: string): WorkdayState | null {
+  const stored = getWorkday(workdayId)
+  if (!stored || stored.status === 'ended' || !stored.current_session_id) return null
+  return writeWorkday(workdayId, (w) => (w.status === 'between_moves' ? w : { ...w, status: 'between_moves' }))
+}
+
+/**
+ * End a workday at `when` (phone time). Ending an ended workday keeps its
+ * first ended_at. Null when the workday isn't stored. The caller runs the
+ * departure flow for a current leg that hasn't ended first.
+ */
+export function endWorkday(workdayId: string, when: Date = new Date()): WorkdayState | null {
+  return writeWorkday(workdayId, (w) =>
+    w.status === 'ended' ? w : { ...w, status: 'ended', ended_at: when.toISOString() },
+  )
 }
