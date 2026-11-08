@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>验证 ParkProof 证据记录 — ParkProof</title>
-<meta name="description" content="使用 openssl 一步步验证 ParkProof 证据 PDF 自保存以来未被篡改。基于 AWS KMS ECDSA P-256 的密码学签名。">
+<title>验证 ParkProof 证据记录 | ParkProof</title>
+<meta name="description" content="使用 openssl 一步步核对 ParkProof 证据记录自 ParkProof 签名以来没有改动。基于 AWS KMS ECDSA P-256 的密码学签名。">
 <meta name="robots" content="index, follow">
 <link rel="icon" href="../../assets/parkproof-icon.svg" type="image/svg+xml">
 
@@ -128,6 +128,14 @@
     margin-bottom: 14px;
     letter-spacing: -0.01em;
   }
+  h3 {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 18px;
+    color: var(--ink-900);
+    margin-top: 28px;
+    margin-bottom: 10px;
+  }
   p { margin-bottom: 14px; color: var(--ink-700); }
   p.small { font-size: 14px; color: var(--ink-500); }
 
@@ -227,7 +235,7 @@
   footer a { color: var(--brand-700); text-decoration: none; }
   footer a:hover { text-decoration: underline; }
 
-  /* Auto-detect chip — mirrors the landing's pp-locale-chip pattern.
+  /* Auto-detect chip. Mirrors the landing's pp-locale-chip pattern.
      Shown only when the visitor's browser language is supported AND
      different from the current page's language. Dismissable per
      session via sessionStorage. */
@@ -278,69 +286,108 @@
 
   <div class="eyebrow">验证</div>
   <h1>验证一份 ParkProof <span class="accent">证据记录</span>。</h1>
-  <p class="lede">每份 ParkProof 证据 PDF 都带有密码学签名附录。本页面是公开的离线指南,供任何人 — 市政官员、保险公司、法院书记员或司机本人 — 确认该记录自保存的那一刻起未被篡改。</p>
+  <p class="lede">每份 ParkProof 证据 PDF 都带有密码学签名附录，每条记录也都可以保存为证据文件。本页面向任何人（例如市议会工作人员、保险公司、法院书记员或驾驶员本人）说明，如何离线核对一条记录自 ParkProof 签名以来没有改动。</p>
 
   <div class="callout">
-    <strong>诚实表态。</strong> 签名证明的是<em>完整性</em>:该记录中的字节与扫描时签名的字节完全一致。它不证明记录的<em>真实性</em>(AI 可能读错了路牌),也不决定证据的法律效力。那是审阅者的独立判断。
+    <strong>诚实表态。</strong> 有效的签名表明的是<em>完整性</em>：已签名的详情和照片指纹与 ParkProof 在签名时间签名的内容完全一致。它不表明记录是<em>真实的</em>（AI 可能读错了路牌），不表明谁在驾驶、车停在哪里，也不表明车辆何时到达或离开，更不决定这条记录有多大分量。那由审阅的人判断。
   </div>
 
   <h2>你在验证什么</h2>
-  <p>每个 ParkProof 会话包含一个<strong>载荷</strong>(一个小文本文件,含规范的会话元数据以及路牌+车辆照片的 SHA-256 哈希)和一个<strong>签名</strong>(用 AWS KMS 管理的 ECDSA P-256 私钥对载荷签名,该私钥永远不会离开 AWS)。两者都打印在每份导出的证据 PDF 的签名附录中。</p>
-  <p>验证签名所需的<strong>公钥</strong>发布在 <a class="link" href="/parkproof-public-key.pem"><code>/parkproof-public-key.pem</code></a> — 在浏览器中打开以确认加载,然后保存到本地。</p>
+  <p>ParkProof 记录是分成几个部分签名的，这些部分称为环节。环节 0 在 ParkProof 收到保存的记录时签名。之后的每个环节（例如停车时的详情、车况照片、付款凭证照片或离开）在 ParkProof 收到时签名，并带有前一个环节的 SHA-256，因此各环节连成一条链。每个环节都有一个<strong>负载</strong>（被签名的确切文本，包括其照片的 SHA-256 指纹）和一个用 ParkProof 私钥（ECDSA P-256）生成的<strong>签名</strong>，该私钥从不离开 AWS KMS。证据 PDF 在签名附录中打印每个环节。记录的<strong>证据文件</strong>（驾驶员可以在应用中的记录页面下载的 .json 文件）包含同样的负载和签名，以及原始照片。</p>
+  <p>核对签名所需的<strong>公钥</strong>发布在 <a class="link" href="/parkproof-public-key.pem"><code>/parkproof-public-key.pem</code></a>。请在浏览器中打开以确认能加载，然后保存下来。</p>
 
   <h2>你需要的</h2>
   <ul>
-    <li><strong>证据 PDF</strong> — 由争议或提交该记录的人提供。</li>
-    <li><strong><code>openssl</code></strong> — macOS 和大多数 Linux 发行版自带;Windows 上可通过 Git Bash、WSL 或独立的 OpenSSL 构建获取。</li>
-    <li><strong>约 60 秒。</strong></li>
+    <li><strong>证据 PDF 或证据文件</strong>，由提交记录的人提供。核对照片需要证据文件。</li>
+    <li><strong><code>openssl</code></strong>。macOS 和大多数 Linux 系统自带。在 Windows 上，Git for Windows（Git Bash）或 WSL 中都有。</li>
+    <li><strong>几分钟时间。</strong></li>
   </ul>
 
   <h2>一步一步</h2>
 
-  <p>打开证据 PDF,滚动到末尾的<strong>"签名附录"</strong>页面。你会看到三块文本:<code>payload</code>、<code>sig.base64</code> 以及对公钥 URL 的引用。把前两块保存到本地文件,然后运行验证:</p>
+  <p>在 PDF 中翻到末尾的签名附录。每个环节有三块内容：文本形式的负载、base64 形式的负载和 base64 形式的签名。把环节 0 的两块 base64 内容复制到名为 <code>link0-payload.b64</code> 和 <code>link0-sig.b64</code> 的文件中，然后运行：</p>
 
-  <pre><span class="comment"># 1. 把 PDF 附录中的载荷块保存到 payload.txt
-#    (精确复制粘贴;保留行尾)。
-# 2. 把 base64 签名块保存到 sig.base64。
-# 3. 获取公钥。</span>
+  <pre><span class="comment"># 1. 解码负载。base64 -d 会忽略 PDF 中的换行。</span>
+base64 -d link0-payload.b64 > link0-payload.txt
+
+<span class="comment"># 2. 解码签名。</span>
+base64 -d link0-sig.b64 > link0-sig.bin
+
+<span class="comment"># 3. 下载 ParkProof 的公钥。</span>
 curl -O https://www.parkproof.com.au/parkproof-public-key.pem
 
-<span class="comment"># 4. 将 base64 签名解码为原始字节。</span>
-base64 -d sig.base64 > sig.bin
-
-<span class="comment"># 5. 运行验证。</span>
+<span class="comment"># 4. 核对签名。预期输出 "Verified OK"。</span>
 openssl dgst -sha256 -verify parkproof-public-key.pem \
-  -signature sig.bin payload.txt</pre>
+  -signature link0-sig.bin link0-payload.txt</pre>
 
-  <p>上面的命令只验证<strong>载荷</strong> — 它确认元数据以及载荷中记录的照片哈希值未被改变。它<em>不会</em>检查 PDF 中实际显示的照片是否仍与那些哈希值相符。要确认照片本身,你必须重新计算每张照片的哈希并与载荷比对:</p>
+  <p>对每个环节用它自己的文件名（<code>link1-payload.b64</code>、<code>link1-sig.b64</code> 等）重复第 1、2、4 步。不要复制可读的负载文本来代替 base64 块：PDF 会把长行折行，字节因此改变，核对就会失败。</p>
 
-  <pre><span class="comment"># 6. 对 PDF 中的每张照片重新计算 SHA-256,
-#    并与载荷中对应的字段逐一比对:
-#      路牌照片  → sign_photo_sha256
-#      车辆照片  → car_photo_sha256
-#      环境照片  → ambient_photo_sha256
-#    先从 PDF 中导出每张图片为独立文件,然后:</span>
-sha256sum sign_photo.jpg
-sha256sum car_photo.jpg
-sha256sum ambient_photo.jpg
+  <h3>在 Windows 上</h3>
+  <p>在 cmd 或 PowerShell 中没有 <code>base64 -d</code>。请用 Windows 自带的 <code>certutil</code> 解码；在 PowerShell 中，请输入 <code>curl.exe</code> 而不是 <code>curl</code>。你也可以在 Git Bash 中按原样运行本页的所有命令。</p>
 
-<span class="comment"># 若系统没有 sha256sum,可改用 openssl:</span>
-openssl dgst -sha256 sign_photo.jpg</pre>
+  <pre>certutil -decode link0-payload.b64 link0-payload.txt
+certutil -decode link0-sig.b64 link0-sig.bin
+curl.exe -O https://www.parkproof.com.au/parkproof-public-key.pem</pre>
+
+  <h2>核对各环节按顺序相连</h2>
+  <p>环节 0 之后的每个环节都带有 <code>parent_payload_sha256</code>，即前一个环节负载的 SHA-256。打印每个负载文件的 SHA-256，并与下一个环节中的值比较。</p>
+
+  <pre><span class="comment"># 5. 打印环节 0 负载的 SHA-256。</span>
+openssl dgst -sha256 link0-payload.txt
+<span class="comment"># "=" 后面的值必须等于环节 1 中的 parent_payload_sha256。
+# 对后面的每个环节都这样做。</span></pre>
+
+  <p>如果两个环节的编号相同（2a 和 2b），说明两台设备在同一位置各添加了一个部分。它们指向同一个前一环节。</p>
+
+  <h2>核对照片</h2>
+  <p>签名针对的是每张照片的 SHA-256 指纹，而不是图像本身。PDF 中打印的照片是重新编码的副本，字节永远不会一致。要核对照片，请使用记录的证据文件。文件在 <code>photos</code> 下列出每张照片，包括它的 <code>sha256</code>、为它签名的环节（<code>signed_in</code>）以及 base64 形式的原始字节（<code>bytes_base64</code>）。文件名以 parkproof-evidence- 开头，后面是记录 ID 的开头部分。下面的命令把它称为 <code>evidence.json</code>。</p>
+
+  <pre><span class="comment"># 6. 用 jq（一个免费的 JSON 工具）从文件中取出第一张照片。</span>
+jq -r '.photos[0].bytes_base64' evidence.json | base64 -d > photo1.jpg
+
+<span class="comment"># 7. 打印它的 SHA-256。</span>
+openssl dgst -sha256 photo1.jpg
+
+<span class="comment"># 8. 查看哪个环节、哪个字段为它签名。</span>
+jq '.photos[0].signed_in' evidence.json</pre>
+
+  <p>这个十六进制值必须等于 <code>signed_in</code> 中每个环节的已签名负载里这张照片的 <code>sha256</code>：环节 0 中的 <code>sign_photo_sha256</code>、<code>car_photo_sha256</code> 或 <code>ambient_photo_sha256</code>，或后续环节中 <code>photos</code>、<code>photo</code> 或 <code>return_photos</code> 下的 <code>sha256</code>。请与你已核对过的负载比较，而不只是与文件中照片旁边的 <code>sha256</code> 比较，后者没有签名。第二张照片用 <code>.photos[1]</code>，依此类推。</p>
+  <p>如果没有 jq，可以用文本编辑器打开文件，把某张照片的 <code>bytes_base64</code> 值复制到名为 <code>photo1.b64</code> 的文件中，然后运行 <code>base64 -d photo1.b64 &gt; photo1.jpg</code>。</p>
+
+  <h3>在 Windows 上</h3>
+  <p>在 Windows 上，PowerShell 可以直接读取这个文件：</p>
+
+  <pre>$e = Get-Content evidence.json -Raw | ConvertFrom-Json
+[IO.File]::WriteAllBytes((Join-Path $PWD 'photo1.jpg'), [Convert]::FromBase64String($e.photos[0].bytes_base64))
+certutil -hashfile photo1.jpg SHA256
+$e.photos[0].signed_in</pre>
 
   <div class="callout">
-    <strong>这一步不可省略。</strong> 把每条输出的哈希与载荷中相应的 <code>sign_photo_sha256</code> / <code>car_photo_sha256</code> / <code>ambient_photo_sha256</code> 字段逐字符比对。<strong>哈希一致</strong>表示该照片自签名以来未被改动;<strong>哈希不一致</strong>表示这张照片在签名之后被替换或修改过 — 即使第 5 步显示 <code>Verified OK</code> 也是如此。单凭 <code>Verified OK</code> 并<em>不</em>验证图片本身;只有完成本步的重新计算并匹配,才能确认你所看到的照片就是被签名的那些照片。
+    <strong>照片核对是单独的一步。</strong> <code>Verified OK</code> 表明负载中的指纹没有改动。只有重新计算原始照片的哈希，才能表明照片就是被签名的那张。如果哈希不一致，那张照片就不是 ParkProof 签名的那张，即使签名核对通过也是如此。如果文件中某张照片没有字节（<code>bytes</code> 为 <code>not_on_this_device</code>，或者对于驾驶员选择不包含的许可证照片为 <code>withheld_permit</code>），就无法用它核对那张照片。
   </div>
+
+  <h2>用证据文件代替 PDF</h2>
+  <p>证据文件也以 base64 形式包含每个环节的负载和签名，所以不用 PDF 也能完成第 1 到 5 步。从文件中取出环节 0，然后按上面的说明运行第 3 到 5 步：</p>
+
+  <pre>jq -r '.links[0].canonical_payload_base64' evidence.json | base64 -d > link0-payload.txt
+jq -r '.links[0].signature_base64' evidence.json | base64 -d > link0-sig.bin</pre>
+
+  <p>在 PowerShell 中：</p>
+
+  <pre>$e = Get-Content evidence.json -Raw | ConvertFrom-Json
+[IO.File]::WriteAllBytes((Join-Path $PWD 'link0-payload.txt'), [Convert]::FromBase64String($e.links[0].canonical_payload_base64))
+[IO.File]::WriteAllBytes((Join-Path $PWD 'link0-sig.bin'), [Convert]::FromBase64String($e.links[0].signature_base64))</pre>
 
   <h2>结果意味着什么</h2>
 
   <div class="grid-2">
     <div class="card ok">
       <h3>已验证 <span class="label">通过</span></h3>
-      <p><code>Verified OK</code> — 你 PDF 中的载荷与 ParkProof 扫描时签名的字节完全一致。这确认了元数据(路牌规则、GPS、时间戳、地址)以及载荷中记录的照片<em>哈希值</em>自那时起未被更改。但要确认照片本身,仍需完成上面的第 6 步重新计算哈希;只有这一步才能验证 PDF 中显示的图片确实与这些哈希相符。</p>
+      <p><code>Verified OK</code>：负载正是 ParkProof 签名的内容。其中的详情和照片指纹自 ParkProof 在负载内的 <code>signed_at</code> 时间签名以来没有改动。照片本身在第 6 到 8 步中核对。</p>
     </div>
     <div class="card fail">
       <h3>失败 <span class="label">不通过</span></h3>
-      <p><code>Verification failure</code> — 载荷、签名或两者自记录保存以来已被修改。PDF 可能被编辑、附录被篡改,或复制粘贴引入了空白差异。在得出结论之前,请仔细重复复制操作。</p>
+      <p><code>Verification failure</code>：负载或签名不是 ParkProof 签名的内容。记录可能被改动过，也可能是复制时出了错。在下结论之前，请完整地重新复制 base64 块并重试。</p>
     </div>
   </div>
 
@@ -348,13 +395,14 @@ openssl dgst -sha256 sign_photo.jpg</pre>
   <p>验证成功只确认<em>完整性</em>。它不确认:</p>
   <ul>
     <li><strong>AI 是否正确读取了路牌。</strong>ParkProof 扫描是机器对停车标志的读取,机器可能出错。记录中的判定文本和规则是 AI 在扫描时的最佳读取,而非绝对真相。</li>
-    <li><strong>照片是否如其所述。</strong>签名证明照片<em>自保存以来</em>未被更改,而非照片本身是诚实拍摄的。</li>
+    <li><strong>照片是否如其所述。</strong>有效的签名表明照片指纹自 ParkProof 签名以来没有改动，重新计算哈希可以表明照片是否与其指纹一致。两者都不表明照片是诚实拍摄的。</li>
     <li><strong>任何法律结果。</strong>证据是否支持申诉、退款或诉讼,是审阅者的判断。ParkProof 是一个工具,不是律师。</li>
+    <li><strong>车停在哪里，车辆何时到达或离开，或者谁在驾驶。</strong>记录中的位置来自驾驶员的手机，或由驾驶员手动输入。标为手机时间的时间来自驾驶员的手机，ParkProof 的签名时间是 ParkProof 收到每个部分的时间。</li>
   </ul>
 
   <h2>为什么存在</h2>
-  <p>大多数生成"证据"的停车应用只产出截图。截图没有完整性的故事 — 它们可能在拍摄到发送之间的任何时刻被编辑。密码学签名是<em>"这是我看到的"</em>和<em>"这是我看到的,这是数学证明我此后没有改变它"</em>之间的差别。</p>
-  <p>公钥已发布,因此验证完全离线 — 你不需要信任 ParkProof、联系我们的服务器或运行我们的应用来确认完整性声明。即使 ParkProof 多年后不再维护,只要 <code>openssl</code> 仍然存在,验证就可以进行。</p>
+  <p>大多数生成"证据"的停车应用只产出截图。截图在拍下到发送之间的任何时候都可能被编辑。密码学签名的区别在于：<em>"这是我看到的"</em>和<em>"这是我看到的，任何人都可以核对它自 ParkProof 签名以来没有改动"</em>。</p>
+  <p>公钥已公开发布，所以核对可以完全离线进行。你不需要信任 ParkProof、联系我们的服务器或运行我们的应用。即使多年以后 ParkProof 不再运行，只要 <code>openssl</code> 还在，就可以进行核对。</p>
 
   <h2>有疑问?</h2>
   <p>发邮件到 <a class="link" href="mailto:hello@parkproof.com.au">hello@parkproof.com.au</a>。我们会回复。</p>
@@ -365,7 +413,7 @@ openssl dgst -sha256 sign_photo.jpg</pre>
   </footer>
 </div>
 
-<!-- Auto-detect chip — nudges visitors whose browser language differs
+<!-- Auto-detect chip: nudges visitors whose browser language differs
      from the current page's language to their language's /verify/
      subdirectory. The locale switcher at top remains for explicit
      switching; this chip is the one-tap discoverability layer. -->

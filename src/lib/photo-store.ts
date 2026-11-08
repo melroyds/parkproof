@@ -408,6 +408,27 @@ export async function deleteSessionPhotosExcept(sessionId: string, keep: Iterabl
 }
 
 /**
+ * Delete some of a record's photos, by hash. A screen that took photos for
+ * a saved record and then dropped them (a sheet cancelled, a photo
+ * retaken) deletes only those, so the record's other photos and any photo
+ * another screen is still taking are left alone. Hashes that aren't stored
+ * are skipped. Resolves with how many were deleted.
+ */
+export async function deletePhotos(sessionId: string, sha256s: Iterable<string>): Promise<number> {
+  assertSessionId(sessionId)
+  const wanted = new Set<string>()
+  for (const sha256 of sha256s) {
+    assertSha256(sha256)
+    wanted.add(photoKey(sessionId, sha256))
+  }
+  if (wanted.size === 0) return 0
+  const metas = await activeBackend().listMeta()
+  const doomed = metas.filter((m) => wanted.has(m.key)).map((m) => m.key)
+  if (doomed.length > 0) await activeBackend().delete(doomed)
+  return doomed.length
+}
+
+/**
  * Startup GC: delete photos whose record id isn't in `knownIds` and that
  * were written at least ORPHAN_PHOTO_AGE_MS ago (a logger that hasn't
  * saved yet, in this tab or another, keeps its photos meanwhile). Keys that

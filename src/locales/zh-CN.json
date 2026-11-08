@@ -210,7 +210,17 @@
     "ambientCaption": "拍下来证明这里没有张贴标志。",
     "locationContext": "我们用你的位置,只是为了标记你停车的时间和地点。除非你登录,否则它只留在你的设备上。",
     "photoSaveFailed": "这张照片没能保存在你的手机上。请重试,或者不带这张照片保存记录。",
-    "saving": "正在保存…"
+    "saving": "正在保存…",
+    "condition": {
+      "toggle": "记录车况（可选）",
+      "noteLabel": "你注意到的损伤",
+      "notePlaceholder": "例如：后保险杠上有一道划痕"
+    },
+    "proof": {
+      "heading": "付款或许可证凭证",
+      "toggle": "付款或许可证凭证（可选）",
+      "addMeterTicketOrPermit": "添加停车票或许可证的照片（可选）"
+    }
   },
   "reminders": {
     "header": "设置提醒",
@@ -577,7 +587,10 @@
         "departureSigned": "离开部分由 ParkProof 签名的时间(服务器时钟)",
         "departureLocation": "点击\"我已离开\"时手机的位置(GPS)",
         "departureDistance": "与到达位置的大约距离(手机 GPS)",
-        "locationCoords": "位置(坐标)"
+        "locationCoords": "位置(坐标)",
+        "proof": "付款或许可证凭证",
+        "conditionPhotos": "车况照片",
+        "damageNote": "驾驶员注明的车况问题"
       },
       "locationSourceValue": {
         "manuallyEntered": "手动输入",
@@ -612,7 +625,15 @@
         "coordsWithAccuracy": "{{coords}},精度 {{accuracy}}",
         "distanceUnavailable": "无法计算。到达时的位置不是足够精确的手机 GPS 定位,无法比较。",
         "distanceRough": "{{distance}}。点击时手机位置的精度只有 {{accuracy}},所以这个距离不精确。",
-        "distanceRoughNoAccuracy": "{{distance}}。手机没有给出点击时位置的精度,所以这个距离不精确。"
+        "distanceRoughNoAccuracy": "{{distance}}。手机没有给出点击时位置的精度,所以这个距离不精确。",
+        "complianceDescribed": "{{type}}(按驾驶员的描述)",
+        "complianceNoType": "已添加一张照片。驾驶员没有说明照片的内容。",
+        "conditionCounts": "停车时:{{parking}} 张。返回时:{{returned}} 张。",
+        "noteWhenParked": "停车时，驾驶员的原话:{{note}}",
+        "noteOnReturn": "返回时，驾驶员的原话:{{note}}",
+        "notSignedYet": "(尚未签名)",
+        "partRejected": "(这部分无法签名)",
+        "notSigned": "(未签名)"
       },
       "carPhotoCaptionTime": "记录时间 {{time}}(手机时钟)",
       "confidence": {
@@ -639,7 +660,7 @@
       "verifyStep4": "4. 解码签名:",
       "verifyStep5": "5. 验证:",
       "verifyStep6": "6. 预期输出:\"Verified OK\"。这表明已签名的字节自 ParkProof 签名以来没有改动。",
-      "verifyStep7": "7. 关于照片:本 PDF 中显示的图像是为文档重新编码的副本，其字节与原始文件不同，因此无法重现负载中的哈希值。这是正常的，并不表示被篡改。签名对应的是每张原始照片的 SHA-256（即签名负载中的 sign_photo_sha256、car_photo_sha256 和 ambient_photo_sha256 值），第 6 步已经表明这些值自签名以来没有改动。若要自行核对某张图像，请计算原始拍摄文件（来自 ParkProof 记录或你的账户导出）的哈希，而不是这里打印的副本的哈希，再与上方对应的值比较。",
+      "verifyStep7": "7. 关于照片:本 PDF 中打印的图像是为文档重新编码的副本，其字节与原始文件不同，因此与已签名的指纹不一致。这是正常的，并不表示被篡改。已签名的负载带有每张原始照片的 SHA-256:环节 0 中的 sign_photo_sha256、car_photo_sha256 和 ambient_photo_sha256，以及后续环节中 photos、photo 或 return_photos 下的每个 sha256。原始照片在这条记录的证据文件中，这是驾驶员可以在 ParkProof 的记录页面下载的 .json 文件。要核对一张照片，请把该文件中这张照片的 bytes_base64 值保存为 photo1.b64，然后解码并打印它的 SHA-256:",
       "devKey": "使用开发密钥签名。无法用 ParkProof 公布的公钥核验。",
       "linkHeading": "环节 {{link}}:{{kind}}",
       "forkNote": "在记录的这个位置,两台设备各添加了一个部分。两个部分都已签名,都列在这里。",
@@ -654,7 +675,9 @@
         "compliance": "付款或许可证凭证",
         "departure": "离开",
         "handover": "车辆交接"
-      }
+      },
+      "verifyPhotoMatch": "这个十六进制值必须等于上方某个已签名负载中这张照片的 sha256，而不只是证据文件中与照片一起列出的 sha256，后者没有签名。第 6 步已经表明已签名的值自 ParkProof 签名以来没有改动。对每张照片都这样做。",
+      "verifyWindows": "在 Windows 上，cmd 和 PowerShell 没有 base64 -d。请改用 certutil -decode，并用 certutil -hashfile 打印文件的 SHA-256，如下所示。在 PowerShell 中，请输入 curl.exe 而不是 curl。Git for Windows 自带 openssl，它的 Git Bash 也可以按原样运行上面的命令。"
     },
     "appeal": {
       "drafted": "起草于 {{when}}",
@@ -688,6 +711,33 @@
       "hoursOnly_one": "1 小时",
       "hoursOnly_other": "{{count}} 小时",
       "hoursAndMins": "{{hours}} 小时 {{mins}} 分钟"
+    },
+    "complianceType": {
+      "meterTicket": "放在车内显眼处的停车票",
+      "paymentConfirmation": "付款确认",
+      "permitDisplayed": "已展示的许可证",
+      "other": "其他"
+    },
+    "photos": {
+      "complianceHeader": "付款或许可证凭证",
+      "conditionHeader": "车况照片",
+      "whenParked": "停车时",
+      "onReturn": "返回时",
+      "role": {
+        "front": "车头",
+        "rear": "车尾",
+        "left": "左侧",
+        "right": "右侧",
+        "detail": "特写"
+      },
+      "added": "添加于 {{time}}(手机时钟)",
+      "library": "从相册添加。签名显示的是添加的时间，而不是拍摄的时间。",
+      "signedAt": "ParkProof 于 {{time}} 签名了指纹(服务器时钟)",
+      "devKey": "指纹于 {{time}} 使用开发密钥签名。无法用 ParkProof 公布的公钥核验。",
+      "notSignedYet": "指纹尚未签名",
+      "notSigned": "指纹未签名",
+      "rejected": "这部分无法签名",
+      "signedNote": "已签名的照片表明，这张照片在签名时已经存在。它不能说明车况问题是谁造成的。"
     }
   },
   "time": {
@@ -903,7 +953,10 @@
     "heading": "离开",
     "tapped": "你在 {{time}} 点击了\"我已离开\"(手机时钟)。",
     "far": "你点击\"我已离开\"时,手机距离你停车的地方 {{distance}}。记录显示的是你点击的时间,不是车辆开走的时间。",
-    "notSigned": "这次离开没有签名。"
+    "notSigned": "这次离开没有签名。",
+    "condition": {
+      "toggle": "现在记录车况（可选）"
+    }
   },
   "chain": {
     "heading": "这条记录的已签名部分",
@@ -958,5 +1011,75 @@
       "returnDetail": "返回时车况:特写",
       "compliance": "付款或许可证凭证照片"
     }
+  },
+  "photoGrid": {
+    "front": "车头",
+    "rear": "车尾",
+    "left": "左侧",
+    "right": "右侧",
+    "detail": "特写（可选）",
+    "take": "拍照：{{angle}}",
+    "retake": "重拍：{{angle}}",
+    "saving": "正在保存照片…",
+    "saved": "已保存在你的手机上",
+    "failed": "这张照片没能保存在你的手机上。",
+    "hint": "绕车走一圈，给每一面各拍一张照片。如有损伤，再拍一张特写。",
+    "signedNote": "已签名的照片表明，这张照片在签名时已经存在。它不能说明损伤是谁造成的。",
+    "count_one": "{{count}} 张照片",
+    "count_other": "{{count}} 张照片"
+  },
+  "proof": {
+    "fromLibrary": "在应用里付的款？从相册添加付款确认",
+    "typeLegend": "照片的内容"
+  },
+  "complianceType": {
+    "meterTicket": "仪表台上的停车票",
+    "paymentConfirmation": "付款确认",
+    "permitDisplayed": "已展示的许可证",
+    "other": "其他"
+  },
+  "evidence": {
+    "group": {
+      "parking": "停车时车况",
+      "return": "返回时车况",
+      "compliance": "付款或许可证凭证"
+    },
+    "noteLabel": "你注意到的损伤（你自己的描述）",
+    "addedAt": "于 {{time}} 添加（手机时钟）。",
+    "fingerprint": "指纹 {{fingerprint}}",
+    "library": "从相册添加。签名显示的是添加的时间，而不是拍摄的时间。",
+    "notSigned": "这张照片不在记录的任何已签名部分中。",
+    "photoNotOnDevice": "这台设备上没有这张照片。指纹 {{fingerprint}}。",
+    "addCondition": "添加车况照片",
+    "addMeterTicketOrPermit": "添加停车票或许可证的照片",
+    "addIntro": "ParkProof 会把每张照片的指纹作为这条记录的新部分进行签名。照片本身不会被发送去签名。",
+    "addToRecord": "添加到记录",
+    "adding": "正在添加…",
+    "needPhoto": "请先至少拍一张照片。",
+    "needType": "请选择照片的内容。",
+    "addFailed": "这些照片没能添加到记录中。请重试。",
+    "cantAddNow": "现在无法添加这些照片。这条记录可能已经结束，或者已经没有空间再添加新的部分。",
+    "complianceDescribed": "{{type}}（你自己的描述）",
+    "noteNotSigned": "这条备注不在记录的任何已签名部分中。"
+  },
+  "backupPrompt": {
+    "title": "备份你的照片",
+    "body": "你的记录和已签名的照片只保存在这个浏览器里。如果 7 天没有访问，Safari 可能会清除网站的数据。",
+    "homeScreenIos": "把 ParkProof 添加到主屏幕：点击分享按钮，然后选择“添加到主屏幕”。从主屏幕应用保存的记录会留在应用中。已经在 Safari 中保存的记录仍留在 Safari 中，不会转到应用里。",
+    "homeScreenOther": "从浏览器菜单把 ParkProof 添加到主屏幕（“安装应用”或“添加到主屏幕”）。",
+    "signIn": "登录以备份",
+    "dismiss": "以后再说"
+  },
+  "evidenceFile": {
+    "download": "下载证据文件",
+    "busy": "正在准备文件…",
+    "help": "一个 .json 文件，包含所有签名和原始照片，任何人都可以不用 ParkProof 核对这条记录。签名只表明这些详情自 ParkProof 签名以来没有改动。它不能说明这些内容属实，也不能说明是谁在开车、车停在哪里，或车辆何时到达、何时离开。文件包含这条记录中保存的位置和时间，所以只发给需要的人。",
+    "includePermit": "包含许可证详情",
+    "permitHelp": "只有勾选此项，文件中才会包含你的许可证详情，以及标为“已展示的许可证”的照片。已签名的记录只保存它们的指纹，可以用它们来核对。无障碍停车许可证的详情属于健康信息。",
+    "error": "无法生成证据文件。请重试。",
+    "photosMissing_one": "有 {{count}} 张已签名的照片不在这台设备上，所以文件中没有这张照片，只有它已签名的指纹。",
+    "photosMissing_other": "有 {{count}} 张已签名的照片不在这台设备上，所以文件中没有这些照片，只有它们已签名的指纹。",
+    "photosDiffer_one": "这台设备上有 {{count}} 张照片与它已签名的指纹不一致，所以文件中没有这张照片，只有它已签名的指纹。",
+    "photosDiffer_other": "这台设备上有 {{count}} 张照片与它们已签名的指纹不一致，所以文件中没有这些照片，只有它们已签名的指纹。"
   }
 }

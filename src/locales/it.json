@@ -210,7 +210,17 @@
     "ambientCaption": "Catturata per dimostrare l'assenza di cartelli affissi.",
     "locationContext": "Usiamo la tua posizione solo per registrare con data e ora dove hai parcheggiato. Resta sul tuo dispositivo, a meno che tu non acceda.",
     "photoSaveFailed": "Non è stato possibile salvare questa foto sul telefono. Riprova, oppure salva il record senza la foto.",
-    "saving": "Salvataggio…"
+    "saving": "Salvataggio…",
+    "condition": {
+      "toggle": "Registra le condizioni dell'auto (facoltativo)",
+      "noteLabel": "Danni che hai notato",
+      "notePlaceholder": "Per esempio, un graffio sul paraurti posteriore"
+    },
+    "proof": {
+      "heading": "Prova di pagamento o permesso",
+      "toggle": "Prova di pagamento o permesso (facoltativo)",
+      "addMeterTicketOrPermit": "Aggiungi una foto del biglietto del parcheggio o del permesso (facoltativo)"
+    }
   },
   "reminders": {
     "header": "Imposta promemoria",
@@ -577,7 +587,10 @@
         "departureSigned": "Parte di partenza firmata da ParkProof (orologio del server)",
         "departureLocation": "Posizione del telefono al tocco su \"Ho lasciato il posto\" (GPS)",
         "departureDistance": "Distanza approssimativa dalla posizione di arrivo (GPS del telefono)",
-        "locationCoords": "Posizione (coordinate)"
+        "locationCoords": "Posizione (coordinate)",
+        "proof": "Prova di pagamento o permesso",
+        "conditionPhotos": "Foto delle condizioni dell'auto",
+        "damageNote": "Danni annotati dal conducente"
       },
       "locationSourceValue": {
         "manuallyEntered": "Inserito manualmente",
@@ -612,7 +625,15 @@
         "coordsWithAccuracy": "{{coords}}, precisione {{accuracy}}",
         "distanceUnavailable": "Non disponibile. La posizione all'arrivo non è un rilevamento GPS del telefono abbastanza preciso per il confronto.",
         "distanceRough": "{{distance}}. Al momento del tocco la posizione del telefono era precisa solo entro {{accuracy}}, quindi questa distanza è approssimativa.",
-        "distanceRoughNoAccuracy": "{{distance}}. Il telefono non ha indicato quanto fosse precisa la sua posizione al momento del tocco, quindi questa distanza è approssimativa."
+        "distanceRoughNoAccuracy": "{{distance}}. Il telefono non ha indicato quanto fosse precisa la sua posizione al momento del tocco, quindi questa distanza è approssimativa.",
+        "complianceDescribed": "{{type}} (come descritto dal conducente)",
+        "complianceNoType": "È stata aggiunta una foto. Il conducente non ha indicato cosa mostra.",
+        "conditionCounts": "All'arrivo: {{parking}}. Al ritorno: {{returned}}.",
+        "noteWhenParked": "All'arrivo, con le parole del conducente: {{note}}",
+        "noteOnReturn": "Al ritorno, con le parole del conducente: {{note}}",
+        "notSignedYet": "(non ancora firmato)",
+        "partRejected": "(non è stato possibile firmare questa parte)",
+        "notSigned": "(non firmato)"
       },
       "carPhotoCaptionTime": "Registrato {{time}} (orologio del telefono)",
       "confidence": {
@@ -639,7 +660,7 @@
       "verifyStep4": "4. Decodifica la firma:",
       "verifyStep5": "5. Verifica:",
       "verifyStep6": "6. Output atteso: \"Verified OK\". Mostra che i byte firmati non sono cambiati da quando ParkProof li ha firmati.",
-      "verifyStep7": "7. Riguardo alle foto: le immagini mostrate in questo PDF sono una copia visiva, ricodificata per il documento, quindi i loro byte differiscono dagli originali e non riprodurranno gli hash nel payload. È normale e non è segno di manomissione. La firma copre lo SHA-256 di ogni foto originale (i valori sign_photo_sha256, car_photo_sha256 e ambient_photo_sha256 all'interno del payload firmato), e il passaggio 6 ha già mostrato che quei valori non sono cambiati dalla firma. Per verificare in modo indipendente una specifica immagine, calcola l'hash del file originale acquisito (dal record ParkProof o dall'esportazione dei dati del tuo account), non della copia stampata qui, e confrontalo con il valore corrispondente sopra.",
+      "verifyStep7": "7. Riguardo alle foto: le immagini stampate in questo PDF sono copie, ricodificate per il documento, quindi i loro byte differiscono dagli originali e non corrisponderanno alle impronte digitali firmate. È normale e non è segno di manomissione. I payload firmati contengono lo SHA-256 di ogni foto originale: sign_photo_sha256, car_photo_sha256 e ambient_photo_sha256 nell'anello 0, e ogni sha256 sotto photos, photo o return_photos negli anelli successivi. Gli originali sono nel file delle prove del record, un file .json che il conducente può scaricare dal record in ParkProof. Per verificare una foto, salva il suo valore bytes_base64 da quel file come photo1.b64, poi decodificalo e stampa il suo SHA-256:",
       "devKey": "Firmato con una chiave di sviluppo. Non si può verificare con la chiave pubblicata da ParkProof.",
       "linkHeading": "Anello {{link}}: {{kind}}",
       "forkNote": "In questo punto del record sono state aggiunte due parti, da due dispositivi. Sono entrambe firmate e riportate qui.",
@@ -654,7 +675,9 @@
         "compliance": "Prova di pagamento o permesso",
         "departure": "Partenza",
         "handover": "Consegna dell'auto"
-      }
+      },
+      "verifyPhotoMatch": "Il valore esadecimale deve essere uguale allo sha256 di quella foto in un payload firmato qui sopra, non solo allo sha256 accanto alla foto nel file delle prove, che non è firmato. Il passaggio 6 ha mostrato che i valori firmati non sono cambiati da quando ParkProof li ha firmati. Fai lo stesso per ogni foto.",
+      "verifyWindows": "Su Windows, cmd e PowerShell non hanno base64 -d. Usa al suo posto certutil -decode, e certutil -hashfile per stampare lo SHA-256 di un file, come qui sotto. In PowerShell, digita curl.exe al posto di curl. openssl è incluso in Git for Windows, e il suo Git Bash esegue i comandi qui sopra così come sono scritti."
     },
     "appeal": {
       "drafted": "Bozza del {{when}}",
@@ -688,6 +711,33 @@
       "hoursOnly_one": "1 ora",
       "hoursOnly_other": "{{count}} ore",
       "hoursAndMins": "{{hours}}h {{mins}}m"
+    },
+    "complianceType": {
+      "meterTicket": "Biglietto del parchimetro sul cruscotto",
+      "paymentConfirmation": "Conferma di pagamento",
+      "permitDisplayed": "Permesso esposto",
+      "other": "Altro"
+    },
+    "photos": {
+      "complianceHeader": "Prova di pagamento o permesso",
+      "conditionHeader": "Foto delle condizioni dell'auto",
+      "whenParked": "All'arrivo",
+      "onReturn": "Al ritorno",
+      "role": {
+        "front": "Davanti",
+        "rear": "Dietro",
+        "left": "Lato sinistro",
+        "right": "Lato destro",
+        "detail": "Dettaglio"
+      },
+      "added": "Aggiunta: {{time}} (orologio del telefono)",
+      "library": "Aggiunta dalla libreria foto. La firma mostra quando è stata aggiunta, non quando è stata scattata.",
+      "signedAt": "Impronta digitale firmata da ParkProof: {{time}} (orologio del server)",
+      "devKey": "Impronta digitale firmata con una chiave di sviluppo: {{time}}. Non si può verificare con la chiave pubblicata da ParkProof.",
+      "notSignedYet": "Impronta digitale non ancora firmata",
+      "notSigned": "Impronta digitale non firmata",
+      "rejected": "Non è stato possibile firmare questa parte",
+      "signedNote": "Una foto firmata mostra che la foto esisteva già al momento della firma. Non mostra chi abbia causato un eventuale danno."
     }
   },
   "time": {
@@ -903,7 +953,10 @@
     "heading": "PARTENZA",
     "tapped": "Hai toccato \"Ho lasciato il posto\": {{time}} (orologio del telefono).",
     "far": "Quando hai toccato \"Ho lasciato il posto\", il telefono era a {{distance}} da dove avevi parcheggiato. Il record mostra quando hai toccato, non quando l'auto si è spostata.",
-    "notSigned": "Questa partenza non è firmata."
+    "notSigned": "Questa partenza non è firmata.",
+    "condition": {
+      "toggle": "Registra ora le condizioni dell'auto (facoltativo)"
+    }
   },
   "chain": {
     "heading": "PARTI FIRMATE DI QUESTO RECORD",
@@ -958,5 +1011,75 @@
       "returnDetail": "Condizioni al ritorno, dettaglio",
       "compliance": "Foto della prova di pagamento o del permesso"
     }
+  },
+  "photoGrid": {
+    "front": "Davanti",
+    "rear": "Dietro",
+    "left": "Lato sinistro",
+    "right": "Lato destro",
+    "detail": "Dettaglio (facoltativo)",
+    "take": "Scatta una foto: {{angle}}",
+    "retake": "Rifai: {{angle}}",
+    "saving": "Salvataggio della foto…",
+    "saved": "Salvata sul telefono",
+    "failed": "Non è stato possibile salvare questa foto sul telefono.",
+    "hint": "Fai il giro dell'auto e scatta una foto per ogni lato. Aggiungi un dettaglio degli eventuali danni.",
+    "signedNote": "Una foto firmata mostra che la foto esisteva già al momento della firma. Non mostra chi abbia causato un eventuale danno.",
+    "count_one": "{{count}} foto",
+    "count_other": "{{count}} foto"
+  },
+  "proof": {
+    "fromLibrary": "Hai pagato con un'app? Aggiungi la conferma di pagamento dalle tue foto",
+    "typeLegend": "Cosa mostra la foto"
+  },
+  "complianceType": {
+    "meterTicket": "Biglietto del parchimetro sul cruscotto",
+    "paymentConfirmation": "Conferma di pagamento",
+    "permitDisplayed": "Permesso esposto",
+    "other": "Altro"
+  },
+  "evidence": {
+    "group": {
+      "parking": "Condizioni all'arrivo",
+      "return": "Condizioni al ritorno",
+      "compliance": "Prova di pagamento o permesso"
+    },
+    "noteLabel": "Danni che hai notato, con parole tue",
+    "addedAt": "Aggiunta: {{time}} (orologio del telefono).",
+    "fingerprint": "Impronta digitale: {{fingerprint}}",
+    "library": "Aggiunta dalla libreria foto. La firma mostra quando è stata aggiunta, non quando è stata scattata.",
+    "notSigned": "Questa foto non è in una parte firmata del record.",
+    "photoNotOnDevice": "Foto non presente su questo dispositivo. Impronta digitale: {{fingerprint}}.",
+    "addCondition": "Aggiungi foto delle condizioni",
+    "addMeterTicketOrPermit": "Aggiungi una foto del biglietto del parcheggio o del permesso",
+    "addIntro": "ParkProof firma l'impronta digitale di ogni foto come nuova parte di questo record. Le foto in sé non vengono inviate per la firma.",
+    "addToRecord": "Aggiungi al record",
+    "adding": "Aggiunta in corso…",
+    "needPhoto": "Prima scatta almeno una foto.",
+    "needType": "Scegli cosa mostra la foto.",
+    "addFailed": "Non è stato possibile aggiungere queste foto al record. Riprova.",
+    "cantAddNow": "Non è possibile aggiungere queste foto ora. Il record potrebbe essere terminato, oppure non ha spazio per un'altra parte.",
+    "complianceDescribed": "{{type}} (secondo la tua descrizione)",
+    "noteNotSigned": "Questa nota non è in una parte firmata del record."
+  },
+  "backupPrompt": {
+    "title": "Fai un backup delle tue foto",
+    "body": "I tuoi record e le relative foto firmate sono salvati solo in questo browser. Safari può cancellare i dati di un sito dopo 7 giorni senza visite.",
+    "homeScreenIos": "Aggiungi ParkProof alla schermata Home: tocca Condividi, poi \"Aggiungi alla schermata Home\". I record che salvi dall'app nella schermata Home restano nell'app. I record già salvati in Safari restano in Safari e non passano all'app.",
+    "homeScreenOther": "Aggiungi ParkProof alla schermata Home dal menu del browser (\"Installa app\" o \"Aggiungi a schermata Home\").",
+    "signIn": "Accedi per fare il backup",
+    "dismiss": "Non ora"
+  },
+  "evidenceFile": {
+    "download": "Scarica il file delle prove",
+    "busy": "Preparazione del file…",
+    "help": "Un file .json con tutte le firme e le foto originali, così chiunque può verificare questo record senza ParkProof. Una firma mostra che i dati non sono cambiati da quando ParkProof li ha firmati. Non mostra che siano veri, chi guidava, dove si trovava l'auto, né quando è arrivata o partita. Il file contiene il luogo e gli orari salvati in questo record, quindi condividilo solo con chi ne ha bisogno.",
+    "includePermit": "Includi i dettagli del permesso",
+    "permitHelp": "I dettagli del permesso, e ogni foto indicata come \"Permesso esposto\", sono nel file solo se selezioni questa opzione. Il record firmato contiene solo le loro impronte digitali, con cui si possono confrontare. I dettagli del permesso di parcheggio accessibile sono informazioni sanitarie.",
+    "error": "Non è stato possibile creare il file delle prove. Riprova.",
+    "photosMissing_one": "{{count}} foto firmata non è su questo dispositivo, quindi non è nel file. La sua impronta digitale firmata sì.",
+    "photosMissing_other": "{{count}} foto firmate non sono su questo dispositivo, quindi non sono nel file. Le loro impronte digitali firmate sì.",
+    "photosDiffer_one": "{{count}} foto su questo dispositivo non corrisponde alla sua impronta digitale firmata, quindi non è nel file. La sua impronta digitale firmata sì.",
+    "photosDiffer_other": "{{count}} foto su questo dispositivo non corrispondono alle loro impronte digitali firmate, quindi non sono nel file. Le loro impronte digitali firmate sì."
   }
 }

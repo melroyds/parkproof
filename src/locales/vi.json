@@ -210,7 +210,17 @@
     "ambientCaption": "Chụp để chứng minh không có biển báo.",
     "locationContext": "Chúng tôi chỉ dùng vị trí của bạn để ghi dấu thời gian nơi bạn đỗ. Nó nằm trên thiết bị của bạn, trừ khi bạn đăng nhập.",
     "photoSaveFailed": "Không lưu được ảnh này trên điện thoại của bạn. Hãy thử lại, hoặc lưu bản ghi mà không có ảnh này.",
-    "saving": "Đang lưu…"
+    "saving": "Đang lưu…",
+    "condition": {
+      "toggle": "Ghi lại tình trạng xe (tùy chọn)",
+      "noteLabel": "Hư hỏng bạn nhận thấy",
+      "notePlaceholder": "Ví dụ: một vết xước trên cản sau"
+    },
+    "proof": {
+      "heading": "Bằng chứng thanh toán hoặc giấy phép",
+      "toggle": "Bằng chứng thanh toán hoặc giấy phép (tùy chọn)",
+      "addMeterTicketOrPermit": "Thêm ảnh vé đỗ xe hoặc giấy phép của bạn (tùy chọn)"
+    }
   },
   "reminders": {
     "header": "Đặt nhắc nhở",
@@ -577,7 +587,10 @@
         "departureSigned": "Thời điểm ParkProof ký phần rời đi (đồng hồ máy chủ)",
         "departureLocation": "Vị trí điện thoại lúc nhấn \"Tôi đã đi\" (GPS)",
         "departureDistance": "Khoảng cách ước tính từ vị trí lúc đến (GPS điện thoại)",
-        "locationCoords": "Vị trí (tọa độ)"
+        "locationCoords": "Vị trí (tọa độ)",
+        "proof": "Bằng chứng thanh toán hoặc giấy phép",
+        "conditionPhotos": "Ảnh tình trạng xe",
+        "damageNote": "Hư hỏng tài xế ghi nhận"
       },
       "locationSourceValue": {
         "manuallyEntered": "Nhập thủ công",
@@ -612,7 +625,15 @@
         "coordsWithAccuracy": "{{coords}}, độ chính xác {{accuracy}}",
         "distanceUnavailable": "Không có. Vị trí lúc đến không phải là định vị GPS điện thoại đủ chính xác để so sánh.",
         "distanceRough": "{{distance}}. Vị trí của điện thoại lúc nhấn chỉ chính xác trong khoảng {{accuracy}}, nên khoảng cách này chỉ là ước lượng thô.",
-        "distanceRoughNoAccuracy": "{{distance}}. Điện thoại không cho biết vị trí lúc nhấn chính xác đến đâu, nên khoảng cách này chỉ là ước lượng thô."
+        "distanceRoughNoAccuracy": "{{distance}}. Điện thoại không cho biết vị trí lúc nhấn chính xác đến đâu, nên khoảng cách này chỉ là ước lượng thô.",
+        "complianceDescribed": "{{type}} (theo mô tả của tài xế)",
+        "complianceNoType": "Đã thêm một ảnh. Tài xế không nói ảnh cho thấy gì.",
+        "conditionCounts": "Khi đỗ: {{parking}}. Khi quay lại: {{returned}}.",
+        "noteWhenParked": "Khi đỗ, theo lời của tài xế: {{note}}",
+        "noteOnReturn": "Khi quay lại, theo lời của tài xế: {{note}}",
+        "notSignedYet": "(chưa được ký)",
+        "partRejected": "(không thể ký phần này)",
+        "notSigned": "(không được ký)"
       },
       "carPhotoCaptionTime": "Ghi lúc {{time}} (đồng hồ điện thoại)",
       "confidence": {
@@ -639,7 +660,7 @@
       "verifyStep4": "4. Giải mã chữ ký:",
       "verifyStep5": "5. Xác minh:",
       "verifyStep6": "6. Kết quả mong đợi: \"Verified OK\". Điều này cho thấy các byte đã ký không thay đổi kể từ khi ParkProof ký.",
-      "verifyStep7": "7. Về ảnh: các hình trong tệp PDF này là bản sao trực quan, được mã hóa lại cho tài liệu, nên các byte của chúng khác với bản gốc và sẽ không tái tạo được các giá trị băm trong payload. Đây là điều bình thường, không phải dấu hiệu bị giả mạo. Chữ ký áp dụng cho giá trị SHA-256 của từng ảnh gốc (các giá trị sign_photo_sha256, car_photo_sha256 và ambient_photo_sha256 trong payload đã ký), và bước 6 đã cho thấy các giá trị đó không thay đổi kể từ khi ký. Để xác minh độc lập một hình cụ thể, hãy băm tệp ảnh gốc đã chụp (từ bản ghi ParkProof hoặc bản xuất dữ liệu tài khoản của bạn), không phải bản sao in ở đây, và so sánh với giá trị tương ứng ở trên.",
+      "verifyStep7": "7. Về ảnh: các hình in trong tệp PDF này là bản sao, được mã hóa lại cho tài liệu, nên các byte của chúng khác với bản gốc và sẽ không khớp với dấu vân tay số đã ký. Đây là điều bình thường, không phải dấu hiệu bị giả mạo. Các payload đã ký mang SHA-256 của từng ảnh gốc: sign_photo_sha256, car_photo_sha256 và ambient_photo_sha256 trong mắt xích 0, và từng sha256 trong photos, photo hoặc return_photos ở các mắt xích sau. Ảnh gốc nằm trong tệp bằng chứng của bản ghi, một tệp .json mà tài xế có thể tải về từ bản ghi trong ParkProof. Để kiểm tra một ảnh, hãy lưu giá trị bytes_base64 của ảnh đó từ tệp này thành photo1.b64, rồi giải mã và in SHA-256 của nó:",
       "devKey": "Đã ký bằng khóa phát triển. Không thể kiểm tra chữ ký này bằng khóa công khai mà ParkProof đã công bố.",
       "linkHeading": "Mắt xích {{link}}: {{kind}}",
       "forkNote": "Tại điểm này của bản ghi có hai phần được thêm từ hai thiết bị. Cả hai đều đã được ký và được trình bày ở đây.",
@@ -654,7 +675,9 @@
         "compliance": "Bằng chứng thanh toán hoặc giấy phép",
         "departure": "Rời đi",
         "handover": "Giao xe"
-      }
+      },
+      "verifyPhotoMatch": "Giá trị hex này phải bằng sha256 của ảnh đó trong một payload đã ký ở trên, chứ không chỉ bằng sha256 đặt cạnh ảnh trong tệp bằng chứng, vốn không được ký. Bước 6 đã cho thấy các giá trị đã ký không thay đổi kể từ khi ParkProof ký. Làm như vậy với từng ảnh.",
+      "verifyWindows": "Trên Windows, cmd và PowerShell không có base64 -d. Hãy dùng certutil -decode thay thế, và dùng certutil -hashfile để in SHA-256 của một tệp, như bên dưới. Trong PowerShell, hãy gõ curl.exe thay cho curl. openssl đi kèm Git for Windows, và Git Bash của nó chạy được các lệnh ở trên đúng như đã viết."
     },
     "appeal": {
       "drafted": "Soạn thảo lúc {{when}}",
@@ -688,6 +711,33 @@
       "hoursOnly_one": "1 giờ",
       "hoursOnly_other": "{{count}} giờ",
       "hoursAndMins": "{{hours}} giờ {{mins}} phút"
+    },
+    "complianceType": {
+      "meterTicket": "Vé đỗ xe đặt trên taplo",
+      "paymentConfirmation": "Xác nhận thanh toán",
+      "permitDisplayed": "Giấy phép được đặt trên xe",
+      "other": "Khác"
+    },
+    "photos": {
+      "complianceHeader": "Bằng chứng thanh toán hoặc giấy phép",
+      "conditionHeader": "Ảnh tình trạng xe",
+      "whenParked": "Khi đỗ",
+      "onReturn": "Khi quay lại",
+      "role": {
+        "front": "Phía trước",
+        "rear": "Phía sau",
+        "left": "Bên trái",
+        "right": "Bên phải",
+        "detail": "Cận cảnh"
+      },
+      "added": "Thêm lúc {{time}} (đồng hồ điện thoại)",
+      "library": "Được thêm từ thư viện ảnh. Chữ ký cho thấy thời điểm ảnh được thêm, không phải thời điểm ảnh được chụp.",
+      "signedAt": "ParkProof đã ký dấu vân tay số lúc {{time}} (đồng hồ máy chủ)",
+      "devKey": "Dấu vân tay số được ký bằng khóa phát triển lúc {{time}}. Không thể kiểm tra bằng khóa công khai mà ParkProof đã công bố.",
+      "notSignedYet": "Dấu vân tay số chưa được ký",
+      "notSigned": "Dấu vân tay số không được ký",
+      "rejected": "Không thể ký phần này",
+      "signedNote": "Ảnh đã ký cho thấy ảnh này đã tồn tại vào lúc được ký. Nó không cho thấy ai đã gây ra hư hỏng."
     }
   },
   "time": {
@@ -903,7 +953,10 @@
     "heading": "RỜI ĐI",
     "tapped": "Bạn đã nhấn \"Tôi đã đi\" lúc {{time}} (đồng hồ điện thoại).",
     "far": "Khi bạn nhấn \"Tôi đã đi\", điện thoại của bạn cách chỗ bạn đỗ xe {{distance}}. Bản ghi cho thấy lúc bạn nhấn, không phải lúc xe di chuyển.",
-    "notSigned": "Lần rời đi này không có chữ ký."
+    "notSigned": "Lần rời đi này không có chữ ký.",
+    "condition": {
+      "toggle": "Ghi lại tình trạng xe ngay bây giờ (tùy chọn)"
+    }
   },
   "chain": {
     "heading": "CÁC PHẦN ĐÃ KÝ CỦA BẢN GHI NÀY",
@@ -958,5 +1011,75 @@
       "returnDetail": "Tình trạng khi quay lại, cận cảnh",
       "compliance": "Ảnh bằng chứng thanh toán hoặc giấy phép"
     }
+  },
+  "photoGrid": {
+    "front": "Phía trước",
+    "rear": "Phía sau",
+    "left": "Bên trái",
+    "right": "Bên phải",
+    "detail": "Cận cảnh (tùy chọn)",
+    "take": "Chụp ảnh: {{angle}}",
+    "retake": "Chụp lại: {{angle}}",
+    "saving": "Đang lưu ảnh…",
+    "saved": "Đã lưu trên điện thoại của bạn",
+    "failed": "Không lưu được ảnh này trên điện thoại của bạn.",
+    "hint": "Đi một vòng quanh xe và chụp mỗi phía một ảnh. Nếu có hư hỏng, chụp thêm ảnh cận cảnh.",
+    "signedNote": "Ảnh đã ký cho thấy ảnh này đã tồn tại vào lúc được ký. Nó không cho thấy ai đã gây ra hư hỏng.",
+    "count_one": "{{count}} ảnh",
+    "count_other": "{{count}} ảnh"
+  },
+  "proof": {
+    "fromLibrary": "Trả tiền qua ứng dụng? Thêm xác nhận thanh toán từ ảnh của bạn",
+    "typeLegend": "Ảnh này cho thấy gì"
+  },
+  "complianceType": {
+    "meterTicket": "Vé đỗ xe đặt trên taplo",
+    "paymentConfirmation": "Xác nhận thanh toán",
+    "permitDisplayed": "Giấy phép được đặt trên xe",
+    "other": "Khác"
+  },
+  "evidence": {
+    "group": {
+      "parking": "Tình trạng khi đỗ",
+      "return": "Tình trạng khi quay lại",
+      "compliance": "Bằng chứng thanh toán hoặc giấy phép"
+    },
+    "noteLabel": "Hư hỏng bạn nhận thấy, theo lời của bạn",
+    "addedAt": "Thêm lúc {{time}} (đồng hồ điện thoại).",
+    "fingerprint": "Dấu vân tay số: {{fingerprint}}",
+    "library": "Được thêm từ thư viện ảnh. Chữ ký cho thấy thời điểm ảnh được thêm, không phải thời điểm ảnh được chụp.",
+    "notSigned": "Ảnh này không nằm trong phần nào đã ký của bản ghi.",
+    "photoNotOnDevice": "Ảnh này không có trên thiết bị này. Dấu vân tay số: {{fingerprint}}.",
+    "addCondition": "Thêm ảnh tình trạng xe",
+    "addMeterTicketOrPermit": "Thêm ảnh vé đỗ xe hoặc giấy phép của bạn",
+    "addIntro": "ParkProof ký dấu vân tay số của từng ảnh thành một phần mới của bản ghi này. Bản thân các ảnh không được gửi đi để ký.",
+    "addToRecord": "Thêm vào bản ghi",
+    "adding": "Đang thêm…",
+    "needPhoto": "Hãy chụp ít nhất một ảnh trước.",
+    "needType": "Hãy chọn ảnh này cho thấy gì.",
+    "addFailed": "Không thêm được những ảnh này vào bản ghi. Hãy thử lại.",
+    "cantAddNow": "Hiện không thể thêm những ảnh này. Bản ghi có thể đã kết thúc, hoặc không còn chỗ cho phần mới.",
+    "complianceDescribed": "{{type}} (theo mô tả của bạn)",
+    "noteNotSigned": "Ghi chú này không nằm trong phần nào đã ký của bản ghi."
+  },
+  "backupPrompt": {
+    "title": "Sao lưu ảnh của bạn",
+    "body": "Các bản ghi và ảnh đã ký của bạn chỉ được lưu trong trình duyệt này. Safari có thể xóa dữ liệu của một trang web sau 7 ngày không truy cập.",
+    "homeScreenIos": "Thêm ParkProof vào Màn hình chính: nhấn Chia sẻ, rồi chọn 'Thêm vào Màn hình chính'. Các bản ghi bạn lưu từ ứng dụng trên Màn hình chính sẽ ở lại trong ứng dụng. Các bản ghi đã lưu trong Safari vẫn ở trong Safari và không chuyển sang ứng dụng.",
+    "homeScreenOther": "Thêm ParkProof vào Màn hình chính từ menu của trình duyệt ('Cài đặt ứng dụng' hoặc 'Thêm vào Màn hình chính').",
+    "signIn": "Đăng nhập để sao lưu",
+    "dismiss": "Để sau"
+  },
+  "evidenceFile": {
+    "download": "Tải tệp bằng chứng",
+    "busy": "Đang chuẩn bị tệp…",
+    "help": "Một tệp .json gồm mọi chữ ký và các ảnh gốc, để bất kỳ ai cũng có thể kiểm tra bản ghi này mà không cần ParkProof. Chữ ký cho thấy các thông tin chưa thay đổi kể từ khi ParkProof ký. Chữ ký không cho thấy các thông tin đó là đúng, ai là người lái xe, xe ở đâu, hay xe đến và rời đi lúc nào. Tệp chứa vị trí và thời gian đã lưu trong bản ghi này, nên chỉ chia sẻ với người cần đến nó.",
+    "includePermit": "Bao gồm thông tin giấy phép",
+    "permitHelp": "Thông tin giấy phép của bạn, và mọi ảnh được đánh dấu là 'Giấy phép được đặt trên xe', chỉ có trong tệp nếu bạn đánh dấu ô này. Bản ghi đã ký chỉ giữ dấu vân tay số của chúng, có thể dùng để đối chiếu. Thông tin về giấy phép đỗ xe tiếp cận là thông tin sức khỏe.",
+    "error": "Không thể tạo tệp bằng chứng. Hãy thử lại.",
+    "photosMissing_one": "{{count}} ảnh đã ký không có trên thiết bị này nên không có trong tệp. Tệp chỉ có dấu vân tay số đã ký của ảnh.",
+    "photosMissing_other": "{{count}} ảnh đã ký không có trên thiết bị này nên không có trong tệp. Tệp chỉ có dấu vân tay số đã ký của các ảnh.",
+    "photosDiffer_one": "{{count}} ảnh trên thiết bị này không khớp với dấu vân tay số đã ký của nó nên không có trong tệp. Tệp chỉ có dấu vân tay số đã ký của ảnh.",
+    "photosDiffer_other": "{{count}} ảnh trên thiết bị này không khớp với dấu vân tay số đã ký của chúng nên không có trong tệp. Tệp chỉ có dấu vân tay số đã ký của các ảnh."
   }
 }

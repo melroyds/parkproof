@@ -85,3 +85,48 @@ export function useSessionPhoto(
   }
   return { status: 'none' }
 }
+
+export type RefPhotoState =
+  | { status: 'loading' }
+  | { status: 'available'; src: string }
+  /** The photo's bytes aren't on this device (nor in the driver's cloud copy). */
+  | { status: 'missing' }
+
+/**
+ * One photo of a record by its fingerprint, for lists where a role can
+ * have several photos (condition photos at parking and added later, proof
+ * photos). Bytes come from the photo store; when they aren't here, from
+ * the signed-in driver's cloud copy (checked against the fingerprint and
+ * kept here). Asked again when the photo source changes, like
+ * `useSessionPhoto`.
+ */
+export function useRefPhoto(session: ParkingSession, sha256: string): RefPhotoState {
+  const sessionId = session.id
+  const shared = !!session.shared_from
+  const key = `${sessionId}/${sha256}`
+  const [loaded, setLoaded] = useState<{ key: string; src: string | null } | null>(null)
+  const sourceVersion = useSyncExternalStore(subscribePhotoSource, photoSourceVersion, photoSourceVersion)
+  const shownKey = useRef<string | null>(null)
+
+  useEffect(() => {
+    if (shownKey.current === key) return
+    let cancelled = false
+    getPhoto(sessionId, sha256)
+      .catch((err) => {
+        console.warn('[photos] could not read a photo:', err)
+        return null
+      })
+      .then((src) => (src || shared ? src : fetchRemotePhoto(sessionId, sha256)))
+      .then((src) => {
+        if (cancelled) return
+        shownKey.current = src ? key : null
+        setLoaded({ key, src })
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [key, sessionId, sha256, shared, sourceVersion])
+
+  if (!loaded || loaded.key !== key) return { status: 'loading' }
+  return loaded.src ? { status: 'available', src: loaded.src } : { status: 'missing' }
+}

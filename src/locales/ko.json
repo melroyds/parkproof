@@ -332,7 +332,17 @@
     "ambientCaption": "표지판이 게시되지 않았음을 보여주기 위해 촬영됨.",
     "locationContext": "위치는 주차한 곳에 타임스탬프를 남기는 데에만 사용합니다. 로그인하지 않는 한 기기에 남아 있습니다.",
     "photoSaveFailed": "이 사진을 휴대폰에 저장하지 못했습니다. 다시 시도하거나, 이 사진 없이 기록을 저장하세요.",
-    "saving": "저장 중…"
+    "saving": "저장 중…",
+    "condition": {
+      "toggle": "차량 상태 기록 (선택 사항)",
+      "noteLabel": "발견한 손상",
+      "notePlaceholder": "예: 뒤 범퍼의 긁힘"
+    },
+    "proof": {
+      "heading": "결제 또는 허가증 증빙",
+      "toggle": "결제 또는 허가증 증빙 (선택 사항)",
+      "addMeterTicketOrPermit": "주차권 또는 허가증 사진 추가 (선택 사항)"
+    }
   },
   "reminders": {
     "header": "알림 설정",
@@ -723,7 +733,10 @@
         "departureSigned": "ParkProof가 출차 부분에 서명한 시각 (서버 시계)",
         "departureLocation": "\"떠났습니다\"를 누른 시점의 휴대폰 위치 (GPS)",
         "departureDistance": "도착 위치와의 대략적 거리 (휴대폰 GPS)",
-        "locationCoords": "위치 (좌표)"
+        "locationCoords": "위치 (좌표)",
+        "proof": "결제 또는 허가증 증빙",
+        "conditionPhotos": "차량 상태 사진",
+        "damageNote": "운전자가 적은 손상"
       },
       "locationSourceValue": {
         "manuallyEntered": "수동 입력",
@@ -758,7 +771,15 @@
         "coordsWithAccuracy": "{{coords}}, 정확도 {{accuracy}}",
         "distanceUnavailable": "알 수 없음. 도착 위치가 비교할 만큼 정확한 휴대폰 GPS 위치가 아닙니다.",
         "distanceRough": "{{distance}}. 누른 시점의 휴대폰 위치 정확도가 {{accuracy}} 수준이어서, 이 거리는 대략적인 값입니다.",
-        "distanceRoughNoAccuracy": "{{distance}}. 누른 시점의 위치 정확도를 휴대폰이 알려 주지 않아, 이 거리는 대략적인 값입니다."
+        "distanceRoughNoAccuracy": "{{distance}}. 누른 시점의 위치 정확도를 휴대폰이 알려 주지 않아, 이 거리는 대략적인 값입니다.",
+        "complianceDescribed": "{{type}} (운전자가 밝힌 내용)",
+        "complianceNoType": "사진이 추가되었습니다. 운전자가 사진의 내용을 밝히지 않았습니다.",
+        "conditionCounts": "주차 시: {{parking}}장. 돌아왔을 때: {{returned}}장.",
+        "noteWhenParked": "주차 시, 운전자가 직접 적은 내용: {{note}}",
+        "noteOnReturn": "돌아왔을 때, 운전자가 직접 적은 내용: {{note}}",
+        "notSignedYet": "(아직 서명되지 않음)",
+        "partRejected": "(이 부분은 서명할 수 없었음)",
+        "notSigned": "(서명되지 않음)"
       },
       "carPhotoCaptionTime": "{{time}} 기록 (휴대폰 시계)",
       "confidence": {
@@ -785,7 +806,7 @@
       "verifyStep4": "4. 서명 디코딩:",
       "verifyStep5": "5. 검증:",
       "verifyStep6": "6. 예상 출력: \"Verified OK\". 이는 ParkProof가 서명한 뒤로 서명된 바이트가 변경되지 않았음을 보여 줍니다.",
-      "verifyStep7": "7. 사진에 관하여: 이 PDF에 표시된 이미지는 문서용으로 다시 인코딩된 시각적 사본이므로 바이트가 원본과 달라 페이로드의 해시를 재현하지 못합니다. 이는 정상이며 변조의 징후가 아닙니다. 서명은 각 원본 사진의 SHA-256(서명된 페이로드 안의 sign_photo_sha256, car_photo_sha256, ambient_photo_sha256 값)에 대한 것이며, 6단계에서 그 값들이 서명 이후 변경되지 않았음을 보여 주었습니다. 특정 이미지를 독립적으로 확인하려면 여기 인쇄된 사본이 아니라 원본 촬영 파일(ParkProof 기록 또는 계정 내보내기에서 가져온 것)의 해시를 계산하여 위의 해당 값과 비교하세요.",
+      "verifyStep7": "7. 사진에 관하여: 이 PDF에 인쇄된 이미지는 문서용으로 다시 인코딩된 사본이므로 바이트가 원본과 달라 서명된 디지털 지문과 일치하지 않습니다. 이는 정상이며 변조의 징후가 아닙니다. 서명된 페이로드에는 각 원본 사진의 SHA-256이 들어 있습니다. 링크 0의 sign_photo_sha256, car_photo_sha256, ambient_photo_sha256, 그리고 이후 링크의 photos, photo, return_photos 아래 각 sha256입니다. 원본 사진은 이 기록의 증거 파일에 있습니다. 운전자가 ParkProof의 기록 화면에서 다운로드할 수 있는 .json 파일입니다. 사진을 확인하려면 그 파일에서 해당 사진의 bytes_base64 값을 photo1.b64로 저장한 다음, 디코딩하고 SHA-256을 출력하세요:",
       "devKey": "개발용 키로 서명되었습니다. ParkProof가 공개한 키로는 확인할 수 없습니다.",
       "linkHeading": "링크 {{link}}: {{kind}}",
       "forkNote": "기록의 이 지점에 두 기기에서 각각 한 부분이 추가되었습니다. 두 부분 모두 서명되어 여기에 표시됩니다.",
@@ -800,7 +821,9 @@
         "compliance": "결제 또는 허가증 증빙",
         "departure": "출차",
         "handover": "차량 인계"
-      }
+      },
+      "verifyPhotoMatch": "이 16진수 값은 위의 서명된 페이로드에 있는 해당 사진의 sha256과 일치해야 합니다. 증거 파일에서 사진 옆에 있는 sha256은 서명되지 않았으므로 그것과만 비교해서는 안 됩니다. 6단계에서 서명된 값이 ParkProof의 서명 이후 변경되지 않았음을 보여 주었습니다. 각 사진을 이 방법으로 확인하세요.",
+      "verifyWindows": "Windows의 cmd와 PowerShell에는 base64 -d가 없습니다. 아래처럼 대신 certutil -decode를 사용하고, 파일의 SHA-256을 출력하려면 certutil -hashfile을 사용하세요. PowerShell에서는 curl 대신 curl.exe를 입력하세요. openssl은 Git for Windows에 포함되어 있으며, Git Bash에서는 위의 명령을 그대로 실행할 수 있습니다."
     },
     "appeal": {
       "drafted": "초안 {{when}}",
@@ -827,6 +850,33 @@
       "sessionHeader": "{{total}}개 중 {{n}}번째 기록",
       "signedBadge": "{{when}}에 암호학적 서명됨",
       "driverNoteField": "운전자 메모"
+    },
+    "complianceType": {
+      "meterTicket": "대시보드 위 주차권",
+      "paymentConfirmation": "결제 확인",
+      "permitDisplayed": "차에 비치한 허가증",
+      "other": "기타"
+    },
+    "photos": {
+      "complianceHeader": "결제 또는 허가증 증빙",
+      "conditionHeader": "차량 상태 사진",
+      "whenParked": "주차 시",
+      "onReturn": "돌아왔을 때",
+      "role": {
+        "front": "앞",
+        "rear": "뒤",
+        "left": "왼쪽",
+        "right": "오른쪽",
+        "detail": "근접 촬영"
+      },
+      "added": "{{time}}에 추가됨 (휴대폰 시계)",
+      "library": "사진 보관함에서 추가했습니다. 서명은 사진을 추가한 시점을 보여 줄 뿐, 촬영한 시점은 보여 주지 않습니다.",
+      "signedAt": "ParkProof가 {{time}}에 디지털 지문에 서명함 (서버 시계)",
+      "devKey": "{{time}}에 개발용 키로 디지털 지문에 서명함. ParkProof가 공개한 키로는 확인할 수 없습니다.",
+      "notSignedYet": "디지털 지문이 아직 서명되지 않음",
+      "notSigned": "디지털 지문이 서명되지 않음",
+      "rejected": "이 부분은 서명할 수 없었습니다",
+      "signedNote": "서명된 사진은 서명 시점에 그 사진이 이미 있었다는 것을 보여 줍니다. 누가 손상을 입혔는지는 보여 주지 않습니다."
     }
   },
   "time": {
@@ -903,7 +953,10 @@
     "heading": "출차",
     "tapped": "{{time}}에 \"떠났습니다\"를 눌렀습니다 (휴대폰 시계).",
     "far": "\"떠났습니다\"를 눌렀을 때 휴대폰은 주차한 곳에서 {{distance}} 떨어져 있었습니다. 이 기록은 누른 시각을 보여 줄 뿐, 차가 움직인 시각은 보여 주지 않습니다.",
-    "notSigned": "이 출차 기록은 서명되지 않았습니다."
+    "notSigned": "이 출차 기록은 서명되지 않았습니다.",
+    "condition": {
+      "toggle": "지금 차량 상태 기록 (선택 사항)"
+    }
   },
   "chain": {
     "heading": "이 기록의 서명된 부분",
@@ -958,5 +1011,75 @@
       "returnDetail": "돌아왔을 때 상태, 근접 촬영",
       "compliance": "결제 또는 허가증 증빙 사진"
     }
+  },
+  "photoGrid": {
+    "front": "앞",
+    "rear": "뒤",
+    "left": "왼쪽",
+    "right": "오른쪽",
+    "detail": "근접 촬영 (선택 사항)",
+    "take": "사진 촬영: {{angle}}",
+    "retake": "다시 찍기: {{angle}}",
+    "saving": "사진 저장 중…",
+    "saved": "휴대폰에 저장됨",
+    "failed": "이 사진을 휴대폰에 저장하지 못했습니다.",
+    "hint": "차 주위를 돌며 각 면을 한 장씩 찍으세요. 손상이 있으면 근접 사진도 추가하세요.",
+    "signedNote": "서명된 사진은 서명 시점에 그 사진이 이미 있었다는 것을 보여 줍니다. 누가 손상을 입혔는지는 보여 주지 않습니다.",
+    "count_one": "사진 {{count}}장",
+    "count_other": "사진 {{count}}장"
+  },
+  "proof": {
+    "fromLibrary": "앱으로 결제했나요? 사진에서 결제 확인 화면을 추가하세요",
+    "typeLegend": "사진 내용"
+  },
+  "complianceType": {
+    "meterTicket": "대시보드 위 주차권",
+    "paymentConfirmation": "결제 확인",
+    "permitDisplayed": "차에 비치한 허가증",
+    "other": "기타"
+  },
+  "evidence": {
+    "group": {
+      "parking": "주차 시 상태",
+      "return": "돌아왔을 때 상태",
+      "compliance": "결제 또는 허가증 증빙"
+    },
+    "noteLabel": "발견한 손상 (직접 작성한 내용)",
+    "addedAt": "{{time}}에 추가됨 (휴대폰 시계).",
+    "fingerprint": "디지털 지문: {{fingerprint}}",
+    "library": "사진 보관함에서 추가했습니다. 서명은 사진을 추가한 시점을 보여 줄 뿐, 촬영한 시점은 보여 주지 않습니다.",
+    "notSigned": "이 사진은 기록의 서명된 부분에 포함되어 있지 않습니다.",
+    "photoNotOnDevice": "이 기기에 사진이 없습니다. 디지털 지문: {{fingerprint}}.",
+    "addCondition": "차량 상태 사진 추가",
+    "addMeterTicketOrPermit": "주차권 또는 허가증 사진 추가",
+    "addIntro": "ParkProof는 각 사진의 디지털 지문을 이 기록의 새 부분으로 서명합니다. 사진 자체는 서명을 위해 전송되지 않습니다.",
+    "addToRecord": "기록에 추가",
+    "adding": "추가하는 중…",
+    "needPhoto": "먼저 사진을 한 장 이상 찍으세요.",
+    "needType": "사진 내용을 선택하세요.",
+    "addFailed": "이 사진들을 기록에 추가하지 못했습니다. 다시 시도하세요.",
+    "cantAddNow": "지금은 이 사진들을 추가할 수 없습니다. 기록이 이미 끝났거나 새 부분을 추가할 공간이 없을 수 있습니다.",
+    "complianceDescribed": "{{type}} (직접 선택한 내용)",
+    "noteNotSigned": "이 메모는 기록의 서명된 부분에 포함되어 있지 않습니다."
+  },
+  "backupPrompt": {
+    "title": "사진 백업하기",
+    "body": "기록과 서명된 사진은 이 브라우저에만 저장됩니다. Safari는 7일 동안 방문하지 않은 사이트의 데이터를 지울 수 있습니다.",
+    "homeScreenIos": "ParkProof를 홈 화면에 추가하세요. 공유 버튼을 누른 다음 '홈 화면에 추가'를 선택하세요. 홈 화면 앱에서 저장한 기록은 앱에 보관됩니다. Safari에 이미 저장된 기록은 Safari에 남아 있으며 앱으로 옮겨지지 않습니다.",
+    "homeScreenOther": "브라우저 메뉴에서 ParkProof를 홈 화면에 추가하세요 ('앱 설치' 또는 '홈 화면에 추가').",
+    "signIn": "로그인하여 백업",
+    "dismiss": "나중에"
+  },
+  "evidenceFile": {
+    "download": "증거 파일 다운로드",
+    "busy": "파일 준비 중…",
+    "help": "모든 서명과 원본 사진이 담긴 .json 파일로, 누구나 ParkProof 없이 이 기록을 확인할 수 있습니다. 서명은 ParkProof가 서명한 이후 내용이 바뀌지 않았음을 보여 줍니다. 그 내용이 사실인지, 누가 운전했는지, 차가 어디에 있었는지, 언제 도착하거나 떠났는지는 보여 주지 않습니다. 이 기록에 저장된 위치와 시간이 들어 있으므로 꼭 필요한 사람에게만 공유하세요.",
+    "includePermit": "허가증 정보 포함",
+    "permitHelp": "이 항목을 선택해야만 허가증 정보와 '차에 비치한 허가증'으로 표시한 사진이 파일에 들어갑니다. 서명된 기록에는 그 디지털 지문만 담겨 있으며, 이를 대조해 확인할 수 있습니다. 장애인 주차 허가증 정보는 건강 정보입니다.",
+    "error": "증거 파일을 만들 수 없었습니다. 다시 시도하세요.",
+    "photosMissing_one": "서명된 사진 {{count}}장이 이 기기에 없어 파일에 들어가지 않았습니다. 서명된 디지털 지문은 파일에 있습니다.",
+    "photosMissing_other": "서명된 사진 {{count}}장이 이 기기에 없어 파일에 들어가지 않았습니다. 서명된 디지털 지문은 파일에 있습니다.",
+    "photosDiffer_one": "이 기기의 사진 {{count}}장이 서명된 디지털 지문과 일치하지 않아 파일에 들어가지 않았습니다. 서명된 디지털 지문은 파일에 있습니다.",
+    "photosDiffer_other": "이 기기의 사진 {{count}}장이 서명된 디지털 지문과 일치하지 않아 파일에 들어가지 않았습니다. 서명된 디지털 지문은 파일에 있습니다."
   }
 }

@@ -15,7 +15,8 @@ import AuthFlow from './components/AuthFlow'
 import AuthSettings from './components/AuthSettings'
 import PrivacyPolicy from './components/PrivacyPolicy'
 import FeedbackModal from './components/FeedbackModal'
-import DepartureSheet from './components/DepartureSheet'
+import DepartureSheet, { type DepartureConfirmation } from './components/DepartureSheet'
+import BackupPrompt from './components/BackupPrompt'
 import LandingFeatures from './components/LandingFeatures'
 import AboutFeatures from './components/AboutFeatures'
 import LanguageSelector from './components/LanguageSelector'
@@ -57,7 +58,7 @@ import {
   signNewRecord,
 } from './lib/signing'
 import { emptyLogDraft } from './lib/evidence-chain'
-import { completeDeparture, requestDepartureFix, type DepartureFixRequest } from './lib/departure'
+import { completeDeparture, requestDepartureFix, settleReturnPhotos, type DepartureFixRequest } from './lib/departure'
 import { HOME_SCAN_ID, RECORD_STATUS_ID, firstFocusTarget } from './lib/focus-targets'
 import { useAuth } from './lib/use-auth'
 import { authConfigured } from './lib/auth'
@@ -217,6 +218,9 @@ function App() {
   const [notice, setNotice] = useState<string | null>(null)
   // The "I've left" departure sheet, open over home or the record screen.
   const [departureSheet, setDepartureSheet] = useState<DepartureSheetState | null>(null)
+  // A sheet the record screen opened itself (the add-photo sheets). The
+  // backup prompt waits while it is open: one dialog at a time.
+  const [recordSheetOpen, setRecordSheetOpen] = useState(false)
   // Set when a signed-in user's first cloud sync couldn't reach their sessions,
   // so the home view offers a retry instead of silently showing the first-time
   // landing as if they had no data.
@@ -714,19 +718,39 @@ function App() {
    * addendum (completeDeparture). A tab closed before that is covered by
    * the departure catch-up.
    */
-  const confirmDeparture = () => {
+  const confirmDeparture = (confirmation?: DepartureConfirmation) => {
     const sheet = departureSheet
     setDepartureSheet(null)
     if (!sheet) return
-    const endedAt = handleEndSession(sheet.session)
-    if (!endedAt) return
     const signedIn = !!auth.user
+    const onRecordUpdated = (id: string) => {
+      if (signedIn) mirrorSessionUpdateToCloud(id)
+    }
+    const endedAt = handleEndSession(sheet.session)
+    if (!endedAt) {
+      // This tap didn't end the record (it was ended meanwhile, or is
+      // gone): photos taken on the sheet are kept as return photos of an
+      // ended record, or tidied away.
+      void settleReturnPhotos(sheet.session.id, confirmation?.returnPhotos, onRecordUpdated)
+      return
+    }
     void completeDeparture(sheet.session.id, endedAt, sheet.fix, {
-      onRecordUpdated: (id) => {
-        if (signedIn) mirrorSessionUpdateToCloud(id)
-      },
+      // Condition photos taken on the sheet go into the departure part.
+      returnPhotos: confirmation?.returnPhotos,
+      onRecordUpdated,
     })
   }
+
+  // The one-time backup prompt after the first signed photo (T2 item 12),
+  // on the calm screens only (home, history, a record), never mid-flow.
+  const backupPrompt = (
+    <BackupPrompt
+      enabled={!auth.loading}
+      signedIn={!!auth.user}
+      canSignIn={auth.configured}
+      onSignIn={() => setView({ name: 'signin' })}
+    />
+  )
 
   const departureSheetView = departureSheet ? (
     <DepartureSheet
@@ -902,6 +926,7 @@ function App() {
           rules={view.result}
           signPhoto={view.signPhoto}
           signPhotoMeta={view.signPhotoMeta}
+          draft={view.draft}
           onComplete={(session) => void handleSessionSaved(session, view.draft)}
           onCancel={() =>
             setView({
@@ -936,6 +961,7 @@ function App() {
           onBack={() => setView({ name: 'home' })}
           onOpen={(session) => setView({ name: 'session', session })}
         />
+        {backupPrompt}
       </main>
     )
   }
@@ -970,8 +996,10 @@ function App() {
           // SessionDetail re-reads its record on the records-changed event,
           // so the "Ended ..." row shows without patching the view here.
           onEndSession={(s) => openDepartureSheet(s, 'session.endConfirm')}
+          onSheetOpenChange={setRecordSheetOpen}
         />
         {departureSheetView}
+        {!departureSheet && !recordSheetOpen && backupPrompt}
         {/* Background writes (the departure after I've left) can free
             space while this screen is open. */}
         <Toast message={notice} onClose={() => setNotice(null)} />
@@ -1301,6 +1329,7 @@ function App() {
         }}
       />
       {departureSheetView}
+      {!departureSheet && !feedbackOpen && backupPrompt}
       <Toast message={notice} onClose={() => setNotice(null)} />
     </main>
   )
