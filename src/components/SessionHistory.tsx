@@ -97,6 +97,13 @@ export default function SessionHistory({ onBack, onOpen }: Props) {
                     }
                   />
                   <div className="flex-1 min-w-0">
+                    {/* A read-only copy from someone's share link (T7). */}
+                    {s.shared_from && (
+                      <span className="inline-flex items-center gap-1 mb-1 text-2xs font-semibold uppercase tracking-wider text-brand-800 bg-brand-50 border border-brand-200 rounded-full px-2 py-0.5">
+                        <Icon name="share" className="w-3 h-3" strokeWidth={2.25} />
+                        {t('share.badge')}
+                      </span>
+                    )}
                     <div className="flex items-center gap-1.5 min-w-0">
                       {s.signature && (
                         <VerifiedSeal size={16} glow={false} className="flex-none" />

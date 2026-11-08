@@ -26,6 +26,7 @@ import {
   proofGates,
 } from '../lib/evidence-photos'
 import { discardUnreferencedPhotos } from '../lib/record-photos'
+import { DRIVER_NAME_MAX, defaultDriverName, driverBadgeText, savedDriverName } from '../lib/driver-name'
 import { usePhotoSlots } from '../lib/use-photo-slots'
 import CollapsibleSection from './CollapsibleSection'
 import PhotoAngleGrid from './PhotoAngleGrid'
@@ -34,6 +35,7 @@ import Icon from './Icon'
 import Button from './ui/Button'
 import BackButton from './ui/BackButton'
 import Card from './ui/Card'
+import Input from './ui/Input'
 
 interface Props {
   /**
@@ -204,6 +206,14 @@ export default function SessionLogger({
   const proofSlots = usePhotoSlots(recordId, trackWrite)
   const [proofOpen, setProofOpen] = useState(false)
   const [proofType, setProofType] = useState<ComplianceType | null>(() => preselectedComplianceType(gates))
+  // "Who's driving?" (T7): optional, prefilled from the draft (and, once
+  // T4's settings land, the saved name; see defaultDriverName). Saved on
+  // the record and signed in the arrival_context.
+  const [driverName, setDriverName] = useState(() => defaultDriverName(draft))
+  // Collapsed by default (an optional step); the closed toggle shows the
+  // name that will be saved, so a prefilled name is never hidden.
+  const [driverOpen, setDriverOpen] = useState(false)
+  const driverBadge = driverBadgeText(driverName)
 
   const startEdit = () => {
     if (gps.status !== 'ok' && gps.status !== 'error') return
@@ -468,6 +478,9 @@ export default function SessionLogger({
     // A library photo can only be a payment confirmation, whatever was picked.
     if (proofRefs.length > 0) extras.compliance_type = allowedComplianceType(proofRefs[0].source, proofType)
     if (draft) extras.gate_acks = { ...draft.gate_acks }
+    // Always set, null when empty: a cleared field signs "nobody named",
+    // never the draft's default (buildArrivalContext reads the record first).
+    extras.driver_name = savedDriverName(driverName)
     // The legacy fields stay null for photo-store photos. Only when the
     // store couldn't take a scan photo (no IndexedDB, a failed or timed-out
     // write) is it kept in the legacy field instead, so the record still has
@@ -832,8 +845,38 @@ export default function SessionLogger({
           permit, boundary question, Save. Only the boundary question may
           block Save; every other section is optional. */}
 
-      {/* ── Slot: driver line (T7, "Who's driving?"). Renders here, between
-          the car photo and the condition section. Nothing yet. ── */}
+      {/* Driver line (T7, "Who's driving?"): between the car photo and the
+          condition section. An optional step, so collapsed by default; the
+          closed toggle shows the name that will be saved. The driver's own
+          statement: ParkProof doesn't check it. */}
+      <CollapsibleSection
+        className="mb-3"
+        title={t('logger.driver.label')}
+        open={driverOpen}
+        onToggle={() => setDriverOpen((o) => !o)}
+        badge={driverBadge}
+        disabled={submitting}
+      >
+        <Card pad="sm">
+          <label htmlFor={`${recordId}-driver`} className="block text-xs uppercase tracking-widest font-semibold text-ink-600 mb-1">
+            {t('logger.driver.label')}
+          </label>
+          <Input
+            id={`${recordId}-driver`}
+            type="text"
+            value={driverName}
+            onChange={(e) => setDriverName(e.target.value.slice(0, DRIVER_NAME_MAX))}
+            maxLength={DRIVER_NAME_MAX}
+            disabled={submitting}
+            autoComplete="name"
+            placeholder={t('logger.driver.placeholder')}
+            aria-describedby={`${recordId}-driver-help`}
+          />
+          <p id={`${recordId}-driver-help`} className="text-xs text-ink-600 mt-1.5 leading-relaxed">
+            {t('logger.driver.help')}
+          </p>
+        </Card>
+      </CollapsibleSection>
 
       {/* Record the car's condition (optional): collapsed by default. The
           grid's photos and the damage note go into the arrival_context. */}

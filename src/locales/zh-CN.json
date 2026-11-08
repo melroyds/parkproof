@@ -221,6 +221,11 @@
       "heading": "付款或许可证凭证",
       "toggle": "付款或许可证凭证（可选）",
       "addMeterTicketOrPermit": "添加停车票或许可证的照片（可选）"
+    },
+    "driver": {
+      "label": "谁在开车？（可选）",
+      "placeholder": "姓名",
+      "help": "与这条记录一起保存。ParkProof 不会核实。"
     }
   },
   "reminders": {
@@ -600,7 +605,10 @@
         "signCondition": "标志状况",
         "proof": "付款或许可证凭证",
         "conditionPhotos": "车况照片",
-        "damageNote": "驾驶员注明的车况问题"
+        "damageNote": "驾驶员注明的车况问题",
+        "driver": "驾驶员(在手机上填写,未经核实)",
+        "handover": "车辆交接(在手机上填写,未经核实)",
+        "handoverSigned": "交接部分由 ParkProof 签名的时间(服务器时钟)"
       },
       "locationSourceValue": {
         "manuallyEntered": "手动输入",
@@ -643,7 +651,9 @@
         "noteOnReturn": "返回时，驾驶员的原话:{{note}}",
         "notSignedYet": "(尚未签名)",
         "partRejected": "(这部分无法签名)",
-        "notSigned": "(未签名)"
+        "notSigned": "(未签名)",
+        "handoverTo": "于 {{time}} 交给 {{to_driver}}(手机时钟)。",
+        "handoverFromTo": "{{from_driver}} 于 {{time}} 把车交给 {{to_driver}}(手机时钟)。"
       },
       "carPhotoCaptionTime": "记录时间 {{time}}(手机时钟)",
       "confidence": {
@@ -757,6 +767,10 @@
       "notSigned": "指纹未签名",
       "rejected": "这部分无法签名",
       "signedNote": "已签名的照片表明，这张照片在签名时已经存在。它不能说明车况问题是谁造成的。"
+    },
+    "shared": {
+      "field": "他人分享",
+      "madeElsewhere": "这条记录是在他人的手机上创建的。"
     }
   },
   "time": {
@@ -1347,5 +1361,68 @@
     "photosMissing_other": "有 {{count}} 张已签名的照片不在这台设备上，所以文件中没有这些照片，只有它们已签名的指纹。",
     "photosDiffer_one": "这台设备上有 {{count}} 张照片与它已签名的指纹不一致，所以文件中没有这张照片，只有它已签名的指纹。",
     "photosDiffer_other": "这台设备上有 {{count}} 张照片与它们已签名的指纹不一致，所以文件中没有这些照片，只有它们已签名的指纹。"
+  },
+  "share": {
+    "action": "分享车辆位置",
+    "confirm": "任何拿到这个链接的人都能看到车停在哪里、谁停的车以及可以停到几点。链接转发给谁,谁就能打开,而且你无法关闭它。",
+    "shareButton": "分享链接",
+    "shareText": "车停在哪里,来自 ParkProof。",
+    "notSigned": "这条记录还没有签名。ParkProof 签名后你就可以分享。",
+    "tooLarge": "这条记录太大,无法用链接分享。",
+    "copied": "链接已复制。粘贴到消息里即可分享。",
+    "copyManually": "复制这个链接并发送出去。",
+    "linkFieldLabel": "要分享的链接",
+    "permitSafeguard": "这次停车使用了无障碍停车许可证。如果持证人不会在车上,请在任何人开走这辆车之前,把许可证从仪表台上取下来。",
+    "receivedTitle": "车辆位置",
+    "checking": "正在检查链接…",
+    "banner": "由 {{driver}} 于 {{time}} 分享。这是一份快照,不会更新。车辆可能已经移动。",
+    "bannerNoDriver": "于 {{time}} 分享。这是一份快照,不会更新。车辆可能已经移动。",
+    "bannerNoTime": "这是一份快照,不会更新。车辆可能已经移动。",
+    "tampered": "这个链接在分享后被改动过",
+    "newerVersion": "这个链接是用更新版本的 ParkProof 生成的",
+    "unreadable": "无法读取这个分享链接。请让发送者重新分享。",
+    "signedHeading": "已签名的详情",
+    "signedNote": "ParkProof 于 {{time}} 对这些详情签名。签名说明它们从那以后没有改动,但不能说明它们属实,也不能说明是谁在开车、车停在哪里,或车辆何时到达、何时离开。",
+    "signedNoteNoTime": "签名说明这些详情自 ParkProof 签名以来没有改动,但不能说明它们属实,也不能说明是谁在开车、车停在哪里,或车辆何时到达、何时离开。",
+    "field": {
+      "place": "记录地点",
+      "arrived": "记录时间",
+      "limit": "从标志读取的时限",
+      "driver": "驾驶员",
+      "rules": "标志解读",
+      "standardLimit": "标志上的标准时限",
+      "ended": "离开",
+      "limitRecorded": "这条记录上的时限"
+    },
+    "phoneClock": "{{time}}(手机时钟)",
+    "noLimit": "没有记录时限",
+    "noPlace": "没有记录位置",
+    "directions": "路线",
+    "unsignedHeading": "来自发送者,未签名",
+    "endedValue": "发送者于 {{time}} 点击了\"我已离开\"(手机时钟)。",
+    "saved": "已保存到你的停车记录,标为\"分享给你的\"。再次打开链接会更新它。",
+    "keptNewer": "你已经有一份来自更新链接的这条记录的副本,所以保留了那一份。",
+    "ownRecord": "这个链接对应的记录已经保存在这部手机上,所以没有再添加一次。",
+    "saveFailed": "无法在这部手机上保存副本。",
+    "badge": "分享给你的",
+    "check": "核验签名",
+    "checkValid": "签名有效。自 ParkProof 签名以来没有任何改动。但这不能说明这些内容属实,也不能说明是谁在开车、车停在哪里,或车辆何时到达、何时离开。",
+    "remove": "移除",
+    "removeConfirm": "要从这部手机上移除这条分享的记录吗？再次打开链接即可找回。",
+    "permitTimeNote": "这个时限包含许可证带来的额外时间。没有许可证时,适用标志上的标准时限。发送者说标准时限在 {{time}} 结束。"
+  },
+  "handover": {
+    "action": "交接车辆",
+    "intro": "填写接下来开车的人。ParkProof 会把它作为你本人的陈述,随这条记录一起签名。ParkProof 不会核实,签名也不能说明是谁在开车。这条记录仍在进行中。",
+    "nameLabel": "下一位驾驶员的姓名",
+    "nameRequired": "请填写下一位驾驶员的姓名。",
+    "submit": "记录交接",
+    "failed": "无法把这次交接添加到这条记录。",
+    "done": "你的记录现在写的是,车辆已交给 {{to_driver}}。手机联网时,ParkProof 会为它签名。这条记录仍在进行中。",
+    "offerShare": "你可以把车辆位置的链接发给对方。",
+    "line": "你的记录写的是,车辆在 {{time}} 交给了 {{to_driver}}(手机时钟)。",
+    "doneFromTo": "你的记录现在写的是,{{from_driver}} 把车交给了 {{to_driver}}。手机联网时,ParkProof 会为它签名。这条记录仍在进行中。",
+    "fromDriver": "交出车辆的人:{{from_driver}},即这条记录目前写明的驾驶员。",
+    "lineFromTo": "你的记录写的是,{{from_driver}} 在 {{time}} 把车交给了 {{to_driver}}(手机时钟)。"
   }
 }

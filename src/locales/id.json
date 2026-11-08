@@ -343,6 +343,11 @@
       "heading": "Bukti pembayaran atau izin",
       "toggle": "Bukti pembayaran atau izin (opsional)",
       "addMeterTicketOrPermit": "Tambahkan foto tiket parkir atau izinmu (opsional)"
+    },
+    "driver": {
+      "label": "Siapa yang mengemudi? (opsional)",
+      "placeholder": "Nama",
+      "help": "Disimpan bersama catatan ini. ParkProof tidak memeriksanya."
     }
   },
   "reminders": {
@@ -746,7 +751,10 @@
         "signCondition": "Kondisi rambu",
         "proof": "Bukti pembayaran atau izin",
         "conditionPhotos": "Foto kondisi mobil",
-        "damageNote": "Kerusakan yang dicatat pengemudi"
+        "damageNote": "Kerusakan yang dicatat pengemudi",
+        "driver": "Pengemudi (dimasukkan di ponsel, tidak diperiksa)",
+        "handover": "Serah terima mobil (dimasukkan di ponsel, tidak diperiksa)",
+        "handoverSigned": "Serah terima ditandatangani ParkProof (jam server)"
       },
       "locationSourceValue": {
         "manuallyEntered": "Dimasukkan manual",
@@ -789,7 +797,9 @@
         "noteOnReturn": "Saat kembali, dengan kata-kata pengemudi sendiri: {{note}}",
         "notSignedYet": "(belum ditandatangani)",
         "partRejected": "(bagian ini tidak bisa ditandatangani)",
-        "notSigned": "(tidak ditandatangani)"
+        "notSigned": "(tidak ditandatangani)",
+        "handoverTo": "Diserahkan kepada {{to_driver}} pada {{time}} (jam ponsel).",
+        "handoverFromTo": "{{from_driver}} menyerahkan mobil kepada {{to_driver}} pada {{time}} (jam ponsel)."
       },
       "carPhotoCaptionTime": "Dicatat {{time}} (jam ponsel)",
       "confidence": {
@@ -896,6 +906,10 @@
       "notSigned": "Sidik jari tidak ditandatangani",
       "rejected": "Bagian ini tidak bisa ditandatangani",
       "signedNote": "Foto yang ditandatangani menunjukkan foto itu sudah ada saat ditandatangani. Foto itu tidak menunjukkan siapa yang menyebabkan kerusakan."
+    },
+    "shared": {
+      "field": "Dibagikan kepadamu",
+      "madeElsewhere": "Catatan ini dibuat di ponsel orang lain."
     }
   },
   "time": {
@@ -1347,5 +1361,68 @@
     "photosMissing_other": "{{count}} foto yang ditandatangani tidak ada di perangkat ini, jadi fotonya tidak ada di berkas. Sidik jarinya yang ditandatangani ada di berkas.",
     "photosDiffer_one": "{{count}} foto di perangkat ini tidak cocok dengan sidik jarinya yang ditandatangani, jadi fotonya tidak ada di berkas. Sidik jarinya yang ditandatangani ada di berkas.",
     "photosDiffer_other": "{{count}} foto di perangkat ini tidak cocok dengan sidik jarinya yang ditandatangani, jadi fotonya tidak ada di berkas. Sidik jarinya yang ditandatangani ada di berkas."
+  },
+  "share": {
+    "action": "Bagikan lokasi mobil",
+    "confirm": "Siapa pun yang punya tautan ini bisa melihat di mana mobil diparkir, siapa yang memarkirnya, dan sampai kapan. Tautan ini bisa dibuka oleh siapa pun yang menerimanya dari terusan, dan kamu tidak bisa mematikannya.",
+    "shareButton": "Bagikan tautan",
+    "shareText": "Lokasi parkir mobil, dari ParkProof.",
+    "notSigned": "Catatan ini belum ditandatangani. Kamu bisa membagikannya setelah ParkProof menandatanganinya.",
+    "tooLarge": "Catatan ini terlalu besar untuk dibagikan sebagai tautan.",
+    "copied": "Tautan disalin. Tempelkan ke pesan untuk membagikannya.",
+    "copyManually": "Salin tautan ini lalu kirimkan.",
+    "linkFieldLabel": "Tautan untuk dibagikan",
+    "permitSafeguard": "Parkir ini memakai izin parkir aksesibel. Jika pemegang izin tidak akan berada di mobil, ambil izin itu dari dasbor sebelum ada yang mengemudikan mobilnya.",
+    "receivedTitle": "Lokasi mobil",
+    "checking": "Memeriksa tautan…",
+    "banner": "Dibagikan oleh {{driver}} pada {{time}}. Ini cuplikan dan tidak diperbarui. Mobilnya mungkin sudah dipindahkan.",
+    "bannerNoDriver": "Dibagikan pada {{time}}. Ini cuplikan dan tidak diperbarui. Mobilnya mungkin sudah dipindahkan.",
+    "bannerNoTime": "Ini cuplikan dan tidak diperbarui. Mobilnya mungkin sudah dipindahkan.",
+    "tampered": "Tautan ini sudah diubah sejak dibagikan",
+    "newerVersion": "Tautan ini dibuat oleh versi ParkProof yang lebih baru",
+    "unreadable": "Tautan berbagi ini tidak bisa dibaca. Minta pengirimnya membagikannya lagi.",
+    "signedHeading": "Detail yang ditandatangani",
+    "signedNote": "ParkProof menandatangani detail ini pada {{time}}. Tanda tangan menunjukkan detail ini tidak berubah sejak itu. Tanda tangan tidak menunjukkan bahwa detail ini benar, siapa yang mengemudi, di mana mobil berada, atau kapan mobil tiba atau pergi.",
+    "signedNoteNoTime": "Tanda tangan menunjukkan detail ini tidak berubah sejak ParkProof menandatanganinya. Tanda tangan tidak menunjukkan bahwa detail ini benar, siapa yang mengemudi, di mana mobil berada, atau kapan mobil tiba atau pergi.",
+    "field": {
+      "place": "Lokasi saat dicatat",
+      "arrived": "Dicatat pada",
+      "limit": "Batas waktu dari rambu",
+      "driver": "Pengemudi",
+      "rules": "Bacaan rambu",
+      "standardLimit": "Batas standar pada rambu",
+      "ended": "Keberangkatan",
+      "limitRecorded": "Batas waktu pada catatan ini"
+    },
+    "phoneClock": "{{time}} (jam ponsel)",
+    "noLimit": "Tidak ada batas waktu yang dicatat",
+    "noPlace": "Tidak ada lokasi yang dicatat",
+    "directions": "Petunjuk arah",
+    "unsignedHeading": "Dari pengirim, tidak ditandatangani",
+    "endedValue": "Pengirim mengetuk \"Sudah pergi\" pada {{time}} (jam ponsel).",
+    "saved": "Disimpan di catatan parkirmu sebagai \"Dibagikan kepadamu\". Membuka tautan lagi akan memperbaruinya.",
+    "keptNewer": "Kamu sudah punya salinan catatan ini yang lebih baru dari tautan yang lebih baru, jadi salinan itu yang disimpan.",
+    "ownRecord": "Tautan ini untuk catatan yang sudah tersimpan di ponsel ini, jadi tidak ditambahkan lagi.",
+    "saveFailed": "Salinan tidak bisa disimpan di ponsel ini.",
+    "badge": "Dibagikan kepadamu",
+    "check": "Cek tanda tangan",
+    "checkValid": "Tanda tangan valid. Tidak ada yang berubah sejak ParkProof menandatanganinya. Itu tidak menunjukkan bahwa isi catatan ini benar, siapa yang mengemudi, di mana mobil berada, atau kapan mobil tiba atau pergi.",
+    "remove": "Hapus",
+    "removeConfirm": "Hapus catatan yang dibagikan ini dari ponsel ini? Kamu bisa membuka tautannya lagi untuk mendapatkannya kembali.",
+    "permitTimeNote": "Batas waktu ini termasuk waktu tambahan dari izin. Tanpa izin itu, yang berlaku adalah batas standar pada rambu. Menurut pengirim, batas itu berakhir pada {{time}}."
+  },
+  "handover": {
+    "action": "Serahkan mobil",
+    "intro": "Masukkan siapa yang akan mengemudikan mobil berikutnya. ParkProof menandatanganinya bersama catatan ini, sebagai pernyataanmu sendiri. ParkProof tidak memeriksanya, dan tanda tangan tidak menunjukkan siapa yang mengemudi. Catatan ini tetap aktif.",
+    "nameLabel": "Nama pengemudi berikutnya",
+    "nameRequired": "Masukkan nama pengemudi berikutnya.",
+    "submit": "Catat serah terima",
+    "failed": "Serah terima tidak bisa ditambahkan ke catatan ini.",
+    "done": "Catatanmu sekarang menyebut mobil diserahkan kepada {{to_driver}}. ParkProof menandatanganinya saat ponselmu online. Catatan ini tetap aktif.",
+    "offerShare": "Kamu bisa mengirim tautan lokasi mobil kepada orang itu.",
+    "line": "Catatanmu menyebut mobil diserahkan kepada {{to_driver}} pada {{time}} (jam ponsel).",
+    "doneFromTo": "Catatanmu sekarang menyebut {{from_driver}} menyerahkan mobil kepada {{to_driver}}. ParkProof menandatanganinya saat ponselmu online. Catatan ini tetap aktif.",
+    "fromDriver": "Diserahkan oleh {{from_driver}}, pengemudi yang sekarang tercatat di catatan ini.",
+    "lineFromTo": "Catatanmu menyebut {{from_driver}} menyerahkan mobil kepada {{to_driver}} pada {{time}} (jam ponsel)."
   }
 }

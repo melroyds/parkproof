@@ -351,6 +351,11 @@
       "heading": "Proof of payment or permit",
       "toggle": "Proof of payment or permit (optional)",
       "addMeterTicketOrPermit": "Add a photo of your ticket or permit (optional)"
+    },
+    "driver": {
+      "label": "Who's driving? (optional)",
+      "placeholder": "Name",
+      "help": "Saved with this record. ParkProof doesn't check it."
     }
   },
   "reminders": {
@@ -776,7 +781,10 @@
         "signCondition": "Sign condition",
         "proof": "Proof of payment or permit",
         "conditionPhotos": "Car condition photos",
-        "damageNote": "Damage the driver noted"
+        "damageNote": "Damage the driver noted",
+        "driver": "Driver (entered on the phone, not checked)",
+        "handover": "Handover (entered on the phone, not checked)",
+        "handoverSigned": "Handover signed by ParkProof (server clock)"
       },
       "locationSourceValue": {
         "manuallyEntered": "Manually entered",
@@ -819,7 +827,9 @@
         "noteOnReturn": "On return, in the driver's own words: {{note}}",
         "notSignedYet": "(not signed yet)",
         "partRejected": "(this part couldn't be signed)",
-        "notSigned": "(not signed)"
+        "notSigned": "(not signed)",
+        "handoverTo": "Handed to {{to_driver}} at {{time}} (phone clock).",
+        "handoverFromTo": "{{from_driver}} handed the car to {{to_driver}} at {{time}} (phone clock)."
       },
       "carPhotoCaptionTime": "Logged {{time}} (phone clock)",
       "confidence": {
@@ -926,6 +936,10 @@
       "notSigned": "Fingerprint not signed",
       "rejected": "This part couldn't be signed",
       "signedNote": "A signed photo shows the photo existed by the time it was signed. It doesn't show who caused any damage."
+    },
+    "shared": {
+      "field": "Shared with you",
+      "madeElsewhere": "This record was made on someone else's phone."
     }
   },
   "time": {
@@ -1347,5 +1361,68 @@
     "photosMissing_other": "{{count}} signed photos aren't on this device, so they aren't in the file. Their signed fingerprints are.",
     "photosDiffer_one": "{{count}} photo on this device doesn't match its signed fingerprint, so it isn't in the file. Its signed fingerprint is.",
     "photosDiffer_other": "{{count}} photos on this device don't match their signed fingerprints, so they aren't in the file. Their signed fingerprints are."
+  },
+  "share": {
+    "action": "Share where the car is",
+    "confirm": "Anyone with this link can see where the car is parked, who parked it and until when. It works for anyone it's forwarded to, and you can't switch it off.",
+    "shareButton": "Share link",
+    "shareText": "Where the car is parked, from ParkProof.",
+    "notSigned": "This record isn't signed yet. You can share it once ParkProof has signed it.",
+    "tooLarge": "This record is too big to share as a link.",
+    "copied": "Link copied. Paste it into a message to share it.",
+    "copyManually": "Copy this link and send it.",
+    "linkFieldLabel": "Link to share",
+    "permitSafeguard": "This park used an accessible parking permit. If the permit holder won't be in the car, take the permit off the dash before anyone drives it.",
+    "receivedTitle": "Where the car is",
+    "checking": "Checking the link…",
+    "banner": "Shared by {{driver}} at {{time}}. This is a snapshot and doesn't update. The car may have moved.",
+    "bannerNoDriver": "Shared at {{time}}. This is a snapshot and doesn't update. The car may have moved.",
+    "bannerNoTime": "This is a snapshot and doesn't update. The car may have moved.",
+    "tampered": "This link has been changed since it was shared",
+    "newerVersion": "This link was made by a newer version of ParkProof",
+    "unreadable": "This share link can't be read. Ask the sender to share it again.",
+    "signedHeading": "Signed details",
+    "signedNote": "ParkProof signed these details at {{time}}. The signature shows they haven't changed since then. It doesn't show they are true, who was driving, where the car was, or when it arrived or left.",
+    "signedNoteNoTime": "The signature shows these details haven't changed since ParkProof signed them. It doesn't show they are true, who was driving, where the car was, or when it arrived or left.",
+    "field": {
+      "place": "Where it was logged",
+      "arrived": "Logged at",
+      "limit": "Limit read from the sign",
+      "driver": "Driver",
+      "rules": "Sign reading",
+      "standardLimit": "Standard limit on the sign",
+      "ended": "Departure",
+      "limitRecorded": "Limit on this record"
+    },
+    "phoneClock": "{{time}} (phone clock)",
+    "noLimit": "No limit recorded",
+    "noPlace": "No location recorded",
+    "directions": "Directions",
+    "unsignedHeading": "From the sender, not signed",
+    "endedValue": "The sender tapped I've left at {{time}} (phone clock).",
+    "saved": "Saved in your parking records as \"Shared with you\". Opening the link again updates it.",
+    "keptNewer": "You already have a later copy of this record from a newer link, so that one was kept.",
+    "ownRecord": "This link is for a record saved on this phone, so it wasn't added again.",
+    "saveFailed": "A copy couldn't be saved on this phone.",
+    "badge": "Shared with you",
+    "check": "Check the signature",
+    "checkValid": "The signature is valid. Nothing has changed since ParkProof signed it. That doesn't show the details are true, who was driving, where the car was, or when it arrived or left.",
+    "remove": "Remove",
+    "removeConfirm": "Remove this shared record from this phone? You can open the link again to get it back.",
+    "permitTimeNote": "This limit includes extra time from a permit. Without the permit, the sign's standard limit applies. The sender says it ends at {{time}}."
+  },
+  "handover": {
+    "action": "Hand the car over",
+    "intro": "Enter who's taking the car next. ParkProof signs it with this record, as your own statement. ParkProof doesn't check it, and the signature doesn't show who was driving. The record stays active.",
+    "nameLabel": "Next driver's name",
+    "nameRequired": "Enter the next driver's name.",
+    "submit": "Record the handover",
+    "failed": "The handover couldn't be added to this record.",
+    "done": "Your record now says the car was handed to {{to_driver}}. ParkProof signs it when your phone is online. The record stays active.",
+    "offerShare": "You can send them a link to where the car is.",
+    "line": "Your record says the car was handed to {{to_driver}} at {{time}} (phone clock).",
+    "doneFromTo": "Your record now says {{from_driver}} handed the car to {{to_driver}}. ParkProof signs it when your phone is online. The record stays active.",
+    "fromDriver": "Handed over by {{from_driver}}, the driver this record names now.",
+    "lineFromTo": "Your record says {{from_driver}} handed the car to {{to_driver}} at {{time}} (phone clock)."
   }
 }

@@ -845,6 +845,11 @@ export async function performInitialSync(options: SyncOptions = {}): Promise<Ini
  * write failed. A write tells open screens through
  * `scheduleRecordsChanged`, so the list shows a pulled record as soon as it
  * lands, with one re-render for a whole pull.
+ *
+ * A read-only shared copy of this same record (T7: the driver opened their
+ * own share link on this device before the record itself arrived) gives
+ * way to the record: it is removed in the same write, so History never
+ * shows one park twice. upsertSharedCopy covers the other order.
  */
 function writeNewLocalSession(session: ParkingSession): boolean {
   const KEY = 'parkproof.sessions.v1'
@@ -853,9 +858,12 @@ function writeNewLocalSession(session: ParkingSession): boolean {
     const raw = localStorage.getItem(KEY)
     const all: ParkingSession[] = raw ? JSON.parse(raw) : []
     if (all.some((s) => s.id === session.id)) return false
-    all.unshift(session)
-    localStorage.setItem(KEY, JSON.stringify(all))
+    const shadowed = all.filter((s) => s.shared_from?.original_session_id === session.id)
+    const kept = shadowed.length > 0 ? all.filter((s) => !shadowed.includes(s)) : all
+    kept.unshift(session)
+    localStorage.setItem(KEY, JSON.stringify(kept))
     scheduleRecordsChanged(session.id)
+    for (const copy of shadowed) scheduleRecordsChanged(copy.id)
     return true
   } catch (err) {
     console.warn('[sync] writeNewLocalSession failed:', err)

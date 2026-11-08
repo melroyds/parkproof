@@ -11,6 +11,8 @@ export type IconName =
   | 'warning'
   | 'chevron'
   | 'repeat'
+  | 'share'
+  | 'key'
 
 interface Props {
   name: IconName
@@ -91,6 +93,23 @@ const PATHS: Record<IconName, ReactNode> = {
       <path d="M4 12v-1.5a4 4 0 0 1 4-4h12" />
       <path d="M7 20.5 4 17.5l3-3" />
       <path d="M20 12v1.5a4 4 0 0 1-4 4H4" />
+    </>
+  ),
+  // An arrow leaving a tray: send this somewhere else (T7 share links).
+  share: (
+    <>
+      <path d="M12 14.5V3.5" />
+      <path d="m8 7.5 4-4 4 4" />
+      <path d="M8.5 10.5H7A2.5 2.5 0 0 0 4.5 13v5A2.5 2.5 0 0 0 7 20.5h10a2.5 2.5 0 0 0 2.5-2.5v-5A2.5 2.5 0 0 0 17 10.5h-1.5" />
+    </>
+  ),
+  // A car key: the round bow and a toothed blade (T7, hand the car over).
+  key: (
+    <>
+      <circle cx="8" cy="15.5" r="4.5" />
+      <path d="m11.2 12.3 8.3-8.3" />
+      <path d="m16.5 7 2.5 2.5" />
+      <path d="m14 9.5 2 2" />
     </>
   ),
 }

@@ -62,8 +62,9 @@ function findRecentMatch(
   for (const s of sessions) {
     if (!s.location) continue
     // No-sign sessions have no rules to refresh — offering "reuse this read"
-    // for them would be a UX lie. Skip.
-    if (s.no_sign) continue
+    // for them would be a UX lie. Skip. So are shared copies (T7): someone
+    // else's reading, with no sign photo on this device.
+    if (s.no_sign || s.shared_from) continue
     if (now - new Date(s.arrived_at).getTime() > FRESHNESS_MS) continue
     const distance = haversineMeters(coords, s.location)
     if (distance > PROXIMITY_METERS) continue
@@ -79,7 +80,7 @@ function loadRecentSessions(): ParkingSession[] {
   return loadSessions()
     // Same filter as the proximity match — picker offers "reuse a recent
     // scan", and there's nothing to reuse from a no-sign session.
-    .filter((s) => !s.no_sign && now - new Date(s.arrived_at).getTime() <= FRESHNESS_MS)
+    .filter((s) => !s.no_sign && !s.shared_from && now - new Date(s.arrived_at).getTime() <= FRESHNESS_MS)
     .sort(
       (a, b) => new Date(b.arrived_at).getTime() - new Date(a.arrived_at).getTime(),
     )
