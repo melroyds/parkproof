@@ -16,6 +16,7 @@ import {
   formatRelativeLocalized,
   formatExpiryAbsolute,
   formatReminderTimesLine,
+  formatInZone,
 } from './time-format'
 
 // Convenience — ms in higher units.
@@ -63,11 +64,12 @@ describe('formatRelativeLocalized', () => {
     }) as unknown as TFunction
   }
 
-  it('defers each case to the matching i18n key (justNow, minAgo, hourAgo, hoursAgo, yesterday, daysAgo)', () => {
+  it('defers each case to the matching i18n key (justNow, minAgo, hoursAgo, yesterday, daysAgo)', () => {
     const t = mockT()
     expect(formatRelativeLocalized(0, t)).toBe('time.justNow')
     expect(formatRelativeLocalized(5 * MIN, t)).toBe('time.minAgo:5')
-    expect(formatRelativeLocalized(HOUR, t)).toBe('time.hourAgo:1')
+    // One plural base for every hour count; i18next picks _one or _other.
+    expect(formatRelativeLocalized(HOUR, t)).toBe('time.hoursAgo:1')
     expect(formatRelativeLocalized(5 * HOUR, t)).toBe('time.hoursAgo:5')
     expect(formatRelativeLocalized(DAY, t)).toBe('time.yesterday')
     expect(formatRelativeLocalized(3 * DAY, t)).toBe('time.daysAgo:3')
@@ -254,5 +256,34 @@ describe('formatReminderTimesLine', () => {
     // — the ReminderOptions UI sometimes emits a specific display order
     // (e.g. "fire at expiry first, then earlier warnings") that callers rely on.
     expect(result.indexOf('10:00 am')).toBeLessThan(result.indexOf('9:30 am'))
+  })
+})
+
+describe('formatInZone (N5): the record zone, with its short name', () => {
+  it('names the zone either side of the Melbourne DST change (4 Oct 2026, 2 am)', () => {
+    // 3 Oct 2026, 11:30 pm AEST (UTC+10) and 4 Oct 2026, 3:30 am AEDT (UTC+11).
+    expect(formatInZone('2026-10-03T13:30:00.000Z', 'Australia/Melbourne')).toBe('Sat 3 Oct, 11:30 pm AEST')
+    expect(formatInZone('2026-10-03T16:30:00.000Z', 'Australia/Melbourne')).toBe('Sun 4 Oct, 3:30 am AEDT')
+    // The same instant in Brisbane, which has no DST.
+    expect(formatInZone('2026-10-03T16:30:00.000Z', 'Australia/Brisbane')).toBe('Sun 4 Oct, 2:30 am AEST')
+  })
+
+  it('adds the year on request, and drops the zone on request', () => {
+    expect(formatInZone('2026-10-25T02:55:00.000Z', 'Australia/Melbourne', { withYear: true })).toBe(
+      'Sun 25 Oct 2026, 1:55 pm AEDT',
+    )
+    expect(formatInZone('2026-10-25T02:55:00.000Z', 'Australia/Melbourne', { withZone: false })).toBe('Sun 25 Oct, 1:55 pm')
+    expect(formatInZone(Date.parse('2026-10-25T02:55:00.000Z'), 'Australia/Perth')).toBe('Sun 25 Oct, 10:55 am AWST')
+    expect(formatInZone(new Date('2026-06-01T00:05:00.000Z'), 'Australia/Adelaide')).toBe('Mon 1 June, 9:35 am ACST')
+  })
+
+  it('midnight and noon read as 12', () => {
+    expect(formatInZone('2026-10-25T13:00:00.000Z', 'Australia/Melbourne')).toBe('Mon 26 Oct, 12:00 am AEDT')
+    expect(formatInZone('2026-10-25T01:00:00.000Z', 'Australia/Melbourne')).toBe('Sun 25 Oct, 12:00 pm AEDT')
+  })
+
+  it('a bad value shows as text; an unknown zone falls back to Melbourne', () => {
+    expect(formatInZone('not a time', 'Australia/Melbourne')).toBe('not a time')
+    expect(formatInZone('2026-10-25T02:55:00.000Z', 'Mars/Olympus')).toBe('Sun 25 Oct, 1:55 pm AEDT')
   })
 })

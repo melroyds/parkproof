@@ -1,4 +1,5 @@
 import type { ParkingSession } from '../types'
+import { reminderTag, type ReminderCopy } from './reminder-copy'
 
 export type ScheduleStatus =
   | 'scheduled' // ≥1 alarm armed
@@ -26,6 +27,27 @@ const MAX_TIMEOUT_MS = 24 * 60 * 60 * 1000
 // awkward "scheduled… and it fired half a second later" UX.
 const SAFETY_MARGIN_MS = 30 * 1000
 
+// setTimeout handles per session, so "I've left" can disarm in-tab reminders.
+const armed = new Map<string, ReturnType<typeof setTimeout>[]>()
+
+function arm(sessionId: string, fn: () => void, delay: number): void {
+  const handle = setTimeout(() => {
+    const left = (armed.get(sessionId) ?? []).filter((h) => h !== handle)
+    if (left.length) armed.set(sessionId, left)
+    else armed.delete(sessionId)
+    fn()
+  }, delay)
+  armed.set(sessionId, [...(armed.get(sessionId) ?? []), handle])
+}
+
+/** Disarm every in-tab reminder for a session (the driver has left). */
+export function cancelInTabReminders(sessionId: string): number {
+  const handles = armed.get(sessionId) ?? []
+  handles.forEach((h) => clearTimeout(h))
+  armed.delete(sessionId)
+  return handles.length
+}
+
 /**
  * Schedule in-tab browser notifications for an OPEN-ENDED no-sign session.
  *
@@ -34,14 +56,15 @@ const SAFETY_MARGIN_MS = 30 * 1000
  * for each. Same setTimeout constraints apply — anything beyond 24h is
  * rejected because browser timer precision degrades past that point.
  *
- * Body text is "Time to check on your car at <address>" — explicitly
- * different from the expiry-based "Parking expires" copy because the
+ * Copy comes from the caller (reminderCopy in reminder-copy.ts): a
+ * "check on your car" message rather than the expiry wording, because the
  * intent is different (you ASKED to be reminded, not "you'd better move
  * or get a ticket").
  */
 export async function scheduleAbsoluteReminders(
   session: ParkingSession,
   fireAtList: Date[],
+  copyFor: (fireAt: Date) => ReminderCopy,
 ): Promise<ScheduleResult> {
   const total = fireAtList.length
   if (total === 0) {
@@ -83,19 +106,13 @@ export async function scheduleAbsoluteReminders(
     return { status: 'denied', scheduledCount: 0, pastCount, totalSelected: total }
   }
 
-  const locationLabel = session.location
-    ? (session.location.address ??
-      `${session.location.lat.toFixed(4)}, ${session.location.lng.toFixed(4)}`)
-    : 'your spot'
-
   for (const { fireAt, delay } of fireable) {
-    setTimeout(() => {
+    arm(session.id, () => {
       try {
-        new Notification('🚗 Check on your car', {
-          body: `Time to check on your car at ${locationLabel}.`,
-          // Distinct tag per fire-time so multiple notifications coexist.
-          tag: `parkproof-${session.id}-${fireAt.getTime()}`,
-        })
+        const { title, body } = copyFor(fireAt)
+        // Same tag as the push copy of this reminder, so the two collapse
+        // into one alert when the tab is open.
+        new Notification(title, { body, tag: reminderTag(session.id, fireAt) })
       } catch {
         // Permission can be revoked mid-flight — silent best-effort.
       }
@@ -113,6 +130,7 @@ export async function scheduleAbsoluteReminders(
 export async function scheduleParkingReminders(
   session: ParkingSession,
   offsetsMinutes: number[],
+  copyFor: (fireAt: Date) => ReminderCopy,
 ): Promise<ScheduleResult> {
   const total = offsetsMinutes.length
   if (total === 0) {
@@ -159,23 +177,14 @@ export async function scheduleParkingReminders(
     return { status: 'denied', scheduledCount: 0, pastCount, totalSelected: total }
   }
 
-  const locationLabel = session.location
-    ? (session.location.address ??
-      `${session.location.lat.toFixed(4)}, ${session.location.lng.toFixed(4)}`)
-    : 'your spot'
-
   for (const { offset, delay } of fireable) {
-    setTimeout(() => {
+    arm(session.id, () => {
       try {
-        const body =
-          offset === 0
-            ? `Parking is expiring now at ${locationLabel}.`
-            : `Parking expires in ${offset} ${offset === 1 ? 'min' : 'mins'} at ${locationLabel}.`
-        // Distinct tag per offset so multiple notifications coexist instead of replacing each other.
-        new Notification('⏰ Move your car', {
-          body,
-          tag: `parkproof-${session.id}-${offset}`,
-        })
+        const fireAt = new Date(expiresAt - offset * 60 * 1000)
+        const { title, body } = copyFor(fireAt)
+        // Distinct tag per fire time, shared with the push copy of the same
+        // reminder so the two collapse into one alert when the tab is open.
+        new Notification(title, { body, tag: reminderTag(session.id, fireAt) })
       } catch {
         // Permission can be revoked mid-flight — nothing to do, silent best-effort.
       }

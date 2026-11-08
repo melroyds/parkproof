@@ -22,8 +22,9 @@ export interface WalkBackEstimate {
  * Format a distance as either "120 m" or "0.4 km" — whichever reads cleaner
  * at the given size. The < 1000 m threshold is a UX choice, not a precision
  * one: people picture "850 m" fine but "1.2 km" is a comfier mental unit.
+ * Also used for the departure distance on the record screen.
  */
-function formatDistance(meters: number): string {
+export function formatDistance(meters: number): string {
   if (meters < 1000) return `${Math.round(meters)} m`
   return `${(meters / 1000).toFixed(1)} km`
 }

@@ -19,14 +19,23 @@ How it works:
   4. Run pyftsubset to produce a TTF with only those glyphs
 
 Output:
-  Overwrites the full-size TTFs in public/fonts/ with subsetted versions.
-  Originals can be re-downloaded from Google Fonts GitHub at any time.
+  Writes the subsetted TTFs to public/fonts/.
 
-Re-run after locale JSON edits. Idempotent — subsetting an already-subset
-font is fine (it'll just produce the same output).
+Source fonts:
+  When a full-size font exists in fonts-src/ (gitignored), the subset is
+  cut from it. Without one, the script falls back to re-subsetting the
+  file already in public/fonts/ in place. That fallback can only ever
+  DROP glyphs: a character added to the locale JSON after the last
+  full-font run never comes back, and the PDF prints a blank box. Keep
+  full sources in fonts-src/ for any font whose locale strings change.
+  `--fetch` downloads every full font listed in FULL_FONT_URLS.
+
+Re-run after locale JSON edits.
 
 Run:
-  python scripts/_subset_pdf_fonts.py
+  python scripts/_subset_pdf_fonts.py                 # every font
+  python scripts/_subset_pdf_fonts.py --fetch         # download missing full sources first
+  python scripts/_subset_pdf_fonts.py --only NotoSansSC.ttf,NotoSansKR.ttf
 """
 import json
 import subprocess
@@ -36,6 +45,17 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 LOCALES_DIR = ROOT / "src" / "locales"
 FONTS_DIR = ROOT / "public" / "fonts"
+SOURCE_DIR = ROOT / "fonts-src"
+
+# Full-size originals (Google Fonts, SIL Open Font License). Variable
+# fonts, the same families the committed subsets were first cut from.
+FULL_FONT_URLS = {
+    "NotoSansSC.ttf": "https://github.com/google/fonts/raw/main/ofl/notosanssc/NotoSansSC%5Bwght%5D.ttf",
+    "NotoSansKR.ttf": "https://github.com/google/fonts/raw/main/ofl/notosanskr/NotoSansKR%5Bwght%5D.ttf",
+    "NotoSans.ttf": "https://github.com/google/fonts/raw/main/ofl/notosans/NotoSans%5Bwdth,wght%5D.ttf",
+    "NotoSansDevanagari.ttf": "https://github.com/google/fonts/raw/main/ofl/notosansdevanagari/NotoSansDevanagari%5Bwdth,wght%5D.ttf",
+    "NotoSansGurmukhi.ttf": "https://github.com/google/fonts/raw/main/ofl/notosansgurmukhi/NotoSansGurmukhi%5Bwdth,wght%5D.ttf",
+}
 
 # Map of font filename → locale codes whose strings should be included.
 # Vietnamese + Greek share NotoSans.ttf (the file covers both scripts).
@@ -84,9 +104,22 @@ def chars_from_json(path: Path) -> set[str]:
     return chars
 
 
-def subset_font(font_path: Path, chars: set[str]) -> tuple[int, int]:
-    """Run pyftsubset on the font file. Returns (orig_size, new_size)."""
-    orig_size = font_path.stat().st_size
+def fetch_full_fonts() -> None:
+    """Download any missing full-size source font into fonts-src/."""
+    import urllib.request
+
+    SOURCE_DIR.mkdir(exist_ok=True)
+    for name, url in FULL_FONT_URLS.items():
+        dest = SOURCE_DIR / name
+        if dest.is_file():
+            continue
+        print(f"  ↓ fetching {name}")
+        urllib.request.urlretrieve(url, dest)
+
+
+def subset_font(source: Path, font_path: Path, chars: set[str]) -> tuple[int, int]:
+    """Subset `source` into `font_path`. Returns (source_size, new_size)."""
+    orig_size = source.stat().st_size
     # pyftsubset takes a `--unicodes` arg as comma-separated hex codes.
     unicodes = ",".join(f"{ord(c):04X}" for c in sorted(chars))
     out_path = font_path.with_suffix(".subset.ttf")
@@ -96,7 +129,7 @@ def subset_font(font_path: Path, chars: set[str]) -> tuple[int, int]:
     # rendered to a printer the hinting is irrelevant.
     cmd = [
         sys.executable, "-m", "fontTools.subset",
-        str(font_path),
+        str(source),
         f"--unicodes={unicodes}",
         f"--output-file={out_path}",
         "--no-hinting",
@@ -108,15 +141,21 @@ def subset_font(font_path: Path, chars: set[str]) -> tuple[int, int]:
         "--no-recalc-bounds",
         "--drop-tables+=DSIG",
     ]
-    print(f"  → subsetting {font_path.name} ({len(chars)} glyphs)...")
+    print(f"  → subsetting {font_path.name} from {source.parent.name}/ ({len(chars)} glyphs)...")
     subprocess.run(cmd, check=True, capture_output=True)
-    # Replace the original with the subset
     out_path.replace(font_path)
     new_size = font_path.stat().st_size
     return orig_size, new_size
 
 
 def main() -> None:
+    args = sys.argv[1:]
+    only: set[str] | None = None
+    if "--only" in args:
+        only = set(args[args.index("--only") + 1].split(","))
+    if "--fetch" in args:
+        fetch_full_fonts()
+
     if not LOCALES_DIR.is_dir():
         print(f"ERROR: locales dir not found: {LOCALES_DIR}", file=sys.stderr)
         sys.exit(1)
@@ -138,15 +177,21 @@ def main() -> None:
     total_before = 0
     total_after = 0
     for font_name, locales in FONT_LOCALES.items():
-        font_path = FONTS_DIR / font_name
-        if not font_path.is_file():
-            print(f"  ! skip {font_name} (not present)")
+        if only is not None and font_name not in only:
             continue
+        font_path = FONTS_DIR / font_name
+        source = SOURCE_DIR / font_name
+        if not source.is_file():
+            if not font_path.is_file():
+                print(f"  ! skip {font_name} (not present)")
+                continue
+            print(f"  ! {font_name}: no full source in fonts-src/, re-subsetting in place (can only drop glyphs)")
+            source = font_path
         union_chars = set(base)
         for loc in locales:
             if loc in locale_chars:
                 union_chars |= locale_chars[loc]
-        orig, new = subset_font(font_path, union_chars)
+        orig, new = subset_font(source, font_path, union_chars)
         total_before += orig
         total_after += new
         pct = (1 - new / orig) * 100 if orig else 0

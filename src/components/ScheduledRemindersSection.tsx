@@ -4,12 +4,16 @@ import type { ParkingSession } from '../types'
 import { useNow } from '../lib/use-now'
 import { formatExpiryAbsolute } from '../lib/time-format'
 import { sessionTimezone } from '../lib/timezone'
+import { reminderCopy } from '../lib/reminder-copy'
+import { sessionLink } from '../lib/deep-link'
 import {
   cancelPushReminders,
+  hasPushDeviceId,
   schedulePushReminders,
   type ScheduledReminder,
 } from '../lib/push'
 import { updateSession } from '../lib/storage'
+import { useLiveRecord } from '../lib/use-records-version'
 import { useAuth } from '../lib/use-auth'
 import { mirrorSessionUpdateToCloud } from '../lib/sync'
 import Icon from './Icon'
@@ -41,7 +45,16 @@ import Card from './ui/Card'
  *     Server's deletePushSchedulesForSession runs first, then creates the
  *     smaller new set — atomic from the user's perspective.
  *   - "Cancel all" calls /push/cancel (the dedicated endpoint), then clears
- *     the local push_reminders array.
+ *     the local push_reminders array, only when the cancel succeeded.
+ *   - Push schedules belong to the device that created them (spec N6).
+ *     push_reminders syncs through the cloud, so another device can show
+ *     them. There a change gets 403 ERR_NOT_OWNER (or the browser has no
+ *     device id at all): the list is left exactly as it is, the screen says
+ *     the reminders were set on another device, and the change controls
+ *     are hidden, because a retry here can never work.
+ *   - The list is read from the live stored record, so a change made
+ *     elsewhere (App's "I've left" clears it after a successful cancel)
+ *     shows straight away.
  *
  * Renders nothing when session.push_reminders is empty AND it's a past /
  * ended session (no point offering to add reminders to a session that's
@@ -85,32 +98,32 @@ interface Props {
   session: ParkingSession
 }
 
-export default function ScheduledRemindersSection({ session }: Props) {
+export default function ScheduledRemindersSection({ session: initialSession }: Props) {
   const { t } = useTranslation()
   const { user } = useAuth()
   // 30s tick aligns with SAFETY_MARGIN_MS — a row that crosses into "past"
   // disappears from the list on the next tick rather than lingering until
   // page reload.
   const now = useNow(30_000)
+  // The live stored copy: this section's own writes, App's end path and a
+  // cloud pull all land in storage, and the list re-reads it.
+  const session = useLiveRecord(initialSession)
   const timeZone = useMemo(() => sessionTimezone(session.location), [session.location])
-
-  // Internal mirror of session.push_reminders. The section OWNS mutations
-  // (add / remove / cancel-all) — we update localStorage + cloud and reflect
-  // the change locally without needing the parent to refresh. Initialized
-  // from props once; props changes after mount are ignored (which matches
-  // reality — only this surface touches push_reminders, so external changes
-  // can't happen mid-mount).
-  const [reminders, setReminders] = useState<NonNullable<ParkingSession['push_reminders']>>(
-    () => session.push_reminders ?? [],
-  )
+  const reminders = session.push_reminders
   const [picking, setPicking] = useState(false)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  // Set when the server said another device owns these schedules.
+  const [notOwner, setNotOwner] = useState(false)
 
   const futureReminders = useMemo(
     () => selectFuture(reminders, now),
     [reminders, now],
   )
+  // Reminders this device can't change: the server said so, or this browser
+  // has no push device id (scheduling always creates one, so the listed
+  // reminders came from another device through the cloud).
+  const fromOtherDevice = futureReminders.length > 0 && (notOwner || !hasPushDeviceId())
 
   // Hide entirely if there's nothing to show AND the session can't accept
   // new reminders (ended, or expiry is past + no-sign isn't applicable).
@@ -121,6 +134,8 @@ export default function ScheduledRemindersSection({ session }: Props) {
   const isExpiryPast = expiryMs !== null && expiryMs < now
   const isNoSign = !!session.no_sign
   const canAdd = !isEnded && (isNoSign || !isExpiryPast)
+  // Add, remove and cancel all change this device's schedules only.
+  const canChange = canAdd && !fromOtherDevice
 
   // Compute the chip options viable right now — same logic as ReminderOptions
   // but shifted from "user picks" to "user picks ON TOP OF existing list".
@@ -189,15 +204,9 @@ export default function ScheduledRemindersSection({ session }: Props) {
    * they're set to fire 30 min before. Same per-reminder logic as
    * ReminderOptions.tsx — keep them in lock-step. If they diverge, the
    * first edit silently rewrites the body text the user originally chose.
+   * reminderCopy() is the single source for that copy.
    */
-  const bodyForFireAt = (fireAt: Date): string => {
-    if (isNoSign || expiryMs === null) {
-      return t('reminders.pushBodyCheckOn')
-    }
-    const minsBefore = Math.round((expiryMs - fireAt.getTime()) / 60_000)
-    if (minsBefore <= 0) return t('reminders.pushBodyAtExpiry')
-    return t('reminders.pushBodyBefore', { count: minsBefore })
-  }
+  const copyForFireAt = (fireAt: Date) => reminderCopy(session, fireAt, t)
 
   /**
    * Persist the new fire-at list to localStorage + cloud, then notify parent.
@@ -206,13 +215,20 @@ export default function ScheduledRemindersSection({ session }: Props) {
    */
   const persistReminders = (newReminders: Array<{ fire_at: string }>) => {
     try {
+      // The write fires records-changed, which re-reads the list above.
       updateSession(session.id, { push_reminders: newReminders })
       if (user) mirrorSessionUpdateToCloud(session.id)
-      setReminders(newReminders)
     } catch (err) {
       console.warn('[reminders] could not persist:', err)
       setError(t('scheduledReminders.errorRetry'))
     }
+  }
+
+  /** Another device owns these schedules: say so and change nothing. */
+  const showOtherDevice = () => {
+    setNotOwner(true)
+    setPicking(false)
+    setError(t('scheduledReminders.otherDevice'))
   }
 
   /**
@@ -224,32 +240,27 @@ export default function ScheduledRemindersSection({ session }: Props) {
     setBusy(true)
     setError(null)
     try {
-      const title = session.location?.address
-        ? session.location.address
-        : t('reminders.pushTitleFallback')
       // Build the union: existing future fire-times + the new one. Each entry
       // gets its OWN body string computed from its own fire_at — using one
       // shared body for the batch (the previous bug) would have rewritten
-      // existing reminders' copy on every add. bodyForFireAt keeps each
-      // entry honest to its actual offset.
+      // existing reminders' copy on every add.
       const desired: ScheduledReminder[] = [
         ...futureReminders.map((r) => ({
           fire_at: r.fire_at,
-          title,
-          body: bodyForFireAt(r.fireAt),
-          url: `/?session=${session.id}`,
+          ...copyForFireAt(r.fireAt),
+          url: sessionLink(session.id),
         })),
         {
           fire_at: fireAt.toISOString(),
-          title,
-          body: bodyForFireAt(fireAt),
-          url: `/?session=${session.id}`,
+          ...copyForFireAt(fireAt),
+          url: sessionLink(session.id),
         },
       ]
-      const result = await schedulePushReminders(session.id, desired)
-      if (result === null) {
-        setError(t('scheduledReminders.pushNotEnabled'))
-        setBusy(false)
+      const result = await schedulePushReminders(session.id, desired, session.expires_at)
+      if (!result.ok) {
+        if (result.reason === 'not_owner') showOtherDevice()
+        else if (result.reason === 'network') setError(t('scheduledReminders.errorRetry'))
+        else setError(t('scheduledReminders.pushNotEnabled'))
         return
       }
       persistReminders(result.created.map((c) => ({ fire_at: c.fire_at })))
@@ -273,14 +284,14 @@ export default function ScheduledRemindersSection({ session }: Props) {
       const remaining = futureReminders.filter((r) => r.fire_at !== fire_at_iso)
       if (remaining.length === 0) {
         // No remaining → call /push/cancel instead. Schedule API rejects empty
-        // reminders[] with a 400; cancel is the right verb here.
-        await cancelPushReminders(session.id)
-        persistReminders([])
+        // reminders[] with a 400; cancel is the right verb here. Clear the
+        // list only when the schedules are really gone.
+        const cancelled = await cancelPushReminders(session.id)
+        if (cancelled.ok) persistReminders([])
+        else if (cancelled.reason === 'network') setError(t('scheduledReminders.errorRetry'))
+        else showOtherDevice()
         return
       }
-      const title = session.location?.address
-        ? session.location.address
-        : t('reminders.pushTitleFallback')
       // Per-reminder body — same bug-fix as handleAdd. Removing one row
       // shouldn't rewrite the surviving ones' "X min before expiry" copy
       // to a generic "Your parking expires now". Server stores whatever
@@ -288,13 +299,13 @@ export default function ScheduledRemindersSection({ session }: Props) {
       // honest body for each retained fire_at here.
       const desired: ScheduledReminder[] = remaining.map((r) => ({
         fire_at: r.fire_at,
-        title,
-        body: bodyForFireAt(r.fireAt),
-        url: `/?session=${session.id}`,
+        ...copyForFireAt(r.fireAt),
+        url: sessionLink(session.id),
       }))
-      const result = await schedulePushReminders(session.id, desired)
-      if (result === null) {
-        setError(t('scheduledReminders.errorRetry'))
+      const result = await schedulePushReminders(session.id, desired, session.expires_at)
+      if (!result.ok) {
+        if (result.reason === 'not_owner') showOtherDevice()
+        else setError(t('scheduledReminders.errorRetry'))
         return
       }
       persistReminders(result.created.map((c) => ({ fire_at: c.fire_at })))
@@ -312,8 +323,13 @@ export default function ScheduledRemindersSection({ session }: Props) {
     setBusy(true)
     setError(null)
     try {
-      await cancelPushReminders(session.id)
-      persistReminders([])
+      // Clear the list only when the schedules are really gone. Clearing it
+      // after a 403 would mirror an empty list to the cloud while the other
+      // device's reminders keep firing.
+      const cancelled = await cancelPushReminders(session.id)
+      if (cancelled.ok) persistReminders([])
+      else if (cancelled.reason === 'network') setError(t('scheduledReminders.errorRetry'))
+      else showOtherDevice()
     } catch (err) {
       console.error('[reminders] cancel-all failed:', err)
       setError(t('scheduledReminders.errorRetry'))
@@ -379,7 +395,7 @@ export default function ScheduledRemindersSection({ session }: Props) {
               >
                 <Icon name="bell" className="w-4 h-4 text-brand-500 shrink-0" />
                 <span className="flex-1 leading-snug">{label}</span>
-                {canAdd && (
+                {canChange && (
                   <button
                     type="button"
                     onClick={() => void handleRemove(fire_at)}
@@ -396,13 +412,13 @@ export default function ScheduledRemindersSection({ session }: Props) {
         </ul>
       )}
 
-      {error && (
+      {(error ?? (fromOtherDevice ? t('scheduledReminders.otherDevice') : null)) && (
         <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mb-3">
-          {error}
+          {error ?? t('scheduledReminders.otherDevice')}
         </p>
       )}
 
-      {canAdd && !picking && (
+      {canChange && !picking && (
         <div className="flex gap-2 flex-wrap">
           <button
             type="button"
@@ -428,7 +444,7 @@ export default function ScheduledRemindersSection({ session }: Props) {
         </div>
       )}
 
-      {canAdd && picking && (
+      {canChange && picking && (
         <div className="mt-2 p-3 rounded-xl bg-paper-50 border border-paper-200">
           <p className="text-xs font-semibold text-ink-700 mb-2">
             {t('scheduledReminders.pickHeader')}

@@ -152,10 +152,12 @@ describe('formatCountdownLocalized — defers labels to i18n', () => {
     expect(calls).toEqual([{ key: 'time.minLeft', opts: { count: 7 } }])
   })
 
-  it('requests time.hourLeft singular on exactly 1h', () => {
+  it('requests the same time.hoursLeft base on exactly 1h (i18next picks _one)', () => {
+    // One base name per plural: a separate "hourLeft" key fell back to
+    // English in locales whose only plural form is _other (zh-CN, vi, id, ko).
     const { t, calls } = makeT()
     formatCountdownLocalized(hr(1), t)
-    expect(calls).toEqual([{ key: 'time.hourLeft', opts: { count: 1 } }])
+    expect(calls).toEqual([{ key: 'time.hoursLeft', opts: { count: 1 } }])
   })
 
   it('requests time.hoursLeft plural on whole-hour ≥ 2', () => {
@@ -206,10 +208,10 @@ describe('formatElapsedLocalized — open-ended (no-sign) sessions', () => {
     expect(calls).toEqual([{ key: 'time.parkedForMin', opts: { count: 23 } }])
   })
 
-  it('uses time.parkedForHour singular at exactly 1 hour', () => {
+  it('uses the same time.parkedForHours base at exactly 1 hour (i18next picks _one)', () => {
     const { t, calls } = makeT()
     formatElapsedLocalized(hr(1), t)
-    expect(calls).toEqual([{ key: 'time.parkedForHour', opts: { count: 1 } }])
+    expect(calls).toEqual([{ key: 'time.parkedForHours', opts: { count: 1 } }])
   })
 
   it('uses time.parkedForHours plural at 2+ hours whole', () => {

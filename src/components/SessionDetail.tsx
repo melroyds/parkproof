@@ -1,9 +1,17 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { ParkingSession } from '../types'
-import { deleteSession, endSession, updateSession } from '../lib/storage'
+import { isStorageFullError, updateSession } from '../lib/storage'
+import { useLiveRecord } from '../lib/use-records-version'
+import { canEndRecord } from '../lib/record-status'
+import { DEV_KEY_ALIAS } from '../lib/evidence-chain'
+import { LEGACY_PHOTO_ROLES, hasSessionPhoto, legacyPhotoValue, photoRefFor } from '../lib/session-photos'
+import { useSessionPhoto } from '../lib/use-session-photo'
 import ScheduledRemindersSection from './ScheduledRemindersSection'
+import RecordPhoto from './RecordPhoto'
 import VerifiedSeal from './VerifiedSeal'
+import ChainPanel from './ChainPanel'
+import DepartureRow from './DepartureRow'
 import Icon from './Icon'
 import Button from './ui/Button'
 import BackButton from './ui/BackButton'
@@ -13,24 +21,35 @@ import { formatCountdownLocalized } from '../lib/countdown'
 import { sessionTimezone } from '../lib/timezone'
 import { navigationUrl } from '../lib/walk-back'
 import { useAuth } from '../lib/use-auth'
-import { deleteCloudSession, mirrorSessionToCloud, mirrorSessionUpdateToCloud } from '../lib/sync'
-import { cancelPushReminders } from '../lib/push'
+import { mirrorSessionToCloud, mirrorSessionUpdateToCloud } from '../lib/sync'
 import { verifyUrlForLocale } from '../lib/verify-url'
+import { signedTimeOf } from '../lib/chain-view'
+import { formatInZone } from '../lib/time-format'
+import { RECORD_STATUS_ID } from '../lib/focus-targets'
 
 const NOTE_MAX_LENGTH = 280
 
 interface Props {
+  /**
+   * The record to show. The screen re-reads it from storage on every
+   * records change, so this is only the starting copy.
+   */
   session: ParkingSession
   onBack: () => void
-  onDeleted: () => void
+  /**
+   * Called when the driver confirms Delete. App.handleDeleteRecord owns the
+   * whole delete path (the record, its photos, the cloud copy, push and
+   * in-tab reminders) and leaves this screen; this screen only asks.
+   */
+  onDelete: (session: ParkingSession) => void
   onDraftAppeal: () => void
   /**
-   * Called when the user signals "I've left" via the End session button.
-   * App.tsx mirrors the change to cloud (when signed in) and updates the
-   * activeSessions memo. The session itself stays in history with ended_at
-   * set, so this is non-destructive.
+   * Called when the driver taps "I've left". App opens the departure sheet
+   * and, on "Confirm I've left", runs the one end path (stamp ended_at,
+   * cloud mirror, push and in-tab cancels, the signed departure); this
+   * screen only asks. The record stays in history with ended_at set.
    */
-  onEndSession?: (session: ParkingSession) => void
+  onEndSession: (session: ParkingSession) => void
 }
 
 function fmtLocal(iso: string, timeZone: string, full = false): string {
@@ -46,15 +65,21 @@ function fmtLocal(iso: string, timeZone: string, full = false): string {
 }
 
 export default function SessionDetail({
-  session,
+  session: initialSession,
   onBack,
-  onDeleted,
+  onDelete,
   onDraftAppeal,
   onEndSession,
 }: Props) {
   const { t, i18n } = useTranslation()
   const { user } = useAuth()
   const now = useNow()
+  // Live copy: background signing, a cloud pull or the end-session path
+  // update storage, and this re-reads it, so the screen never goes stale.
+  const session = useLiveRecord(initialSession)
+  // The surroundings photo's caption describes the photo, so it shows only
+  // when the photo itself does (not under the "not on this device" line).
+  const ambientPhoto = useSessionPhoto(session, 'ambient')
   const expiresMs = session.expires_at ? new Date(session.expires_at).getTime() : null
   const isExpired = expiresMs !== null && expiresMs < now
   const isEnded = !!session.ended_at
@@ -65,12 +90,9 @@ export default function SessionDetail({
     expiresMs !== null && !isExpired && !isEnded
       ? formatCountdownLocalized(expiresMs - now, t)
       : null
-  // Active means the user can still take the "End session" action. Two cases:
-  //   - no expiry (no-sign session) and not yet ended
-  //   - has expiry, still in the future, and not yet ended (leaving early)
-  const canEnd =
-    !isEnded &&
-    (session.expires_at == null || (expiresMs !== null && expiresMs > now))
+  // "I've left" is offered on any record that hasn't been ended, including
+  // one past its expiry (the driver may come back late).
+  const canEnd = canEndRecord(session)
   const timeZone = useMemo(() => sessionTimezone(session.location), [session.location])
   // Locale-aware link to the plain-English /verify walkthrough — surfaced at
   // the point the user exports evidence, the moment they most want to know how
@@ -79,14 +101,25 @@ export default function SessionDetail({
   // #3 — a silent photo-sync failure flagged on the session. The cloud row
   // exists but an image didn't reach S3, so it's missing cross-device and in
   // the PDF. Offer a retry (signed-in only — the only state a mirror runs in).
-  const [photoSyncFailed, setPhotoSyncFailed] = useState(!!session.photo_sync_failed)
+  // Read from the live record, so a flag set after save shows up here too.
+  const photoSyncFailed = !!session.photo_sync_failed
   const [retryingPhoto, setRetryingPhoto] = useState(false)
-  // #9 — cloud-pulled sessions hold photos as remote HTTPS URLs that may fail to
-  // materialize at export time (expired presign, pre-CORS-fix historical row).
-  // Warn before the user hands a blank-evidence PDF to a council.
-  const hasRemotePhoto = (['sign_photo', 'car_photo', 'ambient_photo'] as const).some(
-    (f) => typeof session[f] === 'string' && /^https?:/i.test(session[f] as string),
-  )
+  // #9 — an older record pulled from the cloud shows its legacy photos from
+  // HTTPS URLs. Since T0b4 the list mints a fresh URL only for a photo that
+  // is in S3, so such a photo normally loads and embeds. The warning shows
+  // only after one actually failed: its <img> didn't load, or the last
+  // export couldn't fetch it. Keyed by URL, so a fresh URL from the next
+  // sync clears it. A role with a photo ref is never read from a URL.
+  const [failedPhotoUrls, setFailedPhotoUrls] = useState<ReadonlySet<string>>(() => new Set())
+  const noteFailedPhotoUrls = (urls: readonly string[]) => {
+    if (urls.length === 0) return
+    setFailedPhotoUrls((prev) => (urls.every((u) => prev.has(u)) ? prev : new Set([...prev, ...urls])))
+  }
+  const hasRemotePhoto = LEGACY_PHOTO_ROLES.some((role) => {
+    if (photoRefFor(session, role)) return false
+    const value = legacyPhotoValue(session, role)
+    return !!value && /^https?:/i.test(value) && failedPhotoUrls.has(value)
+  })
 
   // Pre-import the PDF chunk so the click → save chain stays inside the
   // user-gesture window (iOS Safari otherwise sometimes blocks the download
@@ -138,6 +171,14 @@ export default function SessionDetail({
       // jsPDF's addImage only works with data URLs — materialize first.
       // No-op for same-device sessions (photos already data URLs).
       const sessionForPdf = await mod.materializeRemotePhotos(session)
+      // A cloud URL still on a photo the PDF draws couldn't be fetched: it
+      // draws as "could not be embedded", so say why under the button.
+      noteFailedPhotoUrls(
+        mod.pdfPhotoRoles(session, 'evidence').flatMap((role) => {
+          const value = legacyPhotoValue(sessionForPdf, role)
+          return value && /^https?:/i.test(value) ? [value] : []
+        }),
+      )
       mod.downloadPdf(sessionForPdf, t, i18n.language)
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err)
@@ -153,8 +194,8 @@ export default function SessionDetail({
     try {
       const { photoFailed } = await mirrorSessionToCloud(session)
       if (!photoFailed) {
+        // The write re-renders this screen through the records-changed event.
         updateSession(session.id, { photo_sync_failed: false })
-        setPhotoSyncFailed(false)
       }
     } catch (err) {
       console.warn('[sync] photo re-upload failed:', err)
@@ -165,40 +206,22 @@ export default function SessionDetail({
 
   const handleDelete = () => {
     if (!window.confirm(t('session.deleteConfirm'))) return
-    deleteSession(session.id)
-    // Mirror the deletion to the cloud when signed in — fire-and-forget; the
-    // local delete is authoritative for this device regardless of network.
-    if (user) {
-      void deleteCloudSession(session.id).catch((err) => {
-        console.warn('[sync] cloud delete failed:', err)
-      })
-    }
-    // Cancel any pending Web Push reminders for the deleted session — same
-    // rationale as the end-session path: stale pushes for a session the user
-    // has thrown away would be jarring. Best-effort.
-    void cancelPushReminders(session.id)
-    onDeleted()
+    // App owns deleting: the record and its photos, the cloud copy, push and
+    // in-tab reminders. It also leaves this screen.
+    onDelete(session)
   }
 
   const handleEnd = () => {
-    if (!window.confirm(t('session.endConfirm'))) return
-    endSession(session.id)
-    if (user) mirrorSessionUpdateToCloud(session.id)
-    // Fire-and-forget: clean up any pending Web Push reminders so they
-    // don't fire after the user has already left. See App.handleEndSession
-    // for the rationale; same call from both paths keeps behaviour consistent
-    // whether the user ends via the home card or the detail screen.
-    void cancelPushReminders(session.id)
-    // Notify parent so the home-screen active card can re-derive. We DON'T
-    // navigate away — staying on the detail view lets the user immediately
-    // see the "Ended {{when}}" status row.
-    onEndSession?.({ ...session, ended_at: new Date().toISOString() })
+    // App owns ending: its departure sheet asks (naming the time a late tap
+    // will store), then ended_at, cloud mirror, push and in-tab cancels and
+    // the signed departure. We stay on this screen; the live record shows
+    // "Ended ..." and the departure row once stored.
+    onEndSession(session)
   }
 
-  // Editable note — persists to localStorage on save. The committed value lives
-  // in `currentNote` so re-renders pick up the latest copy without re-reading
-  // session storage; `noteDraft` is the in-progress textarea state.
-  const [currentNote, setCurrentNote] = useState(session.note ?? '')
+  // Editable note — persists to localStorage on save. The committed value is
+  // the live record's note; `noteDraft` is the in-progress textarea state.
+  const currentNote = session.note ?? ''
   const [noteEditing, setNoteEditing] = useState(false)
   const [noteDraft, setNoteDraft] = useState(currentNote)
   const [noteError, setNoteError] = useState<string | null>(null)
@@ -217,7 +240,6 @@ export default function SessionDetail({
     const trimmed = noteDraft.trim()
     try {
       updateSession(session.id, { note: trimmed || undefined })
-      setCurrentNote(trimmed)
       setNoteEditing(false)
       setNoteError(null)
       // Mirror the patched session to the cloud — picks up the latest local
@@ -228,7 +250,11 @@ export default function SessionDetail({
     } catch (err) {
       // Quota error after recovery exhausted, or another storage failure.
       // Keep the user in edit mode so their text isn't lost.
-      const message = err instanceof Error ? err.message : String(err)
+      const message = isStorageFullError(err)
+        ? t('errors.storageFull')
+        : err instanceof Error
+          ? err.message
+          : String(err)
       setNoteError(message)
     }
   }
@@ -260,21 +286,24 @@ export default function SessionDetail({
           }}
         >
           <div className="flex items-center gap-3.5">
-            <VerifiedSeal size={48} glow />
+            {/* A local `npm run dev` signature (key_alias 'dev-ephemeral')
+                can't be checked with the published key, so it never gets
+                the mint glow or the plain "signed" claim. */}
+            <VerifiedSeal size={48} glow={session.signature.key_alias !== DEV_KEY_ALIAS} />
             <div className="min-w-0">
               <p className="text-sm font-display font-bold text-paper-50">
-                {t('session.cryptoSigned')}
+                {session.signature.key_alias === DEV_KEY_ALIAS
+                  ? t('session.devKeySigned')
+                  : t('session.cryptoSigned')}
               </p>
               <p className="text-2xs font-mono truncate text-[#7BE3A4]">
                 {session.signature.signature_base64.slice(0, 16)}
                 <span style={{ color: '#A9CFBE' }}>
                   {' · '}
-                  {new Date(session.signature.signed_at).toLocaleString('en-AU', {
-                    day: 'numeric',
-                    month: 'short',
-                    hour: 'numeric',
-                    minute: '2-digit',
-                  })}
+                  {/* ParkProof's signing time from the signed payload, in the
+                      record's zone with its name: the same as the chain
+                      panel's arrival part below. */}
+                  {formatInZone(signedTimeOf(session.signature) ?? session.signature.signed_at, timeZone)}
                 </span>
               </p>
             </div>
@@ -290,6 +319,11 @@ export default function SessionDetail({
           </p>
         </div>
       )}
+
+      {/* The evidence chain: each signed part, what it covers and when
+          ParkProof signed it, with "Check signatures" (the on-device
+          verifier). A read-only shared copy gets its own check (T7). */}
+      {!session.shared_from && <ChainPanel session={session} timeZone={timeZone} />}
 
       {/* #3 — silent photo-sync failure made visible, with a retry. */}
       {photoSyncFailed && user && (
@@ -315,14 +349,16 @@ export default function SessionDetail({
               {t('session.status')}
             </dt>
             <dd
-              className={`mt-1 font-display font-bold ${
+              id={RECORD_STATUS_ID}
+              tabIndex={-1}
+              className={`mt-1 font-display font-bold outline-none ${
                 isEnded || isExpired ? 'text-ink-600' : 'text-brand-700'
               }`}
             >
+              {/* An ended record's times are in the departure row below:
+                  the phone-clock tap time and ParkProof's signing time. */}
               {isEnded
-                ? t('session.endedAt', {
-                    when: fmtLocal(session.ended_at as string, timeZone),
-                  })
+                ? t('session.ended')
                 : session.expires_at
                   ? isExpired
                     ? t('history.expired')
@@ -345,6 +381,9 @@ export default function SessionDetail({
               </dd>
             )}
           </div>
+          {/* The I've left tap (phone clock) and, separately, when ParkProof
+              signed the departure. Shown once the record has ended. */}
+          <DepartureRow session={session} timeZone={timeZone} now={now} />
           <div>
             <dt className="text-xs uppercase tracking-widest font-semibold text-ink-600">
               {t('session.signRules')}
@@ -510,15 +549,20 @@ export default function SessionDetail({
 
       {/* Sign photo — only rendered for sign-translated sessions. No-sign
           sessions drop straight to the ambient/car photos below. */}
-      {session.sign_photo && (
+      {/* Photos read through the photo store for new records (the legacy
+          fields for old ones). A photo whose bytes aren't on this device
+          shows the one "not on this device" line with its fingerprint. */}
+      {hasSessionPhoto(session, 'sign') && (
         <Card className="mb-3 rounded-2xl border-transparent shadow-[0_14px_40px_rgba(7,59,37,0.16),0_2px_6px_rgba(7,59,37,0.08)]">
           <h3 className="text-xs uppercase tracking-widest font-semibold text-ink-600 mb-2">
             {t('session.signPhotoLabel')}
           </h3>
-          <img
-            src={session.sign_photo}
-            alt="Sign"
+          <RecordPhoto
+            session={session}
+            role="sign"
+            alt={t('session.signPhotoAlt')}
             className="w-full rounded-xl border border-paper-300"
+            onRemoteLoadError={(url) => noteFailedPhotoUrls([url])}
           />
         </Card>
       )}
@@ -534,16 +578,20 @@ export default function SessionDetail({
           <p className="text-sm text-ink-700 leading-relaxed mb-3">
             {t('session.noSignDescription')}
           </p>
-          {session.ambient_photo ? (
+          {hasSessionPhoto(session, 'ambient') ? (
             <>
-              <img
-                src={session.ambient_photo}
+              <RecordPhoto
+                session={session}
+                role="ambient"
                 alt={t('session.ambientPhotoLabel')}
                 className="w-full rounded-xl border border-paper-300"
+                onRemoteLoadError={(url) => noteFailedPhotoUrls([url])}
               />
-              <p className="text-xs text-ink-600 mt-2">
-                {t('session.ambientPhotoCaption')}
-              </p>
+              {ambientPhoto.status === 'available' && (
+                <p className="text-xs text-ink-600 mt-2">
+                  {t('session.ambientPhotoCaption')}
+                </p>
+              )}
             </>
           ) : (
             <p className="text-xs text-ink-600 italic">
@@ -553,15 +601,17 @@ export default function SessionDetail({
         </Card>
       )}
 
-      {session.car_photo && (
+      {hasSessionPhoto(session, 'car') && (
         <Card className="mb-3 rounded-2xl border-transparent shadow-[0_14px_40px_rgba(7,59,37,0.16),0_2px_6px_rgba(7,59,37,0.08)]">
           <h3 className="text-xs uppercase tracking-widest font-semibold text-ink-600 mb-2">
             {t('session.carPhotoLabel')}
           </h3>
-          <img
-            src={session.car_photo}
-            alt="Car"
+          <RecordPhoto
+            session={session}
+            role="car"
+            alt={t('session.carPhotoAlt')}
             className="w-full rounded-xl border border-paper-300"
+            onRemoteLoadError={(url) => noteFailedPhotoUrls([url])}
           />
         </Card>
       )}
@@ -580,8 +630,8 @@ export default function SessionDetail({
             </p>
           </div>
         )}
-        {/* #9 — warn before exporting a cloud-pulled session whose photos may
-            not embed, so a blank-evidence PDF doesn't leave silently. */}
+        {/* #9 — say so when a cloud-pulled record's photo couldn't be
+            loaded, so a blank-evidence PDF doesn't leave silently. */}
         {hasRemotePhoto && (
           <p className="text-xs leading-relaxed text-center px-2" style={{ color: '#A9CFBE' }}>
             {t('session.exportPhotoWarning')}
@@ -609,6 +659,7 @@ export default function SessionDetail({
         {canEnd && (
           <button
             onClick={handleEnd}
+            aria-haspopup="dialog"
             className="bg-white border border-brand-500 hover:bg-brand-50 active:bg-brand-100 text-brand-700 font-semibold py-3 rounded-xl transition-colors"
           >
             {t('session.endSession')}

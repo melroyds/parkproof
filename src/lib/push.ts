@@ -59,12 +59,33 @@ export async function hasActiveSubscription(): Promise<boolean> {
   }
 }
 
+const DEVICE_ID_PATTERN = /^[a-f0-9-]{8,64}$/i
+
+/** The stored device id, or null when this browser never made one. */
+function peekDeviceId(): string | null {
+  try {
+    const id = localStorage.getItem(DEVICE_ID_KEY)
+    return id && DEVICE_ID_PATTERN.test(id) ? id : null
+  } catch {
+    return null
+  }
+}
+
+/**
+ * True when this browser holds a push device id. Scheduling a reminder always
+ * creates one, so a browser without one cannot own any push schedule: synced
+ * reminders it shows were set on another device.
+ */
+export function hasPushDeviceId(): boolean {
+  return peekDeviceId() !== null
+}
+
 /** Generate or fetch a stable device id (UUID) per browser. Persisted in
  *  localStorage. Used as the partition key for the push-subscriptions
  *  table — keeps the data anonymous (no Cognito sub required). */
 function getOrCreateDeviceId(): string {
   let id = localStorage.getItem(DEVICE_ID_KEY)
-  if (id && /^[a-f0-9-]{8,64}$/i.test(id)) return id
+  if (id && DEVICE_ID_PATTERN.test(id)) return id
   // Use crypto.randomUUID if available, otherwise a Math.random fallback
   // (PWA targets all support randomUUID via secure-context).
   id =
@@ -210,6 +231,35 @@ export async function unsubscribeFromPush(): Promise<boolean> {
   }
 }
 
+/**
+ * Why a push call changed nothing.
+ *   - not_owner: the server returned 403 ERR_NOT_OWNER. The schedules were
+ *     created by another device (spec N6). Retrying here can never work.
+ *   - no_device: this browser has no device id, so it owns no schedules.
+ *   - unsupported / not_subscribed: push can't run on this browser right now.
+ *   - network: offline, or any other server failure. A retry may work.
+ */
+export type PushFailureReason = 'not_owner' | 'no_device' | 'unsupported' | 'not_subscribed' | 'network'
+
+export type PushCancelResult =
+  | { ok: true; deleted: number }
+  | { ok: false; reason: Extract<PushFailureReason, 'not_owner' | 'no_device' | 'network'> }
+
+export type PushScheduleResult =
+  | { ok: true; created: ScheduledFire[]; skipped: number }
+  | { ok: false; reason: Extract<PushFailureReason, 'not_owner' | 'unsupported' | 'not_subscribed' | 'network'> }
+
+/** True when a failed response is the server's 403 ERR_NOT_OWNER. */
+async function isNotOwnerResponse(resp: Response): Promise<boolean> {
+  if (resp.status !== 403) return false
+  try {
+    const body = (await resp.json()) as { error?: unknown }
+    return body?.error === 'ERR_NOT_OWNER'
+  } catch {
+    return false
+  }
+}
+
 export interface ScheduledReminder {
   /** ISO timestamp (with offset or Z) — when to fire the push. */
   fire_at: string
@@ -229,35 +279,42 @@ export interface ScheduledReminder {
  * which would be annoying ("30 min until your parking expires" arriving
  * after the car's already gone).
  *
- * Best-effort: silent failure if push isn't supported or the backend errors.
- * Caller can ignore the return value. The local "ended_at" mutation is the
- * source of truth — server cancel is just user-experience polish.
+ * Best-effort: never throws. The end-session path can ignore the result,
+ * since the local "ended_at" stamp is the source of truth. Screens that
+ * manage reminders must check it: only `ok` means the schedules are gone.
  *
  * NOTE: not gated by `hasActiveSubscription()` — even if the user's
  * subscription has rotated/expired since they scheduled, the schedules
  * themselves still exist server-side and we want them gone.
+ *
+ * Push schedules belong to the device that created them: the server cancels
+ * only when this device's id matches the one stored with each schedule
+ * (`not_owner` from a 403 ERR_NOT_OWNER, and nothing changes). A browser
+ * with no device id owns no schedules, so no request is sent (`no_device`).
  */
-export async function cancelPushReminders(
-  session_id: string,
-): Promise<{ deleted: number } | null> {
-  if (typeof fetch === 'undefined') return null
+export async function cancelPushReminders(session_id: string): Promise<PushCancelResult> {
+  if (typeof fetch === 'undefined') return { ok: false, reason: 'network' }
+  const device_id = peekDeviceId()
+  if (!device_id) return { ok: false, reason: 'no_device' }
   try {
     const resp = await fetch(endpointUrl('/push/cancel'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ session_id }),
+      body: JSON.stringify({ device_id, session_id }),
     })
     if (!resp.ok) {
+      if (await isNotOwnerResponse(resp)) return { ok: false, reason: 'not_owner' }
       console.error('[push] cancel failed:', resp.status)
-      return null
+      return { ok: false, reason: 'network' }
     }
     const result = (await resp.json()) as { deleted: unknown }
     return {
+      ok: true,
       deleted: typeof result.deleted === 'number' ? result.deleted : 0,
     }
   } catch (err) {
     console.error('[push] cancel threw:', err)
-    return null
+    return { ok: false, reason: 'network' }
   }
 }
 
@@ -269,8 +326,9 @@ export async function cancelPushReminders(
  * Callers wanting to ADD or REMOVE a single reminder pass the full desired
  * union/difference, not just the delta.
  *
- * Returns null on any failure (network / unsupported / not subscribed)
- * rather than throwing, so callers can fire-and-forget OR await and persist.
+ * Never throws. Returns `{ ok: false, reason }` on any failure, so callers
+ * can fire-and-forget OR await and persist. `not_owner` (403 ERR_NOT_OWNER)
+ * means another device created this record's schedules and nothing changed.
  *
  * Best-effort by default — when push isn't subscribed, the call is skipped
  * silently because the .ics + in-tab paths still fire from the same caller.
@@ -289,15 +347,18 @@ export interface ScheduledFire {
 export async function schedulePushReminders(
   session_id: string,
   reminders: ScheduledReminder[],
-): Promise<{ created: ScheduledFire[]; skipped: number } | null> {
-  if (!isPushSupported()) return null
+  /** The session's parking expiry. Lets the server give each push a TTL
+   *  that ends shortly after the parking does. Null for no-sign sessions. */
+  expires_at: string | null = null,
+): Promise<PushScheduleResult> {
+  if (!isPushSupported()) return { ok: false, reason: 'unsupported' }
   const subscribed = await hasActiveSubscription()
-  if (!subscribed) return null
+  if (!subscribed) return { ok: false, reason: 'not_subscribed' }
   // Allow the empty case to reach the server — that's how the SessionDetail
   // "remove last reminder" path works (POST with reminders=[] effectively
   // cancels all without using /push/cancel). The server enforces a
   // reminders.length === 0 → 400 guard, so we short-circuit here instead.
-  if (reminders.length === 0) return { created: [], skipped: 0 }
+  if (reminders.length === 0) return { ok: true, created: [], skipped: 0 }
 
   try {
     const resp = await fetch(endpointUrl('/push/schedule'), {
@@ -307,11 +368,13 @@ export async function schedulePushReminders(
         device_id: getOrCreateDeviceId(),
         session_id,
         reminders,
+        expires_at,
       }),
     })
     if (!resp.ok) {
+      if (await isNotOwnerResponse(resp)) return { ok: false, reason: 'not_owner' }
       console.error('[push] schedule failed:', resp.status)
-      return null
+      return { ok: false, reason: 'network' }
     }
     const result = (await resp.json()) as {
       created?: Array<{ name?: unknown; fire_at?: unknown }>
@@ -327,9 +390,9 @@ export async function schedulePushReminders(
       )
       .map((c) => ({ name: c.name, fire_at: c.fire_at }))
     const skipped = Array.isArray(result.skipped) ? result.skipped.length : 0
-    return { created, skipped }
+    return { ok: true, created, skipped }
   } catch (err) {
     console.error('[push] schedule threw:', err)
-    return null
+    return { ok: false, reason: 'network' }
   }
 }

@@ -22,13 +22,28 @@ declare const self: ServiceWorkerGlobalScope & {
 precacheAndRoute(self.__WB_MANIFEST)
 
 // ─── Web Push event handler ─────────────────────────────────────────────
-// Payload shape (server-side, see scripts/send-test-push.mjs):
-//   { title: string, body: string, url?: string, tag?: string }
+// Payload shape (lambda/index.js handlePushDispatch):
+//   { title, body, url?, tag?, session_id?, kind?: 'before' | 'expiry' | 'check' }
 //
-// Until the scheduling layer ships, the only sender is the manual test
-// script. Once the schedule layer is in, ReminderOptions saves fire-at
-// timestamps and an EventBridge-driven Lambda dispatches the push with
-// session-specific copy.
+// Each reminder carries its own tag (pp-<session>-<fire ms>). A new tag
+// always alerts; the old shared per-session tag made Chrome replace earlier
+// reminders silently, so the final "expires now" could arrive without sound.
+// To keep the tray tidy we close the session's earlier reminders ourselves.
+type PushPayload = {
+  title?: string
+  body?: string
+  url?: string
+  tag?: string
+  session_id?: string | null
+  kind?: 'before' | 'expiry' | 'check' | null
+}
+
+// lib.dom drops some options Chrome and Firefox still honour.
+type RichNotificationOptions = NotificationOptions & {
+  renotify?: boolean
+  vibrate?: number[]
+  timestamp?: number
+}
 self.addEventListener('push', (event: PushEvent) => {
   if (!event.data) {
     // Browser shouldn't deliver dataless pushes when userVisibleOnly is set,
@@ -48,7 +63,7 @@ self.addEventListener('push', (event: PushEvent) => {
     return
   }
 
-  let payload: { title?: string; body?: string; url?: string; tag?: string } = {}
+  let payload: PushPayload = {}
   try {
     payload = event.data.json() as typeof payload
   } catch {
@@ -57,21 +72,41 @@ self.addEventListener('push', (event: PushEvent) => {
   }
 
   const title = payload.title || 'ParkProof'
-  const options: NotificationOptions = {
+  const sessionId = payload.session_id || null
+  const tag = payload.tag || `parkproof-${Date.now()}`
+  const isExpiry = payload.kind === 'expiry'
+  const options: RichNotificationOptions = {
     body: payload.body || '',
     // Relative paths — see comment above. Resolves to /app/pwa-*.png
     // because the SW lives at /app/service-worker.js post-cutover.
     icon: 'pwa-192x192.png',
     badge: 'pwa-64x64.png',
-    // tag collapses repeat notifications for the same parking session —
-    // when the schedule layer fires 30/15/5/0-min reminders, each replaces
-    // the previous so the user's notification tray doesn't fill up.
-    tag: payload.tag || 'parkproof',
+    tag,
+    // Alert even if a notification with this tag is already showing (the
+    // in-tab copy of the same reminder, or a push from an older server that
+    // still reused the session tag).
+    renotify: true,
+    // The final reminder stays on screen until dismissed on desktop.
+    requireInteraction: isExpiry,
+    vibrate: isExpiry ? [300, 150, 300, 150, 300] : [200, 100, 200],
+    timestamp: Date.now(),
     // data carries the click-through URL into the notificationclick handler.
-    data: { url: payload.url || '/' },
+    data: { url: payload.url || '/', session_id: sessionId },
   }
 
-  event.waitUntil(self.registration.showNotification(title, options))
+  event.waitUntil(
+    (async () => {
+      if (sessionId) {
+        // Close this session's earlier reminders so only the newest shows.
+        const open = await self.registration.getNotifications()
+        for (const n of open) {
+          const data = n.data as { session_id?: string } | undefined
+          if (data?.session_id === sessionId && n.tag !== tag) n.close()
+        }
+      }
+      await self.registration.showNotification(title, options)
+    })(),
+  )
 })
 
 // ─── Notification click handler ─────────────────────────────────────────

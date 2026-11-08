@@ -1,0 +1,61 @@
+{
+  "id": "a1498c13-e7d1-4a66-aeb3-7cd3e4d18485",
+  "signature": {
+    "schema": "parkproof-evidence-v2",
+    "signed_at": "2026-11-03T12:05:15.107Z",
+    "algorithm": "ECDSA_SHA_256",
+    "key_alias": "alias/parkproof-evidence-signing",
+    "canonical_payload": "{\"ambient_photo_sha256\":null,\"arrived_at\":\"2026-11-03T12:05:17.485Z\",\"car_photo_sha256\":null,\"chain_key_sha256\":\"0fe239045c47fb58afac2bc9eb6dd06a42bdc563f01f4c5ec382983efeb54618\",\"chosen_label\":null,\"confidence\":\"low\",\"expires_at\":null,\"location\":null,\"no_sign\":true,\"rules\":\"\",\"schema\":\"parkproof-evidence-v2\",\"session_id\":\"a1498c13-e7d1-4a66-aeb3-7cd3e4d18485\",\"sign_photo_sha256\":null,\"signed_at\":\"2026-11-03T12:05:15.107Z\"}",
+    "signature_base64": "MEYCIQCSDY5gbBy1ylplV7hJK8Vt8CvfzAuEdjxvu6H/4W62LgIhANbCq/dHQpGDUSUPiXBwnmlJp+tS2lo7vt5u/pt5Kfy0"
+  },
+  "addenda": [
+    {
+      "id": "7e21e067-3de0-4898-b16e-ac7061330fe8",
+      "seq": 1,
+      "kind": "arrival_context",
+      "captured_at": "2026-11-03T12:05:17.487Z",
+      "data": {
+        "boundary": null,
+        "compliance_type": null,
+        "condition_note": null,
+        "driver_name": null,
+        "gate_acks": null,
+        "jurisdiction": null,
+        "permit_commitment": null,
+        "photos": [],
+        "rule_flags": null,
+        "sign_issues": [],
+        "sign_status": null,
+        "workday": null
+      },
+      "bundle": {
+        "schema": "parkproof-addendum-v1",
+        "signed_at": "2026-11-03T12:05:15.180Z",
+        "algorithm": "ECDSA_SHA_256",
+        "key_alias": "alias/parkproof-evidence-signing",
+        "canonical_payload": "{\"addendum_id\":\"7e21e067-3de0-4898-b16e-ac7061330fe8\",\"captured_at\":\"2026-11-03T12:05:17.487Z\",\"chain_key_sha256\":\"0fe239045c47fb58afac2bc9eb6dd06a42bdc563f01f4c5ec382983efeb54618\",\"data\":{\"boundary\":null,\"compliance_type\":null,\"condition_note\":null,\"driver_name\":null,\"gate_acks\":null,\"jurisdiction\":null,\"permit_commitment\":null,\"photos\":[],\"rule_flags\":null,\"sign_issues\":[],\"sign_status\":null,\"workday\":null},\"kind\":\"arrival_context\",\"parent_payload_sha256\":\"9eb59f65dea7b5dafe4860e8ad59cfd5bd5c177edf3ab5147e8075b82372a936\",\"schema\":\"parkproof-addendum-v1\",\"seq\":1,\"session_id\":\"a1498c13-e7d1-4a66-aeb3-7cd3e4d18485\",\"signed_at\":\"2026-11-03T12:05:15.180Z\"}",
+        "signature_base64": "MEQCIFfd+BA5ki5vCPDaNHJjzeLa0gdNFavHOTev8kN/c7+fAiBhaexMmZbZuBjh6vjhq3KUtKJ3Ut8/cAwX+9tecOk/Vw=="
+      }
+    },
+    {
+      "id": "6b6730b7-b031-4d87-baa5-b027fdc4a64f",
+      "seq": 2,
+      "kind": "departure",
+      "captured_at": "2026-11-03T12:05:27.653Z",
+      "data": {
+        "distance_from_arrival_m": null,
+        "ended_at": "2026-11-03T12:05:27.650Z",
+        "location": null,
+        "return_photos": []
+      },
+      "bundle": {
+        "schema": "parkproof-addendum-v1",
+        "signed_at": "2026-11-03T12:05:25.241Z",
+        "algorithm": "ECDSA_SHA_256",
+        "key_alias": "alias/parkproof-evidence-signing",
+        "canonical_payload": "{\"addendum_id\":\"6b6730b7-b031-4d87-baa5-b027fdc4a64f\",\"captured_at\":\"2026-11-03T12:05:27.653Z\",\"chain_key_sha256\":\"0fe239045c47fb58afac2bc9eb6dd06a42bdc563f01f4c5ec382983efeb54618\",\"data\":{\"distance_from_arrival_m\":null,\"ended_at\":\"2026-11-03T12:05:27.650Z\",\"location\":null,\"return_photos\":[]},\"kind\":\"departure\",\"parent_payload_sha256\":\"9812a92553d8545764c8ee4d3f0d7d6ae531fca2c253352eeb95afbf279b87c6\",\"schema\":\"parkproof-addendum-v1\",\"seq\":2,\"session_id\":\"a1498c13-e7d1-4a66-aeb3-7cd3e4d18485\",\"signed_at\":\"2026-11-03T12:05:25.241Z\"}",
+        "signature_base64": "MEUCIGogLlDcBvUuE1w2P9ljW4Uzp8Ht9hXPOH3IH7A7In+uAiEA5FyoTOGCYQUOKtC3IxfdFoOjgRBV2cy8Eh0NluZnhvo="
+      }
+    }
+  ]
+}

@@ -1,8 +1,15 @@
 import { useEffect, useRef, useState } from 'react'
 import { Trans, useTranslation } from 'react-i18next'
-import type { ParkingRules, ParkingSession } from '../types'
+import type { ParkingRules, ParkingSession, PhotoRef } from '../types'
 import { forwardGeocode, reverseGeocode } from '../lib/geocode'
 import { resizeImageFile } from '../lib/image'
+import { deleteSessionPhotos, deleteSessionPhotosExcept, isPhotoStoreAvailable } from '../lib/photo-store'
+import {
+  captureMetaFor,
+  storeSessionPhoto,
+  whenPhotoWritesSettle,
+  type PhotoCaptureMeta,
+} from '../lib/session-photos'
 import {
   ACCURACY_DANGER_M,
   ACCURACY_USABLE_M,
@@ -25,10 +32,17 @@ interface Props {
    */
   signPhoto: string | null
   /**
+   * When and how the sign photo was captured on the scan screen (for its
+   * PhotoRef). Missing: the time the logger opened, and 'library'.
+   */
+  signPhotoMeta?: PhotoCaptureMeta | null
+  /**
    * Surroundings photo for no-sign sessions, demonstrating that no signs
    * were visible. Opt-in by the user on the scan screen.
    */
   ambientPhoto?: string | null
+  /** Capture metadata for the surroundings photo, as for `signPhotoMeta`. */
+  ambientPhotoMeta?: PhotoCaptureMeta | null
   /**
    * Pre-seeded coords from a prior screen. When null, SessionLogger fetches
    * GPS itself. Currently unused — geolocation requests cache anyway, so
@@ -44,6 +58,26 @@ interface Props {
   onComplete: (session: ParkingSession) => void
   onCancel: () => void
 }
+
+/**
+ * The car photo taken in the logger. Its bytes go into the photo store as
+ * soon as it is taken; `ref` exists only once that write has completed.
+ * 'inRecord': this browser has no working photo store (no IndexedDB, or it
+ * can't be opened), so a retry can't help. The photo is then kept in the
+ * record itself on save, as the scan's sign and surroundings photos are.
+ */
+type CarPhoto =
+  | { status: 'saving'; dataUrl: string; meta: PhotoCaptureMeta }
+  | { status: 'saved'; dataUrl: string; meta: PhotoCaptureMeta; ref: PhotoRef }
+  | { status: 'inRecord'; dataUrl: string; meta: PhotoCaptureMeta }
+  | { status: 'failed'; dataUrl: string; meta: PhotoCaptureMeta }
+
+/**
+ * How a car photo write ended: its PhotoRef; 'inRecord' when there is no
+ * working photo store; null when the write failed or timed out (a retry
+ * may work).
+ */
+type CarWriteResult = PhotoRef | 'inRecord' | null
 
 type GpsState =
   | { status: 'idle' }
@@ -61,14 +95,42 @@ type GpsState =
 export default function SessionLogger({
   rules,
   signPhoto,
+  signPhotoMeta = null,
   ambientPhoto = null,
+  ambientPhotoMeta = null,
   mode = 'sign',
   onComplete,
   onCancel,
 }: Props) {
   const isNoSign = mode === 'no-sign'
   const { t } = useTranslation()
-  const [carPhoto, setCarPhoto] = useState<string | null>(null)
+  // The record's id is minted when the logger opens, because its photos are
+  // stored under it as they are taken (photo-store key `${id}/${sha256}`).
+  const [recordId] = useState(() => crypto.randomUUID())
+  const [carPhoto, setCarPhoto] = useState<CarPhoto | null>(null)
+  const [carReadError, setCarReadError] = useState<string | null>(null)
+  // Every photo-store write this logger started (including photos replaced
+  // since), so save and cancel can wait for them all before tidying up.
+  // Each one settles within PHOTO_WRITE_TIMEOUT_MS.
+  const photoWrites = useRef<Promise<unknown>[]>([])
+  // The scan screen's photos, written once when the logger opens.
+  const scanPhotoWrites = useRef<{ sign?: Promise<PhotoRef | null>; ambient?: Promise<PhotoRef | null> }>({})
+  // The current car photo's write. Null when there is no car photo; a
+  // newer photo (or Retake) replaces it, so a late result for an older
+  // photo is ignored.
+  const carWrite = useRef<{ result: Promise<CarWriteResult>; dataUrl: string } | null>(null)
+  // Set once the logger is cancelled or its Save has started: a photo still
+  // being resized then is dropped, and Retry and Retake do nothing, so no
+  // write starts after the record's photos were deleted (cancel) or tidied
+  // (save).
+  const closed = useRef(false)
+  // Set once Save has started. The record id is minted once per logger, so
+  // saving twice would store the same record twice (saveSession refuses
+  // that), and from then on the record is being kept: Cancel and Back do
+  // nothing (and are disabled). The ref is the real guard (synchronous);
+  // the state disables the buttons visually.
+  const submittedRef = useRef(false)
+  const [submitting, setSubmitting] = useState(false)
   // Initialise the GPS state synchronously based on API availability — avoids
   // setState-in-effect lint by deciding 'pending' vs 'error' here.
   const [gps, setGps] = useState<GpsState>(() => {
@@ -183,21 +245,103 @@ export default function SessionLogger({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  const handleFile = async (file: File) => {
-    const { dataUrl } = await resizeImageFile(file)
-    setCarPhoto(dataUrl)
+  // The photos from the scan screen go into the photo store when the logger
+  // opens (once, even under StrictMode's double effect run).
+  useEffect(() => {
+    const writes = scanPhotoWrites.current
+    const fallback: PhotoCaptureMeta = { captured_at: new Date().toISOString(), source: 'library' }
+    if (!isNoSign && signPhoto && !writes.sign) {
+      writes.sign = storeSessionPhoto(recordId, 'sign', signPhoto, signPhotoMeta ?? fallback)
+      photoWrites.current.push(writes.sign)
+    }
+    if (isNoSign && ambientPhoto && !writes.ambient) {
+      writes.ambient = storeSessionPhoto(recordId, 'ambient', ambientPhoto, ambientPhotoMeta ?? fallback)
+      photoWrites.current.push(writes.ambient)
+    }
+    // Mount-only: the scan photos can't change while the logger is open.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  /** Write the car photo's bytes; the tile shows saving, then saved or an error. */
+  const writeCarPhoto = (dataUrl: string, meta: PhotoCaptureMeta) => {
+    // After Save started (or Cancel) the record's photos were snapshotted
+    // and tidied: a write now would leave bytes nothing refers to.
+    if (closed.current) return
+    setCarPhoto({ status: 'saving', dataUrl, meta })
+    const result: Promise<CarWriteResult> = storeSessionPhoto(recordId, 'car', dataUrl, meta).then(
+      (ref) => ref ?? (isPhotoStoreAvailable() ? null : 'inRecord'),
+    )
+    const entry = { result, dataUrl }
+    carWrite.current = entry
+    photoWrites.current.push(result)
+    void result.then((r) => {
+      if (carWrite.current !== entry) return // replaced or removed meanwhile
+      setCarPhoto(
+        r === null
+          ? { status: 'failed', dataUrl, meta }
+          : r === 'inRecord'
+            ? { status: 'inRecord', dataUrl, meta }
+            : { status: 'saved', dataUrl, meta, ref: r },
+      )
+    })
   }
 
-  // Each saveSession() mints a fresh UUID, so it is NOT idempotent — a
-  // double-tap before the view transitions would create two distinct sessions,
-  // each firing its own KMS sign + S3 upload + DDB write. The ref is the real
-  // guard (synchronous); the state just disables the button visually.
-  const submittedRef = useRef(false)
-  const [submitting, setSubmitting] = useState(false)
-  const saveSession = () => {
-    if (submittedRef.current) return
+  const handleFile = async (file: File, input: 'camera' | 'library') => {
+    // Capture time and source are taken when the file arrives, before the resize.
+    const meta = captureMetaFor(file, input)
+    setCarReadError(null)
+    let dataUrl: string
+    try {
+      ;({ dataUrl } = await resizeImageFile(file))
+    } catch (err) {
+      console.warn('[logger] could not read the car photo:', err)
+      setCarReadError(t('scanner.couldntReadPhoto'))
+      return
+    }
+    if (closed.current) return
+    writeCarPhoto(dataUrl, meta)
+  }
+
+  const removeCarPhoto = () => {
+    if (closed.current) return
+    carWrite.current = null
+    setCarPhoto(null)
+  }
+
+  /**
+   * Run a photo clean-up for this record once `writes` have settled, and
+   * again once any write that timed out has landed as well (those bytes
+   * have no PhotoRef). Never throws.
+   */
+  const tidyPhotos = (writes: readonly Promise<unknown>[], cleanUp: () => Promise<number>, what: string) => {
+    void Promise.allSettled(writes)
+      .then(async () => {
+        await cleanUp()
+        if (await whenPhotoWritesSettle(recordId)) await cleanUp()
+      })
+      .catch((err) => console.warn(`[logger] could not ${what}:`, err))
+  }
+
+  /**
+   * Leave without saving: the record never existed, so its photos are
+   * deleted (after any write still in flight has landed). Once Save has
+   * started the record is being kept, so this does nothing.
+   */
+  const cancel = () => {
+    if (submittedRef.current || closed.current) return
+    closed.current = true
+    tidyPhotos([...photoWrites.current], () => deleteSessionPhotos(recordId), 'delete the photos of a cancelled record')
+    onCancel()
+  }
+
+  const saveSession = async () => {
+    if (submittedRef.current || closed.current) return
     submittedRef.current = true
+    closed.current = true
     setSubmitting(true)
+    // Arrival time is the tap, as before; the photo writes (milliseconds)
+    // are awaited after it.
+    const arrived_at = new Date().toISOString()
     const location =
       gps.status === 'ok'
         ? {
@@ -208,42 +352,70 @@ export default function SessionLogger({
             accuracy_meters: gps.source === 'gps' ? gps.accuracy : undefined,
           }
         : null
+    // Wait for every photo write to land, so each ref has its bytes stored.
+    // Each write settles within PHOTO_WRITE_TIMEOUT_MS (a stuck IndexedDB
+    // write counts as failed), so Save never hangs.
+    const currentCar = carWrite.current
+    await Promise.allSettled(photoWrites.current)
+    const signRef = (await scanPhotoWrites.current.sign) ?? null
+    const ambientRef = (await scanPhotoWrites.current.ambient) ?? null
+    const carResult = currentCar ? await currentCar.result : null
+    // A car photo whose write failed isn't saved (its tile showed the error
+    // and offered a retry). Without a working photo store it is kept in the
+    // record itself instead, like the scan photos below.
+    const carRef = carResult && carResult !== 'inRecord' ? carResult : null
+    const carInRecord = carResult === 'inRecord' && currentCar ? currentCar.dataUrl : null
+    const photos = [signRef, carRef, ambientRef].filter((r): r is PhotoRef => r !== null)
+    // The legacy fields stay null for photo-store photos. Only when the
+    // store couldn't take a scan photo (no IndexedDB, a failed or timed-out
+    // write) is it kept in the legacy field instead, so the record still has
+    // the photo it was read from.
     const session: ParkingSession = isNoSign
       ? {
           // No-sign session — minimal evidence record. No rules, no expiry,
           // no countdown. The cryptographic signature still covers what's
           // here: location + time + optional ambient + optional car photo.
-          id: crypto.randomUUID(),
-          arrived_at: new Date().toISOString(),
+          id: recordId,
+          arrived_at,
           location,
           sign_photo: null,
-          car_photo: carPhoto,
+          car_photo: carInRecord,
           rules: '',
           observations: [],
           expires_at: null,
           confidence: 'low',
           no_sign: true,
-          ambient_photo: ambientPhoto,
+          ambient_photo: ambientRef ? null : ambientPhoto,
+          photos,
         }
       : {
-          id: crypto.randomUUID(),
-          arrived_at: new Date().toISOString(),
+          id: recordId,
+          arrived_at,
           location,
-          sign_photo: signPhoto,
-          car_photo: carPhoto,
+          sign_photo: signRef ? null : signPhoto,
+          car_photo: carInRecord,
           rules: rules!.rules,
           observations: rules!.observations,
           expires_at: rules!.until,
           confidence: rules!.confidence,
           chosen_label: rules!.chosen_label,
           alternate_variants: rules!.alternate_variants,
+          photos,
         }
     onComplete(session)
+    // Photos taken and then replaced or removed don't stay on the device,
+    // nor do the bytes of a write that timed out and landed later.
+    const keep = photos.map((p) => p.sha256)
+    tidyPhotos([], () => deleteSessionPhotosExcept(recordId, keep), 'tidy replaced photos')
   }
 
   return (
     <div className="min-h-screen flex flex-col p-6 max-w-md mx-auto w-full">
-      <BackButton onClick={onCancel} className="text-paper-50 hover:text-[#7BE3A4]">
+      <BackButton
+        onClick={cancel}
+        disabled={submitting}
+        className="text-paper-50 hover:text-[#7BE3A4] disabled:opacity-50 disabled:cursor-not-allowed"
+      >
         {t('common.back')}
       </BackButton>
 
@@ -459,13 +631,28 @@ export default function SessionLogger({
         {carPhoto ? (
           <>
             <img
-              src={carPhoto}
+              src={carPhoto.dataUrl}
               alt={t('logger.carAtSpot')}
               className="w-full rounded-lg border border-white/10 object-contain max-h-[50vh] bg-white"
             />
+            {/* The photo is only part of the record once its bytes are
+                stored on the phone. If that failed, say so: no ref is made. */}
+            {carPhoto.status === 'failed' && (
+              <div role="alert" className="mt-2 bg-amber-50 border border-amber-300 rounded-lg p-3">
+                <p className="text-xs text-ink-900 leading-relaxed">{t('logger.photoSaveFailed')}</p>
+                <button
+                  onClick={() => writeCarPhoto(carPhoto.dataUrl, carPhoto.meta)}
+                  disabled={submitting}
+                  className="mt-1 min-h-[44px] inline-flex items-center text-xs font-semibold text-brand-700 hover:text-brand-800 underline"
+                >
+                  {t('common.retry')}
+                </button>
+              </div>
+            )}
             <button
-              onClick={() => setCarPhoto(null)}
-              className="text-sm text-[#7BE3A4] hover:text-[#7BE3A4]/80 underline mt-2"
+              onClick={removeCarPhoto}
+              disabled={submitting}
+              className="text-sm text-[#7BE3A4] hover:text-[#7BE3A4]/80 underline mt-2 min-h-[44px] inline-flex items-center"
             >
               {t('logger.carRetake')}
             </button>
@@ -490,6 +677,11 @@ export default function SessionLogger({
             </button>
           </div>
         )}
+        {carReadError && !carPhoto && (
+          <p role="alert" className="mt-3 text-sm text-red-700 bg-red-50 border border-red-200 rounded-xl px-3 py-2">
+            {carReadError}
+          </p>
+        )}
         <p className="text-xs mt-2 text-center" style={{ color: '#A9CFBE' }}>
           {t('logger.carOptionalHelp')}
         </p>
@@ -501,7 +693,7 @@ export default function SessionLogger({
           className="hidden"
           onChange={(e) => {
             const f = e.target.files?.[0]
-            if (f) handleFile(f)
+            if (f) void handleFile(f, 'camera')
             e.target.value = ''
           }}
         />
@@ -512,7 +704,7 @@ export default function SessionLogger({
           className="hidden"
           onChange={(e) => {
             const f = e.target.files?.[0]
-            if (f) handleFile(f)
+            if (f) void handleFile(f, 'library')
             e.target.value = ''
           }}
         />
@@ -520,15 +712,16 @@ export default function SessionLogger({
 
       <div className="mt-auto flex flex-col gap-2">
         <Button
-          onClick={saveSession}
+          onClick={() => void saveSession()}
           disabled={submitting}
           className="disabled:cursor-not-allowed"
         >
-          {t('logger.saveSession')}
+          {submitting ? t('logger.saving') : t('logger.saveSession')}
         </Button>
         <button
-          onClick={onCancel}
-          className="text-paper-50 hover:text-[#7BE3A4] font-medium py-2 transition-colors"
+          onClick={cancel}
+          disabled={submitting}
+          className="text-paper-50 hover:text-[#7BE3A4] font-medium py-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {t('common.cancel')}
         </button>

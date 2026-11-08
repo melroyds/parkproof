@@ -14,19 +14,15 @@ export function formatRelative(ms: number): string {
  * Locale-aware version of formatRelative. Same logic, but emits translated
  * strings via i18next. Callers pass `t` from useTranslation so this file
  * stays React-agnostic. Translation keys consumed: time.justNow,
- * time.minAgo (plural), time.hourAgo (plural), time.hoursAgo (plural),
- * time.yesterday, time.daysAgo (plural).
+ * time.minAgo (plural), time.hoursAgo (plural), time.yesterday,
+ * time.daysAgo (plural).
  */
 export function formatRelativeLocalized(ms: number, t: TFunction): string {
   const minutes = Math.round(ms / 60_000)
   if (minutes < 1) return t('time.justNow')
   if (minutes < 60) return t('time.minAgo', { count: minutes })
   const hours = Math.round(minutes / 60)
-  if (hours < 24) {
-    return hours === 1
-      ? t('time.hourAgo', { count: hours })
-      : t('time.hoursAgo', { count: hours })
-  }
+  if (hours < 24) return t('time.hoursAgo', { count: hours })
   const days = Math.round(hours / 24)
   if (days === 1) return t('time.yesterday')
   return t('time.daysAgo', { count: days })
@@ -99,6 +95,55 @@ export function formatExpiryAbsolute(
   }
   const dayDate = formatDayDate(expires, tz)
   return { time, dayDate, combined: `${time}, ${dayDate}` }
+}
+
+export interface FormatInZoneOptions {
+  /** Add the year ("Sun 25 Oct 2026, 1:55 pm"). Default false. */
+  withYear?: boolean
+  /** Add the zone's short name ("... 1:55 pm AEDT"). Default true. */
+  withZone?: boolean
+}
+
+/**
+ * A moment as a person reads it in the record's own time zone (build spec
+ * N5): "Sun 25 Oct, 1:55 pm AEDT", with the year when asked for. The zone
+ * name is Intl's `timeZoneName: 'short'` for en-AU (AEST/AEDT, ACST/ACDT,
+ * AWST, or "GMT+13" style outside Australia), so a time is never read in
+ * the wrong zone, including either side of a DST change.
+ *
+ * Composed from Intl parts rather than `format()`, because runtimes differ
+ * in the punctuation they put between the parts. Returns the input as text
+ * when it isn't a valid time, so a bad value shows rather than vanishes.
+ */
+export function formatInZone(
+  value: string | number | Date,
+  timeZone: string,
+  options: FormatInZoneOptions = {},
+): string {
+  const { withYear = false, withZone = true } = options
+  const date = value instanceof Date ? value : new Date(value)
+  if (!Number.isFinite(date.getTime())) return String(value)
+  let parts: Intl.DateTimeFormatPart[]
+  try {
+    parts = new Intl.DateTimeFormat('en-AU', {
+      timeZone,
+      weekday: 'short',
+      day: 'numeric',
+      month: 'short',
+      year: withYear ? 'numeric' : undefined,
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true,
+      timeZoneName: withZone ? 'short' : undefined,
+    }).formatToParts(date)
+  } catch {
+    // An unknown zone name: fall back to the default zone rather than throw in a render.
+    return timeZone === DEFAULT_TZ ? date.toISOString() : formatInZone(date, DEFAULT_TZ, options)
+  }
+  const part = (type: Intl.DateTimeFormatPartTypes) => parts.find((p) => p.type === type)?.value ?? ''
+  const day = `${part('weekday')} ${part('day')} ${part('month')}${withYear ? ` ${part('year')}` : ''}`
+  const time = `${part('hour')}:${part('minute')} ${part('dayPeriod').toLowerCase()}`
+  return `${day}, ${time}${withZone ? ` ${part('timeZoneName')}` : ''}`
 }
 
 /**

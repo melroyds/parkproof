@@ -55,11 +55,11 @@
       "lead": "Every park you log saves the time, the GPS, the address, and (if you want) a photo of your car at the spot.",
       "items": [
         "Download the whole thing as a tidy PDF. Handy if you ever need to dispute a ticket.",
-        "It's signed with a digital seal so nobody can argue it was edited after the fact, not even us.",
+        "Each record is signed, so anyone can check it hasn't been changed since it was signed.",
         "Add a note about why you parked there (mum's hospital visit, Saturday market). Councils take context seriously."
       ]
     },
-    "sealCaveat": "The seal proves the record wasn't changed after you saved it. It doesn't prove the AI read the sign correctly, or guarantee a council will accept it.",
+    "sealCaveat": "The seal shows the signed details haven't changed since ParkProof signed them. It doesn't show the AI read the sign correctly, or that a council will accept it.",
     "reminders": {
       "title": "A nudge before time runs out",
       "lead": "Pick when you want to be reminded: 30 minutes before, 15, 5, whatever feels right.",
@@ -203,9 +203,14 @@
     "lastLoggedSpot": "Last logged spot",
     "noPostedRestrictions": "No posted restrictions",
     "iveLeft": "I've left",
-    "iveLeftAria": "Signal that you've left this parking spot",
-    "iveLeftConfirm": "Mark this as left now? It'll move to history with the time you left recorded.",
-    "nextPing": "Next reminder: {{when}}"
+    "iveLeftAria": "I've left. Ends this parking record.",
+    "iveLeftConfirm": "Mark this record as ended now? It saves the time you tap, from your phone's clock. If you left earlier, that earlier time isn't recorded.",
+    "nextPing": "Next reminder: {{when}}",
+    "expiredAt": "Expired at {{time}}",
+    "expiredHint": "Still here? Move now. Already moved? Tap I've left.",
+    "walkBackAria": "Walk back. Opens walking directions to your car.",
+    "walkBackAriaDistance_one": "Walk back. Opens walking directions to your car, {{distance}} away, about {{count}} minute on foot.",
+    "walkBackAriaDistance_other": "Walk back. Opens walking directions to your car, {{distance}} away, about {{count}} minutes on foot."
   },
   "scanner": {
     "header": "Scan parking sign",
@@ -333,7 +338,9 @@
     "noSignKicker": "EVIDENCE NOTE",
     "noSignBanner": "You're recording that no signs were visible at this spot. The cryptographic signature covers when and where, not whether signs were truly absent. Be honest, this is your evidence.",
     "ambientHeader": "Surroundings",
-    "ambientCaption": "Captured to demonstrate no signs were posted."
+    "ambientCaption": "Captured to demonstrate no signs were posted.",
+    "photoSaveFailed": "This photo couldn't be saved on your phone. Try again, or save the record without it.",
+    "saving": "Saving…"
   },
   "reminders": {
     "header": "Set reminders",
@@ -366,10 +373,10 @@
     "browserNothingSelected": "Pick at least one reminder above",
     "pushScheduleFailed": "Couldn't set the background reminder. It may only fire while this tab is open. Tap to try again.",
     "pushTitleFallback": "Parking reminder",
-    "pushBodyAtExpiry": "Your parking expires now.",
-    "pushBodyBefore_one": "1 min until your parking expires.",
-    "pushBodyBefore_other": "{{count}} min until your parking expires.",
-    "pushBodyCheckOn": "Time to check on your car.",
+    "pushBodyAtExpiry": "Your parking expires at {{time}}. Time to move the car.",
+    "pushBodyBefore_one": "Your parking expires at {{time}}. This is your 1-minute reminder.",
+    "pushBodyBefore_other": "Your parking expires at {{time}}. This is your {{count}}-minute reminder.",
+    "pushBodyCheckOn": "Time to check on your car. Parked since {{time}}.",
     "noSign": {
       "intro": "No posted expiry here, but you can still ask for a check-in reminder. Pick how long from now, choose as many as you like.",
       "chipHour_one": "1 hour",
@@ -414,7 +421,8 @@
     "tooLateAll": "No reminder option is far enough in the future to schedule. Tap End session if you've already left.",
     "pushNotEnabled": "Enable push notifications on this device to add reminders that fire when the app is closed.",
     "saving": "Saving…",
-    "errorRetry": "Couldn't update. Try again"
+    "errorRetry": "Couldn't update. Try again",
+    "otherDevice": "These reminders were set on another device. Change them on that device."
   },
   "history": {
     "header": "Parking records",
@@ -462,11 +470,18 @@
     "photoHashMismatch": "This photo doesn't match the signed evidence and may have been altered since saving.",
     "exportPhotoWarning": "One or more photos couldn't be loaded from the cloud for this older session. You can export anyway, or open it on the device where it was created.",
     "endSession": "I've left",
-    "endConfirm": "Mark this as left now? The record stays in history with the time you left recorded.",
+    "endConfirm": "Mark this record as ended now? It saves the time you tap, from your phone's clock. If you left earlier, that earlier time isn't recorded.",
     "endedAt": "Ended {{when}}",
     "noExpiryRecorded": "No expiry recorded",
     "deleteSession": "Delete record",
-    "deleteConfirm": "Delete this parking record? This cannot be undone."
+    "deleteConfirm": "Delete this parking record? This cannot be undone.",
+    "endConfirmLate": "Mark this record as ended now? It will record {{time}}, the time you tap, from your phone's clock. It won't show when the car actually left.",
+    "devKeySigned": "Signed with a development key. It can't be checked with ParkProof's published key.",
+    "photoNotOnDevice": "Photo not on this device. Signed fingerprint {{fingerprint}}.",
+    "photoNotOnDeviceUnsigned": "Photo not on this device. Fingerprint {{fingerprint}}. Not signed yet.",
+    "signPhotoAlt": "Photo of the parking sign you scanned",
+    "carPhotoAlt": "Photo of your car where you parked",
+    "ended": "Ended"
   },
   "appeal": {
     "captureHeader": "Draft an appeal letter",
@@ -663,7 +678,10 @@
     "imageType": "That image type isn't supported. Use a JPEG or PNG photo.",
     "appealUndraftable": "We couldn't draft an appeal from that photo. Try a clearer photo of the notice.",
     "exportFailed": "Couldn't build your export just now. Please try again in a moment.",
-    "genericRetry": "Something went wrong. Please try again in a moment."
+    "genericRetry": "Something went wrong. Please try again in a moment.",
+    "storageFull": "ParkProof's storage on this device is full. Current records and records still waiting for a signature are kept. Open History, delete an old record you no longer need, then try again.",
+    "storageEvicted_one": "Your device storage was full, so {{count}} older parking record was deleted to make space. Sign in to keep records safe in the cloud.",
+    "storageEvicted_other": "Your device storage was full, so {{count}} older parking records were deleted to make space. Sign in to keep records safe in the cloud."
   },
   "pdf": {
     "common": {
@@ -671,24 +689,27 @@
       "valueHeader": "Value",
       "dash": "–",
       "notCaptured": "Not captured",
-      "imageEmbedFailed": "(Image could not be embedded)"
+      "imageEmbedFailed": "(Image could not be embedded)",
+      "photoNotOnDevice": "Photo not on the device that made this PDF. Its signed SHA-256 fingerprint is {{fingerprint}}.",
+      "photoNotOnDeviceUnsigned": "Photo not on the device that made this PDF. Its SHA-256 fingerprint is {{fingerprint}}. Not signed yet.",
+      "plusMinus": "±"
     },
     "duration": {
       "minOnly_one": "1 min",
       "minOnly_other": "{{count}} min",
-      "hourOnly_one": "1 hour",
+      "hoursOnly_one": "1 hour",
       "hoursOnly_other": "{{count}} hours",
       "hoursAndMins": "{{hours}}h {{mins}}m"
     },
     "evidence": {
       "title": "ParkProof: Parking Evidence",
-      "sessionId": "Session ID: {{id}}",
+      "sessionId": "Record ID: {{id}}",
       "generated": "PDF generated: {{when}}",
       "field": {
-        "arrivedAt": "Arrived at",
+        "arrivedAt": "Logged (phone clock)",
         "expiresAt": "Expires at",
-        "endedAt": "Ended at (driver-signalled)",
-        "actualDuration": "Actual duration",
+        "endedAt": "Tapped I've left (phone clock)",
+        "actualDuration": "Time from arrival to the I've left tap (phone clock)",
         "guidance": "ParkProof Guidance",
         "address": "Address",
         "locationGps": "Location (GPS)",
@@ -696,12 +717,17 @@
         "mapLink": "Map link",
         "sideVariant": "Side / Variant selected",
         "signRules": "Sign rules",
-        "aiConfidence": "AI confidence"
+        "aiConfidence": "AI confidence",
+        "arrivalSigned": "Arrival signed by ParkProof (server clock)",
+        "departureSigned": "Departure signed by ParkProof (server clock)",
+        "departureLocation": "Phone location at the I've left tap (GPS)",
+        "departureDistance": "Approx. distance from arrival (phone GPS)",
+        "locationCoords": "Location (coordinates)"
       },
       "locationSourceValue": {
         "manuallyEntered": "Manually entered",
         "gpsWithAccuracy": "GPS: {{accuracy}}",
-        "gpsLowAccuracy": "GPS: LOW ACCURACY {{accuracy}} (see appendix)",
+        "gpsLowAccuracy": "GPS: low accuracy, {{accuracy}} (see the GPS accuracy notice below)",
         "gps": "GPS",
         "captured": "Captured",
         "none": "–"
@@ -709,42 +735,75 @@
       "signPhotoHeader": "Sign photo",
       "carPhotoHeader": "Car at the spot",
       "ambientPhotoHeader": "Surroundings photo",
-      "ambientPhotoCaption": "Captured by the driver at the time of parking to demonstrate no signs were visible.",
-      "noAmbientCaptured": "No surroundings photo was captured for this session.",
-      "noSignRules": "No posted restrictions captured. This session was logged at a spot the driver asserted had no signs.",
+      "ambientPhotoCaption": "Taken by the driver when the record was logged, to show the surroundings. It doesn't show there was no sign nearby.",
+      "noAmbientCaptured": "No surroundings photo was taken for this record.",
+      "noSignRules": "No sign was read for this record. The driver said there were no parking signs at this spot.",
       "noSignConfidence": "Not applicable (no sign was read)",
       "driverNoteHeader": "Driver's note",
       "driverNoteUnsigned": "Added by the driver. This note is not covered by the cryptographic signature.",
-      "gpsNoticeTitle": "⚠ GPS accuracy notice",
+      "gpsNoticeTitle": "GPS accuracy notice",
       "gpsNoticeBody": "The GPS reading at capture time was {{accuracy}}, wider than typical for evidence purposes. The coordinates above identify a point within that radius, not an exact spot. Common causes: indoor / multi-storey carparks, Starlink or VPN connections, or weak satellite signal. Reviewers should weight the captured address against this radius.",
-      "statement": "This record was generated automatically by ParkProof at the time of parking. The arrival timestamp, GPS coordinates, sign translation, and photographs constitute a contemporaneous evidence record suitable for attachment to a parking infringement review submission with the relevant Australian local council.",
+      "statement": "This is a record of a parking event made with ParkProof. Times marked as phone times come from the driver's phone. Statements marked as the driver's are the driver's own. It is not a legal finding about what happened. The council or court decides that.",
       "guidanceFree": "Free to park. Move by {{when}}.",
       "guidanceFreeNoExpiry": "Free to park. No expiry shown on the sign.",
-      "guidanceExpired": "Session expired at {{when}}."
+      "guidanceExpired": "Parking time ended at {{when}}.",
+      "signing": {
+        "devKey": "{{time}}, with a development key. It can't be checked with ParkProof's published key.",
+        "pending": "Not signed yet",
+        "rejected": "This part couldn't be signed",
+        "none": "Not signed"
+      },
+      "value": {
+        "coordsWithAccuracy": "{{coords}}, accuracy {{accuracy}}",
+        "distanceUnavailable": "Not available. The arrival location isn't a phone GPS fix accurate enough to compare.",
+        "distanceRough": "{{distance}}. The phone's location at the tap was only accurate to {{accuracy}}, so this distance is rough.",
+        "distanceRoughNoAccuracy": "{{distance}}. The phone didn't report how accurate its location at the tap was, so this distance is rough."
+      },
+      "carPhotoCaptionTime": "Logged {{time}} (phone clock)",
+      "confidence": {
+        "high": "High",
+        "medium": "Medium",
+        "low": "Low"
+      }
     },
     "signature": {
       "title": "Cryptographic signature",
-      "intro": "This evidence record was signed by ParkProof's AWS KMS-managed private key at the time of saving. The signature lets any third party (council, court, insurer) verify that the metadata and photo hashes below have not been altered since the signed_at timestamp. The private key never leaves AWS; the public key is published openly for verification.",
+      "intro": "Each part of this record was signed by ParkProof's server when the server received it, at the signed_at time shown for that part. A valid signature shows the signed details and photo fingerprints have not changed since then. It does not show that they are true, who was driving, or when the car arrived or left.",
       "algorithm": "Algorithm",
       "keyAlias": "Key alias",
-      "signedAt": "Signed at (UTC)",
+      "signedAt": "Signed by ParkProof (server clock)",
       "schema": "Schema",
       "publicKeyUrl": "Public key URL",
       "canonicalPayloadHeader": "Canonical payload (the exact bytes that were signed):",
-      "payloadB64Header": "Canonical payload, base64 (decode this to verify):",
-      "signatureBlobHeader": "Signature (DER, base64):",
+      "payloadB64Header": "Canonical payload, base64. Save it as {{file}} to check it:",
+      "signatureBlobHeader": "Signature (DER, base64). Save it as {{file}}:",
       "verifyHeader": "To verify with openssl (any platform):",
-      "verifyStep1": "1. Save the base64 payload block above to a file: payload.b64, then decode it to the exact signed bytes. base64 -d ignores the line wrapping, so you recover the precise bytes with no stray newline:",
-      "verifyStep2": "2. Save the signature base64 string above to a file: sig.base64",
+      "verifyStep1": "1. Save the base64 payload block of link 0 to a file named link0-payload.b64, then decode it to the exact signed bytes. base64 -d ignores the line wrapping, so you recover the precise bytes with no stray newline:",
+      "verifyStep2": "2. Save the signature block of link 0 to a file named link0-sig.b64.",
       "verifyStep3": "3. Download the public key:",
       "verifyStep4": "4. Decode the signature:",
       "verifyStep5": "5. Verify:",
-      "verifyStep6": "6. Expect output: \"Verified OK\". This confirms the metadata and the photo hashes recorded in the payload are authentic and unchanged since the signed_at time.",
-      "verifyStep7": "7. About the photos: the images shown in this PDF are a visual copy, re-encoded for the document, so their bytes differ from the originals and will not reproduce the hashes in the payload. That is expected and is not a sign of tampering. The signature commits to the SHA-256 of each original photo (the sign_photo_sha256, car_photo_sha256 and ambient_photo_sha256 values inside the signed payload), and step 6 already proved those values are authentic. To independently confirm a specific image, hash the original captured file (from the ParkProof record or your account export), not the copy printed here, and compare it to the matching value above."
+      "verifyStep6": "6. Expect \"Verified OK\". This shows the signed bytes have not changed since ParkProof signed them.",
+      "verifyStep7": "7. About the photos: the images shown in this PDF are a visual copy, re-encoded for the document, so their bytes differ from the originals and will not reproduce the hashes in the payload. That is expected and is not a sign of tampering. The signature commits to the SHA-256 of each original photo (the sign_photo_sha256, car_photo_sha256 and ambient_photo_sha256 values inside the signed payload), and step 6 showed those values have not changed since signing. To independently confirm a specific image, hash the original captured file (from the ParkProof record or your account export), not the copy printed here, and compare it to the matching value above.",
+      "devKey": "Signed with a development key. It can't be checked with ParkProof's published key.",
+      "linkHeading": "Link {{link}}: {{kind}}",
+      "forkNote": "Two parts were added at this point in the record, from two devices. Both are signed and shown here.",
+      "verifyRepeat": "Do steps 1, 2, 4, 5 and 6 for each link, with its own file names (link1-payload.b64, link1-sig.b64 and so on).",
+      "verifyChain": "8. Check the links are joined in order. Each link after link 0 carries parent_payload_sha256, the SHA-256 of the payload of the link before it. Run each command below on the payload.txt files from step 1. It prints the payload's SHA-256 as a hex value after the = sign (sha256sum, where you have it, prints the same value).",
+      "chainEquals": "That hex value must equal parent_payload_sha256 in link {{link}}.",
+      "chainEqualsOneOf": "One of these hex values must equal parent_payload_sha256 in link {{link}}.",
+      "kind": {
+        "arrival": "Arrival",
+        "arrivalContext": "Details at parking",
+        "condition": "Condition photos",
+        "compliance": "Proof of payment or permit",
+        "departure": "Departure",
+        "handover": "Handover"
+      }
     },
     "appeal": {
       "drafted": "Drafted {{when}}",
-      "linkedSession": "Linked ParkProof session: {{id}}",
+      "linkedSession": "Linked ParkProof record: {{id}}",
       "supportingEvidence": "Supporting evidence (from ParkProof)",
       "fieldGps": "GPS",
       "fieldSideSelected": "Side selected",
@@ -758,10 +817,10 @@
       "userId": "User ID: {{id}}",
       "exportedAt": "Exported: {{when}}",
       "sessionCount": "Records in this export: {{count}}",
-      "intro": "This document gathers every parking record saved to this ParkProof account. Each record was captured at the moment of parking with GPS, photographs, and an AI-translated reading of the parking sign. Where a record was signed with the ParkProof KMS key, the badge on that section indicates a verifiable cryptographic signature exists (export the individual record PDF for the full signature appendix).",
+      "intro": "This document gathers every parking record saved to this ParkProof account, one section per record. Where a record has signed parts, its signature pages follow its section, with the steps to check each signature. A valid signature shows the signed details haven't changed since ParkProof signed them. It doesn't show that they are true.",
       "emptyState": "No parking records have been saved to this account yet.",
       "summaryColIndex": "#",
-      "summaryColArrived": "Arrived",
+      "summaryColArrived": "Logged (phone clock)",
       "summaryColExpires": "Expires",
       "summaryColLocation": "Location",
       "sessionHeader": "Record {{n}} of {{total}}",
@@ -773,20 +832,100 @@
     "moveNow": "Move now",
     "minLeft_one": "1 min left",
     "minLeft_other": "{{count}} min left",
-    "hourLeft_one": "1 hour left",
+    "hoursLeft_one": "1 hour left",
     "hoursLeft_other": "{{count}} hours left",
     "hoursMinsLeft": "{{hours}}h {{mins}}m left",
     "parkedForMin_one": "Parked for 1 min",
     "parkedForMin_other": "Parked for {{count}} min",
-    "parkedForHour_one": "Parked for 1 hour",
+    "parkedForHours_one": "Parked for 1 hour",
     "parkedForHours_other": "Parked for {{count}} hours",
     "parkedForHoursMins": "Parked for {{hours}}h {{mins}}m",
     "justNow": "just now",
     "minAgo_one": "1 min ago",
     "minAgo_other": "{{count}} min ago",
-    "hourAgo_one": "1 hour ago",
+    "hoursAgo_one": "1 hour ago",
     "hoursAgo_other": "{{count}} hours ago",
     "yesterday": "yesterday",
     "daysAgo_other": "{{count}} days ago"
+  },
+  "verifier": {
+    "link": {
+      "valid": "Signature valid. The signed details haven't changed since ParkProof signed them.",
+      "invalid": "Signature not valid. This part isn't what ParkProof signed for this record.",
+      "pending": "Not signed yet",
+      "rejected": "This part couldn't be signed",
+      "devKey": "Signed with a development key. It can't be checked with ParkProof's published key.",
+      "chainBroken": "Its place in the record can't be checked. The part signed before it is missing from this device or doesn't match."
+    },
+    "fork": "Added from two devices",
+    "photo": {
+      "matches": "This photo matches its signed fingerprint.",
+      "differs": "This isn't the photo that was signed. Its fingerprint doesn't match.",
+      "notOnDeviceDevKey": "Photo not on this device. Fingerprint {{fingerprint}}. Signed with a development key."
+    }
+  },
+  "departure": {
+    "locating": "Getting your location",
+    "located": "Location captured, {{accuracy}}",
+    "noLocation": "No location",
+    "confirm": "Confirm I've left",
+    "heading": "DEPARTURE",
+    "tapped": "You tapped I've left at {{time}} (phone clock).",
+    "far": "Your phone was {{distance}} from where you parked when you tapped I've left. The record shows when you tapped, not when the car moved.",
+    "notSigned": "This departure isn't signed."
+  },
+  "chain": {
+    "heading": "SIGNED PARTS OF THIS RECORD",
+    "intro": "ParkProof's server signs each part when it receives it. A valid signature shows the signed details haven't changed since then. It doesn't show they are true, who was driving, where the car was, or when it arrived or left.",
+    "kind": {
+      "arrival": "Arrival",
+      "arrivalContext": "Details at parking",
+      "condition": "Condition photos",
+      "compliance": "Proof of payment or permit",
+      "departure": "Departure",
+      "handover": "Handover"
+    },
+    "covers": {
+      "arrival": "The time and place you logged on your phone, the sign reading and the photo fingerprints.",
+      "arrivalNoSign": "The time and place you logged on your phone, and the photo fingerprints.",
+      "arrivalContext": "What you added when you parked, such as who you said was driving, your answers and photo fingerprints.",
+      "condition": "Fingerprints of your photos of the car's condition, and your note.",
+      "compliance": "The fingerprint of your photo of a meter ticket, payment confirmation or permit.",
+      "departure": "When you tapped I've left (phone clock), and where your phone was if a location was captured.",
+      "handover": "Who you said you handed the car to, and when you recorded it."
+    },
+    "signedAt": "Signed by ParkProof at {{time}}.",
+    "devKeySignedAt": "Signed at {{time}} with a development key, not ParkProof's published key.",
+    "check": "Check signatures",
+    "checking": "Checking…",
+    "checkValid_one": "{{count}} signature is valid. Nothing has changed since ParkProof signed it. That doesn't show what the record says is true.",
+    "checkValid_other": "All {{count}} signatures are valid. Nothing has changed since ParkProof signed it. That doesn't show what the record says is true.",
+    "checkValidPhotosUnchecked_one": "{{count}} signature is valid. Some photos aren't on this device, so they couldn't be compared with their fingerprints. That doesn't show what the record says is true.",
+    "checkValidPhotosUnchecked_other": "All {{count}} signatures are valid. Some photos aren't on this device, so they couldn't be compared with their fingerprints. That doesn't show what the record says is true.",
+    "checkProblem": "At least one part or photo didn't pass the check. The result for each one is shown here.",
+    "checkChanged": "The record changed after the check started. Check again.",
+    "summary_one": "{{count}} part signed",
+    "summary_other": "{{count}} parts signed",
+    "checkDevKey": "Parts of this record were signed with a development key. They can't be checked with ParkProof's published key.",
+    "checkUnsigned": "Nothing on this record is signed yet.",
+    "checkUnavailable": "This browser can't check signatures. Try an up-to-date browser.",
+    "checkFailed": "The check didn't finish. Try again.",
+    "photosHeading": "PHOTOS",
+    "photoRole": {
+      "sign": "Sign photo",
+      "car": "Car photo",
+      "ambient": "Surroundings photo",
+      "conditionFront": "Condition when parked, front",
+      "conditionRear": "Condition when parked, rear",
+      "conditionLeft": "Condition when parked, left side",
+      "conditionRight": "Condition when parked, right side",
+      "conditionDetail": "Condition when parked, close-up",
+      "returnFront": "Condition on return, front",
+      "returnRear": "Condition on return, rear",
+      "returnLeft": "Condition on return, left side",
+      "returnRight": "Condition on return, right side",
+      "returnDetail": "Condition on return, close-up",
+      "compliance": "Proof of payment or permit photo"
+    }
   }
 }

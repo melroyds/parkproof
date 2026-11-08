@@ -26,9 +26,11 @@ const URGENCY_STYLES = {
 } as const
 
 /**
- * Full-screen view listing every active parking session (expires_at in the
- * future). Reached from the "+N more" pill on ActiveSessionCard when the user
- * has more than one car parked simultaneously.
+ * Full-screen view listing every active parking session (see
+ * loadActiveSessions: not ended, and expiring in the future or expired within
+ * the last 12 hours; live countdowns first, expired ones last). Reached from
+ * the "+N more" pill on ActiveSessionCard when the user has more than one
+ * record on home.
  *
  * Each row is a compact mirror of the home-screen Active card — same urgency
  * colour grammar (green > 1h, amber 15–60min, red < 15min), address, and
@@ -81,6 +83,14 @@ export default function ActiveSessionsList({ sessions, onBack, onOpen }: Props) 
                 timeZone,
               })
             : null
+          // Same wording as the home card for a record past its expiry that
+          // the driver hasn't ended yet.
+          const isExpired = hasExpiry && countdown!.urgency === 'expired'
+          const statusLabel = isExpired
+            ? t('active.expiredAt', { time: expiryLabel!.combined })
+            : hasExpiry
+              ? countdown!.label
+              : elapsed!.label
           const addressLine =
             session.location?.address ??
             (session.location
@@ -94,7 +104,7 @@ export default function ActiveSessionsList({ sessions, onBack, onOpen }: Props) 
                 className={`gf-card w-full text-left ${style.tint} hover:brightness-95 active:brightness-90 transition-all overflow-hidden flex items-stretch`}
                 aria-label={t('active.listCardAria', {
                   address: addressLine,
-                  status: hasExpiry ? countdown!.label : elapsed!.label,
+                  status: statusLabel,
                 })}
               >
                 {/* Coloured urgency stripe — at-a-glance grammar matches the home card */}
@@ -110,12 +120,14 @@ export default function ActiveSessionsList({ sessions, onBack, onOpen }: Props) 
                       {addressLine}
                     </p>
                     <p className={`text-sm font-semibold mt-0.5 tnum ${style.text}`}>
-                      {hasExpiry ? countdown!.label : elapsed!.label}
+                      {statusLabel}
                     </p>
                     <p className="text-xs text-ink-600 mt-0.5">
-                      {hasExpiry
-                        ? t('active.moveBy', { time: expiryLabel!.combined })
-                        : t('active.noPostedRestrictions')}
+                      {isExpired
+                        ? t('active.expiredHint')
+                        : hasExpiry
+                          ? t('active.moveBy', { time: expiryLabel!.combined })
+                          : t('active.noPostedRestrictions')}
                     </p>
                   </div>
                   <Icon

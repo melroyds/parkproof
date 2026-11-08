@@ -53,6 +53,28 @@ console.log(
     (process.env.ANTHROPIC_API_KEY ? ` (len=${process.env.ANTHROPIC_API_KEY.length})` : ''),
 )
 
+type DevSigningKeys = { privateKey: crypto.KeyObject; publicKeyPem: string }
+
+/**
+ * The dev server's signing key: generated once per dev-server process, never
+ * written to disk. Kept on globalThis so a config reload in the same process
+ * keeps the key, and chains signed earlier in the session stay extendable.
+ * After a restart, links signed by the previous key can't be extended (the
+ * server answers ERR_PARENT_SIGNATURE), so test with fresh records.
+ */
+function devSigningKeys(): DevSigningKeys {
+  const holder = globalThis as { __parkproofDevSigningKeys?: DevSigningKeys }
+  if (!holder.__parkproofDevSigningKeys) {
+    const { privateKey, publicKey } = crypto.generateKeyPairSync('ec', { namedCurve: 'prime256v1' })
+    holder.__parkproofDevSigningKeys = {
+      privateKey,
+      publicKeyPem: publicKey.export({ type: 'spki', format: 'pem' }).toString(),
+    }
+    console.log("[ParkProof] dev signer: ephemeral P-256 key, key_alias 'dev-ephemeral'")
+  }
+  return holder.__parkproofDevSigningKeys
+}
+
 function signTranslateApi(): Plugin {
   return {
     name: 'parkproof-sign-translate',
@@ -92,6 +114,15 @@ function signTranslateApi(): Plugin {
         }
       })
 
+      // Dev signer (build spec N2). In `npm run dev`, /api/sign-session signs
+      // with an ephemeral P-256 key and key_alias 'dev-ephemeral', so whole
+      // evidence chains can be exercised locally without KMS (and without
+      // ever setting KMS_KEY_ID). Parents may be signed by this dev key or
+      // by the published production key. The verifier reports dev-key links
+      // as "Signed with a development key", never as valid. Production is
+      // untouched: the Lambda dispatcher never passes these options, and the
+      // rate limiter (a DynamoDB call) is skipped here.
+      const devKeys = devSigningKeys()
       server.middlewares.use('/api/sign-session', async (req, res) => {
         if (req.method === 'OPTIONS') {
           res.statusCode = 204
@@ -109,11 +140,19 @@ function signTranslateApi(): Plugin {
           for await (const chunk of req) {
             chunks.push(chunk as Buffer)
           }
-          const body = JSON.parse(Buffer.concat(chunks).toString('utf8'))
-          const result = await lambda.handler({
-            requestContext: { http: { method: 'POST', path: '/sign-session' } },
-            body: JSON.stringify(body),
-          })
+          // Pass the raw text through, so the Lambda's own size check and
+          // JSON parsing (400 ERR_TOO_LARGE / ERR_BAD_REQUEST) apply as-is.
+          const result = await lambda.handleSignSessionRequest(
+            {
+              requestContext: { http: { method: 'POST', path: '/sign-session' } },
+              body: Buffer.concat(chunks).toString('utf8'),
+            },
+            {
+              signer: ({ message }) => crypto.sign('sha256', message, devKeys.privateKey),
+              keyAlias: 'dev-ephemeral',
+              parentPublicKeys: [devKeys.publicKeyPem, lambda.PARKPROOF_PUBLIC_KEY_PEM],
+            },
+          )
           res.statusCode = result.statusCode
           if (result.headers) {
             for (const [k, v] of Object.entries(result.headers)) {
@@ -196,6 +235,7 @@ function signTranslateApi(): Plugin {
         { path: '/api/sessions/list',   methods: ['GET', 'POST'] },
         { path: '/api/sessions/delete', methods: ['POST'] },
         { path: '/api/photos/presign',  methods: ['POST'] },
+        { path: '/api/photos/materialize', methods: ['POST'] },
         { path: '/api/me/export',       methods: ['GET', 'POST'] },
         { path: '/api/me/delete',       methods: ['POST'] },
       ]

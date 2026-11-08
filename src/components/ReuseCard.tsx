@@ -2,6 +2,8 @@ import { useState } from 'react'
 import { Trans, useTranslation } from 'react-i18next'
 import type { ParkingSession } from '../types'
 import { formatRelativeLocalized } from '../lib/time-format'
+import { useSessionPhoto } from '../lib/use-session-photo'
+import { PhotoMissingNote } from './RecordPhoto'
 
 interface Props {
   session: ParkingSession
@@ -18,6 +20,14 @@ export default function ReuseCard({ session, distanceMeters, onReuse, onDismiss 
     formatRelativeLocalized(Date.now() - new Date(session.arrived_at).getTime(), t),
   )
   const bulletItems = session.observations.flatMap((g) => g.items).slice(0, 4)
+  // Through the photo store for new records, the legacy field for old ones.
+  const signPhoto = useSessionPhoto(session, 'sign')
+  // A re-check reuses the sign photo. Without it (bytes not on this device,
+  // or stripped by quota recovery) the button would do nothing, so it isn't
+  // offered; the card keeps the note and Dismiss. Nor while the photo is
+  // still loading: that can include a cloud fetch, and a tap then would
+  // look dead for seconds.
+  const canReuse = signPhoto.status === 'available'
 
   return (
     <section className="gf-card mb-6 bg-brand-50 p-5">
@@ -30,11 +40,19 @@ export default function ReuseCard({ session, distanceMeters, onReuse, onDismiss 
         </span>
       </div>
 
-      <img
-        src={session.sign_photo ?? undefined}
-        alt={t('reuse.signPhotoAlt')}
-        className="w-full h-32 object-contain rounded-lg mb-3 border border-paper-300 bg-white"
-      />
+      {signPhoto.status === 'available' ? (
+        <img
+          src={signPhoto.src}
+          alt={t('reuse.signPhotoAlt')}
+          className="w-full h-32 object-contain rounded-lg mb-3 border border-paper-300 bg-white"
+        />
+      ) : signPhoto.status === 'missing' ? (
+        <div className="mb-3">
+          <PhotoMissingNote sha256={signPhoto.sha256} signed={signPhoto.signed} />
+        </div>
+      ) : (
+        <div className="w-full h-32 rounded-lg mb-3 border border-paper-300 bg-white" aria-hidden="true" />
+      )}
 
       <p className="text-xs uppercase tracking-widest font-semibold text-ink-600 mb-2">
         {t('reuse.bulletsHeader')}
@@ -67,12 +85,14 @@ export default function ReuseCard({ session, distanceMeters, onReuse, onDismiss 
         >
           {t('reuse.dismiss')}
         </button>
-        <button
-          onClick={onReuse}
-          className="flex-1 bg-brand-700 hover:bg-brand-600 active:bg-brand-700 disabled:bg-brand-300 text-white font-semibold py-2.5 rounded-xl transition-colors text-sm"
-        >
-          {t('reuse.useThisRead')}
-        </button>
+        {canReuse && (
+          <button
+            onClick={onReuse}
+            className="flex-1 bg-brand-700 hover:bg-brand-600 active:bg-brand-700 disabled:bg-brand-300 text-white font-semibold py-2.5 rounded-xl transition-colors text-sm"
+          >
+            {t('reuse.useThisRead')}
+          </button>
+        )}
       </div>
     </section>
   )

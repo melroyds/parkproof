@@ -14,6 +14,7 @@ import {
   SchedulerClient,
   CreateScheduleCommand,
   DeleteScheduleCommand,
+  GetScheduleCommand,
 } from '@aws-sdk/client-scheduler'
 import webpush from 'web-push'
 import crypto from 'node:crypto'
@@ -27,6 +28,23 @@ import {
   handleSessionsList,
   handleSessionsUpload,
 } from './cloud-sync.js'
+import {
+  ADDENDUM_SCHEMA,
+  AddendumValidationError,
+  CAPS,
+  ERR,
+  EVIDENCE_V1_SCHEMA,
+  EVIDENCE_V2_SCHEMA,
+  HEX64_RE,
+  buildAddendumPayload,
+  canonicalize,
+  clientTimesToCheck,
+  validateAddendumBody,
+} from './addendum-schema.js'
+
+// canonicalize lives in addendum-schema.js so the browser uses the very same
+// function; re-exported here for existing importers and tests.
+export { canonicalize }
 
 const MODEL = 'claude-sonnet-4-6'
 const DEFAULT_TIMEZONE = 'Australia/Melbourne'
@@ -164,26 +182,32 @@ function rateLimitedResponse() {
 }
 
 // ─── Appeal-letter drafter ────────────────────────────────────────────────
-const APPEAL_SYSTEM_PROMPT = `You are an Australian parking-law assistant. The user received a parking infringement notice and wants a draft appeal letter to send to the issuing council.
+export const APPEAL_SYSTEM_PROMPT = `You are an Australian parking-law assistant. The user received a parking infringement notice and wants a draft appeal letter to send to the issuing council.
 
 You will be given:
 - A photo of the infringement notice (read it carefully)
-- The user's previously-saved evidence of the parking session: sign rules, observations from the sign, GPS coordinates, address, and arrival timestamp
+- The driver's saved ParkProof record of the park: sign rules, observations from the sign, the address and coordinates with their location_source, and separately labelled times. Times marked "phone clock" come from the driver's phone: when the driver logged the park and when they tapped I've left. Times marked "server clock" are when ParkProof's server signed that part of the record. Every time is already in the record's local time with its zone name; quote it as given.
 
 Return a JSON object with these fields:
 - ticket_summary: ONE short sentence describing what you read from the notice (e.g. "Infringement notice #12345 from City of Yarra dated 14 May 2026, $99, for overstaying 2P parking on Lygon St"). If you cannot read the notice clearly, say so honestly.
-- appeal_subject: a short subject line like "Appeal — Infringement Notice [number]"
-- appeal_letter: the full body of the letter as plain text, with double newlines between paragraphs. Use formal Australian English. Cite the user's specific evidence (timestamp, GPS address, what the sign actually said) where it supports the appeal. Address it to the issuing council if known. Sign off with "Yours sincerely," followed by a literal placeholder "[Your full name]" on the next line. Do NOT include the user's address or contact details — they'll add those themselves.
-- evidence_strength: "strong", "moderate", or "weak" — your honest assessment of whether the user's evidence actually contradicts the offence. Don't oversell — councils respect calibrated arguments.
+- appeal_subject: a short subject line like "Appeal: Infringement Notice [number]"
+- appeal_letter: the full body of the letter as plain text, with double newlines between paragraphs. Use formal Australian English. Cite the user's specific evidence (the times in their record, the address, what the sign actually said) where it supports the appeal. Address it to the issuing council if known. Sign off with "Yours sincerely," followed by a literal placeholder "[Your full name]" on the next line. Do NOT include the user's address or contact details. They'll add those themselves.
+- evidence_strength: "strong", "moderate", or "weak": your honest assessment of whether the user's evidence actually contradicts the offence. Don't oversell. Councils respect calibrated arguments.
 - notes: 1-2 sentences explaining your strategy and what evidence you leaned on, OR (if evidence is weak) what specifically the user could try to find to strengthen the case.
 
 Letter construction principles:
 - Be factual and concise. Councils receive thousands of appeals; clarity beats verbosity.
-- Anchor every claim to specific evidence ("at 9:43 PM on Wednesday 14 May", "the sign clearly states '2P Mon–Fri 8am–6pm'", "GPS-verified location at 175 Lygon St, Carlton").
+- Anchor every claim to specific evidence ("my record shows I logged the park at 9:43 pm on Wednesday 14 May", "the sign clearly states '2P Mon–Fri 8am–6pm'", "the address in my record, 175 Lygon St, Carlton").
 - Avoid emotional language ("unfair", "ridiculous"). Stick to facts.
 - Acknowledge the council's role respectfully even when contesting.
 - If the evidence is weak, write a request for consideration of mitigating circumstances rather than a forceful denial.
-- Don't fabricate facts not present in the evidence. If something is unclear from the user's data (e.g. you can't tell if they had a permit), don't invent it.`
+- Don't fabricate facts not present in the evidence. If something is unclear from the user's data (e.g. you can't tell if they had a permit), don't invent it.
+- Don't use em-dashes. Use commas or full stops.
+
+About signatures, times and locations:
+- A ParkProof signature shows only that the record existed, unchanged, by its signed time. Never write that a signature proves when the car arrived or left, or where it was. Describe tapped times as the driver's own record. Call a location GPS-based only when location_source is gps, and never call it verified.
+- Never present a phone-clock time as a signed time. A part marked as not signed has no ParkProof signature at all.
+- If you say any part of the record existed before the time on the notice, base it on the server-clock signed time, never the phone-clock time. If the signed time is after the notice time, don't say the record shows the driver had left by then. When a signed time is more than 5 minutes after its phone-clock time, give both.`
 
 const APPEAL_RESPONSE_SCHEMA = {
   type: 'object',
@@ -198,6 +222,137 @@ const APPEAL_RESPONSE_SCHEMA = {
   additionalProperties: false,
 }
 
+// The record's times arrive pre-formatted by the client (build spec T1b),
+// e.g. "Sun 25 Oct 2026, 1:55 pm AEDT". They are untrusted input that goes
+// into a prompt, so each is a short single-line string or dropped.
+const APPEAL_TEXT_MAX = 80
+const APPEAL_TEXT_FORBIDDEN = /[\u0000-\u001f\u007f-\u009f\u2028\u2029\u202a-\u202e\u2066-\u2069]/g
+
+function appealText(value) {
+  if (typeof value !== 'string') return null
+  const s = value.replace(APPEAL_TEXT_FORBIDDEN, ' ').trim()
+  return s.length > 0 && s.length <= APPEAL_TEXT_MAX ? s : null
+}
+
+const APPEAL_SIGNING_STATES = new Set(['signed', 'dev_key', 'pending', 'rejected', 'none'])
+
+function appealSigning(value) {
+  return typeof value === 'string' && APPEAL_SIGNING_STATES.has(value) ? value : null
+}
+
+/** gps only for a phone GPS fix, manual for a typed address, unknown otherwise. */
+function appealLocationSource(session, evidence) {
+  const sent = evidence ? evidence.location_source : undefined
+  if (sent === 'gps' || sent === 'manual') return sent
+  const source = session.location && typeof session.location === 'object' ? session.location.source : undefined
+  return source === 'gps' || source === 'manual' ? source : 'unknown'
+}
+
+/** The "signed by ParkProof's server" line for one part of the record, or null for an unknown state. */
+function appealSignedLine(part, state, signedAt) {
+  switch (state) {
+    case 'signed':
+      return signedAt
+        ? `${part} record signed by ParkProof's server at (server clock): ${signedAt}`
+        : `${part} record: signed by ParkProof's server (signing time not readable).`
+    case 'dev_key':
+      return `${part} record: signed with a development key at ${signedAt ?? 'an unreadable time'}, not ParkProof's published key. Treat it as not signed by ParkProof.`
+    case 'rejected':
+      return `${part} record: ParkProof's server couldn't sign it. It is not signed.`
+    case 'none':
+      return `${part} record: not signed by ParkProof.`
+    case 'pending':
+      return `${part} record: not signed by ParkProof yet.`
+    default:
+      return null
+  }
+}
+
+/**
+ * An ISO time as the client formats it for the appeal (formatInZone with
+ * the year and zone name, src/lib/time-format.ts), e.g. "Sun 25 Oct 2026,
+ * 1:55 pm AEDT", or null when it doesn't parse. For old clients that send
+ * raw times only: the prompt says every time is already local.
+ */
+export function appealZonedTime(value, timeZone) {
+  if (typeof value !== 'string') return null
+  const date = new Date(value)
+  if (!Number.isFinite(date.getTime())) return null
+  let parts
+  try {
+    parts = new Intl.DateTimeFormat('en-AU', {
+      timeZone,
+      weekday: 'short',
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true,
+      timeZoneName: 'short',
+    }).formatToParts(date)
+  } catch {
+    return timeZone === DEFAULT_TIMEZONE ? null : appealZonedTime(value, DEFAULT_TIMEZONE)
+  }
+  const part = (type) => parts.find((p) => p.type === type)?.value ?? ''
+  return `${part('weekday')} ${part('day')} ${part('month')} ${part('year')}, ${part('hour')}:${part('minute')} ${part('dayPeriod').toLowerCase()} ${part('timeZoneName')}`
+}
+
+/**
+ * The record as the appeal drafter reads it (build spec T1b): separately
+ * labelled lines for each time (phone clock vs server clock, as the client
+ * pre-formatted them in the record's zone), the location and its
+ * location_source. Pure; exported for tests. An old client that sends no
+ * `evidence` gets its phone times formatted here, in the zone of the
+ * record's location, and no signing times.
+ */
+export function buildAppealEvidenceText(session) {
+  const evidence = session.evidence && typeof session.evidence === 'object' ? session.evidence : null
+  const lines = [
+    `Sign rules (what the parking sign said): ${session.rules ?? '(not recorded)'}`,
+    '',
+    `Observations from the sign:`,
+    formatObservationsForAppeal(session.observations),
+    '',
+    session.chosen_label ? `Side / variant the user selected: ${session.chosen_label}` : '',
+  ]
+  if (evidence) {
+    const arrival = appealText(evidence.arrival_phone)
+    const tapped = appealText(evidence.departure_tapped)
+    const expires = appealText(evidence.expires)
+    lines.push(
+      `Arrival: the driver logged the park at (phone clock): ${arrival ?? '(not recorded)'}`,
+      appealSignedLine('Arrival', appealSigning(evidence.arrival_signing), appealText(evidence.arrival_signed)) ?? '',
+      expires ? `The sign reading said parking would end at: ${expires}` : '',
+      tapped
+        ? `Departure: the driver tapped I've left at (phone clock): ${tapped}`
+        : `Departure: the driver hasn't tapped I've left on this record.`,
+      tapped
+        ? appealSignedLine('Departure', appealSigning(evidence.departure_signing), appealText(evidence.departure_signed)) ?? ''
+        : '',
+    )
+  } else {
+    // An old cached client: raw ISO times only. Format them in the record's
+    // zone, as the client would, so the model never quotes a UTC time as local.
+    const loc = session.location && typeof session.location === 'object' ? session.location : null
+    const tz = resolveTimezone(loc ? loc.lat : undefined, loc ? loc.lng : undefined)
+    const arrival = appealZonedTime(session.arrived_at, tz)
+    const expires = appealZonedTime(session.expires_at, tz)
+    lines.push(
+      `Arrival: the driver logged the park at (phone clock): ${arrival ?? '(not recorded)'}`,
+      expires ? `The sign reading said parking would end at: ${expires}` : '',
+      `Signing times: not sent with this record. Don't say any part of it is signed.`,
+    )
+  }
+  lines.push(
+    session.location?.address ? `Address: ${session.location.address}` : '',
+    session.location ? `Coordinates: ${session.location.lat}, ${session.location.lng}` : '',
+    session.location ? `location_source: ${appealLocationSource(session, evidence)}` : '',
+    `AI confidence at original scan: ${session.confidence ?? 'unknown'}`,
+  )
+  return lines.filter(Boolean).join('\n')
+}
+
 function formatObservationsForAppeal(groups) {
   if (!Array.isArray(groups) || groups.length === 0) return '(none recorded)'
   return groups
@@ -208,7 +363,7 @@ function formatObservationsForAppeal(groups) {
     .join('\n')
 }
 
-async function handleDraftAppeal(event) {
+export async function handleDraftAppeal(event) {
   const t0 = Date.now()
   const apiKey = process.env.ANTHROPIC_API_KEY
   if (!apiKey) throw new Error('ANTHROPIC_API_KEY is not configured')
@@ -235,28 +390,8 @@ async function handleDraftAppeal(event) {
   const hasSession = session && typeof session === 'object'
 
   const evidenceText = hasSession
-    ? [
-        `Sign rules (what the parking sign said): ${session.rules ?? '(not recorded)'}`,
-        '',
-        `Observations from the sign:`,
-        formatObservationsForAppeal(session.observations),
-        '',
-        session.chosen_label
-          ? `Side / variant the user selected: ${session.chosen_label}`
-          : '',
-        `Arrival timestamp: ${session.arrived_at ?? '(not recorded)'}`,
-        session.expires_at ? `Parking was due to expire at: ${session.expires_at}` : '',
-        session.location?.address
-          ? `Address: ${session.location.address}`
-          : '',
-        session.location
-          ? `GPS coordinates: ${session.location.lat}, ${session.location.lng}`
-          : '',
-        `AI confidence at original scan: ${session.confidence ?? 'unknown'}`,
-      ]
-        .filter(Boolean)
-        .join('\n')
-    : 'No saved ParkProof parking session is linked to this appeal. The user did not log a park for this spot in the app, so there is NO contemporaneous sign reading, GPS, address, or timestamp evidence on file.'
+    ? buildAppealEvidenceText(session)
+    : 'No saved ParkProof parking record is linked to this appeal. The user did not log a park for this spot in the app, so there is NO contemporaneous sign reading, GPS, address, or timestamp evidence on file.'
 
   const client = new Anthropic({ apiKey })
   const t1 = Date.now()
@@ -286,8 +421,8 @@ async function handleDraftAppeal(event) {
           {
             type: 'text',
             text: hasSession
-              ? `Please read the infringement notice in the attached photo and draft a concise appeal letter (target 250-400 words for the letter body) using the following parking-session evidence:\n\n${evidenceText}`
-              : `Please read the infringement notice in the attached photo and draft a concise appeal letter (target 250-400 words for the letter body). There is NO saved parking-session evidence for this appeal — draft from the infringement notice alone. Do NOT invent or assert evidence the user does not have: make no claims about saved photos, GPS coordinates, timestamps, or a recorded sign reading. Focus on procedural grounds, any inconsistencies or errors visible on the notice itself, and a courteous request for review or leniency. Set evidence_strength honestly (likely "weak" without saved evidence). Context:\n\n${evidenceText}`,
+              ? `Please read the infringement notice in the attached photo and draft a concise appeal letter (target 250-400 words for the letter body) using the following parking-record evidence:\n\n${evidenceText}`
+              : `Please read the infringement notice in the attached photo and draft a concise appeal letter (target 250-400 words for the letter body). There is NO saved parking-record evidence for this appeal. Draft from the infringement notice alone. Do NOT invent or assert evidence the user does not have: make no claims about saved photos, GPS coordinates, timestamps, or a recorded sign reading. Focus on procedural grounds, any inconsistencies or errors visible on the notice itself, and a courteous request for review or leniency. Set evidence_strength honestly (likely "weak" without saved evidence). Context:\n\n${evidenceText}`,
           },
         ],
       },
@@ -746,13 +881,37 @@ const CORS_HEADERS = {
 }
 
 // ─── /sign-session handler ────────────────────────────────────────────────
-// Signs a canonical JSON payload of session metadata + photo hashes using the
-// KMS-managed asymmetric key. The private key never leaves AWS. Anyone can
-// verify the signature against the published public key.
+// Signs a canonical JSON payload using the KMS-managed asymmetric key. The
+// private key never leaves AWS. Anyone can verify the signature against the
+// published public key.
+//
+// Three request shapes (build spec N2), told apart by `body.schema`:
+//   - absent or 'parkproof-evidence-v1': link 0 of an old record. The
+//     payload is byte-identical to what this route has always signed.
+//   - 'parkproof-evidence-v2': link 0 of a new record, every v1 field plus
+//     `chain_key_sha256`.
+//   - 'parkproof-addendum-v1': link N >= 1. The request carries the parent
+//     bundle and the record's chain key; the payload carries only the
+//     key's hash and the parent payload's hash.
+//
+// Validation and every server check run before the KMS_KEY_ID check, so a
+// bad request is a 400 with an ERR code even where signing isn't set up.
 
-const SIGNING_SCHEMA = 'parkproof-evidence-v1'
+const SIGNING_SCHEMA = EVIDENCE_V1_SCHEMA
 const SIGNING_ALGORITHM = 'ECDSA_SHA_256'
 const KEY_ALIAS = 'alias/parkproof-evidence-signing'
+
+/**
+ * The published evidence-signing public key: the same key as
+ * public/parkproof-public-key.pem (a test keeps the two equal). Used to
+ * verify a parent link's signature locally, with no KMS call, before an
+ * addendum is signed on top of it.
+ */
+export const PARKPROOF_PUBLIC_KEY_PEM = `-----BEGIN PUBLIC KEY-----
+MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEyJg5vltZqi2tUU+ZMwmjfO/g3H3B
+1qS6tXZGe9Iyrnlopiy23AoRQ5JSUnol0YK4w6bSHQdYbLGoub//Xazv1Q==
+-----END PUBLIC KEY-----
+`
 
 let _kmsClient
 function getKmsClient() {
@@ -763,28 +922,108 @@ function getKmsClient() {
 }
 
 /**
- * Deterministic JSON canonicalisation: sorted keys, no whitespace, JSON.stringify
- * for primitives. Both sides (Lambda + verifier) must produce identical bytes
- * for the signature to validate.
+ * Production signer: KMS, DIGEST mode, ECDSA_SHA_256. Returns the DER
+ * signature. The KMS_KEY_ID check lives here, so it runs only after the
+ * request has passed validation. Never switch this to RAW.
  */
-export function canonicalize(value) {
-  if (value === null) return 'null'
-  if (typeof value === 'string') return JSON.stringify(value)
-  if (typeof value === 'number') return JSON.stringify(value)
-  if (typeof value === 'boolean') return value ? 'true' : 'false'
-  if (Array.isArray(value)) return '[' + value.map(canonicalize).join(',') + ']'
-  if (typeof value === 'object') {
-    const keys = Object.keys(value).sort()
-    return '{' + keys.map((k) => JSON.stringify(k) + ':' + canonicalize(value[k])).join(',') + '}'
-  }
-  throw new Error(`canonicalize: unsupported type ${typeof value}`)
-}
-
-export async function handleSignSession(event) {
+async function kmsSigner({ digest }) {
   const keyId = process.env.KMS_KEY_ID
   if (!keyId) throw new Error('KMS_KEY_ID env var not configured')
+  const result = await getKmsClient().send(
+    new SignCommand({
+      KeyId: keyId,
+      Message: digest,
+      MessageType: 'DIGEST',
+      SigningAlgorithm: SIGNING_ALGORITHM,
+    }),
+  )
+  return Buffer.from(result.Signature)
+}
 
-  const body = typeof event.body === 'string' ? JSON.parse(event.body) : event.body || {}
+/** A 400 for a request that can't be signed. `message` keeps the older wording. */
+function signRequestError(code, path, message) {
+  const err = new AddendumValidationError(code, path)
+  if (message) err.message = message
+  return err
+}
+
+function isPlainObject(v) {
+  return v !== null && typeof v === 'object' && !Array.isArray(v)
+}
+
+function sha256Hex(text) {
+  return crypto.createHash('sha256').update(text, 'utf8').digest('hex')
+}
+
+/**
+ * sha256 hex of a record's chain key. The key is the 64-char lowercase hex
+ * string the phone generated; this hashes that string's UTF-8 bytes (the
+ * same rule the browser uses in src/lib/signing.ts `chainKeyHash`).
+ */
+export function chainKeyHash(chain_key) {
+  return sha256Hex(chain_key)
+}
+
+/** Parse and size-check the request body. Always returns a plain object. */
+function parseSignBody(event) {
+  const raw = event?.body
+  let body
+  if (typeof raw === 'string') {
+    if (Buffer.byteLength(raw, 'utf8') > CAPS.bodyBytes) throw signRequestError(ERR.TOO_LARGE, '')
+    try {
+      body = JSON.parse(raw)
+    } catch {
+      throw signRequestError(ERR.BAD_REQUEST, '', 'body is not valid JSON')
+    }
+  } else if (raw === undefined || raw === null || raw === '') {
+    body = {}
+  } else {
+    if (Buffer.byteLength(JSON.stringify(raw), 'utf8') > CAPS.bodyBytes) {
+      throw signRequestError(ERR.TOO_LARGE, '')
+    }
+    body = raw
+  }
+  if (!isPlainObject(body)) throw signRequestError(ERR.BAD_REQUEST, '', 'body must be a JSON object')
+  return body
+}
+
+function checkPhotoHash(value, field, { required = false } = {}) {
+  if (value !== null && value !== undefined) {
+    if (typeof value !== 'string' || value.length !== 64) {
+      throw signRequestError(ERR.BAD_VALUE, field, `${field} must be 64-char hex or null`)
+    }
+  } else if (required) {
+    throw signRequestError(ERR.MISSING_FIELD, field, `${field} required for translated sessions`)
+  }
+}
+
+/** The link-0 checks this route has always made (v1 and v2 alike). */
+function validateEvidenceBody(body) {
+  const { session_id, arrived_at, rules, confidence, no_sign } = body
+  if (typeof session_id !== 'string' || !session_id) {
+    throw signRequestError(ERR.MISSING_FIELD, 'session_id', 'session_id required')
+  }
+  if (typeof arrived_at !== 'string' || !arrived_at) {
+    throw signRequestError(ERR.MISSING_FIELD, 'arrived_at', 'arrived_at required')
+  }
+  if (typeof rules !== 'string') throw signRequestError(ERR.MISSING_FIELD, 'rules', 'rules required')
+  if (typeof confidence !== 'string') {
+    throw signRequestError(ERR.MISSING_FIELD, 'confidence', 'confidence required')
+  }
+  // No-sign sessions have a null sign_photo_sha256 — that's fine, the
+  // (optional) ambient hash + car hash + signed metadata still constitute a
+  // tamper-evident bundle. Only enforce the 64-char hex shape when present.
+  checkPhotoHash(body.sign_photo_sha256, 'sign_photo_sha256', { required: !no_sign })
+  checkPhotoHash(body.ambient_photo_sha256, 'ambient_photo_sha256')
+  checkPhotoHash(body.car_photo_sha256, 'car_photo_sha256')
+}
+
+/**
+ * The v1 link-0 payload, exactly as this route has always built it. Its
+ * canonical bytes are golden-tested: changing them breaks every published
+ * verification walkthrough.
+ */
+export function buildEvidenceV1Payload(body, signed_at) {
   const {
     session_id,
     arrived_at,
@@ -798,35 +1037,7 @@ export async function handleSignSession(event) {
     ambient_photo_sha256,
     car_photo_sha256,
   } = body
-
-  if (typeof session_id !== 'string' || !session_id) throw new Error('session_id required')
-  if (typeof arrived_at !== 'string' || !arrived_at) throw new Error('arrived_at required')
-  if (typeof rules !== 'string') throw new Error('rules required')
-  if (typeof confidence !== 'string') throw new Error('confidence required')
-  // No-sign sessions have a null sign_photo_sha256 — that's fine, the
-  // (optional) ambient hash + car hash + signed metadata still constitute a
-  // tamper-evident bundle. Only enforce the 64-char hex shape when present.
-  if (sign_photo_sha256 !== null && sign_photo_sha256 !== undefined) {
-    if (typeof sign_photo_sha256 !== 'string' || sign_photo_sha256.length !== 64) {
-      throw new Error('sign_photo_sha256 must be 64-char hex or null')
-    }
-  } else if (!no_sign) {
-    throw new Error('sign_photo_sha256 required for translated sessions')
-  }
-  if (ambient_photo_sha256 !== null && ambient_photo_sha256 !== undefined) {
-    if (typeof ambient_photo_sha256 !== 'string' || ambient_photo_sha256.length !== 64) {
-      throw new Error('ambient_photo_sha256 must be 64-char hex or null')
-    }
-  }
-  if (car_photo_sha256 !== null && car_photo_sha256 !== undefined) {
-    if (typeof car_photo_sha256 !== 'string' || car_photo_sha256.length !== 64) {
-      throw new Error('car_photo_sha256 must be 64-char hex or null')
-    }
-  }
-
-  const signed_at = new Date().toISOString()
-
-  const payload = {
+  return {
     schema: SIGNING_SCHEMA,
     session_id,
     arrived_at,
@@ -844,31 +1055,195 @@ export async function handleSignSession(event) {
     car_photo_sha256: car_photo_sha256 || null,
     signed_at,
   }
+}
 
+/** The v2 link-0 payload: every v1 field plus the chain key's hash. */
+export function buildEvidenceV2Payload(body, signed_at) {
+  return {
+    ...buildEvidenceV1Payload(body, signed_at),
+    schema: EVIDENCE_V2_SCHEMA,
+    chain_key_sha256: body.chain_key_sha256,
+  }
+}
+
+/** True when `signature_base64` (DER) over the payload's UTF-8 bytes verifies with any key. */
+function verifiesWithAnyKey(canonical_payload, signature_base64, publicKeys) {
+  const message = Buffer.from(canonical_payload, 'utf8')
+  const signature = Buffer.from(signature_base64, 'base64')
+  for (const key of publicKeys) {
+    try {
+      if (crypto.verify('sha256', message, key, signature)) return true
+    } catch {
+      /* malformed signature or key: try the next key */
+    }
+  }
+  return false
+}
+
+/**
+ * The server checks for an addendum (N2), after validation:
+ *   1. the parent's signature verifies with a trusted public key
+ *   2. the parent belongs to this record and sits at seq - 1
+ *   3. the caller holds the chain key the parent committed to
+ *   4. no client time is more than 5 minutes ahead of the server clock
+ * Returns the fields the payload needs from the parent.
+ */
+function checkAddendumAgainstParent(req, parentPublicKeys, nowMs) {
+  if (!verifiesWithAnyKey(req.parent.canonical_payload, req.parent.signature_base64, parentPublicKeys)) {
+    throw signRequestError(ERR.PARENT_SIGNATURE, 'parent.signature_base64')
+  }
+
+  let parent
+  try {
+    parent = JSON.parse(req.parent.canonical_payload)
+  } catch {
+    throw signRequestError(ERR.PARENT_MISMATCH, 'parent.canonical_payload')
+  }
+  if (!isPlainObject(parent) || parent.session_id !== req.session_id) {
+    throw signRequestError(ERR.PARENT_MISMATCH, 'parent.session_id')
+  }
+
+  let parentChainHash
+  if (parent.schema === EVIDENCE_V1_SCHEMA || parent.schema === EVIDENCE_V2_SCHEMA) {
+    if (req.seq !== 1) throw signRequestError(ERR.PARENT_MISMATCH, 'seq')
+    parentChainHash = parent.schema === EVIDENCE_V2_SCHEMA ? parent.chain_key_sha256 : null
+  } else if (parent.schema === ADDENDUM_SCHEMA) {
+    if (parent.seq !== req.seq - 1) throw signRequestError(ERR.PARENT_MISMATCH, 'seq')
+    parentChainHash = parent.chain_key_sha256 ?? null
+  } else {
+    throw signRequestError(ERR.PARENT_MISMATCH, 'parent.schema')
+  }
+  if (parentChainHash !== null && (typeof parentChainHash !== 'string' || !HEX64_RE.test(parentChainHash))) {
+    throw signRequestError(ERR.PARENT_MISMATCH, 'parent.chain_key_sha256')
+  }
+
+  if (parentChainHash === null) {
+    // A v1 chain has no key. Sending one anyway means the client is
+    // confused about which chain it is extending.
+    if (req.chain_key !== null) throw signRequestError(ERR.CHAIN_KEY, 'chain_key')
+  } else if (req.chain_key === null || chainKeyHash(req.chain_key) !== parentChainHash) {
+    throw signRequestError(ERR.CHAIN_KEY, 'chain_key')
+  }
+
+  const latest = nowMs + CAPS.futureSkewMs
+  for (const [path, iso] of clientTimesToCheck(req)) {
+    if (Date.parse(iso) > latest) throw signRequestError(ERR.FUTURE_TIME, path)
+  }
+
+  return {
+    parent_payload_sha256: sha256Hex(req.parent.canonical_payload),
+    chain_key_sha256: parentChainHash,
+  }
+}
+
+async function signPayload(payload, signer, keyAlias) {
   const canonical_payload = canonicalize(payload)
+  const message = Buffer.from(canonical_payload, 'utf8')
   const digest = crypto.createHash('sha256').update(canonical_payload).digest()
 
   const t0 = Date.now()
-  const result = await getKmsClient().send(
-    new SignCommand({
-      KeyId: keyId,
-      Message: digest,
-      MessageType: 'DIGEST',
-      SigningAlgorithm: SIGNING_ALGORITHM,
-    }),
-  )
+  const der = await signer({ digest, message })
   const signMs = Date.now() - t0
-  console.log(`[parkproof.signing] kms_sign=${signMs}ms session_id=${session_id}`)
-
-  const signature_base64 = Buffer.from(result.Signature).toString('base64')
+  console.log(
+    `[parkproof.signing] sign=${signMs}ms key=${keyAlias} session_id=${payload.session_id} schema=${payload.schema}`,
+  )
 
   return {
-    schema: SIGNING_SCHEMA,
-    signed_at,
+    schema: payload.schema,
+    signed_at: payload.signed_at,
     algorithm: SIGNING_ALGORITHM,
-    key_alias: KEY_ALIAS,
+    key_alias: keyAlias,
     canonical_payload,
-    signature_base64,
+    signature_base64: Buffer.from(der).toString('base64'),
+  }
+}
+
+/**
+ * Sign one link. Throws AddendumValidationError (HTTP 400, with an ERR code)
+ * for a request that can't be signed; any other error is a 500.
+ *
+ * `options` exists for the local dev server and tests only; the Lambda
+ * dispatcher never passes it, so production always signs with KMS under
+ * KEY_ALIAS and trusts only the published key for parents.
+ *   - signer({ digest, message }) => DER signature bytes
+ *   - keyAlias: the key_alias written into the bundle
+ *   - parentPublicKeys: PEM keys a parent link may be signed with
+ */
+export async function handleSignSession(event, options = {}) {
+  const signer = options.signer ?? kmsSigner
+  const keyAlias = options.keyAlias ?? KEY_ALIAS
+  const parentPublicKeys = options.parentPublicKeys ?? [PARKPROOF_PUBLIC_KEY_PEM]
+
+  const body = parseSignBody(event)
+
+  if (body.schema === ADDENDUM_SCHEMA) {
+    const req = validateAddendumBody(body)
+    const fromParent = checkAddendumAgainstParent(req, parentPublicKeys, Date.now())
+    const signed_at = new Date().toISOString()
+    const payload = buildAddendumPayload(
+      {
+        addendum_id: req.addendum_id,
+        kind: req.kind,
+        session_id: req.session_id,
+        seq: req.seq,
+        parent_payload_sha256: fromParent.parent_payload_sha256,
+        chain_key_sha256: fromParent.chain_key_sha256,
+        captured_at: req.captured_at,
+        data: req.data,
+      },
+      signed_at,
+    )
+    return signPayload(payload, signer, keyAlias)
+  }
+
+  if (body.schema !== undefined && body.schema !== EVIDENCE_V1_SCHEMA && body.schema !== EVIDENCE_V2_SCHEMA) {
+    throw signRequestError(ERR.BAD_VALUE, 'schema', 'unknown schema')
+  }
+  validateEvidenceBody(body)
+  const isV2 = body.schema === EVIDENCE_V2_SCHEMA
+  if (isV2) {
+    if (body.chain_key_sha256 === undefined || body.chain_key_sha256 === null) {
+      throw signRequestError(ERR.MISSING_FIELD, 'chain_key_sha256', 'chain_key_sha256 required')
+    }
+    if (typeof body.chain_key_sha256 !== 'string' || !HEX64_RE.test(body.chain_key_sha256)) {
+      throw signRequestError(ERR.BAD_VALUE, 'chain_key_sha256', 'chain_key_sha256 must be 64-char lowercase hex')
+    }
+  }
+
+  const signed_at = new Date().toISOString()
+  const payload = isV2 ? buildEvidenceV2Payload(body, signed_at) : buildEvidenceV1Payload(body, signed_at)
+  return signPayload(payload, signer, keyAlias)
+}
+
+/**
+ * The /sign-session HTTP response: 200 with the bundle, 400 with
+ * `{ error: code, field, detail }` for a request that can't be signed (the
+ * phone marks that link rejected and stops retrying it), 500 otherwise.
+ * Logs the code and field only, never the submitted values.
+ */
+export async function handleSignSessionRequest(event, options = {}) {
+  try {
+    const result = await handleSignSession(event, options)
+    return {
+      statusCode: 200,
+      headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
+      body: JSON.stringify(result),
+    }
+  } catch (err) {
+    if (err instanceof AddendumValidationError) {
+      console.warn(`[parkproof.signing] rejected code=${err.code} field=${err.path || '-'}`)
+      return {
+        statusCode: 400,
+        headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ error: err.code, field: err.path, detail: err.message }),
+      }
+    }
+    console.error('sign-session handler error:', err)
+    return {
+      statusCode: 500,
+      headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ error: err?.message || String(err) }),
+    }
   }
 }
 
@@ -1235,36 +1610,169 @@ export function isSafeSessionId(s) {
   return typeof s === 'string' && /^[a-zA-Z0-9._-]{1,47}$/.test(s)
 }
 
+// How long after the parking expiry a reminder is still worth delivering.
+// "Your parking expired 10 min ago" still tells the driver to move now; an
+// hour later it is noise.
+const PUSH_STALE_AFTER_EXPIRY_MS = 15 * 60 * 1000
+// No-sign "check on your car" reminders have no expiry to anchor to.
+const PUSH_STALE_AFTER_FIRE_MS = 60 * 60 * 1000
+// Schedules created before stale_at existed still need a sane TTL.
+const PUSH_DEFAULT_TTL_S = 30 * 60
+const PUSH_MAX_TTL_S = 6 * 60 * 60
+
 /**
- * Defensively delete any existing schedules for this session. Used both at
- * cancel-time (user ended session early) AND at re-schedule time (user picks
- * different offsets for the same session), since CreateSchedule throws
- * ConflictException on a name collision. Idempotent — silently swallows
- * ResourceNotFoundException for slots that were never created or have
- * already fired.
+ * Per-reminder delivery plan, computed when the schedule is created.
  *
- * Returns the count of schedules actually deleted (excludes not-found).
+ * - tag: unique per fire time. A notification with a NEW tag always alerts;
+ *   reusing one tag (the old behaviour) made Chrome replace the earlier
+ *   reminder silently, so the final "expires now" could arrive without a
+ *   sound. Same formula as the in-tab scheduler in src/lib/reminder-copy.ts,
+ *   so the in-tab and push copies of one reminder collapse into one alert.
+ * - kind: 'expiry' (fires at/after expiry), 'before', or 'check' (no-sign).
+ * - stale_at: after this the push is not worth delivering (drives TTL).
  */
-async function deletePushSchedulesForSession(session_id) {
-  if (!isSafeSessionId(session_id)) return 0
+export function pushReminderPlan({ session_id, fire_at, expires_at }) {
+  const fire_ms = new Date(fire_at).getTime()
+  const exp_ms = expires_at ? new Date(expires_at).getTime() : NaN
+  const tag = `pp-${session_id}-${fire_ms}`
+  if (Number.isFinite(exp_ms)) {
+    const kind = fire_ms >= exp_ms - 30_000 ? 'expiry' : 'before'
+    const stale_ms = Math.max(exp_ms, fire_ms) + PUSH_STALE_AFTER_EXPIRY_MS
+    return { tag, kind, stale_at: new Date(stale_ms).toISOString() }
+  }
+  return {
+    tag,
+    kind: 'check',
+    stale_at: new Date(fire_ms + PUSH_STALE_AFTER_FIRE_MS).toISOString(),
+  }
+}
+
+/**
+ * web-push send options for one dispatch, or null when the reminder is
+ * already stale (EventBridge fired late, or the stale window passed).
+ *
+ * - urgency 'high': the library default is 'normal', which lets Android hold
+ *   the message while the phone dozes. A parking reminder is time-critical.
+ * - TTL: the push service drops the message once it is useless, instead of
+ *   the 28-day default that could deliver "expires now" a day late.
+ * - topic: one per session, so if the phone is offline the push service
+ *   keeps only the newest undelivered reminder for that session.
+ */
+export function pushSendOptions({ session_id, stale_at, nowMs }) {
+  const stale_ms = stale_at ? new Date(stale_at).getTime() : NaN
+  let TTL = PUSH_DEFAULT_TTL_S
+  if (Number.isFinite(stale_ms)) {
+    if (stale_ms <= nowMs) return null
+    TTL = Math.min(PUSH_MAX_TTL_S, Math.max(60, Math.floor((stale_ms - nowMs) / 1000)))
+  }
+  const opts = { urgency: 'high', TTL }
+  if (session_id) {
+    // RFC 8030 topic: at most 32 URL-safe base64 characters.
+    opts.topic = crypto.createHash('sha256').update(String(session_id)).digest('base64url').slice(0, 32)
+  }
+  return opts
+}
+
+// ─── Push ownership (spec N6) ─────────────────────────────────────────────
+// Push schedules belong to the device that created them. session_id alone is
+// not a secret (it travels in share links and cloud rows), so before any
+// schedule is deleted or replaced the handler reads it and goes ahead only
+// when the device_id stored in its Target Input matches the caller's. A
+// mismatch is 403 ERR_NOT_OWNER and changes nothing.
+export const PUSH_ERR_NOT_OWNER = 'ERR_NOT_OWNER'
+
+const DEVICE_ID_RE = /^[a-f0-9-]+$/i
+
+/** The request's device_id when well formed (UUID shape, ≤64 chars), else ''. */
+function parseDeviceId(body) {
+  const device_id = typeof body?.device_id === 'string' ? body.device_id.trim() : ''
+  return device_id && device_id.length <= 64 && DEVICE_ID_RE.test(device_id) ? device_id : ''
+}
+
+/** The schedule names a session can occupy: one per reminder slot. */
+function pushScheduleNames(session_id) {
+  return Array.from(
+    { length: PUSH_MAX_REMINDERS_PER_SESSION },
+    (_, i) => `parkproof-push-${session_id}-${i}`,
+  )
+}
+
+/**
+ * The device_id a schedule was created for, read from its Target Input, or
+ * null when the Input is missing, unparseable or has no device_id. Null
+ * never matches a caller, so a schedule we can't attribute is left alone.
+ */
+export function scheduleOwnerDeviceId(schedule) {
+  const input = schedule?.Target?.Input
+  if (typeof input !== 'string') return null
+  try {
+    const parsed = JSON.parse(input)
+    return typeof parsed?.device_id === 'string' && parsed.device_id ? parsed.device_id : null
+  } catch {
+    return null
+  }
+}
+
+/**
+ * Read every slot of a session's push schedules (GetSchedule per slot).
+ * Returns the names that exist and whether the caller owns all of them.
+ * Throws on any scheduler error other than not-found: ownership that can't
+ * be checked must not be assumed, so the caller then changes nothing.
+ */
+async function readSessionPushSchedules(session_id, device_id) {
+  const found = await Promise.all(
+    pushScheduleNames(session_id).map(async (Name) => {
+      try {
+        const schedule = await scheduler().send(new GetScheduleCommand({ Name }))
+        return { Name, owner: scheduleOwnerDeviceId(schedule) }
+      } catch (err) {
+        // Not-found is the happy path: slot never used, or already fired.
+        if (err?.name === 'ResourceNotFoundException') return null
+        throw err
+      }
+    }),
+  )
+  const existing = found.filter(Boolean)
+  return {
+    names: existing.map((s) => s.Name),
+    owned: existing.every((s) => s.owner === device_id),
+  }
+}
+
+/**
+ * Delete the named schedules (already read and owner-checked). Used both at
+ * cancel time (driver left early) and before a reschedule, since
+ * CreateSchedule throws ConflictException on a name collision. A schedule
+ * that fires between the read and the delete is not-found, which is fine.
+ *
+ * Returns the count actually deleted (excludes not-found).
+ */
+async function deletePushSchedules(names, session_id) {
   let deleted = 0
   await Promise.all(
-    Array.from({ length: PUSH_MAX_REMINDERS_PER_SESSION }, (_, i) =>
+    names.map((Name) =>
       scheduler()
-        .send(new DeleteScheduleCommand({ Name: `parkproof-push-${session_id}-${i}` }))
+        .send(new DeleteScheduleCommand({ Name }))
         .then(() => {
           deleted += 1
         })
         .catch((err) => {
-          // Not-found is the happy path — slot was never used or already fired.
           if (err?.name === 'ResourceNotFoundException') return
           console.error(
-            `[parkproof.push.cancel.slot_error] session=${session_id} slot=${i} ${err?.message || err}`,
+            `[parkproof.push.cancel.slot_error] session=${session_id} name=${Name} ${err?.message || err}`,
           )
         }),
     ),
   )
   return deleted
+}
+
+function notOwnerResponse() {
+  return {
+    statusCode: 403,
+    headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ error: PUSH_ERR_NOT_OWNER }),
+  }
 }
 
 async function handlePushSchedule(event) {
@@ -1279,9 +1787,9 @@ async function handlePushSchedule(event) {
   }
 
   const body = typeof event.body === 'string' ? JSON.parse(event.body) : event.body || {}
-  const device_id = typeof body.device_id === 'string' ? body.device_id.trim() : ''
+  const device_id = parseDeviceId(body)
   const session_id = typeof body.session_id === 'string' ? body.session_id.trim() : ''
-  if (!device_id || !/^[a-f0-9-]+$/i.test(device_id) || device_id.length > 64) {
+  if (!device_id) {
     return {
       statusCode: 400,
       headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
@@ -1319,11 +1827,27 @@ async function handlePushSchedule(event) {
     }
   }
 
-  // Reschedule support: defensively wipe any prior schedules for this session
-  // before creating new ones. CreateSchedule throws ConflictException on a
-  // name collision, so this is mandatory whenever the user re-picks offsets
-  // for the same session_id. No-op for first-time scheduling.
-  await deletePushSchedulesForSession(session_id)
+  // Reschedule support: wipe any prior schedules for this session before
+  // creating new ones. CreateSchedule throws ConflictException on a name
+  // collision, so this is mandatory whenever the user re-picks offsets for
+  // the same session_id. No-op for first-time scheduling.
+  //
+  // Ownership first (N6): every existing schedule must have been created by
+  // this device_id. If any wasn't, refuse and touch nothing, so a caller who
+  // only knows a session_id can't replace (or silence) someone's reminders.
+  const prior = await readSessionPushSchedules(session_id, device_id)
+  if (!prior.owned) {
+    console.log(`[parkproof.push.schedule.not_owner] ${JSON.stringify({ session_id })}`)
+    return notOwnerResponse()
+  }
+  await deletePushSchedules(prior.names, session_id)
+
+  // Optional: the session's parking expiry, so each push can carry a TTL that
+  // ends shortly after the parking does. Absent for no-sign sessions.
+  const expires_at =
+    typeof body.expires_at === 'string' && Number.isFinite(new Date(body.expires_at).getTime())
+      ? body.expires_at
+      : null
 
   const now = Date.now()
   const created = []
@@ -1354,6 +1878,7 @@ async function handlePushSchedule(event) {
     // setup-push-scheduler.sh — Lambda can only create/delete schedules
     // with this prefix.
     const name = `parkproof-push-${session_id}-${i}`
+    const plan = pushReminderPlan({ session_id, fire_at: r.fire_at, expires_at })
 
     try {
       await scheduler().send(
@@ -1382,7 +1907,9 @@ async function handlePushSchedule(event) {
               title,
               body: body_text,
               url,
-              tag: session_id || 'parkproof',
+              tag: plan.tag,
+              kind: plan.kind,
+              stale_at: plan.stale_at,
             }),
           },
         }),
@@ -1411,17 +1938,26 @@ async function handlePushSchedule(event) {
 }
 
 /**
- * POST /push/cancel — `{ session_id }`. Deletes all pending push schedules
- * for a session. Called by the frontend when the user signals "I've left"
- * before parking expires — pushes for that session should no longer fire.
+ * POST /push/cancel — `{ device_id, session_id }`. Deletes all pending push
+ * schedules for a session. Called by the frontend when the user signals
+ * "I've left" before parking expires — pushes for that session should no
+ * longer fire.
  *
- * Anonymous, like /push/schedule. session_id is the only thing tying the
- * caller to the schedules; if you don't know it, you can't cancel — which
- * matches the existing privacy model (no auth on the push paths).
+ * Anonymous, like /push/schedule, and owner-checked the same way (N6): the
+ * schedules are deleted only when every one of them was created by this
+ * device_id. Otherwise 403 ERR_NOT_OWNER and nothing is deleted.
  */
 async function handlePushCancel(event) {
   const body = typeof event.body === 'string' ? JSON.parse(event.body) : event.body || {}
+  const device_id = parseDeviceId(body)
   const session_id = typeof body.session_id === 'string' ? body.session_id.trim() : ''
+  if (!device_id) {
+    return {
+      statusCode: 400,
+      headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ error: 'device_id is required (UUID, ≤64 chars)' }),
+    }
+  }
   if (!isSafeSessionId(session_id)) {
     return {
       statusCode: 400,
@@ -1431,7 +1967,12 @@ async function handlePushCancel(event) {
       }),
     }
   }
-  const deleted = await deletePushSchedulesForSession(session_id)
+  const existing = await readSessionPushSchedules(session_id, device_id)
+  if (!existing.owned) {
+    console.log(`[parkproof.push.cancel.not_owner] ${JSON.stringify({ session_id })}`)
+    return notOwnerResponse()
+  }
+  const deleted = await deletePushSchedules(existing.names, session_id)
   console.log(
     `[parkproof.push.cancel] ${JSON.stringify({ session_id, deleted })}`,
   )
@@ -1447,7 +1988,7 @@ async function handlePushCancel(event) {
 // top-level handler dispatcher when event._async_kind === 'push-dispatch'.
 // No HTTP response shape — EventBridge ignores it.
 async function handlePushDispatch(event) {
-  const { device_id, title, body, url, tag } = event
+  const { device_id, session_id, title, body, url, tag, kind, stale_at } = event
   if (!device_id) {
     console.error('[parkproof.push.dispatch] no device_id in payload')
     return { ok: false }
@@ -1467,6 +2008,12 @@ async function handlePushDispatch(event) {
   if (!item) {
     console.log(`[parkproof.push.dispatch] no subscription for device_id ${device_id}`)
     return { ok: false }
+  }
+
+  const sendOptions = pushSendOptions({ session_id, stale_at, nowMs: Date.now() })
+  if (!sendOptions) {
+    console.log(`[parkproof.push.dispatch.stale] ${JSON.stringify({ session_id, stale_at })}`)
+    return { ok: false, stale: true }
   }
 
   // Configure web-push with VAPID keys lazily (don't pay this cost on
@@ -1489,13 +2036,18 @@ async function handlePushDispatch(event) {
         title: title || 'ParkProof',
         body: body || '',
         url: url || '/',
-        tag: tag || 'parkproof',
+        tag: tag || `pp-${session_id || 'parkproof'}-${Date.now()}`,
+        session_id: session_id || null,
+        kind: kind || null,
       }),
+      sendOptions,
     )
     console.log(
       `[parkproof.push.dispatch.ok] ${JSON.stringify({
         device_id,
         endpoint_host: new URL(item.endpoint).host,
+        kind: kind || null,
+        ttl: sendOptions.TTL,
       })}`,
     )
     return { ok: true }
@@ -1789,12 +2341,10 @@ export async function handler(event) {
   if (path.endsWith('/sign-session')) {
     try {
       if (!(await checkRateLimit(event, 'sign', 30))) return rateLimitedResponse()
-      const result = await handleSignSession(event)
-      return {
-        statusCode: 200,
-        headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
-        body: JSON.stringify(result),
-      }
+      // No options: production always signs with KMS and trusts only the
+      // published key for parent links. Validation failures come back as
+      // 400 with an ERR code; the phone stops retrying those links.
+      return await handleSignSessionRequest(event)
     } catch (err) {
       console.error('sign-session handler error:', err)
       return {

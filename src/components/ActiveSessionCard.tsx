@@ -6,6 +6,7 @@ import { useNow } from '../lib/use-now'
 import { formatExpiryAbsolute } from '../lib/time-format'
 import { sessionTimezone } from '../lib/timezone'
 import { estimateWalkBack, navigationUrl, type WalkBackEstimate } from '../lib/walk-back'
+import { useSessionPhoto } from '../lib/use-session-photo'
 import Icon from './Icon'
 
 interface Props {
@@ -21,8 +22,8 @@ interface Props {
   onShowMore?: () => void
   /**
    * Tapped when the user signals "I've left". The card calls this with the
-   * session ID; App.tsx handles the actual storage + cloud mirror so the
-   * card stays pure-presentation.
+   * record; App opens the departure sheet and, on "Confirm I've left", runs
+   * the one end path, so the card stays pure-presentation.
    */
   onEndSession?: (session: ParkingSession) => void
   /**
@@ -107,6 +108,13 @@ export default function ActiveSessionCard({
   // human glancing at the card cares about.
   const now = useNow(30_000)
   const currentPosition = useCurrentPosition()
+  // Re-check reuses the sign photo: offered only once the photo is here.
+  // Not when the record has none, or its bytes aren't on this device (the
+  // tap would only open the scan screen with no word why), nor while it is
+  // still loading (that can include a cloud fetch, and the tap would look
+  // dead until it finished).
+  const signPhoto = useSessionPhoto(session, 'sign')
+  const canRecheckPhoto = signPhoto.status === 'available'
 
   // Two flavours of active session:
   //  - expiry-bearing: countdown + "Move by" line, traditional urgency colours
@@ -130,12 +138,31 @@ export default function ActiveSessionCard({
         timeZone,
       })
     : null
+  // Past its expiry but the driver hasn't tapped "I've left". Home keeps the
+  // card for a while (see loadActiveSessions) and makes "I've left" the
+  // primary action, since the countdown no longer has anything to say.
+  const isExpired = hasExpiry && countdown!.urgency === 'expired'
+  // Spoken status (card aria-label) carries the full time and date.
+  const statusLabel = isExpired
+    ? t('active.expiredAt', { time: expiryLabel!.combined })
+    : hasExpiry
+      ? countdown!.label
+      : elapsed!.label
+  // The big display slot is sized for short values ("1h 20m left"), so an
+  // expired card shows only the time there; the date moves to the subline.
+  const bigLabel = isExpired ? t('active.expiredAt', { time: expiryLabel!.time }) : statusLabel
 
   const addressLine =
     session.location?.address ??
     (session.location
       ? `${session.location.lat.toFixed(4)}, ${session.location.lng.toFixed(4)}`
-      : 'Last logged spot')
+      : t('active.lastLoggedSpot'))
+
+  // App's departure sheet asks before anything is stored (and names the
+  // time a late tap will record).
+  const confirmEnd = () => {
+    onEndSession?.(session)
+  }
 
   // Only show a useful walk-back when we have both the user's current position
   // AND the session's saved location.
@@ -183,7 +210,16 @@ export default function ActiveSessionCard({
               background: 'rgba(255,255,255,0.055)',
               borderColor: 'rgba(123,227,164,0.22)',
             }
-          : { borderColor: 'transparent' }
+          : isExpired
+            ? {
+                // The expired tier's ink surface sits close to the vault, and
+                // it can stay up for 12 h, so give it a visible edge. An inset
+                // ring, because .gf-card-lg's clip-path cuts outer shadows and
+                // the card has no border width.
+                borderColor: 'transparent',
+                boxShadow: 'inset 0 0 0 1.5px rgba(255,255,255,0.28)',
+              }
+            : { borderColor: 'transparent' }
       }
     >
       {morePill}
@@ -195,7 +231,7 @@ export default function ActiveSessionCard({
         className="w-full text-left rounded-xl -m-1 p-1 transition-transform active:scale-[0.99]"
         aria-label={t('active.cardAria', {
           address: addressLine,
-          status: hasExpiry ? countdown!.label : elapsed!.label,
+          status: statusLabel,
         })}
       >
         <div className="flex items-start gap-3">
@@ -230,12 +266,17 @@ export default function ActiveSessionCard({
             className={`font-display tnum text-3xl font-extrabold tracking-tight ${style.glass ? 'text-[#7BE3A4]' : ''}`}
             style={style.glass ? { textShadow: '0 0 18px rgba(123,227,164,0.45)' } : undefined}
           >
-            {hasExpiry ? countdown!.label : elapsed!.label}
+            {bigLabel}
           </p>
+          {isExpired && expiryLabel!.dayDate && (
+            <p className="mt-1 text-sm text-white font-semibold tnum">{expiryLabel!.dayDate}</p>
+          )}
           <p className="mt-1 text-sm text-white font-semibold">
-            {hasExpiry
-              ? t('active.moveBy', { time: expiryLabel!.combined })
-              : t('active.noPostedRestrictions')}
+            {isExpired
+              ? t('active.expiredHint')
+              : hasExpiry
+                ? t('active.moveBy', { time: expiryLabel!.combined })
+                : t('active.noPostedRestrictions')}
           </p>
           {/* "🔔 Next ping: 4:25 PM" — closes the visibility gap the user
               flagged: previously, after setting reminders, the only way to
@@ -269,7 +310,23 @@ export default function ActiveSessionCard({
           instead of burying it three taps deep inside the scan screen. Only
           for sign-bearing sessions: the smart re-scan reuses the prior sign
           reading, which no-sign / photo-less sessions don't have. */}
-      {onRecheck && session.sign_photo && !session.no_sign && (
+      {/* Expired and not ended: "I've left" is the primary action. Re-check
+          is hidden here, because re-checking would log a new record with a
+          new arrival time for a car that may not have moved. */}
+      {isExpired && onEndSession && (
+        <button
+          type="button"
+          onClick={confirmEnd}
+          aria-label={t('active.iveLeftAria')}
+          aria-haspopup="dialog"
+          className="mt-4 w-full bg-paper-50 hover:bg-white active:bg-paper-100 text-ink-900 font-semibold text-sm px-4 py-3 min-h-[44px] rounded-xl transition-colors inline-flex items-center justify-center gap-2"
+        >
+          <Icon name="check" className="w-4 h-4" strokeWidth={2.5} />
+          {t('active.iveLeft')}
+        </button>
+      )}
+
+      {onRecheck && !isExpired && canRecheckPhoto && !session.no_sign && (
         <button
           type="button"
           onClick={() => onRecheck(session)}
@@ -316,8 +373,11 @@ export default function ActiveSessionCard({
             className="bg-white/20 hover:bg-white/30 active:bg-white/25 text-white font-semibold text-sm px-4 py-2.5 rounded-xl whitespace-nowrap transition-colors"
             aria-label={
               walkBackVisible
-                ? `Open walking directions to your car (${walkBack!.distanceLabel}, about ${walkBack!.minutesLabel})`
-                : 'Open walking directions to your car'
+                ? t('active.walkBackAriaDistance', {
+                    distance: walkBack!.distanceLabel,
+                    count: walkBack!.minutes,
+                  })
+                : t('active.walkBackAria')
             }
           >
             {t('active.walkBackButton')}
@@ -329,10 +389,9 @@ export default function ActiveSessionCard({
           no-sign sessions (they have no natural expiry) but useful on
           expiry-bearing sessions too when the user leaves early. Sits below
           walk-back so it's discoverable without competing with the more-
-          frequent "find my car" intent. confirm() rather than a full modal
-          because the action is undoable (the session record stays in
-          history, just with ended_at set). */}
-      {onEndSession && (
+          frequent "find my car" intent. The tap opens App's departure
+          sheet, which asks first and captures where the phone is. */}
+      {onEndSession && !isExpired && (
         <div
           className={`flex justify-end ${
             mapsUrl ? 'mt-3 pt-3 border-t border-white/20' : 'mt-4 pt-4 border-t border-white/20'
@@ -340,13 +399,10 @@ export default function ActiveSessionCard({
         >
           <button
             type="button"
-            onClick={() => {
-              if (window.confirm(t('active.iveLeftConfirm'))) {
-                onEndSession(session)
-              }
-            }}
+            onClick={confirmEnd}
             className="text-white hover:text-white text-xs font-semibold uppercase tracking-wider px-3 py-2 rounded-lg bg-white/10 hover:bg-white/20 active:bg-white/15 transition-colors inline-flex items-center gap-1.5"
             aria-label={t('active.iveLeftAria')}
+            aria-haspopup="dialog"
           >
             <Icon name="check" className="w-3.5 h-3.5" strokeWidth={2.5} />
             {t('active.iveLeft')}

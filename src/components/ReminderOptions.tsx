@@ -18,6 +18,8 @@ import { updateSession } from '../lib/storage'
 import { useAuth } from '../lib/use-auth'
 import { mirrorSessionUpdateToCloud } from '../lib/sync'
 import { formatExpiryAbsolute, formatReminderTimesLine } from '../lib/time-format'
+import { reminderCopy } from '../lib/reminder-copy'
+import { sessionLink } from '../lib/deep-link'
 import { sessionTimezone } from '../lib/timezone'
 import Icon from './Icon'
 import Button from './ui/Button'
@@ -305,7 +307,8 @@ export default function ReminderOptions({ session, onDone }: Props) {
   const handleNotify = async () => {
     setNotifBusy(true)
     setPushScheduleFailed(false)
-    const result = await scheduleParkingReminders(session, selectedList)
+    const copyFor = (fireAt: Date) => reminderCopy(session, fireAt, t)
+    const result = await scheduleParkingReminders(session, selectedList, copyFor)
     setNotifResult(result)
     setNotifBusy(false)
 
@@ -316,27 +319,13 @@ export default function ReminderOptions({ session, onDone }: Props) {
     // the tab open. If push isn't supported / subscribed, schedulePushReminders
     // returns null silently — we don't pop a UI error because in-tab worked.
     //
-    // Title = the address (most useful thing the OS surfaces on the lockscreen;
-    // concrete location beats a generic "ParkProof reminder"). Falls back to
-    // the localized generic when no address was captured (e.g., no-sign
-    // sessions or geocode failure). Body = just the time-left, since the
-    // title already carries the where.
-    const title = session.location?.address
-      ? session.location.address
-      : t('reminders.pushTitleFallback')
-    const reminders: ScheduledReminder[] = selectedFireAtList.map((fireAt, i) => {
-      const offset = selectedList[i]
-      const body =
-        offset === 0
-          ? t('reminders.pushBodyAtExpiry')
-          : t('reminders.pushBodyBefore', { count: offset })
-      return {
-        fire_at: fireAt.toISOString(),
-        title,
-        body,
-        url: `/?session=${session.id}`,
-      }
-    })
+    // Title = the address (most useful thing the OS surfaces on the lockscreen),
+    // body = the absolute expiry time. Same copy as the in-tab path above.
+    const reminders: ScheduledReminder[] = selectedFireAtList.map((fireAt) => ({
+      fire_at: fireAt.toISOString(),
+      ...copyFor(fireAt),
+      url: sessionLink(session.id),
+    }))
     if (reminders.length > 0) {
       // Await so we can persist the actual fire times to session.push_reminders
       // for later display in SessionDetail. Without persisting, the user has
@@ -346,8 +335,12 @@ export default function ReminderOptions({ session, onDone }: Props) {
       // The user doesn't WAIT on this — the in-tab notification scheduler
       // above already ran synchronously and the success state is rendered.
       // We just take a beat longer to fetch the server-confirmed times.
-      const pushResult = await schedulePushReminders(session.id, reminders)
-      if (pushResult && pushResult.created.length > 0) {
+      const pushResult = await schedulePushReminders(
+        session.id,
+        reminders,
+        session.expires_at,
+      )
+      if (pushResult.ok && pushResult.created.length > 0) {
         try {
           updateSession(session.id, {
             push_reminders: pushResult.created.map((c) => ({
@@ -358,14 +351,12 @@ export default function ReminderOptions({ session, onDone }: Props) {
         } catch (err) {
           console.warn('[reminders] could not persist push_reminders:', err)
         }
-      } else if (pushResult === null) {
-        // null from schedulePushReminders is ambiguous: it's a legitimate skip
-        // when push isn't subscribed, but a real failure when it IS. Only the
-        // latter deserves a warning — otherwise the user trusts a background
-        // reminder that silently never got scheduled. Disambiguate by asking
-        // whether this device actually holds an active subscription.
-        const subscribed = await hasActiveSubscription()
-        if (subscribed) setPushScheduleFailed(true)
+      } else if (!pushResult.ok && pushResult.reason !== 'unsupported' && pushResult.reason !== 'not_subscribed') {
+        // Push not supported or not subscribed is a legitimate skip (the
+        // in-tab path above still runs). Anything else is a real failure that
+        // deserves a warning, otherwise the user trusts a background reminder
+        // that silently never got scheduled.
+        setPushScheduleFailed(true)
       }
     }
   }
@@ -639,27 +630,24 @@ function NoSignReminderPicker({ session, onDone }: Props) {
   const handleNotify = async () => {
     setNotifBusy(true)
     setPushScheduleFailed(false)
-    const result = await scheduleAbsoluteReminders(session, selectedFireAtList)
+    const copyFor = (fireAt: Date) => reminderCopy(session, fireAt, t)
+    const result = await scheduleAbsoluteReminders(session, selectedFireAtList, copyFor)
     setNotifResult(result)
     setNotifBusy(false)
 
     // Fire-and-forget: also schedule server-side Web Push at the same
     // absolute times so the user gets the reminder even with the tab
     // closed. Same pattern as the expiry-path handleNotify above.
-    const title = session.location?.address
-      ? session.location.address
-      : t('reminders.pushTitleFallback')
     const reminders: ScheduledReminder[] = selectedFireAtList.map((fireAt) => ({
       fire_at: fireAt.toISOString(),
-      title,
-      body: t('reminders.pushBodyCheckOn'),
-      url: `/?session=${session.id}`,
+      ...copyFor(fireAt),
+      url: sessionLink(session.id),
     }))
     if (reminders.length > 0) {
       // Same persistence as the expiry-path handleNotify above — see comment
       // there for why we await rather than fire-and-forget.
       const pushResult = await schedulePushReminders(session.id, reminders)
-      if (pushResult && pushResult.created.length > 0) {
+      if (pushResult.ok && pushResult.created.length > 0) {
         try {
           updateSession(session.id, {
             push_reminders: pushResult.created.map((c) => ({
@@ -670,11 +658,10 @@ function NoSignReminderPicker({ session, onDone }: Props) {
         } catch (err) {
           console.warn('[reminders] could not persist push_reminders:', err)
         }
-      } else if (pushResult === null) {
-        // Subscribed-but-null = real failure; not-subscribed null is a skip.
-        // Same disambiguation as the expiry-path handleNotify above.
-        const subscribed = await hasActiveSubscription()
-        if (subscribed) setPushScheduleFailed(true)
+      } else if (!pushResult.ok && pushResult.reason !== 'unsupported' && pushResult.reason !== 'not_subscribed') {
+        // Not supported / not subscribed is a skip; anything else is a real
+        // failure. Same rule as the expiry-path handleNotify above.
+        setPushScheduleFailed(true)
       }
     }
   }
