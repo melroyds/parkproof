@@ -15,6 +15,7 @@
 //   and typed in. ParkProof doesn't calculate permit times or concessions.
 import { HEX64_RE } from '../../lambda/addendum-schema.js'
 import { draftWithGateAcks } from './evidence-chain'
+import { wallClockInZone, type ZonedClockReading } from './time-format'
 import type {
   GateAcks,
   LogDraft,
@@ -224,31 +225,12 @@ export function showsMayAllowMore(result: ParkingRules, permits: readonly SavedP
 
 const HHMM_RE = /^([01]\d|2[0-3]):([0-5]\d)$/
 
-interface ZonedParts {
-  year: number
-  month: number
-  day: number
-  hour: number
-  minute: number
-}
-
-function zonedParts(instant: number, timeZone: string): ZonedParts {
-  const parts = new Intl.DateTimeFormat('en-US', {
-    timeZone,
-    hourCycle: 'h23',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-  }).formatToParts(new Date(instant))
-  const get = (type: Intl.DateTimeFormatPartTypes): number => Number(parts.find((p) => p.type === type)?.value)
-  return { year: get('year'), month: get('month'), day: get('day'), hour: get('hour') % 24, minute: get('minute') }
-}
+// The zone's wall clock comes from time-format.ts's wallClockInZone, the
+// app's one reading of a zone's clock (notice-match.ts uses it too).
 
 /** The zone's offset from UTC at an instant, in ms (whole minutes). */
 function zoneOffsetMs(instant: number, timeZone: string): number {
-  const p = zonedParts(instant, timeZone)
+  const p = wallClockInZone(instant, timeZone)
   const wall = Date.UTC(p.year, p.month - 1, p.day, p.hour, p.minute)
   return wall - Math.floor(instant / 60_000) * 60_000
 }
@@ -268,9 +250,9 @@ export function nextWallClockTime(hhmm: string, timeZone: string, now: Date): Da
   if (!m || !Number.isFinite(now.getTime())) return null
   const hour = Number(m[1])
   const minute = Number(m[2])
-  let today: ZonedParts
+  let today: ZonedClockReading
   try {
-    today = zonedParts(now.getTime(), timeZone)
+    today = wallClockInZone(now.getTime(), timeZone)
   } catch {
     return null
   }
@@ -284,7 +266,7 @@ export function nextWallClockTime(hhmm: string, timeZone: string, now: Date): Da
     const exact = [...offsets]
       .map((offset) => wall - offset)
       .filter((instant) => {
-        const p = zonedParts(instant, timeZone)
+        const p = wallClockInZone(instant, timeZone)
         return (
           p.year === date.getUTCFullYear() &&
           p.month === date.getUTCMonth() + 1 &&

@@ -1,12 +1,15 @@
 // "Who's driving?" on each record (build spec T7 item 1).
 import type { LogDraft } from '../types'
-import { CAPS } from '../../lambda/addendum-schema.js'
 import { fitText } from './evidence-chain'
-import { logDraftFromProfile } from './profile'
+import { DRIVER_NAME_MAX, logDraftFromProfile } from './profile'
 import { loadProfile } from './storage'
 
-/** The longest driver name a record keeps (and signs in arrival_context). */
-export const DRIVER_NAME_MAX = CAPS.driverName
+/**
+ * The longest driver name a record keeps (and signs in arrival_context).
+ * Defined once, in profile.ts (addendum-schema's `driverName` cap), and
+ * re-exported here for the logger.
+ */
+export { DRIVER_NAME_MAX }
 
 /**
  * What the logger's "Who's driving?" field starts with: the draft's driver

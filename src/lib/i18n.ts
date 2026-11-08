@@ -29,20 +29,55 @@ import ko from '../locales/ko.json'
  * written in Devanagari, Punjabi (in India) in Gurmukhi — they look very
  * different so the native-name column in the dropdown disambiguates them
  * cleanly even though the flag's the same.
+ *
+ * `dir` is the writing direction set on <html dir> with the language: all
+ * nine are left to right. A right-to-left language (Arabic, say) would set
+ * 'rtl' here.
  */
 export const SUPPORTED_LANGUAGES = [
-  { code: 'en', label: 'English', native: 'English', country: 'AU' },
-  { code: 'zh-CN', label: 'Chinese (Simplified)', native: '简体中文', country: 'CN' },
-  { code: 'vi', label: 'Vietnamese', native: 'Tiếng Việt', country: 'VN' },
-  { code: 'id', label: 'Indonesian', native: 'Bahasa Indonesia', country: 'ID' },
-  { code: 'ko', label: 'Korean', native: '한국어', country: 'KR' },
-  { code: 'it', label: 'Italian', native: 'Italiano', country: 'IT' },
-  { code: 'el', label: 'Greek', native: 'Ελληνικά', country: 'GR' },
-  { code: 'hi', label: 'Hindi', native: 'हिन्दी', country: 'IN' },
-  { code: 'pa', label: 'Punjabi', native: 'ਪੰਜਾਬੀ', country: 'IN' },
+  { code: 'en', label: 'English', native: 'English', country: 'AU', dir: 'ltr' },
+  { code: 'zh-CN', label: 'Chinese (Simplified)', native: '简体中文', country: 'CN', dir: 'ltr' },
+  { code: 'vi', label: 'Vietnamese', native: 'Tiếng Việt', country: 'VN', dir: 'ltr' },
+  { code: 'id', label: 'Indonesian', native: 'Bahasa Indonesia', country: 'ID', dir: 'ltr' },
+  { code: 'ko', label: 'Korean', native: '한국어', country: 'KR', dir: 'ltr' },
+  { code: 'it', label: 'Italian', native: 'Italiano', country: 'IT', dir: 'ltr' },
+  { code: 'el', label: 'Greek', native: 'Ελληνικά', country: 'GR', dir: 'ltr' },
+  { code: 'hi', label: 'Hindi', native: 'हिन्दी', country: 'IN', dir: 'ltr' },
+  { code: 'pa', label: 'Punjabi', native: 'ਪੰਜਾਬੀ', country: 'IN', dir: 'ltr' },
 ] as const
 
 export type LanguageCode = (typeof SUPPORTED_LANGUAGES)[number]['code']
+
+/**
+ * The supported code for a language tag: an exact match, else the first
+ * supported code with the same base language ('en-AU' is 'en', 'zh' and
+ * 'zh-Hans-CN' are 'zh-CN', the same way i18next picks one), else English.
+ */
+export function supportedLanguageFor(lng: string | null | undefined): LanguageCode {
+  const exact = SUPPORTED_LANGUAGES.find((l) => l.code === lng)
+  if (exact) return exact.code
+  const base = (lng ?? '').toLowerCase().split(/[-_]/)[0]
+  const sameBase = base ? SUPPORTED_LANGUAGES.find((l) => l.code.toLowerCase().split('-')[0] === base) : undefined
+  return sameBase?.code ?? 'en'
+}
+
+/**
+ * Set <html lang> and <html dir> to the language on screen. Screen readers
+ * pick their voice from lang: left at index.html's "en", Greek and Hindi
+ * were read with an English voice (fix list, after the overnight build).
+ * Codes are the app's own, so zh-CN stays zh-CN.
+ */
+export function applyDocumentLanguage(lng: string | null | undefined): void {
+  if (typeof document === 'undefined') return
+  const code = supportedLanguageFor(lng)
+  const root = document.documentElement
+  root.lang = code
+  root.dir = SUPPORTED_LANGUAGES.find((l) => l.code === code)?.dir ?? 'ltr'
+}
+
+// Every language change, including the first one i18next makes while it
+// starts up (from ?lng=, the saved choice or the browser's language).
+i18n.on('languageChanged', (lng: string) => applyDocumentLanguage(i18n.resolvedLanguage ?? lng))
 
 void i18n
   .use(LanguageDetector)
@@ -84,6 +119,10 @@ void i18n
     },
     returnNull: false,
   })
+
+// With the resources bundled, init has already settled the language by
+// here. Set it again in case the startup change was missed.
+if (i18n.isInitialized) applyDocumentLanguage(i18n.resolvedLanguage ?? i18n.language)
 
 // Expose the i18n instance on globalThis so non-React modules (e.g.
 // src/lib/api.ts, which builds error messages from the fetch layer outside

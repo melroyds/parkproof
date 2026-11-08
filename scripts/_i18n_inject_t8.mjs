@@ -15,8 +15,8 @@
  * ERR_IMAGE_TOO_LARGE, ERR_IMAGE_TYPE, and the generic retry line for
  * anything else.
  *
- * Unit 2 (view and actions) adds the `notice.*` namespace: the home link,
- * capture, the reading stages, the extracted fields, the matches, every
+ * Unit 2 (view and actions) adds the `notice.*` namespace: capture, the
+ * reading stages, the extracted fields, the matches, every
  * comparison line of item 4 (src/lib/notice-compare.ts; the en text is the
  * spec's wording), the durations they use (plurals), the actions of item 5
  * and the disclaimer. It also adds `loading.stepOf` and
@@ -33,6 +33,10 @@
  *
  * Fix round 2 adds the signature's limit to notice.compare.arrivalSignedBefore
  * (it showed ParkProof's signing time against the notice with no caveat).
+ *
+ * The home link this script once added (`notice.homeLink`) was never read:
+ * the home row uses T4's `home.fineStart`. The fix list's clean-ups deleted
+ * it (scripts/_i18n_inject_fixlist_final.mjs).
  *
  * "fine" and "infringement notice" follow the verified terminology table
  * in docs/legal-pdf-review-worksheet.md and the appeal flow's existing
@@ -199,18 +203,6 @@ const ADDITIONS = {
   },
 
   // ── The notice view (unit 2: view and actions) ──
-  // The home entry point (T4's layout moves it into its own row).
-  'notice.homeLink': {
-    en: `Got a fine? Start here`,
-    'zh-CN': `收到罚款?从这里开始`,
-    vi: `Bị phạt? Bắt đầu từ đây`,
-    id: `Kena denda? Mulai di sini`,
-    ko: `벌금을 받았나요? 여기서 시작하세요`,
-    it: `Hai preso una multa? Inizia da qui`,
-    el: `Πήρες κλήση; Ξεκίνα εδώ`,
-    hi: `जुर्माना मिला? यहाँ से शुरू करें`,
-    pa: `ਜੁਰਮਾਨਾ ਮਿਲਿਆ? ਇੱਥੋਂ ਸ਼ੁਰੂ ਕਰੋ`,
-  },
   'notice.title': {
     en: `Got a fine?`,
     'zh-CN': `收到罚款?`,

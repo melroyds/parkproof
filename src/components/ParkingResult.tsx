@@ -702,6 +702,8 @@ export default function ParkingResult({
               'repeating-linear-gradient(115deg, rgba(123,227,164,0.055) 0 1px, transparent 1px 8px)',
           }}
         >
+          {/* Decorative: nothing is signed yet at this point, the driver
+              only confirmed the reading, as the text beside it says. */}
           <VerifiedSeal glow size={38} className="shrink-0" />
           <div className="flex-1 min-w-0">
             <p className="text-sm font-display font-semibold text-paper-50 inline-flex items-center gap-1.5">

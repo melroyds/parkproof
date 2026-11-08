@@ -344,12 +344,36 @@ function nextTransition(value) {
 }
 
 /**
+ * The driver's permits in the order the app ranks them when more than one
+ * could apply to a sign (permitAnswerFor in src/lib/permit-answer.ts): an
+ * accessible permit first, then resident and business permits in the order
+ * they were saved. A new array; the order within each group is kept.
+ *
+ * The sign reader lists the permits to the model in this order, and the
+ * prompt's tie-break (PERMIT EXCEPTIONS in lambda/index.js) gives the
+ * accessible permit first, then a permit whose area label matches the
+ * sign's area, then the first in this order: the same ranking the app
+ * uses. The model reports one exception per level, so it must be the one
+ * the app would choose. The answer's permit_exception entries follow this
+ * order too.
+ *
+ * @template {{ type?: unknown }} T
+ * @param {readonly T[] | null | undefined} permits
+ * @returns {T[]}
+ */
+export function permitsInPriorityOrder(permits) {
+  const list = Array.isArray(permits) ? permits : []
+  const isAccessible = (p) => !!p && p.type === 'accessible'
+  return [...list.filter(isAccessible), ...list.filter((p) => !isAccessible(p))]
+}
+
+/**
  * The user's permit types the answer reports on: each listed type once, in
- * list order, known types only.
+ * priority order (permitsInPriorityOrder), known types only.
  */
 function permitTypesOf(userPermits) {
   const types = []
-  for (const p of Array.isArray(userPermits) ? userPermits : []) {
+  for (const p of permitsInPriorityOrder(userPermits)) {
     const type = p && p.type
     if (USER_PERMIT_TYPES.includes(type) && !types.includes(type)) types.push(type)
   }
@@ -367,9 +391,10 @@ export function noPermitExceptions(permitTypes) {
 /**
  * What the sign itself prints for each of the user's permit types (build
  * spec T3 item 1, "per user permit type"): exactly one entry per listed
- * type, in list order, [] when no permits are listed. The model reports at
- * most one exception per level, as two flat fields (permit_exception_type
- * and permit_exception_text), so at most one entry applies: the one for
+ * type, in priority order (accessible first), [] when no permits are
+ * listed. The model reports at most one exception per level, as two flat
+ * fields (permit_exception_type and permit_exception_text), so at most one
+ * entry applies: the one for
  * that exact type, and only when the model quotes the sign. Anything else
  * (a type the user doesn't hold, 'none', an unknown type, an empty quote)
  * is "no exception" for every type: a false "your permit allows this"
@@ -577,9 +602,10 @@ function clarification(value, permitTypes) {
  *   rest of such an answer is never read, so a malformed time in it
  *   doesn't turn that screen into an error.
  * - permit_exception has one entry per permit type in
- *   `context.user_permits` (in list order; [] when none are listed). At
+ *   `context.user_permits`, in priority order (permitsInPriorityOrder:
+ *   accessible first, then the order listed; [] when none are listed). At
  *   most one of them applies at each level: the model reports one
- *   exception per level.
+ *   exception per level, picked by the same priority.
  * - A weekly restriction's days are the known codes in its days string
  *   ('MO,TU'); its weeks are the 1 to 5 tokens in its week_of_month string
  *   ('1,3', '' for every week). One with no known day, or with weeks none of

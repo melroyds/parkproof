@@ -20,7 +20,7 @@ export type QualityVerdict = 'ok' | 'blurry' | 'dark' | 'overexposed' | 'tiny'
 
 export interface QualityResult {
   verdict: QualityVerdict
-  /** "Photo is blurry — retake for a better read?" etc. UI-ready message. */
+  /** "Photo looks blurry. Tap to focus..." etc. An English message for logs; the UI shows the verdict's translated text (scanner.quality*). */
   message: string | null
   /** Numeric diagnostics — useful in logs but the UI just consumes message + verdict. */
   diagnostics: {
@@ -64,7 +64,7 @@ export async function analyseSignPhoto(file: File): Promise<QualityResult> {
     return {
       verdict: 'tiny',
       message:
-        "Photo is very low resolution — the AI may miss details. Retake closer to the sign?",
+        "Photo is very low resolution, so the AI may miss details. Retake closer to the sign?",
       diagnostics: { width: w0, height: h0, meanLuminance: 0, sharpness: 0 },
     }
   }
@@ -136,7 +136,7 @@ export async function analyseSignPhoto(file: File): Promise<QualityResult> {
     return {
       verdict: 'dark',
       message:
-        "Photo looks dark — the AI may misread it. Move closer to a light or retake with flash?",
+        "Photo looks dark, so the AI may misread it. Move closer to a light or retake with flash?",
       diagnostics,
     }
   }
@@ -144,7 +144,7 @@ export async function analyseSignPhoto(file: File): Promise<QualityResult> {
     return {
       verdict: 'overexposed',
       message:
-        "Photo looks washed out — direct sunlight on the sign? Shade the lens with your hand and retake?",
+        "Photo looks washed out. Direct sunlight on the sign? Shade the lens with your hand and retake?",
       diagnostics,
     }
   }
@@ -152,7 +152,7 @@ export async function analyseSignPhoto(file: File): Promise<QualityResult> {
     return {
       verdict: 'blurry',
       message:
-        "Photo looks blurry — tap to focus on the sign and retake for a more reliable read?",
+        "Photo looks blurry. Tap to focus on the sign and retake for a more reliable read?",
       diagnostics,
     }
   }

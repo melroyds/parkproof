@@ -396,7 +396,8 @@ export default function SessionDetail({
           <div className="flex items-center gap-3.5">
             {/* A local `npm run dev` signature (key_alias 'dev-ephemeral')
                 can't be checked with the published key, so it never gets
-                the mint glow or the plain "signed" claim. */}
+                the mint glow or the plain "signed" claim. The seal is
+                decorative here: the line beside it says which key signed. */}
             <VerifiedSeal size={48} glow={session.signature.key_alias !== DEV_KEY_ALIAS} />
             <div className="min-w-0">
               <p className="text-sm font-display font-bold text-paper-50">
@@ -729,10 +730,13 @@ export default function SessionDetail({
           </p>
         ) : (
           <p className="text-xs text-ink-600 italic leading-relaxed">
+            {/* No horizontal negative margin on the inline button: one used
+                to swallow the spaces either side ("TapAdd noteto"). */}
             {t('session.noNote')}{' '}
             <button
+              type="button"
               onClick={startNoteEdit}
-              className="underline font-medium text-brand-700 min-h-[44px] inline-flex items-center py-2.5 -my-2 -mx-1 align-middle"
+              className="underline font-medium text-brand-700 min-h-[44px] inline-flex items-center py-2.5 -my-2 align-middle"
             >
               {t('session.addNote')}
             </button>{' '}
@@ -949,12 +953,11 @@ export default function SessionDetail({
             {t('session.endSession')}
           </button>
         )}
-        <button
-          onClick={handleDelete}
-          className="text-accent-600 hover:text-accent-700 font-medium py-3 transition-colors"
-        >
+        {/* Destructive, so the danger style: coral on the vault, quieter
+            than every action above it (WCAG AA, Button's danger variant). */}
+        <Button variant="danger" size="sm" type="button" onClick={handleDelete}>
           {t('session.deleteSession')}
-        </button>
+        </Button>
       </div>
     </div>
   )

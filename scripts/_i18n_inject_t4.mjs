@@ -8,8 +8,10 @@
  *     name ("Your name on records you share"), My permits (type, issuing
  *     state, area or zone, expiry), the accessible-permit warning shown
  *     before such a permit is saved (spec wording), the notifications
- *     section's extra lines (the reminder reliability line, and what an
- *     unsupported browser can still do), and the way to Account or sign-in.
+ *     section's extra line (what an unsupported browser can still do), and
+ *     the way to Account or sign-in. (Its own reliability line,
+ *     `prefs.remindersReliability`, was never read: Settings shows
+ *     `reminders.reliability`. The fix list's clean-ups deleted it.)
  *     The state and permit-type names are key maps (prefs.state.*,
  *     prefs.permitType.*), never raw codes.
  *   - `privacy.anonymousFineNotice` (item 8): infringement notice photos sent
@@ -24,9 +26,12 @@
  *   - `reminders.permit*`, `scheduledReminders.firesAtStandardEnd` (item 6):
  *     reminders on a record whose permit allows a later time, including the
  *     spec's "The standard limit on this sign ends now..." reminder.
- *   - `home.weeklyReminders`, `home.settings`, `home.settingsSignIn`,
- *     `home.startWorkday`, `home.fineStart`, `active.shareAria` (item 9):
- *     the home layout's rows and links, and the home card's Share icon.
+ *   - `home.settings`, `home.settingsSignIn`, `home.startWorkday`,
+ *     `home.fineStart` (item 9): the home layout's rows and links.
+ *     `home.weeklyReminders` and `active.shareAria` were here too; the
+ *     fix list's clean-ups deleted them (the weekly row reads T5's
+ *     `recurring.homeRow`, the Share icon T7's `share.action`), see
+ *     scripts/_i18n_inject_fixlist_final.mjs.
  *   - Review fixes: `prefs.privacyCta` (Settings' own key);
  *     `reminders.chipAtPermitTime`,
  *     `reminders.permitBody*`, `reminders.calendarPermit*`,
@@ -532,18 +537,6 @@ const ADDITIONS = {
     hi: 'यह ब्राउज़र ParkProof बंद होने पर रिमाइंडर नहीं दिखा सकता। iPhone पर, पहले ParkProof को होम स्क्रीन पर जोड़ें। कैलेंडर रिमाइंडर फिर भी काम करते हैं।',
     pa: "ਇਹ ਬ੍ਰਾਊਜ਼ਰ ParkProof ਬੰਦ ਹੋਣ 'ਤੇ ਰਿਮਾਈਂਡਰ ਨਹੀਂ ਦਿਖਾ ਸਕਦਾ। iPhone 'ਤੇ, ਪਹਿਲਾਂ ParkProof ਨੂੰ ਹੋਮ ਸਕ੍ਰੀਨ 'ਤੇ ਜੋੜੋ। ਕੈਲੰਡਰ ਰਿਮਾਈਂਡਰ ਫਿਰ ਵੀ ਕੰਮ ਕਰਦੇ ਹਨ।",
   },
-  // The reliability line every reminder feature carries (copy rules).
-  'prefs.remindersReliability': {
-    en: "Reminders can be delayed or silenced, for example by Focus or battery saving. Don't rely on them alone.",
-    'zh-CN': '提醒可能会延迟或被静音,例如因为专注模式或省电模式。不要只依赖提醒。',
-    vi: 'Nhắc nhở có thể bị trễ hoặc bị tắt tiếng, ví dụ do chế độ Tập trung hoặc tiết kiệm pin. Đừng chỉ dựa vào nhắc nhở.',
-    id: 'Pengingat bisa tertunda atau dibisukan, misalnya oleh mode Fokus atau penghemat baterai. Jangan hanya mengandalkan pengingat.',
-    ko: '알림은 집중 모드나 배터리 절약 등으로 늦어지거나 무음이 될 수 있습니다. 알림에만 의존하지 마세요.',
-    it: 'I promemoria possono arrivare in ritardo o essere silenziati, per esempio da Full immersion o dal risparmio energetico. Non affidarti solo a loro.',
-    el: 'Οι υπενθυμίσεις μπορεί να καθυστερήσουν ή να σιγήσουν, για παράδειγμα λόγω Εστίασης ή εξοικονόμησης μπαταρίας. Μη βασίζεσαι μόνο σε αυτές.',
-    hi: 'रिमाइंडर में देरी हो सकती है या वे बंद हो सकते हैं, जैसे फ़ोकस या बैटरी सेवर की वजह से। सिर्फ़ इन पर निर्भर न रहें।',
-    pa: "ਰਿਮਾਈਂਡਰ ਲੇਟ ਹੋ ਸਕਦੇ ਹਨ ਜਾਂ ਚੁੱਪ ਹੋ ਸਕਦੇ ਹਨ, ਜਿਵੇਂ ਫ਼ੋਕਸ ਜਾਂ ਬੈਟਰੀ ਸੇਵਰ ਕਾਰਨ। ਸਿਰਫ਼ ਇਨ੍ਹਾਂ 'ਤੇ ਨਿਰਭਰ ਨਾ ਰਹੋ।",
-  },
   'prefs.accountHeader': {
     en: 'Account',
     'zh-CN': '账户',
@@ -871,18 +864,8 @@ const ADDITIONS = {
     hi: '{{when}}: सामान्य सीमा खत्म',
     pa: '{{when}}: ਆਮ ਸੀਮਾ ਖ਼ਤਮ',
   },
-  // Item 9, the home layout. The row T5a fills in.
-  'home.weeklyReminders': {
-    en: 'Street sweeping and weekly reminders',
-    'zh-CN': '街道清扫和每周提醒',
-    vi: 'Quét đường và nhắc nhở hằng tuần',
-    id: 'Penyapuan jalan dan pengingat mingguan',
-    ko: '거리 청소 및 매주 알림',
-    it: 'Pulizia strade e promemoria settimanali',
-    el: 'Καθαρισμός δρόμων και εβδομαδιαίες υπενθυμίσεις',
-    hi: 'सड़क सफ़ाई और साप्ताहिक रिमाइंडर',
-    pa: 'ਸੜਕ ਸਫ਼ਾਈ ਅਤੇ ਹਫ਼ਤਾਵਾਰੀ ਰਿਮਾਈਂਡਰ',
-  },
+  // Item 9, the home layout. (Its weekly reminders row reads T5's
+  // recurring.homeRow: FIXLIST deleted home.weeklyReminders.)
   'home.settings': {
     en: 'Settings',
     'zh-CN': '设置',
@@ -930,18 +913,6 @@ const ADDITIONS = {
     hi: 'जुर्माना मिला? यहाँ से शुरू करें',
     pa: 'ਜੁਰਮਾਨਾ ਮਿਲਿਆ? ਇੱਥੋਂ ਸ਼ੁਰੂ ਕਰੋ',
   },
-  // The home card's Share icon (T7 wires it).
-  'active.shareAria': {
-    en: 'Share where the car is',
-    'zh-CN': '分享车停在哪里',
-    vi: 'Chia sẻ vị trí xe',
-    id: 'Bagikan lokasi mobil',
-    ko: '차량 위치 공유',
-    it: "Condividi dov'è l'auto",
-    el: 'Κοινοποίηση του σημείου όπου είναι το αυτοκίνητο',
-    hi: 'शेयर करें कि गाड़ी कहाँ है',
-    pa: 'ਸਾਂਝਾ ਕਰੋ ਕਿ ਕਾਰ ਕਿੱਥੇ ਹੈ',
-  },
   // ═══ Review fixes (round 1) ═════════════════════════════════════════════
   // Settings' own privacy link (prefs.* namespace, spec T4 item 1).
   'prefs.privacyCta': {
@@ -958,7 +929,7 @@ const ADDITIONS = {
   // The reliability line on the reminder screens, `reminders.reliability`, is
   // owned by scripts/_i18n_inject_fix_push.mjs (the field-test fix list added
   // it first, with reviewed translations). It is not set here, so the two
-  // scripts never write one key; prefs.remindersReliability has the same text.
+  // scripts never write one key. Settings shows it too.
   // The 0-minute chip on a record whose reminders count down to the permit time the driver entered.
   'reminders.chipAtPermitTime': {
     en: 'At permit time',

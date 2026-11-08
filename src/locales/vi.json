@@ -20,7 +20,8 @@
     "no": "Không",
     "close": "Đóng",
     "sendFeedback": "Gửi phản hồi",
-    "about": "Ứng dụng này làm gì"
+    "about": "Ứng dụng này làm gì",
+    "signedSeal": "Bản ghi đã ký, phát hiện được nếu bị sửa"
   },
   "language": {
     "title": "Ngôn ngữ",
@@ -48,7 +49,6 @@
     },
     "seeEverything": "Xem tất cả những gì ParkProof có thể làm →",
     "draftAppeal": "Bị phạt? Soạn thư khiếu nại",
-    "weeklyReminders": "Quét đường và nhắc nhở hằng tuần",
     "settings": "Cài đặt",
     "settingsSignIn": "Đăng nhập để đồng bộ",
     "startWorkday": "Đỗ xe cả ngày? Bắt đầu một ngày làm việc",
@@ -85,8 +85,7 @@
     "expiredHint": "Vẫn còn đỗ ở đây? Hãy di chuyển xe ngay. Đã di chuyển rồi? Nhấn \"Tôi đã đi\".",
     "walkBackAria": "Đi bộ về. Mở chỉ đường đi bộ đến xe của bạn.",
     "walkBackAriaDistance_one": "Đi bộ về. Mở chỉ đường đi bộ đến xe của bạn, cách {{distance}}, khoảng {{count}} phút đi bộ.",
-    "walkBackAriaDistance_other": "Đi bộ về. Mở chỉ đường đi bộ đến xe của bạn, cách {{distance}}, khoảng {{count}} phút đi bộ.",
-    "shareAria": "Chia sẻ vị trí xe"
+    "walkBackAriaDistance_other": "Đi bộ về. Mở chỉ đường đi bộ đến xe của bạn, cách {{distance}}, khoảng {{count}} phút đi bộ."
   },
   "scanner": {
     "header": "Quét biển báo đỗ xe",
@@ -116,7 +115,8 @@
     "privacyLine": "Để đọc biển báo, chúng tôi gửi ảnh biển báo đến một dịch vụ AI. Nếu bạn cho phép dùng vị trí, máy chủ của chúng tôi dùng vị trí đó để tính giờ địa phương. Việc đọc biển báo không lưu bản sao ảnh nào trên máy chủ của chúng tôi. Không cần tài khoản.",
     "cameraDeniedTitle": "Máy ảnh đang bị tắt",
     "cameraDeniedCopy": "Hãy chọn một ảnh từ thư viện, hoặc bật lại quyền máy ảnh trong cài đặt trình duyệt.",
-    "couldntReadPhoto": "Không đọc được ảnh đó. Thử ảnh khác, hoặc chọn một ảnh từ thư viện của bạn."
+    "couldntReadPhoto": "Không đọc được ảnh đó. Thử ảnh khác, hoặc chọn một ảnh từ thư viện của bạn.",
+    "previewAlt": "Ảnh biển báo đỗ xe của bạn"
   },
   "reuse": {
     "scannedHere": "Bạn đã quét ở đây {{age}}",
@@ -354,7 +354,17 @@
     "permitBodyBefore_one": "Thời gian theo giấy phép mà bạn đã nhập từ biển báo kết thúc lúc {{time}}. Đây là lời nhắc trước {{count}} phút.",
     "permitBodyBefore_other": "Thời gian theo giấy phép mà bạn đã nhập từ biển báo kết thúc lúc {{time}}. Đây là lời nhắc trước {{count}} phút.",
     "calendarPermitTitle": "ParkProof: hết thời gian giấy phép bạn đã nhập",
-    "calendarPermitSummary": "Thời gian theo giấy phép mà bạn đã nhập từ biển báo kết thúc lúc {{time}}. ParkProof không tính thời gian theo giấy phép."
+    "calendarPermitSummary": "Thời gian theo giấy phép mà bạn đã nhập từ biển báo kết thúc lúc {{time}}. ParkProof không tính thời gian theo giấy phép.",
+    "ics": {
+      "expiresTitle": "ParkProof: hết giờ đỗ xe",
+      "expiresAt": "Giờ đỗ xe của bạn hết vào {{time}} ({{place}}).",
+      "remindersAt": "Nhắc nhở: {{times}}.",
+      "recordId": "Bản ghi ParkProof: {{id}}",
+      "checkOnTitle": "ParkProof: kiểm tra xe của bạn",
+      "checkOnAt": "Kiểm tra xe của bạn tại {{address}} ({{place}}).",
+      "checkOnHere": "Kiểm tra xe của bạn ở nơi bạn đã đỗ ({{place}}).",
+      "buildFailed": "Không tạo được tệp lịch. Hãy thử lại."
+    }
   },
   "history": {
     "header": "Bản ghi đỗ xe",
@@ -424,9 +434,6 @@
     "draftingHeader": "Đang đọc vé phạt…",
     "draftingSub": "Claude đang đối chiếu với bằng chứng đã lưu của bạn.",
     "reviewHeader": "Bản nháp khiếu nại",
-    "strongEvidence": "Bằng chứng mạnh",
-    "moderateEvidence": "Bằng chứng vừa phải",
-    "weakEvidence": "Bằng chứng yếu",
     "strategy": "CHIẾN LƯỢC",
     "subjectLine": "DÒNG TIÊU ĐỀ",
     "letter": "THƯ (CÓ THỂ SỬA)",
@@ -531,7 +538,7 @@
     "anonymousThings": "Những thứ sau cũng rời khỏi thiết bị của bạn, kể cả khi không có tài khoản:",
     "anonymousAnthropic": "<strong>Mỗi ảnh biển báo bạn quét</strong> được gửi tới <strong>Anthropic</strong> (Claude) để đọc biển báo, kèm vị trí chụp và loại của từng giấy phép bạn đã lưu (cùng khu vực của giấy phép cư dân hoặc doanh nghiệp). Khi kiểm tra lại, kết quả đọc trước đó được gửi thay cho ảnh. Chúng tôi không giữ ảnh hay vị trí. Câu trả lời, có thể nhắc tới loại giấy phép của bạn, được lưu ngắn hạn trên máy chủ của chúng tôi để điện thoại của bạn nhận về. Chính sách lưu trữ của Anthropic được áp dụng.",
     "anonymousNominatim": "<strong>Toạ độ GPS</strong> được gửi tới <strong>OpenStreetMap Nominatim</strong> để phân giải địa chỉ đường. Nominatim không yêu cầu khoá và áp dụng chính sách lưu trữ công khai của họ.",
-    "anonymousCloudwatch": "<strong>Một UUID ngẫu nhiên cho mỗi kết quả</strong> + đánh giá \"đúng / chụp lại\" được ghi vào <strong>AWS CloudWatch</strong> khi bạn nhấn thẻ xác minh. Không có dữ liệu nhận dạng cá nhân; chỉ tín hiệu tổng hợp để tinh chỉnh prompt.",
+    "anonymousCloudwatch": "<strong>Khi bạn cho chúng tôi biết chúng tôi đọc biển báo có đúng không</strong>, máy chủ của ParkProof ghi câu trả lời của bạn vào <strong>AWS CloudWatch</strong>, kèm thời điểm bạn trả lời và một mã ngẫu nhiên cho câu trả lời đó. Cùng với đó là các chi tiết của lần đọc: 120 ký tự đầu tiên trong phần mô tả các quy định của biển báo, mức độ chắc chắn, giới hạn thời gian, các cách thanh toán và khu vực giấy phép (nếu có), việc có hỏi bạn đỗ ở vị trí nào không và lựa chọn của bạn, cùng số nhóm quy định, số vấn đề khi đọc và số hạn chế hằng tuần tìm thấy. Các chi tiết này cũng cho biết biển báo có đọc được không, lần đọc có phải là kiểm tra lại không, có phát hiện biển báo áp dụng cho cả một khu vực đỗ xe, chỗ đỗ xe trả phí, khu vực giấy phép hay chỗ đỗ xe tiếp cận không, và lúc đó là mấy giờ tại nơi có biển báo. Các câu trả lời bạn đã đưa ra đến lúc đó cho các câu hỏi về đỗ xe trả phí, khu vực giấy phép và giấy phép đỗ xe tiếp cận cũng được ghi lại, nên một dòng nhật ký có thể cho thấy bạn đã nói có giấy phép đỗ xe tiếp cận được hiển thị. Nhật ký không có ảnh, vị trí GPS của ảnh, hay mã nào nhận dạng bạn hoặc thiết bị này. Chúng tôi dùng nhật ký này để tìm ra chỗ đọc biển báo bị sai. Nhật ký bị xoá sau 90 ngày.",
     "signedInHeader": "Bạn cung cấp gì khi đăng nhập",
     "signedInIntro": "Đăng nhập là tùy chọn. Đăng nhập sẽ bật đồng bộ đám mây, để bạn thấy cùng các bản ghi trên mọi thiết bị của mình.",
     "signedInThings": "Khi bạn đăng nhập, có thêm dữ liệu rời khỏi thiết bị:",
@@ -555,7 +562,7 @@
     "rightsExport": "<strong>Xuất.</strong> Nhấn \"Tải về dạng PDF\" trong Tài khoản để có tài liệu đầy đủ với mọi bản ghi bạn đã lưu: tóm tắt trang bìa cộng với phần chi tiết từng bản ghi có ảnh.",
     "rightsDelete": "<strong>Xoá.</strong> Nhấn \"Xoá tài khoản\" trong Tài khoản. Xoá bản ghi đăng nhập, mọi hàng DynamoDB, và mọi ảnh S3 trong vài giây. Không thể hoàn tác.",
     "rightsCorrect": "<strong>Sửa.</strong> Bạn sửa bản ghi ngay trong ứng dụng. Mọi thay đổi đồng bộ lên đám mây ngay nếu đã đăng nhập.",
-    "rightsAnonymous": "Nếu bạn không đăng nhập, các bản ghi đỗ xe của bạn chỉ nằm trên thiết bị này. Hãy xoá bộ nhớ trình duyệt để xoá chúng. Việc đó không xoá những gì đã có trên máy chủ của chúng tôi, chẳng hạn nhắc nhở đẩy bạn đã đặt (được giữ đến khi được gửi, bị huỷ hoặc hết hạn), đăng ký nhận thông báo đẩy của thiết bị này (được giữ khoảng 90 ngày sau lần cuối bạn đặt nhắc nhở) hoặc phản hồi bạn gửi, kèm email nếu bạn có ghi (được giữ tối đa hai năm).",
+    "rightsAnonymous": "Nếu bạn không đăng nhập, các bản ghi đỗ xe của bạn chỉ nằm trên thiết bị này. Hãy xoá bộ nhớ trình duyệt để xoá chúng. Việc đó không xoá những gì đã có trên máy chủ của chúng tôi. Lời nhắc đẩy bạn đặt cho một bản ghi được giữ đến khi được gửi đi hoặc bạn huỷ. Lời nhắc đẩy hằng tuần bị xoá trong vòng 90 ngày kể từ lần cuối bạn mở ParkProof. Đăng ký nhận thông báo đẩy của thiết bị này (một mã ngẫu nhiên của thiết bị, địa chỉ nhận thông báo đẩy và khoá mã hoá mà trình duyệt của bạn cung cấp cho chúng tôi, cùng thời điểm chúng được gia hạn lần cuối) được giữ khoảng 90 ngày sau lần cuối ParkProof gia hạn nó. ParkProof gia hạn đăng ký này khi bạn mở ứng dụng trong lúc đang bật lời nhắc đẩy và khi bạn đặt lời nhắc. Tắt lời nhắc đẩy, trong ParkProof hay trong trình duyệt, không báo cho máy chủ của chúng tôi, nên đăng ký này vẫn được giữ như trên. Nếu dịch vụ thông báo đẩy báo cho chúng tôi rằng địa chỉ đó không còn hoạt động (điều này có thể xảy ra khi một lời nhắc bạn đặt trước đó được gửi đi sau khi bạn đã tắt lời nhắc đẩy), chúng tôi xoá ngay địa chỉ và khoá mã hoá đó. Chúng tôi chỉ giữ mã của thiết bị này, dấu vân tay số của địa chỉ đó và thời điểm chúng tôi biết, trong khoảng 90 ngày, để địa chỉ đó không bị lưu lại. Nhật ký máy chủ của chúng tôi cũng ghi lại mã của thiết bị này khi thiết bị đăng ký nhận thông báo đẩy, đặt lời nhắc hoặc nhận một lời nhắc, cùng với dịch vụ thông báo đẩy mà thiết bị dùng, mã ngẫu nhiên của bản ghi hoặc lời nhắc hằng tuần, và thời điểm mỗi lời nhắc được đặt, gửi đi hoặc bỏ qua. Nhật ký này bị xoá sau 90 ngày. Phản hồi bạn gửi, kèm email nếu bạn có ghi, được giữ tối đa hai năm.",
     "photosHeader": "Ảnh chụp trong ParkProof",
     "photosCopy": "Ảnh được thay đổi kích thước xuống ≤1200px và mã hoá lại thành JPEG chất lượng 0.82 ngay trên thiết bị của bạn trước khi rời khỏi trình duyệt. Ảnh gốc độ phân giải cao không bao giờ rời khỏi điện thoại.",
     "signingHeader": "Ký bằng mã hoá",
@@ -568,7 +575,7 @@
     "anonymousPush": "<strong>Lời nhắc đẩy</strong>, nếu bạn bật: địa chỉ của bản ghi, thời gian và nội dung của từng lời nhắc (có thể nhắc tới thời gian giấy phép bạn đã nhập) được gửi tới <strong>máy chủ của ParkProof</strong>. Máy chủ giữ từng lời nhắc cho đến khi gửi đi, rồi xoá.",
     "anonymousPermits": "<strong>Giấy phép bạn dùng cho một lần đỗ xe</strong>: loại, khu vực và thời gian giấy phép bạn đã nhập được lưu cùng bản ghi đó. Khi ký bản ghi, điện thoại gửi dấu vân tay của các chi tiết này, không phải bản thân chi tiết, cùng với câu trả lời của bạn cho các câu hỏi về giấy phép. Xoá giấy phép trong Cài đặt không thay đổi các bản ghi đã lưu. Xoá bản ghi sẽ xoá các chi tiết này.",
     "signedInPermits": "<strong>Chi tiết giấy phép</strong> lưu cùng một bản ghi (loại, khu vực và thời gian giấy phép bạn đã nhập, cho lần đỗ xe bạn dùng giấy phép đã lưu) được lưu cùng bản ghi đó trong AWS DynamoDB. Các giấy phép bạn lưu trong Cài đặt thì không. Xoá bản ghi sẽ xoá các chi tiết này.",
-    "anonymousWeeklyPush": "<strong>Lời nhắc đẩy hằng tuần</strong>, nếu bạn bật: tên của từng lời nhắc và địa chỉ bạn đã nhập (nếu có), các ngày, giờ và múi giờ của lời nhắc, cùng nội dung thông báo được gửi tới <strong>máy chủ của ParkProof</strong>. Máy chủ giữ các thông tin này khi lời nhắc còn bật, để có thể gửi lời nhắc mỗi tuần. Các thông tin này bị xoá khi bạn tạm dừng hoặc xoá lời nhắc, hoặc tắt thông báo của lời nhắc. Nếu bạn không mở ParkProof nữa, chúng sẽ bị xoá trong vòng 90 ngày."
+    "anonymousWeeklyPush": "<strong>Lời nhắc đẩy hằng tuần</strong>, nếu bạn bật: tên của từng lời nhắc và địa chỉ bạn đã nhập (nếu có), các ngày, giờ, cách lặp lại và múi giờ của lời nhắc, thời điểm nhắc bạn, cùng nội dung thông báo được gửi tới <strong>máy chủ của ParkProof</strong>, kèm một mã ngẫu nhiên của thiết bị này. Máy chủ giữ các thông tin này khi lời nhắc còn bật, để có thể gửi lời nhắc mỗi tuần. Các thông tin này bị xoá khi bạn tạm dừng hoặc xoá lời nhắc, hoặc tắt thông báo của lời nhắc, vào lần tới ParkProof được mở và có kết nối mạng. Mỗi lần ParkProof gửi các thông tin này, máy chủ giữ chúng tối đa 90 ngày. ParkProof thỉnh thoảng gửi lại khi bạn vẫn mở ứng dụng, nên nếu bạn ngừng mở, chúng sẽ bị xoá trong vòng 90 ngày kể từ lần cuối bạn mở ParkProof."
   },
   "loading": {
     "step1": "Đang đọc biển báo…",
@@ -874,20 +881,17 @@
       "title": "Bằng chứng phát hiện được mọi thay đổi, khi điều đó quan trọng.",
       "body": "Mỗi bản ghi đỗ xe bạn lưu đều được ký, nên ai cũng có thể kiểm tra rằng các thông tin trong đó chưa thay đổi kể từ lúc ký. Chữ ký không cho thấy các thông tin đó là đúng, ai là người lái xe, xe ở đâu, hay xe đến và rời đi lúc nào."
     },
-    "feature": {
-      "translateTitle": "Câu trả lời rõ ràng",
-      "translateDesc": "Chụp ảnh bất kỳ biển đỗ xe nào của Úc để nhận câu trả lời \"có thể đỗ ngay không?\" trong khoảng 12 giây.",
-      "evidenceTitle": "Bằng chứng phát hiện được mọi thay đổi",
-      "evidenceDesc": "Mỗi lần đỗ xe đều có dấu thời gian, GPS và ảnh được ký mã hóa.",
-      "appealTitle": "Thư khiếu nại AI",
-      "appealDesc": "Bị phạt oan? Chụp ảnh và chúng tôi sẽ soạn thư khiếu nại chính thức."
-    },
     "accuracyNote": "ParkProof có thể đọc sai một biển báo lộn xộn. Luôn đối chiếu kết quả của chúng tôi với biển báo thực tế trước khi rời xe.",
     "trustFree": "Miễn phí",
     "trustNoAccount": "Không cần tài khoản",
     "trustOffline": "Bản ghi đã lưu dùng được offline",
     "locationOptional": "Vị trí là tùy chọn. Từ chối thì bạn vẫn đọc được biển báo và tự nhập địa chỉ.",
-    "heroTitle": "Đỗ xe trở nên <accent>đơn giản.</accent>"
+    "heroTitle": "Đỗ xe trở nên <accent>đơn giản.</accent>",
+    "hero": {
+      "aria": "Một biển đỗ xe biến thành bản ghi đỗ xe đã ký: bạn có thể đỗ đến {{time}}.",
+      "kicker": "BẢN GHI ĐÃ KÝ",
+      "canPark": "Bạn có thể đỗ xe"
+    }
   },
   "about": {
     "title": "Mọi thứ ParkProof có thể làm",
@@ -1101,7 +1105,6 @@
     }
   },
   "notice": {
-    "homeLink": "Bị phạt? Bắt đầu từ đây",
     "title": "Bị phạt?",
     "captureIntro": "Chụp ảnh thông báo vi phạm. ParkProof đọc ngày, giờ và địa điểm trên đó, rồi tìm các bản ghi đỗ xe của bạn quanh thời điểm đó.",
     "reading": {
@@ -1335,7 +1338,8 @@
       "alarmTomorrow": "{{what}} vào ngày mai, {{range}}. Hãy dời xe trước {{start}}.",
       "alarmSoon": "{{what}} bắt đầu lúc {{start}}. Hãy dời xe trước giờ đó.",
       "move": "Hãy dời xe trước khi bắt đầu.",
-      "footer": "Nhắc nhở được đặt trong ParkProof."
+      "footer": "Nhắc nhở được đặt trong ParkProof.",
+      "noDates": "Lời nhắc hằng tuần này không có ngày nào để thêm."
     }
   },
   "photoGrid": {
@@ -1451,7 +1455,6 @@
     "permitExpired": "Đã hết hạn ngày {{date}}. Giấy phép này không được gửi khi bạn quét.",
     "deletePermitLabel": "Xoá {{permit}}",
     "pushUnsupported": "Trình duyệt này không thể hiện nhắc nhở khi ParkProof đang đóng. Trên iPhone, hãy thêm ParkProof vào Màn hình chính trước. Nhắc nhở trong lịch vẫn hoạt động.",
-    "remindersReliability": "Nhắc nhở có thể bị trễ hoặc bị tắt tiếng, ví dụ do chế độ Tập trung hoặc tiết kiệm pin. Đừng chỉ dựa vào nhắc nhở.",
     "accountHeader": "Tài khoản",
     "accountCopy": "Đồng bộ đám mây, xuất dữ liệu, đăng xuất và xoá tài khoản.",
     "openAccount": "Mở tài khoản",

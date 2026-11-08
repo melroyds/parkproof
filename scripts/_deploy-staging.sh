@@ -19,6 +19,19 @@ cd "$(dirname "$0")/.."
 # assignment applies. Without this, --base=/q7m2x9k4z8a3/ becomes a Windows path.
 export MSYS_NO_PATHCONV=1
 
+# Workday mode stays off unless the shell that runs this sets
+# DEPLOY_ALLOW_WORKDAY=1, the same rule as deploy.sh: staging is public, on the
+# production domain, and the workday copy needs a lawyer's read first. Decided
+# before scripts/.aws-resources is sourced, and passed to the build explicitly,
+# so no .env line can decide it (scripts/vite-env-precedence.test.mjs).
+if [[ "${DEPLOY_ALLOW_WORKDAY:-}" == "1" ]]; then
+  WORKDAY_FLAG=true
+else
+  WORKDAY_FLAG=false
+fi
+readonly WORKDAY_FLAG
+echo "▶ workday mode: VITE_FEATURE_WORKDAY=$WORKDAY_FLAG"
+
 # Backend identifiers (same as prod, so scan->verdict and auth work on staging).
 # shellcheck disable=SC1091
 source scripts/.aws-resources
@@ -28,6 +41,7 @@ npx tsc -b
 
 echo "▶ build (base=/$SLUG/)"
 rm -rf "$OUT"
+VITE_FEATURE_WORKDAY="$WORKDAY_FLAG" \
 VITE_API_URL="$API_URL" \
 VITE_COGNITO_USER_POOL_ID="${COGNITO_USER_POOL_ID:-}" \
 VITE_COGNITO_APP_CLIENT_ID="${COGNITO_APP_CLIENT_ID:-}" \

@@ -20,7 +20,8 @@
     "no": "否",
     "close": "关闭",
     "sendFeedback": "发送反馈",
-    "about": "它能做什么"
+    "about": "它能做什么",
+    "signedSeal": "已签名、可核对是否被改动的记录"
   },
   "language": {
     "title": "语言",
@@ -48,7 +49,6 @@
     },
     "seeEverything": "查看 ParkProof 的所有功能 →",
     "draftAppeal": "收到罚单?起草申诉信",
-    "weeklyReminders": "街道清扫和每周提醒",
     "settings": "设置",
     "settingsSignIn": "登录以同步",
     "startWorkday": "要停一整天?开始工作日",
@@ -85,8 +85,7 @@
     "expiredHint": "还在这里?请立即移车。已经开走了?点击\"我已离开\"。",
     "walkBackAria": "走回。打开前往你车辆的步行路线。",
     "walkBackAriaDistance_one": "走回。打开前往你车辆的步行路线,距离 {{distance}},步行约 {{count}} 分钟。",
-    "walkBackAriaDistance_other": "走回。打开前往你车辆的步行路线,距离 {{distance}},步行约 {{count}} 分钟。",
-    "shareAria": "分享车停在哪里"
+    "walkBackAriaDistance_other": "走回。打开前往你车辆的步行路线,距离 {{distance}},步行约 {{count}} 分钟。"
   },
   "scanner": {
     "header": "扫描停车标志",
@@ -116,7 +115,8 @@
     "privacyLine": "为了读取标志，我们会把标志照片发送给一项 AI 服务。如果你允许使用位置，我们的服务器会用它来确定当地时间。读取标志不会在我们的服务器上留下照片副本。无需账户。",
     "cameraDeniedTitle": "相机访问已关闭",
     "cameraDeniedCopy": "改从相册里选一张照片,或在浏览器设置里重新打开相机权限。",
-    "couldntReadPhoto": "读不了那张照片。请换一张,或从相册里选一张。"
+    "couldntReadPhoto": "读不了那张照片。请换一张,或从相册里选一张。",
+    "previewAlt": "你的停车标志照片"
   },
   "reuse": {
     "scannedHere": "你 {{age}} 在这里扫描过",
@@ -354,7 +354,17 @@
     "permitBodyBefore_one": "你根据标志输入的许可证时间将于 {{time}} 结束。这是提前 {{count}} 分钟的提醒。",
     "permitBodyBefore_other": "你根据标志输入的许可证时间将于 {{time}} 结束。这是提前 {{count}} 分钟的提醒。",
     "calendarPermitTitle": "ParkProof:你输入的许可证时间结束",
-    "calendarPermitSummary": "你根据标志输入的许可证时间在 {{time}} 结束。ParkProof 不计算许可证时间。"
+    "calendarPermitSummary": "你根据标志输入的许可证时间在 {{time}} 结束。ParkProof 不计算许可证时间。",
+    "ics": {
+      "expiresTitle": "ParkProof：停车时间到期",
+      "expiresAt": "停车到期时间：{{time}}（{{place}}）。",
+      "remindersAt": "提醒时间：{{times}}。",
+      "recordId": "ParkProof 记录：{{id}}",
+      "checkOnTitle": "ParkProof：去看看你的车",
+      "checkOnAt": "去 {{address}}（{{place}}）看看你的车。",
+      "checkOnHere": "去你停车的地方看看你的车（{{place}}）。",
+      "buildFailed": "无法生成日历文件，请重试。"
+    }
   },
   "history": {
     "header": "停车记录",
@@ -424,9 +434,6 @@
     "draftingHeader": "正在读取罚单…",
     "draftingSub": "Claude 正在拿它和你保存的证据交叉比对。",
     "reviewHeader": "申诉草稿",
-    "strongEvidence": "强证据",
-    "moderateEvidence": "中等证据",
-    "weakEvidence": "弱证据",
     "strategy": "策略",
     "subjectLine": "主题行",
     "letter": "信件(可编辑)",
@@ -531,7 +538,7 @@
     "anonymousThings": "即使没有账户,下面这些也会离开你的设备:",
     "anonymousAnthropic": "<strong>你扫描的每张标志照片</strong>都会发送给 <strong>Anthropic</strong>(Claude)来读取标志,同时发送拍摄位置和你保存的每个许可证的类型(居民或商户许可证还会附上区域)。重新检查时发送的是之前的读取结果,而不是照片。我们不保留照片或位置。答案中可能提到你的许可证类型,它会在我们的服务器上短暂保留,好让你的手机取回。适用 Anthropic 的保留政策。",
     "anonymousNominatim": "<strong>GPS 坐标</strong>发送给 <strong>OpenStreetMap Nominatim</strong> 以解析街道地址。Nominatim 不需要密钥,适用其公开的保留政策。",
-    "anonymousCloudwatch": "当你点击验证卡片时,<strong>每个结果的随机 UUID</strong> 加上一个\"正确/重拍\"判定会记录到 <strong>AWS CloudWatch</strong>。不含个人身份信息;聚合后的信号用于调整提示词。",
+    "anonymousCloudwatch": "<strong>当你告诉我们标志读得对不对时</strong>，ParkProof 的服务器会把你的回答记录到 <strong>AWS CloudWatch</strong>，同时记录你回答的时间和这个回答的随机 ID。一起记录的还有这次读取的详情：它对标志规则的描述的前 120 个字符、它有多确定、时间限制、标志上的付款方式和许可证区域编号（如有）、它是否问过你停在哪个位置以及你选了哪个选项，以及它找到的规则组数、读取问题数和每周限制数。这些详情还会说明标志是否可读、这次读取是不是重新检查、是否发现适用于整片停车区域的标志、收费停车、许可证区域或无障碍车位，并给出标志所在地当时是几点。你当时对收费停车、许可证区域和无障碍停车许可证这几个问题已经作出的回答也会被记录，所以一条日志可能显示你表示已展示无障碍停车许可证。日志不包含照片、照片的 GPS 位置，也不包含识别你或这台设备的 ID。我们用这些日志找出标志读取在哪里出错。日志会在 90 天后删除。",
     "signedInHeader": "你登录后给我们的数据",
     "signedInIntro": "登录是可选的。它会开启云同步,让同一套记录在你所有设备上都能看到。",
     "signedInThings": "登录之后,以下额外数据会离开你的设备:",
@@ -555,7 +562,7 @@
     "rightsExport": "<strong>导出。</strong>在账户里点\"下载为 PDF\",拿到一份完整文档,包含你存储的所有记录:封面摘要,加上每条记录的详细信息块(含照片)。",
     "rightsDelete": "<strong>删除。</strong>在账户里点\"删除账户\"。几秒内删掉你的登录记录、每一个 DynamoDB 行和每一张 S3 照片。无法撤销。",
     "rightsCorrect": "<strong>更正。</strong>你在应用中编辑记录。登录时每次更改会立即同步到云端。",
-    "rightsAnonymous": "如果你不登录，你的停车记录只保存在这台设备上。清除浏览器存储即可删除它们。但这不会删除已经在我们服务器上的数据，例如你设置的推送提醒（保留到发送、取消或过期为止）、这台设备的推送注册（在你最后一次设置提醒后保留约 90 天），或你发送的反馈以及你填写的电子邮件（最多保留两年）。",
+    "rightsAnonymous": "如果你不登录，你的停车记录只保存在这台设备上。清除浏览器存储即可删除它们。但这不会删除已经在我们服务器上的数据。你为某条记录设置的推送提醒会保留到发出或你取消为止。每周推送提醒会在你最后一次打开 ParkProof 后的 90 天内删除。这台设备的推送注册（这台设备的随机 ID、你的浏览器提供给我们的推送地址和加密密钥，以及它们最后一次更新的时间）会在 ParkProof 最后一次更新它之后保留约 90 天。你在开启推送提醒的情况下打开 ParkProof，或设置提醒时，ParkProof 都会更新它。在 ParkProof 或浏览器中关闭推送提醒不会通知我们的服务器，所以推送注册仍按上述方式保留。如果推送服务告诉我们这个地址已经失效（你关闭推送提醒后，之前设置的提醒发出时就可能出现这种情况），我们会立即删除这个地址和密钥。我们只保留这台设备的 ID、这个地址的指纹和我们得知的时间，保留约 90 天，以免再次存储这个地址。这台设备注册推送、设置提醒或收到提醒时，我们服务器的日志还会记录这台设备的 ID，以及它使用的推送服务、相关记录或每周提醒的随机 ID，和每条提醒的设置、发送或跳过时间。这些日志会在 90 天后删除。你发送的反馈以及你填写的电子邮件（如有）最多保留两年。",
     "photosHeader": "在 ParkProof 内拍摄的照片",
     "photosCopy": "照片在离开浏览器之前,会先在你的设备上缩到 ≤1200px 并以 0.82 质量重新编码为 JPEG。原始的高分辨率相机照片从不离开你的手机。",
     "signingHeader": "数字签名",
@@ -568,7 +575,7 @@
     "anonymousPush": "<strong>推送提醒</strong>(如果你开启):记录的地址、每条提醒的时间和内容(内容可能提到你输入的许可证时间)会发送到 <strong>ParkProof 的服务器</strong>。服务器会保留每条提醒直到发出,然后删除。",
     "anonymousPermits": "<strong>你在某次停车中使用的许可证</strong>:它的类型、区域以及你输入的许可证时间会和这条记录保存在一起。为记录签名时,发送的是这些信息的指纹,而不是信息本身,同时还会发送你对许可证问题的回答。在设置里删除许可证不会改变已保存的记录。删除这条记录才会删除这些信息。",
     "signedInPermits": "记录里保存的<strong>许可证信息</strong>(你在某次停车中使用已保存许可证时的类型、区域以及你输入的许可证时间)会随这条记录存储在 AWS DynamoDB 中。设置里保存的许可证不会上传。删除这条记录就会删除这些信息。",
-    "anonymousWeeklyPush": "<strong>每周推送提醒</strong>(如果你开启):每条提醒的名称、你输入的地址(如有)、星期、时间和时区,以及通知内容会发送到 <strong>ParkProof 的服务器</strong>。提醒开启期间,服务器会保留这些信息,以便每周发出提醒。你暂停或删除这条提醒,或关闭它的通知时,这些信息会被删除。如果你不再打开 ParkProof,这些信息会在 90 天内删除。"
+    "anonymousWeeklyPush": "<strong>每周推送提醒</strong>（如果你开启）：每条提醒的名称、你输入的地址（如有）、星期、时间、重复方式和时区、何时提醒你，以及通知内容，会连同这台设备的随机 ID 一起发送到 <strong>ParkProof 的服务器</strong>。提醒开启期间，服务器会保留这些信息，以便每周发出提醒。你暂停或删除这条提醒，或关闭它的通知后，ParkProof 下次打开并联网时会删除这些信息。ParkProof 每次发送这些信息后，服务器最多保留 90 天。只要你继续打开 ParkProof，它就会不时重新发送；如果你不再打开，这些信息会在你最后一次打开 ParkProof 后的 90 天内删除。"
   },
   "loading": {
     "step1": "正在读取标志…",
@@ -874,20 +881,17 @@
       "title": "需要时，可核对是否被篡改的证据。",
       "body": "你保存的每一条停车记录都会被签名，任何人都可以核对它的内容自签名以来有没有改动。签名不能说明这些内容属实，也不能说明是谁在开车、车停在哪里，或车辆何时到达、何时离开。"
     },
-    "feature": {
-      "translateTitle": "通俗的解读",
-      "translateDesc": "拍下任何澳洲停车标志,大约 12 秒内告诉你\"现在能不能停\"。",
-      "evidenceTitle": "可验证未被篡改的证据",
-      "evidenceDesc": "每次停车都有加密签名的时间戳、GPS 和照片记录。",
-      "appealTitle": "AI 申诉信",
-      "appealDesc": "收到不合理的罚单？拍下来，我们帮你起草正式申诉。"
-    },
     "accuracyNote": "ParkProof 可能会误读杂乱的标志。离开车辆前,请务必把我们的解读和实际标志核对一遍。",
     "trustFree": "免费",
     "trustNoAccount": "无需账户",
     "trustOffline": "已保存的记录可离线使用",
     "locationOptional": "位置信息是可选的。即使拒绝,你仍然可以读取标志并自行输入地址。",
-    "heroTitle": "停车,<accent>就这么简单。</accent>"
+    "heroTitle": "停车,<accent>就这么简单。</accent>",
+    "hero": {
+      "aria": "一块停车标志变成一条已签名的停车记录：你可以停到 {{time}}。",
+      "kicker": "已签名记录",
+      "canPark": "可以停车"
+    }
   },
   "about": {
     "title": "ParkProof 的全部功能",
@@ -1101,7 +1105,6 @@
     }
   },
   "notice": {
-    "homeLink": "收到罚款?从这里开始",
     "title": "收到罚款?",
     "captureIntro": "拍一张违章通知的照片。ParkProof 会读取上面的日期、时间和地点,并查找你在那段时间前后的停车记录。",
     "reading": {
@@ -1335,7 +1338,8 @@
       "alarmTomorrow": "{{what}}:明天 {{range}}。请在 {{start}} 前把车挪走。",
       "alarmSoon": "{{what}}将于 {{start}} 开始。请在那之前把车挪走。",
       "move": "请在开始前把车挪走。",
-      "footer": "在 ParkProof 中设置的提醒。"
+      "footer": "在 ParkProof 中设置的提醒。",
+      "noDates": "这条每周提醒没有可添加的日期。"
     }
   },
   "photoGrid": {
@@ -1451,7 +1455,6 @@
     "permitExpired": "已于 {{date}} 到期。扫描时不会再发送它。",
     "deletePermitLabel": "删除{{permit}}",
     "pushUnsupported": "这个浏览器无法在 ParkProof 关闭时显示提醒。在 iPhone 上,请先把 ParkProof 添加到主屏幕。日历提醒仍然可以使用。",
-    "remindersReliability": "提醒可能会延迟或被静音,例如因为专注模式或省电模式。不要只依赖提醒。",
     "accountHeader": "账户",
     "accountCopy": "云同步、导出数据、退出登录和删除账户。",
     "openAccount": "打开账户",

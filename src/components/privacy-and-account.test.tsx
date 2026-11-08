@@ -74,11 +74,19 @@ describe('PrivacyPolicy', () => {
     render(<PrivacyPolicy onBack={() => {}} />)
     const item = screen.getByText('Weekly reminders by push').closest('li')!
     expect(item.closest('ul')).toBe(screen.getByText('Each sign photo you scan').closest('ul'))
-    expect(item.textContent).toMatch(/name and any address you entered, its days, times and time zone, and its notification text/)
+    expect(item.textContent).toMatch(
+      /name and any address you entered, its days, times, repeat pattern and time zone, when it should remind you, and its notification text/,
+    )
+    // Each schedule's Target Input carries the device id (lambda/recurring-schedule.js recurringDispatchInput).
+    expect(item.textContent).toMatch(/with a random ID for this device/)
     expect(item.textContent).toMatch(/keeps them while the reminder is on/)
-    expect(item.textContent).toMatch(/deleted when you pause or delete the reminder or switch off its notifications/)
+    // The phone's cancel (recurring-push.ts reconcile) runs while the app is open and online.
+    expect(item.textContent).toMatch(
+      /deleted when you pause or delete the reminder or switch off its notifications, the next time ParkProof is open and online/,
+    )
     // The server's weekly schedules end and delete themselves this long after the phone last booked them.
-    expect(item.textContent).toContain(`If you stop opening ParkProof, they're deleted within ${RECURRING_SCHEDULE_DAYS} days.`)
+    expect(item.textContent).toContain(`the server keeps them for ${RECURRING_SCHEDULE_DAYS} days at most`)
+    expect(item.textContent).toContain(`they're deleted within ${RECURRING_SCHEDULE_DAYS} days of the last time you opened ParkProof.`)
     // Not the one-off promise the record reminders make.
     expect(item.textContent).not.toMatch(/until it is sent/)
   })

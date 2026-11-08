@@ -109,7 +109,8 @@ export default function HomeMenu({
     rows.push({
       key: 'weekly',
       icon: 'repeat',
-      title: t('home.weeklyReminders'),
+      // T5's reviewed wording, the same key RecurringHomeRow reads.
+      title: t('recurring.homeRow'),
       sub: weeklyRemindersNext,
       detail: weeklyRemindersDetail,
       onClick: onOpenWeeklyReminders,

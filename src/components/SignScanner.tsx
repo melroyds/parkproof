@@ -321,7 +321,7 @@ export default function SignScanner({ onCapture, onReuseSession, onNoSignScan, o
         <>
           <img
             src={preview}
-            alt="Captured parking sign"
+            alt={t('scanner.previewAlt')}
             className="w-full rounded-lg mb-4 border border-brand-900/10 object-contain max-h-[60vh] bg-white"
           />
           {/* Pre-flight quality warning — doesn't block, just informs.
