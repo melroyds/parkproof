@@ -155,11 +155,12 @@ export const DRY_RUN_USAGE = Object.freeze({
  * right answer, so a dry run of a well-formed corpus scores 100%. A label
  * that names a position gets a position question with that option and one
  * opposite decoy. It carries T3's required fields too (sign_status,
- * sign_issues, is_area_sign, permit_exception, recurring_restrictions,
- * with empty defaults when the label doesn't state them), so it matches
- * RESPONSE_SCHEMA and passes T3's output normaliser. permit_exception is
- * an array with one entry per permit the request lists; the harness lists
- * none, so it is [].
+ * sign_issues, is_area_sign, permit_exception_type and
+ * permit_exception_text, recurring_restrictions, with empty defaults when
+ * the label doesn't state them), so it matches RESPONSE_SCHEMA, the
+ * model's raw shape, and passes T3's output normaliser. The harness lists
+ * no permits, so the exception is 'none' with no text (the normaliser
+ * turns that into permit_exception []).
  */
 export function answerFromLabel(entry) {
   const exp = entry.expected
@@ -172,7 +173,8 @@ export function answerFromLabel(entry) {
     is_permit_zone: flags.is_permit_zone ?? false,
     permit_area: flags.permit_area ?? null,
     is_area_sign: flags.is_area_sign ?? false,
-    permit_exception: [],
+    permit_exception_type: 'none',
+    permit_exception_text: '',
     next_transition: null,
   }
   const top = {

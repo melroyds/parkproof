@@ -54,8 +54,15 @@ export function translateSign(input: TranslateSignInput): Promise<ModelParkingRu
 
 /** The sign reader's system prompt (exported for prompt guard tests and the accuracy harness). */
 export const SYSTEM_PROMPT: string
-/** The structured-output JSON schema sent with every sign reading. */
+/**
+ * The structured-output JSON schema sent with every sign reading: the
+ * model's raw shape, kept small enough for the API to compile (flat
+ * permit_exception_type and permit_exception_text, days and week_of_month
+ * as strings). normalizeModelOutput maps it to ModelParkingRules.
+ */
 export const RESPONSE_SCHEMA: Record<string, unknown>
+/** The structured-output JSON schema sent with every appeal draft. */
+export const APPEAL_RESPONSE_SCHEMA: Record<string, unknown>
 export function normalizeModelOutput(raw: unknown, context?: NormalizeContext): ModelParkingRules
 export function validateTranslateExtras(body: unknown): {
   user_permits: CheckedUserPermit[]

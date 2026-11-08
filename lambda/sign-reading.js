@@ -20,6 +20,14 @@
 import { CAPS, ERR, FORBIDDEN_CHARS_RE, JURISDICTIONS, SIGN_STATUSES } from './addendum-schema.js'
 
 export const USER_PERMIT_TYPES = Object.freeze(['accessible', 'resident', 'business'])
+/**
+ * The model's permit_exception_type when the sign prints no exception for
+ * any listed permit (or none are listed). The model's answer carries one
+ * flat type and quote per level, because a list of objects made the
+ * schema's grammar too large for the API (lambda/index.js); the answer the
+ * app gets keeps the permit_exception list.
+ */
+export const NO_PERMIT_EXCEPTION_TYPE = 'none'
 export const CONFIDENCE_LEVELS = Object.freeze(['low', 'medium', 'high'])
 /**
  * The kinds of weekly restriction: the one list the sign reader's schema
@@ -359,19 +367,21 @@ export function noPermitExceptions(permitTypes) {
 /**
  * What the sign itself prints for each of the user's permit types (build
  * spec T3 item 1, "per user permit type"): exactly one entry per listed
- * type, in list order, [] when no permits are listed. An entry applies only
- * when the model says so for that exact type and quotes the sign. Anything
- * else (an entry for a type the user doesn't hold, a missing entry, an
- * empty quote) is "no exception" for that type: a false "your permit allows
- * this" could get the driver fined.
+ * type, in list order, [] when no permits are listed. The model reports at
+ * most one exception per level, as two flat fields (permit_exception_type
+ * and permit_exception_text), so at most one entry applies: the one for
+ * that exact type, and only when the model quotes the sign. Anything else
+ * (a type the user doesn't hold, 'none', an unknown type, an empty quote)
+ * is "no exception" for every type: a false "your permit allows this"
+ * could get the driver fined.
  */
-function permitExceptions(value, permitTypes) {
-  const entries = Array.isArray(value) ? value.filter(isPlainObject) : []
-  return permitTypes.map((type) => {
-    const entry = entries.find((e) => e.permit_type === type && e.applies === true)
-    const text = entry ? fitModelText(entry.text, SIGN_READING_CAPS.permitExceptionText) : ''
-    return text ? { applies: true, permit_type: type, text } : { applies: false, permit_type: type, text: '' }
-  })
+function permitExceptions(type, text, permitTypes) {
+  const quote = fitModelText(text, SIGN_READING_CAPS.permitExceptionText)
+  return permitTypes.map((permitType) =>
+    permitType === type && quote
+      ? { applies: true, permit_type: permitType, text: quote }
+      : { applies: false, permit_type: permitType, text: '' },
+  )
 }
 
 /**
@@ -453,22 +463,57 @@ export function readRecurringRestrictions(value) {
 }
 
 /**
+ * The model's `days` string ('MO,TU') as the kept list: comma-separated
+ * tokens, each trimmed and upper-cased, unknown ones ignored, each day once,
+ * in MO..SU order. [] for anything that isn't a string, or names no known
+ * day (readRecurringRestriction then drops the restriction).
+ */
+function modelDays(value) {
+  if (typeof value !== 'string') return []
+  const tokens = value.split(',').map((t) => t.trim().toUpperCase())
+  return WEEKDAYS.filter((day) => tokens.includes(day))
+}
+
+/** A week token the kept list allows: a single digit 1 to 5. */
+const WEEK_TOKEN_RE = new RegExp(`^[1-${SIGN_READING_CAPS.weekOfMonthMax}]$`)
+
+/**
+ * The model's `week_of_month` string ('1,3') as the kept list: '' (or only
+ * commas and spaces) is every week, []; otherwise the comma-separated
+ * tokens that are a week 1 to 5 (trimmed, each once, sorted), others
+ * ignored. Null when the value isn't a string, or names weeks but none of
+ * them is 1 to 5 ('last', '0'): the restriction is then dropped rather than
+ * shown as running every week.
+ */
+function modelWeeks(value) {
+  if (typeof value !== 'string') return null
+  const tokens = value
+    .split(',')
+    .map((t) => t.trim())
+    .filter(Boolean)
+  if (tokens.length === 0) return []
+  const weeks = [...new Set(tokens.filter((t) => WEEK_TOKEN_RE.test(t)).map(Number))].sort((a, b) => a - b)
+  return weeks.length > 0 ? weeks : null
+}
+
+/**
  * A model's weekly restriction repaired into the kept shape before the
- * check: times written 'H:MM' get their leading zero, '24:00' is the end
- * of the day ('23:59' as an end, '00:00' as a start), and weeks outside 1
- * to 5 are dropped from the list. Anything it can't repair is left for
- * readRecurringRestriction to drop.
+ * check: the days and week_of_month strings become lists (modelDays,
+ * modelWeeks), times written 'H:MM' get their leading zero, and '24:00' is
+ * the end of the day ('23:59' as an end, '00:00' as a start). Null when it
+ * isn't an object or its weeks can't be read; anything else it can't
+ * repair is left for readRecurringRestriction to drop.
  */
 function repairRecurringRestriction(value) {
-  if (!isPlainObject(value)) return value
-  const weeks = value.week_of_month
+  if (!isPlainObject(value)) return null
+  const week_of_month = modelWeeks(value.week_of_month)
+  if (week_of_month === null) return null
   return {
     ...value,
+    days: modelDays(value.days),
     start: clockTime(value.start),
     end: clockTime(value.end, { isEnd: true }),
-    week_of_month: Array.isArray(weeks)
-      ? weeks.filter((w) => Number.isInteger(w) && w >= 1 && w <= SIGN_READING_CAPS.weekOfMonthMax)
-      : weeks,
+    week_of_month,
   }
 }
 
@@ -492,7 +537,7 @@ function ruleVariant(value, permitTypes) {
     is_permit_zone: bool(value.is_permit_zone),
     permit_area: fitTextOrNull(value.permit_area, SIGN_READING_CAPS.permitArea),
     is_area_sign: bool(value.is_area_sign),
-    permit_exception: permitExceptions(value.permit_exception, permitTypes),
+    permit_exception: permitExceptions(value.permit_exception_type, value.permit_exception_text, permitTypes),
     next_transition: nextTransition(value.next_transition),
   }
 }
@@ -513,8 +558,12 @@ function clarification(value, permitTypes) {
 
 /**
  * The sign reader's answer with every enum and cap enforced (build spec T3
- * item 4). Returns a fresh object holding exactly RESPONSE_SCHEMA's keys,
- * in schema order. Defaults for a missing or invalid value:
+ * item 4). Returns a fresh object holding exactly the answer keys the app
+ * reads (ModelParkingRules), in a fixed order: RESPONSE_SCHEMA's keys, with
+ * the model's flat permit_exception_type and permit_exception_text read
+ * into one permit_exception list, and each weekly restriction's days and
+ * week_of_month strings read into lists. Defaults for a missing or invalid
+ * value:
  * sign_status 'partially_obscured' (the cautious banner), confidence 'low',
  * booleans false, strings '', lists [], nullable values null, an unknown
  * recurring kind 'other'. Throws ERR_SIGN_UNREADABLE when the answer isn't
@@ -528,7 +577,13 @@ function clarification(value, permitTypes) {
  *   rest of such an answer is never read, so a malformed time in it
  *   doesn't turn that screen into an error.
  * - permit_exception has one entry per permit type in
- *   `context.user_permits` (in list order; [] when none are listed).
+ *   `context.user_permits` (in list order; [] when none are listed). At
+ *   most one of them applies at each level: the model reports one
+ *   exception per level.
+ * - A weekly restriction's days are the known codes in its days string
+ *   ('MO,TU'); its weeks are the 1 to 5 tokens in its week_of_month string
+ *   ('1,3', '' for every week). One with no known day, or with weeks none of
+ *   which can be read, is dropped.
  * - sign_issues are plain notes (plainNoteText): no arrows or symbols a
  *   PDF font can't draw.
  * - The top-level is_area_sign is true when any position's is.
@@ -604,7 +659,7 @@ export function normalizeModelOutput(raw, context = {}) {
     is_permit_zone: bool(raw.is_permit_zone),
     permit_area: fitTextOrNull(raw.permit_area, SIGN_READING_CAPS.permitArea),
     is_area_sign,
-    permit_exception: permitExceptions(raw.permit_exception, permitTypes),
+    permit_exception: permitExceptions(raw.permit_exception_type, raw.permit_exception_text, permitTypes),
     recurring_restrictions: recurringRestrictions(raw.recurring_restrictions),
     next_transition: nextTransition(raw.next_transition),
     clarification: clarification(raw.clarification, permitTypes),
