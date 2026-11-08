@@ -24,7 +24,7 @@ export default function PrivacyPolicy({ onBack }: Props) {
 
   return (
     <div className="min-h-screen flex flex-col p-6 max-w-2xl mx-auto w-full">
-      <BackButton onClick={onBack} className="!text-[#A9CFBE] hover:!text-paper-50">
+      <BackButton onClick={onBack}>
         {t('common.back')}
       </BackButton>
 

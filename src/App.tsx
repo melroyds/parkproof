@@ -62,14 +62,17 @@ import { HOME_SCAN_ID, RECORD_STATUS_ID, firstFocusTarget } from './lib/focus-ta
 import { useAuth } from './lib/use-auth'
 import { authConfigured } from './lib/auth'
 import {
+  createSyncRunner,
   deleteCloudSession,
   fetchRefPhotoFromCloud,
+  installSyncOnReturn,
   mirrorSessionToCloud,
   mirrorSessionUpdateToCloud,
   performInitialSync,
+  type InitialSyncResult,
 } from './lib/sync'
 import { handleCallback as handleFederatedCallback } from './lib/federated-auth'
-import { cancelPushReminders } from './lib/push'
+import { cancelPushReminders, installPushRegistrationRefresh } from './lib/push'
 import { cancelInTabReminders } from './lib/notifications'
 import { clearDeepLinkParams, parseDeepLink } from './lib/deep-link'
 import type { LogDraft, ParkingRules, ParkingSession, RuleVariant } from './types'
@@ -139,6 +142,35 @@ function isOffline(): boolean {
 }
 
 /**
+ * Settle a cloud sync run: the start/sign-in sync, the retry and the pull
+ * on return all end here. Records already told open screens as they landed
+ * (sync.ts); this adds the end-of-run notification and the signing release.
+ * `setUnreachable` drives the "couldn't reach your records" banner: set
+ * when a run fails with nothing local to show, cleared when a later run
+ * (a pull on return, say) reaches the cloud.
+ */
+function settleSyncRun(run: Promise<InitialSyncResult>, setUnreachable: (unreachable: boolean) => void): void {
+  void run
+    .then((res) => {
+      // Couldn't reach the cloud AND nothing local to fall back on → a
+      // returning user on a fresh device would otherwise see the first-time
+      // landing with no clue their data is fine in the cloud. Offer a retry.
+      if (res.listFailed && loadSessions().length === 0) setUnreachable(true)
+      else if (!res.listFailed) setUnreachable(false)
+    })
+    .catch((err) => {
+      console.warn('[sync] initial sync failed:', err)
+      if (loadSessions().length === 0) setUnreachable(true)
+    })
+    .finally(() => {
+      // Load-bearing (see CLAUDE.md gotchas): re-renders home after a pull.
+      notifyRecordsChanged()
+      // The cloud copies are merged in: sign the addenda held since start.
+      releaseAddendumSigning()
+    })
+}
+
+/**
  * Transient bottom-of-screen notice. Used for save-time events the user would
  * otherwise never learn about: a photo that failed to back up to the cloud, or
  * evidence photos stripped to recover localStorage quota.
@@ -148,7 +180,7 @@ function Toast({ message, onClose }: { message: string | null; onClose: () => vo
   return (
     <div
       role="alert"
-      className="fixed bottom-4 inset-x-4 z-50 max-w-md mx-auto bg-ink-900 text-white rounded-xl shadow-sm p-4 flex items-start gap-3"
+      className="fixed safe-bottom-4 safe-inset-x-4 z-50 max-w-md mx-auto bg-ink-900 text-white rounded-xl shadow-sm p-4 flex items-start gap-3"
     >
       <p className="text-sm leading-relaxed flex-1">{message}</p>
       <button
@@ -280,6 +312,14 @@ function App() {
     if (!auth.loading && !auth.user) releaseAddendumSigning()
   }, [auth.loading, auth.user])
 
+  // Push registration refresh (field-test fix list, item 1): the server can
+  // forget this phone (90-day expiry, or a first save that failed) while
+  // the browser still holds its subscription, and reminders booked then
+  // were dropped. Re-send the registration on start and when the app comes
+  // back to the screen. Fire-and-forget, only with notifications allowed
+  // and a subscription present, at most hourly.
+  useEffect(() => installPushRegistrationRefresh(), [])
+
   // Photo-store GC on app start: delete photos whose record no longer
   // exists, once they are at least a day old (a logger open in another tab
   // stores its photos before its record is saved). Skipped when the saved
@@ -341,31 +381,21 @@ function App() {
   // After the sync settles (success OR error) we fire a records-changed
   // notification so the home view re-derives. Without this, a signed-in user
   // on a fresh device sees the "first-time visitor" LandingFeatures forever:
-  // sessionCount is computed inline at render time and the cloud pull writes
-  // localStorage directly, so nothing else would trigger a render.
+  // sessionCount is computed inline at render time. Records now also notify
+  // as they land (sync.ts), so open screens update mid-sync, but this
+  // end-of-run notification stays: it is the one the gotcha depends on.
   const userId = auth.user?.userId
+  // One sync at a time for the app's lifetime: the start/sign-in sync, the
+  // retry and the pull on return all go through it (sync.ts createSyncRunner).
+  const [cloudSync] = useState(() => createSyncRunner(performInitialSync))
   const runInitialSync = () => {
     if (!userId) return
-    // Note: syncError is cleared by the retry handler, NOT here — calling
-    // setState synchronously from the mount effect that invokes this would trip
-    // the cascading-render lint rule. The async branches below are fine.
-    void performInitialSync()
-      .then((res) => {
-        // Couldn't reach the cloud AND nothing local to fall back on → a
-        // returning user on a fresh device would otherwise see the first-time
-        // landing with no clue their data is fine in the cloud. Offer a retry.
-        if (res.listFailed && loadSessions().length === 0) setSyncError(true)
-      })
-      .catch((err) => {
-        console.warn('[sync] initial sync failed:', err)
-        if (loadSessions().length === 0) setSyncError(true)
-      })
-      .finally(() => {
-        // Load-bearing (see CLAUDE.md gotchas): re-renders home after a pull.
-        notifyRecordsChanged()
-        // The cloud copies are merged in: sign the addenda held since start.
-        releaseAddendumSigning()
-      })
+    // Note: syncError is cleared by the retry handler, NOT synchronously
+    // here. Calling setState synchronously from the mount effect that invokes
+    // this would trip the cascading-render lint rule. The async branches in
+    // settleSyncRun are fine: they set it, and clear it once a run (the pull
+    // on return, too) reaches the cloud.
+    settleSyncRun(cloudSync.now(), setSyncError)
   }
   // A photo whose bytes aren't on this device (a record pulled from the
   // cloud, or IndexedDB cleared) is fetched from the signed-in driver's
@@ -387,6 +417,14 @@ function App() {
     // render, so listing it as a dep would re-sync on every render.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId])
+  // Pull on return (field-test fix list, Tier 2): while signed in, sync
+  // again when the app comes back to the screen or back online, so a record
+  // ended or added on another device shows up without a reload. At most
+  // once a minute, and never while a sync is already running.
+  useEffect(() => {
+    if (!userId) return
+    return installSyncOnReturn(cloudSync, (run) => settleSyncRun(run, setSyncError))
+  }, [userId, cloudSync])
 
   // Whenever signing stores a new bundle (at save or from a background
   // retry), mirror the record to the cloud while signed in.

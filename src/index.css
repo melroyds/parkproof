@@ -79,6 +79,57 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* ─── Safe areas (installed iPhone app) ────────────────────────────
+   index.html sets viewport-fit=cover and the black-translucent status
+   bar, so the installed app draws under the clock, the notch and the home
+   indicator. The vault background above stays on body, so it still draws
+   edge to edge under the status bar. Only content moves: the app shell
+   (#root, which holds every screen) pads itself back inside the safe area.
+   In a desktop or Android browser tab every inset is 0, so nothing moves.
+
+   Fixed layers (modals, sheets, toasts, banners) are placed against the
+   viewport, not the shell, so the shell's padding never reaches them and
+   they can't be padded twice. Each one uses the safe-* utilities below
+   instead. src/lib/app-shell.test.ts keeps every fixed layer on them. */
+#root {
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-right: env(safe-area-inset-right, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  padding-left: env(safe-area-inset-left, 0px);
+}
+/* Every screen is min-h-screen (100vh). Inside the padded shell that would
+   overflow by the insets and give each short screen a pointless scroll, so
+   screens in the shell fill the safe area instead. Unlayered, so it wins
+   over the Tailwind utility; with no insets it is exactly 100vh again. */
+#root .min-h-screen {
+  min-height: calc(100vh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+}
+
+/* bottom-4, plus the home indicator. */
+@utility safe-bottom-4 {
+  bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
+}
+/* inset-x-4, plus the side insets in landscape. */
+@utility safe-inset-x-4 {
+  left: calc(1rem + env(safe-area-inset-left, 0px));
+  right: calc(1rem + env(safe-area-inset-right, 0px));
+}
+/* p-4 and p-6 for a full-screen overlay: the backdrop still covers the
+   whole screen, but the panel inside clears every inset. */
+@utility safe-p-4 {
+  padding: calc(1rem + env(safe-area-inset-top, 0px)) calc(1rem + env(safe-area-inset-right, 0px))
+    calc(1rem + env(safe-area-inset-bottom, 0px)) calc(1rem + env(safe-area-inset-left, 0px));
+}
+@utility safe-p-6 {
+  padding: calc(1.5rem + env(safe-area-inset-top, 0px)) calc(1.5rem + env(safe-area-inset-right, 0px))
+    calc(1.5rem + env(safe-area-inset-bottom, 0px)) calc(1.5rem + env(safe-area-inset-left, 0px));
+}
+/* max-w-[calc(100vw-1.5rem)] for the centred pill banners, less the side
+   insets. */
+@utility safe-max-w-pill {
+  max-width: calc(100vw - 1.5rem - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px));
+}
+
 h1, h2, h3, h4, .font-display {
   font-family: var(--font-display);
   letter-spacing: -0.02em;

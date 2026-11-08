@@ -271,7 +271,37 @@
     },
     "pushScheduleFailed": "Non siamo riusciti a impostare il promemoria in background. Potrebbe suonare solo finché questa scheda è aperta. Tocca per riprovare.",
     "chipMin_one": "{{count}} min",
-    "chipMin_other": "{{count}} min"
+    "chipMin_other": "{{count}} min",
+    "remindMe": {
+      "cta": "Ricordamelo",
+      "busy": "Impostazione in corso…",
+      "setBackground_one": "{{count}} promemoria impostato per le <strong>{{times}}</strong>. Viene inviato a questo dispositivo anche con ParkProof chiuso.",
+      "setBackground_other": "{{count}} promemoria impostati per le <strong>{{times}}</strong>. Vengono inviati a questo dispositivo anche con ParkProof chiuso.",
+      "setOpenOnly_one": "{{count}} promemoria impostato per le <strong>{{times}}</strong>, ma funziona solo finché ParkProof è aperto.",
+      "setOpenOnly_other": "{{count}} promemoria impostati per le <strong>{{times}}</strong>, ma funzionano solo finché ParkProof è aperto.",
+      "notSet": "Nessun promemoria impostato.",
+      "stepInstall": "Su iPhone, i promemoria richiedono ParkProof nella schermata Home. Tocca Condividi, poi \"Aggiungi alla schermata Home\", apri ParkProof da lì e tocca di nuovo Ricordamelo.",
+      "stepAllow": "Le notifiche di ParkProof sono disattivate. Consentile quando il browser te lo chiede, oppure nelle impostazioni del sito del browser, poi tocca di nuovo Ricordamelo.",
+      "stepUnsupported": "Questo browser non può inviare promemoria quando ParkProof è chiuso. Usa invece un promemoria nel calendario.",
+      "stepRetry": "Non è stato possibile impostare i promemoria per quando ParkProof è chiuso. Controlla la connessione, poi tocca di nuovo Ricordamelo.",
+      "stepAllPast": "Gli orari che hai scelto sono già passati. Scegline uno più tardi."
+    },
+    "reliability": "I promemoria possono arrivare in ritardo o essere silenziati, per esempio da Full immersion o dal risparmio energetico. Non affidarti solo a loro.",
+    "androidTips": {
+      "summary": "Consigli per telefoni Android",
+      "spam": "Se Chrome segnala un promemoria come possibile spam, tocca Consenti.",
+      "battery": "Sui Samsung, imposta l'uso della batteria di Chrome su Senza restrizioni."
+    },
+    "chipFiresAt": "Suona alle {{when}}",
+    "chipPast": "Già passato",
+    "reconnect": {
+      "cta": "I promemoria non arrivano? Riconnetti",
+      "busy": "Riconnessione in corso…",
+      "done": "Riconnesso. I prossimi promemoria su questo dispositivo useranno la nuova connessione.",
+      "failed": "Impossibile riconnettersi. Controlla la connessione e riprova.",
+      "denied": "Le notifiche di ParkProof sono bloccate. Consentile nelle impostazioni del sito del browser, poi riprova."
+    },
+    "timesOnDay": "{{times}} di {{day}}"
   },
   "history": {
     "header": "Record di parcheggio",
@@ -430,7 +460,7 @@
     "deleteTypoError": "Digita DELETE in maiuscolo per confermare.",
     "youSignedOut": "Sei uscito.",
     "pushHeader": "Notifiche push su questo dispositivo",
-    "pushCopy": "I promemoria suonano ad app chiusa solo se il push è attivo. L'iscrizione è per browser e per dispositivo, separata dall'account.",
+    "pushCopy": "Il push permette ai promemoria di arrivare su questo dispositivo quando ParkProof è chiuso. Attivarlo non imposta nessun promemoria da solo. Tocca Ricordamelo su un record di parcheggio per impostarne uno. Si attiva per ogni browser su ciascun dispositivo, separatamente dal tuo account.",
     "pushSubscribed": "✓ Iscritto su questo dispositivo",
     "pushEnable": "Attiva push",
     "pushDisable": "Disattiva push su questo dispositivo",
@@ -739,8 +769,8 @@
     "lead": "Probabilmente sei qui pensando ah, legge i cartelli di parcheggio. È vero. Ma già che c'eravamo, abbiamo deciso di salvare anche le prove nel caso tu prenda una multa ingiusta, scriverti noi la lettera di ricorso se serve, e ricordarti di spostare la macchina prima che scada il tempo. Ecco il giro di presentazione.",
     "push": {
       "title": "Attiva le notifiche push su questo dispositivo",
-      "body": "I promemoria funzionano a mani libere anche quando ParkProof non è aperta. Concedere il permesso ora significa che i futuri promemoria di parcheggio scattano in silenzio in sottofondo — senza richiesta di permesso a metà flusso.",
-      "subscribed": "✓ Questo dispositivo è iscritto. I promemoria push scatteranno per i tuoi futuri record di parcheggio.",
+      "body": "Se consenti le notifiche ora, dopo non ti verrà più chiesto. Nessun promemoria viene impostato finché non tocchi Ricordamelo su un record di parcheggio.",
+      "subscribed": "✓ Le notifiche sono attive su questo dispositivo. Per impostare un promemoria, tocca Ricordamelo su un record di parcheggio.",
       "denied": "Hai bloccato le notifiche per questo sito. Per attivarle, modifica il permesso nelle impostazioni del sito del tuo browser.",
       "errorRetry": "Qualcosa è andato storto — riprova",
       "enable": "Attiva le notifiche",
@@ -838,7 +868,8 @@
     "pushNotEnabled": "Attiva le notifiche push su questo dispositivo per aggiungere promemoria che suonano anche quando l'app è chiusa.",
     "saving": "Salvataggio…",
     "errorRetry": "Impossibile aggiornare — riprova",
-    "otherDevice": "Questi promemoria sono stati impostati su un altro dispositivo. Modificali da quel dispositivo."
+    "otherDevice": "Questi promemoria sono stati impostati su un altro dispositivo. Modificali da quel dispositivo.",
+    "chipAlreadySet": "Già impostato"
   },
   "installPrompt": {
     "available": "Installa ParkProof",

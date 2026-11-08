@@ -43,7 +43,7 @@ export default function ActiveSessionsList({ sessions, onBack, onOpen }: Props) 
 
   return (
     <div className="min-h-screen flex flex-col p-6 max-w-md mx-auto w-full">
-      <BackButton onClick={onBack} className="text-[#7BE3A4] hover:text-paper-50">
+      <BackButton onClick={onBack}>
         {t('common.back')}
       </BackButton>
 

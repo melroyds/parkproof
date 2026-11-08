@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import type { ParkingSession } from '../types'
 import { isStorageFullError, updateSession } from '../lib/storage'
 import { useLiveRecord } from '../lib/use-records-version'
-import { canEndRecord } from '../lib/record-status'
+import { canEndRecord, endedStatusTime } from '../lib/record-status'
 import { DEV_KEY_ALIAS } from '../lib/evidence-chain'
 import { LEGACY_PHOTO_ROLES, hasSessionPhoto, legacyPhotoValue, photoRefFor } from '../lib/session-photos'
 import { useSessionPhoto } from '../lib/use-session-photo'
@@ -52,13 +52,11 @@ interface Props {
   onEndSession: (session: ParkingSession) => void
 }
 
-function fmtLocal(iso: string, timeZone: string, full = false): string {
+function fmtLocal(iso: string, timeZone: string): string {
   return new Date(iso).toLocaleString('en-AU', {
     timeZone,
-    weekday: full ? 'short' : undefined,
     day: 'numeric',
     month: 'short',
-    year: full ? 'numeric' : undefined,
     hour: 'numeric',
     minute: '2-digit',
   })
@@ -94,6 +92,8 @@ export default function SessionDetail({
   // one past its expiry (the driver may come back late).
   const canEnd = canEndRecord(session)
   const timeZone = useMemo(() => sessionTimezone(session.location), [session.location])
+  // "Ended 5:23 pm AEDT" on the status line (the I've left tap time).
+  const endedTime = isEnded ? endedStatusTime(session, timeZone) : null
   // Locale-aware link to the plain-English /verify walkthrough — surfaced at
   // the point the user exports evidence, the moment they most want to know how
   // a council actually verifies the tamper-proof claim.
@@ -261,15 +261,18 @@ export default function SessionDetail({
 
   return (
     <div className="min-h-screen flex flex-col p-6 max-w-md mx-auto w-full">
-      <BackButton onClick={onBack} className="text-[#7BE3A4] hover:text-paper-50">
+      <BackButton onClick={onBack}>
         {t('common.backToHistory')}
       </BackButton>
 
       <h2 className="font-display text-3xl font-extrabold tracking-tight text-paper-50 mb-1">
         {t('session.header')}
       </h2>
-      <p className="text-sm mb-3 leading-relaxed" style={{ color: '#A9CFBE' }}>
-        {t('session.arrived', { when: fmtLocal(session.arrived_at, timeZone, true) })}
+      {/* Which record this is: the arrival day and time, in the record's own
+          zone with its name (field-test fix list, item 6). Prominent, so two
+          records from the same afternoon can't be mixed up. */}
+      <p className="text-base font-semibold text-paper-50 mb-3 leading-snug tnum">
+        {t('session.arrived', { when: formatInZone(session.arrived_at, timeZone, { withYear: true }) })}
       </p>
 
       {/* Register A — the signed-record vault panel. The cryptographic proof
@@ -355,10 +358,13 @@ export default function SessionDetail({
                 isEnded || isExpired ? 'text-ink-600' : 'text-brand-700'
               }`}
             >
-              {/* An ended record's times are in the departure row below:
-                  the phone-clock tap time and ParkProof's signing time. */}
+              {/* An ended record names its I've left tap time, so the line
+                  says which record this is. The departure row below labels
+                  that time as the phone's and adds ParkProof's signing time. */}
               {isEnded
-                ? t('session.ended')
+                ? endedTime
+                  ? t('session.endedAt', { when: endedTime })
+                  : t('session.ended')
                 : session.expires_at
                   ? isExpired
                     ? t('history.expired')

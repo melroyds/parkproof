@@ -271,7 +271,37 @@
     },
     "pushScheduleFailed": "Không đặt được lời nhắc chạy ngầm. Lời nhắc có thể chỉ kêu khi tab này đang mở. Nhấn để thử lại.",
     "chipMin_one": "{{count}} phút",
-    "chipMin_other": "{{count}} phút"
+    "chipMin_other": "{{count}} phút",
+    "remindMe": {
+      "cta": "Nhắc tôi",
+      "busy": "Đang thiết lập…",
+      "setBackground_one": "Đã đặt {{count}} lời nhắc lúc <strong>{{times}}</strong>. Lời nhắc vẫn được gửi đến thiết bị này kể cả khi ParkProof đã đóng.",
+      "setBackground_other": "Đã đặt {{count}} lời nhắc lúc <strong>{{times}}</strong>. Lời nhắc vẫn được gửi đến thiết bị này kể cả khi ParkProof đã đóng.",
+      "setOpenOnly_one": "Đã đặt {{count}} lời nhắc lúc <strong>{{times}}</strong>, nhưng chỉ hoạt động khi ParkProof đang mở.",
+      "setOpenOnly_other": "Đã đặt {{count}} lời nhắc lúc <strong>{{times}}</strong>, nhưng chỉ hoạt động khi ParkProof đang mở.",
+      "notSet": "Chưa đặt được lời nhắc nào.",
+      "stepInstall": "Trên iPhone, lời nhắc cần ParkProof nằm trên Màn hình chính. Nhấn Chia sẻ, chọn 'Thêm vào Màn hình chính', rồi mở ParkProof từ đó và nhấn lại 'Nhắc tôi'.",
+      "stepAllow": "Thông báo của ParkProof đang tắt. Hãy cho phép khi trình duyệt hỏi, hoặc trong cài đặt trang của trình duyệt, rồi nhấn lại 'Nhắc tôi'.",
+      "stepUnsupported": "Trình duyệt này không gửi được lời nhắc khi ParkProof đã đóng. Hãy dùng nhắc nhở qua lịch.",
+      "stepRetry": "Không thiết lập được lời nhắc cho lúc ParkProof đã đóng. Hãy kiểm tra kết nối, rồi nhấn lại 'Nhắc tôi'.",
+      "stepAllPast": "Thời điểm bạn chọn đã qua. Hãy chọn thời điểm muộn hơn."
+    },
+    "reliability": "Lời nhắc có thể bị chậm hoặc bị tắt tiếng, chẳng hạn do chế độ Tập trung hoặc tiết kiệm pin. Đừng chỉ dựa vào lời nhắc.",
+    "androidTips": {
+      "summary": "Mẹo cho điện thoại Android",
+      "spam": "Nếu Chrome cảnh báo lời nhắc có thể là thư rác, hãy nhấn Cho phép.",
+      "battery": "Trên Samsung, đặt mức dùng pin của Chrome thành Không hạn chế."
+    },
+    "chipFiresAt": "Nhắc lúc {{when}}",
+    "chipPast": "Đã qua",
+    "reconnect": {
+      "cta": "Không nhận được lời nhắc? Kết nối lại",
+      "busy": "Đang kết nối lại…",
+      "done": "Đã kết nối lại. Các lời nhắc sắp tới trên thiết bị này sẽ dùng kết nối mới.",
+      "failed": "Không kết nối lại được. Hãy kiểm tra kết nối rồi thử lại.",
+      "denied": "Thông báo của ParkProof đang bị chặn. Hãy cho phép trong cài đặt trang của trình duyệt, rồi thử lại."
+    },
+    "timesOnDay": "{{times}} ngày {{day}}"
   },
   "history": {
     "header": "Bản ghi đỗ xe",
@@ -430,7 +460,7 @@
     "deleteTypoError": "Vui lòng nhập DELETE bằng chữ in hoa để xác nhận.",
     "youSignedOut": "Bạn đã đăng xuất.",
     "pushHeader": "Thông báo đẩy trên thiết bị này",
-    "pushCopy": "Lời nhắc chỉ kêu khi ứng dụng đóng nếu đã bật đẩy. Đăng ký theo từng trình duyệt và từng thiết bị, độc lập với tài khoản.",
+    "pushCopy": "Thông báo đẩy giúp lời nhắc đến được thiết bị này khi ParkProof đã đóng. Bật đẩy không tự đặt lời nhắc nào. Hãy nhấn 'Nhắc tôi' trên một bản ghi đỗ xe để đặt lời nhắc. Đẩy được thiết lập riêng cho từng trình duyệt trên mỗi thiết bị, độc lập với tài khoản của bạn.",
     "pushSubscribed": "✓ Đã đăng ký trên thiết bị này",
     "pushEnable": "Bật đẩy",
     "pushDisable": "Tắt đẩy trên thiết bị này",
@@ -739,8 +769,8 @@
     "lead": "Bạn đến đây có lẽ chỉ nghĩ à, nó đọc biển báo đỗ xe. Đúng vậy. Nhưng nhân tiện, chúng tôi cũng lưu lại bằng chứng phòng khi bạn bị phạt oan, viết thư khiếu nại giúp bạn nếu cần, và nhắc bạn dời xe trước khi hết giờ. Đây là phần giới thiệu nhẹ nhàng.",
     "push": {
       "title": "Bật thông báo đẩy trên thiết bị này",
-      "body": "Lời nhắc chạy không cần thao tác, kể cả khi ParkProof không mở. Cấp quyền ngay bây giờ nghĩa là các lời nhắc đỗ xe sau này sẽ chạy ngầm — không có lời xin quyền chen ngang giữa chừng.",
-      "subscribed": "✓ Thiết bị này đã đăng ký. Nhắc nhở đẩy sẽ phát cho các bản ghi đỗ xe sau này của bạn.",
+      "body": "Cho phép thông báo ngay bây giờ thì sau này bạn sẽ không bị hỏi lại. Chỉ khi bạn nhấn 'Nhắc tôi' trên một bản ghi đỗ xe thì lời nhắc mới được đặt.",
+      "subscribed": "✓ Thông báo đã bật trên thiết bị này. Để đặt lời nhắc, hãy nhấn 'Nhắc tôi' trên một bản ghi đỗ xe.",
       "denied": "Bạn đã chặn thông báo cho trang này. Để bật, hãy thay đổi quyền trong cài đặt trang của trình duyệt.",
       "errorRetry": "Đã xảy ra lỗi — thử lại",
       "enable": "Bật thông báo",
@@ -838,7 +868,8 @@
     "pushNotEnabled": "Bật thông báo đẩy trên thiết bị này để thêm nhắc nhở kêu khi ứng dụng đóng.",
     "saving": "Đang lưu…",
     "errorRetry": "Không thể cập nhật — thử lại",
-    "otherDevice": "Các lời nhắc này được đặt trên một thiết bị khác. Hãy thay đổi chúng trên thiết bị đó."
+    "otherDevice": "Các lời nhắc này được đặt trên một thiết bị khác. Hãy thay đổi chúng trên thiết bị đó.",
+    "chipAlreadySet": "Đã đặt"
   },
   "installPrompt": {
     "available": "Cài đặt ParkProof",

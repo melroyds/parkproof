@@ -45,7 +45,7 @@ export default function SessionHistory({ onBack, onOpen }: Props) {
 
   return (
     <div className="min-h-screen flex flex-col p-6 max-w-md mx-auto w-full">
-      <BackButton onClick={onBack} className="text-[#7BE3A4] hover:text-paper-50">{t('common.backToHome')}</BackButton>
+      <BackButton onClick={onBack}>{t('common.backToHome')}</BackButton>
 
       <h2 className="font-display text-3xl font-extrabold text-paper-50 mb-1">
         {t('history.header')}

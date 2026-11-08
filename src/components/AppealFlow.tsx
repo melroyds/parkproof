@@ -5,6 +5,7 @@ import { draftAppeal } from '../lib/claude'
 import { resizeImageFile } from '../lib/image'
 import Icon from './Icon'
 import BrandMark from './BrandMark'
+import BackButton from './ui/BackButton'
 import Button from './ui/Button'
 import Card from './ui/Card'
 
@@ -115,9 +116,7 @@ export default function AppealFlow({ session, onBack }: Props) {
   if (stage.name === 'error') {
     return (
       <main className="min-h-screen flex flex-col p-6 max-w-md mx-auto w-full">
-        <button onClick={onBack} className="self-start min-h-[44px] inline-flex items-center -my-2.5 text-[#A9CFBE] hover:text-paper-50 text-sm mb-4">
-          {t('common.back')}
-        </button>
+        <BackButton onClick={onBack}>{t('common.back')}</BackButton>
         <div className="w-16 h-16 rounded-full bg-accent-100 border-2 border-accent-500 text-accent-700 flex items-center justify-center mb-4 mx-auto">
           <Icon name="warning" className="w-8 h-8" />
         </div>
@@ -139,12 +138,9 @@ export default function AppealFlow({ session, onBack }: Props) {
     const strength = STRENGTH_LABEL[stage.draft.evidence_strength] ?? STRENGTH_LABEL.moderate
     return (
       <div className="min-h-screen flex flex-col p-6 max-w-md mx-auto w-full">
-        <button
-          onClick={onBack}
-          className="self-start min-h-[44px] inline-flex items-center -my-2.5 text-[#A9CFBE] hover:text-paper-50 text-sm mb-4"
-        >
+        <BackButton onClick={onBack}>
           {session ? t('common.backToSession') : t('common.backToHome')}
-        </button>
+        </BackButton>
 
         <h2 className="font-display text-3xl font-extrabold text-paper-50 mb-2">
           {t('appeal.reviewHeader')}
@@ -233,12 +229,9 @@ export default function AppealFlow({ session, onBack }: Props) {
   // capture stage
   return (
     <div className="min-h-screen flex flex-col p-6 max-w-md mx-auto w-full">
-      <button
-        onClick={onBack}
-        className="self-start min-h-[44px] inline-flex items-center -my-2.5 text-[#A9CFBE] hover:text-paper-50 text-sm mb-4 transition-colors"
-      >
+      <BackButton onClick={onBack}>
         {session ? t('common.backToSession') : t('common.backToHome')}
-      </button>
+      </BackButton>
 
       <h2 className="font-display text-3xl font-extrabold text-paper-50 mb-1">
         {t('appeal.captureHeader')}

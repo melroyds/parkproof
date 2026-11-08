@@ -6,7 +6,6 @@ import {
   DynamoDBDocumentClient,
   GetCommand,
   PutCommand,
-  DeleteCommand,
   UpdateCommand,
 } from '@aws-sdk/lib-dynamodb'
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3'
@@ -1471,11 +1470,24 @@ async function handleUserFeedback(event) {
 // the frontend generates and stashes in localStorage), not by signed-in
 // user — same anonymous-by-default posture as the rest of the app.
 //
-// FOUNDATION ONLY tonight: this just persists. The dispatch layer (which
-// actually fires a push at the right time) ships next session. Documented
-// caveat in CLAUDE.md.
+// Dispatch (handlePushDispatch) reads the row when a booked reminder fires.
 const PUSH_TABLE = process.env.DYNAMODB_TABLE_PUSH || 'parkproof-push-subscriptions'
 const PUSH_TTL_DAYS = 90
+
+// A dead registration (field-test review): when the push service answers a
+// send with 410 Gone or 404, the endpoint will never deliver again. The
+// browser can still report it from getSubscription(), and the app re-sends
+// its registration on open and before every booking, so deleting the row
+// let the re-send put the dead endpoint back: the booking then passed the
+// registration check and every reminder was dropped in silence. Dispatch
+// now leaves a tombstone (the dead endpoint's hash, no keys) and
+// /push/subscribe refuses that endpoint with 409 ERR_ENDPOINT_GONE. The app
+// answers by dropping it and registering a fresh one (src/lib/push.ts).
+export const PUSH_ERR_ENDPOINT_GONE = 'ERR_ENDPOINT_GONE'
+
+function pushEndpointHash(endpoint) {
+  return crypto.createHash('sha256').update(String(endpoint), 'utf8').digest('hex')
+}
 
 async function handlePushSubscribe(event) {
   const body = typeof event.body === 'string' ? JSON.parse(event.body) : event.body || {}
@@ -1521,6 +1533,32 @@ async function handlePushSubscribe(event) {
     }
   }
 
+  // Refuse an endpoint the push service has already said is dead (see
+  // PUSH_ERR_ENDPOINT_GONE). Best-effort: if the row can't be read, store
+  // the registration as before.
+  let endpointHost = ''
+  try {
+    endpointHost = new URL(sub.endpoint).host
+  } catch {
+    /* logged without a host */
+  }
+  try {
+    const existing = await jobsDdb().send(
+      new GetCommand({ TableName: PUSH_TABLE, Key: { device_id }, ConsistentRead: true }),
+    )
+    const gone = existing?.Item?.gone_endpoint_sha256
+    if (typeof gone === 'string' && gone === pushEndpointHash(sub.endpoint)) {
+      console.log(`[parkproof.push.subscribe.endpoint_gone] ${JSON.stringify({ device_id, endpoint_host: endpointHost })}`)
+      return {
+        statusCode: 409,
+        headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ error: PUSH_ERR_ENDPOINT_GONE }),
+      }
+    }
+  } catch (err) {
+    console.error(`[parkproof.push.subscribe.lookup_failed] ${err?.message || err}`)
+  }
+
   const now = Math.floor(Date.now() / 1000)
   const item = {
     device_id,
@@ -1529,10 +1567,12 @@ async function handlePushSubscribe(event) {
     auth: sub.keys.auth,
     created_at: now,
     last_seen_at: now,
-    // TTL — DDB auto-deletes stale subscriptions after PUSH_TTL_DAYS days.
-    // Active devices re-subscribe on app open (frontend logic), refreshing
-    // this timestamp. Browsers rotate push endpoints periodically anyway;
-    // stale subs hang around taking up rows otherwise.
+    // TTL: DDB auto-deletes stale subscriptions after PUSH_TTL_DAYS days.
+    // An active device never gets there: the app re-sends its registration
+    // here when it opens and before every booking (src/lib/push.ts
+    // syncPushRegistration), and every successful /push/schedule pushes
+    // this out again (refreshPushSubscriptionExpiry). Browsers rotate push
+    // endpoints periodically anyway; stale subs would hang around otherwise.
     expires_at: now + PUSH_TTL_DAYS * 24 * 60 * 60,
   }
 
@@ -1775,6 +1815,71 @@ function notOwnerResponse() {
   }
 }
 
+// ─── Push registration check (field-test fix list, item 1) ────────────────
+// A phone can hold a browser push subscription while this server has no row
+// for it: the row expired (PUSH_TTL_DAYS) or the first save failed after the
+// browser had subscribed. Booking anyway created schedules that dispatch
+// later dropped ("no subscription for device_id") without the driver ever
+// knowing. /push/schedule now refuses with 409 ERR_NOT_SUBSCRIBED instead;
+// the app re-sends its registration and retries once. 409 because the
+// request is fine but the device's server state doesn't allow it yet
+// (ERR_NOT_OWNER, a permission problem, is 403).
+export const PUSH_ERR_NOT_SUBSCRIBED = 'ERR_NOT_SUBSCRIBED'
+
+function notSubscribedResponse() {
+  return {
+    statusCode: 409,
+    headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ error: PUSH_ERR_NOT_SUBSCRIBED }),
+  }
+}
+
+/**
+ * True when the device has a live subscription row. A row whose expires_at
+ * has passed counts as missing: DynamoDB's TTL sweep can lag by days, and
+ * the row is about to vanish anyway. A row with no expires_at (never
+ * written by this code) counts as live.
+ *
+ * Consistent read: the app re-sends its registration right before it books,
+ * so an eventually consistent read could miss the row it has just written.
+ */
+async function hasLivePushSubscription(device_id, nowSec) {
+  const got = await jobsDdb().send(
+    new GetCommand({ TableName: PUSH_TABLE, Key: { device_id }, ConsistentRead: true }),
+  )
+  const item = got?.Item
+  if (!item || typeof item.endpoint !== 'string') return false
+  if (typeof item.expires_at === 'number' && item.expires_at <= nowSec) return false
+  return true
+}
+
+/**
+ * Push the subscription row's expiry out again after a successful booking,
+ * so a device that keeps booking reminders never expires. At least
+ * PUSH_TTL_DAYS from now, and never before a day after the last reminder.
+ * Conditional on the row still existing, so a row deleted in between (a
+ * dispatch got 410 Gone) is not recreated as a stub without keys.
+ * Best-effort: the booking already succeeded, so a failure is only logged.
+ */
+async function refreshPushSubscriptionExpiry(device_id, nowSec, lastFireMs) {
+  const ttlEnd = nowSec + PUSH_TTL_DAYS * 24 * 60 * 60
+  const afterLastFire = Number.isFinite(lastFireMs) ? Math.floor(lastFireMs / 1000) + 24 * 60 * 60 : 0
+  try {
+    await jobsDdb().send(
+      new UpdateCommand({
+        TableName: PUSH_TABLE,
+        Key: { device_id },
+        UpdateExpression: 'SET #exp = :exp, #seen = :now',
+        ConditionExpression: 'attribute_exists(#id)',
+        ExpressionAttributeNames: { '#exp': 'expires_at', '#seen': 'last_seen_at', '#id': 'device_id' },
+        ExpressionAttributeValues: { ':exp': Math.max(ttlEnd, afterLastFire), ':now': nowSec },
+      }),
+    )
+  } catch (err) {
+    console.error(`[parkproof.push.schedule.refresh_failed] ${err?.name || ''} ${err?.message || err}`)
+  }
+}
+
 async function handlePushSchedule(event) {
   if (!PUSH_SCHEDULER_ROLE_ARN || !PUSH_DISPATCH_LAMBDA_ARN) {
     return {
@@ -1827,12 +1932,20 @@ async function handlePushSchedule(event) {
     }
   }
 
+  // No live registration for this device: refuse before touching any
+  // schedule, so nothing is booked that dispatch could never deliver.
+  const nowSec = Math.floor(Date.now() / 1000)
+  if (!(await hasLivePushSubscription(device_id, nowSec))) {
+    console.log(`[parkproof.push.schedule.not_subscribed] ${JSON.stringify({ device_id, session_id })}`)
+    return notSubscribedResponse()
+  }
+
   // Reschedule support: wipe any prior schedules for this session before
   // creating new ones. CreateSchedule throws ConflictException on a name
   // collision, so this is mandatory whenever the user re-picks offsets for
   // the same session_id. No-op for first-time scheduling.
   //
-  // Ownership first (N6): every existing schedule must have been created by
+  // Ownership next (N6): every existing schedule must have been created by
   // this device_id. If any wasn't, refuse and touch nothing, so a caller who
   // only knows a session_id can't replace (or silence) someone's reminders.
   const prior = await readSessionPushSchedules(session_id, device_id)
@@ -1921,6 +2034,11 @@ async function handlePushSchedule(event) {
     }
   }
 
+  if (created.length > 0) {
+    const lastFireMs = Math.max(...created.map((c) => new Date(c.fire_at).getTime()))
+    await refreshPushSubscriptionExpiry(device_id, nowSec, lastFireMs)
+  }
+
   console.log(
     `[parkproof.push.schedule] ${JSON.stringify({
       device_id,
@@ -2005,7 +2123,8 @@ async function handlePushDispatch(event) {
     console.error(`[parkproof.push.dispatch.lookup_failed] ${err?.message || err}`)
     return { ok: false }
   }
-  if (!item) {
+  if (!item || typeof item.endpoint !== 'string') {
+    // No row, or only the tombstone of a dead endpoint.
     console.log(`[parkproof.push.dispatch] no subscription for device_id ${device_id}`)
     return { ok: false }
   }
@@ -2054,15 +2173,30 @@ async function handlePushDispatch(event) {
   } catch (err) {
     const status = err?.statusCode
     console.error(`[parkproof.push.dispatch.failed] status=${status} ${err?.message || err}`)
-    // 410 Gone or 404 Not Found = browser rotated endpoint; clean up.
+    // 410 Gone or 404 Not Found: the endpoint is dead. Replace the row with
+    // a tombstone (see PUSH_ERR_ENDPOINT_GONE) rather than deleting it, so a
+    // re-send of the same dead endpoint is refused. Only while the row still
+    // holds this endpoint: a fresh registration stored since is kept.
     if (status === 410 || status === 404) {
+      const nowSec = Math.floor(Date.now() / 1000)
       try {
         await jobsDdb().send(
-          new DeleteCommand({ TableName: PUSH_TABLE, Key: { device_id } }),
+          new PutCommand({
+            TableName: PUSH_TABLE,
+            Item: {
+              device_id,
+              gone_endpoint_sha256: pushEndpointHash(item.endpoint),
+              gone_at: nowSec,
+              expires_at: nowSec + PUSH_TTL_DAYS * 24 * 60 * 60,
+            },
+            ConditionExpression: '#ep = :dead',
+            ExpressionAttributeNames: { '#ep': 'endpoint' },
+            ExpressionAttributeValues: { ':dead': item.endpoint },
+          }),
         )
         console.log(`[parkproof.push.dispatch.cleaned_stale] ${device_id}`)
       } catch {
-        /* ignore */
+        /* the row changed since (a fresh registration): leave it */
       }
     }
     return { ok: false }

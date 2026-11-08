@@ -1,7 +1,7 @@
 import type { ParkingSession, SignatureBundle } from '../types'
 import { EVIDENCE_V2_SCHEMA, HEX64_RE } from '../../lambda/addendum-schema.js'
 import { getIdToken } from './auth'
-import { getSession, loadSessions, mergeCloudEvidence, updateSession } from './storage'
+import { getSession, loadSessions, mergeCloudEvidence, scheduleRecordsChanged, updateSession } from './storage'
 import { getPhotoBytes, putPhoto } from './photo-store'
 import { hashDataUrlImage, sha256HexUtf8 } from './hash'
 import {
@@ -647,13 +647,38 @@ async function chainKeyFits(link0: SignatureBundle | undefined, chainKey: string
   return (await sha256HexUtf8(chainKey)) === p.chain_key_sha256
 }
 
+/** A presigned legacy photo URL with more than this left is kept, not swapped for a fresh one. */
+const LEGACY_URL_REFRESH_MARGIN_MS = 10 * 60 * 1000
+
+/**
+ * True when `url` is a presigned URL (X-Amz-Date plus X-Amz-Expires) with
+ * more than the margin left before it expires. Anything else counts as
+ * stale. /sessions/list mints new URLs on every call, so without this every
+ * pull on return (up to once a minute) would rewrite each such record and
+ * re-render its screens for a URL that still works.
+ */
+function presignedUrlStillFresh(url: string, nowMs: number): boolean {
+  try {
+    const query = new URL(url).searchParams
+    const signed = /^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})Z$/.exec(query.get('X-Amz-Date') ?? '')
+    const expiresS = Number(query.get('X-Amz-Expires'))
+    if (!signed || !Number.isFinite(expiresS) || expiresS <= 0) return false
+    const [, y, mo, d, h, mi, se] = signed.map(Number)
+    const expiresAt = Date.UTC(y, mo - 1, d, h, mi, se) + expiresS * 1000
+    return expiresAt - nowMs > LEGACY_URL_REFRESH_MARGIN_MS
+  } catch {
+    return false
+  }
+}
+
 /**
  * The legacy photo fields to refresh on this device's copy. For a role
  * without a ref: a data URL here stays (self-contained, works offline);
- * otherwise the cloud's freshly minted URL replaces an older (likely
- * expired) one. For a role with a ref: a URL left in the legacy field by
- * an earlier sync is dropped, because a ref's photo is read from this
- * device or fetched by its sha256, never from a URL.
+ * otherwise the cloud's freshly minted URL replaces an older one that is
+ * expired or close to it (`presignedUrlStillFresh`). For a role with a ref:
+ * a URL left in the legacy field by an earlier sync is dropped, because a
+ * ref's photo is read from this device or fetched by its sha256, never
+ * from a URL.
  */
 function legacyPhotoPatch(local: ParkingSession, cloud: ParkingSession): Partial<ParkingSession> {
   const patch: Partial<ParkingSession> = {}
@@ -666,7 +691,9 @@ function legacyPhotoPatch(local: ParkingSession, cloud: ParkingSession): Partial
       continue
     }
     const cloudValue = cloud[field]
-    if (cloudValue && cloudValue !== localValue) patch[field] = cloudValue
+    if (!cloudValue || cloudValue === localValue) continue
+    if (typeof localValue === 'string' && presignedUrlStillFresh(localValue, Date.now())) continue
+    patch[field] = cloudValue
   }
   return patch
 }
@@ -704,18 +731,42 @@ async function syncBothSides(local: ParkingSession, cloud: ParkingSession): Prom
   return changed
 }
 
+/** Options for one `performInitialSync` run. */
+export interface SyncOptions {
+  /**
+   * Upload the records only this device holds (default true). False for a
+   * pull on return: a record missing from the listing then is most likely
+   * one deleted on another device, and uploading it again would undo that
+   * delete within a minute. New records reach the cloud when they are saved
+   * (`mirrorSessionToCloud`); one that didn't still goes up at the next app
+   * start or sign-in, as before the pull on return existed.
+   */
+  uploadLocalOnly?: boolean
+}
+
 /**
- * Called once after sign-in. Merges local + cloud:
- *   - local-only records → uploaded to the cloud
- *   - records on both sides → the cloud copy's evidence merged into the
- *     local copy (`mergeEvidence`), and uploaded again when the local copy
- *     has links (or an end, photos...) the cloud copy lacks
+ * Runs at app start, after sign-in, and when the app comes back to the
+ * screen (App runs it through `createSyncRunner`). Merges local + cloud:
  *   - cloud-only records → written into local storage, marked as pulled
  *     (they never get a link 0 on this device) and without any pending
  *     addenda
+ *   - records on both sides → the cloud copy's evidence merged into the
+ *     local copy (`mergeEvidence`), and uploaded again when the local copy
+ *     has links (or an end, photos...) the cloud copy lacks
+ *   - local-only records → uploaded to the cloud, except on a pull on
+ *     return (`SyncOptions.uploadLocalOnly`)
  * Read-only shared copies never sync.
+ *
+ * In that order, so what arrives from other devices lands first (field-test
+ * fix list, item 6): the pull is local writes only, and each merge lands
+ * before any local-only upload is waited on. The three sets don't overlap,
+ * so the order changes nothing else. Each record that lands tells open
+ * screens at once: pulled records through `scheduleRecordsChanged` (one
+ * notification per synchronous batch), merges through the storage write
+ * itself (`updateSession`, `mergeCloudEvidence`).
  */
-export async function performInitialSync(): Promise<InitialSyncResult> {
+export async function performInitialSync(options: SyncOptions = {}): Promise<InitialSyncResult> {
+  const uploadLocalOnly = options.uploadLocalOnly ?? true
   let listFailed = false
   const cloudSessions = await listCloudSessions().catch((err) => {
     console.warn('[sync] list failed, treating cloud as empty:', err)
@@ -727,34 +778,6 @@ export async function performInitialSync(): Promise<InitialSyncResult> {
   const cloudById = new Map(cloudSessions.map((s) => [s.id, s]))
 
   const result: InitialSyncResult = { uploaded: 0, pulled: 0, alreadyInSync: 0, merged: 0, listFailed }
-
-  // Local-only → upload to cloud.
-  for (const session of localSessions) {
-    if (cloudById.has(session.id) || session.shared_from) continue
-    // The listing shows no row for it. If it had one before, it was deleted
-    // (from another device), and that delete swept its photos too, so this
-    // device's markers no longer hold. Forget them: a photo still stored
-    // costs one presign that answers `exists`, with no bytes sent.
-    if (!listFailed) forgetRecordMarkers(session.id)
-    try {
-      await uploadSession(session)
-      result.uploaded++
-    } catch (err) {
-      console.warn(`[sync] upload of ${session.id} failed:`, err)
-    }
-  }
-
-  // On both sides → merge, and push back what the cloud lacks.
-  for (const cloudSession of cloudSessions) {
-    const local = localById.get(cloudSession.id)
-    if (!local || local.shared_from) continue
-    result.alreadyInSync++
-    try {
-      if (await syncBothSides(local, cloudSession)) result.merged++
-    } catch (err) {
-      console.warn(`[sync] merge of ${cloudSession.id} failed:`, err)
-    }
-  }
 
   // Cloud-only → into local storage. The pulled mark goes first: a pulled
   // record must never be signed as if it were saved here.
@@ -773,6 +796,34 @@ export async function performInitialSync(): Promise<InitialSyncResult> {
     }
   }
 
+  // On both sides → merge, and push back what the cloud lacks.
+  for (const cloudSession of cloudSessions) {
+    const local = localById.get(cloudSession.id)
+    if (!local || local.shared_from) continue
+    result.alreadyInSync++
+    try {
+      if (await syncBothSides(local, cloudSession)) result.merged++
+    } catch (err) {
+      console.warn(`[sync] merge of ${cloudSession.id} failed:`, err)
+    }
+  }
+
+  // Local-only → upload to cloud (not on a pull on return: see SyncOptions).
+  for (const session of uploadLocalOnly ? localSessions : []) {
+    if (cloudById.has(session.id) || session.shared_from) continue
+    // The listing shows no row for it. If it had one before, it was deleted
+    // (from another device), and that delete swept its photos too, so this
+    // device's markers no longer hold. Forget them: a photo still stored
+    // costs one presign that answers `exists`, with no bytes sent.
+    if (!listFailed) forgetRecordMarkers(session.id)
+    try {
+      await uploadSession(session)
+      result.uploaded++
+    } catch (err) {
+      console.warn(`[sync] upload of ${session.id} failed:`, err)
+    }
+  }
+
   // Forget upload markers of records no longer saved here.
   const scope = tokenSubject(await getIdToken().catch(() => null))
   if (scope && !listFailed) pruneUploadMarkers(scope, new Set(loadSessions().map((s) => s.id)))
@@ -787,7 +838,9 @@ export async function performInitialSync(): Promise<InitialSyncResult> {
  * Insert a session into localStorage at index 0 (newest-first ordering),
  * preserving the rest. Used by the cloud-pull path during initial sync.
  * Returns false (and writes nothing) when a record with the id is already
- * saved, or the write failed.
+ * saved, or the write failed. A write tells open screens through
+ * `scheduleRecordsChanged`, so the list shows a pulled record as soon as it
+ * lands, with one re-render for a whole pull.
  */
 function writeNewLocalSession(session: ParkingSession): boolean {
   const KEY = 'parkproof.sessions.v1'
@@ -797,10 +850,153 @@ function writeNewLocalSession(session: ParkingSession): boolean {
     if (all.some((s) => s.id === session.id)) return false
     all.unshift(session)
     localStorage.setItem(KEY, JSON.stringify(all))
+    scheduleRecordsChanged(session.id)
     return true
   } catch (err) {
     console.warn('[sync] writeNewLocalSession failed:', err)
     return false
+  }
+}
+
+// ─── Running the sync ────────────────────────────────────────────────────
+// One sync at a time. App runs it at app start, at sign-in and from the
+// retry (`now`), and again when the app comes back to the screen or back
+// online (`onReturn` through `installSyncOnReturn`; field-test fix list
+// Tier 2: before, another device's changes only arrived on a reload).
+
+/** Coming back to the app pulls again at most this often (from the start of the last sync). */
+export const SYNC_ON_RETURN_INTERVAL_MS = 60_000
+
+export interface SyncRunner {
+  /**
+   * Sync now (app start, sign-in, the retry). Never two at once: while one
+   * runs, this returns one more run that starts when it settles, shared by
+   * every call made meanwhile. So a sign-in during a sync still syncs the
+   * account it signed into, and no record is merged by two runs at once.
+   */
+  now(): Promise<InitialSyncResult>
+  /**
+   * Pull on return: sync again so changes made on another device arrive
+   * without a reload. It pulls and merges but uploads no local-only record
+   * (`SyncOptions.uploadLocalOnly`). Returns the run, or null when skipped:
+   * a sync is running or queued, the browser is offline (the `online` event
+   * asks again), or the last run started under the interval ago. Only call
+   * it while signed in.
+   */
+  onReturn(now?: number): Promise<InitialSyncResult> | null
+  /**
+   * When the interval since the last start ends (the earliest an
+   * `onReturn` is not throttled), or null before any run.
+   */
+  nextReturnAt(): number | null
+}
+
+/**
+ * The one-at-a-time guard around the sync. `sync` is `performInitialSync`
+ * (App passes it in; tests pass a stand-in). Each runner has its own state,
+ * so App keeps one for its lifetime.
+ */
+export function createSyncRunner(
+  sync: (options?: SyncOptions) => Promise<InitialSyncResult> = performInitialSync,
+  intervalMs: number = SYNC_ON_RETURN_INTERVAL_MS,
+): SyncRunner {
+  let running: Promise<InitialSyncResult> | null = null
+  let followUp: Promise<InitialSyncResult> | null = null
+  let lastStartedAt: number | null = null
+
+  const start = (at: number, options: SyncOptions = {}): Promise<InitialSyncResult> => {
+    lastStartedAt = at
+    let run: Promise<InitialSyncResult>
+    try {
+      run = sync(options)
+    } catch (err) {
+      run = Promise.reject(err)
+    }
+    const tracked: Promise<InitialSyncResult> = run.finally(() => {
+      if (running === tracked) running = null
+    })
+    running = tracked
+    return tracked
+  }
+
+  return {
+    now() {
+      // Checked first: between a run settling and its follow-up starting,
+      // `running` is already null.
+      if (followUp) return followUp
+      const current = running
+      if (!current) return start(Date.now())
+      const queued: Promise<InitialSyncResult> = current
+        .catch(() => undefined)
+        .then(() => {
+          followUp = null
+          return start(Date.now())
+        })
+      followUp = queued
+      return queued
+    },
+    onReturn(now = Date.now()) {
+      if (running || followUp) return null
+      if (typeof navigator !== 'undefined' && navigator.onLine === false) return null
+      if (lastStartedAt !== null) {
+        const since = now - lastStartedAt
+        if (since >= 0 && since < intervalMs) return null
+      }
+      return start(now, { uploadLocalOnly: false })
+    },
+    nextReturnAt() {
+      return lastStartedAt === null ? null : lastStartedAt + intervalMs
+    },
+  }
+}
+
+/**
+ * Pull on return when the page becomes visible again (an installed app is
+ * usually resumed, not reloaded) and when the browser comes back online.
+ * A return inside the interval is not dropped: one pull follows when the
+ * interval ends, if the page is still on screen, so a device picked up
+ * seconds after the last sync doesn't stay stale while it is in use.
+ * App installs it only while someone is signed in. `onRun` gets each run
+ * that starts, to settle it as the app-start sync is settled. Returns the
+ * cleanup for a React effect.
+ */
+export function installSyncOnReturn(
+  runner: SyncRunner,
+  onRun: (run: Promise<InitialSyncResult>) => void,
+): () => void {
+  if (typeof window === 'undefined' || typeof document === 'undefined') return () => {}
+  let later: ReturnType<typeof setTimeout> | null = null
+  const pull = () => {
+    if (later !== null) {
+      clearTimeout(later)
+      later = null
+    }
+    const run = runner.onReturn()
+    if (run) {
+      onRun(run)
+      return
+    }
+    // Skipped. Try once more when the interval ends: by then a skip for
+    // any other reason (a sync still running) has usually cleared too.
+    const at = runner.nextReturnAt()
+    const wait = at === null ? 0 : at - Date.now()
+    if (wait > 0) {
+      later = setTimeout(() => {
+        later = null
+        if (document.visibilityState === 'visible') pull()
+      }, wait)
+    }
+  }
+  const onVisibility = () => {
+    if (document.visibilityState === 'visible') pull()
+  }
+  window.addEventListener('online', pull)
+  document.addEventListener('visibilitychange', onVisibility)
+  return () => {
+    if (later !== null) clearTimeout(later)
+    later = null
+    window.removeEventListener('online', pull)
+    document.removeEventListener('visibilitychange', onVisibility)
   }
 }
 

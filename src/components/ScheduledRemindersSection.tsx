@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { ParkingSession } from '../types'
 import { useNow } from '../lib/use-now'
@@ -12,12 +12,16 @@ import {
   schedulePushReminders,
   type ScheduledReminder,
 } from '../lib/push'
+import { cancelInTabReminders, scheduleAbsoluteReminders } from '../lib/notifications'
+import { remindMe, summariseRemindMe, type RemindMeSummary } from '../lib/remind-me'
 import { updateSession } from '../lib/storage'
 import { useLiveRecord } from '../lib/use-records-version'
 import { useAuth } from '../lib/use-auth'
 import { mirrorSessionUpdateToCloud } from '../lib/sync'
 import Icon from './Icon'
+import Button from './ui/Button'
 import Card from './ui/Card'
+import { ReminderHelp, RemindMeOutcome } from './ReminderStatus'
 
 /**
  * Per-session reminder management surface — closes the loop on the user's
@@ -33,6 +37,13 @@ import Card from './ui/Card'
  *      "+ Add reminder" with smart-filtered chips (greyed when offset is
  *      already past), and "Cancel all" as a nuclear option.
  *
+ * Adding uses the same one-tap "Remind me" as ReminderOptions (field-test
+ * fix list, item 2): pick chips, tap Remind me, and remindMe() asks for
+ * permission, registers push, books the server reminders and arms the
+ * in-tab ones. When push can't work here it says the new reminders only
+ * work while ParkProof is open, and why. The reliability line sits at the
+ * bottom of the section.
+ *
  * Architecture:
  *   - session.push_reminders[] is the cached truth for display. Authoritative
  *     truth is EventBridge Scheduler server-side, but reading it on every
@@ -46,6 +57,9 @@ import Card from './ui/Card'
  *     smaller new set — atomic from the user's perspective.
  *   - "Cancel all" calls /push/cancel (the dedicated endpoint), then clears
  *     the local push_reminders array, only when the cancel succeeded.
+ *   - In-tab copies follow the list: a removed reminder's in-tab timer is
+ *     disarmed with it, "Cancel all" disarms every one for the record, and
+ *     a Remind me refused as another device's disarms the ones it armed.
  *   - Push schedules belong to the device that created them (spec N6).
  *     push_reminders syncs through the cloud, so another device can show
  *     them. There a change gets 403 ERR_NOT_OWNER (or the browser has no
@@ -67,6 +81,8 @@ import Card from './ui/Card'
 const EXPIRY_OFFSETS_MIN = [30, 15, 10, 5, 2, 0] as const
 const NOSIGN_DURATIONS_MIN = [30, 60, 120, 240, 480] as const
 const SAFETY_MARGIN_MS = 30 * 1000
+// The server books at most 6 reminders per record (PUSH_MAX_REMINDERS_PER_SESSION).
+const MAX_REMINDERS = 6
 
 // ----- helpers --------------------------------------------------------------
 
@@ -115,6 +131,12 @@ export default function ScheduledRemindersSection({ session: initialSession }: P
   const [error, setError] = useState<string | null>(null)
   // Set when the server said another device owns these schedules.
   const [notOwner, setNotOwner] = useState(false)
+  // Chips picked in the add picker, and what the last "Remind me" did.
+  const [picked, setPicked] = useState<Set<string>>(() => new Set())
+  const [outcome, setOutcome] = useState<RemindMeSummary | null>(null)
+  // In-tab reminders armed by a Remind me tap that left the picker open for
+  // a retry (push failed): the retry replaces them rather than doubling them.
+  const armedByLastTry = useRef<Date[]>([])
 
   const futureReminders = useMemo(
     () => selectFuture(reminders, now),
@@ -147,6 +169,8 @@ export default function ScheduledRemindersSection({ session: initialSession }: P
       key: string
       label: string
       fireAt: Date
+      /** No-sign chips: minutes from now, recomputed at the tap. */
+      fromNowMin: number | null
       /** True if this exact fire_at is already in the list. */
       alreadyScheduled: boolean
       /** True if would fire before now + safety margin. */
@@ -167,6 +191,7 @@ export default function ScheduledRemindersSection({ session: initialSession }: P
               ? t('reminders.noSign.chipMin', { count: dur })
               : t('reminders.noSign.chipHour', { count: dur / 60 }),
           fireAt,
+          fromNowMin: dur,
           alreadyScheduled: existingFireAtMs.has(Math.round(ms / 1000)),
           isPast: ms - now < SAFETY_MARGIN_MS,
         })
@@ -182,6 +207,7 @@ export default function ScheduledRemindersSection({ session: initialSession }: P
               ? t('reminders.chipAtExpiry')
               : t('reminders.chipMin', { count: off }),
           fireAt,
+          fromNowMin: null,
           alreadyScheduled: existingFireAtMs.has(Math.round(ms / 1000)),
           isPast: ms - now < SAFETY_MARGIN_MS,
         })
@@ -191,11 +217,14 @@ export default function ScheduledRemindersSection({ session: initialSession }: P
   }, [futureReminders, now, isNoSign, expiryMs, t])
 
   const anyChipViable = chipOptions.some((c) => !c.isPast && !c.alreadyScheduled)
+  // Picks still usable after the 30-second tick (a chip can slide into the past).
+  const pickedChips = chipOptions.filter((c) => picked.has(c.key) && !c.isPast && !c.alreadyScheduled)
+  const roomLeft = MAX_REMINDERS - futureReminders.length
 
   /**
    * Compute the notification body for a given fire-at, per-reminder.
    *
-   * Bug this fixes: handleAdd and handleRemove previously used a single body
+   * Bug this fixes: the add and remove paths previously used a single body
    * string for the WHOLE batch when re-calling /push/schedule. For expiry-
    * bearing sessions that meant retained reminders lost their original
    * "X min until your parking expires" copy and inherited whatever body was
@@ -232,45 +261,85 @@ export default function ScheduledRemindersSection({ session: initialSession }: P
   }
 
   /**
-   * Add one reminder by re-scheduling the UNION of existing + this new fire_at.
-   * /push/schedule is replace-all, so we always send the full desired list.
+   * "Remind me" for the picked chips: book the UNION of the existing future
+   * reminders and the new ones (/push/schedule is replace-all) and arm the
+   * new ones in this tab. remindMe() opens with the permission prompt, so
+   * nothing is awaited before it (iOS only prompts from a tap).
    */
-  const handleAdd = async (fireAt: Date) => {
-    if (busy) return
+  const handleRemindMe = async () => {
+    if (busy || pickedChips.length === 0) return
     setBusy(true)
     setError(null)
+    setOutcome(null)
+    const tapped = Date.now()
+    const newFireAts = pickedChips.map((c) =>
+      c.fromNowMin === null ? c.fireAt : new Date(tapped + c.fromNowMin * 60 * 1000),
+    )
+    // Each entry gets its OWN body from its own fire_at: one shared body for
+    // the batch (an old bug) would rewrite existing reminders' copy.
+    const desired: ScheduledReminder[] = [
+      ...futureReminders.map((r) => ({
+        fire_at: r.fire_at,
+        ...copyForFireAt(r.fireAt),
+        url: sessionLink(session.id),
+      })),
+      ...newFireAts.map((fireAt) => ({
+        fire_at: fireAt.toISOString(),
+        ...copyForFireAt(fireAt),
+        url: sessionLink(session.id),
+      })),
+    ]
     try {
-      // Build the union: existing future fire-times + the new one. Each entry
-      // gets its OWN body string computed from its own fire_at — using one
-      // shared body for the batch (the previous bug) would have rewritten
-      // existing reminders' copy on every add.
-      const desired: ScheduledReminder[] = [
-        ...futureReminders.map((r) => ({
-          fire_at: r.fire_at,
-          ...copyForFireAt(r.fireAt),
-          url: sessionLink(session.id),
-        })),
-        {
-          fire_at: fireAt.toISOString(),
-          ...copyForFireAt(fireAt),
-          url: sessionLink(session.id),
+      const result = await remindMe({
+        sessionId: session.id,
+        pushReminders: desired,
+        expiresAt: session.expires_at,
+        // Only the new times: earlier reminders were armed when they were set.
+        armInTab: async () => {
+          cancelInTabReminders(session.id, armedByLastTry.current)
+          armedByLastTry.current = []
+          const armedNow = await scheduleAbsoluteReminders(session, newFireAts, copyForFireAt)
+          armedByLastTry.current = armedNow.firesAt
+          return armedNow
         },
-      ]
-      const result = await schedulePushReminders(session.id, desired, session.expires_at)
-      if (!result.ok) {
-        if (result.reason === 'not_owner') showOtherDevice()
-        else if (result.reason === 'network') setError(t('scheduledReminders.errorRetry'))
-        else setError(t('scheduledReminders.pushNotEnabled'))
+      })
+      if (!result.background.ok && result.background.reason === 'not_owner') {
+        // Nothing changes here: disarm the in-tab copies this tap just armed.
+        cancelInTabReminders(session.id, armedByLastTry.current)
+        armedByLastTry.current = []
+        showOtherDevice()
         return
       }
-      persistReminders(result.created.map((c) => ({ fire_at: c.fire_at })))
-      setPicking(false)
+      if (result.background.ok) {
+        persistReminders(result.background.created.map((c) => ({ fire_at: c.fire_at })))
+      }
+      const summary = summariseRemindMe(result)
+      setOutcome(summary)
+      // Keep the picker open, with the picks, when nothing was set or when
+      // the step says to tap Remind me again (push failed but the in-tab
+      // reminders were set), so a retry is one tap.
+      const retry = summary.kind === 'none' || (summary.kind === 'openOnly' && summary.step === 'failed')
+      if (!retry) {
+        armedByLastTry.current = []
+        setPicking(false)
+        setPicked(new Set())
+      }
     } catch (err) {
       console.error('[reminders] add failed:', err)
       setError(t('scheduledReminders.errorRetry'))
     } finally {
       setBusy(false)
     }
+  }
+
+  const togglePick = (key: string) => {
+    setOutcome(null)
+    setPicked((prev) => {
+      const next = new Set(prev)
+      if (next.has(key)) next.delete(key)
+      else if (next.size < roomLeft) next.add(key)
+      return next
+    })
   }
 
   /**
@@ -287,12 +356,14 @@ export default function ScheduledRemindersSection({ session: initialSession }: P
         // reminders[] with a 400; cancel is the right verb here. Clear the
         // list only when the schedules are really gone.
         const cancelled = await cancelPushReminders(session.id)
-        if (cancelled.ok) persistReminders([])
-        else if (cancelled.reason === 'network') setError(t('scheduledReminders.errorRetry'))
+        if (cancelled.ok) {
+          persistReminders([])
+          cancelInTabReminders(session.id, [new Date(fire_at_iso)])
+        } else if (cancelled.reason === 'network') setError(t('scheduledReminders.errorRetry'))
         else showOtherDevice()
         return
       }
-      // Per-reminder body — same bug-fix as handleAdd. Removing one row
+      // Per-reminder body, same bug-fix as handleRemindMe. Removing one row
       // shouldn't rewrite the surviving ones' "X min before expiry" copy
       // to a generic "Your parking expires now". Server stores whatever
       // body we send (no server-side rebuild), so we have to compute the
@@ -309,6 +380,9 @@ export default function ScheduledRemindersSection({ session: initialSession }: P
         return
       }
       persistReminders(result.created.map((c) => ({ fire_at: c.fire_at })))
+      // The in-tab copy of the removed reminder too, or it still alerts
+      // while ParkProof is open.
+      cancelInTabReminders(session.id, [new Date(fire_at_iso)])
     } catch (err) {
       console.error('[reminders] remove failed:', err)
       setError(t('scheduledReminders.errorRetry'))
@@ -327,8 +401,12 @@ export default function ScheduledRemindersSection({ session: initialSession }: P
       // after a 403 would mirror an empty list to the cloud while the other
       // device's reminders keep firing.
       const cancelled = await cancelPushReminders(session.id)
-      if (cancelled.ok) persistReminders([])
-      else if (cancelled.reason === 'network') setError(t('scheduledReminders.errorRetry'))
+      if (cancelled.ok) {
+        persistReminders([])
+        // Every in-tab reminder for this record too.
+        cancelInTabReminders(session.id)
+        armedByLastTry.current = []
+      } else if (cancelled.reason === 'network') setError(t('scheduledReminders.errorRetry'))
       else showOtherDevice()
     } catch (err) {
       console.error('[reminders] cancel-all failed:', err)
@@ -424,6 +502,9 @@ export default function ScheduledRemindersSection({ session: initialSession }: P
             type="button"
             onClick={() => {
               setError(null)
+              setOutcome(null)
+              setPicked(new Set())
+              armedByLastTry.current = []
               setPicking(true)
             }}
             disabled={busy || !anyChipViable}
@@ -456,28 +537,36 @@ export default function ScheduledRemindersSection({ session: initialSession }: P
           ) : (
             <div className="flex flex-wrap gap-2">
               {chipOptions.map((chip) => {
-                const disabled = chip.isPast || chip.alreadyScheduled || busy
+                const isPicked = picked.has(chip.key)
+                const full = !isPicked && picked.size >= roomLeft
+                const unavailable = chip.isPast || chip.alreadyScheduled
+                const disabled = unavailable || busy || full
                 const base =
                   'px-3 py-2.5 min-h-[44px] inline-flex items-center justify-center rounded-full text-xs font-semibold border-2 transition-colors min-w-[72px] text-center'
-                const cls = disabled
+                const cls = unavailable
                   ? `${base} bg-paper-100 border-paper-200 text-ink-400 ${chip.isPast ? 'line-through' : ''} cursor-not-allowed`
-                  : `${base} bg-white border-brand-300 text-brand-700 hover:bg-brand-50 active:bg-brand-100`
+                  : isPicked
+                    ? `${base} bg-brand-500 border-brand-500 text-white`
+                    : `${base} bg-white border-brand-300 text-brand-700 hover:bg-brand-50 active:bg-brand-100 disabled:opacity-50`
                 const tip = chip.alreadyScheduled
-                  ? 'Already scheduled'
+                  ? t('scheduledReminders.chipAlreadySet')
                   : chip.isPast
-                    ? 'Already past — would fire before now'
-                    : `Fires at ${formatExpiryAbsolute(chip.fireAt, {
-                        now: new Date(now),
-                        timeZone,
-                      }).combined}`
+                    ? t('reminders.chipPast')
+                    : t('reminders.chipFiresAt', {
+                        when: formatExpiryAbsolute(chip.fireAt, {
+                          now: new Date(now),
+                          timeZone,
+                        }).combined,
+                      })
                 return (
                   <button
                     key={chip.key}
                     type="button"
-                    onClick={() => !disabled && void handleAdd(chip.fireAt)}
+                    onClick={() => !disabled && togglePick(chip.key)}
                     disabled={disabled}
+                    aria-pressed={isPicked}
                     title={tip}
-                    aria-label={`${chip.label} — ${tip}`}
+                    aria-label={`${chip.label}, ${tip}`}
                     className={cls}
                   >
                     {chip.label}
@@ -485,6 +574,18 @@ export default function ScheduledRemindersSection({ session: initialSession }: P
                 )
               })}
             </div>
+          )}
+          {anyChipViable && (
+            <>
+              <Button
+                className="w-full gap-2 mt-3 min-h-[44px]"
+                onClick={() => void handleRemindMe()}
+                disabled={busy || pickedChips.length === 0}
+              >
+                <Icon name="bell" className="w-5 h-5" />
+                {busy ? t('reminders.remindMe.busy') : t('reminders.remindMe.cta')}
+              </Button>
+            </>
           )}
           <button
             type="button"
@@ -495,6 +596,9 @@ export default function ScheduledRemindersSection({ session: initialSession }: P
           </button>
         </div>
       )}
+
+      <RemindMeOutcome summary={outcome} timeZone={timeZone} className={outcome ? 'mt-3' : ''} />
+      <ReminderHelp tone="card" className="mt-3" />
     </Card>
   )
 }

@@ -15,6 +15,9 @@ set -euo pipefail
 PROJECT=parkproof
 REGION=ap-southeast-2
 LAMBDA_NAME=$PROJECT-sign-translator
+# The AWS SDK for JavaScript v3 needs Node 22 or newer from early January
+# 2027. CI tests on Node 22 too (.github/workflows/test.yml).
+LAMBDA_RUNTIME=nodejs22.x
 ROLE_NAME=$PROJECT-lambda-role
 API_NAME=$PROJECT-api
 DIST_COMMENT=$PROJECT-cdn
@@ -96,6 +99,26 @@ else
 fi
 
 if aws lambda get-function --function-name "$LAMBDA_NAME" --region "$REGION" >/dev/null 2>&1; then
+  # Move an existing function onto $LAMBDA_RUNTIME before the new code lands,
+  # and let that update settle first: Lambda refuses a code update while a
+  # configuration update is still in progress. A no-op once it is there.
+  # tr strips the CR that the Windows aws.exe can leave on text output.
+  CURRENT_RUNTIME=$(aws lambda get-function-configuration \
+    --function-name "$LAMBDA_NAME" \
+    --region "$REGION" \
+    --query Runtime \
+    --output text | tr -d '\r')
+  if [[ "$CURRENT_RUNTIME" != "$LAMBDA_RUNTIME" ]]; then
+    echo "  • moving runtime from $CURRENT_RUNTIME to $LAMBDA_RUNTIME"
+    aws lambda update-function-configuration \
+      --function-name "$LAMBDA_NAME" \
+      --runtime "$LAMBDA_RUNTIME" \
+      --region "$REGION" \
+      >/dev/null
+    aws lambda wait function-updated --function-name "$LAMBDA_NAME" --region "$REGION"
+  else
+    echo "  • runtime: $LAMBDA_RUNTIME"
+  fi
   echo "  • updating code"
   aws lambda update-function-code \
     --function-name "$LAMBDA_NAME" \
@@ -107,7 +130,7 @@ else
   echo "  • creating function"
   aws lambda create-function \
     --function-name "$LAMBDA_NAME" \
-    --runtime nodejs20.x \
+    --runtime "$LAMBDA_RUNTIME" \
     --handler index.handler \
     --role "$ROLE_ARN" \
     --zip-file fileb://function.zip \
@@ -481,6 +504,26 @@ cp "migrations/two-app-architecture/public-sw-shim.js" dist/sw.js
 
 echo "  • landing files: $(find "$LANDING_SRC" -type f -not -name .gitkeep -not -name DEPLOY.md | wc -l | tr -d ' ')"
 echo "  • sw shim:        dist/sw.js (evicts old root-scope SW)"
+
+# Public key line endings (field-test fix list, Tier 2). With
+# core.autocrlf=true, a checkout made before .gitattributes pinned *.pem to
+# LF still has CRLF PEMs on disk (merging the rule doesn't rewrite them),
+# and the live key then differs byte for byte from the repo's (182 bytes
+# against 178). Ship LF whatever the checkout holds: strip CR from every
+# PEM in dist/, and stop the deploy if any CR is left.
+PEM_COUNT=0
+while IFS= read -r -d '' pem; do
+  tr -d '\r' < "$pem" > "$pem.lf" && mv "$pem.lf" "$pem"
+  if LC_ALL=C grep -q $'\r' "$pem"; then
+    echo "✗ $pem still has CR line endings after normalising; not deploying" >&2
+    exit 1
+  fi
+  echo "  • pem (LF):       $pem ($(wc -c < "$pem" | tr -d ' ') bytes)"
+  PEM_COUNT=$((PEM_COUNT + 1))
+done < <(find dist -type f -name '*.pem' -print0)
+if [ "$PEM_COUNT" -eq 0 ]; then
+  echo "  ! no .pem in dist/: the public key is missing from this build" >&2
+fi
 
 # ───── [5/6] S3 bucket + upload ─────────────────────────────────────────────
 echo "▶ [5/6] S3 bucket: $BUCKET"

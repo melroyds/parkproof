@@ -99,8 +99,8 @@
     },
     "push": {
       "title": "이 기기에서 푸시 알림 활성화",
-      "body": "ParkProof를 켜두지 않아도 알림이 알아서 울립니다. 지금 권한을 허용해두면, 앞으로 주차 알림이 흐름을 끊지 않고 백그라운드에서 조용히 울려요.",
-      "subscribed": "✓ 이 기기가 구독되었습니다. 앞으로의 주차 기록에 대해 푸시 알림이 전송됩니다.",
+      "body": "지금 알림을 허용해 두면 나중에 권한 요청을 받지 않습니다. 주차 기록에서 '알림 받기'를 눌러야 알림이 설정됩니다.",
+      "subscribed": "✓ 이 기기에서 알림이 켜져 있습니다. 알림을 설정하려면 주차 기록에서 '알림 받기'를 누르세요.",
       "denied": "이 사이트에 대한 알림을 차단하셨습니다. 활성화하려면 브라우저의 사이트 설정에서 권한을 변경하세요.",
       "errorRetry": "문제가 발생했습니다 — 다시 시도",
       "enable": "알림 활성화",
@@ -393,7 +393,37 @@
     },
     "pushScheduleFailed": "백그라운드 알림을 설정할 수 없었습니다. 이 탭이 열려 있을 때만 울릴 수 있습니다. 다시 시도하려면 누르세요.",
     "chipMin_one": "{{count}}분",
-    "chipMin_other": "{{count}}분"
+    "chipMin_other": "{{count}}분",
+    "remindMe": {
+      "cta": "알림 받기",
+      "busy": "설정하는 중…",
+      "setBackground_one": "<strong>{{times}}</strong>에 알림 {{count}}개를 설정했습니다. ParkProof를 닫아도 알림은 이 기기로 전송됩니다.",
+      "setBackground_other": "<strong>{{times}}</strong>에 알림 {{count}}개를 설정했습니다. ParkProof를 닫아도 알림은 이 기기로 전송됩니다.",
+      "setOpenOnly_one": "<strong>{{times}}</strong>에 알림 {{count}}개를 설정했지만, ParkProof가 열려 있을 때만 작동합니다.",
+      "setOpenOnly_other": "<strong>{{times}}</strong>에 알림 {{count}}개를 설정했지만, ParkProof가 열려 있을 때만 작동합니다.",
+      "notSet": "알림이 설정되지 않았습니다.",
+      "stepInstall": "iPhone에서는 ParkProof를 홈 화면에 추가해야 알림을 받을 수 있습니다. 공유 버튼을 누르고 '홈 화면에 추가'를 선택한 다음, 홈 화면에서 ParkProof를 열고 '알림 받기'를 다시 누르세요.",
+      "stepAllow": "ParkProof 알림이 꺼져 있습니다. 브라우저가 물어볼 때 허용하거나 브라우저의 사이트 설정에서 허용한 다음, '알림 받기'를 다시 누르세요.",
+      "stepUnsupported": "이 브라우저는 ParkProof가 닫혀 있을 때 알림을 보낼 수 없습니다. 대신 캘린더 알림을 이용하세요.",
+      "stepRetry": "ParkProof가 닫혀 있을 때의 알림을 설정하지 못했습니다. 연결 상태를 확인한 다음 '알림 받기'를 다시 누르세요.",
+      "stepAllPast": "선택한 시간이 이미 지났습니다. 더 늦은 시간을 선택하세요."
+    },
+    "reliability": "알림은 집중 모드나 절전 모드 등으로 늦어지거나 무음 처리될 수 있습니다. 알림에만 의존하지 마세요.",
+    "androidTips": {
+      "summary": "Android 휴대폰 팁",
+      "spam": "Chrome이 알림을 스팸일 수 있다고 표시하면 '허용'을 누르세요.",
+      "battery": "삼성 휴대폰에서는 Chrome의 배터리 사용을 '제한 없음'으로 설정하세요."
+    },
+    "chipFiresAt": "{{when}}에 알림",
+    "chipPast": "이미 지남",
+    "reconnect": {
+      "cta": "알림이 오지 않나요? 다시 연결",
+      "busy": "다시 연결하는 중…",
+      "done": "다시 연결했습니다. 이 기기의 예정된 알림은 새 연결을 사용합니다.",
+      "failed": "다시 연결하지 못했습니다. 연결 상태를 확인하고 다시 시도하세요.",
+      "denied": "ParkProof 알림이 차단되어 있습니다. 브라우저의 사이트 설정에서 허용한 다음 다시 시도하세요."
+    },
+    "timesOnDay": "{{day}} {{times}}"
   },
   "history": {
     "header": "주차 기록",
@@ -552,7 +582,7 @@
     "deleteTypoError": "확인하려면 DELETE를 대문자로 입력하세요.",
     "youSignedOut": "로그아웃되었습니다.",
     "pushHeader": "이 기기의 푸시 알림",
-    "pushCopy": "푸시가 활성화된 경우에만 앱이 닫혔을 때 알림이 작동합니다. 구독은 브라우저+기기별이며 계정과 별개입니다.",
+    "pushCopy": "푸시를 켜면 ParkProof가 닫혀 있어도 알림이 이 기기로 전달될 수 있습니다. 푸시를 켜는 것만으로는 알림이 설정되지 않습니다. 주차 기록에서 '알림 받기'를 눌러 알림을 설정하세요. 푸시는 기기마다 브라우저별로 설정되며 계정과는 별개입니다.",
     "pushSubscribed": "✓ 이 기기에서 구독 중",
     "pushEnable": "푸시 활성화",
     "pushDisable": "이 기기에서 푸시 비활성화",
@@ -838,7 +868,8 @@
     "pushNotEnabled": "앱이 닫혀 있을 때도 작동하는 알림을 추가하려면 이 기기에서 푸시 알림을 활성화하세요.",
     "saving": "저장 중…",
     "errorRetry": "업데이트할 수 없음 — 다시 시도",
-    "otherDevice": "이 알림은 다른 기기에서 설정되었습니다. 해당 기기에서 변경하세요."
+    "otherDevice": "이 알림은 다른 기기에서 설정되었습니다. 해당 기기에서 변경하세요.",
+    "chipAlreadySet": "이미 설정됨"
   },
   "installPrompt": {
     "available": "ParkProof 설치",

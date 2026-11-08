@@ -9,6 +9,8 @@ import {
   unsubscribeFromPush,
 } from '../lib/push'
 import Icon from './Icon'
+import PushReconnect from './PushReconnect'
+import { ReminderHelp } from './ReminderStatus'
 import Button from './ui/Button'
 import BackButton from './ui/BackButton'
 import Card from './ui/Card'
@@ -33,7 +35,7 @@ export default function AuthSettings({ onBack, onOpenPrivacy, onDeleted }: Props
     // this but the type system can't know.
     return (
       <div className="min-h-screen flex flex-col p-6 max-w-md mx-auto w-full">
-        <BackButton onClick={onBack} className="!text-[#A9CFBE] hover:!text-paper-50">
+        <BackButton onClick={onBack}>
           {t('common.back')}
         </BackButton>
         <p className="text-paper-50">{t('settings.youSignedOut')}</p>
@@ -109,7 +111,7 @@ export default function AuthSettings({ onBack, onOpenPrivacy, onDeleted }: Props
 
   return (
     <div className="min-h-screen flex flex-col p-6 max-w-md mx-auto w-full">
-      <BackButton onClick={onBack} className="!text-[#A9CFBE] hover:!text-paper-50">
+      <BackButton onClick={onBack}>
         {t('common.back')}
       </BackButton>
 
@@ -299,6 +301,14 @@ function PushManagementSection() {
     setStatus(ok ? 'notSubscribed' : 'error')
   }
 
+  // A failed reconnect can leave the browser with no subscription: show
+  // Enable again when it's gone.
+  const handleReconnectFailed = () => {
+    void hasActiveSubscription().then((has) => {
+      if (!has) setStatus(getPushPermissionState() === 'denied' ? 'denied' : 'notSubscribed')
+    })
+  }
+
   if (status === 'unsupported') {
     // No UI surface — the browser literally can't do Web Push. Showing
     // a "you can't enable this" section is just noise.
@@ -319,6 +329,9 @@ function PushManagementSection() {
           <div className="mb-3 px-3 py-2 rounded-lg bg-brand-50 border border-brand-200 text-brand-800 text-xs font-medium flex items-center gap-2">
             <Icon name="check" className="w-4 h-4 shrink-0" strokeWidth={2.5} />
             <span className="leading-snug">{t('settings.pushSubscribed')}</span>
+          </div>
+          <div className="mb-3 -mt-2">
+            <PushReconnect onFailed={handleReconnectFailed} />
           </div>
           <button
             type="button"
@@ -350,6 +363,8 @@ function PushManagementSection() {
               : t('settings.pushEnable')}
         </button>
       )}
+      {/* The reliability line every reminder feature carries. */}
+      <ReminderHelp tone="card" reconnect={false} className="mt-3" />
     </Card>
   )
 }

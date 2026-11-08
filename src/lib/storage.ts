@@ -58,6 +58,33 @@ export function notifyRecordsChanged(id: string | null = null): void {
   }
 }
 
+/** The records named by `scheduleRecordsChanged` calls not yet notified, or null when none is queued. */
+let queuedChanges: Set<string | null> | null = null
+
+/**
+ * `notifyRecordsChanged` for bulk writes, such as records landing from a
+ * cloud pull (field-test fix list, item 6): every call made in one
+ * synchronous run becomes ONE notification on the next microtask, so a pull
+ * of 50 records re-renders the screens once, not 50 times. The notification
+ * names the record when only one changed, else null. Never throws.
+ */
+export function scheduleRecordsChanged(id: string | null = null): void {
+  if (queuedChanges) {
+    queuedChanges.add(id)
+    return
+  }
+  queuedChanges = new Set([id])
+  queueMicrotask(flushQueuedRecordsChanged)
+}
+
+function flushQueuedRecordsChanged(): void {
+  const ids = queuedChanges
+  queuedChanges = null
+  if (!ids) return
+  const [only] = ids
+  notifyRecordsChanged(ids.size === 1 ? only : null)
+}
+
 /**
  * Subscribe to records-changed notifications. Also forwards writes made by
  * another tab of the app (the browser's `storage` event), so two open tabs

@@ -17,6 +17,8 @@ import i18n from './lib/i18n'
 import { AuthContext, type AuthContextValue } from './lib/auth-context-shape'
 import { appendAddendum, getSession, saveSession } from './lib/storage'
 import { ORPHAN_PHOTO_AGE_MS, createMemoryPhotoBackend, putPhoto, setPhotoBackendForTests } from './lib/photo-store'
+import { endedStatusTime } from './lib/record-status'
+import { SYNC_ON_RETURN_INTERVAL_MS } from './lib/sync'
 import type { PushCancelResult } from './lib/push'
 import type { AddendumKind, LogDraft, ParkingRules, ParkingSession, SignatureBundle, SignedAddendum } from './types'
 import App from './App'
@@ -362,7 +364,10 @@ describe('App.handleEndSession — one end path', () => {
     fireEvent.click(leave)
     confirmLeft()
     expect(document.activeElement?.id).toBe('record-status')
-    expect(document.activeElement?.textContent).toBe(i18n.t('session.ended'))
+    // "Ended" with the tap time (fix list item 6).
+    expect(document.activeElement?.textContent).toBe(
+      i18n.t('session.endedAt', { when: endedStatusTime(getSession('rec-1')!, 'Australia/Melbourne') }),
+    )
   })
 
   it('Cancel, Escape or a tap outside the sheet records nothing', () => {
@@ -400,7 +405,11 @@ describe('App.handleEndSession — one end path', () => {
     expect(getSession('rec-1')?.ended_at).toEqual(expect.any(String))
     expect(mocks.cancelPushReminders).toHaveBeenCalledTimes(1)
     expect(mocks.cancelInTabReminders).toHaveBeenCalledTimes(1)
-    expect(screen.getByText(i18n.t('session.ended'))).toBeTruthy()
+    expect(
+      screen.getByText(
+        i18n.t('session.endedAt', { when: endedStatusTime(getSession('rec-1')!, 'Australia/Melbourne') }),
+      ),
+    ).toBeTruthy()
     expect(screen.queryByRole('button', { name: i18n.t('session.endSession') })).toBeNull()
   })
 
@@ -916,5 +925,33 @@ describe('App and the photo store (T0b2)', () => {
     expect(mocks.signNewRecord).not.toHaveBeenCalled()
     await new Promise((resolve) => setTimeout(resolve, 20))
     expect(photos.records.has(`new-no-sign/${sha}`)).toBe(true)
+  })
+})
+
+// Review of the field-test build: before the pull on return there was no
+// automatic re-sync, so the banner was always accurate until Retry. Now a
+// later pull can reach the cloud by itself, and the banner must go then.
+describe("The 'couldn't load your records' banner", () => {
+  it('clears once a later pull on return reaches the cloud', async () => {
+    const result = { uploaded: 0, pulled: 0, alreadyInSync: 0, merged: 0 }
+    mocks.performInitialSync
+      .mockResolvedValueOnce({ ...result, listFailed: true })
+      .mockResolvedValueOnce({ ...result, listFailed: false })
+    renderApp(true)
+    expect(await screen.findByText(i18n.t('errors.syncFailed'))).toBeTruthy()
+
+    // The driver comes back to the app more than a minute later.
+    const realNow = Date.now.bind(Date)
+    const now = vi.spyOn(Date, 'now').mockImplementation(() => realNow() + SYNC_ON_RETURN_INTERVAL_MS + 1_000)
+    try {
+      Object.defineProperty(document, 'visibilityState', { value: 'visible', configurable: true })
+      act(() => {
+        document.dispatchEvent(new Event('visibilitychange'))
+      })
+      await waitFor(() => expect(screen.queryByText(i18n.t('errors.syncFailed'))).toBeNull())
+      expect(mocks.performInitialSync).toHaveBeenCalledTimes(2)
+    } finally {
+      now.mockRestore()
+    }
   })
 })

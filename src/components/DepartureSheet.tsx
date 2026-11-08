@@ -71,13 +71,13 @@ export default function DepartureSheet({ session, fix, confirmKey, onConfirm, on
       onMouseDown={(e) => {
         if (e.target === e.currentTarget) onCancel()
       }}
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-ink-900/60 backdrop-blur-sm p-4"
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-ink-900/60 backdrop-blur-sm safe-p-4"
       role="dialog"
       aria-modal="true"
       aria-labelledby="departure-title"
       aria-describedby="departure-body"
     >
-      <div className="bg-white gf-card max-w-md w-full p-6 max-h-[90vh] overflow-y-auto">
+      <div className="bg-white gf-card max-w-md w-full p-6 max-h-[min(90vh,100%)] overflow-y-auto">
         <h2
           id="departure-title"
           ref={titleRef}

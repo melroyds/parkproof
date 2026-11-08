@@ -184,7 +184,7 @@ export default function AuthFlow({ onDone, onCancel }: Props) {
 
   return (
     <div className="min-h-screen flex flex-col p-6 max-w-md mx-auto w-full">
-      <BackButton onClick={onCancel} className="!text-[#A9CFBE] hover:!text-paper-50">{t('common.back')}</BackButton>
+      <BackButton onClick={onCancel}>{t('common.back')}</BackButton>
 
       <div className="flex items-center gap-3 mb-1">
         <BrandMark className="w-10 h-10" />

@@ -411,11 +411,7 @@ export default function SessionLogger({
 
   return (
     <div className="min-h-screen flex flex-col p-6 max-w-md mx-auto w-full">
-      <BackButton
-        onClick={cancel}
-        disabled={submitting}
-        className="text-paper-50 hover:text-[#7BE3A4] disabled:opacity-50 disabled:cursor-not-allowed"
-      >
+      <BackButton onClick={cancel} disabled={submitting}>
         {t('common.back')}
       </BackButton>
 

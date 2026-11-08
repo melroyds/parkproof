@@ -36,7 +36,41 @@ const fake = vi.hoisted(() => {
     }
     return Promise.reject(new Error(`unexpected op ${cmd.op}`))
   }
-  return { store, calls, state, send }
+  // The push-subscriptions table: /push/schedule refuses a device with no
+  // live row (ERR_NOT_SUBSCRIBED, covered in push-registration.test.js), so
+  // every device in these tests is registered. Mocked so no test can reach
+  // a real DynamoDB table.
+  const subs = new Map()
+  function ddbSend(cmd) {
+    if (cmd.op === 'get') {
+      const item = subs.get(cmd.input.Key.device_id)
+      return Promise.resolve({ Item: item === undefined ? undefined : structuredClone(item) })
+    }
+    if (cmd.op === 'update') return Promise.resolve({})
+    return Promise.reject(new Error(`unexpected ddb op ${cmd.op}`))
+  }
+  return { store, calls, state, send, subs, ddbSend }
+})
+
+vi.mock('@aws-sdk/client-dynamodb', () => ({
+  DynamoDBClient: class {},
+}))
+vi.mock('@aws-sdk/lib-dynamodb', () => {
+  // Real classes, not arrow-function factories: the code does `new X(...)`.
+  const command = (op) =>
+    class {
+      constructor(input) {
+        this.op = op
+        this.input = input
+      }
+    }
+  return {
+    DynamoDBDocumentClient: { from: () => ({ send: (cmd) => fake.ddbSend(cmd) }) },
+    GetCommand: command('get'),
+    PutCommand: command('put'),
+    DeleteCommand: command('delete'),
+    UpdateCommand: command('update'),
+  }
 })
 
 vi.mock('@aws-sdk/client-scheduler', () => {
@@ -116,6 +150,11 @@ beforeEach(() => {
   fake.store.clear()
   fake.calls.length = 0
   fake.state.getFailure = null
+  fake.subs.clear()
+  const live = Math.floor(Date.now() / 1000) + 30 * 24 * 60 * 60
+  for (const device_id of [OWNER, OTHER]) {
+    fake.subs.set(device_id, { device_id, endpoint: 'https://push.example/x', p256dh: 'p', auth: 'a', expires_at: live })
+  }
   vi.spyOn(console, 'log').mockImplementation(() => {})
   vi.spyOn(console, 'error').mockImplementation(() => {})
 })

@@ -1,23 +1,134 @@
-// Web Push subscription helpers.
+// Web Push helpers: the browser subscription, its registration on the
+// server (/push/subscribe), and the server-side reminder schedules
+// (/push/schedule, /push/cancel). The "Remind me" flow that ties these to
+// the in-tab notifications lives in remind-me.ts.
 //
-// FOUNDATION ONLY tonight: this file handles the SUBSCRIBE side — getting
-// a PushSubscription from the browser and persisting it to our backend.
+// Keeping the server registration alive (field-test fix list, item 1): the
+// server forgets a device after PUSH_TTL_DAYS, or never heard of it when the
+// first save failed, while the browser still holds its subscription. So the
+// app re-sends the registration when it opens (installPushRegistrationRefresh)
+// and before every booking, and a booking the server refuses with
+// ERR_NOT_SUBSCRIBED re-registers once and retries once.
 //
-// What's NOT here yet (deferred to next session):
-//   - The service-worker push event handler (until that ships, pushes show
-//     as the browser's default "site updated" notification, not branded
-//     ParkProof copy)
-//   - The dispatch / scheduling layer (no automatic firing of pushes at
-//     parking-expiry times yet — manual curl is the only way to fire one)
-//   - i18n for the user-facing copy
-//
-// Once Reminders are wired up the user-facing flow will be: pick reminder
-// offsets → app asks for notification permission → SW push event renders
-// a nice notification at fire-time. Tonight it's just the plumbing.
+// A registration the push service has answered 410 Gone for is dead, but
+// the browser can keep reporting it. The server keeps a tombstone for it and
+// refuses it with 409 ERR_ENDPOINT_GONE; the app then drops it and registers
+// a fresh one (subscribeToPush), instead of re-sending the dead one forever.
 
 import { endpointUrl } from './api'
 
 const DEVICE_ID_KEY = 'parkproof.device_id.v1'
+
+/** When this browser last sent its registration to the server, and which endpoint. */
+const REGISTRATION_SENT_KEY = 'parkproof.push.registration_sent.v1'
+/** App open (and coming back to the screen) re-sends at most this often. */
+export const REGISTRATION_RESYNC_INTERVAL_MS = 60 * 60 * 1000
+/** A booking skips its own re-send when one went out this recently. */
+const REGISTRATION_FRESH_FOR_BOOKING_MS = 60 * 1000
+/** How long to wait for the service worker before giving up on push. */
+const SW_READY_TIMEOUT_MS = 10_000
+
+/** The server error code for "no live registration for this device". */
+export const ERR_NOT_SUBSCRIBED = 'ERR_NOT_SUBSCRIBED'
+/** The server error code for "this endpoint is dead (the push service said 410 Gone)". */
+export const ERR_ENDPOINT_GONE = 'ERR_ENDPOINT_GONE'
+
+/**
+ * The active service worker registration, or null when there is none.
+ * `navigator.serviceWorker.ready` never settles without a registration (the
+ * dev server registers no service worker), so check for one first and cap
+ * the wait: a reminder screen must never spin forever.
+ */
+async function swRegistration(): Promise<ServiceWorkerRegistration | null> {
+  try {
+    const sw = navigator.serviceWorker
+    if (typeof sw.getRegistration === 'function' && !(await sw.getRegistration())) return null
+    let timer: ReturnType<typeof setTimeout> | undefined
+    const timeout = new Promise<null>((resolve) => {
+      timer = setTimeout(() => resolve(null), SW_READY_TIMEOUT_MS)
+    })
+    try {
+      return await Promise.race([sw.ready, timeout])
+    } finally {
+      clearTimeout(timer)
+    }
+  } catch {
+    return null
+  }
+}
+
+interface RegistrationSent {
+  at: number
+  endpoint: string
+}
+
+function readRegistrationSent(): RegistrationSent | null {
+  try {
+    const raw = localStorage.getItem(REGISTRATION_SENT_KEY)
+    if (!raw) return null
+    const parsed = JSON.parse(raw) as Partial<RegistrationSent>
+    return typeof parsed.at === 'number' && typeof parsed.endpoint === 'string'
+      ? { at: parsed.at, endpoint: parsed.endpoint }
+      : null
+  } catch {
+    return null
+  }
+}
+
+function writeRegistrationSent(endpoint: string): void {
+  try {
+    localStorage.setItem(REGISTRATION_SENT_KEY, JSON.stringify({ at: Date.now(), endpoint }))
+  } catch {
+    /* storage blocked: the next sync just sends again */
+  }
+}
+
+function clearRegistrationSent(): void {
+  try {
+    localStorage.removeItem(REGISTRATION_SENT_KEY)
+  } catch {
+    /* ignore */
+  }
+}
+
+/**
+ * Send this browser's subscription to /push/subscribe under this browser's
+ * device id: 'stored' when the server stored it, 'gone' when the server
+ * refused it as a dead endpoint (409 ERR_ENDPOINT_GONE), else 'failed'.
+ */
+async function postRegistration(subscription: PushSubscription): Promise<'stored' | 'gone' | 'failed'> {
+  // toJSON() gives the wire shape (endpoint + keys.p256dh + keys.auth as base64).
+  let json: { endpoint?: string; keys?: { p256dh?: string; auth?: string } }
+  try {
+    json = subscription.toJSON()
+  } catch {
+    return 'failed'
+  }
+  if (!json.endpoint || !json.keys?.p256dh || !json.keys?.auth) return 'failed'
+  try {
+    const resp = await fetch(endpointUrl('/push/subscribe'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        device_id: getOrCreateDeviceId(),
+        subscription: {
+          endpoint: json.endpoint,
+          keys: { p256dh: json.keys.p256dh, auth: json.keys.auth },
+        },
+      }),
+    })
+    if (!resp.ok) {
+      if (resp.status === 409 && (await errorCodeOf(resp)) === ERR_ENDPOINT_GONE) return 'gone'
+      console.error('[push] backend persist failed:', resp.status)
+      return 'failed'
+    }
+    writeRegistrationSent(json.endpoint)
+    return 'stored'
+  } catch (err) {
+    console.error('[push] backend persist threw:', err)
+    return 'failed'
+  }
+}
 
 /** Returns true if the browser supports the APIs we need. iOS Safari < 16.4
  *  doesn't ship PushManager at all; this gate is the kindest UX. */
@@ -51,7 +162,8 @@ export async function hasActiveSubscription(): Promise<boolean> {
   if (!isPushSupported()) return false
   if (Notification.permission !== 'granted') return false
   try {
-    const reg = await navigator.serviceWorker.ready
+    const reg = await swRegistration()
+    if (!reg) return false
     const sub = await reg.pushManager.getSubscription()
     return sub !== null
   } catch {
@@ -141,11 +253,13 @@ export async function subscribeToPush(): Promise<SubscribeResult> {
     return { ok: false, reason: 'denied' }
   }
 
-  // Get a SW registration. vite-plugin-pwa registers one at root scope —
-  // navigator.serviceWorker.ready resolves to it once active.
-  const reg = await navigator.serviceWorker.ready
+  // Get a SW registration. vite-plugin-pwa registers one at the /app/
+  // scope; it is null when there is none (the dev server) or it never
+  // became ready.
+  const reg = await swRegistration()
+  if (!reg) return { ok: false, reason: 'subscribe_failed' }
 
-  // Create a push subscription. userVisibleOnly: true is mandatory — the
+  // Create a push subscription. userVisibleOnly: true is mandatory: the
   // user must see a notification for every push (browsers enforce this).
   let subscription: PushSubscription
   try {
@@ -162,34 +276,134 @@ export async function subscribeToPush(): Promise<SubscribeResult> {
     return { ok: false, reason: 'subscribe_failed' }
   }
 
-  // Persist to backend. Use the subscription's toJSON() to get the wire
-  // shape (endpoint + keys.p256dh + keys.auth as base64 strings).
-  const json = subscription.toJSON() as {
-    endpoint: string
-    keys: { p256dh: string; auth: string }
-  }
-  try {
-    const resp = await fetch(endpointUrl('/push/subscribe'), {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        device_id: getOrCreateDeviceId(),
-        subscription: {
-          endpoint: json.endpoint,
-          keys: { p256dh: json.keys.p256dh, auth: json.keys.auth },
-        },
-      }),
-    })
-    if (!resp.ok) {
-      console.error('[push] backend persist failed:', resp.status)
-      return { ok: false, reason: 'network', subscription }
+  // Persist to the backend every time, even for a reused subscription: the
+  // server may have lost this device (expired row, failed first save).
+  let posted = await postRegistration(subscription)
+  if (posted === 'gone') {
+    // The server knows this endpoint is dead (the push service answered 410
+    // Gone for it). Drop it and register a fresh one, once.
+    try {
+      await subscription.unsubscribe()
+    } catch (err) {
+      console.warn('[push] unsubscribe of a dead registration failed:', err)
     }
-  } catch (err) {
-    console.error('[push] backend persist threw:', err)
-    return { ok: false, reason: 'network', subscription }
+    clearRegistrationSent()
+    try {
+      subscription = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(vapid),
+      })
+    } catch (err) {
+      console.error('[push] subscribe after a dead registration failed:', err)
+      return { ok: false, reason: 'subscribe_failed' }
+    }
+    posted = await postRegistration(subscription)
   }
-
+  if (posted !== 'stored') return { ok: false, reason: 'network', subscription }
   return { ok: true, subscription }
+}
+
+export type RegistrationSyncResult =
+  /** The server stored this browser's registration just now. */
+  | 'sent'
+  /** Skipped: the same registration went out within `maxAgeMs`. */
+  | 'fresh'
+  /** Nothing to send: no push support, permission not granted, or no subscription. */
+  | 'no_subscription'
+  /** The server didn't store it (offline, a server error, or a dead
+   *  registration that couldn't be replaced). */
+  | 'failed'
+
+/**
+ * Re-send this browser's existing push registration to the server. Never
+ * prompts and never creates a subscription: it only refreshes what the
+ * browser already holds, so the server row exists and its expiry moves out.
+ *
+ * `maxAgeMs` skips the request when the same endpoint was sent that
+ * recently (0, the default, always sends). A changed endpoint (the browser
+ * rotated it) always sends. When the server refuses the endpoint as dead
+ * (ERR_ENDPOINT_GONE), this registers a fresh one instead: permission is
+ * already granted, so that never prompts.
+ */
+export async function syncPushRegistration(
+  opts: { maxAgeMs?: number } = {},
+): Promise<RegistrationSyncResult> {
+  if (!isPushSupported() || Notification.permission !== 'granted') return 'no_subscription'
+  let subscription: PushSubscription | null
+  try {
+    const reg = await swRegistration()
+    subscription = reg ? await reg.pushManager.getSubscription() : null
+  } catch {
+    subscription = null
+  }
+  if (!subscription) return 'no_subscription'
+  const maxAgeMs = opts.maxAgeMs ?? 0
+  if (maxAgeMs > 0) {
+    const last = readRegistrationSent()
+    const age = last ? Date.now() - last.at : Infinity
+    if (last && last.endpoint === subscription.endpoint && age >= 0 && age < maxAgeMs) return 'fresh'
+  }
+  const posted = await postRegistration(subscription)
+  if (posted === 'gone') return (await subscribeToPush()).ok ? 'sent' : 'failed'
+  return posted === 'stored' ? 'sent' : 'failed'
+}
+
+let resyncInFlight = false
+
+/** Re-send the registration in the background, at most once an hour. */
+function resyncRegistrationIfDue(): void {
+  if (resyncInFlight || !isPushSupported() || Notification.permission !== 'granted') return
+  resyncInFlight = true
+  void syncPushRegistration({ maxAgeMs: REGISTRATION_RESYNC_INTERVAL_MS })
+    .catch(() => 'failed')
+    .finally(() => {
+      resyncInFlight = false
+    })
+}
+
+/**
+ * App start: re-send this browser's push registration now and whenever the
+ * app comes back to the screen (an installed app is usually resumed, not
+ * reloaded). Fire-and-forget, only when notifications are allowed and the
+ * browser holds a subscription, and at most once an hour unless the
+ * endpoint changed. Returns the cleanup for a React effect.
+ */
+export function installPushRegistrationRefresh(): () => void {
+  if (typeof document === 'undefined') return () => {}
+  resyncRegistrationIfDue()
+  const onVisible = () => {
+    if (document.visibilityState === 'visible') resyncRegistrationIfDue()
+  }
+  document.addEventListener('visibilitychange', onVisible)
+  return () => document.removeEventListener('visibilitychange', onVisible)
+}
+
+/**
+ * "Reminders not arriving? Reconnect" (field-test fix list, item 5). A push
+ * registration can go bad at the push service's end: it keeps accepting
+ * messages but delivers them late or never, and only a fresh registration
+ * fixes it. This drops the browser's subscription, makes a new one and
+ * sends it to the server under the same device id.
+ *
+ * Reminders already booked need no re-booking: each schedule names the
+ * device id, and the sender looks up the device's current registration
+ * when the reminder fires, so they go to the new one.
+ */
+export async function reconnectPush(): Promise<SubscribeResult> {
+  if (!isPushSupported()) return { ok: false, reason: 'unsupported' }
+  if (Notification.permission === 'denied') return { ok: false, reason: 'denied' }
+  const reg = await swRegistration()
+  if (!reg) return { ok: false, reason: 'subscribe_failed' }
+  try {
+    const old = await reg.pushManager.getSubscription()
+    if (old) await old.unsubscribe()
+  } catch (err) {
+    // Carry on: subscribe() below still asks for a registration, and a
+    // failure there is reported.
+    console.warn('[push] unsubscribe before reconnect failed:', err)
+  }
+  clearRegistrationSent()
+  return subscribeToPush()
 }
 
 /** Returns the device id (creating one if needed). Exposed for the test
@@ -204,10 +418,10 @@ export function getDeviceId(): string {
  * Tears down the browser's PushSubscription (so the endpoint is invalidated
  * for any future EventBridge → dispatch attempts) and resolves to true on
  * success. On the next push dispatch the server gets HTTP 410 from the
- * gateway and the dispatch Lambda's existing reaper deletes the DDB row,
- * so the cloud subscription record self-cleans without a dedicated
- * /push/unsubscribe endpoint. Acceptable lag — at most one stale-push
- * attempt before the row goes away.
+ * gateway and the dispatch Lambda replaces the DDB row with a tombstone
+ * for that endpoint (no keys), so the cloud subscription record
+ * self-cleans without a dedicated /push/unsubscribe endpoint. Acceptable
+ * lag: at most one stale-push attempt before the row goes.
  *
  * Returns false on:
  *   - Push unsupported (iOS Safari < 16.4)
@@ -221,9 +435,11 @@ export function getDeviceId(): string {
 export async function unsubscribeFromPush(): Promise<boolean> {
   if (!isPushSupported()) return false
   try {
-    const reg = await navigator.serviceWorker.ready
+    const reg = await swRegistration()
+    if (!reg) return false
     const sub = await reg.pushManager.getSubscription()
     if (!sub) return false
+    clearRegistrationSent()
     return await sub.unsubscribe()
   } catch (err) {
     console.error('[push] unsubscribe failed:', err)
@@ -236,7 +452,11 @@ export async function unsubscribeFromPush(): Promise<boolean> {
  *   - not_owner: the server returned 403 ERR_NOT_OWNER. The schedules were
  *     created by another device (spec N6). Retrying here can never work.
  *   - no_device: this browser has no device id, so it owns no schedules.
- *   - unsupported / not_subscribed: push can't run on this browser right now.
+ *   - unsupported: push can't run on this browser.
+ *   - not_subscribed: this browser holds no push subscription, or the
+ *     server still had no registration for it (409 ERR_NOT_SUBSCRIBED)
+ *     after one re-registration and one retry. Nothing was booked: never
+ *     treat it as success.
  *   - network: offline, or any other server failure. A retry may work.
  */
 export type PushFailureReason = 'not_owner' | 'no_device' | 'unsupported' | 'not_subscribed' | 'network'
@@ -318,25 +538,6 @@ export async function cancelPushReminders(session_id: string): Promise<PushCance
   }
 }
 
-/**
- * Schedule a batch of push notifications for a saved session.
- *
- * Server-side semantics: REPLACE-ALL. /push/schedule first deletes every
- * existing schedule for the given session_id, then creates the new set.
- * Callers wanting to ADD or REMOVE a single reminder pass the full desired
- * union/difference, not just the delta.
- *
- * Never throws. Returns `{ ok: false, reason }` on any failure, so callers
- * can fire-and-forget OR await and persist. `not_owner` (403 ERR_NOT_OWNER)
- * means another device created this record's schedules and nothing changed.
- *
- * Best-effort by default — when push isn't subscribed, the call is skipped
- * silently because the .ics + in-tab paths still fire from the same caller.
- * The first caller (ReminderOptions, initial set) doesn't need the return
- * value. Newer callers (SessionDetail add/remove) DO — they need the
- * created[] fire_at list so they can persist the truth back to the session
- * for display in the "Scheduled reminders" section.
- */
 export interface ScheduledFire {
   /** Server-side schedule name (parkproof-push-<session_id>-<slot>). */
   name: string
@@ -344,6 +545,76 @@ export interface ScheduledFire {
   fire_at: string
 }
 
+type ScheduleAttempt =
+  | { kind: 'ok'; created: ScheduledFire[]; skipped: number }
+  | { kind: 'not_owner' | 'not_subscribed' | 'network' }
+
+/** The `error` code of a failed JSON response, or null. */
+async function errorCodeOf(resp: Response): Promise<string | null> {
+  try {
+    const body = (await resp.json()) as { error?: unknown }
+    return typeof body?.error === 'string' ? body.error : null
+  } catch {
+    return null
+  }
+}
+
+/** One POST to /push/schedule. Never throws. */
+async function postSchedule(body: string): Promise<ScheduleAttempt> {
+  try {
+    const resp = await fetch(endpointUrl('/push/schedule'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body,
+    })
+    if (!resp.ok) {
+      const code = resp.status === 403 || resp.status === 409 ? await errorCodeOf(resp) : null
+      if (resp.status === 403 && code === 'ERR_NOT_OWNER') return { kind: 'not_owner' }
+      if (resp.status === 409 && code === ERR_NOT_SUBSCRIBED) return { kind: 'not_subscribed' }
+      console.error('[push] schedule failed:', resp.status)
+      return { kind: 'network' }
+    }
+    const result = (await resp.json()) as {
+      created?: Array<{ name?: unknown; fire_at?: unknown }>
+      skipped?: unknown[]
+    }
+    // Defensive shape narrowing: the server's contract is {created: [{name, fire_at}], skipped: [...]}
+    // but a future Lambda change could rearrange. Filter to entries that
+    // actually have both fields rather than passing through garbage.
+    const created: ScheduledFire[] = (result.created ?? [])
+      .filter(
+        (c): c is { name: string; fire_at: string } =>
+          typeof c?.name === 'string' && typeof c?.fire_at === 'string',
+      )
+      .map((c) => ({ name: c.name, fire_at: c.fire_at }))
+    const skipped = Array.isArray(result.skipped) ? result.skipped.length : 0
+    return { kind: 'ok', created, skipped }
+  } catch (err) {
+    console.error('[push] schedule threw:', err)
+    return { kind: 'network' }
+  }
+}
+
+/**
+ * Schedule a batch of push notifications for a saved record.
+ *
+ * Server-side semantics: REPLACE-ALL. /push/schedule first deletes every
+ * existing schedule for the given session_id, then creates the new set.
+ * Callers wanting to ADD or REMOVE a single reminder pass the full desired
+ * union/difference, not just the delta.
+ *
+ * Before booking it re-sends this browser's registration to the server
+ * (skipped when one went out in the last minute), so a server that forgot
+ * the device learns it again. If the server still answers 409
+ * ERR_NOT_SUBSCRIBED, it registers once more and retries once.
+ *
+ * Never throws. Only `ok` means reminders were booked. Every other result
+ * is a failure the caller must show: `not_subscribed` (no subscription in
+ * this browser, or the server refused it even after the retry) is NOT a
+ * quiet skip, because a reminder that can't be sent is worse than none.
+ * `not_owner` (403 ERR_NOT_OWNER) means another device created this
+ * record's schedules and nothing changed.
+ */
 export async function schedulePushReminders(
   session_id: string,
   reminders: ScheduledReminder[],
@@ -354,45 +625,37 @@ export async function schedulePushReminders(
   if (!isPushSupported()) return { ok: false, reason: 'unsupported' }
   const subscribed = await hasActiveSubscription()
   if (!subscribed) return { ok: false, reason: 'not_subscribed' }
-  // Allow the empty case to reach the server — that's how the SessionDetail
-  // "remove last reminder" path works (POST with reminders=[] effectively
-  // cancels all without using /push/cancel). The server enforces a
-  // reminders.length === 0 → 400 guard, so we short-circuit here instead.
+  // The server rejects an empty reminders[] with a 400, so short-circuit.
+  // Removing the last reminder uses /push/cancel instead.
   if (reminders.length === 0) return { ok: true, created: [], skipped: 0 }
 
-  try {
-    const resp = await fetch(endpointUrl('/push/schedule'), {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        device_id: getOrCreateDeviceId(),
-        session_id,
-        reminders,
-        expires_at,
-      }),
-    })
-    if (!resp.ok) {
-      if (await isNotOwnerResponse(resp)) return { ok: false, reason: 'not_owner' }
-      console.error('[push] schedule failed:', resp.status)
+  // Re-send the registration before booking (fix list item 1). A failure
+  // here isn't final: the server decides below.
+  await syncPushRegistration({ maxAgeMs: REGISTRATION_FRESH_FOR_BOOKING_MS })
+
+  const body = JSON.stringify({
+    device_id: getOrCreateDeviceId(),
+    session_id,
+    reminders,
+    expires_at,
+  })
+  let attempt = await postSchedule(body)
+  if (attempt.kind === 'not_subscribed') {
+    // The server has no live registration for this device. Register once
+    // more (ignoring the recent-send skip) and retry once.
+    clearRegistrationSent()
+    if ((await syncPushRegistration()) !== 'sent') return { ok: false, reason: 'not_subscribed' }
+    attempt = await postSchedule(body)
+  }
+  switch (attempt.kind) {
+    case 'ok':
+      return { ok: true, created: attempt.created, skipped: attempt.skipped }
+    case 'not_owner':
+      return { ok: false, reason: 'not_owner' }
+    case 'not_subscribed':
+      console.error('[push] schedule refused: the server has no registration for this device')
+      return { ok: false, reason: 'not_subscribed' }
+    default:
       return { ok: false, reason: 'network' }
-    }
-    const result = (await resp.json()) as {
-      created?: Array<{ name?: unknown; fire_at?: unknown }>
-      skipped?: unknown[]
-    }
-    // Defensive shape narrowing — the server's contract is {created: [{name, fire_at}], skipped: [...]}
-    // but a future Lambda change could rearrange. Filter to entries that
-    // actually have both fields rather than passing through garbage.
-    const created: ScheduledFire[] = (result.created ?? [])
-      .filter(
-        (c): c is { name: string; fire_at: string } =>
-          typeof c?.name === 'string' && typeof c?.fire_at === 'string',
-      )
-      .map((c) => ({ name: c.name, fire_at: c.fire_at }))
-    const skipped = Array.isArray(result.skipped) ? result.skipped.length : 0
-    return { ok: true, created, skipped }
-  } catch (err) {
-    console.error('[push] schedule threw:', err)
-    return { ok: false, reason: 'network' }
   }
 }

@@ -360,4 +360,29 @@ describe('performInitialSync and photos', () => {
     await performInitialSync()
     expect(getSession(legacy)!.sign_photo).toBe(jpeg('kept'))
   })
+
+  // /sessions/list mints new URLs on every call, and the pull on return can
+  // run once a minute: a URL that still has a while to run is kept, so the
+  // record isn't rewritten (and its screens re-rendered) on every return.
+  it('keeps a presigned legacy URL with time left, and swaps one about to expire', async () => {
+    const amzDate = (ms: number) => new Date(ms).toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '')
+    const presigned = (signedAtMs: number) =>
+      `https://bucket.s3.ap-southeast-2.amazonaws.com/${USER}/${ID}/car.jpg?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Date=${amzDate(signedAtMs)}&X-Amz-Expires=3600&X-Amz-Signature=abc`
+    const fresh = presigned(Date.now() - 5 * 60_000)
+    saveSession(record({ car_photo: fresh }))
+    cloud.rows.set(ID, { ...record() })
+    cloud.putObject(`${USER}/${ID}/car.jpg`, jpeg('legacy-car'))
+
+    await performInitialSync()
+    expect(getSession(ID)!.car_photo).toBe(fresh)
+
+    const old = '7d1e2f3a-4b5c-4d6e-8f70-1a2b3c4d5e70'
+    const nearlyExpired = presigned(Date.now() - 55 * 60_000)
+    saveSession(record({ id: old, car_photo: nearlyExpired }))
+    cloud.rows.set(old, { ...record({ id: old }) })
+    cloud.putObject(`${USER}/${old}/car.jpg`, jpeg('legacy-car'))
+
+    await performInitialSync()
+    expect(getSession(old)!.car_photo).toBe(`https://s3.test/get/${USER}/${old}/car.jpg`)
+  })
 })

@@ -162,12 +162,12 @@ function FeedbackModalBody({
     <div
       ref={dialogRef}
       onMouseDown={onBackdropClick}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-ink-900/60 backdrop-blur-sm p-4 sm:p-6"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-ink-900/60 backdrop-blur-sm safe-p-4 sm:safe-p-6"
       role="dialog"
       aria-modal="true"
       aria-labelledby="feedback-title"
     >
-      <div className="bg-white rounded-2xl border border-brand-900/10 shadow-sm max-w-lg w-full max-h-[90vh] overflow-y-auto">
+      <div className="bg-white rounded-2xl border border-brand-900/10 shadow-sm max-w-lg w-full max-h-[min(90vh,100%)] overflow-y-auto">
         {success ? (
           <div className="p-8 text-center">
             <div

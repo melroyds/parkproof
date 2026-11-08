@@ -99,8 +99,8 @@
     },
     "push": {
       "title": "Aktifkan notifikasi push di perangkat ini",
-      "body": "Pengingat bekerja tanpa perlu dipegang, bahkan saat ParkProof sedang tidak terbuka. Beri izin sekarang, dan pengingat parkir berikutnya bunyi diam-diam di latar belakang, tanpa permintaan izin lagi di tengah jalan.",
-      "subscribed": "✓ Perangkat ini sudah berlangganan. Pengingat push akan aktif untuk catatan parkir mendatang.",
+      "body": "Izinkan notifikasi sekarang supaya nanti kamu tidak ditanya lagi. Pengingat baru diatur setelah kamu mengetuk 'Ingatkan saya' di catatan parkir.",
+      "subscribed": "✓ Notifikasi sudah aktif di perangkat ini. Untuk mengatur pengingat, ketuk 'Ingatkan saya' di catatan parkir.",
       "denied": "Kamu telah memblokir notifikasi untuk situs ini. Untuk mengaktifkan, ubah izin di pengaturan situs browsermu.",
       "errorRetry": "Ada yang tidak beres — coba lagi",
       "enable": "Aktifkan notifikasi",
@@ -393,7 +393,37 @@
     },
     "pushScheduleFailed": "Tidak bisa mengatur pengingat latar belakang. Mungkin cuma akan bunyi saat tab ini terbuka. Ketuk untuk coba lagi.",
     "chipMin_one": "{{count}} mnt",
-    "chipMin_other": "{{count}} mnt"
+    "chipMin_other": "{{count}} mnt",
+    "remindMe": {
+      "cta": "Ingatkan saya",
+      "busy": "Sedang menyiapkan…",
+      "setBackground_one": "{{count}} pengingat diatur untuk <strong>{{times}}</strong>. Pengingat tetap dikirim ke perangkat ini walaupun ParkProof ditutup.",
+      "setBackground_other": "{{count}} pengingat diatur untuk <strong>{{times}}</strong>. Pengingat tetap dikirim ke perangkat ini walaupun ParkProof ditutup.",
+      "setOpenOnly_one": "{{count}} pengingat diatur untuk <strong>{{times}}</strong>, tapi cuma berfungsi selama ParkProof terbuka.",
+      "setOpenOnly_other": "{{count}} pengingat diatur untuk <strong>{{times}}</strong>, tapi cuma berfungsi selama ParkProof terbuka.",
+      "notSet": "Tidak ada pengingat yang diatur.",
+      "stepInstall": "Di iPhone, pengingat butuh ParkProof ada di Layar Utama. Ketuk Share, pilih 'Add to Home Screen', lalu buka ParkProof dari sana dan ketuk 'Ingatkan saya' lagi.",
+      "stepAllow": "Notifikasi ParkProof sedang mati. Izinkan saat browsermu bertanya, atau di pengaturan situs browsermu, lalu ketuk 'Ingatkan saya' lagi.",
+      "stepUnsupported": "Browser ini tidak bisa mengirim pengingat saat ParkProof ditutup. Gunakan pengingat kalender saja.",
+      "stepRetry": "Pengingat untuk saat ParkProof ditutup tidak bisa diatur. Cek koneksimu, lalu ketuk 'Ingatkan saya' lagi.",
+      "stepAllPast": "Waktu yang kamu pilih sudah lewat. Pilih waktu yang lebih lambat."
+    },
+    "reliability": "Pengingat bisa tertunda atau dibisukan, misalnya oleh mode Fokus atau penghemat baterai. Jangan hanya mengandalkan pengingat.",
+    "androidTips": {
+      "summary": "Tips untuk ponsel Android",
+      "spam": "Kalau Chrome menandai pengingat sebagai kemungkinan spam, ketuk Izinkan.",
+      "battery": "Di Samsung, atur penggunaan baterai Chrome ke Tidak dibatasi."
+    },
+    "chipFiresAt": "Berbunyi pukul {{when}}",
+    "chipPast": "Sudah lewat",
+    "reconnect": {
+      "cta": "Pengingat tidak masuk? Sambungkan ulang",
+      "busy": "Menyambungkan ulang…",
+      "done": "Tersambung ulang. Pengingat berikutnya di perangkat ini akan memakai sambungan baru.",
+      "failed": "Tidak bisa menyambung ulang. Cek koneksimu lalu coba lagi.",
+      "denied": "Notifikasi ParkProof diblokir. Izinkan di pengaturan situs browsermu, lalu coba lagi."
+    },
+    "timesOnDay": "{{times}} pada {{day}}"
   },
   "history": {
     "header": "Catatan parkir",
@@ -552,7 +582,7 @@
     "deleteTypoError": "Ketik DELETE dengan huruf kapital untuk konfirmasi.",
     "youSignedOut": "Kamu telah keluar.",
     "pushHeader": "Notifikasi push di perangkat ini",
-    "pushCopy": "Pengingat cuma bunyi saat aplikasi tertutup kalau push diaktifkan. Langganannya per browser per perangkat, terpisah dari akunmu.",
+    "pushCopy": "Push memungkinkan pengingat sampai ke perangkat ini saat ParkProof ditutup. Mengaktifkan push saja tidak mengatur pengingat apa pun. Ketuk 'Ingatkan saya' di catatan parkir untuk mengaturnya. Push diatur per browser di setiap perangkat, terpisah dari akunmu.",
     "pushSubscribed": "✓ Berlangganan di perangkat ini",
     "pushEnable": "Aktifkan push",
     "pushDisable": "Nonaktifkan push di perangkat ini",
@@ -838,7 +868,8 @@
     "pushNotEnabled": "Aktifkan notifikasi push di perangkat ini untuk menambah pengingat yang menyala saat aplikasi tertutup.",
     "saving": "Menyimpan…",
     "errorRetry": "Tidak bisa memperbarui — coba lagi",
-    "otherDevice": "Pengingat ini diatur di perangkat lain. Ubah di perangkat itu."
+    "otherDevice": "Pengingat ini diatur di perangkat lain. Ubah di perangkat itu.",
+    "chipAlreadySet": "Sudah diatur"
   },
   "installPrompt": {
     "available": "Pasang ParkProof",

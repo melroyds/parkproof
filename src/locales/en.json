@@ -108,8 +108,8 @@
     },
     "push": {
       "title": "Enable push notifications on this device",
-      "body": "Reminders work hands-free even when ParkProof isn't open. Granting permission now means future parking reminders fire silently in the background, with no permission prompt mid-flow.",
-      "subscribed": "✓ This device is subscribed. Push reminders will fire for your future parking records.",
+      "body": "Allowing notifications now saves you a prompt later. Nothing is set until you tap Remind me on a parking record.",
+      "subscribed": "✓ Notifications are on for this device. To set a reminder, tap Remind me on a parking record.",
       "denied": "You've blocked notifications for this site. To enable, change the permission in your browser's site settings.",
       "errorRetry": "Something went wrong. Try again",
       "enable": "Enable notifications",
@@ -401,7 +401,37 @@
       "multiple": "You'll be pushed at {{times}}."
     },
     "chipMin_one": "{{count}} min",
-    "chipMin_other": "{{count}} min"
+    "chipMin_other": "{{count}} min",
+    "remindMe": {
+      "cta": "Remind me",
+      "busy": "Setting up…",
+      "setBackground_one": "{{count}} reminder set for <strong>{{times}}</strong>. It's sent to this device even when ParkProof is closed.",
+      "setBackground_other": "{{count}} reminders set for <strong>{{times}}</strong>. They're sent to this device even when ParkProof is closed.",
+      "setOpenOnly_one": "{{count}} reminder set for <strong>{{times}}</strong>, but it only works while ParkProof is open.",
+      "setOpenOnly_other": "{{count}} reminders set for <strong>{{times}}</strong>, but they only work while ParkProof is open.",
+      "notSet": "No reminder was set.",
+      "stepInstall": "On iPhone, reminders need ParkProof on your Home Screen. Tap Share, then Add to Home Screen, then open ParkProof from there and tap Remind me again.",
+      "stepAllow": "Notifications are off for ParkProof. Allow them when your browser asks, or in your browser's site settings, then tap Remind me again.",
+      "stepUnsupported": "This browser can't send reminders when ParkProof is closed. Use a calendar reminder instead.",
+      "stepRetry": "Reminders for when ParkProof is closed couldn't be set up. Check your connection, then tap Remind me again.",
+      "stepAllPast": "The times you picked have passed. Pick a later one."
+    },
+    "reliability": "Reminders can be delayed or silenced, for example by Focus or battery saving. Don't rely on them alone.",
+    "androidTips": {
+      "summary": "Tips for Android phones",
+      "spam": "If Chrome marks a reminder as possible spam, tap Allow.",
+      "battery": "On Samsung, set Chrome's battery use to Unrestricted."
+    },
+    "chipFiresAt": "Fires at {{when}}",
+    "chipPast": "Already passed",
+    "reconnect": {
+      "cta": "Reminders not arriving? Reconnect",
+      "busy": "Reconnecting…",
+      "done": "Reconnected. Your upcoming reminders on this device will use the new connection.",
+      "failed": "Couldn't reconnect. Check your connection and try again.",
+      "denied": "Notifications are blocked for ParkProof. Allow them in your browser's site settings, then try again."
+    },
+    "timesOnDay": "{{times}} on {{day}}"
   },
   "scheduledReminders": {
     "header": "Scheduled reminders",
@@ -422,7 +452,8 @@
     "pushNotEnabled": "Enable push notifications on this device to add reminders that fire when the app is closed.",
     "saving": "Saving…",
     "errorRetry": "Couldn't update. Try again",
-    "otherDevice": "These reminders were set on another device. Change them on that device."
+    "otherDevice": "These reminders were set on another device. Change them on that device.",
+    "chipAlreadySet": "Already set"
   },
   "history": {
     "header": "Parking records",
@@ -581,7 +612,7 @@
     "deleteTypoError": "Please type DELETE in capitals to confirm.",
     "youSignedOut": "You're signed out.",
     "pushHeader": "Push notifications on this device",
-    "pushCopy": "Reminders only fire when the app is closed if push is enabled. Subscription is per-browser-per-device, separate from your account.",
+    "pushCopy": "Push lets reminders reach this device when ParkProof is closed. Turning it on sets no reminder by itself. Tap Remind me on a parking record to set one. It's set up per browser on each device, separate from your account.",
     "pushSubscribed": "✓ Subscribed on this device",
     "pushEnable": "Enable push",
     "pushDisable": "Disable push on this device",

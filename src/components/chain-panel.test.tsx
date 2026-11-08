@@ -585,9 +585,9 @@ describe('the record screen', () => {
         ],
       }),
     )
-    // STATUS is a plain "Ended": the times are in the departure row.
-    expect(screen.getByText(i18n.t('session.ended'))).toBeTruthy()
-    expect(screen.queryByText(/^Ended /)).toBeNull()
+    // STATUS names the tap time, without the day (it ended on the day it
+    // arrived; fix list item 6). The departure row labels it as the phone's.
+    expect(document.getElementById('record-status')?.textContent).toBe('Ended 1:55 pm AEDT')
     expect(screen.getByText("You tapped I've left at Sun 25 Oct, 1:55 pm AEDT (phone clock).")).toBeTruthy()
     expand()
     // The departure row and the chain panel's departure part both carry ParkProof's time.

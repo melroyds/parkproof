@@ -17,6 +17,7 @@ import {
   formatExpiryAbsolute,
   formatReminderTimesLine,
   formatInZone,
+  isSameDayInZone,
 } from './time-format'
 
 // Convenience — ms in higher units.
@@ -222,6 +223,21 @@ describe('formatReminderTimesLine', () => {
     expect((result.match(/\d{1,2}\/\d{1,2}\/\d{4}/g) ?? []).length).toBe(1)
   })
 
+  it('with t, the future-day join comes from reminders.timesOnDay (no English "on" in other languages)', () => {
+    const now = new Date('2026-05-21T08:00:00+10:00')
+    const t = vi.fn((key: string, opts: { times: string; day: string }) => `[${key}] ${opts.day} / ${opts.times}`)
+    const result = formatReminderTimesLine(
+      [new Date('2026-05-22T09:30:00+10:00'), new Date('2026-05-22T09:45:00+10:00')],
+      { timeZone: TZ, now, t: t as unknown as TFunction },
+    )
+    expect(t).toHaveBeenCalledTimes(1)
+    expect(result).toMatch(/^\[reminders\.timesOnDay\] \w{3} 22\/05\/2026 \/ 9:30 am, 9:45 am$/i)
+    expect(result).not.toContain(' on ')
+    // Today needs no join, so no key.
+    formatReminderTimesLine([new Date('2026-05-21T09:30:00+10:00')], { timeZone: TZ, now, t: t as unknown as TFunction })
+    expect(t).toHaveBeenCalledTimes(1)
+  })
+
   it('mixed-day (rare): each time tagged with its own (Day DD/MM/YYYY)', () => {
     const now = new Date('2026-05-21T08:00:00+10:00')
     const result = formatReminderTimesLine(
@@ -285,5 +301,33 @@ describe('formatInZone (N5): the record zone, with its short name', () => {
   it('a bad value shows as text; an unknown zone falls back to Melbourne', () => {
     expect(formatInZone('not a time', 'Australia/Melbourne')).toBe('not a time')
     expect(formatInZone('2026-10-25T02:55:00.000Z', 'Mars/Olympus')).toBe('Sun 25 Oct, 1:55 pm AEDT')
+  })
+})
+
+describe('formatInZone without the date, and isSameDayInZone (fix list item 6)', () => {
+  it('withDate false gives only the time, with the zone unless dropped', () => {
+    expect(formatInZone('2026-11-08T06:23:23.000Z', 'Australia/Melbourne', { withDate: false })).toBe('5:23 pm AEDT')
+    expect(formatInZone('2026-11-08T06:23:23.000Z', 'Australia/Perth', { withDate: false })).toBe('2:23 pm AWST')
+    expect(formatInZone('2026-11-08T06:23:23.000Z', 'Australia/Melbourne', { withDate: false, withZone: false })).toBe(
+      '5:23 pm',
+    )
+    // The year needs the date: asking for it without the date changes nothing.
+    expect(formatInZone('2026-11-08T06:23:23.000Z', 'Australia/Melbourne', { withDate: false, withYear: true })).toBe(
+      '5:23 pm AEDT',
+    )
+  })
+
+  it('compares calendar days in the given zone, not the device zone', () => {
+    // 11:30 pm and 11:50 pm AEDT on Sun 8 Nov are the same Melbourne day...
+    expect(isSameDayInZone('2026-11-08T12:30:00.000Z', '2026-11-08T12:50:00.000Z', 'Australia/Melbourne')).toBe(true)
+    // ...but 12:30 am AEDT on Mon 9 Nov is the next one, while in Perth
+    // (9:30 pm AWST, Sun 8 Nov) it is still the same day.
+    expect(isSameDayInZone('2026-11-08T12:30:00.000Z', '2026-11-08T13:30:00.000Z', 'Australia/Melbourne')).toBe(false)
+    expect(isSameDayInZone('2026-11-08T12:30:00.000Z', '2026-11-08T13:30:00.000Z', 'Australia/Perth')).toBe(true)
+  })
+
+  it('answers false for an unreadable time or an unknown zone', () => {
+    expect(isSameDayInZone('not a time', '2026-11-08T06:00:00.000Z', 'Australia/Melbourne')).toBe(false)
+    expect(isSameDayInZone('2026-11-08T06:00:00.000Z', '2026-11-08T06:01:00.000Z', 'Mars/Olympus')).toBe(false)
   })
 })

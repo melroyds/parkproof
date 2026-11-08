@@ -1,6 +1,8 @@
 import { Fragment, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import Icon from './Icon'
+import PushReconnect from './PushReconnect'
+import { ReminderHelp } from './ReminderStatus'
 import BackButton from './ui/BackButton'
 import {
   getPushPermissionState,
@@ -82,6 +84,14 @@ export default function AboutFeatures({ onBack, onTryIt }: Props) {
     }
   }
 
+  // A failed reconnect can leave the browser with no subscription. Re-check,
+  // and offer Enable again (as a retry) when it's gone.
+  function handleReconnectFailed() {
+    void hasActiveSubscription().then((has) => {
+      if (!has) setPushStatus(getPushPermissionState() === 'denied' ? 'denied' : 'error')
+    })
+  }
+
   // Section ids — order matters (it's the visible order on the page).
   // Each id maps to `about.<id>.title`, `about.<id>.lead`, `about.<id>.items`
   // (array of strings) in the locale file.
@@ -97,7 +107,7 @@ export default function AboutFeatures({ onBack, onTryIt }: Props) {
 
   return (
     <div className="min-h-screen flex flex-col p-6 max-w-2xl mx-auto w-full">
-      <BackButton onClick={onBack} className="!text-[#A9CFBE] hover:!text-paper-50">{t('common.back')}</BackButton>
+      <BackButton onClick={onBack}>{t('common.back')}</BackButton>
 
       <header className="mb-10">
         <h1 className="font-display text-4xl font-extrabold text-paper-50 leading-tight mb-3">
@@ -130,6 +140,7 @@ export default function AboutFeatures({ onBack, onTryIt }: Props) {
             <PushSubscribeBlock
               pushStatus={pushStatus}
               onEnable={handleEnablePush}
+              onReconnectFailed={handleReconnectFailed}
             />
           )}
           {/* Plain-English caveat under the evidence section. The seal proves
@@ -216,9 +227,10 @@ interface SectionProps {
 interface PushSubscribeBlockProps {
   pushStatus: 'idle' | 'requesting' | 'subscribed' | 'denied' | 'unsupported' | 'error'
   onEnable: () => void
+  onReconnectFailed: () => void
 }
 
-function PushSubscribeBlock({ pushStatus, onEnable }: PushSubscribeBlockProps) {
+function PushSubscribeBlock({ pushStatus, onEnable, onReconnectFailed }: PushSubscribeBlockProps) {
   const { t } = useTranslation()
   return (
     <div className="gf-card -mt-4 mb-10 ml-14 p-4 bg-brand-50">
@@ -229,9 +241,12 @@ function PushSubscribeBlock({ pushStatus, onEnable }: PushSubscribeBlockProps) {
         {t('about.push.body')}
       </p>
       {pushStatus === 'subscribed' ? (
-        <p className="text-xs text-brand-700 font-medium">
-          {t('about.push.subscribed')}
-        </p>
+        <>
+          <p className="text-xs text-brand-700 font-medium">
+            {t('about.push.subscribed')}
+          </p>
+          <PushReconnect onFailed={onReconnectFailed} />
+        </>
       ) : pushStatus === 'denied' ? (
         <p className="text-xs text-ink-600 leading-relaxed">
           {t('about.push.denied')}
@@ -252,6 +267,8 @@ function PushSubscribeBlock({ pushStatus, onEnable }: PushSubscribeBlockProps) {
           {pushStatus === 'requesting' ? t('about.push.requesting') : t('about.push.enable')}
         </button>
       )}
+      {/* The reliability line every reminder feature carries. */}
+      <ReminderHelp tone="card" reconnect={false} className="mt-3" />
     </div>
   )
 }

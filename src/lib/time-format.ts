@@ -97,11 +97,32 @@ export function formatExpiryAbsolute(
   return { time, dayDate, combined: `${time}, ${dayDate}` }
 }
 
+/**
+ * True when two moments fall on the same calendar day in `timeZone` (the
+ * record's own zone, not the device's). False for an unknown zone or an
+ * invalid time, so a caller then shows the full date rather than too little.
+ */
+export function isSameDayInZone(a: string | number | Date, b: string | number | Date, timeZone: string): boolean {
+  const da = a instanceof Date ? a : new Date(a)
+  const db = b instanceof Date ? b : new Date(b)
+  if (!Number.isFinite(da.getTime()) || !Number.isFinite(db.getTime())) return false
+  try {
+    return isSameDay(da, db, timeZone)
+  } catch {
+    return false
+  }
+}
+
 export interface FormatInZoneOptions {
-  /** Add the year ("Sun 25 Oct 2026, 1:55 pm"). Default false. */
+  /** Add the year ("Sun 25 Oct 2026, 1:55 pm"). Default false. Ignored without the date. */
   withYear?: boolean
   /** Add the zone's short name ("... 1:55 pm AEDT"). Default true. */
   withZone?: boolean
+  /**
+   * Add the weekday, day and month. Default true. False gives only the time
+   * ("1:55 pm AEDT"), for a line whose day is already shown next to it.
+   */
+  withDate?: boolean
 }
 
 /**
@@ -120,16 +141,17 @@ export function formatInZone(
   timeZone: string,
   options: FormatInZoneOptions = {},
 ): string {
-  const { withYear = false, withZone = true } = options
+  const { withZone = true, withDate = true } = options
+  const withYear = withDate && options.withYear === true
   const date = value instanceof Date ? value : new Date(value)
   if (!Number.isFinite(date.getTime())) return String(value)
   let parts: Intl.DateTimeFormatPart[]
   try {
     parts = new Intl.DateTimeFormat('en-AU', {
       timeZone,
-      weekday: 'short',
-      day: 'numeric',
-      month: 'short',
+      weekday: withDate ? 'short' : undefined,
+      day: withDate ? 'numeric' : undefined,
+      month: withDate ? 'short' : undefined,
       year: withYear ? 'numeric' : undefined,
       hour: 'numeric',
       minute: '2-digit',
@@ -141,9 +163,11 @@ export function formatInZone(
     return timeZone === DEFAULT_TZ ? date.toISOString() : formatInZone(date, DEFAULT_TZ, options)
   }
   const part = (type: Intl.DateTimeFormatPartTypes) => parts.find((p) => p.type === type)?.value ?? ''
-  const day = `${part('weekday')} ${part('day')} ${part('month')}${withYear ? ` ${part('year')}` : ''}`
   const time = `${part('hour')}:${part('minute')} ${part('dayPeriod').toLowerCase()}`
-  return `${day}, ${time}${withZone ? ` ${part('timeZoneName')}` : ''}`
+  const zone = withZone ? ` ${part('timeZoneName')}` : ''
+  if (!withDate) return `${time}${zone}`
+  const day = `${part('weekday')} ${part('day')} ${part('month')}${withYear ? ` ${part('year')}` : ''}`
+  return `${day}, ${time}${zone}`
 }
 
 /**
@@ -155,10 +179,14 @@ export function formatInZone(
  *   today          → "9:30 am, 9:45 am"
  *   future day     → "9:30 am, 9:45 am on Mon 18/05/2026"
  *   mixed (rare)   → each time tagged with its day: "9:30 am (Mon 18/05/2026), 8:00 am (Tue 19/05/2026)"
+ *
+ * Pass `t` wherever the line is shown: the future-day join then comes from
+ * `reminders.timesOnDay` in the reader's language. Without it the join is
+ * the English " on ".
  */
 export function formatReminderTimesLine(
   fireAtList: Date[],
-  options: { timeZone?: string; now?: Date } = {},
+  options: { timeZone?: string; now?: Date; t?: TFunction } = {},
 ): string {
   const tz = options.timeZone ?? DEFAULT_TZ
   const now = options.now ?? new Date()
@@ -168,7 +196,8 @@ export function formatReminderTimesLine(
   if (sameDayAcrossAll) {
     const timeList = fireAtList.map((d) => formatTime(d, tz)).join(', ')
     if (isSameDay(fireAtList[0], now, tz)) return timeList
-    return `${timeList} on ${formatDayDate(fireAtList[0], tz)}`
+    const day = formatDayDate(fireAtList[0], tz)
+    return options.t ? options.t('reminders.timesOnDay', { times: timeList, day }) : `${timeList} on ${day}`
   }
   // Cross-day reminder bundle — annotate each with its day-date for clarity.
   return fireAtList
