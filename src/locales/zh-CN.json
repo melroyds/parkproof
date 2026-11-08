@@ -516,7 +516,11 @@
     "step1": "正在读取标志…",
     "step2": "正在识别停车规则…",
     "step3": "正在计算可停车时间…",
-    "step4": "正在生成答案…"
+    "step4": "正在生成答案…",
+    "stepOf": "第 {{current}} 步,共 {{total}} 步",
+    "usuallyTen": "通常约需 10 秒。",
+    "almostThere": "快好了。这个标志比较复杂…",
+    "stillWorking": "仍在处理,这次比平时久一些…"
   },
   "errors": {
     "somethingWrong": "出错了",
@@ -543,7 +547,11 @@
     "genericRetry": "出了点问题。请稍后再试一次。",
     "storageFull": "ParkProof 在此设备上的存储空间已满。进行中的停车记录和仍在等待签名的记录都会保留。请打开\"停车记录\",删除一条不再需要的旧记录,然后重试。",
     "storageEvicted_one": "你的设备存储已满,因此为了腾出空间,删除了 {{count}} 条较旧的停车记录。登录即可把记录安全保存在云端。",
-    "storageEvicted_other": "你的设备存储已满,因此为了腾出空间,删除了 {{count}} 条较旧的停车记录。登录即可把记录安全保存在云端。"
+    "storageEvicted_other": "你的设备存储已满,因此为了腾出空间,删除了 {{count}} 条较旧的停车记录。登录即可把记录安全保存在云端。",
+    "noticeUnreadable": "我们无法读取这张违章通知。请把整张通知放平,在光线好的地方拍一张更清晰的照片。",
+    "notANotice": "这张照片看起来不像停车罚款通知。请直接拍违章通知本身。",
+    "noticeHeavyLoad": "ParkProof 目前繁忙,未能及时读完这张通知。请稍等一分钟后再试。",
+    "noticeImageTooLarge": "这张照片太大了。请换一张通知的照片。"
   },
   "pdf": {
     "common": {
@@ -967,5 +975,79 @@
       "headsUpArea": "你在此停车区域的停车时限于 {{time}} 结束。请把车开出整个区域,不要只是换到区域内的另一条街。",
       "endedArea": "你在此停车区域的停车时间已于 {{time}} 结束。"
     }
+  },
+  "notice": {
+    "homeLink": "收到罚款?从这里开始",
+    "title": "收到罚款?",
+    "captureIntro": "拍一张违章通知的照片。ParkProof 会读取上面的日期、时间和地点,并查找你在那段时间前后的停车记录。",
+    "reading": {
+      "step1": "正在读取通知…",
+      "step2": "正在查找日期、时间和地点…",
+      "step3": "正在查找你的记录…",
+      "slow": "仍在读取,可能还需要一点时间…",
+      "hint": "通常只需几秒钟。"
+    },
+    "errorHeader": "无法读取通知",
+    "fields": {
+      "heading": "通知上的内容",
+      "intro": "由 AI 从你的照片中读取。请逐项与通知核对。",
+      "noticeNumber": "通知编号",
+      "issuedBy": "签发机构",
+      "date": "通知上的日期",
+      "time": "通知上的时间",
+      "location": "地点",
+      "offence": "违规行为",
+      "partlyReadable": "通知的部分内容难以辨认。请对照通知本身核对这些信息。",
+      "checkDateTime": "请对照通知核对日期和时间,它们可能被读错了。",
+      "enterDateTime": "我们无法读取日期和时间。请按通知上的内容填写,以查找你的记录。"
+    },
+    "matches": {
+      "heading": "你在这段时间前后的记录",
+      "none": "你保存的停车记录中,没有在这个日期和时间前后的记录。如果上面的日期或时间读错了,请改正。"
+    },
+    "match": {
+      "compare": "与这条记录对比",
+      "far": "这条记录距离通知上的地点约 {{distance}} 公里。",
+      "repeatedHour": "这一天夏令时结束,所以通知上的时间出现了两次。这里用 {{time}} 与记录对比。",
+      "skippedHour": "这一天夏令时开始,所以通知上的时间在时钟上并不存在。这里用 {{time}} 与记录对比。"
+    },
+    "compare": {
+      "heading": "与通知对比",
+      "departureSignedBefore": "你在 {{time}} 点击了\"我已离开\",比通知上的时间早 {{duration}}。ParkProof 在 {{signedTime}} 为这条记录签名。记录显示的是你点击的时间,不是车辆开走的时间。",
+      "departureSignedBeforeClock": "按你手机的时钟,你在 {{time}} 点击了\"我已离开\"。ParkProof 在 {{signedTime}} 为这条记录签名,早于通知上的时间。记录显示的是你点击的时间,不是车辆开走的时间。",
+      "departureSignedAfter": "按你手机的时钟,你在 {{time}} 点击了\"我已离开\"。但 ParkProof 直到 {{signedTime}} 才签名,晚于通知上的时间,所以签名无法表明你在 {{noticeTime}} 之前已经离开。",
+      "departurePending": "你在 {{time}} 点击了\"我已离开\"。这还没有签名。",
+      "departureNotSigned": "你在 {{time}} 点击了\"我已离开\"。这没有签名。",
+      "noDeparture": "你还没有在这条记录上点击\"我已离开\"。",
+      "arrivalBefore": "你在 {{time}} 记录了这次停车,比通知上的时间早 {{duration}}。",
+      "arrivalAfter": "你在 {{time}} 记录了这次停车,比通知上的时间晚 {{duration}}。",
+      "arrivalSame": "你在 {{time}} 记录了这次停车,与通知上的时间在同一分钟。",
+      "driver": "你的记录写的是 {{driver}} 在开车。这是记录停车时输入的内容,ParkProof 没有核实。如果当时是别人在开车,通知上会说明如何提名对方。只能提名实际开车的人。",
+      "handover": "你的记录写的是,车辆在 {{time}} 交给了 {{to_driver}}。",
+      "checkRegistration": "请核对通知上的车牌号是否就是这条记录里的车。ParkProof 不记录车牌号。",
+      "checkDueDate": "请在通知本身上查看截止日期。",
+      "departureDevKey": "按你手机的时钟,你在 {{time}} 点击了\"我已离开\"。这部分使用开发密钥签名,不是 ParkProof 公布的密钥,所以签名无法表明你在 {{noticeTime}} 之前已经离开。",
+      "arrivalSignedBefore": "ParkProof 在 {{signedTime}} 为这条记录签名,早于通知上的时间。签名表明这条记录在那时已经存在,但不能说明车辆何时到达或停在哪里。",
+      "arrivalSignedAfter": "ParkProof 直到 {{signedTime}} 才为这条记录签名,晚于通知上的时间,所以签名无法表明这条记录在 {{noticeTime}} 之前已经存在。",
+      "arrivalDevKey": "这条记录使用开发密钥签名,不是 ParkProof 公布的密钥,所以签名无法表明它在 {{noticeTime}} 之前已经存在。",
+      "arrivalPending": "ParkProof 还没有为这条记录签名。",
+      "arrivalNotSigned": "这条记录没有签名。",
+      "driverPending": "驾驶员姓名还没有签名。",
+      "driverNotSigned": "驾驶员姓名没有签名。",
+      "handoverPending": "这次车辆交接还没有签名。"
+    },
+    "duration": {
+      "minutes_one": "{{count}} 分钟",
+      "minutes_other": "{{count}} 分钟",
+      "hours_one": "{{count}} 小时",
+      "hours_other": "{{count}} 小时",
+      "hoursMinutes": "{{hours}} {{minutes}}"
+    },
+    "actions": {
+      "draftAppeal": "用这条记录起草申诉信",
+      "exportPdf": "导出证据 PDF",
+      "draftAnyway": "仍然起草申诉信"
+    },
+    "disclaimer": "这里只是把你的记录与通知上的内容进行对比。这不是法律建议,也不表示这笔罚款是否成立。这由市议会或法院决定。"
   }
 }

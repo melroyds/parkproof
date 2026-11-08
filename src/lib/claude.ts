@@ -1,5 +1,5 @@
-import type { AppealDraft, ObservationGroup, ParkingRules, ParkingSession } from '../types'
-import { postJsonAndPoll } from './api'
+import type { AppealDraft, NoticeFields, ObservationGroup, ParkingRules, ParkingSession } from '../types'
+import { postJsonAndPoll, type ErrorCopy } from './api'
 import { appealEvidence, deviceRecordContext } from './record-times'
 
 /**
@@ -137,4 +137,37 @@ export async function draftAppeal(
     session: session ? appealSessionBody(session) : null,
   }
   return postJsonAndPoll<AppealDraft>('/draft-appeal', body)
+}
+
+/**
+ * Failures of /read-notice in the notice's own words: the shared defaults
+ * talk about "this sign" and "your scan". The English fallbacks match
+ * en.json.
+ */
+export const NOTICE_ERROR_COPY: ErrorCopy = {
+  timeout: ['errors.genericRetry', 'Something went wrong. Please try again in a moment.'],
+  heavyLoad: [
+    'errors.noticeHeavyLoad',
+    "ParkProof is busy right now and couldn't finish reading the notice in time. Wait a minute and try again.",
+  ],
+  codes: {
+    ERR_IMAGE_TOO_LARGE: ['errors.noticeImageTooLarge', 'That photo is too large. Try another photo of the notice.'],
+  },
+}
+
+/**
+ * Read a parking fine notice from a photo (build spec T8). Server-side this
+ * is the /draft-appeal job pattern: 202 + job id, then polling
+ * /read-notice/status/{job_id}, whose row is deleted once the result is
+ * handed back. In dev the Vite proxy answers synchronously. Errors arrive
+ * as ApiError with localised copy (ERR_NOT_A_NOTICE, ERR_NOTICE_UNREADABLE,
+ * ERR_IMAGE_TOO_LARGE, ERR_IMAGE_TYPE map to their own messages; a timeout
+ * or server error uses NOTICE_ERROR_COPY, never the sign scan's copy).
+ */
+export async function readNotice(imageBase64: string, mediaType = 'image/jpeg'): Promise<NoticeFields> {
+  return postJsonAndPoll<NoticeFields>(
+    '/read-notice',
+    { image_base64: imageBase64, media_type: mediaType },
+    { copy: NOTICE_ERROR_COPY },
+  )
 }

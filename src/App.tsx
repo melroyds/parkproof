@@ -9,6 +9,7 @@ import ReminderOptions from './components/ReminderOptions'
 import SessionHistory from './components/SessionHistory'
 import SessionDetail from './components/SessionDetail'
 import AppealFlow from './components/AppealFlow'
+import NoticeLookup from './components/NoticeLookup'
 import ActiveSessionCard from './components/ActiveSessionCard'
 import ActiveSessionsList from './components/ActiveSessionsList'
 import AuthFlow from './components/AuthFlow'
@@ -75,6 +76,7 @@ import { handleCallback as handleFederatedCallback } from './lib/federated-auth'
 import { cancelPushReminders, installPushRegistrationRefresh } from './lib/push'
 import { cancelInTabReminders } from './lib/notifications'
 import { clearDeepLinkParams, parseDeepLink } from './lib/deep-link'
+import type { CapturedNotice, NoticeSnapshot } from './lib/notice-read'
 import type { LogDraft, ParkingRules, ParkingSession, RuleVariant } from './types'
 
 type Coords = { lat: number; lng: number } | null
@@ -114,7 +116,19 @@ type View =
   | { name: 'history' }
   | { name: 'actives' }
   | { name: 'session'; session: ParkingSession }
-  | { name: 'appeal'; session: ParkingSession | null }
+  /**
+   * The appeal flow. From the notice lookup it carries the notice photo
+   * (`notice`, so the flow skips its capture step) and the lookup's state
+   * (`returnTo`, so Back returns to the same matches without reading the
+   * notice again).
+   */
+  | { name: 'appeal'; session: ParkingSession | null; notice?: CapturedNotice; returnTo?: NoticeSnapshot }
+  /**
+   * "Got a fine? Start here" (build spec T8): read a notice photo, show its
+   * fields and the records from around its time, compare, and act.
+   * `snapshot` is a notice already read (back from the appeal flow).
+   */
+  | { name: 'notice'; snapshot: NoticeSnapshot | null }
   | { name: 'signin' }
   | { name: 'settings' }
   | { name: 'privacy' }
@@ -983,16 +997,43 @@ function App() {
   }
 
   if (view.name === 'appeal') {
+    const returnTo = view.returnTo
     return (
       <main className="min-h-screen">
         <AppealFlow
           session={view.session}
+          initialNotice={view.notice ?? null}
+          backLabelKey={returnTo ? 'common.back' : undefined}
           onBack={() =>
             setView(
-              view.session
-                ? { name: 'session', session: view.session }
-                : { name: 'home' },
+              returnTo
+                ? { name: 'notice', snapshot: returnTo }
+                : view.session
+                  ? { name: 'session', session: view.session }
+                  : { name: 'home' },
             )
+          }
+        />
+      </main>
+    )
+  }
+
+  if (view.name === 'notice') {
+    return (
+      <main className="min-h-screen">
+        <NoticeLookup
+          initial={view.snapshot}
+          onBack={() => setView({ name: 'home' })}
+          // The appeal flow gets the stored copy of the record (it may have
+          // gained a signature since the matches were drawn) and the notice
+          // photo, so it drafts at once instead of asking for the photo again.
+          onDraftAppeal={(session, snapshot) =>
+            setView({
+              name: 'appeal',
+              session: session ? (getSession(session.id) ?? session) : null,
+              notice: snapshot.photo,
+              returnTo: snapshot,
+            })
           }
         />
       </main>
@@ -1257,13 +1298,22 @@ function App() {
           </ol>
         )}
 
+        {/* "Got a fine? Start here" (build spec T8): the notice lookup. The
+            smallest entry point until T4's home layout gives it its own row. */}
+        <button
+          onClick={() => setView({ name: 'notice', snapshot: null })}
+          className="mt-8 text-sm text-[#7BE3A4] hover:text-paper-50 font-medium underline self-center min-h-[44px] inline-flex items-center py-2.5"
+        >
+          {t('notice.homeLink')}
+        </button>
+
         {/* Standalone appeal entry — reachable for the highest-intent user:
             someone who got a ticket and found ParkProof to fight it, but never
             logged a park here. Routes into AppealFlow with no linked session;
             the flow drafts from the infringement notice alone. */}
         <button
           onClick={() => setView({ name: 'appeal', session: null })}
-          className="mt-8 text-sm text-[#7BE3A4] hover:text-paper-50 font-medium underline self-center min-h-[44px] inline-flex items-center py-2.5"
+          className="mt-2 text-sm text-[#7BE3A4] hover:text-paper-50 font-medium underline self-center min-h-[44px] inline-flex items-center py-2.5"
         >
           {t('home.draftAppeal')}
         </button>

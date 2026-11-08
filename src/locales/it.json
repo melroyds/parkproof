@@ -516,7 +516,11 @@
     "step1": "Lettura del cartello…",
     "step2": "Identificazione delle regole di parcheggio…",
     "step3": "Calcolo di quando puoi parcheggiare…",
-    "step4": "Composizione della risposta…"
+    "step4": "Composizione della risposta…",
+    "stepOf": "Passo {{current}} di {{total}}",
+    "usuallyTen": "Di solito ci vogliono circa 10 secondi.",
+    "almostThere": "Ci siamo quasi. Questo cartello è complesso…",
+    "stillWorking": "Ancora al lavoro. Ci vuole più del solito…"
   },
   "errors": {
     "somethingWrong": "Qualcosa è andato storto",
@@ -543,7 +547,11 @@
     "genericRetry": "Qualcosa è andato storto. Riprova tra un momento.",
     "storageFull": "Lo spazio di ParkProof su questo dispositivo è pieno. I record in corso e quelli ancora in attesa di firma vengono conservati. Apri la cronologia, elimina un record vecchio che non ti serve più e riprova.",
     "storageEvicted_one": "Lo storage del dispositivo era pieno, quindi {{count}} vecchio record di parcheggio è stato eliminato per fare spazio. Accedi per tenere i record al sicuro nel cloud.",
-    "storageEvicted_other": "Lo storage del dispositivo era pieno, quindi {{count}} vecchi record di parcheggio sono stati eliminati per fare spazio. Accedi per tenere i record al sicuro nel cloud."
+    "storageEvicted_other": "Lo storage del dispositivo era pieno, quindi {{count}} vecchi record di parcheggio sono stati eliminati per fare spazio. Accedi per tenere i record al sicuro nel cloud.",
+    "noticeUnreadable": "Non siamo riusciti a leggere quel verbale. Prova con una foto più chiara del verbale intero, ben disteso e con buona luce.",
+    "notANotice": "Quella foto non sembra un verbale di multa per sosta. Fotografa il verbale stesso.",
+    "noticeHeavyLoad": "ParkProof è molto richiesto in questo momento e non è riuscito a finire di leggere il verbale in tempo. Aspetta un minuto e riprova.",
+    "noticeImageTooLarge": "Quella foto è troppo grande. Prova con un'altra foto del verbale."
   },
   "pdf": {
     "common": {
@@ -967,5 +975,79 @@
       "headsUpArea": "Il limite di tempo in quest'area di parcheggio scade alle {{time}}. Sposta l'auto fuori da tutta l'area, non solo in un'altra via al suo interno.",
       "endedArea": "Il tuo tempo in quest'area di parcheggio è scaduto alle {{time}}."
     }
+  },
+  "notice": {
+    "homeLink": "Hai preso una multa? Inizia da qui",
+    "title": "Hai preso una multa?",
+    "captureIntro": "Scatta una foto del verbale. ParkProof legge data, ora e luogo e cerca i tuoi record di parcheggio intorno a quell'ora.",
+    "reading": {
+      "step1": "Lettura del verbale…",
+      "step2": "Ricerca di data, ora e luogo…",
+      "step3": "Ricerca dei tuoi record…",
+      "slow": "Ancora in lettura. Potrebbe volerci un po' di più…",
+      "hint": "Di solito bastano pochi secondi."
+    },
+    "errorHeader": "Impossibile leggere il verbale",
+    "fields": {
+      "heading": "Cosa dice il verbale",
+      "intro": "Letto dall'AI dalla tua foto. Controlla ogni dato sul verbale.",
+      "noticeNumber": "Numero del verbale",
+      "issuedBy": "Emesso da",
+      "date": "Data sul verbale",
+      "time": "Ora sul verbale",
+      "location": "Luogo",
+      "offence": "Infrazione",
+      "partlyReadable": "Una parte del verbale era difficile da leggere. Controlla questi dati sul verbale stesso.",
+      "checkDateTime": "Controlla data e ora sul verbale. Potrebbero essere state lette male.",
+      "enterDateTime": "Non siamo riusciti a leggere data e ora. Inseriscile dal verbale per trovare i tuoi record."
+    },
+    "matches": {
+      "heading": "I tuoi record intorno a quest'ora",
+      "none": "Nessuno dei tuoi record di parcheggio salvati risale a circa questa data e ora. Se la data o l'ora qui sopra sono state lette male, correggile."
+    },
+    "match": {
+      "compare": "Confronta con questo record",
+      "far": "Questo record è a circa {{distance}} km dal luogo indicato sul verbale.",
+      "repeatedHour": "In questa data è finita l'ora legale, quindi l'ora sul verbale si è ripetuta due volte. Il record viene confrontato con: {{time}}.",
+      "skippedHour": "In questa data è iniziata l'ora legale, quindi l'ora sul verbale non è esistita sull'orologio. Il record viene confrontato con: {{time}}."
+    },
+    "compare": {
+      "heading": "Confronto con il verbale",
+      "departureSignedBefore": "Hai toccato \"Ho lasciato il posto\": {{time}}, {{duration}} prima dell'ora sul verbale. Firma di ParkProof su quel record: {{signedTime}}. Il record mostra quando hai toccato, non quando l'auto si è spostata.",
+      "departureSignedBeforeClock": "Hai toccato \"Ho lasciato il posto\": {{time}} (orologio del telefono). Firma di ParkProof su quel record: {{signedTime}}, prima dell'ora sul verbale. Il record mostra quando hai toccato, non quando l'auto si è spostata.",
+      "departureSignedAfter": "Hai toccato \"Ho lasciato il posto\": {{time}} (orologio del telefono). ParkProof l'ha firmato solo dopo l'ora sul verbale ({{signedTime}}), quindi la firma non può mostrare che avevi lasciato il posto entro {{noticeTime}}.",
+      "departurePending": "Hai toccato \"Ho lasciato il posto\": {{time}}. Non è ancora stato firmato.",
+      "departureNotSigned": "Hai toccato \"Ho lasciato il posto\": {{time}}. Non è stato firmato.",
+      "noDeparture": "Non hai toccato \"Ho lasciato il posto\" su questo record.",
+      "arrivalBefore": "Hai registrato questo parcheggio: {{time}}, {{duration}} prima dell'ora sul verbale.",
+      "arrivalAfter": "Hai registrato questo parcheggio: {{time}}, {{duration}} dopo l'ora sul verbale.",
+      "arrivalSame": "Hai registrato questo parcheggio: {{time}}, nello stesso minuto dell'ora sul verbale.",
+      "driver": "Il tuo record dice che alla guida c'era {{driver}}. È quanto inserito quando il parcheggio è stato registrato. ParkProof non l'ha verificato. Se alla guida c'era un'altra persona, il verbale spiega come indicarla. Indica solo la persona che era davvero alla guida.",
+      "handover": "Il tuo record dice che l'auto è stata consegnata a {{to_driver}}: {{time}}.",
+      "checkRegistration": "Controlla che la targa sul verbale sia quella dell'auto di questo record. ParkProof non registra le targhe.",
+      "checkDueDate": "Controlla la scadenza sul verbale stesso.",
+      "departureDevKey": "Hai toccato \"Ho lasciato il posto\": {{time}} (orologio del telefono). È stato firmato con una chiave di sviluppo, non con la chiave pubblicata da ParkProof, quindi la firma non può mostrare che avevi lasciato il posto entro {{noticeTime}}.",
+      "arrivalSignedBefore": "Firma di ParkProof su questo record: {{signedTime}}, prima dell'ora sul verbale. La firma mostra che il record esisteva già allora, non quando l'auto è arrivata né dove si trovava.",
+      "arrivalSignedAfter": "ParkProof ha firmato questo record solo dopo l'ora sul verbale ({{signedTime}}), quindi la firma non può mostrare che esisteva già entro {{noticeTime}}.",
+      "arrivalDevKey": "Questo record è stato firmato con una chiave di sviluppo, non con la chiave pubblicata da ParkProof, quindi la firma non può mostrare che esisteva già entro {{noticeTime}}.",
+      "arrivalPending": "ParkProof non ha ancora firmato questo record.",
+      "arrivalNotSigned": "Questo record non è stato firmato.",
+      "driverPending": "Il nome del conducente non è ancora stato firmato.",
+      "driverNotSigned": "Il nome del conducente non è stato firmato.",
+      "handoverPending": "Questa consegna dell'auto non è ancora stata firmata."
+    },
+    "duration": {
+      "minutes_one": "{{count}} minuto",
+      "minutes_other": "{{count}} minuti",
+      "hours_one": "{{count}} ora",
+      "hours_other": "{{count}} ore",
+      "hoursMinutes": "{{hours}} e {{minutes}}"
+    },
+    "actions": {
+      "draftAppeal": "Redigi un ricorso con questo record",
+      "exportPdf": "Esporta il PDF delle prove",
+      "draftAnyway": "Redigi comunque un ricorso"
+    },
+    "disclaimer": "Questo confronta il tuo record con quanto dice il verbale. Non è una consulenza legale e non dice se la multa è fondata. Lo decidono il comune o il tribunale."
   }
 }

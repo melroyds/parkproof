@@ -638,7 +638,11 @@
     "step1": "Membaca rambu…",
     "step2": "Mengidentifikasi aturan parkir…",
     "step3": "Menghitung kapan kamu bisa parkir…",
-    "step4": "Menyusun jawaban…"
+    "step4": "Menyusun jawaban…",
+    "stepOf": "Langkah {{current}} dari {{total}}",
+    "usuallyTen": "Biasanya sekitar 10 detik.",
+    "almostThere": "Hampir selesai. Rambu ini cukup rumit…",
+    "stillWorking": "Masih diproses. Ini lebih lama dari biasanya…"
   },
   "feedback": {
     "title": "Kirim masukan",
@@ -682,7 +686,11 @@
     "genericRetry": "Ada yang tidak beres. Coba lagi sebentar.",
     "storageFull": "Penyimpanan ParkProof di perangkat ini penuh. Catatan yang sedang berjalan dan catatan yang masih menunggu tanda tangan tetap disimpan. Buka Riwayat, hapus catatan lama yang tidak kamu perlukan lagi, lalu coba lagi.",
     "storageEvicted_one": "Penyimpanan perangkatmu penuh, jadi {{count}} catatan parkir lama dihapus untuk memberi ruang. Masuk untuk menjaga catatan tetap aman di cloud.",
-    "storageEvicted_other": "Penyimpanan perangkatmu penuh, jadi {{count}} catatan parkir lama dihapus untuk memberi ruang. Masuk untuk menjaga catatan tetap aman di cloud."
+    "storageEvicted_other": "Penyimpanan perangkatmu penuh, jadi {{count}} catatan parkir lama dihapus untuk memberi ruang. Masuk untuk menjaga catatan tetap aman di cloud.",
+    "noticeUnreadable": "Kami tidak bisa membaca surat denda itu. Coba foto seluruh surat dengan lebih jelas, diletakkan rata dan di tempat yang terang.",
+    "notANotice": "Foto itu sepertinya bukan surat denda parkir. Foto langsung surat dendanya.",
+    "noticeHeavyLoad": "ParkProof sedang sibuk saat ini dan tidak sempat selesai membaca surat denda. Tunggu sebentar lalu coba lagi.",
+    "noticeImageTooLarge": "Foto itu terlalu besar. Coba foto lain dari surat dendanya."
   },
   "pdf": {
     "common": {
@@ -967,5 +975,79 @@
       "headsUpArea": "Batas waktu parkirmu di area parkir ini berakhir pukul {{time}}. Pindahkan mobil keluar dari seluruh area, bukan hanya ke jalan lain di dalamnya.",
       "endedArea": "Waktu parkirmu di area parkir ini sudah berakhir pukul {{time}}."
     }
+  },
+  "notice": {
+    "homeLink": "Kena denda? Mulai di sini",
+    "title": "Kena denda?",
+    "captureIntro": "Foto surat denda pelanggaran. ParkProof membaca tanggal, waktu, dan tempat di surat itu, lalu mencari catatan parkirmu di sekitar waktu tersebut.",
+    "reading": {
+      "step1": "Membaca surat denda…",
+      "step2": "Mencari tanggal, waktu, dan tempat…",
+      "step3": "Mencari catatanmu…",
+      "slow": "Masih membaca. Ini bisa sedikit lebih lama…",
+      "hint": "Biasanya hanya beberapa detik."
+    },
+    "errorHeader": "Tidak bisa membaca surat denda",
+    "fields": {
+      "heading": "Isi surat denda",
+      "intro": "Dibaca oleh AI dari fotomu. Cocokkan setiap detail dengan surat dendanya.",
+      "noticeNumber": "Nomor surat",
+      "issuedBy": "Diterbitkan oleh",
+      "date": "Tanggal di surat",
+      "time": "Waktu di surat",
+      "location": "Tempat",
+      "offence": "Pelanggaran",
+      "partlyReadable": "Sebagian surat denda sulit dibaca. Cocokkan detail ini dengan surat dendanya langsung.",
+      "checkDateTime": "Cocokkan tanggal dan waktu dengan surat denda. Mungkin salah terbaca.",
+      "enterDateTime": "Kami tidak bisa membaca tanggal dan waktunya. Masukkan sesuai surat denda untuk mencari catatanmu."
+    },
+    "matches": {
+      "heading": "Catatanmu di sekitar waktu ini",
+      "none": "Tidak ada catatan parkir tersimpan milikmu di sekitar tanggal dan waktu ini. Jika tanggal atau waktu di atas salah terbaca, perbaiki."
+    },
+    "match": {
+      "compare": "Bandingkan dengan catatan ini",
+      "far": "Catatan ini berjarak sekitar {{distance}} km dari tempat di surat denda.",
+      "repeatedHour": "Waktu musim panas berakhir pada tanggal ini, jadi waktu di surat denda terjadi dua kali. Catatan ini dibandingkan dengan {{time}}.",
+      "skippedHour": "Waktu musim panas dimulai pada tanggal ini, jadi waktu di surat denda tidak ada di jam. Catatan ini dibandingkan dengan {{time}}."
+    },
+    "compare": {
+      "heading": "Dibandingkan dengan surat denda",
+      "departureSignedBefore": "Kamu mengetuk \"Sudah pergi\" pada {{time}}, {{duration}} sebelum waktu di surat denda. ParkProof menandatangani catatan itu pada {{signedTime}}. Catatan ini menunjukkan kapan kamu mengetuk, bukan kapan mobil bergerak.",
+      "departureSignedBeforeClock": "Menurut jam ponselmu, kamu mengetuk \"Sudah pergi\" pada {{time}}. ParkProof menandatangani catatan itu pada {{signedTime}}, sebelum waktu di surat denda. Catatan ini menunjukkan kapan kamu mengetuk, bukan kapan mobil bergerak.",
+      "departureSignedAfter": "Menurut jam ponselmu, kamu mengetuk \"Sudah pergi\" pada {{time}}. ParkProof baru menandatanganinya pada {{signedTime}}, setelah waktu di surat denda, jadi tanda tangan itu tidak bisa menunjukkan bahwa kamu sudah pergi pada {{noticeTime}}.",
+      "departurePending": "Kamu mengetuk \"Sudah pergi\" pada {{time}}. Ini belum ditandatangani.",
+      "departureNotSigned": "Kamu mengetuk \"Sudah pergi\" pada {{time}}. Ini tidak ditandatangani.",
+      "noDeparture": "Kamu belum mengetuk \"Sudah pergi\" di catatan ini.",
+      "arrivalBefore": "Kamu mencatat parkir ini pada {{time}}, {{duration}} sebelum waktu di surat denda.",
+      "arrivalAfter": "Kamu mencatat parkir ini pada {{time}}, {{duration}} setelah waktu di surat denda.",
+      "arrivalSame": "Kamu mencatat parkir ini pada {{time}}, pada menit yang sama dengan waktu di surat denda.",
+      "driver": "Catatanmu menyebut {{driver}} yang mengemudi. Itu yang dimasukkan saat parkir ini dicatat. ParkProof tidak memeriksanya. Jika orang lain yang mengemudi, surat denda menjelaskan cara menominasikan orang itu. Nominasikan hanya orang yang benar-benar mengemudi.",
+      "handover": "Catatanmu menyebut mobil diserahkan kepada {{to_driver}} pada {{time}}.",
+      "checkRegistration": "Pastikan nomor registrasi di surat denda adalah mobil dalam catatan ini. ParkProof tidak mencatat nomor registrasi.",
+      "checkDueDate": "Periksa tanggal jatuh tempo di surat dendanya langsung.",
+      "departureDevKey": "Menurut jam ponselmu, kamu mengetuk \"Sudah pergi\" pada {{time}}. Ini ditandatangani dengan kunci pengembangan, bukan kunci yang diterbitkan ParkProof, jadi tanda tangan itu tidak bisa menunjukkan bahwa kamu sudah pergi pada {{noticeTime}}.",
+      "arrivalSignedBefore": "ParkProof menandatangani catatan ini pada {{signedTime}}, sebelum waktu di surat denda. Tanda tangan itu menunjukkan bahwa catatan ini sudah ada saat itu, bukan kapan mobil tiba atau di mana mobil berada.",
+      "arrivalSignedAfter": "ParkProof baru menandatangani catatan ini pada {{signedTime}}, setelah waktu di surat denda, jadi tanda tangan itu tidak bisa menunjukkan bahwa catatan ini sudah ada pada {{noticeTime}}.",
+      "arrivalDevKey": "Catatan ini ditandatangani dengan kunci pengembangan, bukan kunci yang diterbitkan ParkProof, jadi tanda tangan itu tidak bisa menunjukkan bahwa catatan ini sudah ada pada {{noticeTime}}.",
+      "arrivalPending": "ParkProof belum menandatangani catatan ini.",
+      "arrivalNotSigned": "Catatan ini tidak ditandatangani.",
+      "driverPending": "Nama pengemudi belum ditandatangani.",
+      "driverNotSigned": "Nama pengemudi tidak ditandatangani.",
+      "handoverPending": "Serah terima mobil ini belum ditandatangani."
+    },
+    "duration": {
+      "minutes_one": "{{count}} menit",
+      "minutes_other": "{{count}} menit",
+      "hours_one": "{{count}} jam",
+      "hours_other": "{{count}} jam",
+      "hoursMinutes": "{{hours}} {{minutes}}"
+    },
+    "actions": {
+      "draftAppeal": "Buat draf surat banding dengan catatan ini",
+      "exportPdf": "Ekspor PDF bukti",
+      "draftAnyway": "Tetap buat draf surat banding"
+    },
+    "disclaimer": "Ini membandingkan catatanmu dengan isi surat denda. Ini bukan nasihat hukum, dan tidak menyatakan apakah dendanya sah. Dewan kota atau pengadilan yang memutuskan."
   }
 }

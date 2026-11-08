@@ -668,7 +668,11 @@
     "step1": "Reading the sign…",
     "step2": "Identifying parking rules…",
     "step3": "Computing when you can park…",
-    "step4": "Composing the answer…"
+    "step4": "Composing the answer…",
+    "stepOf": "Step {{current}} of {{total}}",
+    "usuallyTen": "Usually takes about 10 seconds.",
+    "almostThere": "Almost there. This sign is complex…",
+    "stillWorking": "Still working. This is taking longer than usual…"
   },
   "feedback": {
     "title": "Send feedback",
@@ -712,7 +716,11 @@
     "genericRetry": "Something went wrong. Please try again in a moment.",
     "storageFull": "ParkProof's storage on this device is full. Current records and records still waiting for a signature are kept. Open History, delete an old record you no longer need, then try again.",
     "storageEvicted_one": "Your device storage was full, so {{count}} older parking record was deleted to make space. Sign in to keep records safe in the cloud.",
-    "storageEvicted_other": "Your device storage was full, so {{count}} older parking records were deleted to make space. Sign in to keep records safe in the cloud."
+    "storageEvicted_other": "Your device storage was full, so {{count}} older parking records were deleted to make space. Sign in to keep records safe in the cloud.",
+    "noticeUnreadable": "We couldn't read that notice. Try a clearer photo of the whole notice, flat and in good light.",
+    "notANotice": "That photo doesn't look like a parking fine notice. Take a photo of the infringement notice itself.",
+    "noticeHeavyLoad": "ParkProof is busy right now and couldn't finish reading the notice in time. Wait a minute and try again.",
+    "noticeImageTooLarge": "That photo is too large. Try another photo of the notice."
   },
   "pdf": {
     "common": {
@@ -967,5 +975,79 @@
       "headsUpArea": "Your time limit in this parking area ends at {{time}}. Move the car out of the whole area, not just to another street inside it.",
       "endedArea": "Your time in this parking area ended at {{time}}."
     }
+  },
+  "notice": {
+    "homeLink": "Got a fine? Start here",
+    "title": "Got a fine?",
+    "captureIntro": "Take a photo of the infringement notice. ParkProof reads the date, time and place on it and looks for your parking records from around then.",
+    "reading": {
+      "step1": "Reading the notice…",
+      "step2": "Finding the date, time and place…",
+      "step3": "Looking for your records…",
+      "slow": "Still reading. This can take a little longer…",
+      "hint": "Usually takes a few seconds."
+    },
+    "errorHeader": "Couldn't read the notice",
+    "fields": {
+      "heading": "What the notice says",
+      "intro": "Read by AI from your photo. Check each detail against the notice.",
+      "noticeNumber": "Notice number",
+      "issuedBy": "Issued by",
+      "date": "Date on the notice",
+      "time": "Time on the notice",
+      "location": "Place",
+      "offence": "Offence",
+      "partlyReadable": "Some of the notice was hard to read. Check these details against the notice itself.",
+      "checkDateTime": "Check the date and time against the notice. They may have been misread.",
+      "enterDateTime": "We couldn't read the date and time. Enter them from the notice to find your records."
+    },
+    "matches": {
+      "heading": "Your records from around this time",
+      "none": "None of your saved parking records are from around this date and time. If the date or time above was misread, correct it."
+    },
+    "match": {
+      "compare": "Compare with this record",
+      "far": "This record is about {{distance}} km from the place on the notice.",
+      "repeatedHour": "Daylight saving ended on this date, so the time on the notice happened twice. This compares the record with {{time}}.",
+      "skippedHour": "Daylight saving started on this date, so the time on the notice didn't exist on the clock. This compares the record with {{time}}."
+    },
+    "compare": {
+      "heading": "Compared with the notice",
+      "departureSignedBefore": "You tapped I've left at {{time}}, {{duration}} before the time on the notice. ParkProof signed that record at {{signedTime}}. The record shows when you tapped, not when the car moved.",
+      "departureSignedBeforeClock": "You tapped I've left at {{time}} by your phone's clock. ParkProof signed that record at {{signedTime}}, before the time on the notice. The record shows when you tapped, not when the car moved.",
+      "departureSignedAfter": "You tapped I've left at {{time}} by your phone's clock. ParkProof only signed it at {{signedTime}}, after the time on the notice, so the signature can't show you'd left by {{noticeTime}}.",
+      "departurePending": "You tapped I've left at {{time}}. This hasn't been signed yet.",
+      "departureNotSigned": "You tapped I've left at {{time}}. This wasn't signed.",
+      "noDeparture": "You haven't tapped I've left on this record.",
+      "arrivalBefore": "You logged this park at {{time}}, {{duration}} before the time on the notice.",
+      "arrivalAfter": "You logged this park at {{time}}, {{duration}} after the time on the notice.",
+      "arrivalSame": "You logged this park at {{time}}, the same minute as the time on the notice.",
+      "driver": "Your record says {{driver}} was driving. That's what was entered when the park was logged. ParkProof didn't check it. If someone else was driving, the notice explains how to nominate them. Only nominate the person who was actually driving.",
+      "handover": "Your record says the car was handed to {{to_driver}} at {{time}}.",
+      "checkRegistration": "Check the registration on the notice is the car in this record. ParkProof doesn't record registrations.",
+      "checkDueDate": "Check the due date on the notice itself.",
+      "departureDevKey": "You tapped I've left at {{time}} by your phone's clock. It was signed with a development key, not ParkProof's published key, so the signature can't show you'd left by {{noticeTime}}.",
+      "arrivalSignedBefore": "ParkProof signed this record at {{signedTime}}, before the time on the notice. The signature shows the record existed by then, not when the car arrived or where it was.",
+      "arrivalSignedAfter": "ParkProof only signed this record at {{signedTime}}, after the time on the notice, so the signature can't show it existed by {{noticeTime}}.",
+      "arrivalDevKey": "This record was signed with a development key, not ParkProof's published key, so the signature can't show it existed by {{noticeTime}}.",
+      "arrivalPending": "ParkProof hasn't signed this record yet.",
+      "arrivalNotSigned": "This record wasn't signed.",
+      "driverPending": "The driver's name hasn't been signed yet.",
+      "driverNotSigned": "The driver's name wasn't signed.",
+      "handoverPending": "This handover hasn't been signed yet."
+    },
+    "duration": {
+      "minutes_one": "{{count}} minute",
+      "minutes_other": "{{count}} minutes",
+      "hours_one": "{{count}} hour",
+      "hours_other": "{{count}} hours",
+      "hoursMinutes": "{{hours}} {{minutes}}"
+    },
+    "actions": {
+      "draftAppeal": "Draft an appeal with this record",
+      "exportPdf": "Export evidence PDF",
+      "draftAnyway": "Draft an appeal anyway"
+    },
+    "disclaimer": "This compares your record with what the notice says. It isn't legal advice, and it doesn't say whether the fine should stand. The council or court decides that."
   }
 }
