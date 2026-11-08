@@ -92,6 +92,32 @@ export function draftWithGateAcks(draft: LogDraft, acks: GateAcks): LogDraft {
   return same ? draft : { ...draft, gate_acks: next }
 }
 
+/**
+ * A freshly logged record with the draft's defaults filled in, before it is
+ * prepared and saved (T4 items 4 to 7). A field the record already has, even
+ * null, is the record's own and stays as it is. Otherwise:
+ * - the driver: `draft.driver_name` (from Settings). A record that says who
+ *   was driving, even null (the driver cleared the "Who's driving?" line,
+ *   T7), keeps its own. Nothing is added when the draft has no name.
+ * - `gate_acks`: the result screen's gate answers, when any gate was asked.
+ * - `permit_context`: the permit the driver confirmed on the result screen
+ *   (prepareNewRecord then adds its salt). Never signed as it stands.
+ * Pure.
+ */
+export function applyLogDraftDefaults(session: ParkingSession, draft: LogDraft): ParkingSession {
+  let out = session
+  if (session.driver_name === undefined && typeof draft.driver_name === 'string' && draft.driver_name !== '') {
+    out = { ...out, driver_name: draft.driver_name }
+  }
+  if (session.gate_acks === undefined && gateAcksData(draft.gate_acks) !== null) {
+    out = { ...out, gate_acks: { ...draft.gate_acks } }
+  }
+  if (session.permit_context === undefined && draft.permit_context) {
+    out = { ...out, permit_context: { ...draft.permit_context } }
+  }
+  return out
+}
+
 const FORBIDDEN_GLOBAL = new RegExp(FORBIDDEN_CHARS_RE.source, 'g')
 
 /**

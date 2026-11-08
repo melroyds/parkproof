@@ -167,14 +167,21 @@ describe('App: the notice view', () => {
     expect(screen.getByText('Fake notice read')).toBeTruthy()
   })
 
-  it('the standalone appeal link still opens the appeal flow at capture, and Back goes home', () => {
+  // T4's home layout: with the notice lookup wired, "Got a fine? Start here"
+  // takes the place of the old standalone "Got a ticket? Draft an appeal"
+  // link, and is the way in to an appeal with no record ("Draft an appeal
+  // anyway"). Back from that appeal returns to the notice, and from there home.
+  it('the fine link replaces the standalone appeal link as the way in to an appeal, and Back leads home', () => {
     renderApp()
-    fireEvent.click(screen.getByRole('button', { name: i18n.t('home.draftAppeal') }))
+    expect(screen.queryByRole('button', { name: i18n.t('home.draftAppeal') })).toBeNull()
+    openNotice()
+    fireEvent.click(screen.getByText('Fake draft anyway'))
     const props = appealProps.at(-1)!
     expect(props.session).toBeNull()
-    expect(props.initialNotice).toBeNull()
-    expect(props.backLabelKey).toBeUndefined()
+    expect(props.initialNotice).toEqual(SNAPSHOT.photo)
+    expect(props.backLabelKey).toBe('common.back')
     fireEvent.click(screen.getByText('Fake appeal back'))
+    fireEvent.click(screen.getByText('Fake notice back'))
     expect(screen.getByRole('button', { name: i18n.t('notice.homeLink') })).toBeTruthy()
   })
 })

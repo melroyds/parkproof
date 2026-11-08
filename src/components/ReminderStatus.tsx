@@ -93,7 +93,7 @@ export function RemindMeOutcome({
  * fix for a registration that went bad at the push service (fix list,
  * item 5), where a driver whose reminder didn't come will look.
  * `reconnect={false}` where the surface shows its own Reconnect (About,
- * account settings).
+ * Settings).
  */
 export function ReminderHelp({
   tone,

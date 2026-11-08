@@ -1,5 +1,6 @@
 import type {
   AddendumKind,
+  DriverProfile,
   Jurisdiction,
   ParkingSession,
   RecurringRule,
@@ -26,6 +27,7 @@ import { mergeEvidence, sameEvidence } from './evidence-merge'
 import { deleteSessionPhotos } from './photo-store'
 import { isWorkdayJurisdiction } from './jurisdiction'
 import { changesCalendar, normalizeRecurringRule } from './recurring'
+import { PROFILE_KEY, emptyProfile, normalizeProfile } from './profile'
 
 const KEY = 'parkproof.sessions.v1'
 
@@ -1004,4 +1006,41 @@ export function deleteRecurringRule(id: string): boolean {
   writeRecurringRaw(readRawRecurring().filter((item) => rawRuleId(item) !== id))
   notifyRecurringChanged(id)
   return true
+}
+
+// ─── Settings: the driver's name and saved permits (T4) ─────────────────
+
+/**
+ * The profile saved in Settings: the driver's name and saved permits
+ * (src/lib/profile.ts has the shape rules). Stored in this browser only,
+ * under `parkproof.profile.v1`, and never synced. Anything unreadable
+ * (nothing saved, storage blocked, a damaged value) reads as the empty
+ * profile, and a stored value is re-checked on every read, so callers
+ * always get a valid profile. Never throws.
+ */
+export function loadProfile(): DriverProfile {
+  try {
+    const raw = localStorage.getItem(PROFILE_KEY)
+    return raw ? normalizeProfile(JSON.parse(raw)) : emptyProfile()
+  } catch {
+    return emptyProfile()
+  }
+}
+
+/**
+ * Save the Settings profile, shaped by `normalizeProfile` first (name cut to
+ * 60, at most 3 valid permits, no area on an accessible permit). Returns
+ * what was stored. Throws StorageFullError when the browser's storage is
+ * full (records are never cleared to make room for settings), and passes
+ * any other storage error on.
+ */
+export function saveProfile(profile: DriverProfile): DriverProfile {
+  const stored = normalizeProfile(profile)
+  try {
+    localStorage.setItem(PROFILE_KEY, JSON.stringify(stored))
+  } catch (err) {
+    if (isQuotaError(err)) throw new StorageFullError()
+    throw err
+  }
+  return stored
 }

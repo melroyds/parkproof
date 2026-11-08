@@ -46,7 +46,9 @@ const PERMIT: PermitContext = {
   permit_until: null,
   note: null,
 }
-const SALT = 'a1'.repeat(16)
+// A permit salt as signing.ts makes them (T4, generatePermitSalt): 32 bytes
+// as 64 lowercase hex characters. prepareNewRecord replaces anything else.
+const SALT = 'a1'.repeat(32)
 
 function ref(role: PhotoRef['role'], sha256: string, source: PhotoRef['source'] = 'camera_input'): PhotoRef {
   return { role, sha256, captured_at: new Date(Date.now() - 60_000).toISOString(), source }

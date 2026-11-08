@@ -14,6 +14,7 @@ import { useAuth } from '../lib/use-auth'
 import { mirrorSessionUpdateToCloud } from '../lib/sync'
 import { formatExpiryAbsolute, formatReminderTimesLine } from '../lib/time-format'
 import { reminderCopy } from '../lib/reminder-copy'
+import { MAX_PUSH_REMINDERS, permitAdjustedUntil, reminderFireTimes } from '../lib/permit-answer'
 import { sessionLink } from '../lib/deep-link'
 import { sessionTimezone } from '../lib/timezone'
 import { isNoSignReadRecord } from '../lib/sign-result'
@@ -156,9 +157,6 @@ export default function ReminderOptions({ session, onDone }: Props) {
   const [busy, setBusy] = useState(false)
   const [outcome, setOutcome] = useState<RemindMeSummary | null>(null)
 
-  const chipLabel = (offset: Offset): string =>
-    offset === 0 ? t('reminders.chipAtExpiry') : t('reminders.chipMin', { count: offset })
-
   // Re-tick every 30s so chips that slide into the past auto-disable without
   // requiring the user to re-enter the screen. Matches SAFETY_MARGIN_MS exactly,
   // so the moment a chip becomes "fireable in <30s" it flips to disabled.
@@ -166,11 +164,25 @@ export default function ReminderOptions({ session, onDone }: Props) {
 
   const timeZone = useMemo(() => sessionTimezone(session.location), [session.location])
 
+  // T4 item 6: when the sign prints an exception for the permit the driver
+  // used, and they typed in a later permit time from the sign, the chips
+  // count down to that time, and one more reminder fires when the
+  // standard limit (expires_at) ends.
+  const permitUntil = permitAdjustedUntil(session)
+  const anchor = permitUntil ?? session.expires_at
+
+  // The chip at 0 fires at what the reminders count down to: the expiry,
+  // or the permit time the driver entered (never called an expiry).
+  const chipLabel = (offset: Offset): string =>
+    offset === 0
+      ? t(permitUntil ? 'reminders.chipAtPermitTime' : 'reminders.chipAtExpiry')
+      : t('reminders.chipMin', { count: offset })
+
   const { offsets, expiresLabel, anyFireable } = useMemo(() => {
-    if (!session.expires_at) {
+    if (!anchor) {
       return { offsets: [] as OffsetInfo[], expiresLabel: null as string | null, anyFireable: false }
     }
-    const expires = new Date(session.expires_at)
+    const expires = new Date(anchor)
     const nowDate = new Date(now)
     const offsets: OffsetInfo[] = REMINDER_OFFSETS.map((offset) => {
       const fireAt = new Date(expires.getTime() - offset * 60 * 1000)
@@ -188,7 +200,15 @@ export default function ReminderOptions({ session, onDone }: Props) {
       expiresLabel: formatExpiryAbsolute(expires, { now: nowDate, timeZone }).combined,
       anyFireable: offsets.some((o) => !o.isPast),
     }
-  }, [session.expires_at, now, timeZone])
+  }, [anchor, now, timeZone])
+
+  // The extra reminder at the standard limit, while it is still to come.
+  const standardEnd = useMemo(() => {
+    if (!permitUntil || !session.expires_at) return null
+    const at = new Date(session.expires_at)
+    if (at.getTime() - now < SAFETY_MARGIN_MS) return null
+    return { at, label: formatExpiryAbsolute(at, { now: new Date(now), timeZone }).combined }
+  }, [permitUntil, session.expires_at, now, timeZone])
 
   const [selected, setSelected] = useState<Set<Offset>>(() =>
     pickDefaults(offsets.filter((o) => !o.isPast)),
@@ -227,6 +247,22 @@ export default function ReminderOptions({ session, onDone }: Props) {
     [selectedFireAtList, now, timeZone, t],
   )
 
+  // Every fire time this screen schedules: the picked ones, plus the
+  // standard-limit reminder on a record whose permit allows a later time,
+  // one reminder per moment (a chip at the standard limit adds nothing).
+  const allFireAtList = useMemo(
+    () => (permitUntil ? reminderFireTimes(session, selectedFireAtList, now) : selectedFireAtList),
+    [permitUntil, session, selectedFireAtList, now],
+  )
+  // Push takes at most MAX_PUSH_REMINDERS per record and refuses the whole
+  // set above that, so with the standard-limit reminder in the set an
+  // unpicked chip that would go over the limit can't be picked.
+  const overLimit = (fireAt: Date): boolean =>
+    !!permitUntil && reminderFireTimes(session, [...selectedFireAtList, fireAt], now).length > MAX_PUSH_REMINDERS
+  const atChipLimit = offsets.some(({ offset, isPast, fireAt }) => !isPast && !selected.has(offset) && overLimit(fireAt))
+  // What the calendar file and the notifications will hold.
+  const reminderCount = allFireAtList.length
+
   const handleIcs = async () => {
     if (selectedList.length === 0) {
       setIcsState('empty')
@@ -234,7 +270,18 @@ export default function ReminderOptions({ session, onDone }: Props) {
     }
     try {
       const { downloadIcs } = await import('../lib/ics')
-      downloadIcs(session, selectedList)
+      if (permitUntil) {
+        // Every alarm at its own time with its own translated text, so the
+        // calendar never calls the permit time the driver entered an expiry.
+        downloadIcs(session, [], {
+          anchor: permitUntil,
+          extraAlarms: allFireAtList.map((at) => ({ at, description: reminderCopy(session, at, t).body })),
+          title: t('reminders.calendarPermitTitle'),
+          description: t('reminders.calendarPermitSummary', { time: expiresLabel }),
+        })
+      } else {
+        downloadIcs(session, selectedList)
+      }
       setIcsState('downloaded')
     } catch {
       setIcsState('error')
@@ -247,8 +294,10 @@ export default function ReminderOptions({ session, onDone }: Props) {
     setOutcome(null)
     const copyFor = (fireAt: Date) => reminderCopy(session, fireAt, t)
     // Title = the address (most useful thing on the lock screen), body =
-    // the absolute expiry time. Same copy for push and in-tab.
-    const pushReminders: ScheduledReminder[] = selectedFireAtList.map((fireAt) => ({
+    // the absolute expiry time. Same copy for push and in-tab. On a record
+    // whose permit allows a later time, the set includes the standard-limit
+    // reminder (T4), at most MAX_PUSH_REMINDERS in all.
+    const pushReminders: ScheduledReminder[] = allFireAtList.map((fireAt) => ({
       fire_at: fireAt.toISOString(),
       ...copyFor(fireAt),
       url: sessionLink(session.id),
@@ -258,12 +307,16 @@ export default function ReminderOptions({ session, onDone }: Props) {
       const result = await remindMe({
         sessionId: session.id,
         pushReminders,
-        expiresAt: session.expires_at,
+        // The server's delivery window follows what the reminders count
+        // down to (the permit time, when there is one).
+        expiresAt: anchor,
         armInTab: () => {
           // A second tap replaces the first tap's in-tab reminders instead
           // of doubling them. The server side is replace-all too.
           cancelInTabReminders(session.id)
-          return scheduleParkingReminders(session, selectedList, copyFor)
+          return permitUntil
+            ? scheduleAbsoluteReminders(session, allFireAtList, copyFor)
+            : scheduleParkingReminders(session, selectedList, copyFor)
         },
       })
       if (result.background.ok) persistPushReminders(session.id, result.background.created, Boolean(user))
@@ -307,23 +360,31 @@ export default function ReminderOptions({ session, onDone }: Props) {
   return (
     <div className="min-h-screen flex flex-col p-6 max-w-md mx-auto w-full">
       <h2 className="font-display text-3xl font-extrabold text-paper-50 mb-1">{t('reminders.header')}</h2>
-      <p className="text-sm mb-6 leading-relaxed" style={{ color: '#A9CFBE' }}>
+      <p className={`text-sm ${standardEnd ? 'mb-2' : 'mb-6'} leading-relaxed`} style={{ color: '#A9CFBE' }}>
         <Trans
-          i18nKey="reminders.intro"
+          i18nKey={permitUntil ? 'reminders.permitIntro' : 'reminders.intro'}
           values={{ when: expiresLabel }}
           components={{ strong: <span className="font-display font-bold text-paper-50" /> }}
         />
       </p>
+      {standardEnd && (
+        <p className="text-sm mb-6 leading-relaxed" style={{ color: '#A9CFBE' }}>
+          {t('reminders.permitExtra', { time: standardEnd.label })}
+        </p>
+      )}
 
       {/* Chip selector */}
       <div className="flex flex-wrap gap-2 mb-3">
         {offsets.map(({ offset, isPast, fireAt }) => {
           const isSelected = selected.has(offset)
+          const capped = !isPast && !isSelected && overLimit(fireAt)
           const base =
             'px-4 py-2.5 min-h-[44px] rounded-full text-sm font-semibold border-2 transition-colors min-w-[88px] text-center'
           let cls: string
           if (isPast) {
             cls = `${base} bg-paper-100 border-paper-200 text-ink-400 line-through cursor-not-allowed`
+          } else if (capped) {
+            cls = `${base} bg-paper-100 border-paper-200 text-ink-400 cursor-not-allowed`
           } else if (isSelected) {
             cls = `${base} bg-brand-500 border-brand-500 text-white`
           } else {
@@ -340,8 +401,8 @@ export default function ReminderOptions({ session, onDone }: Props) {
             <button
               key={offset}
               type="button"
-              onClick={() => !isPast && toggle(offset)}
-              disabled={isPast}
+              onClick={() => !isPast && !capped && toggle(offset)}
+              disabled={isPast || capped}
               aria-pressed={isSelected}
               aria-label={`${chipLabel(offset)}, ${tip}`}
               title={tip}
@@ -352,6 +413,12 @@ export default function ReminderOptions({ session, onDone }: Props) {
           )
         })}
       </div>
+
+      {atChipLimit && (
+        <p className="text-xs mb-3 leading-relaxed" style={{ color: '#A9CFBE' }}>
+          {t('reminders.permitChipLimit', { count: MAX_PUSH_REMINDERS - 1 })}
+        </p>
+      )}
 
       {/* Live summary of selected fire-times */}
       <p className="text-xs mb-6 leading-relaxed min-h-[2.25rem]" style={{ color: '#A9CFBE' }}>
@@ -375,7 +442,7 @@ export default function ReminderOptions({ session, onDone }: Props) {
       <CalendarCard
         copy={t('reminders.calendarCopy')}
         state={icsState}
-        count={selectedList.length}
+        count={reminderCount}
         onDownload={handleIcs}
       />
 

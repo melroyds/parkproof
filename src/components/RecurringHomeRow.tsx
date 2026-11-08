@@ -1,12 +1,7 @@
 import { useTranslation } from 'react-i18next'
 import type { RecurringRule } from '../types'
-import { nextOccurrenceWithin } from '../lib/recurring'
-import { differsFromPhoneClock, formatClock, ruleWhat } from '../lib/recurring-copy'
-import { formatExpiryAbsolute, formatInZone } from '../lib/time-format'
+import { recurringHomeCount, recurringHomeNext } from '../lib/recurring-copy'
 import Icon from './Icon'
-
-/** The home row shows the next occurrence inline when it starts within this window. */
-const HOME_NEXT_WINDOW_MS = 24 * 60 * 60 * 1000
 
 interface Props {
   rules: readonly RecurringRule[]
@@ -16,31 +11,15 @@ interface Props {
 }
 
 /**
- * The home screen's "Street sweeping and weekly reminders" glass row
- * (T5a fills it, T4's layout places it): opens the recurring view, and
- * when an active rule starts within 24 hours (or is on now) names it and
- * its time under the title.
+ * The "Street sweeping and weekly reminders" glass row on its own (T5a):
+ * opens the recurring view, and when an active rule starts within 24 hours
+ * (or is on now) names it and its time under the title. The home screen
+ * shows the same words in T4's HomeMenu row (recurringHomeNext and
+ * recurringHomeCount in src/lib/recurring-copy.ts).
  */
 export default function RecurringHomeRow({ rules, now, onOpen, className = '' }: Props) {
   const { t } = useTranslation()
-  const soon = nextOccurrenceWithin(rules, now, HOME_NEXT_WINDOW_MS)
-  let next: string | null = null
-  if (soon) {
-    const what = ruleWhat(soon.rule, t)
-    const tz = soon.rule.timezone
-    next =
-      soon.occurrence.start.getTime() <= now
-        ? t('recurring.homeOnNow', { what, time: formatClock(soon.rule.end) })
-        : t('recurring.homeNext', {
-            what,
-            // The rule's own zone, named when the phone's clock reads it
-            // differently (as in the list), so 7 am in Melbourne isn't read
-            // as 7 am on a phone in Perth.
-            time: differsFromPhoneClock(soon.occurrence.start, tz)
-              ? formatInZone(soon.occurrence.start, tz, { withZone: true })
-              : formatExpiryAbsolute(soon.occurrence.start, { timeZone: tz, now: new Date(now) }).combined,
-          })
-  }
+  const next = recurringHomeNext(rules, now, t)
   return (
     <button
       onClick={onOpen}
@@ -55,7 +34,7 @@ export default function RecurringHomeRow({ rules, now, onOpen, className = '' }:
         </span>
       </span>
       <span className="text-sm shrink-0 mt-px pr-2" style={{ color: '#A9CFBE' }}>
-        {rules.length === 0 ? t('recurring.homeNone') : t('recurring.homeCount', { count: rules.length })}
+        {recurringHomeCount(rules, t)}
       </span>
     </button>
   )

@@ -3,11 +3,14 @@
 // The result screen's gate acknowledgements reach the logger (spec T2 item
 // 4): Save hands App what the driver ticked, true for a ticked gate and
 // null for a gate the screen didn't ask, so the record saves and signs
-// them as gate_acks instead of "not asked".
+// them as gate_acks instead of "not asked". Since T4 they travel in the
+// result screen's answers (ResultAnswers, with the permit the driver
+// confirmed, null here: no saved permit), the one path into the draft.
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import i18n from '../lib/i18n'
 import type { GateAcks, ParkingRules } from '../types'
+import type { ResultAnswers } from '../lib/permit-answer'
 import ParkingResult from './ParkingResult'
 
 const RESULT: ParkingRules = {
@@ -22,6 +25,9 @@ const RESULT: ParkingRules = {
 
 const NOT_ASKED: GateAcks = { meter_ticket: null, permit_zone: null, accessible_permit: null }
 
+/** What Save hands App: these gate answers, and no permit (none is saved). */
+const answers = (gate_acks: GateAcks): ResultAnswers => ({ gate_acks, permit_context: null })
+
 beforeAll(async () => {
   await i18n.changeLanguage('en')
 })
@@ -34,7 +40,7 @@ afterEach(() => {
 })
 
 function show(result: ParkingRules) {
-  const onLogSession = vi.fn<(acks: GateAcks) => void>()
+  const onLogSession = vi.fn<(answers: ResultAnswers) => void>()
   render(
     <ParkingResult
       result={result}
@@ -60,7 +66,7 @@ describe('ParkingResult gate acknowledgements', () => {
     tick(i18n.t('result.payRequired.ack'))
     save()
     expect(onLogSession).toHaveBeenCalledTimes(1)
-    expect(onLogSession).toHaveBeenCalledWith({ meter_ticket: true, permit_zone: null, accessible_permit: null })
+    expect(onLogSession).toHaveBeenCalledWith(answers({ meter_ticket: true, permit_zone: null, accessible_permit: null }))
   })
 
   it('every gate asked and ticked reaches the logger as true', () => {
@@ -75,13 +81,13 @@ describe('ParkingResult gate acknowledgements', () => {
     tick(i18n.t('result.permitZone.ack'))
     tick(i18n.t('result.payRequired.ack'))
     save()
-    expect(onLogSession).toHaveBeenCalledWith({ meter_ticket: true, permit_zone: true, accessible_permit: true })
+    expect(onLogSession).toHaveBeenCalledWith(answers({ meter_ticket: true, permit_zone: true, accessible_permit: true }))
   })
 
   it('a sign with no gate logs every gate as not asked', () => {
     const onLogSession = show(RESULT)
     save()
-    expect(onLogSession).toHaveBeenCalledWith(NOT_ASKED)
+    expect(onLogSession).toHaveBeenCalledWith(answers(NOT_ASKED))
   })
 
   it("the can't-park override asks no gate, whatever the flags say", () => {
@@ -95,6 +101,6 @@ describe('ParkingResult gate acknowledgements', () => {
     })
     expect(screen.queryByLabelText(i18n.t('result.payRequired.ack'))).toBeNull()
     fireEvent.click(screen.getByRole('button', { name: i18n.t('result.cantParkOverrideCta') }))
-    expect(onLogSession).toHaveBeenCalledWith(NOT_ASKED)
+    expect(onLogSession).toHaveBeenCalledWith(answers(NOT_ASKED))
   })
 })

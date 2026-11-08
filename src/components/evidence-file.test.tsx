@@ -34,7 +34,8 @@ const PERMIT: PermitContext = {
   permit_until: null,
   note: null,
 }
-const SALT = 'b2'.repeat(16)
+// A permit salt as signing.ts makes them (T4): 64 lowercase hex characters.
+const SALT = 'b2'.repeat(32)
 const LINK0: SignatureBundle = {
   schema: 'parkproof-evidence-v2',
   signed_at: '2026-11-08T01:00:04.000Z',

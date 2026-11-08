@@ -12,7 +12,7 @@ import { reconnectPush } from '../lib/push'
  * Reminders already booked need no re-booking: the sender looks up this
  * device's current registration when each one fires.
  *
- * Shown inside the push management blocks (About, account settings) when
+ * Shown inside the push management blocks (About, and Settings since T4) when
  * this device is subscribed, and in the Android tips on the reminder
  * screens (ReminderHelp) when notifications are allowed. `onFailed` lets
  * the parent re-check the subscription, because a failed reconnect can

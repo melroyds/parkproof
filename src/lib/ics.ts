@@ -44,16 +44,33 @@ function offsetWord(offset: number): string {
  * iOS, and Google Calendar honour multiple VALARMs natively. Outlook only
  * fires the first one — that's a known limitation we accept rather than
  * emitting multiple competing events.
+ *
+ * `options.anchor` moves the event and its offsets off `expires_at` (T4: a
+ * permit time the driver read off the sign). `options.extraAlarms` adds
+ * alarms at fixed times with their own text (T4: every reminder of a
+ * permit-adjusted record, the standard limit included); with them, the
+ * offsets may be empty. `options.title` and `options.description` replace
+ * the event's English title and description with the caller's translated
+ * text (T4: the permit time is the driver's own reading, not an expiry).
  */
-export function downloadIcs(session: ParkingSession, offsetsMinutes: number[]): void {
+export function downloadIcs(
+  session: ParkingSession,
+  offsetsMinutes: number[],
+  options: {
+    anchor?: string | null
+    extraAlarms?: Array<{ at: Date; description: string }>
+    title?: string
+    description?: string
+  } = {},
+): void {
   if (!session.expires_at) {
     throw new Error('This session has no expiry time — nothing to remind about.')
   }
-  if (offsetsMinutes.length === 0) {
+  if (offsetsMinutes.length === 0 && (options.extraAlarms ?? []).length === 0) {
     throw new Error('Pick at least one reminder time before downloading.')
   }
 
-  const expires = new Date(session.expires_at)
+  const expires = new Date(options.anchor ?? session.expires_at)
   const endAt = new Date(expires.getTime() + EVENT_DURATION_MINUTES * 60 * 1000)
   const timeZone = sessionTimezone(session.location)
   // City name from the IANA tz string ("Australia/Sydney" → "Sydney") for the
@@ -73,11 +90,13 @@ export function downloadIcs(session: ParkingSession, offsetsMinutes: number[]): 
   // earliest (longest lead time) first.
   const sortedOffsets = [...offsetsMinutes].sort((a, b) => b - a)
 
-  const description = [
-    `Your parking expires at ${expiresLabel} (${cityLabel}).`,
-    `Reminders: ${sortedOffsets.map(offsetWord).join(', ')}.`,
-    `ParkProof session: ${session.id}`,
-  ].join('\n')
+  const description =
+    options.description ??
+    [
+      `Your parking expires at ${expiresLabel} (${cityLabel}).`,
+      `Reminders: ${sortedOffsets.map(offsetWord).join(', ')}.`,
+      `ParkProof session: ${session.id}`,
+    ].join('\n')
 
   const mapsUrl = session.location
     ? `https://www.google.com/maps?q=${session.location.lat},${session.location.lng}`
@@ -96,11 +115,17 @@ export function downloadIcs(session: ParkingSession, offsetsMinutes: number[]): 
         : `Parking expires in ${offset} ${offset === 1 ? 'min' : 'mins'} — move your car`,
     // A zero relative offset serialises as "TRIGGER:-PT", which is not a
     // valid RFC 5545 duration, so the at-expiry alarm uses an absolute time.
-    trigger: offset === 0 ? utcParts(expires) : { minutes: offset, before: true },
+    // As a timestamp: the `ics` package reads a date array in an alarm
+    // trigger as the phone's local time (not UTC, unlike start and end), so
+    // utcParts here put the alarm hours off on any phone east of UTC.
+    trigger: offset === 0 ? expires.getTime() : { minutes: offset, before: true },
   }))
+  for (const extra of options.extraAlarms ?? []) {
+    alarms.push({ action: 'display' as const, description: extra.description, trigger: extra.at.getTime() })
+  }
 
   const { error, value } = createEvent({
-    title: 'ParkProof — Parking expires 🚗',
+    title: options.title ?? 'ParkProof: Parking expires 🚗',
     description,
     location: locationField,
     geo: session.location ? { lat: session.location.lat, lon: session.location.lng } : undefined,

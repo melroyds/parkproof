@@ -5,8 +5,16 @@
  */
 import type { TFunction } from 'i18next'
 import type { RecurringRule, Weekday } from '../types'
-import { WEEKDAYS, deviceTimeZone, nextOccurrence, zonedWallClock, type Occurrence, type ReminderKind } from './recurring'
-import { formatInZone } from './time-format'
+import {
+  WEEKDAYS,
+  deviceTimeZone,
+  nextOccurrence,
+  nextOccurrenceWithin,
+  zonedWallClock,
+  type Occurrence,
+  type ReminderKind,
+} from './recurring'
+import { formatExpiryAbsolute, formatInZone } from './time-format'
 
 /** "7 am", "9:30 am", "12 pm". With `suffix: false`, just "7" or "9:30". */
 export function formatClock(hhmm: string, suffix = true): string {
@@ -200,4 +208,36 @@ export function ruleStatusText(rule: RecurringRule, now: number, t: TFunction): 
   // differently, so a Melbourne driver isn't told "AEDT" on every line.
   const time = formatInZone(occ.start, rule.timezone, { withZone: differsFromPhoneClock(occ.start, rule.timezone) })
   return t('recurring.next', { time })
+}
+
+/** The home row shows the next occurrence inline when it starts within this window. */
+export const HOME_NEXT_WINDOW_MS = 24 * 60 * 60 * 1000
+
+/**
+ * The line under the home screen's "Street sweeping and weekly reminders"
+ * row (T5a's words, in T4's home layout): when an active rule starts within
+ * 24 hours (or is on now), its name and time; otherwise null.
+ */
+export function recurringHomeNext(rules: readonly RecurringRule[], now: number, t: TFunction): string | null {
+  const soon = nextOccurrenceWithin(rules, now, HOME_NEXT_WINDOW_MS)
+  if (!soon) return null
+  const what = ruleWhat(soon.rule, t)
+  const tz = soon.rule.timezone
+  if (soon.occurrence.start.getTime() <= now) {
+    return t('recurring.homeOnNow', { what, time: formatClock(soon.rule.end) })
+  }
+  return t('recurring.homeNext', {
+    what,
+    // The rule's own zone, named when the phone's clock reads it
+    // differently (as in the list), so 7 am in Melbourne isn't read
+    // as 7 am on a phone in Perth.
+    time: differsFromPhoneClock(soon.occurrence.start, tz)
+      ? formatInZone(soon.occurrence.start, tz, { withZone: true })
+      : formatExpiryAbsolute(soon.occurrence.start, { timeZone: tz, now: new Date(now) }).combined,
+  })
+}
+
+/** The home row's right-hand label: "None yet", "2 set". */
+export function recurringHomeCount(rules: readonly RecurringRule[], t: TFunction): string {
+  return rules.length === 0 ? t('recurring.homeNone') : t('recurring.homeCount', { count: rules.length })
 }

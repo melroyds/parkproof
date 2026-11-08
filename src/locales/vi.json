@@ -35,7 +35,7 @@
     "scanCta": "Quét biển báo đỗ xe",
     "scanAnother": "Quét biển báo khác",
     "scanHelp": "Chúng tôi đọc biển báo, cho bạn biết có đỗ được ngay không, và nhắc bạn trước khi hết giờ.",
-    "history": "Lịch sử phiên",
+    "history": "Lịch sử",
     "historyEmpty": "trống",
     "historyCount_one": "Đã lưu {{count}}",
     "historyCount_other": "Đã lưu {{count}}",
@@ -47,7 +47,12 @@
       "remind": "Nhận lời nhắc trên lịch trước khi hết giờ đỗ"
     },
     "seeEverything": "Xem tất cả những gì ParkProof có thể làm →",
-    "draftAppeal": "Bị phạt? Soạn thư khiếu nại"
+    "draftAppeal": "Bị phạt? Soạn thư khiếu nại",
+    "weeklyReminders": "Quét đường và nhắc nhở hằng tuần",
+    "settings": "Cài đặt",
+    "settingsSignIn": "Đăng nhập để đồng bộ",
+    "startWorkday": "Đỗ xe cả ngày? Bắt đầu một ngày làm việc",
+    "fineStart": "Bị phạt? Bắt đầu từ đây"
   },
   "active": {
     "currentlyParked": "ĐANG ĐỖ XE",
@@ -80,7 +85,8 @@
     "expiredHint": "Vẫn còn đỗ ở đây? Hãy di chuyển xe ngay. Đã di chuyển rồi? Nhấn \"Tôi đã đi\".",
     "walkBackAria": "Đi bộ về. Mở chỉ đường đi bộ đến xe của bạn.",
     "walkBackAriaDistance_one": "Đi bộ về. Mở chỉ đường đi bộ đến xe của bạn, cách {{distance}}, khoảng {{count}} phút đi bộ.",
-    "walkBackAriaDistance_other": "Đi bộ về. Mở chỉ đường đi bộ đến xe của bạn, cách {{distance}}, khoảng {{count}} phút đi bộ."
+    "walkBackAriaDistance_other": "Đi bộ về. Mở chỉ đường đi bộ đến xe của bạn, cách {{distance}}, khoảng {{count}} phút đi bộ.",
+    "shareAria": "Chia sẻ vị trí xe"
   },
   "scanner": {
     "header": "Quét biển báo đỗ xe",
@@ -173,7 +179,27 @@
     "cantParkOverride": "Thấy kết quả này sai? Bạn vẫn có thể ghi nhận chỗ này làm bằng chứng.",
     "cantParkOverrideCta": "Vẫn ghi nhận",
     "firstSaveValue": "Lưu lại giúp giữ một bản ghi có dấu thời gian, phát hiện được mọi thay đổi. Đây là bằng chứng của bạn phòng khi bị phạt oan.",
-    "weeklyRestrictionHint": "Biển báo này có hạn chế lặp lại hằng tuần. Bạn có thể đặt lời nhắc sau khi lưu."
+    "weeklyRestrictionHint": "Biển báo này có hạn chế lặp lại hằng tuần. Bạn có thể đặt lời nhắc sau khi lưu.",
+    "permit": {
+      "standardKicker": "Câu trả lời tiêu chuẩn",
+      "kicker": "Với giấy phép của bạn",
+      "signPrints": "Biển báo có in một ngoại lệ cho loại giấy phép này:",
+      "checkConditions": "ParkProof chỉ đọc những gì in trên biển báo. Hãy xem cả các điều kiện ghi trên giấy phép của bạn.",
+      "areaMatch": "Giấy phép bạn đã lưu cho {{area}} khớp với khu vực này.",
+      "areaMismatch": "Giấy phép bạn đã lưu dành cho {{area}}. Khu này là Khu vực Giấy phép {{zone}}.",
+      "mayAllowMore": "Theo quy định của {{state}}, giấy phép của bạn có thể cho phép đỗ lâu hơn. ParkProof không tính điều đó. Hãy xem các điều kiện trên giấy phép của bạn hoặc hỏi hội đồng địa phương.",
+      "mayAllowMoreNoState": "Theo quy định tại nơi bạn đỗ xe, giấy phép của bạn có thể cho phép đỗ lâu hơn. ParkProof không tính điều đó. Hãy xem các điều kiện trên giấy phép của bạn hoặc hỏi hội đồng địa phương.",
+      "accessibleQuestion": "Người có giấy phép đang ở trong xe cùng tôi và sẽ xuống xe tại đây, và giấy phép của họ đang được trưng bày.",
+      "accessibleNo": "Vậy thì không thể dùng giấy phép cho lần đỗ xe này. Đừng đỗ vào chỗ đỗ xe tiếp cận.",
+      "forThisCarQuestion": "Giấy phép này có dành cho chiếc xe này không, và có đang được trưng bày hoặc đăng ký cho xe này không?",
+      "forThisCarNo": "Vậy thì không thể dùng giấy phép cho lần đỗ xe này. Đừng đỗ trong khu vực giấy phép này nếu không có giấy phép hợp lệ cho khu vực đó.",
+      "noStandardApplies": "Vậy thì không thể dùng giấy phép cho lần đỗ xe này. Chỉ câu trả lời tiêu chuẩn được áp dụng.",
+      "timeToggle": "Biển báo có cho giấy phép của bạn thời hạn muộn hơn không?",
+      "timeLabel": "Thời gian theo giấy phép của bạn trên biển này kết thúc lúc",
+      "timeHint": "Hãy đọc thời gian này trên biển báo. ParkProof không tính thời gian theo giấy phép.",
+      "timeSet": "Lời nhắc của bạn sẽ đếm ngược đến {{time}}, thời gian bạn đã nhập, và có thêm một lời nhắc khi hết giới hạn tiêu chuẩn.",
+      "timeNotLater": "Thời gian đó không muộn hơn giới hạn tiêu chuẩn, nên lời nhắc vẫn theo giới hạn tiêu chuẩn."
+    }
   },
   "logger": {
     "header": "Ghi lại bản ghi đỗ xe này",
@@ -312,7 +338,18 @@
       "failed": "Không kết nối lại được. Hãy kiểm tra kết nối rồi thử lại.",
       "denied": "Thông báo của ParkProof đang bị chặn. Hãy cho phép trong cài đặt trang của trình duyệt, rồi thử lại."
     },
-    "timesOnDay": "{{times}} ngày {{day}}"
+    "timesOnDay": "{{times}} ngày {{day}}",
+    "permitIntro": "Thời gian theo giấy phép của bạn kéo dài đến <strong>{{when}}</strong>, là thời gian bạn đã nhập từ biển báo. Chọn lúc bạn muốn được nhắc, chọn bao nhiêu cũng được.",
+    "permitExtra": "Bạn cũng sẽ nhận một lời nhắc lúc {{time}}, khi giới hạn tiêu chuẩn trên biển này kết thúc.",
+    "permitStandardEnds": "Giới hạn tiêu chuẩn trên biển này kết thúc bây giờ. Thời gian theo giấy phép của bạn kéo dài đến {{time}}.",
+    "chipAtPermitTime": "Lúc hết thời gian giấy phép",
+    "permitChipLimit_one": "Bạn có thể chọn tối đa {{count}} lời nhắc ở đây, cộng thêm lời nhắc lúc hết giới hạn tiêu chuẩn.",
+    "permitChipLimit_other": "Bạn có thể chọn tối đa {{count}} lời nhắc ở đây, cộng thêm lời nhắc lúc hết giới hạn tiêu chuẩn.",
+    "permitBodyAt": "Thời gian theo giấy phép mà bạn đã nhập từ biển báo kết thúc lúc {{time}}. Đã đến lúc dời xe.",
+    "permitBodyBefore_one": "Thời gian theo giấy phép mà bạn đã nhập từ biển báo kết thúc lúc {{time}}. Đây là lời nhắc trước {{count}} phút.",
+    "permitBodyBefore_other": "Thời gian theo giấy phép mà bạn đã nhập từ biển báo kết thúc lúc {{time}}. Đây là lời nhắc trước {{count}} phút.",
+    "calendarPermitTitle": "ParkProof: hết thời gian giấy phép bạn đã nhập",
+    "calendarPermitSummary": "Thời gian theo giấy phép mà bạn đã nhập từ biển báo kết thúc lúc {{time}}. ParkProof không tính thời gian theo giấy phép."
   },
   "history": {
     "header": "Bản ghi đỗ xe",
@@ -485,9 +522,9 @@
     "header": "Quyền riêng tư",
     "lastUpdated": "Cập nhật lần cuối: {{date}}",
     "anonymousHeader": "Bạn cung cấp gì khi dùng ParkProof không cần tài khoản",
-    "anonymousIntro": "ParkProof chạy hoàn toàn ẩn danh theo mặc định. Chúng tôi không bắt đăng nhập, không ghi nhận tài khoản, và các bản ghi đỗ xe bạn lưu nằm trong <code>localStorage</code> của trình duyệt. Chúng không bao giờ rời khỏi thiết bị.",
-    "anonymousThings": "Có ba thứ rời khỏi thiết bị của bạn, kể cả ở chế độ ẩn danh:",
-    "anonymousAnthropic": "<strong>Ảnh biển báo + toạ độ GPS</strong> được gửi tới <strong>Anthropic</strong> (Claude vision) để dịch biển báo. Chúng tôi không lưu phía máy chủ; chính sách lưu trữ của Anthropic được áp dụng.",
+    "anonymousIntro": "ParkProof dùng được mà không cần tài khoản. Các bản ghi của bạn được lưu trong trình duyệt này. Để ký một bản ghi, điện thoại của bạn gửi các chi tiết của bản ghi (thời gian, vị trí, những gì bạn đã nhập và dấu vân tay của ảnh, không phải bản thân ảnh) tới máy chủ của ParkProof. Máy chủ ký các chi tiết đó và không giữ lại bản sao.",
+    "anonymousThings": "Những thứ sau cũng rời khỏi thiết bị của bạn, kể cả khi không có tài khoản:",
+    "anonymousAnthropic": "<strong>Mỗi ảnh biển báo bạn quét</strong> được gửi tới <strong>Anthropic</strong> (Claude) để đọc biển báo, kèm vị trí chụp và loại của từng giấy phép bạn đã lưu (cùng khu vực của giấy phép cư dân hoặc doanh nghiệp). Khi kiểm tra lại, kết quả đọc trước đó được gửi thay cho ảnh. Chúng tôi không giữ ảnh hay vị trí. Câu trả lời, có thể nhắc tới loại giấy phép của bạn, được lưu ngắn hạn trên máy chủ của chúng tôi để điện thoại của bạn nhận về. Chính sách lưu trữ của Anthropic được áp dụng.",
     "anonymousNominatim": "<strong>Toạ độ GPS</strong> được gửi tới <strong>OpenStreetMap Nominatim</strong> để phân giải địa chỉ đường. Nominatim không yêu cầu khoá và áp dụng chính sách lưu trữ công khai của họ.",
     "anonymousCloudwatch": "<strong>Một UUID ngẫu nhiên cho mỗi kết quả</strong> + đánh giá \"đúng / chụp lại\" được ghi vào <strong>AWS CloudWatch</strong> khi bạn nhấn thẻ xác minh. Không có dữ liệu nhận dạng cá nhân; chỉ tín hiệu tổng hợp để tinh chỉnh prompt.",
     "signedInHeader": "Bạn cung cấp gì khi đăng nhập",
@@ -521,7 +558,11 @@
     "verifyLinkLabel": "Xem cách xác minh một bản ghi →",
     "contactHeader": "Liên hệ + khiếu nại",
     "contactCopy": "Nếu có thắc mắc hoặc muốn thực thi quyền của bạn ngoài các điều khiển trong ứng dụng, gửi email tới <a>hello@parkproof.com.au</a>.",
-    "complaintCopy": "Không hài lòng với phản hồi của chúng tôi? Bạn có thể khiếu nại lên <a>Văn phòng Uỷ viên Thông tin Úc (OAIC)</a>."
+    "complaintCopy": "Không hài lòng với phản hồi của chúng tôi? Bạn có thể khiếu nại lên <a>Văn phòng Uỷ viên Thông tin Úc (OAIC)</a>.",
+    "anonymousFineNotice": "<strong>Ảnh thông báo vi phạm</strong> (tiền phạt đỗ xe) được gửi tới <strong>Anthropic</strong> để đọc thông báo, ví dụ khi bạn soạn đơn xem xét. Khi soạn đơn, chi tiết của bản ghi đỗ xe bạn chọn cũng được gửi đi. Chúng tôi không giữ ảnh.",
+    "anonymousPush": "<strong>Lời nhắc đẩy</strong>, nếu bạn bật: địa chỉ của bản ghi, thời gian và nội dung của từng lời nhắc (có thể nhắc tới thời gian giấy phép bạn đã nhập) được gửi tới <strong>máy chủ của ParkProof</strong>. Máy chủ giữ từng lời nhắc cho đến khi gửi đi, rồi xoá.",
+    "anonymousPermits": "<strong>Giấy phép bạn dùng cho một lần đỗ xe</strong>: loại, khu vực và thời gian giấy phép bạn đã nhập được lưu cùng bản ghi đó. Khi ký bản ghi, điện thoại gửi dấu vân tay của các chi tiết này, không phải bản thân chi tiết, cùng với câu trả lời của bạn cho các câu hỏi về giấy phép. Xoá giấy phép trong Cài đặt không thay đổi các bản ghi đã lưu. Xoá bản ghi sẽ xoá các chi tiết này.",
+    "signedInPermits": "<strong>Chi tiết giấy phép</strong> lưu cùng một bản ghi (loại, khu vực và thời gian giấy phép bạn đã nhập, cho lần đỗ xe bạn dùng giấy phép đã lưu) được lưu cùng bản ghi đó trong AWS DynamoDB. Các giấy phép bạn lưu trong Cài đặt thì không. Xoá bản ghi sẽ xoá các chi tiết này."
   },
   "loading": {
     "step1": "Đang đọc biển báo…",
@@ -938,7 +979,11 @@
     "saving": "Đang lưu…",
     "errorRetry": "Không thể cập nhật — thử lại",
     "otherDevice": "Các lời nhắc này được đặt trên một thiết bị khác. Hãy thay đổi chúng trên thiết bị đó.",
-    "chipAlreadySet": "Đã đặt"
+    "chipAlreadySet": "Đã đặt",
+    "firesAtStandardEnd": "{{when}}: hết giới hạn tiêu chuẩn",
+    "firesAtPermitTime": "{{when}}: khi hết thời gian giấy phép bạn đã nhập",
+    "firesBeforePermitTime_one": "{{when}}: {{count}} phút trước khi hết thời gian giấy phép bạn đã nhập",
+    "firesBeforePermitTime_other": "{{when}}: {{count}} phút trước khi hết thời gian giấy phép bạn đã nhập"
   },
   "installPrompt": {
     "available": "Cài đặt ParkProof",
@@ -1347,5 +1392,56 @@
     "photosMissing_other": "{{count}} ảnh đã ký không có trên thiết bị này nên không có trong tệp. Tệp chỉ có dấu vân tay số đã ký của các ảnh.",
     "photosDiffer_one": "{{count}} ảnh trên thiết bị này không khớp với dấu vân tay số đã ký của nó nên không có trong tệp. Tệp chỉ có dấu vân tay số đã ký của ảnh.",
     "photosDiffer_other": "{{count}} ảnh trên thiết bị này không khớp với dấu vân tay số đã ký của chúng nên không có trong tệp. Tệp chỉ có dấu vân tay số đã ký của các ảnh."
+  },
+  "prefs": {
+    "header": "Cài đặt",
+    "intro": "Chỉ được lưu trong trình duyệt này, không lưu vào tài khoản của bạn.",
+    "driverNameLabel": "Tên của bạn trên các bản ghi bạn chia sẻ",
+    "driverNameHint": "Các bản ghi đỗ xe mới sẽ ghi tên này là tài xế. Để trống nếu bạn không muốn ghi.",
+    "saveName": "Lưu tên",
+    "saved": "Đã lưu",
+    "saveFailed": "Không lưu được. Hãy thử lại.",
+    "permitsHeader": "Giấy phép của tôi",
+    "permitsIntro": "Giấy phép đã lưu được gửi kèm mỗi biển báo bạn quét hoặc kiểm tra lại, để câu trả lời có thể nêu những gì biển báo ghi về chúng. Chỉ loại giấy phép được gửi, cùng với khu vực của giấy phép cư dân hoặc doanh nghiệp.",
+    "permitsEmpty": "Chưa lưu giấy phép nào.",
+    "addPermit": "Thêm giấy phép",
+    "permitsLimit_one": "Bạn có thể lưu tối đa {{count}} giấy phép.",
+    "permitsLimit_other": "Bạn có thể lưu tối đa {{count}} giấy phép.",
+    "permitTypeLabel": "Loại giấy phép",
+    "permitType": {
+      "accessible": "Giấy phép đỗ xe tiếp cận",
+      "resident": "Giấy phép đỗ xe cho cư dân",
+      "business": "Giấy phép đỗ xe cho doanh nghiệp"
+    },
+    "issuingStateLabel": "Bang hoặc vùng lãnh thổ cấp giấy phép",
+    "stateNotSet": "Chưa chọn",
+    "state": {
+      "VIC": "Victoria",
+      "NSW": "New South Wales",
+      "QLD": "Queensland",
+      "ACT": "Lãnh thổ Thủ đô Úc",
+      "SA": "Nam Úc",
+      "WA": "Tây Úc",
+      "TAS": "Tasmania",
+      "NT": "Lãnh thổ Bắc Úc"
+    },
+    "areaLabel": "Khu vực ghi trên giấy phép",
+    "areaPlaceholder": "Ví dụ: Area 25",
+    "expiryLabel": "Ngày hết hạn",
+    "savePermit": "Lưu giấy phép",
+    "accessibleWarning": "Lưu giấy phép này nghĩa là loại giấy phép sẽ được gửi kèm mỗi ảnh biển báo bạn quét, để câu trả lời có thể nêu những gì biển báo ghi về giấy phép. Thông tin về giấy phép đỗ xe tiếp cận là thông tin sức khỏe. Bạn có thể xoá chúng bất cứ lúc nào.",
+    "accessibleConfirm": "Lưu giấy phép này",
+    "permitArea": "Khu vực: {{area}}",
+    "permitExpires": "Hết hạn ngày {{date}}",
+    "permitExpired": "Đã hết hạn ngày {{date}}. Giấy phép này không được gửi khi bạn quét.",
+    "deletePermitLabel": "Xoá {{permit}}",
+    "pushUnsupported": "Trình duyệt này không thể hiện nhắc nhở khi ParkProof đang đóng. Trên iPhone, hãy thêm ParkProof vào Màn hình chính trước. Nhắc nhở trong lịch vẫn hoạt động.",
+    "remindersReliability": "Nhắc nhở có thể bị trễ hoặc bị tắt tiếng, ví dụ do chế độ Tập trung hoặc tiết kiệm pin. Đừng chỉ dựa vào nhắc nhở.",
+    "accountHeader": "Tài khoản",
+    "accountCopy": "Đồng bộ đám mây, xuất dữ liệu, đăng xuất và xoá tài khoản.",
+    "openAccount": "Mở tài khoản",
+    "signInCopy": "Đăng nhập để sao lưu các bản ghi và xem chúng trên các thiết bị khác của bạn. Mọi thứ trên trang này đều dùng được mà không cần tài khoản.",
+    "signIn": "Đăng nhập",
+    "privacyCta": "Mở chính sách bảo mật"
   }
 }

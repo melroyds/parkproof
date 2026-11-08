@@ -147,11 +147,18 @@ vi.mock('./components/Clarify', () => ({
     <button onClick={() => p.onPick(p.clarification.options[0])}>Fake pick</button>
   ),
 }))
+// Save hands App the result screen's answers (T4's ResultAnswers): the gate
+// acknowledgements, and no permit (none is saved in these tests).
 vi.mock('./components/ParkingResult', () => ({
-  default: (p: { onLogSession: (acks: GateAcks) => void; result: unknown }) => (
+  default: (p: { onLogSession: (answers: { gate_acks: GateAcks; permit_context: null }) => void; result: unknown }) => (
     <button
       ref={() => void resultProps.push({ result: p.result })}
-      onClick={() => p.onLogSession(resultAcks.next ?? { meter_ticket: null, permit_zone: null, accessible_permit: null })}
+      onClick={() =>
+        p.onLogSession({
+          gate_acks: resultAcks.next ?? { meter_ticket: null, permit_zone: null, accessible_permit: null },
+          permit_context: null,
+        })
+      }
     >
       Fake log
     </button>

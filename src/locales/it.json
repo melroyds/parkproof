@@ -35,7 +35,7 @@
     "scanCta": "Scansiona un cartello di parcheggio",
     "scanAnother": "Scansiona un altro cartello",
     "scanHelp": "Leggiamo il cartello, ti diciamo se puoi parcheggiare adesso e ti proponiamo un promemoria prima che scada il tempo.",
-    "history": "Cronologia sessioni",
+    "history": "Cronologia",
     "historyEmpty": "vuota",
     "historyCount_one": "{{count}} salvata",
     "historyCount_other": "{{count}} salvate",
@@ -47,7 +47,12 @@
       "remind": "Ricevi un promemoria sul calendario prima della scadenza"
     },
     "seeEverything": "Scopri tutto quello che fa ParkProof →",
-    "draftAppeal": "Hai preso una multa? Redigi un ricorso"
+    "draftAppeal": "Hai preso una multa? Redigi un ricorso",
+    "weeklyReminders": "Pulizia strade e promemoria settimanali",
+    "settings": "Impostazioni",
+    "settingsSignIn": "Accedi per sincronizzare",
+    "startWorkday": "Parcheggi tutto il giorno? Inizia una giornata di lavoro",
+    "fineStart": "Hai preso una multa? Inizia da qui"
   },
   "active": {
     "currentlyParked": "ATTUALMENTE PARCHEGGIATO",
@@ -80,7 +85,8 @@
     "expiredHint": "Sei ancora qui? Sposta l'auto ora. Hai già spostato l'auto? Tocca \"Ho lasciato il posto\".",
     "walkBackAria": "Torna a piedi. Apre le indicazioni a piedi per la tua auto.",
     "walkBackAriaDistance_one": "Torna a piedi. Apre le indicazioni a piedi per la tua auto, a {{distance}}, circa {{count}} minuto a piedi.",
-    "walkBackAriaDistance_other": "Torna a piedi. Apre le indicazioni a piedi per la tua auto, a {{distance}}, circa {{count}} minuti a piedi."
+    "walkBackAriaDistance_other": "Torna a piedi. Apre le indicazioni a piedi per la tua auto, a {{distance}}, circa {{count}} minuti a piedi.",
+    "shareAria": "Condividi dov'è l'auto"
   },
   "scanner": {
     "header": "Scansiona cartello di parcheggio",
@@ -173,7 +179,27 @@
     "cantParkOverride": "Pensi che sia sbagliato? Puoi comunque registrare questo posto come prova.",
     "cantParkOverrideCta": "Registralo comunque",
     "firstSaveValue": "Salvando conservi un record con data, ora e prova di integrità. La tua prova se mai dovessi prendere una multa ingiusta.",
-    "weeklyRestrictionHint": "Questo cartello ha una restrizione settimanale. Puoi impostare un promemoria dopo aver salvato."
+    "weeklyRestrictionHint": "Questo cartello ha una restrizione settimanale. Puoi impostare un promemoria dopo aver salvato.",
+    "permit": {
+      "standardKicker": "Risposta standard",
+      "kicker": "Con il tuo permesso",
+      "signPrints": "Il cartello riporta un'eccezione per questo permesso:",
+      "checkConditions": "ParkProof legge solo ciò che è scritto sul cartello. Controlla anche le condizioni del tuo permesso.",
+      "areaMatch": "Il permesso salvato per {{area}} corrisponde a questa zona.",
+      "areaMismatch": "Il permesso salvato è per {{area}}. Questa zona è l'Area Permesso {{zone}}.",
+      "mayAllowMore": "Il tuo permesso potrebbe consentire più tempo secondo le regole in vigore qui ({{state}}). ParkProof non lo calcola. Controlla le condizioni del permesso o chiedi al tuo comune.",
+      "mayAllowMoreNoState": "Il tuo permesso potrebbe consentire più tempo secondo le regole del luogo in cui hai parcheggiato. ParkProof non lo calcola. Controlla le condizioni del permesso o chiedi al tuo comune.",
+      "accessibleQuestion": "La persona titolare del permesso è in auto con me e scende qui, e il suo permesso è esposto.",
+      "accessibleNo": "Allora il permesso non può essere usato per questo parcheggio. Non parcheggiare nel posto accessibile.",
+      "forThisCarQuestion": "Questo permesso è per quest'auto, ed è esposto o registrato per quest'auto?",
+      "forThisCarNo": "Allora il permesso non può essere usato per questo parcheggio. Non parcheggiare in questa zona a permesso senza un permesso valido per la zona.",
+      "noStandardApplies": "Allora il permesso non può essere usato per questo parcheggio. Vale solo la risposta standard.",
+      "timeToggle": "Il cartello dà al tuo permesso un orario più tardo?",
+      "timeLabel": "Il tempo del tuo permesso su questo cartello finisce alle",
+      "timeHint": "Leggilo sul cartello. ParkProof non calcola gli orari dei permessi.",
+      "timeSet": "I promemoria conteranno fino alle {{time}}, l'orario che hai inserito, più uno quando finisce il limite standard.",
+      "timeNotLater": "Quell'orario non è più tardo del limite standard, quindi i promemoria restano sul limite standard."
+    }
   },
   "logger": {
     "header": "Registra questo record di parcheggio",
@@ -312,7 +338,18 @@
       "failed": "Impossibile riconnettersi. Controlla la connessione e riprova.",
       "denied": "Le notifiche di ParkProof sono bloccate. Consentile nelle impostazioni del sito del browser, poi riprova."
     },
-    "timesOnDay": "{{times}} di {{day}}"
+    "timesOnDay": "{{times}} di {{day}}",
+    "permitIntro": "Il tempo del tuo permesso dura fino alle <strong>{{when}}</strong>, l'orario che hai inserito leggendo il cartello. Scegli quando ricevere un promemoria, quante volte vuoi.",
+    "permitExtra": "Riceverai anche un promemoria alle {{time}}, quando finisce il limite standard di questo cartello.",
+    "permitStandardEnds": "Il limite standard di questo cartello finisce ora. Il tempo del tuo permesso dura fino alle {{time}}.",
+    "chipAtPermitTime": "Alla fine del permesso",
+    "permitChipLimit_one": "Qui puoi scegliere al massimo {{count}} promemoria, più quello alla fine del limite standard.",
+    "permitChipLimit_other": "Qui puoi scegliere al massimo {{count}} promemoria, più quello alla fine del limite standard.",
+    "permitBodyAt": "Il tempo del permesso che hai inserito leggendo il cartello finisce alle {{time}}. È ora di spostare l'auto.",
+    "permitBodyBefore_one": "Il tempo del permesso che hai inserito leggendo il cartello finisce alle {{time}}. Questo è il promemoria di {{count}} minuto prima.",
+    "permitBodyBefore_other": "Il tempo del permesso che hai inserito leggendo il cartello finisce alle {{time}}. Questo è il promemoria di {{count}} minuti prima.",
+    "calendarPermitTitle": "ParkProof: finisce il tempo del permesso che hai inserito",
+    "calendarPermitSummary": "Il tempo del permesso che hai inserito leggendo il cartello finisce alle {{time}}. ParkProof non calcola gli orari dei permessi."
   },
   "history": {
     "header": "Record di parcheggio",
@@ -485,9 +522,9 @@
     "header": "Privacy",
     "lastUpdated": "Ultimo aggiornamento: {{date}}",
     "anonymousHeader": "Cosa ci dai quando usi ParkProof senza un account",
-    "anonymousIntro": "ParkProof funziona in modo del tutto anonimo per impostazione predefinita. Non richiediamo l'accesso, non creiamo nessun account, e i parcheggi che registri vivono nel <code>localStorage</code> del tuo browser. Non lasciano mai il tuo dispositivo.",
-    "anonymousThings": "Tre cose lasciano il tuo dispositivo, anche in modalità anonima:",
-    "anonymousAnthropic": "<strong>Le foto dei cartelli + le coordinate GPS</strong> vengono inviate ad <strong>Anthropic</strong> (Claude vision) per tradurre il cartello. Non le memorizziamo lato server; si applica la policy di conservazione di Anthropic.",
+    "anonymousIntro": "ParkProof funziona senza account. I tuoi record sono salvati in questo browser. Per firmare un record, il telefono invia i suoi dettagli (orari, posizione, ciò che hai inserito e le impronte delle foto, non le foto) al server di ParkProof, che li firma e non ne conserva una copia.",
+    "anonymousThings": "Anche queste cose lasciano il tuo dispositivo, pure senza account:",
+    "anonymousAnthropic": "<strong>Ogni foto di cartello che scansioni</strong> viene inviata ad <strong>Anthropic</strong> (Claude) per leggere il cartello, insieme alla posizione e al tipo di ogni permesso che hai salvato (più l'area o zona di un permesso per residenti o per attività). Un ricontrollo invia la lettura precedente al posto della foto. Non conserviamo né la foto né la posizione. La risposta, che può citare i tipi dei tuoi permessi, resta per poco sul nostro server così il telefono può recuperarla. Si applica la policy di conservazione di Anthropic.",
     "anonymousNominatim": "<strong>Le coordinate GPS</strong> vengono inviate a <strong>OpenStreetMap Nominatim</strong> per risolvere l'indirizzo. Nominatim non richiede una chiave e applica la propria policy di conservazione pubblica.",
     "anonymousCloudwatch": "<strong>Un UUID casuale per ogni risultato</strong> più un verdetto \"corretto / rifai\" vengono registrati su <strong>AWS CloudWatch</strong> quando tocchi la scheda di verifica. Nessun dato personale: solo un segnale aggregato per migliorare il prompt.",
     "signedInHeader": "Cosa ci dai quando accedi",
@@ -521,7 +558,11 @@
     "verifyLinkLabel": "Vedi come verificare un record →",
     "contactHeader": "Contatti + reclami",
     "contactCopy": "Per domande o per esercitare i tuoi diritti al di fuori dei controlli in-app, scrivi a <a>hello@parkproof.com.au</a>.",
-    "complaintCopy": "Insoddisfatto della nostra risposta? Puoi presentare reclamo all'<a>Office of the Australian Information Commissioner (OAIC)</a>."
+    "complaintCopy": "Insoddisfatto della nostra risposta? Puoi presentare reclamo all'<a>Office of the Australian Information Commissioner (OAIC)</a>.",
+    "anonymousFineNotice": "Le <strong>foto di un verbale di contravvenzione</strong> (una multa per il parcheggio) vengono inviate ad <strong>Anthropic</strong> per leggere il verbale, per esempio quando prepari un ricorso. Preparare un ricorso invia anche i dettagli del record di parcheggio che hai scelto. Non conserviamo la foto.",
+    "anonymousPush": "<strong>Promemoria push</strong>, se li attivi: l'indirizzo del record, l'orario di ogni promemoria e il suo testo (che può citare un tempo del permesso che hai inserito) vanno al <strong>server di ParkProof</strong>, che conserva ciascuno finché non viene inviato, poi lo cancella.",
+    "anonymousPermits": "<strong>Un permesso che usi per un parcheggio</strong>: il tipo, l'area o zona e l'eventuale tempo del permesso che hai inserito restano con quel record. Firmando il record si invia un'impronta di questi dettagli, non i dettagli, insieme alle tue risposte alle domande sul permesso. Eliminare un permesso nelle Impostazioni non cambia i record già salvati. Eliminando il record si eliminano anche questi dettagli.",
+    "signedInPermits": "I <strong>dettagli del permesso</strong> tenuti con un record (tipo, area o zona ed eventuale tempo del permesso che hai inserito, per un parcheggio in cui hai usato un permesso salvato) vengono memorizzati con quel record in AWS DynamoDB. I permessi salvati nelle Impostazioni no. Eliminando il record si eliminano anche questi dettagli."
   },
   "loading": {
     "step1": "Lettura del cartello…",
@@ -938,7 +979,11 @@
     "saving": "Salvataggio…",
     "errorRetry": "Impossibile aggiornare — riprova",
     "otherDevice": "Questi promemoria sono stati impostati su un altro dispositivo. Modificali da quel dispositivo.",
-    "chipAlreadySet": "Già impostato"
+    "chipAlreadySet": "Già impostato",
+    "firesAtStandardEnd": "{{when}}: finisce il limite standard",
+    "firesAtPermitTime": "{{when}}: alla fine del tempo del permesso che hai inserito",
+    "firesBeforePermitTime_one": "{{when}}: {{count}} min prima della fine del tempo del permesso che hai inserito",
+    "firesBeforePermitTime_other": "{{when}}: {{count}} min prima della fine del tempo del permesso che hai inserito"
   },
   "installPrompt": {
     "available": "Installa ParkProof",
@@ -1347,5 +1392,56 @@
     "photosMissing_other": "{{count}} foto firmate non sono su questo dispositivo, quindi non sono nel file. Le loro impronte digitali firmate sì.",
     "photosDiffer_one": "{{count}} foto su questo dispositivo non corrisponde alla sua impronta digitale firmata, quindi non è nel file. La sua impronta digitale firmata sì.",
     "photosDiffer_other": "{{count}} foto su questo dispositivo non corrispondono alle loro impronte digitali firmate, quindi non sono nel file. Le loro impronte digitali firmate sì."
+  },
+  "prefs": {
+    "header": "Impostazioni",
+    "intro": "Salvate solo in questo browser, non nel tuo account.",
+    "driverNameLabel": "Il tuo nome sui record che condividi",
+    "driverNameHint": "I nuovi record di parcheggio indicano questo nome come conducente. Lascia vuoto per non indicarlo.",
+    "saveName": "Salva nome",
+    "saved": "Salvato",
+    "saveFailed": "Impossibile salvare. Riprova.",
+    "permitsHeader": "I miei permessi",
+    "permitsIntro": "I permessi salvati vengono inviati con ogni cartello che scansioni o ricontrolli, così la risposta può dire cosa riporta il cartello su di loro. Viene inviato solo il tipo di permesso, più l'area o zona di un permesso per residenti o per attività.",
+    "permitsEmpty": "Nessun permesso salvato.",
+    "addPermit": "Aggiungi un permesso",
+    "permitsLimit_one": "Puoi salvare al massimo {{count}} permesso.",
+    "permitsLimit_other": "Puoi salvare al massimo {{count}} permessi.",
+    "permitTypeLabel": "Tipo di permesso",
+    "permitType": {
+      "accessible": "Permesso di parcheggio accessibile",
+      "resident": "Permesso di parcheggio per residenti",
+      "business": "Permesso di parcheggio per attività"
+    },
+    "issuingStateLabel": "Stato o territorio che l'ha rilasciato",
+    "stateNotSet": "Non indicato",
+    "state": {
+      "VIC": "Victoria",
+      "NSW": "Nuovo Galles del Sud",
+      "QLD": "Queensland",
+      "ACT": "Territorio della Capitale Australiana",
+      "SA": "Australia Meridionale",
+      "WA": "Australia Occidentale",
+      "TAS": "Tasmania",
+      "NT": "Territorio del Nord"
+    },
+    "areaLabel": "Area o zona sul permesso",
+    "areaPlaceholder": "Ad esempio, Area 25",
+    "expiryLabel": "Data di scadenza",
+    "savePermit": "Salva permesso",
+    "accessibleWarning": "Salvare questo permesso significa che il suo tipo viene inviato con ogni foto di cartello che scansioni, così la risposta può dire cosa riporta il cartello sui permessi. I dati del permesso di parcheggio accessibile sono informazioni sulla salute. Puoi eliminarli in qualsiasi momento.",
+    "accessibleConfirm": "Salva questo permesso",
+    "permitArea": "Area o zona: {{area}}",
+    "permitExpires": "Scade il {{date}}",
+    "permitExpired": "Scaduto il {{date}}. Non viene inviato con le tue scansioni.",
+    "deletePermitLabel": "Elimina {{permit}}",
+    "pushUnsupported": "Questo browser non può mostrare promemoria quando ParkProof è chiuso. Su iPhone, aggiungi prima ParkProof alla schermata Home. I promemoria nel calendario funzionano comunque.",
+    "remindersReliability": "I promemoria possono arrivare in ritardo o essere silenziati, per esempio da Full immersion o dal risparmio energetico. Non affidarti solo a loro.",
+    "accountHeader": "Account",
+    "accountCopy": "Sincronizzazione cloud, esportazione dei dati, uscita ed eliminazione dell'account.",
+    "openAccount": "Apri account",
+    "signInCopy": "Accedi per fare il backup dei tuoi record e vederli sugli altri dispositivi. Niente in questa pagina richiede un account.",
+    "signIn": "Accedi",
+    "privacyCta": "Apri policy sulla privacy"
   }
 }
