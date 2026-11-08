@@ -111,7 +111,7 @@ Live at **[https://www.parkproof.com.au](https://www.parkproof.com.au)** · Sour
 > **The engineering rigour that's invisible until something breaks.**
 
 - **One Lambda, 23 API Gateway routes** (14 anonymous, 9 JWT) once roadmap 2 is deployed, plus the self-invoked job worker and the EventBridge target for one-shot and weekly pushes. The same code runs as the local dev proxy
-- **Legal-safety discipline**: a copy lint fails the build on em-dashes and banned claims ("verified record", "tamper-proof", "strong evidence"…) in all 9 languages; every string a lawyer should read is listed in `docs/legal-review-queue.md`
+- **Legal-safety discipline**: a copy lint fails the build on em-dashes in all 9 languages, and on banned claims ("verified record", "tamper-proof", "strong evidence"…) in the English strings, JSX text and error messages. It doesn't check the translations' wording: that is left to the language reviews (`docs/build/translation-human-review.md`). Every string a lawyer should read is listed in `docs/legal-review-queue.md`
 - **A feature held back on purpose**: workday mode (moving between time-limited spots all day) is built and tested, and off in production until a lawyer has read it. The deploy scripts set the flag explicitly, and tests prove a `.env` line can't turn it on
 - **Server checks on every signed part**: the parent's signature, its sequence, the chain key, no phone time from the future, size caps; malformed parts are refused, never repaired
 - **AI feedback telemetry**: every "Yes, looks right" / "Retake photo" logs the reading's shape to CloudWatch, and the privacy policy lists exactly which fields (a test fails if they drift)

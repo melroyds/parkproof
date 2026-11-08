@@ -189,9 +189,9 @@
       "areaMismatch": "Giấy phép bạn đã lưu dành cho {{area}}. Khu này là Khu vực Giấy phép {{zone}}.",
       "mayAllowMore": "Theo quy định của {{state}}, giấy phép của bạn có thể cho phép đỗ lâu hơn. ParkProof không tính điều đó. Hãy xem các điều kiện trên giấy phép của bạn hoặc hỏi hội đồng địa phương.",
       "mayAllowMoreNoState": "Theo quy định tại nơi bạn đỗ xe, giấy phép của bạn có thể cho phép đỗ lâu hơn. ParkProof không tính điều đó. Hãy xem các điều kiện trên giấy phép của bạn hoặc hỏi hội đồng địa phương.",
-      "accessibleQuestion": "Người có giấy phép đang ở trong xe cùng tôi và sẽ xuống xe tại đây, và giấy phép của họ đang được đặt trên xe.",
+      "accessibleQuestion": "Người có giấy phép đang ở trong xe cùng tôi và sẽ xuống xe tại đây, và giấy phép của họ đang được hiển thị trên xe.",
       "accessibleNo": "Vậy thì không thể dùng giấy phép cho lần đỗ xe này. Đừng đỗ vào chỗ đỗ xe tiếp cận.",
-      "forThisCarQuestion": "Giấy phép này có dành cho chiếc xe này không, và có đang được đặt trên xe này hoặc đã đăng ký cho xe này không?",
+      "forThisCarQuestion": "Giấy phép này có dành cho chiếc xe này không, và có đang được hiển thị trên xe này hoặc đã đăng ký cho xe này không?",
       "forThisCarNo": "Vậy thì không thể dùng giấy phép cho lần đỗ xe này. Đừng đỗ trong khu vực giấy phép này nếu không có giấy phép hợp lệ cho khu vực đó.",
       "noStandardApplies": "Vậy thì không thể dùng giấy phép cho lần đỗ xe này. Chỉ câu trả lời tiêu chuẩn được áp dụng.",
       "timeToggle": "Biển báo có cho giấy phép của bạn thời hạn muộn hơn không?",
@@ -538,7 +538,7 @@
     "anonymousThings": "Những thứ sau cũng rời khỏi thiết bị của bạn, kể cả khi không có tài khoản:",
     "anonymousAnthropic": "<strong>Mỗi ảnh biển báo bạn quét</strong> được gửi tới <strong>Anthropic</strong> (Claude) để đọc biển báo, kèm vị trí chụp và loại của từng giấy phép bạn đã lưu (cùng khu vực của giấy phép cư dân hoặc doanh nghiệp). Khi kiểm tra lại, kết quả đọc trước đó được gửi thay cho ảnh. Chúng tôi không giữ ảnh hay vị trí. Câu trả lời, có thể nhắc tới loại giấy phép của bạn, được lưu ngắn hạn trên máy chủ của chúng tôi để điện thoại của bạn nhận về. Chính sách lưu trữ của Anthropic được áp dụng.",
     "anonymousNominatim": "<strong>Toạ độ GPS</strong> được gửi tới <strong>OpenStreetMap Nominatim</strong> để phân giải địa chỉ đường. Nominatim không yêu cầu khoá và áp dụng chính sách lưu trữ công khai của họ.",
-    "anonymousCloudwatch": "<strong>Khi bạn cho chúng tôi biết chúng tôi đọc biển báo có đúng không</strong>, máy chủ của ParkProof ghi câu trả lời của bạn vào <strong>AWS CloudWatch</strong>, kèm thời điểm bạn trả lời và một mã ngẫu nhiên cho câu trả lời đó. Cùng với đó là các chi tiết của lần đọc: 120 ký tự đầu tiên trong phần mô tả các quy định của biển báo, mức độ chắc chắn, giới hạn thời gian, các cách thanh toán và khu vực giấy phép (nếu có), việc có hỏi bạn đỗ ở vị trí nào không và lựa chọn của bạn, cùng số nhóm quy định, số vấn đề khi đọc và số hạn chế hằng tuần tìm thấy. Các chi tiết này cũng cho biết biển báo có đọc được không, lần đọc có phải là kiểm tra lại không, có phát hiện biển báo áp dụng cho cả một khu vực đỗ xe, chỗ đỗ xe trả phí, khu vực giấy phép hay chỗ đỗ xe tiếp cận không, và lúc đó là mấy giờ tại nơi có biển báo. Các câu trả lời bạn đã đưa ra đến lúc đó cho các câu hỏi về đỗ xe trả phí, khu vực giấy phép và giấy phép đỗ xe tiếp cận cũng được ghi lại, nên một dòng nhật ký có thể cho thấy bạn đã nói giấy phép đỗ xe tiếp cận đang được đặt trên xe. Nhật ký không có ảnh, vị trí GPS của ảnh, hay mã nào nhận dạng bạn hoặc thiết bị này. Chúng tôi dùng nhật ký này để tìm ra chỗ đọc biển báo bị sai. Nhật ký bị xoá sau 90 ngày.",
+    "anonymousCloudwatch": "<strong>Khi bạn cho chúng tôi biết chúng tôi đọc biển báo có đúng không</strong>, máy chủ của ParkProof ghi câu trả lời của bạn vào <strong>AWS CloudWatch</strong>, kèm thời điểm bạn trả lời và một mã ngẫu nhiên cho câu trả lời đó. Cùng với đó là các chi tiết của lần đọc: 120 ký tự đầu tiên trong phần mô tả các quy định của biển báo, mức độ chắc chắn, giới hạn thời gian, các cách thanh toán và khu vực giấy phép (nếu có), việc có hỏi bạn đỗ ở vị trí nào không và lựa chọn của bạn, cùng số nhóm quy định, số vấn đề khi đọc và số hạn chế hằng tuần tìm thấy. Các chi tiết này cũng cho biết biển báo có đọc được không, lần đọc có phải là kiểm tra lại không, có phát hiện biển báo áp dụng cho cả một khu vực đỗ xe, chỗ đỗ xe trả phí, khu vực giấy phép hay chỗ đỗ xe tiếp cận không, và lúc đó là mấy giờ tại nơi có biển báo. Các câu trả lời bạn đã đưa ra đến lúc đó cho các câu hỏi về đỗ xe trả phí, khu vực giấy phép và giấy phép đỗ xe tiếp cận cũng được ghi lại, nên một dòng nhật ký có thể cho thấy bạn đã nói có giấy phép đỗ xe tiếp cận được hiển thị trên xe. Nhật ký không có ảnh, vị trí GPS của ảnh, hay mã nào nhận dạng bạn hoặc thiết bị này. Chúng tôi dùng nhật ký này để tìm ra chỗ đọc biển báo bị sai. Nhật ký bị xoá sau 90 ngày.",
     "signedInHeader": "Bạn cung cấp gì khi đăng nhập",
     "signedInIntro": "Đăng nhập là tùy chọn. Đăng nhập sẽ bật đồng bộ đám mây, để bạn thấy cùng các bản ghi trên mọi thiết bị của mình.",
     "signedInThings": "Khi bạn đăng nhập, có thêm dữ liệu rời khỏi thiết bị:",
@@ -793,7 +793,7 @@
     "complianceType": {
       "meterTicket": "Vé đỗ xe đặt trên taplo",
       "paymentConfirmation": "Xác nhận thanh toán",
-      "permitDisplayed": "Giấy phép được đặt trên xe",
+      "permitDisplayed": "Giấy phép được hiển thị trên xe",
       "other": "Khác"
     },
     "photos": {
@@ -1525,7 +1525,7 @@
   "complianceType": {
     "meterTicket": "Vé đỗ xe đặt trên taplo",
     "paymentConfirmation": "Xác nhận thanh toán",
-    "permitDisplayed": "Giấy phép được đặt trên xe",
+    "permitDisplayed": "Giấy phép được hiển thị trên xe",
     "other": "Khác"
   },
   "evidence": {
@@ -1565,7 +1565,7 @@
     "busy": "Đang chuẩn bị tệp…",
     "help": "Một tệp .json gồm mọi chữ ký và các ảnh gốc, để bất kỳ ai cũng có thể kiểm tra bản ghi này mà không cần ParkProof. Chữ ký cho thấy các thông tin chưa thay đổi kể từ khi ParkProof ký. Chữ ký không cho thấy các thông tin đó là đúng, ai là người lái xe, xe ở đâu, hay xe đến và rời đi lúc nào. Tệp chứa vị trí và thời gian đã lưu trong bản ghi này, nên chỉ chia sẻ với người cần đến nó.",
     "includePermit": "Bao gồm thông tin giấy phép",
-    "permitHelp": "Thông tin giấy phép của bạn, và mọi ảnh được đánh dấu là 'Giấy phép được đặt trên xe', chỉ có trong tệp nếu bạn đánh dấu ô này. Bản ghi đã ký chỉ giữ dấu vân tay số của chúng, có thể dùng để đối chiếu. Thông tin về giấy phép đỗ xe tiếp cận là thông tin sức khỏe.",
+    "permitHelp": "Thông tin giấy phép của bạn, và mọi ảnh được đánh dấu là 'Giấy phép được hiển thị trên xe', chỉ có trong tệp nếu bạn đánh dấu ô này. Bản ghi đã ký chỉ giữ dấu vân tay số của chúng, có thể dùng để đối chiếu. Thông tin về giấy phép đỗ xe tiếp cận là thông tin sức khỏe.",
     "error": "Không thể tạo tệp bằng chứng. Hãy thử lại.",
     "photosMissing_one": "{{count}} ảnh đã ký không có trên thiết bị này nên không có trong tệp. Tệp chỉ có dấu vân tay số đã ký của ảnh.",
     "photosMissing_other": "{{count}} ảnh đã ký không có trên thiết bị này nên không có trong tệp. Tệp chỉ có dấu vân tay số đã ký của các ảnh.",

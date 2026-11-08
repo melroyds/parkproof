@@ -27,8 +27,10 @@ const PINNED = {
   date: '2026-11-09',
   // Fix round 2 (same day): privacy.anonymousCloudwatch now names every
   // field of the feedback log line. T10 (same day): the translation review
-  // rewrote privacy.* strings in vi, id, el, hi and pa.
-  sha256: '86984dacf39ff3d591abe729e07e49b7ae0392078bc50109ef1fef24d57cc765',
+  // rewrote privacy.* strings in vi, id, el, hi and pa. T10 review fixes
+  // (same day): vi privacy.anonymousCloudwatch says the permit was
+  // "displayed" (hiển thị) again, not just placed in the car.
+  sha256: '896a95f27e8a60944455d8305aa2b0c0733c554de8980e37d0f992413e348cb0',
 }
 
 /** Every locale's privacy.* strings, in the locales' fixed order. */
