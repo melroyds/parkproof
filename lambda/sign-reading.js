@@ -21,9 +21,17 @@ import { CAPS, ERR, FORBIDDEN_CHARS_RE, JURISDICTIONS, SIGN_STATUSES } from './a
 
 export const USER_PERMIT_TYPES = Object.freeze(['accessible', 'resident', 'business'])
 export const CONFIDENCE_LEVELS = Object.freeze(['low', 'medium', 'high'])
+/**
+ * The kinds of weekly restriction: the one list the sign reader's schema
+ * offers the model, the answer and stored-record check
+ * (readRecurringRestrictions) and the weekly reminders (src/lib/recurring.ts)
+ * all use.
+ */
 export const RECURRING_KINDS = Object.freeze(['street_cleaning', 'clearway', 'no_stopping', 'other'])
 /** iCalendar BYDAY codes, Monday first. */
 export const WEEKDAYS = Object.freeze(['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'])
+/** A 24-hour 'HH:MM' local time, 00:00 to 23:59. */
+export const HHMM_RE = /^([01]\d|2[0-3]):[0-5]\d$/
 /** Statuses for which the app shows its "no readable sign" screen instead of an answer. */
 export const NO_READABLE_SIGN_STATUSES = Object.freeze(['missing', 'not_a_parking_sign'])
 
@@ -168,31 +176,47 @@ export function readPriorSignContext(body) {
 
 // ─── Plain notes ────────────────────────────────────────────────────────
 
-// Arrows and pictographs that no PDF font draws: jsPDF's Helvetica (en, it,
-// id) is WinAnsi only, and the Noto subsets hold their own script. The
-// prompt teaches arrow scopes ("← Left arrow"), so a note such as
-// "→ plate faded" is likely. The common arrows become ASCII; other arrows,
-// shapes, dingbats and emoji are dropped.
-const NOTE_ARROWS = Object.freeze([
-  [/[↔⇔⟷⬌]/g, '<->'],
-  [/[←⇐⟵⬅]/g, '<-'],
-  [/[→⇒➡⟶]/g, '->'],
-  [/[↑⇑⬆]/g, '^'],
-  [/[↓⇓⬇]/g, 'v'],
+// Arrows, maths signs and pictographs that no PDF font draws: jsPDF's
+// Helvetica (en, it, id) is WinAnsi only, and the Noto subsets hold their
+// own script. The prompt teaches arrow scopes ("\u2190 Left arrow"), so a
+// note such as "\u2192 plate faded" is likely, and a limit can come back as
+// "\u2264 2P". The common arrows and comparison signs become ASCII; other
+// arrows, maths signs, shapes, dingbats and emoji are dropped.
+const NOTE_ASCII = Object.freeze([
+  [/[\u2194\u21D4\u27F7\u2B0C]/g, '<->'],
+  [/[\u2190\u21D0\u27F5\u2B05]/g, '<-'],
+  [/[\u2192\u21D2\u27A1\u27F6]/g, '->'],
+  [/[\u2191\u21D1\u2B06]/g, '^'],
+  [/[\u2193\u21D3\u2B07]/g, 'v'],
+  // Less than or equal, greater than or equal, not equal, about.
+  [/[\u2264\u2266\u2A7D]/g, '<='],
+  [/[\u2265\u2267\u2A7E]/g, '>='],
+  [/[\u2260]/g, '!='],
+  [/[\u2248\u2243\u2245\u223C]/g, '~'],
+  // A minus sign and the hyphens and dashes WinAnsi lacks.
+  [/[\u2212\u2010\u2011\u2012\u2015]/g, '-'],
+  [/[\u2215\u2044]/g, '/'],
+  [/[\u2217]/g, '*'],
+  // Primes (feet and inches, minutes and seconds).
+  [/[\u2032]/g, "'"],
+  [/[\u2033]/g, '"'],
 ])
-const NOTE_SYMBOLS_RE =
-  /[←-⇿⌀-⏿■-➿⟰-⟿⤀-⥿⬀-⯿︎️\u{1F000}-\u{1FAFF}]/gu
+// Arrows, maths operators and technical signs (U+2190 to U+23FF), shapes,
+// dingbats and maths brackets (U+25A0 to U+27FF), more arrows and maths
+// (U+2900 to U+2BFF), variation selectors and emoji.
+const NOTE_SYMBOLS_RE = /[\u2190-\u23FF\u2034-\u2037\u25A0-\u27FF\u2900-\u2BFF\uFE0E\uFE0F\u{1F000}-\u{1FAFF}]/gu
 
 /**
  * A note on what stops a sign being read, in characters every PDF font can
- * draw: arrows as ASCII ("->"), other symbols and emoji removed, runs of
- * spaces collapsed. Notes are kept with the record, signed in its
- * arrival_context and printed in its PDF. Non-strings become ''.
+ * draw: arrows and comparison signs as ASCII ("->", "<="), other symbols
+ * and emoji removed, runs of spaces collapsed. Notes are kept with the
+ * record, signed in its arrival_context and printed in its PDF. Non-strings
+ * become ''.
  */
 export function plainNoteText(value) {
   if (typeof value !== 'string') return ''
   let s = value
-  for (const [re, ascii] of NOTE_ARROWS) s = s.replace(re, ascii)
+  for (const [re, ascii] of NOTE_ASCII) s = s.replace(re, ascii)
   return s.replace(NOTE_SYMBOLS_RE, ' ').replace(/ {2,}/g, ' ').trim()
 }
 
@@ -367,41 +391,58 @@ function clockTime(value, { isEnd = false } = {}) {
 }
 
 /**
- * One weekly restriction, or null when it can't be scheduled: no valid day,
- * a bad time, or start equal to end. An unknown kind becomes 'other' so the
- * restriction isn't lost. week_of_month keeps whole numbers 1 to 5, sorted
- * and unique ([] means every week).
+ * One weekly restriction as the app keeps it, checked, or null when it
+ * can't be one. This is the one check for a weekly restriction, wherever it
+ * comes from: the server's answer (after repairRecurringRestriction), a
+ * record in storage or the cloud, or a server of any age. It returns a
+ * fresh object with exactly the stored keys:
+ * - days: the known ones, in MO..SU order, at least one;
+ * - start and end: 'HH:MM', and not the same (an end before the start runs
+ *   past midnight);
+ * - week_of_month: absent, null or [] for every week, else whole numbers 1
+ *   to 5 (sorted, each once). Anything else ("last week" -1, a 0, a
+ *   string) drops the restriction rather than describe the sign wrongly,
+ *   as weekly or with fewer weeks, on the screen that asks the driver to
+ *   check it against the sign;
+ * - kind: one of RECURRING_KINDS; any other becomes 'other', so the
+ *   restriction isn't lost;
+ * - exceptions_text and label: fitted to their caps ('' when not text).
  */
-function recurringRestriction(value) {
-  if (!isPlainObject(value)) return null
+export function readRecurringRestriction(value) {
+  if (value === null || typeof value !== 'object' || Array.isArray(value)) return null
   const days = WEEKDAYS.filter((d) => Array.isArray(value.days) && value.days.includes(d))
-  const start = clockTime(value.start)
-  const end = clockTime(value.end, { isEnd: true })
-  if (days.length === 0 || start === null || end === null || start === end) return null
-  const weeks = Array.isArray(value.week_of_month)
-    ? [...new Set(value.week_of_month.filter((w) => Number.isInteger(w) && w >= 1 && w <= SIGN_READING_CAPS.weekOfMonthMax))].sort(
-        (a, b) => a - b,
-      )
-    : []
+  if (days.length === 0) return null
+  const { start, end } = value
+  if (typeof start !== 'string' || !HHMM_RE.test(start)) return null
+  if (typeof end !== 'string' || !HHMM_RE.test(end) || end === start) return null
+  const weeks = value.week_of_month
+  if (weeks !== undefined && weeks !== null && !Array.isArray(weeks)) return null
+  const list = Array.isArray(weeks) ? weeks : []
+  if (!list.every((w) => Number.isInteger(w) && w >= 1 && w <= SIGN_READING_CAPS.weekOfMonthMax)) return null
   return {
     kind: oneOf(RECURRING_KINDS, value.kind, 'other'),
     days,
     start,
     end,
-    week_of_month: weeks,
+    week_of_month: [...new Set(list)].sort((a, b) => a - b),
     exceptions_text: fitModelText(value.exceptions_text, SIGN_READING_CAPS.recurringExceptionsText),
     label: fitModelText(value.label, SIGN_READING_CAPS.recurringLabel),
   }
 }
 
-function recurringRestrictions(value) {
+/**
+ * Weekly restrictions as the app keeps them: each checked by
+ * readRecurringRestriction, the same restriction printed on two plates
+ * kept once, at most SIGN_READING_CAPS.recurringRestrictions. [] for
+ * anything that isn't a list.
+ */
+export function readRecurringRestrictions(value) {
   if (!Array.isArray(value)) return []
   const out = []
   const seen = new Set()
   for (const item of value) {
-    const r = recurringRestriction(item)
+    const r = readRecurringRestriction(item)
     if (!r) continue
-    // The same restriction printed on two plates is one restriction.
     const key = [r.kind, r.days.join(','), r.start, r.end, r.week_of_month.join(',')].join('|')
     if (seen.has(key)) continue
     seen.add(key)
@@ -409,6 +450,30 @@ function recurringRestrictions(value) {
     if (out.length === SIGN_READING_CAPS.recurringRestrictions) break
   }
   return out
+}
+
+/**
+ * A model's weekly restriction repaired into the kept shape before the
+ * check: times written 'H:MM' get their leading zero, '24:00' is the end
+ * of the day ('23:59' as an end, '00:00' as a start), and weeks outside 1
+ * to 5 are dropped from the list. Anything it can't repair is left for
+ * readRecurringRestriction to drop.
+ */
+function repairRecurringRestriction(value) {
+  if (!isPlainObject(value)) return value
+  const weeks = value.week_of_month
+  return {
+    ...value,
+    start: clockTime(value.start),
+    end: clockTime(value.end, { isEnd: true }),
+    week_of_month: Array.isArray(weeks)
+      ? weeks.filter((w) => Number.isInteger(w) && w >= 1 && w <= SIGN_READING_CAPS.weekOfMonthMax)
+      : weeks,
+  }
+}
+
+function recurringRestrictions(value) {
+  return readRecurringRestrictions(Array.isArray(value) ? value.map(repairRecurringRestriction) : [])
 }
 
 function ruleVariant(value, permitTypes) {
@@ -469,7 +534,12 @@ function clarification(value, permitTypes) {
  * - The top-level is_area_sign is true when any position's is.
  * - In refresh mode (`context.refresh`), a recorded sign_status replaces the
  *   model's (with its sign_issues), and a recorded is_area_sign replaces
- *   the model's: a re-check reads no photo, so it can't change them.
+ *   the model's: a re-check reads no photo, so it can't change them. With
+ *   no recorded status (a record saved before T3) the status is the
+ *   placeholder 'readable' with no notes, whatever the model says: the
+ *   re-check has the recorded rules to answer from, so a model that calls
+ *   the sign missing (it was sent no photo) can't blank the answer into a
+ *   "can't park" with every flag off. The app doesn't keep the placeholder.
  *
  * @param {unknown} raw the parsed model output
  * @param {{ user_permits?: { type: string }[], refresh?: { sign_status: string|null, sign_issues: string[], is_area_sign: boolean|null } | null }} [context]
@@ -483,9 +553,14 @@ export function normalizeModelOutput(raw, context = {}) {
   let sign_issues = signIssueList(raw.sign_issues)
   let is_area_sign = bool(raw.is_area_sign)
   if (refresh) {
-    if (refresh.sign_status !== null && refresh.sign_status !== undefined) {
-      sign_status = oneOf(SIGN_STATUSES, refresh.sign_status, sign_status)
+    const recorded = oneOf(SIGN_STATUSES, refresh.sign_status, null)
+    if (recorded !== null) {
+      sign_status = recorded
       sign_issues = signIssueList(refresh.sign_issues)
+    } else {
+      // The placeholder the refresh prompt asks for, enforced.
+      sign_status = 'readable'
+      sign_issues = []
     }
     if (typeof refresh.is_area_sign === 'boolean') is_area_sign = refresh.is_area_sign
   }

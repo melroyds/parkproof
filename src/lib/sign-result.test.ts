@@ -15,6 +15,8 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import type { ParkingRules, ParkingSession, PermitException, RecurringRestriction, RuleVariant } from '../types'
 import { normalizeAddendumData } from '../../lambda/addendum-schema.js'
+import { SIGN_READING_CAPS, readRecurringRestrictions } from '../../lambda/sign-reading.js'
+import { recurringRestrictionsOf as recurringRestrictionsOfReminders } from './recurring'
 import { buildArrivalContext, emptyLogDraft } from './evidence-chain'
 import { getSession, loadSessions, saveSession } from './storage'
 import {
@@ -348,13 +350,38 @@ describe('what a new record keeps (T3 item 5)', () => {
       SWEEP,
       { ...SWEEP, days: ['XX'] },
       { ...SWEEP, start: '7am' },
-      { ...SWEEP, kind: 'parade' },
       { ...SWEEP, week_of_month: [6] },
       'street cleaning',
     ]
     const fields = signReadingFields(answer({ sign_issues: ['ignored'], recurring_restrictions: bad as unknown as RecurringRestriction[] }))
     expect(fields.recurring_restrictions).toEqual([SWEEP])
     expect(fields.sign_issues).toEqual([])
+  })
+
+  it('reads weekly restrictions with the one check the server and the weekly reminders use (polish list)', () => {
+    const odd = [
+      // An unknown kind (from a newer server) is kept as "other", as the
+      // server's own check keeps it, rather than lost from the record.
+      { ...SWEEP, kind: 'parade' },
+      // The same start and end can't be scheduled.
+      { ...SWEEP, kind: 'clearway', end: SWEEP.start },
+      // Unknown days are dropped, the rest kept in week order; weeks sorted.
+      { ...SWEEP, kind: 'no_stopping', days: ['FR', 'XX', 'TU'], week_of_month: [3, 1] },
+    ]
+    const read = recurringRestrictionsOf({ recurring_restrictions: odd })
+    expect(read).toEqual([
+      { ...SWEEP, kind: 'other' },
+      { ...SWEEP, kind: 'no_stopping', days: ['TU', 'FR'], week_of_month: [1, 3] },
+    ])
+    // The result screen's hint, the record and the weekly reminders' offer all see the same list.
+    expect(recurringRestrictionsOfReminders({ recurring_restrictions: odd })).toEqual(read)
+    expect(signReadingFields(answer({ recurring_restrictions: odd as unknown as RecurringRestriction[] })).recurring_restrictions).toEqual(read)
+    expect(readRecurringRestrictions(odd)).toEqual(read)
+    // A long label keeps the server's cap, not a shorter one.
+    const long = 'x'.repeat(SIGN_READING_CAPS.recurringLabel + 5)
+    expect(recurringRestrictionsOfReminders({ recurring_restrictions: [{ ...SWEEP, label: long }] })[0].label).toHaveLength(
+      SIGN_READING_CAPS.recurringLabel,
+    )
   })
 
   it('a record with the new fields round-trips through storage; an old record still loads', () => {

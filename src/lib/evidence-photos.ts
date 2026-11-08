@@ -136,6 +136,24 @@ export function proofGates(flags: ProofFlags | null | undefined, acks: GateAcks 
   return out
 }
 
+/**
+ * The proof gates of a saved record (the record screen's "Add a photo of
+ * your ticket or permit"). A record keeps the result screen's answers as
+ * `gate_acks`, null for every gate it didn't ask, so those decide alone:
+ * its `rule_flags` don't say whether parking was allowed (they hold no
+ * can_park_now), and on a "can't park" record the flags would otherwise
+ * preselect a proof type the driver was never asked about. Only a record
+ * saved without acknowledgements falls back to its flags.
+ */
+export function recordProofGates(session: {
+  rule_flags?: ProofFlags | null
+  gate_acks?: GateAcks | null
+}): ProofGate[] {
+  const acks = session.gate_acks
+  if (acks && typeof acks === 'object') return proofGates(null, acks)
+  return proofGates(session.rule_flags, acks)
+}
+
 /** The proof type to preselect for the first gate, or null when no gate applies. */
 export function preselectedComplianceType(gates: readonly ProofGate[]): ComplianceType | null {
   const first = gates[0]

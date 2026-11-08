@@ -76,7 +76,7 @@ export function downloadIcs(session: ParkingSession, offsetsMinutes: number[]): 
   const description = [
     `Your parking expires at ${expiresLabel} (${cityLabel}).`,
     `Reminders: ${sortedOffsets.map(offsetWord).join(', ')}.`,
-    `ParkProof session: ${session.id}`,
+    `ParkProof record: ${session.id}`,
   ].join('\n')
 
   const mapsUrl = session.location
@@ -92,15 +92,15 @@ export function downloadIcs(session: ParkingSession, offsetsMinutes: number[]): 
     action: 'display' as const,
     description:
       offset === 0
-        ? 'Parking expires now — move your car'
-        : `Parking expires in ${offset} ${offset === 1 ? 'min' : 'mins'} — move your car`,
+        ? 'Parking expires now. Move your car.'
+        : `Parking expires in ${offset} min. Move your car.`,
     // A zero relative offset serialises as "TRIGGER:-PT", which is not a
     // valid RFC 5545 duration, so the at-expiry alarm uses an absolute time.
     trigger: offset === 0 ? utcParts(expires) : { minutes: offset, before: true },
   }))
 
   const { error, value } = createEvent({
-    title: 'ParkProof — Parking expires 🚗',
+    title: 'ParkProof: parking expires 🚗',
     description,
     location: locationField,
     geo: session.location ? { lat: session.location.lat, lon: session.location.lng } : undefined,
@@ -161,7 +161,7 @@ export function downloadIcsAbsolute(session: ParkingSession, fireAtList: Date[])
   const description = [
     `Check on your car at ${session.location?.address ?? 'your parking spot'} (${cityLabel}).`,
     `Reminders: ${fireAtLabels.join(', ')}.`,
-    `ParkProof session: ${session.id}`,
+    `ParkProof record: ${session.id}`,
   ].join('\n')
 
   const mapsUrl = session.location
@@ -185,7 +185,7 @@ export function downloadIcsAbsolute(session: ParkingSession, fireAtList: Date[])
   }))
 
   const { error, value } = createEvent({
-    title: 'ParkProof — Check on your car 🚗',
+    title: 'ParkProof: check on your car 🚗',
     description,
     location: locationField,
     geo: session.location ? { lat: session.location.lat, lon: session.location.lng } : undefined,

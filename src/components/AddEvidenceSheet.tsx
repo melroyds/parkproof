@@ -7,7 +7,7 @@ import {
   canAddEvidence,
   gridRoles,
   preselectedComplianceType,
-  proofGates,
+  recordProofGates,
 } from '../lib/evidence-photos'
 import { addCompliancePhoto, addConditionPhotos, discardUnreferencedPhotos } from '../lib/record-photos'
 import { getSession, isStorageFullError } from '../lib/storage'
@@ -43,9 +43,9 @@ export default function AddEvidenceSheet({ session, kind, onAdded, onClose }: Pr
   const titleRef = useRef<HTMLHeadingElement>(null)
   const slots = usePhotoSlots(session.id)
   const [note, setNote] = useState('')
-  const [type, setType] = useState<ComplianceType | null>(() =>
-    preselectedComplianceType(proofGates(session.rule_flags, session.gate_acks)),
-  )
+  // Preselected only from a gate the result screen actually asked about:
+  // never a type the driver didn't choose (a "can't park" record asks none).
+  const [type, setType] = useState<ComplianceType | null>(() => preselectedComplianceType(recordProofGates(session)))
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   // Set once Add or Cancel has started: neither runs twice.

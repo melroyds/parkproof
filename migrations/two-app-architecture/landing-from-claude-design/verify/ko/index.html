@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>ParkProof 증거 기록 검증 | ParkProof</title>
+<title>ParkProof 기록의 서명 확인 | ParkProof</title>
 <meta name="description" content="ParkProof 증거 기록이 ParkProof가 서명한 이후 변경되지 않았는지 확인하는 단계별 openssl 가이드. AWS KMS ECDSA P-256을 통한 암호학적 서명.">
 <meta name="robots" content="index, follow">
 <link rel="icon" href="../../assets/parkproof-icon.svg" type="image/svg+xml">
@@ -284,15 +284,15 @@
 
   <nav class="locale-switcher" aria-label="Language"><span class="marker">🌏</span> <a href="/verify/" hreflang="en">English</a> <span class="sep">·</span> <a href="/verify/zh-CN/" hreflang="zh-CN">简体中文</a> <span class="sep">·</span> <a href="/verify/vi/" hreflang="vi">Tiếng Việt</a> <span class="sep">·</span> <a href="/verify/id/" hreflang="id">Bahasa Indonesia</a> <span class="sep">·</span> <span class="active">한국어</span> <span class="sep">·</span> <a href="/verify/it/" hreflang="it">Italiano</a> <span class="sep">·</span> <a href="/verify/el/" hreflang="el">Ελληνικά</a> <span class="sep">·</span> <a href="/verify/hi/" hreflang="hi">हिन्दी</a> <span class="sep">·</span> <a href="/verify/pa/" hreflang="pa">ਪੰਜਾਬੀ</a></nav>
 
-  <div class="eyebrow">검증</div>
-  <h1>ParkProof <span class="accent">증거 기록 검증</span>하기.</h1>
+  <div class="eyebrow">서명 확인</div>
+  <h1>ParkProof 기록의 <span class="accent">서명 확인</span>하기.</h1>
   <p class="lede">모든 ParkProof 증거 PDF에는 암호학적 서명 부록이 있고, 모든 기록은 증거 파일로 저장할 수 있습니다. 이 페이지는 의회 직원, 보험사, 법원 서기, 운전자 본인 등 누구나 기록이 ParkProof의 서명 이후 변경되지 않았음을 오프라인으로 확인하는 방법을 안내합니다.</p>
 
   <div class="callout">
     <strong>솔직한 프레임.</strong> 유효한 서명은 <em>무결성</em>을 보여 줍니다. 서명된 내용과 사진 지문이 ParkProof가 서명 시각에 서명한 것과 정확히 같다는 뜻입니다. 서명은 기록이 <em>사실</em>임을 보여 주지 않으며(AI가 표지판을 잘못 읽었을 수 있음), 누가 운전했는지, 차가 어디에 있었는지, 차가 언제 도착하거나 떠났는지도 보여 주지 않고, 기록이 어떤 무게를 갖는지도 정하지 않습니다. 그것은 검토하는 사람이 판단합니다.
   </div>
 
-  <h2>무엇을 검증하는가</h2>
+  <h2>무엇을 확인하는가</h2>
   <p>ParkProof 기록은 링크라는 여러 부분으로 나누어 서명됩니다. 링크 0은 ParkProof가 저장된 기록을 받을 때 서명됩니다. 이후의 각 링크(주차 시 정보, 차량 상태 사진, 결제 증빙 사진, 출발 등)는 ParkProof가 받을 때 서명되며 바로 앞 링크의 SHA-256을 담고 있어, 링크들이 하나의 체인을 이룹니다. 각 링크에는 <strong>페이로드</strong>(서명된 정확한 텍스트로, 사진의 SHA-256 디지털 지문 포함)와 ParkProof의 개인 키(ECDSA P-256)로 만든 <strong>서명</strong>이 있으며, 이 개인 키는 AWS KMS 밖으로 나가지 않습니다. 증거 PDF는 서명 부록에 모든 링크를 인쇄합니다. 기록의 <strong>증거 파일</strong>(운전자가 앱의 기록 화면에서 다운로드할 수 있는 .json 파일)에는 같은 페이로드와 서명, 그리고 원본 사진이 들어 있습니다.</p>
   <p>서명을 확인하는 데 필요한 <strong>공개 키</strong>는 <a class="link" href="/parkproof-public-key.pem"><code>/parkproof-public-key.pem</code></a>에 게시되어 있습니다. 브라우저에서 열어 로드되는지 확인한 다음 저장하세요.</p>
 
@@ -351,7 +351,7 @@ openssl dgst -sha256 photo1.jpg
 <span class="comment"># 8. 어느 링크의 어느 필드가 서명했는지 확인합니다.</span>
 jq '.photos[0].signed_in' evidence.json</pre>
 
-  <p>이 16진수 값은 <code>signed_in</code>에 있는 각 링크의 서명된 페이로드 안에 있는 해당 사진의 <code>sha256</code>과 같아야 합니다. 링크 0에서는 <code>sign_photo_sha256</code>, <code>car_photo_sha256</code>, <code>ambient_photo_sha256</code>이고, 이후 링크에서는 <code>photos</code>, <code>photo</code>, <code>return_photos</code> 아래의 <code>sha256</code>입니다. 파일에서 사진 옆에 있는 <code>sha256</code>은 서명되지 않았으므로, 그것만이 아니라 이미 확인한 페이로드와 비교하세요. 두 번째 사진은 <code>.photos[1]</code>을 사용하는 식입니다.</p>
+  <p>이 16진수 값은 <code>signed_in</code>에 있는 각 링크의 서명된 페이로드 안에 있는 해당 사진의 <code>sha256</code>과 같아야 합니다. 링크 0에서는 <code>sign_photo_sha256</code>, <code>car_photo_sha256</code>, <code>ambient_photo_sha256</code>이고, 이후 링크에서는 <code>photos</code>, <code>photo</code>, <code>return_photos</code> 아래의 <code>sha256</code>입니다. 파일에서 사진 옆에 있는 <code>sha256</code>은 서명되지 않았으므로, 그것만이 아니라 4단계에서 서명을 확인한 페이로드와 비교하세요. 두 번째 사진은 <code>.photos[1]</code>을 사용하는 식입니다.</p>
   <p>jq가 없다면 텍스트 편집기로 파일을 열어 사진의 <code>bytes_base64</code> 값을 <code>photo1.b64</code>라는 파일에 복사한 다음 <code>base64 -d photo1.b64 &gt; photo1.jpg</code>를 실행하세요.</p>
 
   <h3>Windows에서</h3>
@@ -382,7 +382,7 @@ jq -r '.links[0].signature_base64' evidence.json | base64 -d > link0-sig.bin</pr
 
   <div class="grid-2">
     <div class="card ok">
-      <h3>검증됨 <span class="label">통과</span></h3>
+      <h3>서명 유효 <span class="label">통과</span></h3>
       <p><code>Verified OK</code>: 페이로드가 ParkProof가 서명한 것과 정확히 같습니다. 그 안의 내용과 사진 지문은 페이로드 안의 <code>signed_at</code> 시각에 ParkProof가 서명한 이후 변경되지 않았습니다. 사진 자체는 6~8단계에서 확인합니다.</p>
     </div>
     <div class="card fail">
@@ -392,7 +392,7 @@ jq -r '.links[0].signature_base64' evidence.json | base64 -d > link0-sig.bin</pr
   </div>
 
   <h2>"바이트가 변경되었는가?" 그 너머</h2>
-  <p>성공적인 검증은 <em>무결성</em>을 확인합니다. 다음은 확인하지 않습니다:</p>
+  <p>유효한 서명은 <em>무결성</em>을 보여 줍니다. 다음은 보여 주지 않습니다:</p>
   <ul>
     <li><strong>AI가 표지판을 올바르게 읽었는지.</strong> ParkProof 스캔은 주차 표지판의 기계 판독이며 기계는 틀릴 수 있습니다. 기록의 판정 텍스트와 규칙은 스캔 시점의 AI 최선의 판독이며 절대 진리가 아닙니다.</li>
     <li><strong>사진이 그 사람이 말하는 것을 묘사하는지.</strong> 유효한 서명은 ParkProof가 서명한 이후 사진의 디지털 지문이 바뀌지 않았음을 보여 주고, 해시를 다시 계산하면 사진이 그 디지털 지문과 일치하는지 알 수 있습니다. 둘 다 사진이 정직하게 촬영되었음을 보여 주지는 않습니다.</li>
@@ -402,13 +402,13 @@ jq -r '.links[0].signature_base64' evidence.json | base64 -d > link0-sig.bin</pr
 
   <h2>왜 존재하는가</h2>
   <p>"증거"를 만든다는 대부분의 주차 앱은 스크린샷을 만듭니다. 스크린샷은 찍은 뒤 보내기 전까지 언제든 편집될 수 있습니다. 암호학적 서명은 <em>"이것이 내가 본 것"</em>과 <em>"이것이 내가 본 것이며, ParkProof가 서명한 뒤로 바뀌지 않았음을 누구나 확인할 수 있다"</em>의 차이입니다.</p>
-  <p>공개 키가 게시되어 있으므로 확인은 완전히 오프라인으로 할 수 있습니다. ParkProof를 신뢰하거나, 우리 서버에 연락하거나, 우리 앱을 실행할 필요가 없습니다. ParkProof가 더 이상 운영되지 않더라도 <code>openssl</code>이 있는 한 몇 년 뒤에도 확인할 수 있습니다.</p>
+  <p>공개 키가 게시되어 있으므로, 한 번 저장해 두면 저희 앱 없이 오프라인으로 확인할 수 있습니다. 서명 시각은 ParkProof 서버 시계에서 나오므로, 그 시각에 대해서는 ParkProof를 믿어야 합니다. ParkProof가 더 이상 운영되지 않더라도, 저장해 둔 공개 키 사본과 <code>openssl</code>이 있으면 몇 년 뒤에도 확인할 수 있습니다.</p>
 
   <h2>질문이 있나요?</h2>
   <p><a class="link" href="mailto:hello@parkproof.com.au">hello@parkproof.com.au</a>로 이메일을 보내세요. 답변드립니다.</p>
 
   <footer>
-    <span>parkproof.com.au · 검증 페이지</span>
+    <span>parkproof.com.au · 서명 확인</span>
     <span><a href="/parkproof-public-key.pem">/parkproof-public-key.pem</a> <span class="sep">·</span> <a href="/">← ParkProof로 돌아가기</a></span>
   </footer>
 </div>

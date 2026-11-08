@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Xác minh bản ghi bằng chứng ParkProof | ParkProof</title>
+<title>Kiểm tra chữ ký trên bản ghi ParkProof | ParkProof</title>
 <meta name="description" content="Hướng dẫn từng bước bằng openssl để kiểm tra một bản ghi bằng chứng ParkProof không thay đổi kể từ khi ParkProof ký. Ký mật mã qua AWS KMS ECDSA P-256.">
 <meta name="robots" content="index, follow">
 <link rel="icon" href="../../assets/parkproof-icon.svg" type="image/svg+xml">
@@ -284,15 +284,15 @@
 
   <nav class="locale-switcher" aria-label="Language"><span class="marker">🌏</span> <a href="/verify/" hreflang="en">English</a> <span class="sep">·</span> <a href="/verify/zh-CN/" hreflang="zh-CN">简体中文</a> <span class="sep">·</span> <span class="active">Tiếng Việt</span> <span class="sep">·</span> <a href="/verify/id/" hreflang="id">Bahasa Indonesia</a> <span class="sep">·</span> <a href="/verify/ko/" hreflang="ko">한국어</a> <span class="sep">·</span> <a href="/verify/it/" hreflang="it">Italiano</a> <span class="sep">·</span> <a href="/verify/el/" hreflang="el">Ελληνικά</a> <span class="sep">·</span> <a href="/verify/hi/" hreflang="hi">हिन्दी</a> <span class="sep">·</span> <a href="/verify/pa/" hreflang="pa">ਪੰਜਾਬੀ</a></nav>
 
-  <div class="eyebrow">Xác minh</div>
-  <h1>Xác minh một <span class="accent">bản ghi bằng chứng</span> ParkProof.</h1>
+  <div class="eyebrow">Kiểm tra chữ ký</div>
+  <h1>Kiểm tra chữ ký trên một <span class="accent">bản ghi ParkProof</span>.</h1>
   <p class="lede">Mỗi PDF bằng chứng ParkProof có một phụ lục chữ ký mã hóa, và mỗi bản ghi đều có thể lưu thành tệp bằng chứng. Trang này hướng dẫn bất kỳ ai, chẳng hạn nhân viên hội đồng, công ty bảo hiểm, thư ký tòa án hoặc chính tài xế, cách kiểm tra ngoại tuyến rằng một bản ghi không thay đổi kể từ khi ParkProof ký.</p>
 
   <div class="callout">
     <strong>Khung trung thực.</strong> Chữ ký hợp lệ cho thấy <em>tính toàn vẹn</em>: các thông tin và dấu vân tay số của ảnh đã ký đúng là những gì ParkProof đã ký, vào thời điểm ký. Nó không cho thấy bản ghi là <em>đúng sự thật</em> (AI có thể đọc sai biển báo), ai đã lái xe, xe ở đâu, hay xe đến hoặc rời đi lúc nào, và không quyết định bản ghi có giá trị đến đâu. Việc đó do người xem xét quyết định.
   </div>
 
-  <h2>Bạn đang xác minh điều gì</h2>
+  <h2>Bạn đang kiểm tra điều gì</h2>
   <p>Một bản ghi ParkProof được ký theo từng phần, gọi là mắt xích. Mắt xích 0 được ký khi ParkProof nhận được bản ghi đã lưu. Mỗi mắt xích sau đó, chẳng hạn thông tin lúc đỗ, ảnh tình trạng xe, ảnh bằng chứng thanh toán hoặc lúc rời đi, được ký khi ParkProof nhận được và mang SHA-256 của mắt xích trước nó, nên các mắt xích nối thành một chuỗi. Mỗi mắt xích có một <strong>payload</strong> (đúng đoạn văn bản đã được ký, gồm cả dấu vân tay số SHA-256 của các ảnh) và một <strong>chữ ký</strong> tạo bằng khóa riêng của ParkProof (ECDSA P-256), khóa này không bao giờ rời khỏi AWS KMS. PDF bằng chứng in mọi mắt xích trong phụ lục chữ ký. <strong>Tệp bằng chứng</strong> của bản ghi (một tệp .json mà tài xế có thể tải về từ bản ghi trong ứng dụng) chứa cùng các payload và chữ ký đó, cùng với ảnh gốc.</p>
   <p><strong>Khóa công khai</strong> cần để kiểm tra chữ ký được công bố tại <a class="link" href="/parkproof-public-key.pem"><code>/parkproof-public-key.pem</code></a>. Mở trong trình duyệt để xác nhận tải được, rồi lưu lại.</p>
 
@@ -351,7 +351,7 @@ openssl dgst -sha256 photo1.jpg
 <span class="comment"># 8. Xem mắt xích và trường nào ký ảnh này.</span>
 jq '.photos[0].signed_in' evidence.json</pre>
 
-  <p>Giá trị hex phải bằng <code>sha256</code> của ảnh trong payload đã ký của từng mắt xích trong <code>signed_in</code>: <code>sign_photo_sha256</code>, <code>car_photo_sha256</code> hoặc <code>ambient_photo_sha256</code> ở mắt xích 0, hoặc một <code>sha256</code> trong <code>photos</code>, <code>photo</code> hoặc <code>return_photos</code> ở mắt xích sau. Hãy đối chiếu với payload bạn đã kiểm tra, chứ không chỉ với <code>sha256</code> đặt cạnh ảnh trong tệp, vốn không được ký. Dùng <code>.photos[1]</code> cho ảnh thứ hai, v.v.</p>
+  <p>Giá trị hex phải bằng <code>sha256</code> của ảnh trong payload đã ký của từng mắt xích trong <code>signed_in</code>: <code>sign_photo_sha256</code>, <code>car_photo_sha256</code> hoặc <code>ambient_photo_sha256</code> ở mắt xích 0, hoặc một <code>sha256</code> trong <code>photos</code>, <code>photo</code> hoặc <code>return_photos</code> ở mắt xích sau. Hãy đối chiếu với payload mà bạn đã kiểm tra chữ ký ở bước 4, chứ không chỉ với <code>sha256</code> đặt cạnh ảnh trong tệp, vốn không được ký. Dùng <code>.photos[1]</code> cho ảnh thứ hai, v.v.</p>
   <p>Nếu không có jq, hãy mở tệp bằng trình soạn thảo văn bản, sao chép giá trị <code>bytes_base64</code> của một ảnh vào tệp tên <code>photo1.b64</code>, rồi chạy <code>base64 -d photo1.b64 &gt; photo1.jpg</code>.</p>
 
   <h3>Trên Windows</h3>
@@ -382,7 +382,7 @@ jq -r '.links[0].signature_base64' evidence.json | base64 -d > link0-sig.bin</pr
 
   <div class="grid-2">
     <div class="card ok">
-      <h3>Đã xác minh <span class="label">ĐẠT</span></h3>
+      <h3>Chữ ký hợp lệ <span class="label">ĐẠT</span></h3>
       <p><code>Verified OK</code>: payload đúng là những gì ParkProof đã ký. Các thông tin và dấu vân tay số của ảnh trong đó không thay đổi kể từ khi ParkProof ký, vào thời điểm <code>signed_at</code> ghi trong payload. Bản thân các ảnh được kiểm tra ở các bước 6 đến 8.</p>
     </div>
     <div class="card fail">
@@ -392,7 +392,7 @@ jq -r '.links[0].signature_base64' evidence.json | base64 -d > link0-sig.bin</pr
   </div>
 
   <h2>Hơn cả "các byte có thay đổi không?"</h2>
-  <p>Một lần xác minh thành công xác nhận <em>tính toàn vẹn</em>. Nó không xác nhận:</p>
+  <p>Chữ ký hợp lệ cho thấy <em>tính toàn vẹn</em>. Nó không cho thấy:</p>
   <ul>
     <li><strong>Rằng AI đọc biển báo đúng.</strong> Quét ParkProof là một lần đọc máy của biển báo đỗ xe, và máy có thể sai. Văn bản phán quyết và các quy tắc trong bản ghi là cách đọc tốt nhất của AI tại thời điểm quét, không phải sự thật tuyệt đối.</li>
     <li><strong>Rằng các ảnh mô tả những gì người đó nói chúng mô tả.</strong> Chữ ký hợp lệ cho thấy dấu vân tay số của các ảnh không thay đổi kể từ khi ParkProof ký, và việc băm lại cho thấy một ảnh có khớp với dấu vân tay số của nó hay không. Cả hai đều không cho thấy các ảnh được chụp một cách trung thực.</li>
@@ -402,13 +402,13 @@ jq -r '.links[0].signature_base64' evidence.json | base64 -d > link0-sig.bin</pr
 
   <h2>Vì sao nó tồn tại</h2>
   <p>Hầu hết các ứng dụng đỗ xe tạo ra "bằng chứng" chỉ tạo ra ảnh chụp màn hình. Ảnh chụp màn hình có thể bị chỉnh sửa vào bất kỳ lúc nào giữa lúc chụp và lúc gửi. Chữ ký mã hóa là sự khác biệt giữa <em>"đây là những gì tôi đã thấy"</em> và <em>"đây là những gì tôi đã thấy, và bất kỳ ai cũng có thể kiểm tra rằng nó không thay đổi kể từ khi ParkProof ký."</em></p>
-  <p>Khóa công khai được công bố nên việc kiểm tra có thể làm hoàn toàn ngoại tuyến. Bạn không cần tin ParkProof, liên hệ máy chủ của chúng tôi hay chạy ứng dụng của chúng tôi. Việc kiểm tra vẫn làm được sau nhiều năm, kể cả khi ParkProof không còn hoạt động, miễn là <code>openssl</code> vẫn còn.</p>
+  <p>Khóa công khai được công bố, nên khi bạn đã lưu khóa này, việc kiểm tra có thể làm ngoại tuyến, không cần ứng dụng của chúng tôi. Thời điểm ký lấy từ đồng hồ máy chủ của ParkProof, nên với thời điểm đó bạn đang tin vào ParkProof. Việc kiểm tra vẫn làm được sau nhiều năm, kể cả khi ParkProof không còn hoạt động, miễn là bạn có bản sao khóa công khai đã lưu và <code>openssl</code>.</p>
 
   <h2>Câu hỏi?</h2>
   <p>Email <a class="link" href="mailto:hello@parkproof.com.au">hello@parkproof.com.au</a>. Chúng tôi trả lời.</p>
 
   <footer>
-    <span>parkproof.com.au · trang xác minh</span>
+    <span>parkproof.com.au · kiểm tra chữ ký</span>
     <span><a href="/parkproof-public-key.pem">/parkproof-public-key.pem</a> <span class="sep">·</span> <a href="/">← Quay lại ParkProof</a></span>
   </footer>
 </div>

@@ -9,7 +9,7 @@ import type { TFunction } from 'i18next'
 import i18n from './i18n'
 import type { RecurringRule } from '../types'
 import { RECURRING_SCHEDULE_DAYS, parseRecurringPushRequest } from '../../lambda/recurring-schedule.js'
-import { PUSH_REQUEST_TIMEOUT_MS } from './push'
+import { PUSH_REQUEST_TIMEOUT_MS, installPushRegistrationRefresh, isPushTurnedOff, subscribeToPush, unsubscribeFromPush } from './push'
 import {
   REGISTER_TIMEOUT_MS,
   RECURRING_PUSH_LAPSE_MS,
@@ -24,10 +24,12 @@ import {
   recurringBookingStands,
   recurringPushRequest,
   registerForRecurringPush,
+  pushReadiness,
   recurringPushSignature,
   recurringPushStatusOf,
   requestRecurringPushSync,
   resetRecurringPushForTests,
+  subscribeRecurringPushStatus,
   wantsServerPush,
   type PushReadiness,
   type RecurringPushCallResult,
@@ -688,3 +690,105 @@ describe('the two routes', () => {
     expect(Object.keys(JSON.parse(localStorage.getItem(RECURRING_PUSH_STATE_KEY) ?? '{}'))).toEqual([A])
   })
 })
+
+describe('push registration and Settings (polish list)', () => {
+  const ENDPOINT = 'https://fcm.googleapis.com/fcm/send/abc'
+
+  /** Push supported and allowed, and a browser subscription that can be dropped. */
+  function stubBrowser() {
+    let subscription: { endpoint: string; toJSON: () => unknown; unsubscribe: () => Promise<boolean> } | null = {
+      endpoint: ENDPOINT,
+      toJSON: () => ({ endpoint: ENDPOINT, keys: { p256dh: 'p256', auth: 'auth' } }),
+      unsubscribe: async () => {
+        subscription = null
+        return true
+      },
+    }
+    vi.stubGlobal('PushManager', class {})
+    vi.stubGlobal('Notification', { permission: 'granted' })
+    vi.stubEnv('VITE_VAPID_PUBLIC_KEY', 'BKtestVapidKey')
+    const reg = {
+      pushManager: {
+        getSubscription: async () => subscription,
+        subscribe: async () => {
+          subscription = {
+            endpoint: `${ENDPOINT}-again`,
+            toJSON: () => ({ endpoint: `${ENDPOINT}-again`, keys: { p256dh: 'p256', auth: 'auth' } }),
+            unsubscribe: async () => {
+              subscription = null
+              return true
+            },
+          }
+          return subscription
+        },
+      },
+    }
+    Object.defineProperty(navigator, 'serviceWorker', {
+      configurable: true,
+      value: { ready: Promise.resolve(reg), getRegistration: async () => reg },
+    })
+  }
+
+  afterEach(() => {
+    vi.unstubAllEnvs()
+    delete (navigator as unknown as Record<string, unknown>).serviceWorker
+  })
+
+  it("app start sends the registration once, shared by the hourly refresh and the weekly reminders' check", async () => {
+    stubBrowser()
+    let releaseSubscribe!: () => void
+    const held = new Promise<void>((resolve) => {
+      releaseSubscribe = resolve
+    })
+    const posts: string[] = []
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: string) => {
+        posts.push(String(input))
+        await held
+        return new Response(null, { status: 204 })
+      }),
+    )
+    // Both start together, as App's effects do.
+    const cleanup = installPushRegistrationRefresh()
+    const readiness = pushReadiness()
+    await vi.waitFor(() => expect(posts.length).toBe(1))
+    releaseSubscribe()
+    expect(await readiness).toBe('ready')
+    await new Promise((r) => setTimeout(r, 20))
+    expect(posts.filter((u) => u.endsWith('/push/subscribe'))).toHaveLength(1)
+    cleanup()
+  })
+
+  it('turning push off in Settings stops weekly rules saying they alert with ParkProof closed, until it is on again', async () => {
+    stubBrowser()
+    vi.stubGlobal('fetch', vi.fn(async () => new Response(null, { status: 204 })))
+    await reconcileRecurringPush([rule()], t, fakeDeps({ readiness: 'ready' }).deps)
+    const env = { permission: 'granted' as const, inTab: true }
+    expect(recurringAlertReach(rule(), t, { ...env, ...pushOffOf(alertEnvironment()) })).toBe('closed')
+
+    let heard = 0
+    const stop = subscribeRecurringPushStatus(() => heard++)
+    try {
+      expect(await unsubscribeFromPush()).toBe(true)
+      expect(isPushTurnedOff()).toBe(true)
+      expect(heard).toBeGreaterThan(0)
+      // The booking still stands on the server, but this browser no longer
+      // holds the subscription its pushes went to: only while open.
+      expect(recurringAlertReach(rule(), t, { ...env, ...pushOffOf(alertEnvironment()) })).toBe('open_only')
+      expect(recurringAlertReach(rule(), t, { ...env, inTab: false, pushOff: true })).toBe('none')
+
+      // Turned on again: a registration reaches the server.
+      expect((await subscribeToPush()).ok).toBe(true)
+      expect(isPushTurnedOff()).toBe(false)
+      expect(recurringAlertReach(rule(), t, { ...env, ...pushOffOf(alertEnvironment()) })).toBe('closed')
+    } finally {
+      stop()
+    }
+  })
+})
+
+/** Only the pushOff part of an environment. */
+function pushOffOf(env: { pushOff?: boolean }): { pushOff?: boolean } {
+  return env.pushOff ? { pushOff: true } : {}
+}

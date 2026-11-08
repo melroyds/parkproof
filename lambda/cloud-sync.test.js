@@ -464,8 +464,15 @@ describe('POST /sessions/upload', () => {
 describe('GET /sessions/list', () => {
   it('follows DynamoDB pages and strips server attributes', async () => {
     for (const id of ['r1', 'r2', 'r3']) await handleSessionsUpload(event({ session: record({ id }) }))
+    fake.calls.length = 0
     const { sessions } = await handleSessionsList(event({}))
     expect(sessions.map((s) => s.id).sort()).toEqual(['r1', 'r2', 'r3'])
+    // Strongly consistent on every page: an eventually consistent read just
+    // after a /sessions/delete can still list the deleted row, and a phone
+    // that pulls it back uploads it again (polish list).
+    const queries = fake.calls.filter((c) => c.service === 'ddb' && c.op === 'query')
+    expect(queries.length).toBeGreaterThan(1)
+    for (const q of queries) expect(q.input.ConsistentRead).toBe(true)
     for (const s of sessions) {
       expect(s.rev).toBeUndefined()
       expect(s.pk).toBeUndefined()

@@ -192,6 +192,27 @@ describe('uploadSession serialisation (item 5)', () => {
     expect(cloud.uploads()).toHaveLength(0)
     expect(uploadedPhotoMarkers(USER).has(refUploadMarker(ID, sha))).toBe(false)
   })
+
+  it('an upload whose photos take more than 30 s after the delete still never re-creates the row', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    try {
+      vi.setSystemTime(new Date('2026-11-09T01:00:00.000Z'))
+      const sha = await putPhoto(ID, 'data:image/jpeg;base64,' + btoa('slow-doomed'))
+      saveSession(record({ photos: [{ role: 'sign', sha256: sha, captured_at: '2026-10-20T00:59:00.000Z', source: 'camera_input' }] }))
+      cloud.beforePut = async () => {
+        cloud.beforePut = null
+        await deleteCloudSession(ID)
+        // The photo upload crawls on a weak signal.
+        vi.setSystemTime(Date.now() + 2 * 60_000)
+      }
+      await uploadSession(getSession(ID)!)
+      expect(cloud.uploads()).toHaveLength(0)
+      expect(cloud.rows.has(ID)).toBe(false)
+      expect(uploadedPhotoMarkers(USER).has(refUploadMarker(ID, sha))).toBe(false)
+    } finally {
+      vi.useRealTimers()
+    }
+  })
 })
 
 describe('performInitialSync: records on both sides (item 4)', () => {

@@ -7,11 +7,34 @@
 export const RESULTS_SCHEMA = 'parkproof-accuracy-v1'
 
 /**
+ * The fewest test photos a rate over a labelled group (a sign detail, the
+ * sign condition, the position question) may cover and still be shown.
+ * The harness withholds smaller ones (scripts/eval-lib/report.mjs
+ * MIN_SIGNS_PER_LABELLED_GROUP): they would say how single held-out photos
+ * went.
+ */
+export const MIN_SIGNS_PER_LABELLED_GROUP = 5
+
+/** True when a rate over a labelled group is shown although it covers too few photos. */
+function pointsAtSinglePhotos(rate) {
+  return (
+    !!rate &&
+    typeof rate === 'object' &&
+    rate.rate !== null &&
+    rate.rate !== undefined &&
+    rate.signs > 0 &&
+    rate.signs < MIN_SIGNS_PER_LABELLED_GROUP
+  )
+}
+
+/**
  * The results when they are fit to publish, otherwise null. A run with
  * uncommitted changes (or none recorded) isn't, because the page names the
  * commit as the app version the numbers belong to. Nor is a file that says
- * which test photos were right or wrong (a row with its own results, or
- * rates by tag), because the page says that isn't published.
+ * which test photos were right or wrong (a row with its own results,
+ * rates by tag, or a rate over a labelled group of fewer than
+ * MIN_SIGNS_PER_LABELLED_GROUP photos), because the page says that isn't
+ * published.
  */
 export function publishableResults(data) {
   if (!data || typeof data !== 'object') return null
@@ -25,6 +48,9 @@ export function publishableResults(data) {
   if (!Array.isArray(data.signs) || !data.signs.every(hidden)) return null
   const answer = data.metrics && data.metrics.answer
   if (!answer || !(answer.signs > 0)) return null
+  const m = data.metrics
+  const grouped = [...Object.values(m.flags || {}), m.sign_status, m.position]
+  if (grouped.some(pointsAtSinglePhotos)) return null
   return data
 }
 

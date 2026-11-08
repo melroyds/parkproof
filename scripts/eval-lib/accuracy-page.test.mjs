@@ -10,13 +10,14 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
 import {
+  MIN_SIGNS_PER_LABELLED_GROUP as PAGE_MIN_SIGNS,
   init,
   publishableResults,
   resultFacts,
   resultRows,
 } from '../../migrations/two-app-architecture/landing-from-claude-design/accuracy/accuracy.js'
 import { normalizeEntry } from './corpus.mjs'
-import { buildResults, buildResultsFile } from './report.mjs'
+import { MIN_SIGNS_PER_LABELLED_GROUP, buildResults, buildResultsFile, formatReport } from './report.mjs'
 import { scoreTrial } from './score.mjs'
 import { PRICES_USD_PER_MTOK } from './stats.mjs'
 
@@ -134,6 +135,99 @@ describe('which results are published', () => {
     expect(publishableResults(oneRowShown)).toBeNull()
     expect(publishableResults({ ...harnessResults(), signs: [{ ...harnessResults().signs[0], right: 1 }] })).toBeNull()
     expect(publishableResults({ ...harnessResults(), signs: undefined })).toBeNull()
+  })
+})
+
+describe('a rate over a labelled group of a few test photos (polish list)', () => {
+  /**
+   * Six test photos: one labelled with the payment detail and a position,
+   * five with the area-sign detail. The model gets the payment one wrong.
+   */
+  function groupedRun({ split = 'test', build = buildResultsFile } = {}) {
+    const label = (id, extra) =>
+      normalizeEntry(
+        {
+          id,
+          image: `${id}.jpg`,
+          split,
+          scanContext: { lat: -37.8136, lng: 144.9631, datetime: '2026-05-20T14:30:00+10:00' },
+          expected: { can_park_now: true, until: null, duration_minutes: null },
+          ...extra,
+        },
+        `${id}.json`,
+      ).entry
+    const paid = label('paid', { expected_flags: { requires_ticket: true }, expected_variant: 'Left side' })
+    const areas = [1, 2, 3, 4, 5].map((n) => label(`area-${n}`, { expected_flags: { is_area_sign: false } }))
+    const out = (extra = {}) => ({
+      can_park_now: true,
+      until: null,
+      duration_minutes: null,
+      confidence: 'high',
+      clarification: null,
+      requires_ticket: false,
+      is_area_sign: false,
+      ...extra,
+    })
+    const trial = (e, output) => ({
+      id: e.id,
+      tags: e.tags,
+      has_variant_label: !!e.expected_variant,
+      latency_ms: 5000,
+      usage: null,
+      score: scoreTrial(e, output, null),
+    })
+    const trials = [trial(paid, out()), ...areas.map((e) => trial(e, out()))]
+    return build({
+      entries: [paid, ...areas],
+      trials,
+      meta: {
+        split,
+        runs: 1,
+        dryRun: false,
+        git: { sha: '12d93185cb355c1231b087284679afd23b3c45a5', dirty: false },
+        fingerprint: { model: 'claude-sonnet-4-6', prompt_sha256: 'ab'.repeat(32), schema_sha256: 'cd'.repeat(32) },
+        price: null,
+        generatedAt: '2026-11-08T01:00:00.000Z',
+        showFailures: false,
+      },
+    })
+  }
+
+  it('the harness and the page agree on the smallest group shown', () => {
+    expect(PAGE_MIN_SIGNS).toBe(MIN_SIGNS_PER_LABELLED_GROUP)
+  })
+
+  it('is withheld from the published file while test results are hidden, and left off the page', () => {
+    const file = groupedRun()
+    // One test photo states the payment detail, one names a position: their
+    // rates would say how that photo went.
+    expect(file.metrics.flags.requires_ticket).toEqual({ signs: 1, runs: 1, run_successes: null, rate: null, ci95: null, withheld: true })
+    expect(file.metrics.position).toMatchObject({ signs: 1, rate: null, withheld: true })
+    expect(JSON.stringify(file.metrics.flags.requires_ticket)).not.toMatch(/"rate":0/)
+    // Five photos state the area-sign detail: shown.
+    expect(file.metrics.flags.is_area_sign).toMatchObject({ signs: 5, rate: 1 })
+    expect(publishableResults(file)).not.toBeNull()
+    const measures = resultRows(file).map((r) => r.measure)
+    expect(measures).toContain('Sign detail: Area sign')
+    expect(measures).not.toContain('Sign detail: Payment needed now')
+    expect(measures.some((m) => m.startsWith('Asked where'))).toBe(false)
+    // The printed report says why it isn't shown.
+    expect(formatReport(file)).toMatch(/Sign detail: requires_ticket\s+withheld: 1 test sign, under 5/)
+  })
+
+  it('a file that shows one anyway is not published', () => {
+    const file = groupedRun()
+    const leaky = { ...file, metrics: { ...file.metrics, flags: { ...file.metrics.flags, requires_ticket: { signs: 1, runs: 1, run_successes: 0, rate: 0, ci95: [0, 0.79] } } } }
+    expect(publishableResults(leaky)).toBeNull()
+    const leakyPosition = { ...file, metrics: { ...file.metrics, position: { signs: 2, runs: 2, run_successes: 2, rate: 1, ci95: [0.34, 1] } } }
+    expect(publishableResults(leakyPosition)).toBeNull()
+  })
+
+  it('dev photos, whose results are shown anyway, keep every rate', () => {
+    const dev = groupedRun({ split: 'dev', build: buildResults })
+    expect(dev.metrics.flags.requires_ticket).toMatchObject({ signs: 1, rate: 0 })
+    expect(dev.metrics.position).toMatchObject({ signs: 1 })
+    expect(dev.metrics.position.withheld).toBeUndefined()
   })
 })
 

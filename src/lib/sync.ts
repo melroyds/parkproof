@@ -99,25 +99,112 @@ function tokenSubject(token: string | null): string | null {
 
 // ─── Delete tombstones ─────────────────────────────────────────────────────
 // A fire-and-forget photo/metadata upload that is already in flight can land
-// AFTER a /sessions/delete and resurrect the row the user just erased. We hold
-// a short-lived set of recently-deleted ids; uploadSession consults it both at
-// entry and right before the metadata write, so an upload that overlaps a
-// delete is dropped instead of re-creating the session in the cloud.
-const recentlyDeleted = new Map<string, number>()
-const DELETE_TOMBSTONE_MS = 30_000
+// AFTER a /sessions/delete and resurrect the row the user just erased, and a
+// /sessions/list that was answered before the delete reached the server
+// still lists the row. Both are decided by the order of events, not by how
+// long ago the delete was: a weak signal or a suspended app can hold a
+// listing or an upload for minutes, so any fixed age would let one through.
+//
+// Every listing and every upload takes a number from one counter when it
+// starts (`beginOperation`). A delete marks its tombstone when it starts,
+// and notes the counter again when its request settles (answered or
+// failed). An operation skips a deleted id when the delete hadn't settled
+// before the operation started (`deletedSince`): either it is still in
+// flight, or it settled later.
+//
+// An operation that starts just after the delete settled is still covered
+// for a short grace (DELETE_SETTLE_GRACE_MS, by the clock). The server's
+// answer to the delete doesn't mean every later read sees it: a request
+// that failed here may still reach the server, and a read can lag a write.
+// /sessions/list reads consistently now, but this side doesn't rely on it
+// alone: a pulled-back record is uploaded again by the next full sync,
+// which undoes the delete for good. After the grace, an operation sees the
+// server's state, so a row listed then was put back by another device and
+// is pulled as usual. A tombstone goes once its grace is over and no
+// running operation it covers is left.
 
-function markSessionDeleted(id: string): void {
-  recentlyDeleted.set(id, Date.now())
+/** How long after a delete settles a new listing or upload still skips its id. */
+export const DELETE_SETTLE_GRACE_MS = 10_000
+
+/** A listing or upload in progress: its place in the event order and its start time. */
+interface SyncOperation {
+  seq: number
+  startedAt: number
 }
 
-function isTombstoned(id: string): boolean {
-  const at = recentlyDeleted.get(id)
-  if (at == null) return false
-  if (Date.now() - at > DELETE_TOMBSTONE_MS) {
-    recentlyDeleted.delete(id)
-    return false
+/** The event counter: operation starts and delete settlements, in order. */
+let eventSeq = 0
+/** Per deleted id: when its delete settled, in event order and by the clock (null while in flight). */
+const tombstones = new Map<string, { settledAt: number | null; settledTime: number | null }>()
+/** The listings and uploads still running. */
+const runningOperations = new Set<SyncOperation>()
+
+function nextEvent(): number {
+  eventSeq += 1
+  return eventSeq
+}
+
+/** A listing or upload starts: its place, for `deletedSince`. Pair with `endOperation`. */
+function beginOperation(): SyncOperation {
+  const operation = { seq: nextEvent(), startedAt: Date.now() }
+  runningOperations.add(operation)
+  return operation
+}
+
+function endOperation(operation: SyncOperation): void {
+  runningOperations.delete(operation)
+  pruneTombstones()
+}
+
+/** True when a delete's tombstone still applies to an operation. */
+function covers(
+  t: { settledAt: number | null; settledTime: number | null },
+  operation: SyncOperation,
+): boolean {
+  if (t.settledAt === null || t.settledTime === null) return true
+  return t.settledAt > operation.seq || operation.startedAt < t.settledTime + DELETE_SETTLE_GRACE_MS
+}
+
+/** Forget the tombstones past their grace that no running operation needs. */
+function pruneTombstones(): void {
+  const now = Date.now()
+  for (const [id, t] of tombstones) {
+    if (t.settledTime === null || now < t.settledTime + DELETE_SETTLE_GRACE_MS) continue
+    let needed = false
+    for (const operation of runningOperations) {
+      if (covers(t, operation)) {
+        needed = true
+        break
+      }
+    }
+    if (!needed) tombstones.delete(id)
   }
-  return true
+}
+
+function markSessionDeleted(id: string): void {
+  // A newer delete of the same id (another tap, a retry) is in flight again.
+  tombstones.set(id, { settledAt: null, settledTime: null })
+  nextEvent()
+}
+
+function markDeleteSettled(id: string): void {
+  const t = tombstones.get(id)
+  if (t && t.settledAt === null) {
+    t.settledAt = nextEvent()
+    t.settledTime = Date.now()
+  }
+  pruneTombstones()
+}
+
+/**
+ * True when `id` was deleted on this device and `operation` may predate
+ * that delete: the delete hadn't settled before the operation began, or it
+ * settled less than DELETE_SETTLE_GRACE_MS before. What the operation read
+ * or is about to write must then skip the id.
+ */
+function deletedSince(id: string, operation: SyncOperation): boolean {
+  const t = tombstones.get(id)
+  return t !== undefined && covers(t, operation)
 }
 
 // ─── Upload markers ──────────────────────────────────────────────────────
@@ -329,6 +416,16 @@ const NO_FAILURE: UploadResult = { photoFailed: false }
  * photo loss leaves another device with a missing image and a blank PDF.
  */
 async function runUpload(id: string): Promise<UploadResult> {
+  const operation = beginOperation()
+  try {
+    return await uploadOnce(id, operation)
+  } finally {
+    endOperation(operation)
+  }
+}
+
+async function uploadOnce(id: string, operation: SyncOperation): Promise<UploadResult> {
+  const isTombstoned = (recordId: string) => deletedSince(recordId, operation)
   // Don't resurrect a session the user just deleted.
   if (isTombstoned(id)) return NO_FAILURE
   const start = getSession(id)
@@ -586,11 +683,17 @@ export async function deleteCloudSession(sessionId: string): Promise<void> {
   // before it can re-create the row.
   markSessionDeleted(sessionId)
   forgetRecordMarkers(sessionId)
-  const res = await authFetch('/sessions/delete', {
-    method: 'POST',
-    body: JSON.stringify({ session_id: sessionId }),
-  })
-  await expectJson<{ ok: true }>(res)
+  try {
+    const res = await authFetch('/sessions/delete', {
+      method: 'POST',
+      body: JSON.stringify({ session_id: sessionId }),
+    })
+    await expectJson<{ ok: true }>(res)
+  } finally {
+    // Answered or failed: once DELETE_SETTLE_GRACE_MS has passed, a listing
+    // or upload that starts reads the server as it is.
+    markDeleteSettled(sessionId)
+  }
 }
 
 /** Export everything the cloud holds about the signed-in user. */
@@ -766,6 +869,17 @@ export interface SyncOptions {
  * itself (`updateSession`, `mergeCloudEvidence`).
  */
 export async function performInitialSync(options: SyncOptions = {}): Promise<InitialSyncResult> {
+  // The listing's place in the order of events: a record deleted here after
+  // it started is still in what it returns (however long it took).
+  const listing = beginOperation()
+  try {
+    return await syncOnce(options, listing)
+  } finally {
+    endOperation(listing)
+  }
+}
+
+async function syncOnce(options: SyncOptions, listing: SyncOperation): Promise<InitialSyncResult> {
   const uploadLocalOnly = options.uploadLocalOnly ?? true
   let listFailed = false
   const cloudSessions = await listCloudSessions().catch((err) => {
@@ -781,17 +895,17 @@ export async function performInitialSync(options: SyncOptions = {}): Promise<Ini
 
   // Cloud-only → into local storage. The pulled mark goes first: a pulled
   // record must never be signed as if it were saved here. A record deleted
-  // here while the listing was in flight is still in that listing: skip it
-  // (its tombstone), or it comes back here and the next full sync uploads
-  // it again.
-  const toPull = cloudSessions.filter((s) => !localById.has(s.id) && !s.shared_from && !isTombstoned(s.id))
+  // here after the listing started, or just before it, may still be in that
+  // listing: skip it (its tombstone), or it comes back here and the next
+  // full sync uploads it again.
+  const toPull = cloudSessions.filter((s) => !localById.has(s.id) && !s.shared_from && !deletedSince(s.id, listing))
   if (toPull.length > 0) {
     if (!markPulledRecords(toPull.map((s) => s.id))) {
       console.warn('[sync] could not mark records as pulled; they are pulled on the next sync')
     } else {
       for (const session of toPull) {
         try {
-          if (writeNewLocalSession(pulledRecord(session))) result.pulled++
+          if (writeNewLocalSession(pulledRecord(session), listing)) result.pulled++
         } catch (err) {
           console.warn(`[sync] pull of ${session.id} failed:`, err)
         }
@@ -841,14 +955,14 @@ export async function performInitialSync(options: SyncOptions = {}): Promise<Ini
  * Insert a session into localStorage at index 0 (newest-first ordering),
  * preserving the rest. Used by the cloud-pull path during initial sync.
  * Returns false (and writes nothing) when a record with the id is already
- * saved, the record was deleted here moments ago (its tombstone), or the
- * write failed. A write tells open screens through
- * `scheduleRecordsChanged`, so the list shows a pulled record as soon as it
- * lands, with one re-render for a whole pull.
+ * saved, the record was deleted here after the listing it came from
+ * started or just before it (its tombstone), or the write failed. A write tells open screens
+ * through `scheduleRecordsChanged`, so the list shows a pulled record as
+ * soon as it lands, with one re-render for a whole pull.
  */
-function writeNewLocalSession(session: ParkingSession): boolean {
+function writeNewLocalSession(session: ParkingSession, listing: SyncOperation): boolean {
   const KEY = 'parkproof.sessions.v1'
-  if (isTombstoned(session.id)) return false
+  if (deletedSince(session.id, listing)) return false
   try {
     const raw = localStorage.getItem(KEY)
     const all: ParkingSession[] = raw ? JSON.parse(raw) : []
@@ -1041,7 +1155,8 @@ export function mirrorSessionUpdateToCloud(sessionId: string): void {
 /** Test-only: forget uploads in flight, tombstones and the cloud-photo caches. */
 export function resetSyncForTests(): void {
   uploadSlots.clear()
-  recentlyDeleted.clear()
+  tombstones.clear()
+  runningOperations.clear()
   remoteInFlight.clear()
   remoteMisses.clear()
 }

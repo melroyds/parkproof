@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>ParkProof साक्ष्य रिकॉर्ड सत्यापित करें | ParkProof</title>
+<title>ParkProof रिकॉर्ड के हस्ताक्षर जाँचें | ParkProof</title>
 <meta name="description" content="यह जाँचने के लिए चरण-दर-चरण openssl गाइड कि ParkProof साक्ष्य रिकॉर्ड ParkProof के हस्ताक्षर करने के बाद से नहीं बदला है। AWS KMS ECDSA P-256 के माध्यम से क्रिप्टोग्राफिक हस्ताक्षर।">
 <meta name="robots" content="index, follow">
 <link rel="icon" href="../../assets/parkproof-icon.svg" type="image/svg+xml">
@@ -284,15 +284,15 @@
 
   <nav class="locale-switcher" aria-label="Language"><span class="marker">🌏</span> <a href="/verify/" hreflang="en">English</a> <span class="sep">·</span> <a href="/verify/zh-CN/" hreflang="zh-CN">简体中文</a> <span class="sep">·</span> <a href="/verify/vi/" hreflang="vi">Tiếng Việt</a> <span class="sep">·</span> <a href="/verify/id/" hreflang="id">Bahasa Indonesia</a> <span class="sep">·</span> <a href="/verify/ko/" hreflang="ko">한국어</a> <span class="sep">·</span> <a href="/verify/it/" hreflang="it">Italiano</a> <span class="sep">·</span> <a href="/verify/el/" hreflang="el">Ελληνικά</a> <span class="sep">·</span> <span class="active">हिन्दी</span> <span class="sep">·</span> <a href="/verify/pa/" hreflang="pa">ਪੰਜਾਬੀ</a></nav>
 
-  <div class="eyebrow">सत्यापन</div>
-  <h1>ParkProof <span class="accent">साक्ष्य रिकॉर्ड</span> सत्यापित करें।</h1>
+  <div class="eyebrow">हस्ताक्षर जाँच</div>
+  <h1>ParkProof <span class="accent">रिकॉर्ड के हस्ताक्षर</span> जाँचें।</h1>
   <p class="lede">हर ParkProof साक्ष्य PDF में एक क्रिप्टोग्राफ़िक हस्ताक्षर परिशिष्ट होता है, और हर रिकॉर्ड को साक्ष्य फ़ाइल के रूप में सहेजा जा सकता है। यह पृष्ठ किसी को भी, जैसे परिषद के अधिकारी, बीमाकर्ता, अदालत के क्लर्क या स्वयं चालक को, बताता है कि ऑफ़लाइन कैसे जाँचें कि ParkProof के हस्ताक्षर करने के बाद से कोई रिकॉर्ड बदला नहीं है।</p>
 
   <div class="callout">
     <strong>ईमानदार ढांचा।</strong> मान्य हस्ताक्षर <em>अखंडता</em> दिखाता है: हस्ताक्षरित विवरण और फ़ोटो के फिंगरप्रिंट ठीक वही हैं जिन पर ParkProof ने हस्ताक्षर के समय हस्ताक्षर किए थे। यह नहीं दिखाता कि रिकॉर्ड <em>सच</em> है (AI साइन को गलत पढ़ सकती है), चालक कौन था, कार कहाँ थी, या वह कब पहुँची या कब गई, और यह तय नहीं करता कि रिकॉर्ड का कितना महत्व है। यह समीक्षा करने वाले व्यक्ति पर है।
   </div>
 
-  <h2>आप क्या सत्यापित कर रहे हैं</h2>
+  <h2>आप क्या जाँच रहे हैं</h2>
   <p>ParkProof रिकॉर्ड पर हिस्सों में हस्ताक्षर होते हैं, जिन्हें कड़ियाँ कहते हैं। ParkProof को सहेजा गया रिकॉर्ड मिलने पर कड़ी 0 पर हस्ताक्षर होते हैं। बाद की हर कड़ी, जैसे पार्क करते समय का विवरण, कार की हालत की फ़ोटो, भुगतान के प्रमाण की फ़ोटो या प्रस्थान, ParkProof को मिलने पर हस्ताक्षरित होती है और उसमें पिछली कड़ी का SHA-256 होता है, इसलिए कड़ियाँ मिलकर एक शृंखला बनाती हैं। हर कड़ी में एक <strong>पेलोड</strong> (वह सटीक पाठ जिस पर हस्ताक्षर हुए, उसकी फ़ोटो के SHA-256 फिंगरप्रिंट सहित) और ParkProof की निजी कुंजी (ECDSA P-256) से बना एक <strong>हस्ताक्षर</strong> होता है, और यह कुंजी कभी AWS KMS से बाहर नहीं जाती। साक्ष्य PDF अपने हस्ताक्षर परिशिष्ट में हर कड़ी छापता है। रिकॉर्ड की <strong>साक्ष्य फ़ाइल</strong> (एक .json फ़ाइल, जिसे ऐप में रिकॉर्ड से डाउनलोड किया जा सकता है) में वही पेलोड और हस्ताक्षर होते हैं, और साथ में मूल फ़ोटो भी।</p>
   <p>हस्ताक्षर जाँचने के लिए ज़रूरी <strong>सार्वजनिक कुंजी</strong> <a class="link" href="/parkproof-public-key.pem"><code>/parkproof-public-key.pem</code></a> पर प्रकाशित है। यह पुष्टि करने के लिए कि यह लोड होती है, इसे ब्राउज़र में खोलें, फिर सहेजें।</p>
 
@@ -351,7 +351,7 @@ openssl dgst -sha256 photo1.jpg
 <span class="comment"># 8. देखें कि किस कड़ी और किस फ़ील्ड में उस पर हस्ताक्षर हैं।</span>
 jq '.photos[0].signed_in' evidence.json</pre>
 
-  <p>यह हेक्स मान <code>signed_in</code> में दी हर कड़ी के हस्ताक्षरित पेलोड में उस फ़ोटो के <code>sha256</code> के बराबर होना चाहिए: कड़ी 0 में <code>sign_photo_sha256</code>, <code>car_photo_sha256</code> या <code>ambient_photo_sha256</code>, या बाद की कड़ी में <code>photos</code>, <code>photo</code> या <code>return_photos</code> के नीचे कोई <code>sha256</code>। इसकी तुलना उस पेलोड से करें जिसे आपने जाँचा है, न कि सिर्फ़ फ़ाइल में फ़ोटो के पास लिखे <code>sha256</code> से, जिस पर हस्ताक्षर नहीं है। दूसरी फ़ोटो के लिए <code>.photos[1]</code> का उपयोग करें, और इसी तरह आगे।</p>
+  <p>यह हेक्स मान <code>signed_in</code> में दी हर कड़ी के हस्ताक्षरित पेलोड में उस फ़ोटो के <code>sha256</code> के बराबर होना चाहिए: कड़ी 0 में <code>sign_photo_sha256</code>, <code>car_photo_sha256</code> या <code>ambient_photo_sha256</code>, या बाद की कड़ी में <code>photos</code>, <code>photo</code> या <code>return_photos</code> के नीचे कोई <code>sha256</code>। इसकी तुलना उस पेलोड से करें जिसका हस्ताक्षर आपने चरण 4 में जाँचा है, न कि सिर्फ़ फ़ाइल में फ़ोटो के पास लिखे <code>sha256</code> से, जिस पर हस्ताक्षर नहीं है। दूसरी फ़ोटो के लिए <code>.photos[1]</code> का उपयोग करें, और इसी तरह आगे।</p>
   <p>jq के बिना, फ़ाइल को टेक्स्ट एडिटर में खोलें, किसी फ़ोटो का <code>bytes_base64</code> मान <code>photo1.b64</code> नाम की फ़ाइल में कॉपी करें, फिर <code>base64 -d photo1.b64 &gt; photo1.jpg</code> चलाएँ।</p>
 
   <h3>Windows पर</h3>
@@ -382,7 +382,7 @@ jq -r '.links[0].signature_base64' evidence.json | base64 -d > link0-sig.bin</pr
 
   <div class="grid-2">
     <div class="card ok">
-      <h3>सत्यापित <span class="label">पास</span></h3>
+      <h3>हस्ताक्षर मान्य <span class="label">पास</span></h3>
       <p><code>Verified OK</code>: पेलोड ठीक वही है जिस पर ParkProof ने हस्ताक्षर किए थे। इसमें दिए विवरण और फ़ोटो के फिंगरप्रिंट, पेलोड में दिए <code>signed_at</code> समय पर ParkProof के हस्ताक्षर करने के बाद से नहीं बदले हैं। फ़ोटो की जाँच खुद चरण 6 से 8 में होती है।</p>
     </div>
     <div class="card fail">
@@ -392,7 +392,7 @@ jq -r '.links[0].signature_base64' evidence.json | base64 -d > link0-sig.bin</pr
   </div>
 
   <h2>"क्या बाइट्स बदले?" से परे</h2>
-  <p>सफल सत्यापन <em>अखंडता</em> की पुष्टि करता है। यह पुष्टि नहीं करता:</p>
+  <p>मान्य हस्ताक्षर <em>अखंडता</em> दिखाता है। यह नहीं दिखाता:</p>
   <ul>
     <li><strong>कि AI ने साइन को सही पढ़ा।</strong> ParkProof स्कैन एक पार्किंग साइन का मशीन रीडिंग है, और मशीनें गलत हो सकती हैं। रिकॉर्ड में फैसले का पाठ और नियम स्कैन के समय AI की सर्वोत्तम रीडिंग है, परम सत्य नहीं।</li>
     <li><strong>कि फ़ोटो वही दिखाती हैं जो व्यक्ति कहता है कि वे दिखाती हैं।</strong> एक मान्य हस्ताक्षर दिखाता है कि ParkProof के हस्ताक्षर करने के बाद से फ़ोटो के फिंगरप्रिंट नहीं बदले हैं, और हैश फिर से निकालने से पता चलता है कि कोई फ़ोटो अपने फिंगरप्रिंट से मेल खाती है या नहीं। इनमें से कोई भी यह नहीं दिखाता कि फ़ोटो ईमानदारी से ली गई थीं।</li>
@@ -402,13 +402,13 @@ jq -r '.links[0].signature_base64' evidence.json | base64 -d > link0-sig.bin</pr
 
   <h2>यह क्यों मौजूद है</h2>
   <p>"साक्ष्य" बनाने वाले ज़्यादातर पार्किंग ऐप एक स्क्रीनशॉट बनाते हैं। स्क्रीनशॉट को लेने और भेजने के बीच किसी भी समय संपादित किया जा सकता है। क्रिप्टोग्राफ़िक हस्ताक्षर <em>"यह मैंने देखा"</em> और <em>"यह मैंने देखा, और कोई भी जाँच सकता है कि ParkProof के हस्ताक्षर के बाद से यह बदला नहीं है"</em> के बीच का अंतर है।</p>
-  <p>सार्वजनिक कुंजी प्रकाशित है, ताकि जाँच पूरी तरह ऑफ़लाइन हो सके। आपको ParkProof पर भरोसा करने, हमारे सर्वर से संपर्क करने या हमारा ऐप चलाने की ज़रूरत नहीं है। ParkProof के बंद हो जाने पर भी, जब तक <code>openssl</code> मौजूद है, जाँच बरसों बाद भी की जा सकती है।</p>
+  <p>सार्वजनिक कुंजी प्रकाशित है, इसलिए उसे सहेज लेने के बाद जाँच ऑफ़लाइन, हमारे ऐप के बिना हो सकती है। हस्ताक्षर का समय ParkProof के सर्वर की घड़ी से आता है, इसलिए उस समय के लिए आप ParkProof पर भरोसा कर रहे हैं। ParkProof के बंद हो जाने पर भी, जब तक आपके पास सार्वजनिक कुंजी की सहेजी हुई कॉपी और <code>openssl</code> है, जाँच बरसों बाद भी की जा सकती है।</p>
 
   <h2>प्रश्न?</h2>
   <p><a class="link" href="mailto:hello@parkproof.com.au">hello@parkproof.com.au</a> पर ईमेल करें। हम जवाब देते हैं।</p>
 
   <footer>
-    <span>parkproof.com.au · सत्यापन पृष्ठ</span>
+    <span>parkproof.com.au · हस्ताक्षर जाँच</span>
     <span><a href="/parkproof-public-key.pem">/parkproof-public-key.pem</a> <span class="sep">·</span> <a href="/">← ParkProof पर वापस</a></span>
   </footer>
 </div>

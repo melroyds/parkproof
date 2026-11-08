@@ -26,6 +26,14 @@ const DEVICE_ID_KEY = 'parkproof.device_id.v1'
 
 /** When this browser last sent its registration to the server, and which endpoint. */
 const REGISTRATION_SENT_KEY = 'parkproof.push.registration_sent.v1'
+/**
+ * Set when push was turned off in Settings on this browser (its
+ * subscription dropped); cleared when a registration reaches the server
+ * again. Read synchronously by the weekly reminders' status line.
+ */
+const PUSH_TURNED_OFF_KEY = 'parkproof.push.turned_off.v1'
+/** Fired on `window` when push is turned off in Settings, or registered again after. */
+export const PUSH_STATE_EVENT = 'parkproof:push-state-changed'
 /** App open (and coming back to the screen) re-sends at most this often. */
 export const REGISTRATION_RESYNC_INTERVAL_MS = 60 * 60 * 1000
 /** A booking skips its own re-send when one went out this recently. */
@@ -168,6 +176,39 @@ function writeRegistrationSent(endpoint: string): void {
     localStorage.setItem(REGISTRATION_SENT_KEY, JSON.stringify({ at: Date.now(), endpoint }))
   } catch {
     /* storage blocked: the next sync just sends again */
+  }
+  // A registration the server stored means push is on again on this browser.
+  setPushTurnedOff(false)
+}
+
+/**
+ * True after push was turned off in Settings on this browser, until a
+ * registration reaches the server again. A rule booked for push before
+ * then can't alert with ParkProof closed: the browser no longer holds the
+ * subscription its pushes went to.
+ */
+export function isPushTurnedOff(): boolean {
+  try {
+    return localStorage.getItem(PUSH_TURNED_OFF_KEY) !== null
+  } catch {
+    return false
+  }
+}
+
+function setPushTurnedOff(off: boolean): void {
+  if (off === isPushTurnedOff()) return
+  try {
+    if (off) localStorage.setItem(PUSH_TURNED_OFF_KEY, String(Date.now()))
+    else localStorage.removeItem(PUSH_TURNED_OFF_KEY)
+  } catch {
+    return
+  }
+  if (typeof window !== 'undefined' && typeof window.dispatchEvent === 'function') {
+    try {
+      window.dispatchEvent(new CustomEvent(PUSH_STATE_EVENT, { detail: { off } }))
+    } catch {
+      /* a listener threw */
+    }
   }
 }
 
@@ -434,6 +475,9 @@ export type RegistrationSyncResult =
    *  for push right now. */
   | 'timeout'
 
+/** The re-send in flight, shared by every syncPushRegistration call made meanwhile. */
+let registrationSync: Promise<RegistrationSyncResult> | null = null
+
 /**
  * Re-send this browser's existing push registration to the server. Never
  * prompts and never creates a subscription: it only refreshes what the
@@ -445,9 +489,30 @@ export type RegistrationSyncResult =
  * (ERR_ENDPOINT_GONE), this registers a fresh one instead: permission is
  * already granted, so that never prompts.
  */
-export async function syncPushRegistration(
-  opts: { maxAgeMs?: number } = {},
-): Promise<RegistrationSyncResult> {
+export function syncPushRegistration(opts: { maxAgeMs?: number } = {}): Promise<RegistrationSyncResult> {
+  const prior = registrationSync
+  if (prior) {
+    // One re-send at a time (app start runs the hourly refresh and the
+    // weekly reminders' check together). A call made meanwhile shares its
+    // outcome, unless it was skipped as fresh under its own window (this
+    // caller's may be shorter) or this caller must send whatever happened
+    // (maxAgeMs 0): then it decides again once that one has settled.
+    const force = !(opts.maxAgeMs && opts.maxAgeMs > 0)
+    return prior.then(
+      (result) => (force || result === 'fresh' ? syncPushRegistration(opts) : result),
+      () => syncPushRegistration(opts),
+    )
+  }
+  const run = sendRegistration(opts)
+  registrationSync = run
+  const clear = () => {
+    if (registrationSync === run) registrationSync = null
+  }
+  run.then(clear, clear)
+  return run
+}
+
+async function sendRegistration(opts: { maxAgeMs?: number }): Promise<RegistrationSyncResult> {
   if (!isPushSupported() || Notification.permission !== 'granted') return 'no_subscription'
   let subscription: PushSubscription | null
   try {
@@ -582,7 +647,11 @@ export async function unsubscribeFromPush(): Promise<boolean> {
     const sub = await reg.pushManager.getSubscription()
     if (!sub) return false
     clearRegistrationSent()
-    return await sub.unsubscribe()
+    const ok = await sub.unsubscribe()
+    // Weekly rules booked for push stop saying they alert with ParkProof
+    // closed (recurring-push.ts recurringAlertReach).
+    if (ok) setPushTurnedOff(true)
+    return ok
   } catch (err) {
     console.error('[push] unsubscribe failed:', err)
     return false

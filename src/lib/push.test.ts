@@ -271,6 +271,28 @@ describe('syncPushRegistration', () => {
     expect(fetchMock).toHaveBeenCalledTimes(2)
   })
 
+  it('one re-send at a time: calls made meanwhile share it, and a forced one sends again after it (polish list)', async () => {
+    stubSubscribedBrowser(ENDPOINT)
+    let release!: () => void
+    const held = new Promise<void>((resolve) => {
+      release = resolve
+    })
+    fetchMock.mockImplementation(async () => {
+      await held
+      return new Response(null, { status: 204 })
+    })
+    const hourly = syncPushRegistration({ maxAgeMs: 60 * 60_000 })
+    const tenMinutes = syncPushRegistration({ maxAgeMs: 10 * 60_000 })
+    const forced = syncPushRegistration()
+    await vi.waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1))
+    release()
+    expect(await hourly).toBe('sent')
+    expect(await tenMinutes).toBe('sent')
+    // The re-register half of "re-register once and retry once" always sends.
+    expect(await forced).toBe('sent')
+    expect(fetchMock).toHaveBeenCalledTimes(2)
+  })
+
   it('reports failed when the server does not store it, and does not mark it sent', async () => {
     stubSubscribedBrowser(ENDPOINT)
     fetchMock.mockImplementation(async () => jsonResponse(500, { error: 'boom' }))

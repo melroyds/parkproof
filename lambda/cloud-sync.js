@@ -468,7 +468,12 @@ export async function handleSessionsUpload(event) {
 
 // ─── Reading rows ─────────────────────────────────────────────────────────
 
-/** Every row of the user's partition, following DynamoDB's pages. */
+/**
+ * Every row of the user's partition, following DynamoDB's pages. A strongly
+ * consistent read: an eventually consistent Query just after a
+ * /sessions/delete can still return the deleted row, and a phone that
+ * pulls it back re-uploads it on its next full sync, undoing the delete.
+ */
 async function queryAllRows(userId, scanForward) {
   const rows = []
   let lastKey
@@ -478,6 +483,7 @@ async function queryAllRows(userId, scanForward) {
         TableName: TABLE_NAME,
         KeyConditionExpression: 'pk = :pk',
         ExpressionAttributeValues: { ':pk': pk(userId) },
+        ConsistentRead: true,
         ExclusiveStartKey: lastKey,
         ...(scanForward === undefined ? {} : { ScanIndexForward: scanForward }),
       }),

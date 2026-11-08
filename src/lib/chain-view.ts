@@ -388,7 +388,7 @@ export const PHOTO_ROLE_KEYS: Readonly<Record<PhotoRole, string>> = {
  * The summary line after "Check signatures". `count` (the number of valid
  * signatures) is set for the all-valid lines, plurals. When a signed photo
  * isn't on this device its bytes were never compared, so the all-valid
- * line says so instead of "Nothing has changed" (N4).
+ * line says so instead of "The signed details haven't changed" (N4).
  */
 export function checkSummary(
   result: Pick<RecordVerification, 'overall' | 'counts'> & { photos?: RecordVerification['photos'] },

@@ -207,6 +207,47 @@ describe('adding photos after saving', () => {
     await waitFor(() => expect(memory.records.size).toBe(0))
     expect(getSession('rec-screen')!.addenda ?? []).toEqual([])
   })
+
+  describe('the proof type is preselected only from a gate the driver was asked (polish list)', () => {
+    const TICKET_SIGN = {
+      requires_ticket: true,
+      payment_methods: ['meter'],
+      requires_disabled_permit: false,
+      is_permit_zone: true,
+      permit_area: '7',
+      is_area_sign: false,
+    }
+    const NOT_ASKED = { meter_ticket: null, permit_zone: null, accessible_permit: null }
+
+    async function openWithPhoto(session: ParkingSession) {
+      saveSession(session)
+      const { container } = renderDetail(session)
+      fireEvent.click(screen.getByRole('button', { name: 'Add a photo of your ticket or permit' }))
+      const dialog = screen.getByRole('dialog')
+      pick(container, 'compliance', 'proof')
+      await within(dialog).findByText(i18n.t('photoGrid.saved'))
+      return dialog
+    }
+
+    it('a "can\'t park" record whose sign needs a ticket or permit preselects nothing: the driver chooses', async () => {
+      // The result screen asks no gate when you can't park, so every ack is null.
+      const dialog = await openWithPhoto(record({ rule_flags: TICKET_SIGN, gate_acks: NOT_ASKED }))
+      const radios = within(dialog).getAllByRole('radio') as HTMLInputElement[]
+      expect(radios.length).toBeGreaterThan(0)
+      expect(radios.some((r) => r.checked)).toBe(false)
+      expect((within(dialog).getByRole('button', { name: i18n.t('evidence.addToRecord') }) as HTMLButtonElement).disabled).toBe(true)
+      expect(within(dialog).getByText(i18n.t('evidence.needType'))).toBeTruthy()
+    })
+
+    it('a gate the result screen asked still preselects its type', async () => {
+      const dialog = await openWithPhoto(
+        record({ rule_flags: TICKET_SIGN, gate_acks: { ...NOT_ASKED, meter_ticket: true } }),
+      )
+      const checked = (within(dialog).getAllByRole('radio') as HTMLInputElement[]).filter((r) => r.checked)
+      expect(checked.map((r) => r.value)).toEqual(['meter_ticket'])
+      expect((within(dialog).getByRole('button', { name: i18n.t('evidence.addToRecord') }) as HTMLButtonElement).disabled).toBe(false)
+    })
+  })
 })
 
 describe('the photos on the record screen', () => {
@@ -248,7 +289,7 @@ describe('the photos on the record screen', () => {
     expect(item.getByText(`Fingerprint ${sha.slice(0, 4)}…${sha.slice(-4)}`)).toBeTruthy()
     expect(item.getByText('Signed by ParkProof at Sun 8 Nov, 12:03 pm AEDT.')).toBeTruthy()
     expect(
-      item.getByText('Added from the photo library. The signature shows when it was added, not when it was taken.'),
+      item.getByText("Added from the photo library. The signature shows the photo existed by ParkProof's signing time, not when it was taken."),
     ).toBeTruthy()
     expect(screen.getByText('Dent above the wheel')).toBeTruthy()
     expect(

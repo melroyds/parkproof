@@ -19,6 +19,7 @@ import tzlookup from 'tz-lookup'
 import type { Jurisdiction, NoticeFields, ParkingSession } from '../types'
 import { haversineMeters } from './geo'
 import { recordTimes } from './record-times'
+import { wallClockInZone } from './time-format'
 import { sessionTimezone } from './timezone'
 
 // ─── Wall-clock times ─────────────────────────────────────────────────────
@@ -61,46 +62,18 @@ export function isValidWallClock(w: WallClock | null | undefined): w is WallCloc
   return isValidDate(w) && isValidTime(w)
 }
 
-const formatters = new Map<string, Intl.DateTimeFormat>()
-
-/** Throws RangeError for an unknown zone. */
-function formatterFor(timeZone: string): Intl.DateTimeFormat {
-  let f = formatters.get(timeZone)
-  if (!f) {
-    f = new Intl.DateTimeFormat('en-US', {
-      timeZone,
-      hourCycle: 'h23',
-      year: 'numeric',
-      month: 'numeric',
-      day: 'numeric',
-      hour: 'numeric',
-      minute: 'numeric',
-      second: 'numeric',
-    })
-    formatters.set(timeZone, f)
-  }
-  return f
-}
-
-/** The wall clock in `timeZone` at instant `ms` (seconds dropped). Throws RangeError for an unknown zone. */
+/**
+ * The wall clock in `timeZone` at instant `ms` (seconds dropped). Read
+ * through time-format.ts's wallClockInZone, the app's one reading of a
+ * zone's clock. Throws RangeError for an unknown zone.
+ */
 export function wallClockAt(ms: number, timeZone: string): WallClock {
-  const w = wallClockWithSeconds(ms, timeZone)
+  const w = wallClockInZone(ms, timeZone)
   return { year: w.year, month: w.month, day: w.day, hour: w.hour, minute: w.minute }
 }
 
 function wallClockWithSeconds(ms: number, timeZone: string): WallClock & { second: number } {
-  const parts = formatterFor(timeZone).formatToParts(new Date(ms))
-  const num = (type: Intl.DateTimeFormatPartTypes) => Number(parts.find((p) => p.type === type)?.value)
-  const hour = num('hour')
-  return {
-    year: num('year'),
-    month: num('month'),
-    day: num('day'),
-    // Some engines print midnight as 24 even with h23.
-    hour: hour === 24 ? 0 : hour,
-    minute: num('minute'),
-    second: num('second'),
-  }
+  return wallClockInZone(ms, timeZone)
 }
 
 /** The zone's UTC offset at instant `ms`, in ms (east positive). */
@@ -128,7 +101,7 @@ const sameWallClock = (a: WallClock, b: WallClock): boolean =>
 export function zonedWallClockToUtc(parts: WallClock, timeZone: string): number[] {
   if (!isValidWallClock(parts)) return []
   try {
-    formatterFor(timeZone)
+    wallClockInZone(0, timeZone)
   } catch {
     return []
   }
@@ -225,7 +198,8 @@ export function parseDayFirstDate(raw: string | null | undefined): CalendarDate 
  * A printed time as read. `halfOfDayUnknown` is true for a time written
  * without am or pm whose hour is 1 to 12 ("2:10", "12:30"): it could be
  * either half of the day (the am or pm may be printed in another box, or
- * cut off). A 24-hour hour (0 or 13 to 23), an am or pm, a four-digit
+ * cut off). A 24-hour hour (0 or 13 to 23), a zero-padded hour ("02:10",
+ * the way a 24-hour clock writes 2:10 am), an am or pm, a four-digit
  * "1410 hrs", noon and midnight are all unambiguous.
  */
 interface PrintedClock {
@@ -259,6 +233,15 @@ function periodOf(text: string | undefined): string | undefined {
 }
 
 /**
+ * True when an hour printed without am or pm leaves the half of the day
+ * open: "2" or "12" could be either, but a zero-padded "02" is how a
+ * 24-hour clock writes the small hours, never an afternoon.
+ */
+function hourLeavesHalfOfDayOpen(hourText: string, period: string | undefined): boolean {
+  return !period && !(hourText.length === 2 && hourText.startsWith('0'))
+}
+
+/**
  * The time printed on a notice: "2:10 PM", "2.10pm", "14:10", "14:10:32",
  * "1410", "1410 hrs", "2pm", "noon", "midnight". Null when no valid time
  * can be read.
@@ -274,7 +257,7 @@ function readPrintedClock(raw: string | null | undefined): PrintedClock | null {
   if (/\b(noon|midday)\b/.test(s)) return printedOrNull({ hour: 12, minute: 0 }, false)
   if (/\bmidnight\b/.test(s)) return printedOrNull({ hour: 0, minute: 0 }, false)
   let m = HM_RE.exec(s)
-  if (m) return printedOrNull(clockOrNull(Number(m[1]), Number(m[2]), periodOf(m[3])), !m[3])
+  if (m) return printedOrNull(clockOrNull(Number(m[1]), Number(m[2]), periodOf(m[3])), hourLeavesHalfOfDayOpen(m[1], m[3]))
   m = /^(\d{2})(\d{2})\s*(?:hrs?|h|hours)?$/.exec(s)
   if (m) return printedOrNull(clockOrNull(Number(m[1]), Number(m[2]), undefined), false)
   m = H_PERIOD_RE.exec(s)
@@ -291,7 +274,7 @@ function timeInDateText(raw: string | null | undefined): PrintedClock | null {
   if (typeof raw !== 'string') return null
   const s = raw.trim().toLowerCase().replace(/\s+/g, ' ')
   let m = HM_COLON_RE.exec(s)
-  if (m) return printedOrNull(clockOrNull(Number(m[1]), Number(m[2]), periodOf(m[3])), !m[3])
+  if (m) return printedOrNull(clockOrNull(Number(m[1]), Number(m[2]), periodOf(m[3])), hourLeavesHalfOfDayOpen(m[1], m[3]))
   m = H_PERIOD_RE.exec(s)
   if (m) return printedOrNull(clockOrNull(Number(m[1]), 0, periodOf(m[2])), false)
   return null
