@@ -247,6 +247,11 @@
       "heading": "Bằng chứng thanh toán hoặc giấy phép",
       "toggle": "Bằng chứng thanh toán hoặc giấy phép (tùy chọn)",
       "addMeterTicketOrPermit": "Thêm ảnh vé đỗ xe hoặc giấy phép của bạn (tùy chọn)"
+    },
+    "driver": {
+      "label": "Ai đang lái xe? (tùy chọn)",
+      "placeholder": "Tên",
+      "help": "Được lưu cùng bản ghi này. ParkProof không kiểm tra thông tin này."
     }
   },
   "reminders": {
@@ -642,7 +647,10 @@
         "signCondition": "Tình trạng biển báo",
         "proof": "Bằng chứng thanh toán hoặc giấy phép",
         "conditionPhotos": "Ảnh tình trạng xe",
-        "damageNote": "Hư hỏng tài xế ghi nhận"
+        "damageNote": "Hư hỏng tài xế ghi nhận",
+        "driver": "Tài xế (nhập trên điện thoại, không được kiểm tra)",
+        "handover": "Giao xe (nhập trên điện thoại, không được kiểm tra)",
+        "handoverSigned": "Thời điểm ParkProof ký phần giao xe (đồng hồ máy chủ)"
       },
       "locationSourceValue": {
         "manuallyEntered": "Nhập thủ công",
@@ -685,7 +693,9 @@
         "noteOnReturn": "Khi quay lại, theo lời của tài xế: {{note}}",
         "notSignedYet": "(chưa được ký)",
         "partRejected": "(không thể ký phần này)",
-        "notSigned": "(không được ký)"
+        "notSigned": "(không được ký)",
+        "handoverTo": "Giao cho {{to_driver}} lúc {{time}} (đồng hồ điện thoại).",
+        "handoverFromTo": "{{from_driver}} giao xe cho {{to_driver}} lúc {{time}} (đồng hồ điện thoại)."
       },
       "carPhotoCaptionTime": "Ghi lúc {{time}} (đồng hồ điện thoại)",
       "confidence": {
@@ -799,6 +809,10 @@
       "notSigned": "Dấu vân tay số không được ký",
       "rejected": "Không thể ký phần này",
       "signedNote": "Ảnh đã ký cho thấy ảnh này đã tồn tại vào lúc được ký. Nó không cho thấy ai đã gây ra hư hỏng."
+    },
+    "shared": {
+      "field": "Được chia sẻ với bạn",
+      "madeElsewhere": "Bản ghi này được tạo trên điện thoại của người khác."
     }
   },
   "time": {
@@ -1444,5 +1458,68 @@
     "signInCopy": "Đăng nhập để sao lưu các bản ghi và xem chúng trên các thiết bị khác của bạn. Mọi thứ trên trang này đều dùng được mà không cần tài khoản.",
     "signIn": "Đăng nhập",
     "privacyCta": "Mở chính sách bảo mật"
+  },
+  "share": {
+    "action": "Chia sẻ vị trí xe",
+    "confirm": "Bất kỳ ai có liên kết này đều xem được xe đang đỗ ở đâu, ai đã đỗ và được đỗ đến khi nào. Liên kết dùng được với bất kỳ ai nhận được khi bị chuyển tiếp, và bạn không thể tắt nó.",
+    "shareButton": "Chia sẻ liên kết",
+    "shareText": "Xe đang đỗ ở đâu, từ ParkProof.",
+    "notSigned": "Bản ghi này chưa được ký. Bạn có thể chia sẻ sau khi ParkProof đã ký.",
+    "tooLarge": "Bản ghi này quá lớn để chia sẻ bằng liên kết.",
+    "copied": "Đã sao chép liên kết. Dán vào tin nhắn để chia sẻ.",
+    "copyManually": "Hãy sao chép liên kết này và gửi đi.",
+    "linkFieldLabel": "Liên kết để chia sẻ",
+    "permitSafeguard": "Lần đỗ xe này đã dùng giấy phép đỗ xe tiếp cận. Nếu người có giấy phép sẽ không ở trên xe, hãy lấy giấy phép ra khỏi bảng điều khiển trước khi có ai lái xe đi.",
+    "receivedTitle": "Vị trí xe",
+    "checking": "Đang kiểm tra liên kết…",
+    "banner": "{{driver}} đã chia sẻ lúc {{time}}. Đây là ảnh chụp tại thời điểm đó và không tự cập nhật. Xe có thể đã được di chuyển.",
+    "bannerNoDriver": "Được chia sẻ lúc {{time}}. Đây là ảnh chụp tại thời điểm đó và không tự cập nhật. Xe có thể đã được di chuyển.",
+    "bannerNoTime": "Đây là ảnh chụp tại thời điểm đó và không tự cập nhật. Xe có thể đã được di chuyển.",
+    "tampered": "Liên kết này đã bị thay đổi kể từ khi được chia sẻ",
+    "newerVersion": "Liên kết này được tạo bằng phiên bản ParkProof mới hơn",
+    "unreadable": "Không đọc được liên kết chia sẻ này. Hãy nhờ người gửi chia sẻ lại.",
+    "signedHeading": "Thông tin đã ký",
+    "signedNote": "ParkProof đã ký các thông tin này lúc {{time}}. Chữ ký cho thấy chúng không thay đổi kể từ đó. Chữ ký không cho thấy chúng là đúng, ai là người lái xe, xe ở đâu, hay xe đến và rời đi lúc nào.",
+    "signedNoteNoTime": "Chữ ký cho thấy các thông tin này không thay đổi kể từ khi ParkProof ký. Chữ ký không cho thấy chúng là đúng, ai là người lái xe, xe ở đâu, hay xe đến và rời đi lúc nào.",
+    "field": {
+      "place": "Nơi ghi lại",
+      "arrived": "Thời điểm ghi lại",
+      "limit": "Giới hạn đọc từ biển báo",
+      "limitRecorded": "Giới hạn trong bản ghi này",
+      "driver": "Người lái xe",
+      "rules": "Nội dung biển báo",
+      "standardLimit": "Giới hạn tiêu chuẩn trên biển báo",
+      "ended": "Rời đi"
+    },
+    "permitTimeNote": "Giới hạn này gồm thời gian thêm nhờ giấy phép. Nếu không có giấy phép, giới hạn tiêu chuẩn trên biển báo được áp dụng. Người gửi cho biết giới hạn đó kết thúc lúc {{time}}.",
+    "phoneClock": "{{time}} (đồng hồ điện thoại)",
+    "noLimit": "Không ghi nhận giới hạn",
+    "noPlace": "Không ghi nhận vị trí",
+    "directions": "Chỉ đường",
+    "unsignedHeading": "Từ người gửi, chưa được ký",
+    "endedValue": "Người gửi đã nhấn \"Tôi đã đi\" lúc {{time}} (đồng hồ điện thoại).",
+    "saved": "Đã lưu vào bản ghi đỗ xe của bạn với nhãn \"Được chia sẻ với bạn\". Mở lại liên kết sẽ cập nhật bản ghi.",
+    "keptNewer": "Bạn đã có một bản sao mới hơn của bản ghi này từ một liên kết mới hơn, nên bản đó được giữ lại.",
+    "ownRecord": "Liên kết này dành cho một bản ghi đã lưu trên điện thoại này, nên không được thêm lại.",
+    "saveFailed": "Không thể lưu bản sao trên điện thoại này.",
+    "badge": "Được chia sẻ với bạn",
+    "check": "Kiểm tra chữ ký",
+    "checkValid": "Chữ ký hợp lệ. Không có gì thay đổi kể từ khi ParkProof ký. Điều đó không cho thấy nội dung bản ghi là đúng, ai là người lái xe, xe ở đâu, hay xe đến và rời đi lúc nào.",
+    "remove": "Xoá",
+    "removeConfirm": "Xoá bản ghi được chia sẻ này khỏi điện thoại? Bạn có thể mở lại liên kết để lấy lại."
+  },
+  "handover": {
+    "action": "Giao xe cho người khác",
+    "intro": "Nhập người sẽ lái xe tiếp theo. ParkProof ký thông tin này cùng bản ghi, như lời khai của chính bạn. ParkProof không kiểm tra, và chữ ký không cho thấy ai đã lái xe. Bản ghi vẫn đang hoạt động.",
+    "nameLabel": "Tên người lái tiếp theo",
+    "nameRequired": "Hãy nhập tên người lái tiếp theo.",
+    "submit": "Ghi lại việc giao xe",
+    "failed": "Không thể thêm việc giao xe vào bản ghi này.",
+    "done": "Bản ghi của bạn giờ ghi rằng xe đã được giao cho {{to_driver}}. ParkProof sẽ ký khi điện thoại của bạn có mạng. Bản ghi vẫn đang hoạt động.",
+    "doneFromTo": "Bản ghi của bạn giờ ghi rằng {{from_driver}} đã giao xe cho {{to_driver}}. ParkProof sẽ ký khi điện thoại của bạn có mạng. Bản ghi vẫn đang hoạt động.",
+    "fromDriver": "Người giao xe: {{from_driver}}, người lái mà bản ghi này hiện đang ghi.",
+    "offerShare": "Bạn có thể gửi cho người đó một liên kết đến vị trí xe.",
+    "line": "Bản ghi của bạn nói xe đã được giao cho {{to_driver}} lúc {{time}} (đồng hồ điện thoại).",
+    "lineFromTo": "Bản ghi của bạn nói {{from_driver}} đã giao xe cho {{to_driver}} lúc {{time}} (đồng hồ điện thoại)."
   }
 }

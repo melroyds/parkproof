@@ -247,6 +247,11 @@
       "heading": "Prova di pagamento o permesso",
       "toggle": "Prova di pagamento o permesso (facoltativo)",
       "addMeterTicketOrPermit": "Aggiungi una foto del biglietto del parcheggio o del permesso (facoltativo)"
+    },
+    "driver": {
+      "label": "Chi è alla guida? (facoltativo)",
+      "placeholder": "Nome",
+      "help": "Salvato con questo record. ParkProof non lo verifica."
     }
   },
   "reminders": {
@@ -642,7 +647,10 @@
         "signCondition": "Condizione del cartello",
         "proof": "Prova di pagamento o permesso",
         "conditionPhotos": "Foto delle condizioni dell'auto",
-        "damageNote": "Danni annotati dal conducente"
+        "damageNote": "Danni annotati dal conducente",
+        "driver": "Conducente (inserito sul telefono, non verificato)",
+        "handover": "Consegna dell'auto (inserita sul telefono, non verificata)",
+        "handoverSigned": "Parte di consegna firmata da ParkProof (orologio del server)"
       },
       "locationSourceValue": {
         "manuallyEntered": "Inserito manualmente",
@@ -685,7 +693,9 @@
         "noteOnReturn": "Al ritorno, con le parole del conducente: {{note}}",
         "notSignedYet": "(non ancora firmato)",
         "partRejected": "(non è stato possibile firmare questa parte)",
-        "notSigned": "(non firmato)"
+        "notSigned": "(non firmato)",
+        "handoverTo": "Consegnata a {{to_driver}}: {{time}} (orologio del telefono).",
+        "handoverFromTo": "{{from_driver}} ha consegnato l'auto a {{to_driver}}: {{time}} (orologio del telefono)."
       },
       "carPhotoCaptionTime": "Registrato {{time}} (orologio del telefono)",
       "confidence": {
@@ -799,6 +809,10 @@
       "notSigned": "Impronta digitale non firmata",
       "rejected": "Non è stato possibile firmare questa parte",
       "signedNote": "Una foto firmata mostra che la foto esisteva già al momento della firma. Non mostra chi abbia causato un eventuale danno."
+    },
+    "shared": {
+      "field": "Condiviso con te",
+      "madeElsewhere": "Questo record è stato creato sul telefono di un'altra persona."
     }
   },
   "time": {
@@ -1444,5 +1458,68 @@
     "signInCopy": "Accedi per fare il backup dei tuoi record e vederli sugli altri dispositivi. Niente in questa pagina richiede un account.",
     "signIn": "Accedi",
     "privacyCta": "Apri policy sulla privacy"
+  },
+  "share": {
+    "action": "Condividi dove si trova l'auto",
+    "confirm": "Chiunque abbia questo link può vedere dove è parcheggiata l'auto, chi l'ha parcheggiata e fino a quando. Funziona per chiunque lo riceva inoltrato e non puoi disattivarlo.",
+    "shareButton": "Condividi il link",
+    "shareText": "Dove è parcheggiata l'auto, da ParkProof.",
+    "notSigned": "Questo record non è ancora firmato. Potrai condividerlo quando ParkProof lo avrà firmato.",
+    "tooLarge": "Questo record è troppo grande per condividerlo con un link.",
+    "copied": "Link copiato. Incollalo in un messaggio per condividerlo.",
+    "copyManually": "Copia questo link e invialo.",
+    "linkFieldLabel": "Link da condividere",
+    "permitSafeguard": "Per questo parcheggio è stato usato un permesso di parcheggio accessibile. Se il titolare del permesso non sarà in auto, togli il permesso dal cruscotto prima che qualcuno guidi l'auto.",
+    "receivedTitle": "Dove si trova l'auto",
+    "checking": "Controllo del link…",
+    "banner": "Condiviso da {{driver}}: {{time}}. È un'istantanea e non si aggiorna. L'auto potrebbe essere stata spostata.",
+    "bannerNoDriver": "Condiviso: {{time}}. È un'istantanea e non si aggiorna. L'auto potrebbe essere stata spostata.",
+    "bannerNoTime": "È un'istantanea e non si aggiorna. L'auto potrebbe essere stata spostata.",
+    "tampered": "Questo link è stato modificato da quando è stato condiviso",
+    "newerVersion": "Questo link è stato creato da una versione più recente di ParkProof",
+    "unreadable": "Questo link di condivisione non si può leggere. Chiedi a chi l'ha inviato di condividerlo di nuovo.",
+    "signedHeading": "Dettagli firmati",
+    "signedNote": "ParkProof ha firmato questi dettagli: {{time}}. La firma mostra che da allora non sono cambiati. Non mostra che siano veri, chi guidava, dove si trovava l'auto, né quando è arrivata o partita.",
+    "signedNoteNoTime": "La firma mostra che questi dettagli non sono cambiati da quando ParkProof li ha firmati. Non mostra che siano veri, chi guidava, dove si trovava l'auto, né quando è arrivata o partita.",
+    "field": {
+      "place": "Dove è stato registrato",
+      "arrived": "Registrato",
+      "limit": "Limite letto dal cartello",
+      "limitRecorded": "Limite in questo record",
+      "driver": "Conducente",
+      "rules": "Lettura del cartello",
+      "standardLimit": "Limite standard del cartello",
+      "ended": "Partenza"
+    },
+    "permitTimeNote": "Questo limite include tempo in più dato da un permesso. Senza il permesso vale il limite standard del cartello. Secondo chi ha inviato il link, termina: {{time}}.",
+    "phoneClock": "{{time}} (orologio del telefono)",
+    "noLimit": "Nessun limite registrato",
+    "noPlace": "Nessuna posizione registrata",
+    "directions": "Indicazioni",
+    "unsignedHeading": "Dal mittente, non firmato",
+    "endedValue": "Il mittente ha toccato \"Ho lasciato il posto\": {{time}} (orologio del telefono).",
+    "saved": "Salvato nei tuoi record di parcheggio come \"Condiviso con te\". Se riapri il link, viene aggiornato.",
+    "keptNewer": "Hai già una copia più recente di questo record da un link più nuovo, quindi è stata mantenuta quella.",
+    "ownRecord": "Questo link è di un record già salvato su questo telefono, quindi non è stato aggiunto di nuovo.",
+    "saveFailed": "Non è stato possibile salvare una copia su questo telefono.",
+    "badge": "Condiviso con te",
+    "check": "Verifica la firma",
+    "checkValid": "La firma è valida. Nulla è cambiato da quando ParkProof ha firmato. Questo non mostra che quanto dice il record sia vero, chi guidava, dove si trovava l'auto, né quando è arrivata o partita.",
+    "remove": "Rimuovi",
+    "removeConfirm": "Rimuovere questo record condiviso da questo telefono? Puoi riaprire il link per recuperarlo."
+  },
+  "handover": {
+    "action": "Consegna l'auto",
+    "intro": "Inserisci chi prenderà l'auto dopo. ParkProof lo firma con questo record, come tua dichiarazione. ParkProof non lo verifica, e la firma non mostra chi era alla guida. Il record resta attivo.",
+    "nameLabel": "Nome del prossimo conducente",
+    "nameRequired": "Inserisci il nome del prossimo conducente.",
+    "submit": "Registra la consegna",
+    "failed": "Non è stato possibile aggiungere la consegna a questo record.",
+    "done": "Il tuo record ora dice che l'auto è stata consegnata a {{to_driver}}. ParkProof lo firma quando il telefono è online. Il record resta attivo.",
+    "doneFromTo": "Il tuo record ora dice che {{from_driver}} ha consegnato l'auto a {{to_driver}}. ParkProof lo firma quando il telefono è online. Il record resta attivo.",
+    "fromDriver": "Consegnata da: {{from_driver}}, il conducente indicato ora in questo record.",
+    "offerShare": "Puoi inviare a questa persona un link a dove si trova l'auto.",
+    "line": "Il tuo record dice che l'auto è stata consegnata a {{to_driver}}: {{time}} (orologio del telefono).",
+    "lineFromTo": "Il tuo record dice che {{from_driver}} ha consegnato l'auto a {{to_driver}}: {{time}} (orologio del telefono)."
   }
 }

@@ -28,6 +28,9 @@ import LoadingProgress from './components/LoadingProgress'
 import NoReadableSign from './components/NoReadableSign'
 import RecurringReminders from './components/RecurringReminders'
 import HomeMenu from './components/HomeMenu'
+import ShareSheet from './components/ShareSheet'
+import SharedLinkView from './components/SharedLinkView'
+import SharedRecordScreen from './components/SharedRecordScreen'
 import { refreshInterpretation, translateSign } from './lib/claude'
 import {
   deleteSession,
@@ -180,6 +183,12 @@ type View =
   | { name: 'about' }
   /** Street sweeping and weekly reminders: the list and its editor (T5a). */
   | { name: 'recurring' }
+  /**
+   * A share link opened on this device (T7): `token` is the text after
+   * `#share=`, read at startup (or on hashchange) and already cleared from
+   * the address bar.
+   */
+  | { name: 'shared'; token: string }
   | { name: 'error'; message: string; offline?: boolean }
 
 /**
@@ -267,14 +276,33 @@ function Toast({ message, onClose }: { message: string | null; onClose: () => vo
   )
 }
 
+/**
+ * Views a share link opened in an already open tab may replace at once
+ * (T7). Every other view is mid-flow (a scan being read, the logger with
+ * unsaved photos, a form being filled in): there the link waits, and opens
+ * when the driver is back on one of these.
+ */
+const SHARE_SAFE_VIEWS: ReadonlySet<View['name']> = new Set<View['name']>([
+  'home',
+  'history',
+  'actives',
+  'session',
+  'shared',
+  'privacy',
+  'about',
+  'error',
+])
+
 function App() {
-  // Deep link from a reminder notification (?session=) or the landing footer
-  // (?privacy=open, ?feedback=open). Read once, at first render, so the first
-  // paint is the right screen; the effect below then cleans the URL.
+  // Deep link from a reminder notification (?session=), the landing footer
+  // (?privacy=open, ?feedback=open) or a share link (#share=, T7). Read once,
+  // at first render, so the first paint is the right screen; the effect
+  // below then cleans the URL.
   const [initialLink] = useState(() =>
-    typeof window === 'undefined' ? null : parseDeepLink(window.location.search),
+    typeof window === 'undefined' ? null : parseDeepLink(window.location.search, window.location.hash),
   )
   const [view, setView] = useState<View>(() => {
+    if (initialLink?.kind === 'share') return { name: 'shared', token: initialLink.token }
     if (initialLink?.kind === 'session') {
       const linked = loadSessions().find((s) => s.id === initialLink.sessionId)
       if (linked) return { name: 'session', session: linked }
@@ -287,6 +315,23 @@ function App() {
   useEffect(() => {
     if (initialLink) clearDeepLinkParams()
   }, [initialLink])
+  // "Share where the car is" from the home card's Share icon (T7): the
+  // record whose share sheet is open.
+  const [shareSheet, setShareSheet] = useState<ParkingSession | null>(null)
+  // A share link opened in a tab where the app is already open only changes
+  // the fragment (no reload), so it is picked up here too. It waits here
+  // until the driver is somewhere it can replace (see SHARE_SAFE_VIEWS).
+  const [pendingShare, setPendingShare] = useState<string | null>(null)
+  useEffect(() => {
+    const onHashChange = () => {
+      const link = parseDeepLink('', window.location.hash)
+      if (link?.kind !== 'share') return
+      clearDeepLinkParams()
+      setPendingShare(link.token)
+    }
+    window.addEventListener('hashchange', onHashChange)
+    return () => window.removeEventListener('hashchange', onHashChange)
+  }, [])
   // Transient save-time notice (quota recovery, photo-sync failure). Auto-clears.
   const [notice, setNotice] = useState<string | null>(null)
   // The "I've left" departure sheet, open over home or the record screen.
@@ -294,6 +339,17 @@ function App() {
   // A sheet the record screen opened itself (the add-photo sheets). The
   // backup prompt waits while it is open: one dialog at a time.
   const [recordSheetOpen, setRecordSheetOpen] = useState(false)
+  // Open a waiting share link once nothing would be lost by leaving: a
+  // scan in flight, the logger's unsaved photos, a form or an open sheet
+  // keep it waiting until the driver is back on a view it can replace.
+  // Adjusting state during render (not in an effect), so the shared view
+  // is the next paint.
+  const shareCanOpen = SHARE_SAFE_VIEWS.has(view.name) && !departureSheet && !recordSheetOpen && !feedbackOpen
+  if (pendingShare && shareCanOpen) {
+    setPendingShare(null)
+    setShareSheet(null)
+    setView({ name: 'shared', token: pendingShare })
+  }
   // Set when a signed-in user's first cloud sync couldn't reach their sessions,
   // so the home view offers a retry instead of silently showing the first-time
   // landing as if they had no data.
@@ -856,6 +912,12 @@ function App() {
       console.warn('[storage] could not delete record:', err)
       return
     }
+    // A shared copy (T7) lives on this device only: it was never uploaded
+    // and has no reminders, so there is nothing else to undo.
+    if (session.shared_from) {
+      setView({ name: 'history' })
+      return
+    }
     // Fire-and-forget; the local delete is authoritative for this device.
     if (auth.user) {
       void deleteCloudSession(session.id).catch((err) => {
@@ -1096,6 +1158,29 @@ function App() {
     )
   }
 
+  if (view.name === 'shared') {
+    return (
+      <main className="min-h-screen">
+        {/* Keyed by the link, so a second link opened meanwhile starts afresh. */}
+        <SharedLinkView key={view.token} token={view.token} onDone={() => setView({ name: 'home' })} />
+      </main>
+    )
+  }
+
+  if (view.name === 'session' && view.session.shared_from) {
+    // A read-only copy from a share link (T7 item 4): countdown, Directions,
+    // "Check the signature" and Remove only.
+    return (
+      <main className="min-h-screen">
+        <SharedRecordScreen
+          session={view.session}
+          onBack={() => setView({ name: 'history' })}
+          onRemove={handleDeleteRecord}
+        />
+      </main>
+    )
+  }
+
   if (view.name === 'session') {
     return (
       <main className="min-h-screen">
@@ -1323,8 +1408,7 @@ function App() {
         )}
         {/* Home layout (T4 item 9), first: the active card, or the workday
             card while a workday is active (T6b puts it here, in place of
-            this one). The card gains only a Share icon, which shows once T7
-            passes onShare. */}
+            this one). The card gains only a Share icon (T7). */}
         {primaryActive && (
           <div className="w-full mb-6">
             <ActiveSessionCard
@@ -1334,8 +1418,9 @@ function App() {
               onShowMore={() => setView({ name: 'actives' })}
               onEndSession={(s) => openDepartureSheet(s, 'active.iveLeftConfirm')}
               onRecheck={handleReuseSession}
-              // Share slot (T4 item 9): T7 passes onShare here, and the card
-              // shows its Share icon beside the "+N more" pill.
+              // Share slot (T4 item 9): the card shows its Share icon
+              // beside the "+N more" pill, and the sheet asks first (T7).
+              onShare={(s) => setShareSheet(getSession(s.id) ?? s)}
             />
           </div>
         )}
@@ -1451,7 +1536,14 @@ function App() {
         }}
       />
       {departureSheetView}
-      {!departureSheet && !feedbackOpen && backupPrompt}
+      {shareSheet && (
+        <ShareSheet
+          session={shareSheet}
+          onClose={() => setShareSheet(null)}
+          returnFocus={() => firstFocusTarget(HOME_SCAN_ID)}
+        />
+      )}
+      {!departureSheet && !feedbackOpen && !shareSheet && backupPrompt}
       <Toast message={notice} onClose={() => setNotice(null)} />
     </main>
   )

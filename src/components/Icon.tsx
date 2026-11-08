@@ -13,6 +13,7 @@ export type IconName =
   | 'repeat'
   | 'settings'
   | 'share'
+  | 'key'
 
 interface Props {
   name: IconName
@@ -103,11 +104,21 @@ const PATHS: Record<IconName, ReactNode> = {
       <circle cx="8.8" cy="16.5" r="2.2" />
     </>
   ),
-  // A box with an arrow out of it: share (T7 uses it on the home card).
+  // An arrow leaving a tray: send this somewhere else (T7 share links).
   share: (
     <>
-      <path d="M12 14.5v-11M8 7.5l4-4 4 4" />
-      <path d="M8 10.5H6.5A2.5 2.5 0 0 0 4 13v5a2.5 2.5 0 0 0 2.5 2.5h11A2.5 2.5 0 0 0 20 18v-5a2.5 2.5 0 0 0-2.5-2.5H16" />
+      <path d="M12 14.5V3.5" />
+      <path d="m8 7.5 4-4 4 4" />
+      <path d="M8.5 10.5H7A2.5 2.5 0 0 0 4.5 13v5A2.5 2.5 0 0 0 7 20.5h10a2.5 2.5 0 0 0 2.5-2.5v-5A2.5 2.5 0 0 0 17 10.5h-1.5" />
+    </>
+  ),
+  // A car key: the round bow and a toothed blade (T7, hand the car over).
+  key: (
+    <>
+      <circle cx="8" cy="15.5" r="4.5" />
+      <path d="m11.2 12.3 8.3-8.3" />
+      <path d="m16.5 7 2.5 2.5" />
+      <path d="m14 9.5 2 2" />
     </>
   ),
 }

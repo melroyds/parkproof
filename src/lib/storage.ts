@@ -282,6 +282,9 @@ export function subscribeStorageRecovered(listener: (report: QuotaRecoveryReport
  * because the photo bytes are what the pending signature commits to.
  */
 export function hasUnsignedEvidence(session: ParkingSession): boolean {
+  // A read-only shared copy (T7) is never signed here: it holds the
+  // sender's bundle, has no photos, and can be fetched again from its link.
+  if (session.shared_from) return false
   if (!session.signature) return true
   const addenda = session.addenda
   if (!Array.isArray(addenda)) return false
@@ -305,6 +308,13 @@ export function hasUnsignedEvidence(session: ParkingSession): boolean {
  *     fine arrives), or open-ended with no expiry
  *   - any record whose evidence isn't fully signed (`hasUnsignedEvidence`)
  *
+ * Read-only shared copies (T7) are never on home, hold no photos and can
+ * be opened again from their link, so a phase 0 evicts them first, oldest
+ * received first, before any photo of the driver's own is stripped. A
+ * write that only stores a shared copy (`sharedOnly`) runs phase 0 alone:
+ * someone else's record must never cost the driver their own evidence.
+ * `keepId` is the record being written, never a victim.
+ *
  * Victims are tracked by id, never by array index, so evicting one record
  * can't shift the next victim onto a different (possibly active) record.
  * An evicted record's photo-store photos are deleted too, once the write
@@ -318,6 +328,7 @@ export function hasUnsignedEvidence(session: ParkingSession): boolean {
 function persistWithQuotaRecovery(
   input: ParkingSession[],
   now: number = Date.now(),
+  options: { sharedOnly?: boolean; keepId?: string } = {},
 ): QuotaRecoveryReport {
   let sessions = input
   const trimmed = new Set<string>()
@@ -360,15 +371,45 @@ function persistWithQuotaRecovery(
     const ms = new Date(s.expires_at).getTime()
     return Number.isFinite(ms) && ms + ACTIVE_AFTER_EXPIRY_MS <= now
   }
-  const victimIds = sessions
-    .filter((s) => isOffHome(s) && !hasUnsignedEvidence(s))
-    .sort((a, b) => tombstoneTime(a) - tombstoneTime(b))
+  const receivedTime = (s: ParkingSession): number => {
+    const ms = new Date(s.shared_from?.received_at ?? '').getTime()
+    return Number.isFinite(ms) ? ms : 0
+  }
+  // Shared copies (never on home, never signed here, opened again from
+  // their link), oldest received first.
+  const copyIds = sessions
+    .filter((s) => !!s.shared_from && s.id !== options.keepId)
+    .sort((a, b) => receivedTime(a) - receivedTime(b))
     .map((s) => s.id)
+  // The driver's own records off home with fully signed evidence, oldest
+  // first. None when only a shared copy is being written.
+  const victimIds = options.sharedOnly
+    ? []
+    : sessions
+        .filter((s) => !s.shared_from && s.id !== options.keepId && isOffHome(s) && !hasUnsignedEvidence(s))
+        .sort((a, b) => tombstoneTime(a) - tombstoneTime(b))
+        .map((s) => s.id)
 
   const patchById = (id: string, patch: Partial<ParkingSession>) => {
     sessions = sessions.map((s) => (s.id === id ? { ...s, ...patch } : s))
   }
   const byId = (id: string) => sessions.find((s) => s.id === id)
+  const evictedIds: string[] = []
+  const evict = (id: string): boolean => {
+    sessions = sessions.filter((s) => s.id !== id)
+    // An evicted record is counted once, as evicted, not also as trimmed.
+    trimmed.delete(id)
+    evicted++
+    evictedIds.push(id)
+    if (!tryWrite()) return false
+    for (const gone of evictedIds) releaseRecordPhotos(gone)
+    return true
+  }
+
+  // Phase 0: evict shared copies, before anything of the driver's own.
+  for (const id of copyIds) {
+    if (evict(id)) return recovered()
+  }
 
   // Phase 1: strip car_photo (the user-supplied second photo).
   for (const id of victimIds) {
@@ -392,17 +433,8 @@ function persistWithQuotaRecovery(
   }
 
   // Phase 3: evict whole records, oldest first.
-  const evictedIds: string[] = []
   for (const id of victimIds) {
-    sessions = sessions.filter((s) => s.id !== id)
-    // An evicted record is counted once, as evicted, not also as trimmed.
-    trimmed.delete(id)
-    evicted++
-    evictedIds.push(id)
-    if (tryWrite()) {
-      for (const gone of evictedIds) releaseRecordPhotos(gone)
-      return recovered()
-    }
+    if (evict(id)) return recovered()
   }
 
   // Genuinely full: even with every eligible record gone we can't fit.
@@ -601,6 +633,95 @@ export function setArrivalSignature(sessionId: string, bundle: SignatureBundle):
   return true
 }
 
+// ─── Shared copies (build spec T7 item 4) ─────────────────────────────────
+
+export type SharedCopyResult =
+  /** No copy of that record was stored: this one was added (newest first). */
+  | { status: 'created'; record: ParkingSession }
+  /** A copy was stored: it now holds this link's data, under its own local id. */
+  | { status: 'updated'; record: ParkingSession }
+  /** The stored copy came from a later link: it was kept as it was. */
+  | { status: 'kept_newer'; record: ParkingSession }
+  /** The record is saved on this device as the driver's own: nothing was stored. */
+  | { status: 'own_record'; record: ParkingSession }
+
+/**
+ * Store a read-only copy of someone else's record, opened from a share
+ * link. Copies are deduplicated on `shared_from.original_session_id`:
+ * opening the link again updates the stored copy, keeping its local id,
+ * unless the stored copy came from a later link (its `shared_at` is
+ * later), which is kept. A record saved here as the driver's own (its id
+ * is the original id) is never shadowed by a copy of itself.
+ *
+ * `shared_at` is the sender's phone time and isn't signed, so a forwarded
+ * link can carry any value. One later than its own receive time (plus
+ * SHARED_AT_SKEW_MS for clock drift) can't be a real share time and never
+ * decides which copy is newer: such a link never keeps a later genuine
+ * link out.
+ *
+ * A copy never costs the driver their own records: when storage is full,
+ * only other shared copies may be evicted to fit it, and otherwise this
+ * throws StorageFullError with nothing written.
+ *
+ * The copy must carry `shared_from` (throws otherwise). Its fields are the
+ * caller's (shared-record.ts builds them from the verified payload).
+ */
+export function upsertSharedCopy(copy: ParkingSession): SharedCopyResult {
+  const from = copy.shared_from
+  if (!from) throw new Error('upsertSharedCopy needs a record with shared_from')
+  const sessions = loadSessions()
+  const own = sessions.find((s) => s.id === from.original_session_id && !s.shared_from)
+  if (own) return { status: 'own_record', record: own }
+  const idx = sessions.findIndex((s) => s.shared_from?.original_session_id === from.original_session_id)
+  if (idx === -1) {
+    if (sessions.some((s) => s.id === copy.id)) throw new DuplicateRecordError(copy.id)
+    sessions.unshift(copy)
+    persistWithQuotaRecovery(sessions, Date.now(), { sharedOnly: true, keepId: copy.id })
+    notifyRecordsChanged(copy.id)
+    return { status: 'created', record: copy }
+  }
+  const stored = sessions[idx]
+  const storedAt = plausibleSharedAt(stored.shared_from)
+  const incomingAt = plausibleSharedAt(from)
+  if (storedAt !== null && incomingAt !== null && incomingAt < storedAt) {
+    return { status: 'kept_newer', record: stored }
+  }
+  const next: ParkingSession = { ...copy, id: stored.id }
+  sessions[idx] = next
+  persistWithQuotaRecovery(sessions, Date.now(), { sharedOnly: true, keepId: stored.id })
+  notifyRecordsChanged(stored.id)
+  return { status: 'updated', record: next }
+}
+
+/** How far a share time may run ahead of its receive time (phone clocks drift). */
+export const SHARED_AT_SKEW_MS = 5 * 60 * 1000
+
+/**
+ * A copy's share time (ms) when it can be used to order copies: a time no
+ * later than when this device received the link, plus SHARED_AT_SKEW_MS.
+ * Null otherwise (missing, unreadable, or in the future).
+ */
+function plausibleSharedAt(from: ParkingSession['shared_from']): number | null {
+  const at = Date.parse(from?.shared_at ?? '')
+  const received = Date.parse(from?.received_at ?? '')
+  if (!Number.isFinite(at) || !Number.isFinite(received)) return null
+  return at <= received + SHARED_AT_SKEW_MS ? at : null
+}
+
+/**
+ * Is this record active, as the home screen decides it (loadActiveSessions
+ * lists exactly these)? The driver's own record, not ended, and either
+ * expiring in the future, expired less than ACTIVE_AFTER_EXPIRY_MS ago, or
+ * a no-sign record with no expiry. A read-only shared copy never is.
+ * "Hand the car over" (T7 item 5) uses the same rule.
+ */
+export function isActiveRecord(session: ParkingSession, now: number = Date.now()): boolean {
+  if (session.ended_at || session.shared_from) return false
+  if (!session.expires_at) return !!session.no_sign
+  const ms = new Date(session.expires_at).getTime()
+  return Number.isFinite(ms) && ms + ACTIVE_AFTER_EXPIRY_MS > now
+}
+
 /**
  * Records that are currently in progress, i.e. shown on the home screen.
  * Three groups, in this order (App shows the first as the main card):
@@ -614,10 +735,11 @@ export function setArrivalSignature(sessionId: string, bundle: SignatureBundle):
  *      then its card asks "I've left".
  *
  * In every group an explicit `ended_at` excludes the record: the driver has
- * signalled they've left.
+ * signalled they've left. A read-only shared copy (T7) is never active
+ * here: it is someone else's park, shown in History only.
  */
 export function loadActiveSessions(now: number = Date.now()): ParkingSession[] {
-  const all = loadSessions().filter((s) => !s.ended_at)
+  const all = loadSessions().filter((s) => isActiveRecord(s, now))
   const expiryMs = (s: ParkingSession): number =>
     s.expires_at ? new Date(s.expires_at).getTime() : NaN
   const live = all

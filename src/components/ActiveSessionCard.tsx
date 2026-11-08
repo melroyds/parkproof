@@ -36,7 +36,8 @@ interface Props {
   onRecheck?: (session: ParkingSession) => void
   /**
    * "Share where the car is" (T7). The home card gains only this Share icon
-   * (T4 item 9); it renders when the handler is passed.
+   * (T4 item 9). Tapping it makes App open the share sheet, which asks
+   * before any link is made. No icon without it.
    */
   onShare?: (session: ParkingSession) => void
 }
@@ -208,12 +209,14 @@ export default function ActiveSessionCard({
       )
     ) : null
   // The Share icon (T7 wires it) sits beside the pill, top right, outside
-  // the card's "open" button for the same reason as the pill.
+  // the card's "open" button for the same reason as the pill. Its name is
+  // the share sheet's title, so the icon and the sheet it opens agree.
   const shareButton = onShare ? (
     <button
       type="button"
       onClick={() => onShare(session)}
-      aria-label={t('active.shareAria')}
+      aria-label={t('share.action')}
+      aria-haspopup="dialog"
       className="bg-white/10 hover:bg-white/20 active:bg-white/15 rounded-full min-h-[44px] min-w-[44px] inline-flex items-center justify-center transition-colors shrink-0"
     >
       <Icon name="share" className="w-5 h-5" strokeWidth={2.25} />

@@ -44,6 +44,8 @@ import { createLimiter, type Limiter } from './concurrency'
 import { isNoSignReadRecord, signIssuesOf, signStatusOf } from './sign-result'
 import { plainNoteText } from '../../lambda/sign-reading.js'
 import { base64Utf8, isCompleteBundle, linkFileNames, signedLinks, type SignedLink } from './signed-links'
+import { recordDriver, type RecordDriver } from './notice-compare'
+import { handoverParts, type HandoverPart } from './handover'
 
 const MARGIN = 40
 
@@ -361,6 +363,9 @@ export function sessionRows(
   const dash = t('pdf.common.dash')
   const location = session.location
   return [
+    // A read-only copy from a share link (T7 item 4) says so first: its
+    // details and signature are the sender's.
+    ...(session.shared_from ? [[t('pdf.shared.field'), t('pdf.shared.madeElsewhere')] as [string, string]] : []),
     [t('pdf.evidence.field.arrivedAt'), evidenceTime(times.arrived_at, timezone)],
     [t('pdf.evidence.field.arrivalSigned'), signingValue(times.arrival_signing, timezone, t)],
     [t('pdf.evidence.field.expiresAt'), times.expires_at ? evidenceTime(times.expires_at, timezone) : dash],
@@ -401,7 +406,84 @@ export function sessionRows(
     // The proof of payment or permit, the condition photos and the
     // driver's damage notes (T2), when the record has them.
     ...evidenceRows(session, t),
+    // Who was driving, as entered on the phone, and the handovers since
+    // (T7 item 7), when the record has them.
+    ...driverRows(session, t),
+    ...handoverRows(session, timezone, t),
   ]
+}
+
+// ─── The driver and handovers (T7) ──────────────────────────────────────────
+
+/**
+ * A name as the PDFs print it: what the driver typed, with arrows, symbols
+ * and emoji (which no PDF font draws) taken out, as sign notes are.
+ */
+function pdfName(name: string | null): string | null {
+  const plain = plainNoteText(name)
+  return plain.length > 0 ? plain : null
+}
+
+/** The mark after a driver's name that isn't signed by ParkProof (N2). */
+const DRIVER_MARK_KEYS: Readonly<Record<RecordDriver['signing'], string | null>> = {
+  signed: null,
+  dev_key: null,
+  pending: 'pdf.evidence.value.notSignedYet',
+  not_signed: 'pdf.evidence.value.notSigned',
+}
+
+/**
+ * The "Driver (entered on the phone, not checked)" row (build spec T7 item
+ * 7): who the record says was driving when the park was logged, read from
+ * the signed arrival details once signed (notice-compare's recordDriver,
+ * the same reading as the notice screen's driver line), with "(not signed
+ * yet)" or "(not signed)" after it otherwise. None when nobody was named,
+ * and none on a shared copy (someone else's record).
+ */
+export function driverRows(session: ParkingSession, t: TFunction): [string, string][] {
+  const driver = recordDriver(session)
+  const name = driver ? pdfName(driver.name) : null
+  if (!driver || !name) return []
+  const mark = DRIVER_MARK_KEYS[driver.signing]
+  return [[t('pdf.evidence.field.driver'), mark ? `${name} ${t(mark)}` : name]]
+}
+
+/** A handover's signing, in the shape the "signed by ParkProof (server clock)" rows take. */
+function handoverSigning(part: HandoverPart): ArrivalSigning {
+  switch (part.state) {
+    case 'signed':
+      return { state: 'signed', signed_at: part.signed_at }
+    case 'dev_key':
+      return { state: 'dev_key', signed_at: part.signed_at }
+    case 'rejected':
+      return { state: 'rejected' }
+    default:
+      return { state: 'pending' }
+  }
+}
+
+/**
+ * The handover section (build spec T7 item 7): for each handover, oldest
+ * first, who the driver said handed the car to whom and when they entered
+ * it (phone clock), then ParkProof's signing time for that part (server
+ * clock), "Not signed yet", or "This part couldn't be signed". Signed
+ * values are read from the signed payload (N2). Empty without handovers.
+ */
+export function handoverRows(session: ParkingSession, timezone: string, t: TFunction): [string, string][] {
+  const rows: [string, string][] = []
+  for (const part of handoverParts(session)) {
+    const to = pdfName(part.to_driver) ?? t('pdf.common.dash')
+    const from = pdfName(part.from_driver)
+    const time = evidenceTime(part.handed_over_at, timezone)
+    rows.push([
+      t('pdf.evidence.field.handover'),
+      from
+        ? t('pdf.evidence.value.handoverFromTo', { from_driver: from, to_driver: to, time })
+        : t('pdf.evidence.value.handoverTo', { to_driver: to, time }),
+    ])
+    rows.push([t('pdf.evidence.field.handoverSigned'), signingValue(handoverSigning(part), timezone, t)])
+  }
+  return rows
 }
 
 // ─── Condition and proof photos (T2) ────────────────────────────────────────

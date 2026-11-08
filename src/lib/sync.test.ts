@@ -393,6 +393,24 @@ describe('performInitialSync: records only in the cloud (item 11)', () => {
     expect(isPulledRecord(ID)).toBe(true)
   })
 
+  it("a pulled record replaces this device's shared copy of itself (T7: the driver opened their own link here first)", async () => {
+    const copyOfOwn = record({
+      id: 'copy-of-own',
+      shared_from: { original_session_id: ID, received_at: new Date().toISOString(), shared_at: null, arrival_bundle: null, snapshot: {} },
+    })
+    const otherCopy = record({
+      id: 'copy-of-theirs',
+      shared_from: { original_session_id: 'someone-else', received_at: new Date().toISOString(), shared_at: null, arrival_bundle: null, snapshot: {} },
+    })
+    saveSession(copyOfOwn)
+    saveSession(otherCopy)
+    cloud.rows.set(ID, { ...record() })
+    expect((await performInitialSync()).pulled).toBe(1)
+    // One park, once: the record itself, with no "Shared with you" twin. Other copies stay.
+    expect(loadSessions().map((s) => s.id).sort()).toEqual([ID, 'copy-of-theirs'].sort())
+    expect(getSession(ID)!.shared_from).toBeUndefined()
+  })
+
   it('local-only records upload; shared copies never do', async () => {
     saveSession(record())
     saveSession(record({ id: 'shared-1', shared_from: { original_session_id: 'x', received_at: 't', shared_at: null, arrival_bundle: null, snapshot: {} } }))

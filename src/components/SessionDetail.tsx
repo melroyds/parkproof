@@ -20,6 +20,8 @@ import ScheduledRemindersSection from './ScheduledRemindersSection'
 import RecordPhoto from './RecordPhoto'
 import EvidencePhotos, { PhotoRefMeta } from './EvidencePhotos'
 import AddEvidenceSheet, { type AddEvidenceKind } from './AddEvidenceSheet'
+import ShareSheet from './ShareSheet'
+import HandoverSheet from './HandoverSheet'
 import VerifiedSeal from './VerifiedSeal'
 import ChainPanel from './ChainPanel'
 import DepartureRow from './DepartureRow'
@@ -38,6 +40,27 @@ import { signedTimeOf } from '../lib/chain-view'
 import { formatInZone } from '../lib/time-format'
 import { RECORD_STATUS_ID } from '../lib/focus-targets'
 import { isNoSignReadRecord } from '../lib/sign-result'
+import { canHandOver, handoverParts, type HandoverPart } from '../lib/handover'
+import { recordDriver, type RecordDriver } from '../lib/notice-compare'
+
+/** The "Hand the car over" button's id: focus goes back to it when the share sheet it led to closes. */
+const HANDOVER_BUTTON_ID = 'record-handover'
+
+/** The line under the driver's name when it isn't signed by ParkProof (N2). */
+const DRIVER_SIGNING_KEYS: Readonly<Record<RecordDriver['signing'], string | null>> = {
+  signed: null,
+  dev_key: 'verifier.link.devKey',
+  pending: 'notice.compare.driverPending',
+  not_signed: 'notice.compare.driverNotSigned',
+}
+
+/** The line under a handover that isn't signed by ParkProof (N2). */
+const HANDOVER_SIGNING_KEYS: Readonly<Record<HandoverPart['state'], string | null>> = {
+  signed: null,
+  dev_key: 'verifier.link.devKey',
+  pending: 'notice.compare.handoverPending',
+  rejected: 'verifier.link.rejected',
+}
 
 const NOTE_MAX_LENGTH = 280
 
@@ -117,13 +140,24 @@ export default function SessionDetail({
   // "Add a photo of your ticket or permit", each its own signed part.
   const canAdd = canAddEvidence(session)
   const [addSheet, setAddSheet] = useState<AddEvidenceKind | null>(null)
+  // "Share where the car is" (T7): its sheet asks before any link is made.
+  const [shareOpen, setShareOpen] = useState(false)
+  // "Hand the car over" (T7 item 5): on an active record of the driver's
+  // own, as the home screen decides it (so not on a park that finished
+  // long ago without an I've left tap).
+  const canHand = canHandOver(session, now)
+  const [handoverOpen, setHandoverOpen] = useState(false)
+  // Who the record says was driving, and the handovers since (T7). Signed
+  // values come from the signed parts; each says when it isn't signed.
+  const driver = recordDriver(session)
+  const handovers = handoverParts(session)
   const sheetOpenChange = useRef(onSheetOpenChange)
   useEffect(() => {
     sheetOpenChange.current = onSheetOpenChange
   })
   useEffect(() => {
-    sheetOpenChange.current?.(addSheet !== null)
-  }, [addSheet])
+    sheetOpenChange.current?.(addSheet !== null || shareOpen || handoverOpen)
+  }, [addSheet, shareOpen, handoverOpen])
   useEffect(() => () => sheetOpenChange.current?.(false), [])
   const timeZone = useMemo(() => sessionTimezone(session.location), [session.location])
   // "Ended 5:23 pm AEDT" on the status line (the I've left tap time).
@@ -461,6 +495,42 @@ export default function SessionDetail({
           {/* The I've left tap (phone clock) and, separately, when ParkProof
               signed the departure. Shown once the record has ended. */}
           <DepartureRow session={session} timeZone={timeZone} now={now} />
+          {/* Who was driving, as entered on the phone, and any handovers
+              (T7). The driver's own statements: never worded as checked. */}
+          {driver && (
+            <div>
+              <dt className="text-xs uppercase tracking-widest font-semibold text-ink-600">
+                {t('share.field.driver')}
+              </dt>
+              <dd className="mt-1 text-ink-900 break-words">{driver.name}</dd>
+              <dd className="text-xs text-ink-600 mt-0.5 leading-relaxed">
+                {t('logger.driver.help')}
+                {DRIVER_SIGNING_KEYS[driver.signing] && ` ${t(DRIVER_SIGNING_KEYS[driver.signing] as string)}`}
+              </dd>
+            </div>
+          )}
+          {handovers.length > 0 && (
+            <div>
+              <dt className="text-xs uppercase tracking-widest font-semibold text-ink-600">
+                {t('chain.kind.handover')}
+              </dt>
+              {handovers.map((h) => {
+                const unsigned = HANDOVER_SIGNING_KEYS[h.state]
+                const time = formatInZone(h.handed_over_at, timeZone)
+                return (
+                  <dd key={h.addendum_id} className="mt-1 text-ink-900 break-words">
+                    {/* What the record says, worded as the driver's own statement. */}
+                    {h.from_driver
+                      ? t('handover.lineFromTo', { from_driver: h.from_driver, to_driver: h.to_driver, time })
+                      : t('handover.line', { to_driver: h.to_driver, time })}
+                    {unsigned && <span className="block text-xs text-ink-600 mt-0.5">{t(unsigned)}</span>}
+                  </dd>
+                )
+              })}
+              {/* Entered on the phone: ParkProof doesn't check it, signed or not. */}
+              <dd className="text-xs text-ink-600 mt-1 leading-relaxed">{t('logger.driver.help')}</dd>
+            </div>
+          )}
           <div>
             <dt className="text-xs uppercase tracking-widest font-semibold text-ink-600">
               {t('session.signRules')}
@@ -536,6 +606,59 @@ export default function SessionDetail({
           )}
         </dl>
       </Card>
+
+      {/* Share where the car is (T7 item 2): a link anyone can open, made
+          only after the sheet's confirm. This screen is only ever the
+          driver's own record (a shared copy has its own screen). */}
+      <button
+        type="button"
+        onClick={() => setShareOpen(true)}
+        aria-haspopup="dialog"
+        className="gf-card mb-3 w-full min-h-[48px] text-paper-50 font-medium py-3 px-5 flex items-center gap-2 transition-colors hover:brightness-110"
+        style={{ background: 'rgba(255,255,255,0.055)' }}
+      >
+        <Icon name="share" className="w-5 h-5 shrink-0 text-[#A9CFBE]" />
+        <span className="text-left leading-snug">{t('share.action')}</span>
+      </button>
+      {shareOpen && (
+        <ShareSheet
+          session={session}
+          onClose={() => setShareOpen(false)}
+          returnFocus={() => document.getElementById(HANDOVER_BUTTON_ID)}
+        />
+      )}
+
+      {/* Hand the car over (T7 item 5): only on an active record. Records
+          the next driver as a signed part, then offers the share link. The
+          record stays active. */}
+      {canHand && (
+        <button
+          id={HANDOVER_BUTTON_ID}
+          type="button"
+          onClick={() => setHandoverOpen(true)}
+          aria-haspopup="dialog"
+          className="gf-card mb-3 w-full min-h-[48px] text-paper-50 font-medium py-3 px-5 flex items-center gap-2 transition-colors hover:brightness-110"
+          style={{ background: 'rgba(255,255,255,0.055)' }}
+        >
+          <Icon name="key" className="w-5 h-5 shrink-0 text-[#A9CFBE]" />
+          <span className="text-left leading-snug">{t('handover.action')}</span>
+        </button>
+      )}
+      {handoverOpen && (
+        <HandoverSheet
+          session={session}
+          onAdded={(id) => {
+            if (user) mirrorSessionUpdateToCloud(id)
+          }}
+          onShare={() => {
+            // One dialog at a time: the share sheet replaces this one.
+            setHandoverOpen(false)
+            setShareOpen(true)
+          }}
+          onClose={() => setHandoverOpen(false)}
+          returnFocus={() => document.getElementById(HANDOVER_BUTTON_ID)}
+        />
+      )}
 
       {/* Note — user-supplied context. Soft-asks for it on empty so people
           remember to add the WHY rather than just the WHEN-and-WHERE. */}
