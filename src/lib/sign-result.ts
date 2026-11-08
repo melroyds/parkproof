@@ -25,7 +25,7 @@ import { NO_READABLE_SIGN_STATUSES, RECURRING_KINDS, SIGN_READING_CAPS, WEEKDAYS
 import { fitText } from './evidence-chain'
 
 /** Anything that may carry a sign reading: an answer, a variant-merged answer or a saved record. */
-interface MaybeSignReading {
+export interface MaybeSignReading {
   sign_status?: unknown
   sign_issues?: unknown
   recurring_restrictions?: unknown

@@ -60,6 +60,18 @@ import {
   readPriorSignContext,
   validateTranslateExtras,
 } from './sign-reading.js'
+import {
+  RECURRING_SCHEDULE_DAYS,
+  parseRecurringPushRequest,
+  recurringCronPlans,
+  recurringDispatchDecision,
+  recurringDispatchInput,
+  recurringScheduleNames,
+  recurringTopicId,
+} from './recurring-schedule.js'
+// Lowercase only (rule ids are lowercase uuids). Aliased: the job-status
+// routes keep their own case-insensitive UUID_RE further down (T8).
+import { UUID_RE as LOWERCASE_UUID_RE } from './addendum-schema.js'
 
 // canonicalize lives in addendum-schema.js so the browser uses the very same
 // function; re-exported here for existing importers and tests.
@@ -2154,8 +2166,11 @@ const PUSH_MAX_REMINDERS_PER_SESSION = 6
 // Allowed chars: [0-9a-zA-Z-_.] (EventBridge rule), max length tuned so the
 // composed `parkproof-push-{session_id}-{i}` name stays under the 64-char
 // EventBridge limit (15 prefix + sid + 2 suffix ≤ 64 → sid ≤ 47).
+// A leading "r-" is refused: `parkproof-push-r-…` names belong to the
+// weekly reminders (T5b), so a record's schedules can never take one of a
+// rule's names. Record ids are UUIDs, which never start with "r-".
 export function isSafeSessionId(s) {
-  return typeof s === 'string' && /^[a-zA-Z0-9._-]{1,47}$/.test(s)
+  return typeof s === 'string' && /^(?!r-)[a-zA-Z0-9._-]{1,47}$/.test(s)
 }
 
 // How long after the parking expiry a reminder is still worth delivering.
@@ -2269,8 +2284,13 @@ export function scheduleOwnerDeviceId(schedule) {
  * assumed, so the caller then changes nothing.
  */
 async function readSessionPushSchedules(session_id, device_id) {
+  return readOwnedSchedules(pushScheduleNames(session_id), device_id)
+}
+
+/** readSessionPushSchedules for any fixed set of names (a weekly rule's slots too). */
+async function readOwnedSchedules(names, device_id) {
   const found = await Promise.all(
-    pushScheduleNames(session_id).map(async (Name) => {
+    names.map(async (Name) => {
       try {
         const schedule = await scheduler().send(new GetScheduleCommand({ Name }))
         return {
@@ -2328,7 +2348,18 @@ function imminentSchedulesToKeep(schedules, reminders, nowMs) {
  * Returns the count actually deleted (excludes not-found).
  */
 async function deletePushSchedules(names, session_id) {
+  return (await deletePushSchedulesReport(names, session_id)).deleted
+}
+
+/**
+ * deletePushSchedules, also saying which deletes failed for a reason other
+ * than not-found (throttling, a server error). The weekly reminder routes
+ * use it: a schedule that survives a cancel would keep firing every week,
+ * so the caller has to hear about it and try again.
+ */
+async function deletePushSchedulesReport(names, session_id) {
   let deleted = 0
+  const failed = []
   await Promise.all(
     names.map((Name) =>
       scheduler()
@@ -2338,13 +2369,14 @@ async function deletePushSchedules(names, session_id) {
         })
         .catch((err) => {
           if (err?.name === 'ResourceNotFoundException') return
+          failed.push(Name)
           console.error(
             `[parkproof.push.cancel.slot_error] session=${session_id} name=${Name} ${err?.message || err}`,
           )
         }),
     ),
   )
-  return deleted
+  return { deleted, failed }
 }
 
 function notOwnerResponse() {
@@ -2667,6 +2699,192 @@ async function handlePushCancel(event) {
     headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
     body: JSON.stringify({ deleted }),
   }
+}
+
+// ─── /push/recurring + /push/recurring/cancel (T5b) ───────────────────────
+// Street sweeping and weekly reminders by push. One rule gets at most two
+// EventBridge cron() schedules, read in the rule's own IANA zone
+// (ScheduleExpressionTimezone), named parkproof-push-r-<rule uuid>-<slot>:
+// slot 0 the evening before, slot 1 before it starts. A 36-char uuid makes
+// a 55-char name, under EventBridge's 64 and inside the Lambda's IAM scope
+// `parkproof-push-*` (setup-push-scheduler.sh). Fortnightly and monthly_nth
+// rules fire every week on their days; the dispatcher decides each time
+// (lambda/recurring-schedule.js recurringDispatchDecision).
+//
+// Ownership (N6) works as for a record's schedules: every existing slot is
+// read first and the request goes ahead only when the device_id in each
+// one's Target Input is the caller's. Schedules end after
+// RECURRING_SCHEDULE_DAYS and delete themselves; the app books again
+// (replace-all) when it is opened, so a phone that stops using ParkProof
+// leaves nothing firing for ever.
+const RECURRING_RATE_LIMIT_PER_MIN = 30
+
+function badRequest(error) {
+  return {
+    statusCode: 400,
+    headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ error }),
+  }
+}
+
+/**
+ * POST /push/recurring: `{ device_id, rule, copy }` (see
+ * parseRecurringPushRequest). Replace-all for one rule: the rule's existing
+ * schedules are read (owner check), deleted, and its new set created.
+ * 200 `{ created: [{ name, reminder, expression, fire_time }], skipped }`,
+ * 400 for a bad body, 403 ERR_NOT_OWNER (nothing changed), 409
+ * ERR_NOT_SUBSCRIBED when the device has no live registration (nothing
+ * changed). A successful booking moves the registration's expiry out.
+ * The cancel route needs no registration: like /push/cancel, it must be
+ * able to remove schedules whatever state the device's registration is in.
+ */
+async function handlePushRecurring(event) {
+  if (!PUSH_SCHEDULER_ROLE_ARN || !PUSH_DISPATCH_LAMBDA_ARN) {
+    return {
+      statusCode: 500,
+      headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        error: 'Scheduler not configured: PUSH_SCHEDULER_ROLE_ARN / PUSH_DISPATCH_LAMBDA_ARN env missing',
+      }),
+    }
+  }
+  const body = typeof event.body === 'string' ? JSON.parse(event.body) : event.body || {}
+  const device_id = parseDeviceId(body)
+  if (!device_id) return badRequest('device_id is required (UUID, 64 chars or fewer)')
+  const parsed = parseRecurringPushRequest(body)
+  if (!parsed.ok) return badRequest(parsed.error)
+  const { rule, copy } = parsed
+
+  // No live registration for this device (no row, an expired one, or the
+  // tombstone of a dead endpoint): refuse before touching any schedule, as
+  // /push/schedule does (field-test fix list, item 1). The app re-sends its
+  // registration and retries once.
+  const nowSec = Math.floor(Date.now() / 1000)
+  if (!(await hasLivePushSubscription(device_id, nowSec))) {
+    console.log(`[parkproof.push.recurring.not_subscribed] ${JSON.stringify({ device_id, rule_id: rule.id })}`)
+    return notSubscribedResponse()
+  }
+
+  const prior = await readOwnedSchedules(recurringScheduleNames(rule.id), device_id)
+  if (!prior.owned) {
+    console.log(`[parkproof.push.recurring.not_owner] ${JSON.stringify({ rule_id: rule.id })}`)
+    return notOwnerResponse()
+  }
+  const removal = await deletePushSchedulesReport(prior.names, recurringTopicId(rule.id))
+
+  const endDate = new Date(Date.now() + RECURRING_SCHEDULE_DAYS * 24 * 60 * 60 * 1000)
+  const created = []
+  // An old schedule that couldn't be deleted is still firing, perhaps for a
+  // reminder this edit removed: report it, so the phone doesn't count the
+  // booking as done and sends the replace-all again.
+  const skipped = removal.failed.map((name) => ({ reason: 'delete error', name }))
+  for (const plan of recurringCronPlans(rule)) {
+    try {
+      await scheduler().send(
+        new CreateScheduleCommand({
+          Name: plan.name,
+          ScheduleExpression: plan.expression,
+          // The cron is wall-clock time in the rule's zone, so a 7 am sweep
+          // stays at 7 am local across daylight saving changes.
+          ScheduleExpressionTimezone: rule.timezone,
+          FlexibleTimeWindow: { Mode: 'OFF' },
+          EndDate: endDate,
+          ActionAfterCompletion: 'DELETE',
+          Target: {
+            Arn: PUSH_DISPATCH_LAMBDA_ARN,
+            RoleArn: PUSH_SCHEDULER_ROLE_ARN,
+            Input: JSON.stringify(recurringDispatchInput({ device_id, rule, copy, plan })),
+          },
+        }),
+      )
+      created.push({ name: plan.name, reminder: plan.reminder, expression: plan.expression, fire_time: plan.fire_time })
+    } catch (err) {
+      console.error(`[parkproof.push.recurring.error] ${err?.message || err}`)
+      skipped.push({ reason: 'scheduler error', reminder: plan.reminder })
+    }
+  }
+
+  // Keep the registration alive as long as these schedules can fire: they
+  // run until endDate, so the row's expiry moves out to a day after it
+  // (the same refresh /push/schedule makes after a booking).
+  if (created.length > 0) {
+    await refreshPushSubscriptionExpiry(device_id, nowSec, endDate.getTime())
+  }
+
+  console.log(
+    `[parkproof.push.recurring] ${JSON.stringify({
+      device_id,
+      rule_id: rule.id,
+      frequency: rule.frequency,
+      timezone: rule.timezone,
+      created: created.length,
+      skipped: skipped.length,
+    })}`,
+  )
+  return {
+    statusCode: 200,
+    headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ created, skipped }),
+  }
+}
+
+/**
+ * POST /push/recurring/cancel: `{ device_id, rule_id }`. Deletes the rule's
+ * schedules (rule deleted, paused, or its notifications switched off),
+ * owner-checked like /push/cancel. 200 `{ deleted }`, 403 ERR_NOT_OWNER, or
+ * 503 ERR_SCHEDULER when a schedule could not be deleted (try again).
+ */
+async function handlePushRecurringCancel(event) {
+  const body = typeof event.body === 'string' ? JSON.parse(event.body) : event.body || {}
+  const device_id = parseDeviceId(body)
+  if (!device_id) return badRequest('device_id is required (UUID, 64 chars or fewer)')
+  const rule_id = typeof body.rule_id === 'string' ? body.rule_id : ''
+  if (!LOWERCASE_UUID_RE.test(rule_id)) return badRequest('rule_id must be a lowercase uuid')
+  const existing = await readOwnedSchedules(recurringScheduleNames(rule_id), device_id)
+  if (!existing.owned) {
+    console.log(`[parkproof.push.recurring_cancel.not_owner] ${JSON.stringify({ rule_id })}`)
+    return notOwnerResponse()
+  }
+  const { deleted, failed } = await deletePushSchedulesReport(existing.names, recurringTopicId(rule_id))
+  console.log(`[parkproof.push.recurring_cancel] ${JSON.stringify({ rule_id, deleted, failed: failed.length })}`)
+  if (failed.length > 0) {
+    // A schedule is still there and would keep firing. Not a 200, so the
+    // phone keeps the rule on its list and cancels again on its next pass.
+    return {
+      statusCode: 503,
+      headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ error: 'ERR_SCHEDULER', deleted, failed: failed.length }),
+    }
+  }
+  return {
+    statusCode: 200,
+    headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ deleted }),
+  }
+}
+
+/**
+ * push-recurring (EventBridge Scheduler, weekly). Decides from the
+ * occurrence date in the rule's zone whether this firing is for a real
+ * occurrence (fortnightly off weeks, skipped weeks of the month and dates
+ * before the anchor send nothing), drops it when it is already stale, and
+ * otherwise hands the push to handlePushDispatch: same subscription lookup,
+ * TTL, urgency and dead-endpoint handling as a record's reminders.
+ */
+export async function handleRecurringPushDispatch(event, nowMs = Date.now()) {
+  const decision = recurringDispatchDecision(event, nowMs)
+  if (!decision.send) {
+    console.log(
+      `[parkproof.push.recurring.skip] ${JSON.stringify({
+        rule_id: event?.rule_id ?? null,
+        reminder: event?.reminder ?? null,
+        reason: decision.reason,
+        date: decision.date ?? null,
+      })}`,
+    )
+    return { ok: false, skipped: decision.reason }
+  }
+  return handlePushDispatch(decision.message)
 }
 
 // ─── push-dispatch (invoked by EventBridge Scheduler, not API Gateway) ──
@@ -3031,6 +3249,10 @@ export async function handler(event) {
     if (event._async_kind === 'push-dispatch') {
       return await handlePushDispatch(event)
     }
+    // Weekly reminders (T5b): a cron schedule firing for one rule.
+    if (event._async_kind === 'push-recurring') {
+      return await handleRecurringPushDispatch(event)
+    }
     return await handleAsyncWork(event)
   }
 
@@ -3091,6 +3313,41 @@ export async function handler(event) {
       return await handlePushCancel(event)
     } catch (err) {
       console.error('push/cancel handler error:', err)
+      return {
+        statusCode: 500,
+        headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ error: err?.message || String(err) }),
+      }
+    }
+  }
+
+  // Weekly reminders by push (T5b). Each runs up to 2 GetSchedule, 2
+  // DeleteSchedule and 2 CreateSchedule calls, so both are rate limited per
+  // IP like the other routes with a real per-call cost.
+  if (path.endsWith('/push/recurring/cancel')) {
+    try {
+      if (!(await checkRateLimit(event, 'pushrecurringcancel', RECURRING_RATE_LIMIT_PER_MIN))) {
+        return rateLimitedResponse()
+      }
+      return await handlePushRecurringCancel(event)
+    } catch (err) {
+      console.error('push/recurring/cancel handler error:', err)
+      return {
+        statusCode: 500,
+        headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ error: err?.message || String(err) }),
+      }
+    }
+  }
+
+  if (path.endsWith('/push/recurring')) {
+    try {
+      if (!(await checkRateLimit(event, 'pushrecurring', RECURRING_RATE_LIMIT_PER_MIN))) {
+        return rateLimitedResponse()
+      }
+      return await handlePushRecurring(event)
+    } catch (err) {
+      console.error('push/recurring handler error:', err)
       return {
         statusCode: 500,
         headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },

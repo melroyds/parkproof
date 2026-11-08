@@ -49,35 +49,63 @@ function clickData(sessionId: string): { url: string; session_id: string; in_tab
   return { url: sessionLink(sessionId), session_id: sessionId, in_tab: true }
 }
 
-// Armed setTimeout handles per session, each with its fire time, so
-// "I've left" can disarm them all and removing one reminder disarms just it.
+// Armed setTimeout handles per owner (a record's id, or a weekly reminder's
+// 'recurring:<rule id>'), each with its fire time, so "I've left" can disarm
+// them all and removing one reminder disarms just it.
 interface Armed {
   handle: ReturnType<typeof setTimeout>
   fireAtMs: number
+  /**
+   * Set for timers armed by replaceInTabNotifications: the reminder's tag
+   * and fire time, so a re-arm can keep a timer that is still wanted.
+   */
+  key?: string
+  /** Its latest text, read when it fires (a re-arm can change the words). */
+  item?: InTabNotification
+  /**
+   * False for a weekly reminder (T5a): it belongs to no record, so the
+   * ended-record check never drops it. True for a record's reminders.
+   */
+  ofRecord: boolean
 }
 const armed = new Map<string, Armed[]>()
 
-function arm(sessionId: string, fireAt: Date, fn: () => void, delay: number): void {
-  const fireAtMs = fireAt.getTime()
-  const handle = setTimeout(() => {
-    const left = (armed.get(sessionId) ?? []).filter((a) => a.handle !== handle)
-    if (left.length) armed.set(sessionId, left)
-    else armed.delete(sessionId)
-    if (!stillWanted(sessionId, fireAtMs)) return
-    fn()
+function arm(
+  ownerId: string,
+  fireAt: Date,
+  fn: (timer: Armed) => void,
+  delay: number,
+  extra: Pick<Armed, 'key' | 'item'> & { ofRecord?: boolean } = {},
+): void {
+  const { ofRecord = true, ...fields } = extra
+  const timer: Armed = {
+    ...fields,
+    ofRecord,
+    fireAtMs: fireAt.getTime(),
+    handle: undefined as unknown as ReturnType<typeof setTimeout>,
+  }
+  timer.handle = setTimeout(() => {
+    const left = (armed.get(ownerId) ?? []).filter((a) => a !== timer)
+    if (left.length) armed.set(ownerId, left)
+    else armed.delete(ownerId)
+    if (!stillWanted(ownerId, timer)) return
+    fn(timer)
   }, delay)
-  armed.set(sessionId, [...(armed.get(sessionId) ?? []), { handle, fireAtMs }])
+  armed.set(ownerId, [...(armed.get(ownerId) ?? []), timer])
 }
 
 /**
  * Checked when a timer fires: false when it fires too late to help (see
- * IN_TAB_STALE_MS), or when the record has ended since, here or on another
- * device through a cloud pull. Never throws.
+ * IN_TAB_STALE_MS), or, for a record's reminder, when the record has ended
+ * since, here or on another device through a cloud pull. A weekly reminder
+ * is tied to no record, so only the lateness check applies to it. Never
+ * throws.
  */
-function stillWanted(sessionId: string, fireAtMs: number): boolean {
-  if (Date.now() - fireAtMs > IN_TAB_STALE_MS) return false
+function stillWanted(ownerId: string, timer: Armed): boolean {
+  if (Date.now() - timer.fireAtMs > IN_TAB_STALE_MS) return false
+  if (!timer.ofRecord) return true
   try {
-    if (getSession(sessionId)?.ended_at) return false
+    if (getSession(ownerId)?.ended_at) return false
   } catch {
     /* storage unreadable: show the reminder */
   }
@@ -123,6 +151,100 @@ export function cancelInTabReminders(sessionId: string, fireAts?: Date[]): numbe
   if (keep.length) armed.set(sessionId, keep)
   else armed.delete(sessionId)
   return drop.length
+}
+
+/** Disarm every in-tab notification armed for `ownerId`. */
+function disarm(ownerId: string): number {
+  return cancelInTabReminders(ownerId)
+}
+
+/**
+ * True when this browser can show a notification from an open tab right
+ * now: the Notification API exists, permission is granted, and it isn't
+ * Android, whose browsers refuse `new Notification()` (only a service
+ * worker may show one there, which is what push does).
+ */
+export function canShowInTabNotifications(): boolean {
+  if (typeof window === 'undefined' || !('Notification' in window)) return false
+  if (Notification.permission !== 'granted') return false
+  const ua = typeof navigator !== 'undefined' ? navigator.userAgent || '' : ''
+  return !/Android/i.test(ua)
+}
+
+export interface InTabNotification {
+  fireAt: Date
+  title: string
+  body: string
+  /** Shared with the push copy of the same reminder, so the two collapse into one alert. */
+  tag: string
+}
+
+const inTabKey = (item: InTabNotification) => `${item.tag}@${item.fireAt.getTime()}`
+
+/**
+ * Make the in-tab notifications armed for `ownerId` exactly `items`, on the
+ * same timers as the parking reminders (nothing beyond 24 h). A reminder
+ * that is already armed keeps its timer (only its words are updated), so a
+ * re-arm a few seconds before it fires never loses it; the 30 s margin
+ * applies only to a reminder armed for the first time. Timers no longer in
+ * `items` are cleared. Never asks for permission: arms nothing, and clears
+ * everything, unless notifications are already allowed. Used by the weekly
+ * reminders (T5a), which re-arm their next 24 hours whenever the app is
+ * open. They belong to no record, so when one fires only the lateness
+ * check (IN_TAB_STALE_MS) can drop it. Returns how many are armed
+ * afterwards.
+ */
+export function replaceInTabNotifications(ownerId: string, items: readonly InTabNotification[], now: number = Date.now()): number {
+  if (typeof window === 'undefined' || !('Notification' in window) || Notification.permission !== 'granted') {
+    disarm(ownerId)
+    return 0
+  }
+  const wanted = new Map<string, InTabNotification>()
+  for (const item of items) wanted.set(inTabKey(item), item)
+
+  const kept: Armed[] = []
+  for (const timer of armed.get(ownerId) ?? []) {
+    const next = timer.key ? wanted.get(timer.key) : undefined
+    if (next && !kept.some((k) => k.key === timer.key)) {
+      timer.item = next
+      kept.push(timer)
+    } else {
+      clearTimeout(timer.handle)
+    }
+  }
+  if (kept.length) armed.set(ownerId, kept)
+  else armed.delete(ownerId)
+
+  const keptKeys = new Set(kept.map((k) => k.key))
+  let count = kept.length
+  for (const [key, item] of wanted) {
+    if (keptKeys.has(key)) continue
+    const delay = item.fireAt.getTime() - now
+    if (delay < SAFETY_MARGIN_MS || delay > MAX_TIMEOUT_MS) continue
+    arm(
+      ownerId,
+      item.fireAt,
+      (timer) => {
+        const shown = timer.item ?? item
+        try {
+          new Notification(shown.title, { body: shown.body, tag: shown.tag })
+        } catch {
+          // Permission can be revoked mid-flight: silent best-effort.
+        }
+      },
+      delay,
+      { key, item, ofRecord: false },
+    )
+    count++
+  }
+  return count
+}
+
+/** Disarm in-tab notifications for every owner not in `keep` whose id starts with `prefix`. */
+export function disarmInTabNotificationsExcept(prefix: string, keep: ReadonlySet<string>): void {
+  for (const ownerId of [...armed.keys()]) {
+    if (ownerId.startsWith(prefix) && !keep.has(ownerId)) disarm(ownerId)
+  }
 }
 
 /**

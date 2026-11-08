@@ -97,7 +97,7 @@ function timeoutSignal(ms: number): { signal?: AbortSignal; abort: () => void } 
 }
 
 /** What one request to the push API came back with. */
-type PushReply =
+export type PushReply =
   /** The server answered. `body` is its JSON, or null when there was none. */
   | { kind: 'reply'; status: number; ok: boolean; body: unknown }
   /** No answer within PUSH_REQUEST_TIMEOUT_MS. */
@@ -109,9 +109,10 @@ type PushReply =
  * POST `payload` as JSON to a push route and read the JSON reply, giving up
  * after PUSH_REQUEST_TIMEOUT_MS. The timer covers the whole exchange,
  * reading the reply included, and also stops the wait when a browser's
- * fetch ignores the signal. Never throws.
+ * fetch ignores the signal. Never throws. Also used by the weekly
+ * reminders' routes (recurring-push.ts).
  */
-async function pushPost(path: string, payload: unknown): Promise<PushReply> {
+export async function pushPost(path: string, payload: unknown): Promise<PushReply> {
   const { signal, abort } = timeoutSignal(PUSH_REQUEST_TIMEOUT_MS)
   const request = (async (): Promise<PushReply> => {
     try {
@@ -139,7 +140,7 @@ async function pushPost(path: string, payload: unknown): Promise<PushReply> {
 }
 
 /** The `error` code in a reply body, or null. */
-function errorCodeOf(body: unknown): string | null {
+export function errorCodeOf(body: unknown): string | null {
   const code = body && typeof body === 'object' ? (body as { error?: unknown }).error : undefined
   return typeof code === 'string' ? code : null
 }
@@ -471,6 +472,19 @@ export async function syncPushRegistration(
   return posted === 'stored' ? 'sent' : 'failed'
 }
 
+/**
+ * The server answered a booking with 409 ERR_NOT_SUBSCRIBED: send this
+ * browser's registration again now, ignoring the recent-send skip (the
+ * re-register half of re-register once and retry once). A dead endpoint
+ * (ERR_ENDPOINT_GONE) is replaced by a fresh registration on the way, as in
+ * syncPushRegistration. Only 'sent' means a retry can work. Used by
+ * schedulePushReminders' retry and the weekly reminders' (recurring-push.ts).
+ */
+export async function reRegisterPush(): Promise<RegistrationSyncResult> {
+  clearRegistrationSent()
+  return syncPushRegistration()
+}
+
 let resyncInFlight = false
 
 /** Re-send the registration in the background, at most once an hour. */
@@ -765,8 +779,7 @@ export async function schedulePushReminders(
   if (attempt.kind === 'not_subscribed') {
     // The server has no live registration for this device. Register once
     // more (ignoring the recent-send skip) and retry once.
-    clearRegistrationSent()
-    const resent = await syncPushRegistration()
+    const resent = await reRegisterPush()
     if (resent === 'timeout') return { ok: false, reason: 'network' }
     if (resent !== 'sent') return { ok: false, reason: 'not_subscribed' }
     attempt = await postSchedule(payload)

@@ -1,6 +1,9 @@
 import { createEvent } from 'ics'
-import type { ParkingSession } from '../types'
+import type { TFunction } from 'i18next'
+import type { ParkingSession, RecurringRule } from '../types'
 import { sessionTimezone } from './timezone'
+import { eveningLeadMinutes, firstOccurrence, floatingDateTime, nextDate, rruleFor } from './recurring'
+import { recurringAlarmText, ruleSummary, ruleWhat } from './recurring-copy'
 
 // Event covers the expiry moment plus a short tail so calendars don't display
 // it as zero-length. The actual alarms come from the VALARM blocks below.
@@ -14,6 +17,19 @@ function utcParts(d: Date): [number, number, number, number, number] {
     d.getUTCHours(),
     d.getUTCMinutes(),
   ]
+}
+
+/** Hand a generated calendar file to the browser as a download. */
+function saveIcsFile(value: string, filename: string): void {
+  const blob = new Blob([value], { type: 'text/calendar;charset=utf-8' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = filename
+  document.body.appendChild(a)
+  a.click()
+  document.body.removeChild(a)
+  setTimeout(() => URL.revokeObjectURL(url), 0)
 }
 
 function offsetWord(offset: number): string {
@@ -103,15 +119,7 @@ export function downloadIcs(session: ParkingSession, offsetsMinutes: number[]): 
     throw error ?? new Error('Failed to generate calendar event')
   }
 
-  const blob = new Blob([value], { type: 'text/calendar;charset=utf-8' })
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = `parkproof-${session.id.slice(0, 8)}.ics`
-  document.body.appendChild(a)
-  a.click()
-  document.body.removeChild(a)
-  setTimeout(() => URL.revokeObjectURL(url), 0)
+  saveIcsFile(value, `parkproof-${session.id.slice(0, 8)}.ics`)
 }
 
 /**
@@ -196,13 +204,86 @@ export function downloadIcsAbsolute(session: ParkingSession, fireAtList: Date[])
     throw error ?? new Error('Failed to generate calendar event')
   }
 
-  const blob = new Blob([value], { type: 'text/calendar;charset=utf-8' })
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = `parkproof-${session.id.slice(0, 8)}.ics`
-  document.body.appendChild(a)
-  a.click()
-  document.body.removeChild(a)
-  setTimeout(() => URL.revokeObjectURL(url), 0)
+  saveIcsFile(value, `parkproof-${session.id.slice(0, 8)}.ics`)
+}
+
+/**
+ * RFC 5545 text escaping for VALARM descriptions, which the ics package
+ * writes without escaping (it does escape SUMMARY, DESCRIPTION and
+ * LOCATION itself).
+ */
+function escapeIcsText(text: string): string {
+  return text.replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,')
+}
+
+/** A duration in minutes as the ics package's { hours, minutes } (11 h, not 660 min). */
+function leadDuration(minutes: number): { hours?: number; minutes?: number; before: true } {
+  const hours = Math.floor(minutes / 60)
+  const rest = minutes % 60
+  return { ...(hours ? { hours } : {}), ...(rest ? { minutes: rest } : {}), before: true }
+}
+
+/**
+ * The calendar file for a weekly reminder (T5a): one repeating event.
+ *  - Floating local time (no zone, no Z): 7 am stays 7 am in the phone's
+ *    calendar on both sides of a daylight saving change.
+ *  - RRULE from the rule (FREQ=WEEKLY;BYDAY=TU, INTERVAL=2 for every second
+ *    week, FREQ=MONTHLY;BYDAY=1TU,3TU), starting at the first occurrence
+ *    on or after the rule's anchor date.
+ *  - Relative alarms before each occurrence: the evening before and/or
+ *    the chosen minutes before it starts.
+ *  - A UID that is the same for every download of the rule and the rule's
+ *    SEQUENCE, so a re-download after an edit updates the event instead
+ *    of adding a second one.
+ *  - Text in the reader's language, with the council and reliability notes.
+ */
+export function buildRecurringIcs(rule: RecurringRule, t: TFunction, language?: string): string {
+  const first = firstOccurrence(rule)
+  if (!first) throw new Error('This weekly reminder has no dates to add.')
+  const endDate = rule.end <= rule.start ? nextDate(first.date) : first.date
+
+  const alarms: { action: 'display'; description: string; trigger: ReturnType<typeof leadDuration> }[] = []
+  const evening = eveningLeadMinutes(rule)
+  if (evening !== null) {
+    alarms.push({ action: 'display', description: escapeIcsText(recurringAlarmText(rule, 'evening', t)), trigger: leadDuration(evening) })
+  }
+  if (rule.remind_minutes_before !== null) {
+    alarms.push({
+      action: 'display',
+      description: escapeIcsText(recurringAlarmText(rule, 'before', t)),
+      trigger: leadDuration(rule.remind_minutes_before),
+    })
+  }
+
+  const description = [
+    `${ruleSummary(rule, t, language)}.`,
+    t('recurring.ics.move'),
+    t('recurring.councilNote'),
+    t('recurring.reliability'),
+    t('recurring.ics.footer'),
+  ].join('\n')
+
+  const { error, value } = createEvent({
+    productId: 'parkproof',
+    uid: `parkproof-recurring-${rule.id}@parkproof.local`,
+    sequence: rule.sequence,
+    title: ruleWhat(rule, t),
+    description,
+    location: rule.address ?? undefined,
+    // Strings pass through the ics package as written: floating local times.
+    start: floatingDateTime(first.date, rule.start),
+    end: floatingDateTime(endDate, rule.end),
+    recurrenceRule: rruleFor(rule),
+    alarms,
+    // A reminder, not a meeting: don't show the driver as busy.
+    transp: 'TRANSPARENT',
+    busyStatus: 'FREE',
+  })
+  if (error || !value) throw error ?? new Error('Failed to generate calendar event')
+  return value
+}
+
+/** Download the calendar file for a weekly reminder. */
+export function downloadRecurringIcs(rule: RecurringRule, t: TFunction, language?: string): void {
+  saveIcsFile(buildRecurringIcs(rule, t, language), `parkproof-weekly-${rule.id.slice(0, 8)}.ics`)
 }

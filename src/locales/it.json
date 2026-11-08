@@ -1078,5 +1078,152 @@
     "recordNoSignRead": "Nessun cartello letto. ParkProof non ha trovato un cartello di sosta leggibile nella foto, e hai registrato questo parcheggio senza cartello.",
     "noSignReadLabel": "Nessun cartello letto",
     "remindIntro": "Per questo parcheggio non è stato letto nessun cartello, quindi non c'è una scadenza da ricordarti. Puoi comunque chiedere un promemoria di controllo. Scegli tra quanto tempo, quante volte vuoi."
+  },
+  "recurring": {
+    "title": "Promemoria settimanali",
+    "intro": "Pulizia strade, clearway e altri divieti che si ripetono negli stessi giorni. Impostali una volta e ricevi un promemoria prima di ognuno.",
+    "homeRow": "Pulizia strade e promemoria settimanali",
+    "homeNext": "Prossimo: {{what}}, {{time}}",
+    "homeOnNow": "{{what}} in corso, fino alle {{time}}",
+    "homeCount_one": "{{count}} impostato",
+    "homeCount_other": "{{count}} impostati",
+    "homeNone": "Nessuno",
+    "empty": "Nessun promemoria settimanale",
+    "emptyHelp": "Aggiungine uno per la pulizia strade o il clearway dove parcheggi di solito.",
+    "add": "Aggiungi un promemoria settimanale",
+    "editTitleNew": "Nuovo promemoria settimanale",
+    "editTitle": "Modifica promemoria settimanale",
+    "kind": {
+      "street_cleaning": "Pulizia strade",
+      "clearway": "Clearway",
+      "no_stopping": "Divieto di fermata",
+      "other": "Altro divieto"
+    },
+    "field": {
+      "kind": "Di cosa si tratta?",
+      "label": "Nome",
+      "days": "Giorni",
+      "start": "Inizio",
+      "end": "Fine",
+      "frequency": "Ogni quanto",
+      "anchor": "Data della prossima volta",
+      "nth": "Quali settimane del mese",
+      "address": "Dove",
+      "addressPlaceholder": "Via o luogo (facoltativo)",
+      "remind": "Ricordamelo",
+      "push": "Avvisami su questo telefono"
+    },
+    "frequency": {
+      "weekly": "Ogni settimana",
+      "fortnightly": "Ogni due settimane",
+      "monthly_nth": "Alcune settimane del mese"
+    },
+    "remind": {
+      "evening": "La sera prima, alle",
+      "before": "Prima che inizi",
+      "minutes_one": "{{count}} minuto prima",
+      "minutes_other": "{{count}} minuti prima",
+      "hours_one": "{{count}} ora prima",
+      "hours_other": "{{count}} ore prima"
+    },
+    "pushHint": "Per il promemoria più affidabile, aggiungilo anche al calendario.",
+    "zoneNote": "Giorni e orari sono nell'ora locale di {{place}}.",
+    "zone": {
+      "melbourne": "Melbourne",
+      "sydney": "Sydney",
+      "canberra": "Canberra",
+      "brisbane": "Brisbane",
+      "lindeman": "Lindeman",
+      "adelaide": "Adelaide",
+      "brokenHill": "Broken Hill",
+      "darwin": "Darwin",
+      "perth": "Perth",
+      "eucla": "Eucla",
+      "hobart": "Hobart",
+      "lordHowe": "Lord Howe"
+    },
+    "days": {
+      "MO": "lunedì",
+      "TU": "martedì",
+      "WE": "mercoledì",
+      "TH": "giovedì",
+      "FR": "venerdì",
+      "SA": "sabato",
+      "SU": "domenica"
+    },
+    "daysShort": {
+      "MO": "lun",
+      "TU": "mar",
+      "WE": "mer",
+      "TH": "gio",
+      "FR": "ven",
+      "SA": "sab",
+      "SU": "dom"
+    },
+    "dayRange": "da {{from}} a {{to}}",
+    "nth": {
+      "n1": "1ª",
+      "n2": "2ª",
+      "n3": "3ª",
+      "n4": "4ª",
+      "n5": "5ª"
+    },
+    "schedule": {
+      "weekly": "Ogni settimana: {{days}}",
+      "fortnightly": "Ogni due settimane: {{days}}",
+      "monthly_nth": "Ogni mese, {{nths}} settimana: {{days}}"
+    },
+    "timeRange": "dalle {{start}} alle {{end}}",
+    "summary": "{{schedule}}, {{range}}",
+    "next": "Prossimo: {{time}}",
+    "onNow": "In corso, fino alle {{time}}",
+    "paused": "In pausa",
+    "noNext": "Nessuna data in arrivo",
+    "pause": "Metti in pausa",
+    "resume": "Riprendi",
+    "pausedHint": "I promemoria in pausa non ti avvisano qui. Un calendario a cui l'hai aggiunto mantiene i suoi avvisi.",
+    "delete": "Elimina promemoria",
+    "deleteConfirm": "Eliminare questo promemoria settimanale? Un calendario a cui l'hai aggiunto ne conserva la copia.",
+    "calendar": "Aggiungi al calendario",
+    "calendarDone": "Scaricato. Apri il file per aggiungerlo.",
+    "saved": "Promemoria settimanale salvato.",
+    "errors": {
+      "days": "Scegli almeno un giorno.",
+      "times": "Scegli un orario di inizio e uno di fine diversi.",
+      "nth": "Scegli almeno una settimana del mese.",
+      "anchor": "Scegli la data della prossima volta.",
+      "saveFailed": "Impossibile salvare questo promemoria. Riprova."
+    },
+    "councilNote": "I comuni cambiano questi orari e nei giorni festivi possono essere diversi. Controlla i cartelli dove parcheggi.",
+    "reliability": "I promemoria possono arrivare in ritardo o essere silenziati, per esempio da Full immersion o dal risparmio energetico. Non affidarti solo a loro.",
+    "notifyDenied": "Le notifiche di ParkProof sono bloccate, quindi questi promemoria non possono avvisarti su questo telefono. Consenti le notifiche nelle impostazioni del sito del browser, oppure aggiungili al calendario.",
+    "pushStatus": {
+      "closed": "Impostato per avvisarti su questo telefono anche quando ParkProof è chiuso. Apri ParkProof almeno una volta ogni due mesi per mantenerlo attivo.",
+      "openOnly": "Ti avvisa su questo telefono solo mentre ParkProof è aperto. Aggiungilo anche al calendario.",
+      "none": "Al momento questo telefono non può mostrare questo promemoria. Aggiungilo al calendario."
+    },
+    "offer": {
+      "heading": "Divieto settimanale su questo cartello",
+      "body": "ParkProof può ricordartelo prima che inizi, ogni volta.",
+      "line": "{{what}}. {{summary}}.",
+      "cta": "Ricordamelo ogni settimana",
+      "already": "Hai già un promemoria settimanale per questo."
+    },
+    "sheet": {
+      "title": "Ricordamelo ogni settimana",
+      "check": "Controlla questi giorni e orari sul cartello",
+      "signSays": "Il cartello dice anche: {{text}}"
+    },
+    "notify": {
+      "moveTonight": "{{what}}: {{day}}, {{range}}. Sposta l'auto stasera.",
+      "moveBefore": "{{what}}: {{day}}, {{range}}. Sposta l'auto prima delle {{start}}."
+    },
+    "ics": {
+      "alarmTonight": "{{what}}: domani, {{range}}. Sposta l'auto stasera.",
+      "alarmTomorrow": "{{what}}: domani, {{range}}. Sposta l'auto prima delle {{start}}.",
+      "alarmSoon": "{{what}} inizia alle {{start}}. Sposta l'auto prima.",
+      "move": "Sposta l'auto prima che inizi.",
+      "footer": "Promemoria impostato in ParkProof."
+    }
   }
 }

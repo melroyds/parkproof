@@ -2,6 +2,7 @@ import type {
   AddendumKind,
   Jurisdiction,
   ParkingSession,
+  RecurringRule,
   SignatureBundle,
   SignedAddendum,
   WorkdayState,
@@ -24,6 +25,7 @@ import {
 import { mergeEvidence, sameEvidence } from './evidence-merge'
 import { deleteSessionPhotos } from './photo-store'
 import { isWorkdayJurisdiction } from './jurisdiction'
+import { changesCalendar, normalizeRecurringRule } from './recurring'
 
 const KEY = 'parkproof.sessions.v1'
 
@@ -851,4 +853,155 @@ export function endWorkday(workdayId: string, when: Date = new Date()): WorkdayS
   return writeWorkday(workdayId, (w) =>
     w.status === 'ended' ? w : { ...w, status: 'ended', ended_at: when.toISOString() },
   )
+}
+
+// ─── Street sweeping and weekly reminders (T5a) ──────────────────────────
+// Stored apart from the records under their own key, on this device only.
+// Every write re-reads the list, keeps it valid (normalizeRecurringRule)
+// and fires RECURRING_CHANGED_EVENT, so the home row, the recurring view
+// and the in-tab reminders all follow it.
+
+const RECURRING_KEY = 'parkproof.recurring.v1'
+
+/** Fired on `window` after any write to the recurring rules (detail: { id }). */
+export const RECURRING_CHANGED_EVENT = 'parkproof:recurring-changed'
+
+let recurringRevision = 0
+let recurringCrossTabInstalled = false
+
+/** Monotonic counter, bumped on every recurring-changed notification. */
+export function getRecurringRevision(): number {
+  return recurringRevision
+}
+
+function notifyRecurringChanged(id: string | null): void {
+  recurringRevision++
+  if (typeof window === 'undefined' || typeof window.dispatchEvent !== 'function') return
+  try {
+    window.dispatchEvent(new CustomEvent(RECURRING_CHANGED_EVENT, { detail: { id } }))
+  } catch {
+    /* a listener threw: the write itself stands */
+  }
+}
+
+/**
+ * Subscribe to recurring-changed notifications, including writes made in
+ * another tab. Returns the unsubscribe function.
+ */
+export function subscribeRecurringChanged(listener: () => void): () => void {
+  if (typeof window === 'undefined' || typeof window.addEventListener !== 'function') {
+    return () => {}
+  }
+  if (!recurringCrossTabInstalled) {
+    recurringCrossTabInstalled = true
+    window.addEventListener('storage', (e: StorageEvent) => {
+      if (e.key === RECURRING_KEY || e.key === null) notifyRecurringChanged(null)
+    })
+  }
+  window.addEventListener(RECURRING_CHANGED_EVENT, listener)
+  return () => window.removeEventListener(RECURRING_CHANGED_EVENT, listener)
+}
+
+/**
+ * Every saved recurring rule, oldest first. Entries that don't fit the
+ * store's shape are skipped rather than failing the whole list; nothing
+ * readable gives [].
+ */
+export function loadRecurringRules(): RecurringRule[] {
+  try {
+    const raw = localStorage.getItem(RECURRING_KEY)
+    const parsed: unknown = raw ? JSON.parse(raw) : []
+    if (!Array.isArray(parsed)) return []
+    const out: RecurringRule[] = []
+    for (const item of parsed) {
+      const rule = normalizeRecurringRule(item)
+      if (rule && !out.some((r) => r.id === rule.id)) out.push(rule)
+    }
+    return out
+  } catch {
+    return []
+  }
+}
+
+export function getRecurringRule(id: string): RecurringRule | undefined {
+  return loadRecurringRules().find((r) => r.id === id)
+}
+
+/**
+ * The stored list exactly as written, entries this version can't read
+ * included. Writes start from it, so a rule saved by a newer build (a kind
+ * or a field this one doesn't know, say from a tab still on an older cached
+ * app) survives an edit made here. [] when nothing readable is stored.
+ */
+function readRawRecurring(): unknown[] {
+  try {
+    const raw = localStorage.getItem(RECURRING_KEY)
+    const parsed: unknown = raw ? JSON.parse(raw) : []
+    return Array.isArray(parsed) ? parsed : []
+  } catch {
+    return []
+  }
+}
+
+const rawRuleId = (item: unknown): unknown =>
+  item && typeof item === 'object' ? (item as { id?: unknown }).id : undefined
+
+function writeRecurringRaw(items: unknown[]): void {
+  try {
+    localStorage.setItem(RECURRING_KEY, JSON.stringify(items))
+  } catch (err) {
+    if (isQuotaError(err)) throw new StorageFullError()
+    throw err
+  }
+}
+
+/** Thrown when a rule doesn't fit the store's shape (normalizeRecurringRule says no). */
+export class InvalidRecurringRuleError extends Error {
+  constructor() {
+    super('This weekly reminder is missing a day, a time or a date.')
+    this.name = 'InvalidRecurringRuleError'
+  }
+}
+
+/**
+ * Create a rule, or replace the saved rule with the same id. Returns what
+ * was stored. On a replace, `sequence` comes from the stored copy (never
+ * the caller's) and goes up by one when anything the calendar file carries
+ * changed, so a re-downloaded calendar file updates the event instead of
+ * adding a second one. Pausing, resuming or switching notifications leave
+ * it alone. Throws InvalidRecurringRuleError or StorageFullError.
+ */
+export function saveRecurringRule(input: RecurringRule): RecurringRule {
+  const cleaned = normalizeRecurringRule(input)
+  if (!cleaned) throw new InvalidRecurringRuleError()
+  const prev = loadRecurringRules().find((r) => r.id === cleaned.id)
+  const stored: RecurringRule = prev
+    ? { ...cleaned, sequence: prev.sequence + (changesCalendar(prev, cleaned) ? 1 : 0) }
+    : { ...cleaned, sequence: 0 }
+  // Write over the raw list: the rule's own entry keeps any field this
+  // version doesn't know, and every other entry is left exactly as it was.
+  const raw = readRawRecurring()
+  const idx = prev ? raw.findIndex((item) => rawRuleId(item) === stored.id && normalizeRecurringRule(item) !== null) : -1
+  if (idx === -1) raw.push(stored)
+  else raw[idx] = { ...(raw[idx] as Record<string, unknown>), ...stored }
+  writeRecurringRaw(raw)
+  notifyRecurringChanged(stored.id)
+  return stored
+}
+
+/** Pause or resume a rule. Returns the stored rule, or null when it isn't saved. */
+export function setRecurringRulePaused(id: string, paused: boolean): RecurringRule | null {
+  const current = getRecurringRule(id)
+  if (!current) return null
+  if (current.paused === paused) return current
+  return saveRecurringRule({ ...current, paused })
+}
+
+/** Delete a rule. Returns false when it wasn't saved. */
+export function deleteRecurringRule(id: string): boolean {
+  if (!getRecurringRule(id)) return false
+  // Every stored copy of that id goes; entries this version can't read stay.
+  writeRecurringRaw(readRawRecurring().filter((item) => rawRuleId(item) !== id))
+  notifyRecurringChanged(id)
+  return true
 }

@@ -1078,5 +1078,152 @@
     "recordNoSignRead": "No sign read. ParkProof found no readable parking sign in the photo, and you logged this park without one.",
     "noSignReadLabel": "No sign read",
     "remindIntro": "No sign was read for this park, so there's no expiry to remind you of. You can still ask for a check-in reminder. Pick how long from now, choose as many as you like."
+  },
+  "recurring": {
+    "title": "Weekly reminders",
+    "intro": "Street sweeping, clearways and other restrictions that come back on the same days. Set them once and get a reminder before each one.",
+    "homeRow": "Street sweeping and weekly reminders",
+    "homeNext": "Next: {{what}}, {{time}}",
+    "homeOnNow": "{{what}} is on now, until {{time}}",
+    "homeCount_one": "{{count}} set",
+    "homeCount_other": "{{count}} set",
+    "homeNone": "None yet",
+    "empty": "No weekly reminders yet",
+    "emptyHelp": "Add one for the street sweeping or clearway where you usually park.",
+    "add": "Add a weekly reminder",
+    "editTitleNew": "New weekly reminder",
+    "editTitle": "Edit weekly reminder",
+    "kind": {
+      "street_cleaning": "Street sweeping",
+      "clearway": "Clearway",
+      "no_stopping": "No stopping",
+      "other": "Other restriction"
+    },
+    "field": {
+      "kind": "What is it?",
+      "label": "Name",
+      "days": "Days",
+      "start": "Starts",
+      "end": "Ends",
+      "frequency": "How often",
+      "anchor": "Date of the next one",
+      "nth": "Which weeks of the month",
+      "address": "Where",
+      "addressPlaceholder": "Street or place (optional)",
+      "remind": "Remind me",
+      "push": "Notify me on this phone"
+    },
+    "frequency": {
+      "weekly": "Every week",
+      "fortnightly": "Every second week",
+      "monthly_nth": "Some weeks of the month"
+    },
+    "remind": {
+      "evening": "The evening before, at",
+      "before": "Before it starts",
+      "minutes_one": "{{count}} minute before",
+      "minutes_other": "{{count}} minutes before",
+      "hours_one": "{{count}} hour before",
+      "hours_other": "{{count}} hours before"
+    },
+    "pushHint": "For the most reliable reminder, add it to your calendar too.",
+    "zoneNote": "Days and times are local time in {{place}}.",
+    "zone": {
+      "melbourne": "Melbourne",
+      "sydney": "Sydney",
+      "canberra": "Canberra",
+      "brisbane": "Brisbane",
+      "lindeman": "Lindeman Island",
+      "adelaide": "Adelaide",
+      "brokenHill": "Broken Hill",
+      "darwin": "Darwin",
+      "perth": "Perth",
+      "eucla": "Eucla",
+      "hobart": "Hobart",
+      "lordHowe": "Lord Howe Island"
+    },
+    "days": {
+      "MO": "Monday",
+      "TU": "Tuesday",
+      "WE": "Wednesday",
+      "TH": "Thursday",
+      "FR": "Friday",
+      "SA": "Saturday",
+      "SU": "Sunday"
+    },
+    "daysShort": {
+      "MO": "Mon",
+      "TU": "Tue",
+      "WE": "Wed",
+      "TH": "Thu",
+      "FR": "Fri",
+      "SA": "Sat",
+      "SU": "Sun"
+    },
+    "dayRange": "{{from}} to {{to}}",
+    "nth": {
+      "n1": "1st",
+      "n2": "2nd",
+      "n3": "3rd",
+      "n4": "4th",
+      "n5": "5th"
+    },
+    "schedule": {
+      "weekly": "Every week on {{days}}",
+      "fortnightly": "Every second week on {{days}}",
+      "monthly_nth": "The {{nths}} {{days}} of each month"
+    },
+    "timeRange": "{{start}} to {{end}}",
+    "summary": "{{schedule}}, {{range}}",
+    "next": "Next: {{time}}",
+    "onNow": "On now, until {{time}}",
+    "paused": "Paused",
+    "noNext": "No upcoming dates",
+    "pause": "Pause",
+    "resume": "Resume",
+    "pausedHint": "Paused reminders don't alert you here. A calendar you added it to keeps its own alarms.",
+    "delete": "Delete reminder",
+    "deleteConfirm": "Delete this weekly reminder? A calendar you added it to keeps its copy.",
+    "calendar": "Add to calendar",
+    "calendarDone": "Downloaded. Open the file to add it.",
+    "saved": "Weekly reminder saved.",
+    "errors": {
+      "days": "Pick at least one day.",
+      "times": "Pick a start and an end time that differ.",
+      "nth": "Pick at least one week of the month.",
+      "anchor": "Pick the date of the next one.",
+      "saveFailed": "Couldn't save this reminder. Try again."
+    },
+    "councilNote": "Councils change these schedules, and public holidays may be different. Check the signs where you park.",
+    "reliability": "Reminders can be delayed or silenced, for example by Focus or battery saving. Don't rely on them alone.",
+    "notifyDenied": "Notifications are blocked for ParkProof, so these reminders can't alert you on this phone. Allow notifications in your browser's site settings, or add them to your calendar.",
+    "pushStatus": {
+      "closed": "Set to alert this phone even when ParkProof is closed. Open ParkProof at least once every two months to keep it set.",
+      "openOnly": "Alerts this phone only while ParkProof is open. Add it to your calendar too.",
+      "none": "This phone can't show this reminder right now. Add it to your calendar."
+    },
+    "offer": {
+      "heading": "Weekly restriction on this sign",
+      "body": "ParkProof can remind you before it starts each time.",
+      "line": "{{what}}. {{summary}}.",
+      "cta": "Remind me every week",
+      "already": "You already have a weekly reminder for this."
+    },
+    "sheet": {
+      "title": "Remind me every week",
+      "check": "Check these days and times against the sign",
+      "signSays": "The sign also says: {{text}}"
+    },
+    "notify": {
+      "moveTonight": "{{what}} on {{day}} {{range}}. Move the car tonight.",
+      "moveBefore": "{{what}} on {{day}} {{range}}. Move the car before {{start}}."
+    },
+    "ics": {
+      "alarmTonight": "{{what}} tomorrow, {{range}}. Move the car tonight.",
+      "alarmTomorrow": "{{what}} tomorrow, {{range}}. Move the car before {{start}}.",
+      "alarmSoon": "{{what}} starts at {{start}}. Move the car before then.",
+      "move": "Move the car before it starts.",
+      "footer": "Reminder set in ParkProof."
+    }
   }
 }
