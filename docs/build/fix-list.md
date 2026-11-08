@@ -156,3 +156,43 @@ Problems found while testing `feat/evidence-chain` on real AWS. None of these co
 - **Windows verify steps.** The PDF's `base64 -d` verification step doesn't work in Windows cmd or PowerShell.
 - **English-only tooltips.** Some tooltips are hardcoded in English and skip translation.
 - **Stale `CLAUDE.md` (T10).** It no longer matches the current build.
+
+---
+
+# Status after the overnight build (9 Nov 2026)
+
+Everything above is fixed on `integration/roadmap-2`, except where this section says otherwise. The Tier 3 em-dash and Windows-verify items are done too. Tooltips are partly done (see below). The items below are still open.
+
+## Before deploying
+
+- **The sign schema must compile on the real API.** At 5 am a real call showed the API rejected T3's schema ("compiled grammar is too large"). The fix is on `fix/schema-grammar`. Run `node scripts/check-schema-compiles.mjs` before every deploy.
+- **Deploy from a clone outside Dropbox.** `deploy.sh` still deletes `lambda/node_modules` in place. See `docs/build/deploy-checklist-roadmap-2.md`, Stage 2.
+- **IAM and tables.** Check `dynamodb:DeleteItem` and `UpdateItem` on `parkproof-jobs`, and whether that table's TTL attribute is `ttl` (as the code writes) or `expires_at` (as CLAUDE.md says). See the checklist's Stage 4.
+- **Weekly push (T5b) assumptions need a real AWS check:**
+  - the Scheduler's scheduled-time placeholder in the Lambda input;
+  - cron behaviour across daylight saving;
+  - `EndDate` with `ActionAfterCompletion: DELETE` on cron schedules.
+- **Build with `VITE_FEATURE_WORKDAY=false`.** Workday mode needs a lawyer to read its copy first (`docs/legal-review-queue.md`).
+
+## Small, found by the end-to-end run
+
+- **Android "only works while ParkProof is open".** The reminder screen says this, while the weekly list on the same phone says it can't alert at all. That happens only before the service worker controls the page. Make both screens use the same check.
+- **"Remove" (shared copy) and "Delete record" are nearly invisible.** Both are `text-accent-600` on the vault, about 1.5:1.
+- **`<html lang>` stays `en` in every language.** Screen readers then use an English voice for Greek and Hindi.
+- **"No note added. TapAdd noteto record why..."** A negative margin swallows the spaces. This bug is older than tonight.
+
+## Clean-ups
+
+- `src/lib/ics.ts` calendar text and its error string are English-only and not through `t()`. The copy lint only scans `.tsx`, so extend it to user-facing `.ts` strings.
+- `HeroAnswer.tsx` and `VerifiedSeal.tsx` have hardcoded English SVG text and aria labels. Move them to `t()`.
+- Unused locale keys: `appeal.strongEvidence`, `moderateEvidence`, `weakEvidence`, `landing.feature.*`, `prefs.remindersReliability`, `active.shareAria`, `notice.homeLink`. Delete them in one script.
+- Two home rows use T4's own strings rather than the wording T5 and T8 reviewed. Pick one key each.
+- Duplicate helpers: `permit-answer.ts` `zonedParts` vs `time-format.ts` `wallClockInZone`, and `DRIVER_NAME_MAX` in two files.
+- Privacy wording: `privacy.rightsAnonymous` and `privacy.anonymousWeeklyPush` disagree on how long push data is kept. This needs a legal read and 9 translations (T10).
+- Home: "Got a ticket? Draft an appeal" became "Got a fine? Start here", as the spec says. The appeal flow now starts from the notice screen. Revisit if you want the direct link back.
+
+## Not built yet
+
+- **T6b and T6c (workday screens and PDF).** Behind the flag, and blocked on legal review anyway.
+- **T10.** Native review of every new string in 8 languages, docs, `CLAUDE.md`, About and the landing page. Do it after you choose a design direction.
+- **The redesign.** Three directions are in the artifact "ParkProof Redesign Directions".
