@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import type { Jurisdiction, ParkingRules, SavedPermit } from '../types'
 import Icon from './Icon'
 import Button from './ui/Button'
+import BackButton from './ui/BackButton'
 import Card from './ui/Card'
 import Input from './ui/Input'
 import VerifiedSeal from './VerifiedSeal'
@@ -32,7 +33,16 @@ interface Props {
   signPhoto: string
   /** Coords from the scan that produced this result — used to pin the displayed timezone. */
   coords: { lat: number; lng: number } | null
-  onScanAnother: () => void
+  /**
+   * "Scan another sign". Not passed for a workday stop (T6b item 5): that
+   * scan is the stop, and its way out is Back.
+   */
+  onScanAnother?: () => void
+  /**
+   * A "← Back" link above the answer, for a workday stop (T6b item 6):
+   * backing out of the stop's scan returns home with the workday as it was.
+   */
+  onBack?: () => void
   /**
    * Go on to log the park, with what the driver answered here (T4): the
    * gate answers and the permit they confirmed, for the logging draft. The
@@ -268,6 +278,7 @@ export default function ParkingResult({
   signPhoto,
   coords,
   onScanAnother,
+  onBack,
   onLogSession,
   onRetake,
   isFirstSave,
@@ -492,6 +503,7 @@ export default function ParkingResult({
 
   return (
     <div className="min-h-screen flex flex-col p-6 max-w-md mx-auto w-full">
+      {onBack && <BackButton onClick={onBack}>{t('common.back')}</BackButton>}
       {/* Answer card — the one emphatic object that FLOATS off the page with a
           soft pine-tinted shadow. GO is pine, STOP keeps the quarantined red. */}
       <div className="gf-card-lg p-8 text-center bg-white">
@@ -991,12 +1003,14 @@ export default function ParkingResult({
             </button>
           </Card>
         )}
-        <button
-          onClick={onScanAnother}
-          className="bg-paper-200 hover:bg-paper-300 text-ink-900 font-medium py-3 rounded-xl transition-colors"
-        >
-          {t('result.scanAnother')}
-        </button>
+        {onScanAnother && (
+          <button
+            onClick={onScanAnother}
+            className="bg-paper-200 hover:bg-paper-300 text-ink-900 font-medium py-3 rounded-xl transition-colors"
+          >
+            {t('result.scanAnother')}
+          </button>
+        )}
       </div>
     </div>
   )

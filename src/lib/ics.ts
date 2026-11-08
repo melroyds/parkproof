@@ -4,6 +4,14 @@ import type { ParkingSession, RecurringRule } from '../types'
 import { sessionTimezone } from './timezone'
 import { eveningLeadMinutes, firstOccurrence, floatingDateTime, nextDate, rruleFor } from './recurring'
 import { recurringAlarmText, ruleSummary, ruleWhat } from './recurring-copy'
+import { formatInZone } from './time-format'
+import {
+  legInAreaMode,
+  workdayReminderCopy,
+  type WorkdayReminder,
+  type WorkdayReminderCopyOptions,
+  type WorkdayReminderLeg,
+} from './workday'
 
 // Event covers the expiry moment plus a short tail so calendars don't display
 // it as zero-length. The actual alarms come from the VALARM blocks below.
@@ -313,4 +321,61 @@ export function buildRecurringIcs(rule: RecurringRule, t: TFunction, language?: 
 /** Download the calendar file for a weekly reminder. */
 export function downloadRecurringIcs(rule: RecurringRule, t: TFunction, language?: string): void {
   saveIcsFile(buildRecurringIcs(rule, t, language), `parkproof-weekly-${rule.id.slice(0, 8)}.ics`)
+}
+
+/**
+ * The calendar file for one workday stop (build spec T6b item 2), offered
+ * when workday reminders can't reach the driver by push. One event at the
+ * stop's deadline with the SAME alarms the push reminders use (T6a's
+ * schedule: heads-up, go now, and at the deadline), each an absolute time
+ * with the push reminder's own translated text. The event's title says
+ * what to do by when; under an area limit it names the whole area.
+ * Throws when there is nothing to remind about (no deadline ahead).
+ */
+export function buildWorkdayLegIcs(
+  leg: Pick<ParkingSession, 'id' | 'location'> & WorkdayReminderLeg,
+  reminders: readonly WorkdayReminder[],
+  t: TFunction,
+  options: WorkdayReminderCopyOptions = {},
+): string {
+  if (reminders.length === 0) throw new Error('This stop has no time limit ahead to remind about.')
+  const deadline = new Date(reminders[0].deadline)
+  const endAt = new Date(deadline.getTime() + EVENT_DURATION_MINUTES * 60 * 1000)
+  const timeZone = sessionTimezone(leg.location)
+  const area = options.area_mode === true || legInAreaMode(leg)
+  const deadlineLabel = formatInZone(deadline, timeZone, { withDate: true })
+  const alarms = reminders.map((r) => ({
+    action: 'display' as const,
+    description: escapeIcsText(workdayReminderCopy(r, leg, t, options).body),
+    trigger: Date.parse(r.fire_at),
+  }))
+  const { error, value } = createEvent({
+    title: t(area ? 'workday.ics.titleArea' : 'workday.ics.title', { time: deadlineLabel }),
+    description: t('reminders.reliability'),
+    location: leg.location?.address ?? undefined,
+    geo: leg.location ? { lat: leg.location.lat, lon: leg.location.lng } : undefined,
+    start: utcParts(deadline),
+    startInputType: 'utc',
+    startOutputType: 'utc',
+    end: utcParts(endAt),
+    endInputType: 'utc',
+    endOutputType: 'utc',
+    alarms,
+    productId: 'parkproof',
+    uid: `parkproof-${leg.id}-workday@parkproof.local`,
+    transp: 'TRANSPARENT',
+    busyStatus: 'FREE',
+  })
+  if (error || !value) throw error ?? new Error('Failed to generate calendar event')
+  return value
+}
+
+/** Download the calendar file for one workday stop. */
+export function downloadWorkdayLegIcs(
+  leg: Pick<ParkingSession, 'id' | 'location'> & WorkdayReminderLeg,
+  reminders: readonly WorkdayReminder[],
+  t: TFunction,
+  options: WorkdayReminderCopyOptions = {},
+): void {
+  saveIcsFile(buildWorkdayLegIcs(leg, reminders, t, options), `parkproof-workday-${leg.id.slice(0, 8)}.ics`)
 }

@@ -21,6 +21,7 @@ import { sha256HexUtf8 } from './lib/hash'
 import { createMemoryPhotoBackend, setPhotoBackendForTests } from './lib/photo-store'
 import type { LogDraft, ParkingRules, ParkingSession } from './types'
 import App from './App'
+import { isWorkdayEnabled } from './lib/features'
 
 const mocks = vi.hoisted(() => ({
   translateSign: vi.fn(async (): Promise<ParkingRules> => {
@@ -227,8 +228,11 @@ describe('the home layout', () => {
     for (const key of ['home.steps.translate', 'home.steps.log', 'home.steps.remind']) {
       expect(screen.queryByText(i18n.t(key))).toBeNull()
     }
-    // The workday link waits for its handler (T6b, behind VITE_FEATURE_WORKDAY).
-    expect(screen.queryByText('Parking all day? Start a workday')).toBeNull()
+    // The workday link (T6b) shows exactly when VITE_FEATURE_WORKDAY is on
+    // (this test run is a dev build, so on), after the three rows.
+    // src/app-workday.test.tsx covers it with the flag off.
+    const workdayLink = screen.queryByRole('button', { name: 'Parking all day? Start a workday' })
+    expect(!!workdayLink).toBe(isWorkdayEnabled())
     // The fine link (T8's notice lookup) is wired, and is the way in to an
     // appeal, so the appeal flow's own link gives way to it.
     expect(screen.getByRole('button', { name: 'Got a fine? Start here' })).toBeTruthy()

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Trans, useTranslation } from 'react-i18next'
-import type { ComplianceType, LogDraft, ParkingRules, ParkingSession, PhotoRef, PlaceParts } from '../types'
+import type { BoundaryAnswer, ComplianceType, LogDraft, ParkingRules, ParkingSession, PhotoRef, PlaceParts } from '../types'
 import { forwardGeocode, reverseGeocodeDetails } from '../lib/geocode'
 import { jurisdictionOfPlace } from '../lib/jurisdiction'
 import { resizeImageFile } from '../lib/image'
@@ -29,6 +29,21 @@ import {
 import { discardUnreferencedPhotos } from '../lib/record-photos'
 import { DRIVER_NAME_MAX, defaultDriverName, driverBadgeText, savedDriverName } from '../lib/driver-name'
 import { usePhotoSlots } from '../lib/use-photo-slots'
+import { useNow } from '../lib/use-now'
+import { loadSessions } from '../lib/storage'
+import { isWorkdayEnabled } from '../lib/features'
+import { timezoneForCoords } from '../lib/timezone'
+import {
+  answerStartsNewLimit,
+  offeredAnswer,
+  stopBoundaryCheck,
+  stopBoundaryStatement,
+  stopContext,
+  stopDeadlinePassed,
+  stopOutcome,
+  type StopContext,
+} from '../lib/workday-boundary'
+import BoundaryQuestion from './BoundaryQuestion'
 import CollapsibleSection from './CollapsibleSection'
 import PhotoAngleGrid from './PhotoAngleGrid'
 import ProofPhotoSection from './ProofPhotoSection'
@@ -111,6 +126,26 @@ type CarPhoto =
  */
 type CarWriteResult = PhotoRef | 'inRecord' | null
 
+/**
+ * How long Save waits for the reverse lookup of the GPS fix still in flight,
+ * on a workday stop only (T6b item 7): the stop's state comes from that
+ * lookup alone, and without it the park can't be a stop. It is then saved as
+ * a normal record that keeps the running limit the driver was shown, and
+ * the workday stops. Other records save at once, as before.
+ */
+export const WORKDAY_PLACE_WAIT_MS = 5_000
+
+/** Input types that take typing: focus is never pulled away from one. */
+const NON_TYPING_INPUTS = new Set(['radio', 'checkbox', 'button', 'submit', 'reset', 'file', 'image', 'range', 'color'])
+
+/** Whether the driver is typing in this element (a text field, a text area, an editable region). */
+function isTypingTarget(el: Element | null): boolean {
+  if (!el) return false
+  if (el instanceof HTMLTextAreaElement || el instanceof HTMLSelectElement) return true
+  if (el instanceof HTMLInputElement) return !NON_TYPING_INPUTS.has(el.type)
+  return el instanceof HTMLElement && el.isContentEditable
+}
+
 type GpsState =
   | { status: 'idle' }
   | { status: 'pending' }
@@ -185,6 +220,9 @@ export default function SessionLogger({
     }
     return { status: 'error', message: t('logger.gpsErrorUnsupported') }
   })
+  // The reverse lookup in flight for the latest GPS fix, so a workday
+  // stop's Save can wait for its place (see WORKDAY_PLACE_WAIT_MS).
+  const placeLookup = useRef<{ coords: { lat: number; lng: number }; place: Promise<PlaceParts | null> } | null>(null)
   const [editMode, setEditMode] = useState(false)
   const [editValue, setEditValue] = useState('')
   const [editStatus, setEditStatus] = useState<'idle' | 'pending'>('idle')
@@ -217,6 +255,35 @@ export default function SessionLogger({
   // name that will be saved, so a prefilled name is never hidden.
   const [driverOpen, setDriverOpen] = useState(false)
   const driverBadge = driverBadgeText(driverName)
+  // The boundary question (T6b item 8), on a workday stop only (never with
+  // VITE_FEATURE_WORKDAY off). The workday's saved legs are read once, when
+  // the logger opens; the first stop has no question.
+  const [stop] = useState<StopContext | null>(() =>
+    draft?.workday && !isNoSign && rules && isWorkdayEnabled()
+      ? stopContext(loadSessions(), draft.workday.workday_id)
+      : null,
+  )
+  const [boundaryAnswer, setBoundaryAnswer] = useState<BoundaryAnswer | null>(null)
+  // Save was tapped while the question needed an answer: show it even if
+  // the location is still coming in, and say an answer is needed.
+  const [boundaryBlocked, setBoundaryBlocked] = useState(false)
+  const [boundaryRequired, setBoundaryRequired] = useState(false)
+  const [focusNotSure, setFocusNotSure] = useState(0)
+  const notSureRef = useRef<HTMLInputElement>(null)
+  useEffect(() => {
+    if (focusNotSure > 0) notSureRef.current?.focus()
+  }, [focusNotSure])
+  // A workday stop's Save can wait a few seconds for the place lookup
+  // (WORKDAY_PLACE_WAIT_MS); Save, Back and Cancel are disabled meanwhile.
+  const checkingRef = useRef(false)
+  const [checking, setChecking] = useState(false)
+  const busy = submitting || checking
+  // Ticks the "still runs" and deadline-passed lines while the logger is
+  // open. A Save that found the time already ended moves it on at once, so
+  // the screen agrees with what Save found.
+  const ticked = useNow(30_000)
+  const [blockedAt, setBlockedAt] = useState(0)
+  const now = Math.max(ticked, blockedAt)
 
   const startEdit = () => {
     if (gps.status !== 'ok' && gps.status !== 'error') return
@@ -288,7 +355,15 @@ export default function SessionLogger({
         // Don't reverse-geocode an unreliable coord — Nominatim would return
         // whatever happens to be at the (wrong) point and mislead the user.
         if (trustworthy) {
-          void reverseGeocodeDetails(coords.lat, coords.lng).then((details) => {
+          const lookup = reverseGeocodeDetails(coords.lat, coords.lng)
+          placeLookup.current = {
+            coords,
+            place: lookup.then(
+              (d) => (d ? { road: d.road, suburb: d.suburb, state_code: d.state_code } : null),
+              () => null,
+            ),
+          }
+          void lookup.then((details) => {
             // Only onto this fix: a typed address or a newer fix entered
             // meanwhile keeps its own address and place.
             setGps((curr) =>
@@ -419,7 +494,7 @@ export default function SessionLogger({
    * started the record is being kept, so this does nothing.
    */
   const cancel = () => {
-    if (submittedRef.current || closed.current) return
+    if (submittedRef.current || closed.current || checkingRef.current) return
     closed.current = true
     conditionSlots.close()
     proofSlots.close()
@@ -427,13 +502,52 @@ export default function SessionLogger({
     onCancel()
   }
 
-  const saveSession = async () => {
-    if (submittedRef.current || closed.current) return
-    submittedRef.current = true
-    closed.current = true
-    conditionSlots.close()
-    proofSlots.close()
-    setSubmitting(true)
+  // The boundary question as it stands (T6b item 8). It shows when the
+  // same-stretch check asks, once the location has settled (the GPS fix and
+  // its place lookup), so it doesn't flash up and vanish as the fix comes
+  // in; or at once when Save was tapped. An answer is kept only while the
+  // question offers it (the area question has other answers).
+  const liveLocation =
+    gps.status === 'ok'
+      ? {
+          lat: gps.coords.lat,
+          lng: gps.coords.lng,
+          source: gps.source,
+          accuracy_meters: gps.source === 'gps' ? gps.accuracy : null,
+        }
+      : null
+  const livePlace = gps.status === 'ok' && gps.source === 'gps' ? gps.place : null
+  const liveCheck = stop && rules ? stopBoundaryCheck(stop, rules, liveLocation, livePlace) : null
+  const locationSettling = gps.status === 'pending' || (gps.status === 'ok' && gps.addressLoading)
+  const boundaryShown = !!liveCheck?.ask && (!locationSettling || boundaryBlocked)
+  const liveAnswer = boundaryShown && liveCheck ? offeredAnswer(liveCheck, boundaryAnswer) : null
+  const liveStatement = stop && liveAnswer ? stopBoundaryStatement(stop, liveCheck, liveAnswer) : null
+  const liveBoundary = liveStatement && liveStatement !== 'unanswered' ? liveStatement : null
+  const liveOutcome = stop && rules && liveBoundary ? stopOutcome(stop, liveBoundary, rules.until, now) : null
+  const liveStartsNew = answerStartsNewLimit(liveBoundary)
+  // The time on this stretch has already ended: "Save anyway" and "Don't
+  // save this stop" take the place of Save and Cancel.
+  const boundaryDeadlinePassed = boundaryShown && stopDeadlinePassed(liveAnswer, liveStartsNew, liveOutcome)
+  // "I'm not sure" is focused by default (T6b item 8): once, when the
+  // question first shows. Focus only, never checked, because the answer is
+  // signed as the driver's own statement. Not while the driver is typing in
+  // a field (an address, their name), and without scrolling the page under
+  // them. A blocked Save focuses it again (above), scrolling it into view.
+  const boundaryFocused = useRef(false)
+  useEffect(() => {
+    if (!boundaryShown || boundaryFocused.current) return
+    boundaryFocused.current = true
+    if (isTypingTarget(document.activeElement)) return
+    notSureRef.current?.focus({ preventScroll: true })
+  }, [boundaryShown])
+  const stopTimeZone = liveLocation
+    ? timezoneForCoords(liveLocation.lat, liveLocation.lng)
+    : timezoneForCoords(stop?.previous?.location?.lat, stop?.previous?.location?.lng)
+
+  const saveSession = async (options: { acceptPassedDeadline?: boolean } = {}) => {
+    if (submittedRef.current || closed.current || checkingRef.current) return
+    // The answer counts only if the question was on screen when Save was tapped.
+    const answerAtTap = boundaryShown ? boundaryAnswer : null
     // Arrival time is the tap, as before; the photo writes (milliseconds)
     // are awaited after it.
     const arrived_at = new Date().toISOString()
@@ -450,7 +564,56 @@ export default function SessionLogger({
     // The raw reverse-geocode parts of the GPS fix, and the jurisdiction read
     // from their state code alone (T6a). Left off when the lookup hadn't
     // answered, and for a typed address.
-    const place = gps.status === 'ok' && gps.source === 'gps' ? gps.place : null
+    let place = gps.status === 'ok' && gps.source === 'gps' ? gps.place : null
+    // A workday stop's state comes only from this lookup (T6b item 7): when
+    // it hasn't answered yet, wait a little for it rather than end the
+    // workday because the state couldn't be told.
+    const pending = placeLookup.current
+    if (draft?.workday && !place && gps.status === 'ok' && gps.source === 'gps' && pending?.coords === gps.coords) {
+      checkingRef.current = true
+      setChecking(true)
+      try {
+        place = await Promise.race([
+          pending.place,
+          new Promise<null>((resolve) => setTimeout(() => resolve(null), WORKDAY_PLACE_WAIT_MS)),
+        ])
+      } finally {
+        checkingRef.current = false
+        setChecking(false)
+      }
+      if (closed.current) return
+    }
+    // The boundary question (T6b item 8), the only step that may block
+    // Save. Asked from where the phone is at the tap: a GPS fix that isn't
+    // in yet is an unreliable location, so the check asks. A required
+    // answer that hasn't been given blocks Save and moves focus to "I'm not
+    // sure"; an answer that keeps the running limit after it has ended
+    // offers only "Save anyway" and "Don't save this stop".
+    let boundaryFields: Pick<ParkingSession, 'boundary'> = {}
+    if (stop && rules) {
+      const check = stopBoundaryCheck(stop, rules, location, place)
+      const statement = stopBoundaryStatement(stop, check, answerAtTap)
+      if (statement === 'unanswered') {
+        setBoundaryBlocked(true)
+        setBoundaryRequired(true)
+        setFocusNotSure((n) => n + 1)
+        return
+      }
+      if (statement && !options.acceptPassedDeadline) {
+        const outcome = stopOutcome(stop, statement, rules.until, Date.now())
+        if (stopDeadlinePassed(statement.answer, answerStartsNewLimit(statement), outcome)) {
+          setBoundaryBlocked(true)
+          setBlockedAt(Date.now())
+          return
+        }
+      }
+      boundaryFields = { boundary: statement }
+    }
+    submittedRef.current = true
+    closed.current = true
+    conditionSlots.close()
+    proofSlots.close()
+    setSubmitting(true)
     const placeFields: Pick<ParkingSession, 'place' | 'jurisdiction'> = place
       ? { place, jurisdiction: jurisdictionOfPlace(place) }
       : {}
@@ -484,6 +647,9 @@ export default function SessionLogger({
     // Always set, null when empty: a cleared field signs "nobody named",
     // never the draft's default (buildArrivalContext reads the record first).
     extras.driver_name = savedDriverName(driverName)
+    // A workday stop's boundary statement (null for the first stop). App
+    // works out its limit from it when it saves the stop (stopLimitFields).
+    Object.assign(extras, boundaryFields)
     // The legacy fields stay null for photo-store photos. Only when the
     // store couldn't take a scan photo (no IndexedDB, a failed or timed-out
     // write) is it kept in the legacy field instead, so the record still has
@@ -546,7 +712,7 @@ export default function SessionLogger({
 
   return (
     <div className="min-h-screen flex flex-col p-6 max-w-md mx-auto w-full">
-      <BackButton onClick={cancel} disabled={submitting}>
+      <BackButton onClick={cancel} disabled={busy}>
         {t('common.back')}
       </BackButton>
 
@@ -947,26 +1113,46 @@ export default function SessionLogger({
         </CollapsibleSection>
       )}
 
-      {/* ── Slot: boundary question (T6, workday legs only). Renders here,
-          right above Save, and is the only section that may block it.
-          Nothing yet. ── */}
+      {/* Boundary question (T6b item 8, workday stops only), right above
+          Save: the only section that may block it. */}
+      {boundaryShown && liveCheck && (
+        <BoundaryQuestion
+          check={liveCheck}
+          answer={liveAnswer}
+          onAnswer={(answer) => {
+            setBoundaryAnswer(answer)
+            setBoundaryRequired(false)
+          }}
+          outcome={liveOutcome}
+          startsNewLimit={liveStartsNew}
+          required={boundaryRequired}
+          notSureRef={notSureRef}
+          timeZone={stopTimeZone}
+          now={now}
+          disabled={busy}
+          onSaveAnyway={() => void saveSession({ acceptPassedDeadline: true })}
+          onDontSave={cancel}
+        />
+      )}
 
-      <div className="mt-auto pt-3 flex flex-col gap-2">
-        <Button
-          onClick={() => void saveSession()}
-          disabled={submitting}
-          className="disabled:cursor-not-allowed"
-        >
-          {submitting ? t('logger.saving') : t('logger.saveSession')}
-        </Button>
-        <button
-          onClick={cancel}
-          disabled={submitting}
-          className="text-paper-50 hover:text-[#7BE3A4] font-medium py-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {t('common.cancel')}
-        </button>
-      </div>
+      {!boundaryDeadlinePassed && (
+        <div className="mt-auto pt-3 flex flex-col gap-2">
+          <Button
+            onClick={() => void saveSession()}
+            disabled={busy}
+            className="disabled:cursor-not-allowed"
+          >
+            {busy ? t('logger.saving') : t('logger.saveSession')}
+          </Button>
+          <button
+            onClick={cancel}
+            disabled={busy}
+            className="text-paper-50 hover:text-[#7BE3A4] font-medium py-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {t('common.cancel')}
+          </button>
+        </div>
+      )}
     </div>
   )
 }

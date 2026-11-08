@@ -7,6 +7,8 @@
 export const RECORD_STATUS_ID = 'record-status'
 /** The home screen's scan button. */
 export const HOME_SCAN_ID = 'home-scan'
+/** The workday card's scan button between moves (T6b): "Parked again? Scan the new sign". */
+export const WORKDAY_SCAN_ID = 'workday-scan'
 
 /** The first element on the page with one of these ids, or null. */
 export function firstFocusTarget(...ids: readonly string[]): HTMLElement | null {

@@ -6,6 +6,8 @@ import { useLiveRecords } from '../lib/use-records-version'
 import { recordStatus } from '../lib/record-status'
 import { sessionTimezone } from '../lib/timezone'
 import { isNoSignReadRecord } from '../lib/sign-result'
+import { getWorkday, isActiveRecord } from '../lib/storage'
+import { historyEntries } from '../lib/workday-flow'
 import Icon from './Icon'
 import VerifiedSeal from './VerifiedSeal'
 import BackButton from './ui/BackButton'
@@ -17,6 +19,12 @@ const THUMB_ROLES = ['sign', 'ambient', 'car'] as const
 interface Props {
   onBack: () => void
   onOpen: (session: ParkingSession) => void
+  /**
+   * Workday mode (T6b item 5, behind VITE_FEATURE_WORKDAY): with this
+   * passed, a workday's stops fold into one row ("Workday, 3 stops") that
+   * opens the workday view. Without it every record is its own row.
+   */
+  onOpenWorkday?: (workdayId: string) => void
 }
 
 function statusFor(
@@ -37,7 +45,51 @@ function statusFor(
   return { label: status.label, color }
 }
 
-export default function SessionHistory({ onBack, onOpen }: Props) {
+/** One History row for a whole workday: its first stop's date, the stop count, the newest stop's address. */
+function WorkdayRow({
+  legs,
+  workdayId,
+  now,
+  onOpen,
+}: {
+  legs: ParkingSession[]
+  workdayId: string
+  now: number
+  onOpen: () => void
+}) {
+  const { t } = useTranslation()
+  const first = legs[0]
+  const last = legs[legs.length - 1]
+  const timeZone = sessionTimezone(first?.location ?? null)
+  const stored = getWorkday(workdayId)
+  // The workday's own state when it's on this device; otherwise (its stops
+  // came from the cloud) in progress while any stop is.
+  const active = stored ? stored.status !== 'ended' : legs.some((l) => isActiveRecord(l, now))
+  const arrival = first ? new Date(first.arrived_at) : null
+  return (
+    <button onClick={onOpen} className="gf-card text-left bg-white hover:bg-paper-50 p-4 transition-colors">
+      <div className="flex items-start gap-3">
+        <div className="w-16 h-16 rounded-lg border border-paper-300 bg-brand-50 flex items-center justify-center flex-none">
+          <Icon name="briefcase" className="w-7 h-7 text-brand-700" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="font-medium text-ink-900 truncate">{t('workday.history.row', { count: legs.length })}</p>
+          {arrival && (
+            <p className="text-xs text-ink-700 mt-0.5">
+              {arrival.toLocaleDateString('en-AU', { timeZone, weekday: 'short', day: 'numeric', month: 'short' })}
+            </p>
+          )}
+          {last?.location?.address && <p className="text-xs text-ink-700 mt-0.5 truncate">{last.location.address}</p>}
+          <p className={`text-xs font-semibold mt-1 ${active ? 'text-brand-700' : 'text-ink-600'}`}>
+            {active ? t('workday.status.active') : t('workday.status.ended')}
+          </p>
+        </div>
+      </div>
+    </button>
+  )
+}
+
+export default function SessionHistory({ onBack, onOpen, onOpenWorkday }: Props) {
   const { t } = useTranslation()
   // Re-read on every records change, so a signature or a cloud pull that
   // lands while History is open shows up without leaving the screen.
@@ -68,7 +120,19 @@ export default function SessionHistory({ onBack, onOpen }: Props) {
         </div>
       ) : (
         <div className="flex flex-col gap-3">
-          {sessions.map((s) => {
+          {historyEntries(sessions, !!onOpenWorkday).map((entry) => {
+            if (entry.kind === 'workday') {
+              return (
+                <WorkdayRow
+                  key={`workday-${entry.workday_id}`}
+                  legs={entry.legs}
+                  workdayId={entry.workday_id}
+                  now={now}
+                  onOpen={() => onOpenWorkday?.(entry.workday_id)}
+                />
+              )
+            }
+            const s = entry.session
             // One zone for the whole row (the record's own, as on the record
             // screen), so arrival and "Ended ..." can't disagree.
             const timeZone = sessionTimezone(s.location)

@@ -16,6 +16,12 @@ interface Props {
   /** Log the park without a sign; the photo is kept as the surroundings photo. */
   onLogWithoutSign: () => void
   onBack: () => void
+  /**
+   * A workday stop's scan (build spec T6b item 7): stops need a readable
+   * sign, so the only actions are "Retake photo" and "End workday" (this),
+   * and the screen says why. "Log without a sign" isn't offered.
+   */
+  onEndWorkday?: () => void
 }
 
 /**
@@ -25,7 +31,7 @@ interface Props {
  * no rules here", so the screen says that general road rules still apply.
  * The driver retakes the photo or logs the park without a sign.
  */
-export default function NoReadableSign({ result, signPhoto, onRetake, onLogWithoutSign, onBack }: Props) {
+export default function NoReadableSign({ result, signPhoto, onRetake, onLogWithoutSign, onBack, onEndWorkday }: Props) {
   const { t } = useTranslation()
   // The model's notes on what the photo shows instead (its own words).
   const notes = signIssuesOf(result)
@@ -58,7 +64,7 @@ export default function NoReadableSign({ result, signPhoto, onRetake, onLogWitho
           {t('unclearSign.noSignTitle')}
         </h2>
         <p id="no-readable-sign-body" className="mt-4 text-sm text-ink-700 leading-relaxed">
-          {t('unclearSign.noSignBody')}
+          {onEndWorkday ? t('workday.noSign.body') : t('unclearSign.noSignBody')}
         </p>
       </div>
 
@@ -86,9 +92,15 @@ export default function NoReadableSign({ result, signPhoto, onRetake, onLogWitho
           <Icon name="camera" className="w-5 h-5 mr-2" />
           {t('unclearSign.retake')}
         </Button>
-        <Button variant="outline" onClick={onLogWithoutSign}>
-          {t('unclearSign.logWithoutSign')}
-        </Button>
+        {onEndWorkday ? (
+          <Button variant="outline" onClick={onEndWorkday}>
+            {t('workday.card.end')}
+          </Button>
+        ) : (
+          <Button variant="outline" onClick={onLogWithoutSign}>
+            {t('unclearSign.logWithoutSign')}
+          </Button>
+        )}
       </div>
     </div>
   )
