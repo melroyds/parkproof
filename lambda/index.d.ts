@@ -11,6 +11,13 @@ export interface TranslateSignInput {
 
 export function translateSign(input: TranslateSignInput): Promise<unknown>
 
+/**
+ * For the accuracy harness only: wraps the model client translateSign
+ * creates, to record requests and usage or to answer offline. Pass null to
+ * restore the real client.
+ */
+export function setSignClientWrapper(wrap: ((client: unknown) => unknown) | null): void
+
 interface LambdaEvent {
   body?: string | Record<string, unknown>
   requestContext?: {

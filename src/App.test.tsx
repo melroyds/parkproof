@@ -59,6 +59,8 @@ const mocks = vi.hoisted(() => ({
 const { SIGN_BYTES } = vi.hoisted(() => ({ SIGN_BYTES: 'fake-sign-photo-bytes' }))
 /** The props each render of the fake logger received (latest last). */
 const { loggerProps } = vi.hoisted(() => ({ loggerProps: [] as Array<Record<string, unknown>> }))
+/** The answer each render of the fake result screen received (latest last). */
+const { resultProps } = vi.hoisted(() => ({ resultProps: [] as Array<{ result: unknown }> }))
 
 vi.mock('./lib/push', async (importOriginal) => ({
   ...(await importOriginal<typeof import('./lib/push')>()),
@@ -140,7 +142,11 @@ vi.mock('./components/Clarify', () => ({
   ),
 }))
 vi.mock('./components/ParkingResult', () => ({
-  default: (p: { onLogSession: () => void }) => <button onClick={p.onLogSession}>Fake log</button>,
+  default: (p: { onLogSession: () => void; result: unknown }) => (
+    <button ref={() => void resultProps.push({ result: p.result })} onClick={p.onLogSession}>
+      Fake log
+    </button>
+  ),
 }))
 vi.mock('./components/SessionLogger', () => ({
   default: (p: {
@@ -246,6 +252,7 @@ beforeEach(() => {
   Object.defineProperty(window, 'confirm', { value: vi.fn(() => true), configurable: true, writable: true })
   for (const m of Object.values(mocks)) m.mockClear()
   loggerProps.length = 0
+  resultProps.length = 0
   mocks.installSigningTriggers.mockImplementation(() => mocks.uninstallSigningTriggers)
   mocks.scheduleDepartureCatchUp.mockImplementation(() => () => {})
   mocks.queueAddendum.mockImplementation((id, kind, data, options = {}) => appendAddendum(id, { kind, data, ...options }))
@@ -900,6 +907,28 @@ describe('App and the photo store (T0b2)', () => {
     fireEvent.click(button)
     await screen.findByRole('button', { name: 'Fake log' })
     expect(mocks.refreshInterpretation).toHaveBeenCalledTimes(1)
+  })
+
+  it('a re-check answer reaches the result screen marked as a re-check, a fresh scan does not (T9 telemetry)', async () => {
+    // The flag is what the result screen reports as is_refresh. App marks
+    // it itself, so it doesn't depend on refreshInterpretation's copy
+    // surviving however the result object is built.
+    saveSession(makeSession())
+    mocks.refreshInterpretation.mockResolvedValueOnce({ ...RESULT, rules: 'x' })
+    renderApp(false)
+    fireEvent.click(screen.getByRole('button', { name: i18n.t('active.recheckSub') }))
+    await screen.findByRole('button', { name: 'Fake log' })
+    expect(resultProps.at(-1)?.result).toMatchObject({ is_refresh: true, rules: makeSession().rules })
+    cleanup()
+
+    resultProps.length = 0
+    localStorage.clear()
+    mocks.translateSign.mockResolvedValueOnce(RESULT)
+    renderApp(false)
+    click('Fake start scan')
+    click('Fake capture')
+    await screen.findByRole('button', { name: 'Fake log' })
+    expect((resultProps.at(-1)?.result as ParkingRules).is_refresh).toBeUndefined()
   })
 
   it('a second save of the same record id moves on like a save: no error screen, the first save stands', async () => {

@@ -65,6 +65,16 @@ const ALLOWED_MEDIA_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'i
 const ALLOW_TIME_OVERRIDE =
   !process.env.AWS_LAMBDA_FUNCTION_NAME || process.env.ALLOW_TIME_OVERRIDE === '1'
 
+// The accuracy harness (scripts/eval-accuracy.mjs) wraps the sign reader's
+// model client: to record each request's prompt, schema and token usage, or
+// to answer with canned output in --dry-run so it runs with no network.
+// Nothing in the Lambda or the app sets it.
+const passThroughClient = (client) => client
+let wrapSignClient = passThroughClient
+export function setSignClientWrapper(wrap) {
+  wrapSignClient = typeof wrap === 'function' ? wrap : passThroughClient
+}
+
 // ─── Async-job plumbing ───────────────────────────────────────────────────
 // API Gateway HTTP APIs cap at 30 seconds. Claude vision on stacked
 // multi-variant Melbourne signs can take 30–50s. Rather than block the
@@ -787,7 +797,7 @@ export async function translateSign({
     }
   }
 
-  const client = new Anthropic({ apiKey })
+  const client = wrapSignClient(new Anthropic({ apiKey }))
   const timezone = resolveTimezone(lat, lng)
   const now = ALLOW_TIME_OVERRIDE && current_datetime ? current_datetime : nowInTimezone(timezone)
   const t1 = Date.now()

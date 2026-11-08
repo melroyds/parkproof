@@ -97,7 +97,9 @@ export async function refreshInterpretation(
   }
   const devTime = readDevTimeFromUrl()
   if (devTime) body.current_datetime = devTime
-  return postJsonAndPoll<ParkingRules>('/sign-translate', body)
+  const fresh = await postJsonAndPoll<ParkingRules>('/sign-translate', body)
+  // Marks the answer as a re-check for the feedback telemetry.
+  return { ...fresh, is_refresh: true }
 }
 
 /**

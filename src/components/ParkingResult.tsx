@@ -9,7 +9,7 @@ import { submitFeedback } from '../lib/feedback'
 import { PARKING_APPS, launchUrlFor, type ParkingApp } from '../lib/parking-apps'
 import { useNow } from '../lib/use-now'
 import { formatCountdownLocalized } from '../lib/countdown'
-import { formatExpiryAbsolute } from '../lib/time-format'
+import { formatExpiryAbsolute, hourInZone } from '../lib/time-format'
 import { timezoneForCoords } from '../lib/timezone'
 
 interface Props {
@@ -62,6 +62,7 @@ function buildFeedbackContext(
   ticketAcknowledged: boolean,
   disabledAcknowledged: boolean,
   permitZoneAcknowledged: boolean,
+  scan: { at: number; timeZone: string },
 ) {
   return {
     confidence: result.confidence,
@@ -75,10 +76,12 @@ function buildFeedbackContext(
     // First 120 chars only — enough to group similar sign-patterns in Logs
     // Insights queries without bloating CloudWatch storage.
     rules_excerpt: (result.rules ?? '').slice(0, 120),
-    scanned_hour_local: new Date().getHours(),
-    // Refresh-mode results have a marker rule prefix; cheaper than threading
-    // the mode down from App.tsx and good enough for telemetry purposes.
-    is_refresh: false,
+    // The hour at the parking spot, in the zone the answer was read for
+    // (the record's zone), not the phone's: lighting failures are about
+    // the time where the sign is.
+    scanned_hour_local: hourInZone(scan.at, scan.timeZone) ?? undefined,
+    // refreshInterpretation marks re-check answers; fresh photo reads have no mark.
+    is_refresh: result.is_refresh === true,
     // Paid-parking signals — lets us slice retake rate by paid vs free signs
     // and see whether the acknowledgement gate is real friction or just noise.
     requires_ticket: !!result.requires_ticket,
@@ -181,6 +184,9 @@ export default function ParkingResult({
   // One id per rendering of the result — used to dedupe feedback events server-side
   // without storing anything identifiable.
   const [feedbackId] = useState(() => crypto.randomUUID())
+  // When the answer was shown: the scan time for the telemetry, rather
+  // than whenever the driver gets round to tapping a verify button.
+  const [shownAt] = useState(() => Date.now())
   // Synchronous double-submit guard — a fast double-tap on the verify buttons
   // would otherwise fire submitFeedback twice with the same feedback_id and
   // over-count the accuracy telemetry. A ref, not state, so the second tap in
@@ -390,7 +396,10 @@ export default function ParkingResult({
                 submitFeedback({
                   verdict: 'correct',
                   feedback_id: feedbackId,
-                  context: buildFeedbackContext(result, ticketAcknowledged, disabledAcknowledged, permitZoneAcknowledged),
+                  context: buildFeedbackContext(result, ticketAcknowledged, disabledAcknowledged, permitZoneAcknowledged, {
+                    at: shownAt,
+                    timeZone,
+                  }),
                 })
                 setVerified(true)
               }}
@@ -405,7 +414,10 @@ export default function ParkingResult({
                 submitFeedback({
                   verdict: 'retake',
                   feedback_id: feedbackId,
-                  context: buildFeedbackContext(result, ticketAcknowledged, disabledAcknowledged, permitZoneAcknowledged),
+                  context: buildFeedbackContext(result, ticketAcknowledged, disabledAcknowledged, permitZoneAcknowledged, {
+                    at: shownAt,
+                    timeZone,
+                  }),
                 })
                 onRetake()
               }}

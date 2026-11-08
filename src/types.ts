@@ -87,6 +87,13 @@ export interface ParkingRules {
   chosen_label?: string
   /** Frontend-only — variants the user did NOT pick. Carried through for PDF context. */
   alternate_variants?: RuleVariant[]
+  /**
+   * Frontend-only: true when this answer came from a re-check (the
+   * text-only refresh of a saved record's rules), not a fresh photo read.
+   * Set by refreshInterpretation; reported in the feedback telemetry and
+   * never saved on a record.
+   */
+  is_refresh?: boolean
 }
 
 export interface SignatureBundle {
