@@ -126,7 +126,7 @@ afterEach(() => {
   setPhotoBackendForTests(null)
 })
 
-const openNotice = () => fireEvent.click(screen.getByRole('button', { name: i18n.t('notice.homeLink') }))
+const openNotice = () => fireEvent.click(screen.getByRole('button', { name: i18n.t('home.fineStart') }))
 
 describe('App: the notice view', () => {
   it('the home link opens an empty notice screen, and its Back returns home', () => {
@@ -135,7 +135,7 @@ describe('App: the notice view', () => {
     expect(screen.getByText('Fake notice empty')).toBeTruthy()
     expect(noticeProps.at(-1)?.initial).toBeNull()
     fireEvent.click(screen.getByText('Fake notice back'))
-    expect(screen.getByRole('button', { name: i18n.t('notice.homeLink') })).toBeTruthy()
+    expect(screen.getByRole('button', { name: i18n.t('home.fineStart') })).toBeTruthy()
   })
 
   it('the home link is there for a returning driver too', () => {
@@ -186,7 +186,7 @@ describe('App: the notice view', () => {
     expect(props.backLabelKey).toBe('common.back')
     fireEvent.click(screen.getByText('Fake appeal back'))
     fireEvent.click(screen.getByText('Fake notice back'))
-    expect(screen.getByRole('button', { name: i18n.t('notice.homeLink') })).toBeTruthy()
+    expect(screen.getByRole('button', { name: i18n.t('home.fineStart') })).toBeTruthy()
   })
 
   // A driver with no record whose notice can't be read (not_a_notice, a
@@ -202,6 +202,6 @@ describe('App: the notice view', () => {
     expect(props.initialNotice).toBeNull()
     expect(props.backLabelKey).toBeUndefined()
     fireEvent.click(screen.getByText('Fake appeal back'))
-    expect(screen.getByRole('button', { name: i18n.t('notice.homeLink') })).toBeTruthy()
+    expect(screen.getByRole('button', { name: i18n.t('home.fineStart') })).toBeTruthy()
   })
 })

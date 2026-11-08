@@ -22,7 +22,7 @@ import type { TFunction } from 'i18next'
 import type { RecurringRule, Weekday } from '../types'
 import { RECURRING_SCHEDULE_DAYS } from '../../lambda/recurring-schedule.js'
 import { recurringLink } from './deep-link'
-import { canShowInTabNotifications } from './notifications'
+import { alertEnvironment, alertReach, type AlertEnvironment, type AlertReach } from './alert-reach'
 import {
   ERR_NOT_SUBSCRIBED,
   errorCodeOf,
@@ -30,7 +30,6 @@ import {
   getDeviceId,
   hasPushDeviceId,
   isPushSupported,
-  isPushTurnedOff,
   pushPost,
   reRegisterPush,
   subscribeToPush,
@@ -264,7 +263,9 @@ export function recurringPushStatusOf(rule: RecurringRule, t: TFunction, now: nu
 }
 
 /**
- * What the line under a rule can truthfully say about this phone:
+ * What the line under a rule can truthfully say about this phone
+ * (alert-reach.ts AlertReach, the same answer the Remind me outcome for a
+ * record gives):
  *  - 'closed': booked for push, notifications are allowed and push hasn't
  *    been turned off in Settings, so it alerts even when ParkProof is closed;
  *  - 'open_only': not on push, but this browser can show an alert while
@@ -274,26 +275,9 @@ export function recurringPushStatusOf(rule: RecurringRule, t: TFunction, now: nu
  *    push booking went through with no service worker controlling the
  *    page, since Android shows in-tab alerts only through one).
  */
-export type RecurringAlertReach = 'closed' | 'open_only' | 'none'
+export type RecurringAlertReach = AlertReach
 
-export interface AlertEnvironment {
-  /** Notification.permission, or 'unsupported' when there is no Notification API. */
-  permission: NotificationPermission | 'unsupported'
-  /** canShowInTabNotifications(): can an open tab show an alert here? */
-  inTab: boolean
-  /**
-   * push.ts isPushTurnedOff(): push was turned off in Settings on this
-   * browser and hasn't been registered again. Absent counts as false.
-   */
-  pushOff?: boolean
-}
-
-export function alertEnvironment(): AlertEnvironment {
-  const permission = typeof window !== 'undefined' && 'Notification' in window ? Notification.permission : 'unsupported'
-  const env: AlertEnvironment = { permission, inTab: canShowInTabNotifications() }
-  if (isPushTurnedOff()) env.pushOff = true
-  return env
-}
+export { alertEnvironment, type AlertEnvironment }
 
 /**
  * The rule's reach on this phone, or null when there is nothing to say
@@ -301,7 +285,8 @@ export function alertEnvironment(): AlertEnvironment {
  * worked out yet. A booked rule only counts as 'closed' while notification
  * permission is still granted (a revoked permission silences push too) and
  * while push is on in Settings: turning it off drops the subscription the
- * server's pushes go to, even though the bookings stand.
+ * server's pushes go to, even though the bookings stand. The decision is
+ * alert-reach.ts alertReach, shared with the Remind me outcome.
  */
 export function recurringAlertReach(
   rule: RecurringRule,
@@ -311,9 +296,7 @@ export function recurringAlertReach(
 ): RecurringAlertReach | null {
   const status = recurringPushStatusOf(rule, t, now)
   if (status === null) return null
-  if (status === 'push' && env.permission === 'granted' && env.pushOff !== true) return 'closed'
-  if (env.inTab) return 'open_only'
-  return 'none'
+  return alertReach(status === 'push', env)
 }
 
 // ── Talking to the server ────────────────────────────────────────────────

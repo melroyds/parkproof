@@ -15,6 +15,7 @@
 // file runs on a Melbourne clock whatever the machine's zone (Node re-reads
 // TZ when it is assigned), so a UTC CI runner catches it too.
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
+import i18n from './i18n'
 import { downloadIcs, downloadIcsAbsolute } from './ics'
 import type { ParkingSession } from '../types'
 
@@ -28,9 +29,11 @@ const record = {
 } as unknown as ParkingSession
 
 // vi.stubEnv assigns process.env.TZ, which Node applies at once.
-beforeAll(() => {
+beforeAll(async () => {
   vi.stubEnv('TZ', 'Australia/Melbourne')
+  await i18n.changeLanguage('en')
 })
+const t = i18n.getFixedT('en')
 afterAll(() => {
   vi.unstubAllEnvs()
 })
@@ -59,14 +62,14 @@ describe('downloadIcs', () => {
   })
 
   it('anchors on the expiry by default', async () => {
-    const text = await icsText(() => downloadIcs(record, [15]))
+    const text = await icsText(() => downloadIcs(record, [15], t))
     expect(text).toContain('DTSTART:20261109T050000Z')
     expect(text).toContain('TRIGGER:-PT15M')
     expect(text.match(/BEGIN:VALARM/g)).toHaveLength(1)
   })
 
   it('puts the at-expiry alarm at the expiry instant, not hours off on a phone east of UTC', async () => {
-    const text = await icsText(() => downloadIcs(record, [0]))
+    const text = await icsText(() => downloadIcs(record, [0], t))
     expect(text).toContain('TRIGGER;VALUE=DATE-TIME:20261109T050000Z')
   })
 
@@ -74,7 +77,7 @@ describe('downloadIcs', () => {
     const standardText = 'The standard limit on this sign ends now. Your permit time runs to 6:00 pm.'
     const permitText = 'The permit time you entered from the sign ends at 6:00 pm. Time to move the car.'
     const text = await icsText(() =>
-      downloadIcs(record, [], {
+      downloadIcs(record, [], t, {
         anchor: PERMIT,
         extraAlarms: [
           { at: new Date(STANDARD), description: standardText },
@@ -96,7 +99,7 @@ describe('downloadIcs', () => {
   })
 
   it('still needs at least one alarm', () => {
-    expect(() => downloadIcs(record, [])).toThrow(/Pick at least one reminder time/)
+    expect(() => downloadIcs(record, [], t)).toThrow(t('reminders.calendarPickAtLeastOne'))
   })
 })
 
@@ -105,7 +108,7 @@ describe('downloadIcsAbsolute (a record with no sign)', () => {
     // 2 pm and 4:30 pm AEDT on 9 November 2026.
     const first = new Date('2026-11-09T03:00:00.000Z')
     const second = new Date('2026-11-09T05:30:00.000Z')
-    const text = await icsText(() => downloadIcsAbsolute(record, [second, first]))
+    const text = await icsText(() => downloadIcsAbsolute(record, [second, first], t))
     expect(text).toContain('DTSTART:20261109T030000Z')
     expect(text.match(/BEGIN:VALARM/g)).toHaveLength(2)
     expect(text).toContain('TRIGGER;VALUE=DATE-TIME:20261109T030000Z')
@@ -115,6 +118,6 @@ describe('downloadIcsAbsolute (a record with no sign)', () => {
   })
 
   it('still needs at least one alarm', () => {
-    expect(() => downloadIcsAbsolute(record, [])).toThrow(/Pick at least one reminder time/)
+    expect(() => downloadIcsAbsolute(record, [], t)).toThrow(t('reminders.calendarPickAtLeastOne'))
   })
 })

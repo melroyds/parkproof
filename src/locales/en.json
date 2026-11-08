@@ -20,7 +20,8 @@
     "mediumConfidence": "Medium confidence",
     "lowConfidence": "Low confidence",
     "yes": "Yes",
-    "no": "No"
+    "no": "No",
+    "signedSeal": "Signed, tamper-evident record"
   },
   "language": {
     "title": "Language",
@@ -151,13 +152,10 @@
       "title": "Tamper-evident evidence, when it matters.",
       "body": "Every parking record you save is signed, so anyone can check its details haven't changed since. A signature doesn't show they're true, who was driving, where the car was, or when it arrived or left."
     },
-    "feature": {
-      "translateTitle": "Plain-English answers",
-      "translateDesc": "Photograph any Aussie parking sign and get a 'can I park now?' verdict in about 12 seconds.",
-      "evidenceTitle": "Tamper-evident evidence",
-      "evidenceDesc": "Every park gets a cryptographically-signed timestamp, GPS, and photo record.",
-      "appealTitle": "AI appeal letters",
-      "appealDesc": "Got a wrongful ticket? Photograph it and we'll draft a formal dispute."
+    "hero": {
+      "aria": "A parking sign turning into a signed parking record: you can park until {{time}}.",
+      "kicker": "SIGNED RECORD",
+      "canPark": "You can park"
     }
   },
   "home": {
@@ -178,7 +176,6 @@
       "log": "Photo your car → timestamped evidence record",
       "remind": "Get a calendar reminder before parking expires"
     },
-    "weeklyReminders": "Street sweeping and weekly reminders",
     "settings": "Settings",
     "settingsSignIn": "Sign in to sync",
     "startWorkday": "Parking all day? Start a workday",
@@ -215,8 +212,7 @@
     "expiredHint": "Still here? Move now. Already moved? Tap I've left.",
     "walkBackAria": "Walk back. Opens walking directions to your car.",
     "walkBackAriaDistance_one": "Walk back. Opens walking directions to your car, {{distance}} away, about {{count}} minute on foot.",
-    "walkBackAriaDistance_other": "Walk back. Opens walking directions to your car, {{distance}} away, about {{count}} minutes on foot.",
-    "shareAria": "Share where the car is"
+    "walkBackAriaDistance_other": "Walk back. Opens walking directions to your car, {{distance}} away, about {{count}} minutes on foot."
   },
   "scanner": {
     "header": "Scan parking sign",
@@ -246,7 +242,8 @@
     "noSignSkip": "Skip: just save GPS + time",
     "noSignAmbientAlt": "Your photo of the surroundings",
     "noSignAmbientCaption": "Taken to show the surroundings. It doesn't show there was no sign nearby.",
-    "noSignContinue": "Continue to log"
+    "noSignContinue": "Continue to log",
+    "previewAlt": "Your photo of the parking sign"
   },
   "reuse": {
     "scannedHere": "You scanned here {{age}}",
@@ -484,7 +481,17 @@
     "permitBodyBefore_one": "The permit time you entered from the sign ends at {{time}}. This is your {{count}}-minute reminder.",
     "permitBodyBefore_other": "The permit time you entered from the sign ends at {{time}}. This is your {{count}}-minute reminder.",
     "calendarPermitTitle": "ParkProof: the permit time you entered ends",
-    "calendarPermitSummary": "The permit time you entered from the sign ends at {{time}}. ParkProof doesn't work out permit times."
+    "calendarPermitSummary": "The permit time you entered from the sign ends at {{time}}. ParkProof doesn't work out permit times.",
+    "ics": {
+      "expiresTitle": "ParkProof: parking expires",
+      "expiresAt": "Your parking expires at {{time}} ({{place}}).",
+      "remindersAt": "Reminders: {{times}}.",
+      "recordId": "ParkProof record: {{id}}",
+      "checkOnTitle": "ParkProof: check on your car",
+      "checkOnAt": "Check on your car at {{address}} ({{place}}).",
+      "checkOnHere": "Check on your car where you parked it ({{place}}).",
+      "buildFailed": "Couldn't make the calendar file. Try again."
+    }
   },
   "scheduledReminders": {
     "header": "Scheduled reminders",
@@ -581,9 +588,6 @@
     "draftingHeader": "Reading the ticket…",
     "draftingSub": "Claude is cross-referencing it with your saved evidence.",
     "reviewHeader": "Draft appeal",
-    "strongEvidence": "Strong evidence",
-    "moderateEvidence": "Moderate evidence",
-    "weakEvidence": "Weak evidence",
     "strategy": "STRATEGY",
     "subjectLine": "SUBJECT LINE",
     "letter": "LETTER (EDITABLE)",
@@ -687,7 +691,7 @@
     "anonymousThings": "These also leave your device, even without an account:",
     "anonymousAnthropic": "<strong>Each sign photo you scan</strong> is sent to <strong>Anthropic</strong> (Claude) to read the sign, with its location and the type of each permit you've saved (plus the area or zone of a resident or business permit). A re-check sends the earlier reading instead of the photo. We don't keep the photo or the location. The answer, which can mention your permit types, stays on our server briefly so your phone can collect it. Anthropic's retention policy applies.",
     "anonymousNominatim": "<strong>GPS coordinates</strong> are sent to <strong>OpenStreetMap Nominatim</strong> to resolve the street address. Nominatim does not require a key and applies their public retention policy.",
-    "anonymousCloudwatch": "<strong>A random per-result UUID</strong> + a \"correct / retake\" verdict are logged to <strong>AWS CloudWatch</strong> when you tap the verification card. No PII; aggregate signal for prompt tuning.",
+    "anonymousCloudwatch": "<strong>When you tell us whether we read a sign right</strong>, ParkProof's server logs your answer in <strong>AWS CloudWatch</strong>, with when you gave it and a random ID for that answer. With it go details of the reading: the first 120 characters of its description of the sign's rules, how sure it was, the time limit, any payment methods and permit area, whether it asked where you parked and the option you picked, and how many groups of rules, reading problems and weekly restrictions it found. They also say whether the sign was readable, whether the reading was a re-check, and whether it found an area sign, paid parking, a permit zone or an accessible parking bay, and give the hour of day where the sign is. Your answers so far to the paid parking, permit zone and accessible parking permit questions are logged too, so a log line can show that you said an accessible parking permit was displayed. The log doesn't include the photo, its GPS location, or an ID for you or this device. We use it to find where sign readings go wrong. It's deleted after 90 days.",
     "signedInHeader": "What you give us when you sign in",
     "signedInIntro": "Signing in is optional. It enables cloud sync, the same records visible across all your devices.",
     "signedInThings": "When you sign in, additional data leaves your device:",
@@ -711,7 +715,7 @@
     "rightsExport": "<strong>Export.</strong> Tap \"Download as PDF\" in Account to get a complete document with every record you've stored: cover page summary plus a per-record detail block with photos.",
     "rightsDelete": "<strong>Delete.</strong> Tap \"Delete account\" in Account. Removes your sign-in record, every DynamoDB row, and every S3 photo within seconds. Irreversible.",
     "rightsCorrect": "<strong>Correct.</strong> You edit your records in-app. Every change syncs to the cloud immediately if signed in.",
-    "rightsAnonymous": "If you don't sign in, your parking records are only on this device. Clear your browser storage to delete them. That doesn't delete what's already on our servers, such as a push reminder you set (kept until it's sent, cancelled or expires), this device's push registration (kept for about 90 days after you last set a reminder) or feedback you send, with your email if you add one (kept for up to two years).",
+    "rightsAnonymous": "If you don't sign in, your parking records are only on this device. Clear your browser storage to delete them. That doesn't delete what's already on our servers. A push reminder you set for a record is kept until it's sent or you cancel it. A weekly reminder by push is deleted within 90 days of the last time you opened ParkProof. This device's push registration (a random ID for this device, the push address and encryption keys your browser gave us, and when they were last renewed) is kept for about 90 days after ParkProof last renewed it. ParkProof renews it when you open the app with push reminders on and when you set a reminder. Switching push reminders off, in ParkProof or in your browser, doesn't tell our server, so the registration is kept as above. If the push service tells us the address no longer works (this can happen when a reminder you set earlier is sent after you switched them off), we delete the address and keys at once. We keep only this device's ID, a fingerprint of the address and when we found out, for about 90 days, so the address isn't stored again. Our server's logs also record this device's ID when it registers for push, sets a reminder or is sent one, with the push service it uses, the random ID of the record or weekly reminder, and when each reminder was set, sent or skipped. The logs are deleted after 90 days. Feedback you send, with your email if you add one, is kept for up to two years.",
     "photosHeader": "Photos taken inside ParkProof",
     "photosCopy": "Photos are resized to ≤1200px and re-encoded as JPEG at 0.82 quality on your device before they leave the browser. The original high-resolution camera capture never leaves your phone.",
     "signingHeader": "Cryptographic signing",
@@ -724,7 +728,7 @@
     "anonymousPush": "<strong>Push reminders</strong>, if you turn them on: the record's address, each reminder's time and its text (which can mention a permit time you entered) go to <strong>ParkProof's server</strong>, which keeps each one until it is sent, then deletes it.",
     "anonymousPermits": "<strong>A permit you use for a park</strong>: its type, its area or zone and any permit time you entered are kept with that record. Signing the record sends a fingerprint of these details, not the details, along with your answers to the permit questions. Deleting a permit in Settings doesn't change records already saved. Deleting the record removes them.",
     "signedInPermits": "<strong>Permit details</strong> kept with a record (the type, area or zone and any permit time you entered, for a park where you used a saved permit) are stored with that record in AWS DynamoDB. Your saved permits in Settings aren't. Deleting the record removes them.",
-    "anonymousWeeklyPush": "<strong>Weekly reminders by push</strong>, if you turn them on: each reminder's name and any address you entered, its days, times and time zone, and its notification text go to <strong>ParkProof's server</strong>. The server keeps them while the reminder is on, so the reminder can go out every week. They're deleted when you pause or delete the reminder or switch off its notifications. If you stop opening ParkProof, they're deleted within 90 days."
+    "anonymousWeeklyPush": "<strong>Weekly reminders by push</strong>, if you turn them on: each reminder's name and any address you entered, its days, times, repeat pattern and time zone, when it should remind you, and its notification text go to <strong>ParkProof's server</strong>, with a random ID for this device. The server keeps them while the reminder is on, so it can go out every week. They're deleted when you pause or delete the reminder or switch off its notifications, the next time ParkProof is open and online. Each time ParkProof sends them, the server keeps them for 90 days at most. ParkProof sends them again from time to time while you keep opening it, so if you stop, they're deleted within 90 days of the last time you opened ParkProof."
   },
   "loading": {
     "step1": "Reading the sign…",
@@ -1101,7 +1105,6 @@
     }
   },
   "notice": {
-    "homeLink": "Got a fine? Start here",
     "title": "Got a fine?",
     "captureIntro": "Take a photo of the infringement notice. ParkProof reads the date, time and place on it and looks for your parking records from around then.",
     "reading": {
@@ -1335,7 +1338,8 @@
       "alarmTomorrow": "{{what}} tomorrow, {{range}}. Move the car before {{start}}.",
       "alarmSoon": "{{what}} starts at {{start}}. Move the car before then.",
       "move": "Move the car before it starts.",
-      "footer": "Reminder set in ParkProof."
+      "footer": "Reminder set in ParkProof.",
+      "noDates": "This weekly reminder has no dates to add."
     }
   },
   "photoGrid": {
@@ -1451,7 +1455,6 @@
     "permitExpired": "Expired {{date}}. It isn't sent with your scans.",
     "deletePermitLabel": "Delete {{permit}}",
     "pushUnsupported": "This browser can't show reminders while ParkProof is closed. On an iPhone, add ParkProof to your Home Screen first. Calendar reminders still work.",
-    "remindersReliability": "Reminders can be delayed or silenced, for example by Focus or battery saving. Don't rely on them alone.",
     "accountHeader": "Account",
     "accountCopy": "Cloud sync, data export, signing out and deleting your account.",
     "openAccount": "Open account",

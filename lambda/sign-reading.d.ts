@@ -64,6 +64,13 @@ export declare class SignInputError extends Error {
 
 /** At most 3 permits, each exactly `{ type, area? }`. Throws SignInputError. */
 export function validateUserPermits(value: unknown): CheckedUserPermit[]
+/**
+ * The permits in the app's priority order (permitAnswerFor): accessible
+ * first, then resident and business in saved order. A new array. The sign
+ * reader lists permits to the model in this order, and the answer's
+ * permit_exception entries follow it.
+ */
+export function permitsInPriorityOrder<T extends { type?: unknown }>(permits: readonly T[] | null | undefined): T[]
 /** A Jurisdiction code or null. Throws SignInputError. */
 export function validateParkingState(value: unknown): JurisdictionCode | null
 export function validateTranslateExtras(body: unknown): {
@@ -81,7 +88,8 @@ export function readPriorSignContext(body: unknown): PriorSignContext
 
 /**
  * What the sign itself prints for one of the user's permit types. Answers
- * carry one per listed type, in list order ([] when none are listed), so
+ * carry one per listed type, in priority order (permitsInPriorityOrder:
+ * accessible first, then the order listed; [] when none are listed), so
  * `permit_type` is always set there; the type keeps it nullable, as the
  * client's PermitException does. The model reports one exception per level
  * (two flat fields, mapped by normalizeModelOutput), so at most one entry

@@ -111,13 +111,11 @@ export default function SharedRecordScreen({ session: initial, onBack, onRemove,
             {t(CHECK_KEYS[result])}
           </p>
         )}
-        <button
-          type="button"
-          onClick={remove}
-          className="text-accent-600 hover:text-accent-700 font-medium py-3 min-h-[44px] transition-colors"
-        >
+        {/* Destructive, so the danger style: coral on the vault, quieter
+            than Check the signature (WCAG AA, Button's danger variant). */}
+        <Button variant="danger" size="sm" type="button" onClick={remove}>
           {t('share.remove')}
-        </button>
+        </Button>
       </div>
     </div>
   )

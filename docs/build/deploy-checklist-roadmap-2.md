@@ -4,6 +4,16 @@ What this deploys: `integration/roadmap-2`. That's main plus the field-test fixe
 
 Evidence comes from commit `cfdecc7` in `C:\Users\molte\Downloads\pp-wt\readonly`, compared with `git diff main...HEAD`. Line numbers are at that commit. T7 has since merged as `2edc532` ("Merge feat/t7-share into integration/roadmap-2"). From `cfdecc7` to `2edc532`, the only change in `lambda/`, `scripts/`, `migrations/`, `public/` or the build config is the new `scripts/_i18n_inject_t7.mjs`. T7 calls no new API route. A share link is `/app/#share=…`, and the fragment never reaches CloudFront or the API (`src/lib/deep-link.ts`). Its handover addendum kind already exists on the server (`lambda/addendum-schema.js:66`, `:309`). Re-check all of this against the final tip in stage 1.
 
+**Revised 9 Nov 2026 on `fix/final-list`.** What changed in this revision:
+- `scripts/deploy.sh` packages the Lambda in a temp folder outside the repo and never deletes or reinstalls `lambda/node_modules`. `bash scripts/deploy.sh --package-only` builds and lists the package with no AWS call (stage 3.5, rehearsed on 9 Nov 2026).
+- `deploy.sh` builds the frontend with `VITE_FEATURE_WORKDAY=false` unless the shell that runs it sets `DEPLOY_ALLOW_WORKDAY=1`, and prints which (1.4).
+- Read-only AWS checks on 9 Nov 2026 settled two open questions. `dynamodb:DeleteItem` on `parkproof-jobs` is not granted to `parkproof-lambda-role` (implicitDeny; `GetItem`, `PutItem` and `UpdateItem` are allowed). The jobs table's TTL attribute is `ttl`, as the code writes. The new `scripts/setup-jobs-table.sh` adds the missing grant, and stage 6 runs it with your go-ahead.
+- The sign reader's permit tie-break now matches the app (accessible first). `node scripts/check-schema-compiles.mjs` printed COMPILES for all three schemas after the change.
+- The three T5b Scheduler checks moved into the post-deploy stage (8.5), with exact steps. The old stage 10 (the watch window) is now stage 9.
+- Fix round 1 (same day): `vite.config.ts` no longer lets a `.env` line overwrite a `VITE_*` value the build sets, so the `false` from `deploy.sh` really reaches the bundle (1.4, 3.2). Stage 6 grew two steps. 6.2 sets a 90-day retention on the Lambda's log group with the new `scripts/setup-log-retention.sh`, because this build's privacy text says the logs are deleted after 90 days and no script ever set a retention (CloudWatch keeps logs forever by default). 6.3 checks before the deploy, with a disabled throwaway schedule, that Scheduler accepts a weekly `cron()` with `EndDate` and `ActionAfterCompletion: DELETE`. Both 8.5 failure paths for check B now say what to do about the privacy text, which promises that weekly schedules are deleted.
+
+Line numbers for `scripts/deploy.sh` are at this revision. Other line numbers are still at `cfdecc7`.
+
 There's no staging backend. `scripts/deploy.sh` updates the one production Lambda, the live API and the live site. Nobody relies on the app yet, so production is the test bed, as in `docs/build/aws-test-plan.md`. The phone tests themselves live in `field-test-plan.md` next to this file. This checklist covers getting the build onto AWS safely and proving the plumbing.
 
 Who does what:
@@ -11,20 +21,21 @@ Who does what:
 - **[Claude, go-ahead]** changes AWS, only after you say go.
 - **[You]** phone and laptop.
 
-Time: about 2.5 hours. Setup and local gates 30 min, read-only pre-flight 20 min, deploy 10 min, smoke 45 min, Scheduler probe 20 min. Then a 24-hour watch.
+Time: about 2.5 hours, plus any log export you choose in 6.2. Setup and local gates 35 min, read-only pre-flight 20 min, stage 6 (IAM grant, log retention, Scheduler pre-check) 15 min, deploy 10 min, post-deploy smoke and Scheduler checks 65 min. Then a 24-hour watch, and an hour after the deploy one last look at the Scheduler probe (8.5).
 
 ---
 
 ## Top risks
 
-1. **The jobs table may not allow `DeleteItem`.** `/read-notice/status` deletes each notice row after it's read. No script grants anything on `parkproof-jobs`, so the live grant was made by hand and nobody has checked it. The delete is best effort, so a missing grant fails quietly and fine-notice details sit in the table. Worse, CLAUDE.md says the table's TTL is on `expires_at`, but the code writes `ttl`. If CLAUDE.md is right, those rows never expire.
+1. **The jobs table doesn't allow `DeleteItem` (confirmed).** `/read-notice/status` deletes each notice row after it's read. A read-only IAM simulation on 9 Nov 2026 showed `dynamodb:DeleteItem` on `parkproof-jobs` is an implicitDeny for `parkproof-lambda-role` (`GetItem`, `PutItem` and `UpdateItem` are allowed, from a grant made by hand). The delete is best effort, so without the grant it fails quietly and fine-notice details sit in the table until DynamoDB's TTL sweep removes them. The TTL attribute is confirmed as `ttl`, which is what the code writes, so the sweep does happen. CLAUDE.md's `expires_at` is stale (T10 corrects it). Stage 6 runs `scripts/setup-jobs-table.sh` before the code goes up.
 2. **Schemas must compile on the real API.** This was a real failure, now fixed. On 9 Nov 2026 a real call showed the API refused T3's sign schema ("compiled grammar is too large"), so every scan would have failed in production. Merge `863a230` reshaped it, and real fresh and refresh reads now succeed. Two guards stop it coming back: a size-budget test in `lambda/sign-reading.test.js`, and `node scripts/check-schema-compiles.mjs`, which must print COMPILES for all three schemas before every deploy (stage 3.4). The eval corpus is still empty (`eval/corpus/` holds only `.gitkeep`).
-3. **The T5b Scheduler assumptions are unproven.** If `CreateSchedule` refuses `cron()` with `EndDate` and `ActionAfterCompletion: DELETE`, every weekly push booking fails and the app falls back to on-device reminders. Daylight saving can't be seen live until 4 April 2027, but schedules booked from 4 January 2027 cross it.
+3. **The T5b Scheduler assumptions are unproven.** If `CreateSchedule` refuses `cron()` with `EndDate` and `ActionAfterCompletion: DELETE`, every weekly push booking fails and the app falls back to on-device reminders. Stage 6.3 now checks that before the deploy. Whether such a schedule really deletes itself after its end date is only seen after the deploy (8.5 B), and the privacy text says weekly schedules are deleted within 90 days, so a failure there has a deadline (8.5). Daylight saving can't be seen live until 4 April 2027, but schedules booked from 4 January 2027 cross it.
 4. **The shipped PDF fonts aren't the tested fonts.** `deploy.sh` re-subsets the fonts after your tests ran. In a clean clone without `fonts-src/`, it re-subsets in place, which can only drop glyphs.
-5. **Dropbox breaks the deploy.** `deploy.sh` runs `rm -rf node_modules` inside `lambda/`, and Dropbox's file locks make that fail (EBUSY). Deploy from a clone outside Dropbox.
+5. **Dropbox broke the deploy (fixed in `deploy.sh`).** It used to run `rm -rf node_modules` inside `lambda/`, which Dropbox's file locks made fail (EBUSY). It now stages the Lambda package in a temp folder outside the repo and never touches `lambda/node_modules`. Still deploy from a clone outside Dropbox (stage 2): the build rewrites `dist/` in the tree, and the clone is the rollback tool.
 6. **A route can fail silently.** If `add-permission` fails after `create-route`, a re-run skips the route because it exists. The GET route's permission errors are swallowed outright. Either way the route answers 500.
 7. **Rollback isn't clean.** Weekly cron schedules outlive a code rollback, and main's Lambda errors on every firing. Main also answers the four new routes with a 202 (it treats them as a sign scan), and the new app reads a 202 from `/push/recurring` as "booked". So rollback deletes the routes and the schedules before it redeploys main (section 3). Push tombstones and the Node 22 runtime also stay.
 8. **Old app shells lose push bookings.** `/push/schedule` now answers 409 `ERR_NOT_SUBSCRIBED` when a device's row is missing or expired. Rows expire 90 days after their last refresh. A cached old shell doesn't re-register on open, so its bookings fail until the shell updates.
+9. **The privacy text promises a log retention nobody has set.** This build's `privacy.rightsAnonymous` says the server logs (which hold device IDs, record and weekly reminder IDs and push service names) are deleted after 90 days. No script had ever set a retention on `/aws/lambda/parkproof-sign-translator`, and CloudWatch keeps logs forever by default. Stage 6.2 sets it. It deletes the older logs, launch day included, so export anything you want first.
 
 ---
 
@@ -32,12 +43,15 @@ Time: about 2.5 hours. Setup and local gates 30 min, read-only pre-flight 20 min
 
 **Stop before deploying if:**
 - [ ] The KMS public key doesn't match `public/parkproof-public-key.pem` (stage 4.2).
-- [ ] The IAM simulator denies something in stage 4.4 that stage 6 doesn't fix.
+- [ ] `bash scripts/deploy.sh --package-only` fails, or its top-level entries lack `index.js`, `package.json` or `node_modules` (stage 3.5).
+- [ ] The IAM simulator denies something in stage 4.4 other than `dynamodb:DeleteItem` on the jobs table, or still denies that after stage 6.
 - [ ] A real local scan, notice read or appeal draft errors out (stage 3.4).
 - [ ] The font coverage test fails after the re-subset (stage 3.3).
 - [ ] T7's merge changed `lambda/`, `scripts/deploy.sh` or the landing, and this checklist hasn't been re-run against it.
 - [ ] Stage 1's route check lists an API path that isn't in the expected list. The frontend would call a route `deploy.sh` doesn't create.
 - [ ] 4.8 finds no distribution with the comment `parkproof-cdn`. `deploy.sh` would create a second distribution and invalidate that one, so the live site would keep serving old files.
+- [ ] Stage 6.2 didn't run, or didn't print `keeps log events for 90 days`. The privacy text in this build says the logs are deleted after 90 days. If you don't want the retention, don't deploy this build: the text has to change first (through `scripts/_i18n_inject_fixlist_final.mjs`, all 9 languages).
+- [ ] Stage 6.3's disabled schedule was refused. Weekly push can't book with this code. Decide before deploying: ship with weekly push falling back to on-device reminders, as 8.5 "B fails at once" describes, or fix it first.
 
 **Roll back (section 3) if, in the first hour:**
 - [ ] Fresh scans fail on two different real signs.
@@ -46,7 +60,7 @@ Time: about 2.5 hours. Setup and local gates 30 min, read-only pre-flight 20 min
 - [ ] One-shot reminders stop arriving.
 
 **Fix forward, no rollback, if:**
-- A Scheduler probe check fails (stage 9). Weekly push falls back to on-device reminders.
+- A Scheduler check fails (stage 8.5). Weekly push falls back to on-device reminders.
 - The accuracy page, OG image or sitemap is wrong.
 - `/read-notice` misbehaves. It's a new feature, so a hot fix costs less than rolling back everything else.
 - A new route answers 500 because a permission is missing. Add it by hand (stage 7, "If a route answers 500").
@@ -61,10 +75,10 @@ Four new routes. `deploy.sh` creates all four.
 
 | Route | Auth and limit | Lambda dispatch (`lambda/index.js`) | `deploy.sh` | Created by deploy.sh? |
 |---|---|---|---|---|
-| `POST /push/recurring` | Anonymous, 30 a minute per IP (`:2720`, `:3345`) | `:3343-3355`, then `handlePushRecurring` `:2741` | `:302` `ensure_route` | Yes, with a Lambda permission (`:273-280`) |
-| `POST /push/recurring/cancel` | Anonymous, 30 a minute per IP (`:3329`) | `:3327-3339`, then `handlePushRecurringCancel` `:2837` | `:303` | Yes, same |
-| `POST /read-notice` | Anonymous, 10 a minute per IP (`:3044`) | `:3415-3422`, then `handleReadNotice` `:3043` | `:305` | Yes, same |
-| `GET /read-notice/status/{job_id}` | Anonymous, the job id is the bearer | `:3271-3284`, then `handleJobStatus` `:3078` with kind `read-notice` | `:407` `ensure_get_anon_route` | Yes, but a failed permission is swallowed (`:400`) |
+| `POST /push/recurring` | Anonymous, 30 a minute per IP (`:2720`, `:3345`) | `:3343-3355`, then `handlePushRecurring` `:2741` | `:484` `ensure_route` | Yes, with a Lambda permission (`:455-462`) |
+| `POST /push/recurring/cancel` | Anonymous, 30 a minute per IP (`:3329`) | `:3327-3339`, then `handlePushRecurringCancel` `:2837` | `:485` | Yes, same |
+| `POST /read-notice` | Anonymous, 10 a minute per IP (`:3044`) | `:3415-3422`, then `handleReadNotice` `:3043` | `:487` | Yes, same |
+| `GET /read-notice/status/{job_id}` | Anonymous, the job id is the bearer | `:3271-3284`, then `handleJobStatus` `:3078` with kind `read-notice` | `:589` `ensure_get_anon_route` | Yes, but a failed permission is swallowed (`:582`) |
 
 One new trigger that isn't an HTTP route. Scheduler events carrying `_async_kind: 'push-recurring'` go to `handleRecurringPushDispatch` (`:3253-3255`, `:2874`).
 
@@ -81,8 +95,8 @@ Changed behaviour on existing routes:
 No JWT routes changed. `harden.sh` CORS already allows GET, POST, OPTIONS and the `Content-Type` and `Authorization` headers (`scripts/harden.sh:64-66`). The client sends no new headers.
 
 Two traps in `deploy.sh`:
-- [ ] `ensure_route` runs `create-route` and then `add-permission` (`:266-280`). If `add-permission` fails, `set -e` stops the deploy. A re-run then finds the route and skips it, so the permission never gets added (`:291-292`).
-- [ ] `ensure_get_anon_route` throws away any `add-permission` error (`:400`). The route then answers `{"message":"Internal Server Error"}` with nothing in the Lambda log.
+- [ ] `ensure_route` runs `create-route` and then `add-permission` (`:439-462`). If `add-permission` fails, `set -e` stops the deploy. A re-run then finds the route and skips it, so the permission never gets added (`:473-474`).
+- [ ] `ensure_get_anon_route` throws away any `add-permission` error (`:582`). The route then answers `{"message":"Internal Server Error"}` with nothing in the Lambda log.
 
 ### 1.2 IAM (item 2)
 
@@ -94,9 +108,10 @@ Every AWS call the Lambda makes that's new or changed, against what the scripts 
 | `GetSchedule` on rule slots (owner check) | `index.js:2291-2311` (`:2295`) | `scheduler:GetSchedule` | same | Covered. Verify |
 | `DeleteSchedule` on rule slots | `index.js:2360-2385` (`:2366`) | `scheduler:DeleteSchedule` | same | Covered |
 | Scheduler invoking the Lambda for weekly fires | Target `PUSH_DISPATCH_LAMBDA_ARN` with `PUSH_SCHEDULER_ROLE_ARN` | `lambda:InvokeFunction` for the scheduler role | `parkproof-push-scheduler-invoke` (`setup-push-scheduler.sh:63-81`) | Covered |
-| Jobs table: conditional `PutItem` (`attribute_exists(job_id)`) | `index.js:156-173` | `dynamodb:PutItem` | Hand-made grant, no script | Already used by scans |
-| Jobs table: **`DeleteItem`** after a notice is read, and on expired rows | `index.js:183-185`, `:3111-3117`, `:3133-3139` | `dynamodb:DeleteItem` on `table/parkproof-jobs` | **Nothing in any script** | **New. Probably missing** |
-| Jobs table: `UpdateItem` for the per-IP limiter, now also on the two recurring routes and `/read-notice` | `index.js:215-239` | `dynamodb:UpdateItem` | Hand-made | Verify. The limiter fails open, so a missing grant only shows as `[parkproof.ratelimit] check failed, allowing` |
+| Jobs table: conditional `PutItem` (`attribute_exists(job_id)`) | `index.js:156-173` | `dynamodb:PutItem` | Hand-made grant, no script | Allowed (checked 9 Nov 2026). Already used by scans |
+| Jobs table: **`DeleteItem`** after a notice is read, and on expired rows | `index.js:183-185`, `:3111-3117`, `:3133-3139` | `dynamodb:DeleteItem` on `table/parkproof-jobs` | **`scripts/setup-jobs-table.sh`** (new), run in stage 6 | **Missing: implicitDeny (checked 9 Nov 2026). Stage 6 adds it** |
+| Jobs table: `UpdateItem` for the per-IP limiter, now also on the two recurring routes and `/read-notice` | `index.js:215-239` | `dynamodb:UpdateItem` | Hand-made | Allowed (checked 9 Nov 2026). The limiter fails open, so a missing grant would only show as `[parkproof.ratelimit] check failed, allowing` |
+| Jobs table: `GetItem` for the status routes | `index.js:3078` onwards | `dynamodb:GetItem` | Hand-made | Allowed (checked 9 Nov 2026) |
 | Push table: conditional `PutItem` (registration and tombstone) | `push-tombstone.js:33-62`, `index.js:2079`, `:2972-2976` | `dynamodb:PutItem` | `parkproof-push-subscriptions-rw` (`setup-push.sh:78-93`) | Covered |
 | Push table: `GetItem` with `ConsistentRead` | `index.js:2418-2426` (`:2420`), `:2906-2909` | `dynamodb:GetItem` (no extra permission for consistent reads) | same | Covered |
 | Push table: conditional `UpdateItem` to push out the expiry | `index.js:2436-2453` | `dynamodb:UpdateItem` | same | Covered |
@@ -107,7 +122,7 @@ Every AWS call the Lambda makes that's new or changed, against what the scripts 
 
 A conditional write needs no extra permission. A failed condition comes back as `ConditionalCheckFailedException`, and the code handles every one: a 409 at `:2081`, `false` at `:171`, swallowed at `:2981`, logged at `:2451`.
 
-**The one statement to add, only if the simulator in 4.4 says `DeleteItem` is denied.** It's a new inline policy on `parkproof-lambda-role`, named `parkproof-jobs-delete`:
+**The one statement to add.** The simulator showed `DeleteItem` denied, so this isn't optional. `scripts/setup-jobs-table.sh` puts it on `parkproof-lambda-role` as a new inline policy named `parkproof-jobs-delete`, and changes nothing else (stage 6):
 
 ```json
 {
@@ -121,7 +136,9 @@ A conditional write needs no extra permission. A failed condition comes back as 
 }
 ```
 
-If the simulator also denies `UpdateItem` on the jobs table, put `"dynamodb:UpdateItem"` in the same `Action` list. If it denies any scheduler action, put the whole two-statement document from `setup-push-scheduler.sh:86-108` again with `put-role-policy`. Don't re-run the setup script for this. It also rewrites `scripts/.aws-resources`.
+The script reads the account id from `aws sts get-caller-identity`, and the table name from `JOBS_TABLE` when that's set (default `parkproof-jobs`). It's safe to re-run: `put-role-policy` replaces the policy with the same document. It doesn't touch `scripts/.aws-resources`, the table, its TTL or any other policy.
+
+Never re-run `scripts/setup-auth.sh` for an IAM fix. It rewrites `scripts/.aws-resources` from scratch, which drops the VAPID, push and feedback lines, and its `update-user-pool-client` call resets the app client's identity providers to COGNITO only, which would cut Apple and Google sign-in. If 4.4 denies any scheduler action, put the whole two-statement document from `setup-push-scheduler.sh:86-108` again with `put-role-policy`, rather than re-running that script, which also edits `scripts/.aws-resources`.
 
 ### 1.3 DynamoDB and Scheduler state (item 3)
 
@@ -130,7 +147,7 @@ No new tables, keys or indexes. New item shapes:
 **`parkproof-jobs`** (key `job_id`)
 - Notice job rows: `{ job_id, ttl, status, kind: 'read-notice', deadline, result | error }` (`index.js:3058`, `:3204-3218`). The result holds the notice fields (`index.js:617-640`). The error holds only an ERR code (`:3160-3164`). The row is deleted the first time a finished result is read (`:3133-3139`). A worker writing late can't bring it back, because the write is conditional (`:3203`, `:166`).
 - New limiter rows: `RL#pushrecurring#…`, `RL#pushrecurringcancel#…`, `RL#notice#…` with `count` and `ttl` (`:218-231`).
-- **TTL attribute.** The code writes `ttl` (`:163`, `:224`, unchanged from main). CLAUDE.md says the table's TTL is on `expires_at` (CLAUDE.md, "AWS resources", jobs row). Check which is live in 4.5. The notice route ignores an expired row by its own `ttl` check (`:3111`), so this isn't a deploy blocker. It does decide whether DynamoDB ever sweeps the rows.
+- **TTL attribute: `ttl` (confirmed 9 Nov 2026).** The code writes `ttl` (`:163`, `:224`, unchanged from main), and a read-only `describe-time-to-live` showed the live table's TTL is on `ttl`, so DynamoDB does sweep these rows. CLAUDE.md's jobs row says `expires_at`, which is stale (T10 updates CLAUDE.md). The notice route also ignores an expired row by its own `ttl` check (`:3111`).
 
 **`parkproof-push-subscriptions`** (key `device_id`, TTL on `expires_at` per `setup-push.sh:60-66`)
 - Tombstone: `{ device_id, gone_endpoint_sha256, gone_at, expires_at }`, with no endpoint and no keys (`push-tombstone.js:33-46`). It's written instead of a delete when a send gets 410 or 404 (`index.js:2964-2982`).
@@ -151,35 +168,42 @@ No new tables, keys or indexes. New item shapes:
 - [ ] These must be present: `ANTHROPIC_API_KEY`, `KMS_KEY_ID`, `COGNITO_USER_POOL_ID`, `COGNITO_APP_CLIENT_ID`, `DYNAMODB_TABLE_SESSIONS`, `DYNAMODB_TABLE_PUSH`, `S3_BUCKET_EVIDENCE`, `S3_BUCKET_USER_FEEDBACK`, `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`, `PUSH_SCHEDULER_ROLE_ARN` and `PUSH_DISPATCH_LAMBDA_ARN`. Without the two `PUSH_` names, `/push/recurring` answers 500 (`index.js:2743-2751`).
 - [ ] `ALLOW_TIME_OVERRIDE` must be absent. With it set, any anonymous caller can spoof the clock (`index.js:100-101`). The accuracy harness never needs it, because it imports `lambda/index.js` locally (`scripts/eval-accuracy.mjs:94`).
 - `JOBS_TABLE` is optional and defaults to `parkproof-jobs`. If 4.3 shows it set, every `parkproof-jobs` in this checklist (4.4, 4.5, stage 6) means its value instead.
-- `deploy.sh` merges values and never deletes one (`:144-179`). Your `scripts/.aws-resources` has both `S3_BUCKET_*` lines with values (key names checked, values not read), so the deploy prints the bucket names (`:50-51`) and writes them again. `KMS_KEY_ID` isn't in that file or in the merge list, so the live value is kept. That's expected.
+- `deploy.sh` merges values and never deletes one (`:326-361`). Your `scripts/.aws-resources` has both `S3_BUCKET_*` lines with values (key names checked, values not read), so the deploy prints the bucket names (`:243-244`) and writes them again. `KMS_KEY_ID` isn't in that file or in the merge list, so the live value is kept. That's expected.
+
+**Lambda package**
+- `deploy.sh` stages the package in a temp folder outside the repo (`build_lambda_package`, `:106-158`): it copies the `lambda/` sources without `node_modules` or the `*.test.js` files, runs `npm ci --omit=dev` there, and zips it (`zip`, else PowerShell's `Compress-Archive`, preferring PowerShell 7). `lambda/node_modules` in the working tree is never deleted or reinstalled, so the Lambda tests keep their dev dependencies after a deploy.
+- The Windows `aws.exe` gets the zip's Windows path, from `cygpath -w` (`:281`). Git Bash paths such as `/tmp/...` mean nothing to it (CLAUDE.md gotcha).
+- `describe_lambda_package` (`:182-207`) prints the size and the top-level entries, and stops the deploy before any upload if `index.js`, `package.json` or `node_modules` isn't at the top, or the zip is over Lambda's 50 MB direct-upload limit.
+- The temp folder is deleted when the script exits, whether it succeeded or not. Re-runs make a fresh one.
+- `bash scripts/deploy.sh --package-only` does only this and exits before the AWS CLI check, `.env` and any AWS call (`:209-219`). It keeps the zip for inspection and prints its path.
 
 **Frontend build**
-- `deploy.sh` passes `VITE_API_URL`, the `VITE_COGNITO_*` values and `VITE_VAPID_PUBLIC_KEY` (`:457-463`).
-- New: `VITE_FEATURE_WORKDAY` (`src/lib/features.ts:25-38`). It must be unset or `false` in production (`docs/legal-review-queue.md:11`). Two ways it could leak in:
-  - `deploy.sh` exports everything in `.env` and `scripts/.aws-resources` into the build (`:38`, `:46`).
-  - Vite also reads `.env.local`, `.env.production` and `.env.production.local`.
-- Today the Dropbox `.env` holds only `ANTHROPIC_API_KEY`, and `scripts/.aws-resources` has no `VITE_` keys either (key names checked, values not read). Nothing calls `isWorkdayEnabled()` yet, even after T7, because T6b isn't merged, so the flag currently changes nothing. An unset flag is off in a production build (`src/lib/features.ts:25-33`). Set it off explicitly anyway, so T6b can't ship switched on by accident. Stage 7 runs `VITE_FEATURE_WORKDAY=false bash scripts/deploy.sh`.
-- That command-line value is not the whole guard. It beats `.env.local`, `.env.production` and `.env.production.local`, which Vite reads itself. It does not beat `.env` or `scripts/.aws-resources`: `deploy.sh` sources both into its own shell with `set -a` (`:38`, `:46`) after it starts, so a `VITE_FEATURE_WORKDAY` line in either would replace `false` before the build. The greps in 3.2 are what keep those two files clean.
+- `deploy.sh` passes `VITE_API_URL`, the `VITE_COGNITO_*` values and `VITE_VAPID_PUBLIC_KEY` (`:641-649`).
+- New: `VITE_FEATURE_WORKDAY` (`src/lib/features.ts:25-38`). It must be off in production until a lawyer has read the workday copy (`docs/legal-review-queue.md:11`).
+- **`deploy.sh` now sets it on every build** (`:642`): `false`, unless the shell that runs the deploy sets `DEPLOY_ALLOW_WORKDAY=1`, which makes it `true`. It prints which twice: `Workday: off (VITE_FEATURE_WORKDAY=false; DEPLOY_ALLOW_WORKDAY=1 turns it on)` in the opening banner, and `• workday mode: off (...)` just before the build.
+- It decides at the top of the script (`:46-55`), before it sources `.env` and `scripts/.aws-resources` with `set -a` (`:231`, `:239`), so a `VITE_FEATURE_WORKDAY` or `DEPLOY_ALLOW_WORKDAY` line in either file can't turn workday mode on. The value is read-only, so a file that tries to change it stops the deploy instead. An explicit value in the environment also beats `.env.local`, `.env.production` and `.env.production.local`, which Vite reads itself.
+- `vite.config.ts` copies the repo's `.env` onto `process.env` before Vite reads its env files (the vestauth workaround). Until 9 Nov 2026 that copy overwrote every key, so a `VITE_FEATURE_WORKDAY=true` line in `.env` beat the `false` from `deploy.sh` and shipped workday mode on while the banner said off. It now keeps any `VITE_*` key the environment already has (`applyParsed`), which is Vite's own rule for env files.
+- Nothing calls `isWorkdayEnabled()` yet, because T6b isn't merged, so today the flag changes nothing. This keeps T6b from shipping switched on by accident. `scripts/deploy-scripts.test.mjs` runs the script against a fake AWS and checks the build command gets `false` even with both lines in `.env`. `scripts/vite-env-precedence.test.mjs` runs Vite's real config and env resolution with `VITE_FEATURE_WORKDAY=true` in a `.env` and `false` in the environment, and checks the build gets `false`. `scripts/_deploy-staging.sh` follows the same rule.
 
 ### 1.5 Runtime (item 5)
 
-- `LAMBDA_RUNTIME=nodejs22.x` (`deploy.sh:18-20`).
-- On an existing function, the deploy reads the runtime, moves it to Node 22 and waits. Only then does it upload the code (`:101-128`). For a few seconds the old code runs on Node 22. That's fine, because CI runs main on Node 22 too (`.github/workflows/test.yml:27` on both).
-- A new function would be created on Node 22 (`:131-141`).
+- `LAMBDA_RUNTIME=nodejs22.x` (`deploy.sh:61-63`).
+- On an existing function, the deploy reads the runtime, moves it to Node 22 and waits. Only then does it upload the code (`:283-310`). For a few seconds the old code runs on Node 22. That's fine, because CI runs main on Node 22 too (`.github/workflows/test.yml:27` on both).
+- A new function would be created on Node 22 (`:312-323`).
 - No dependency changes in `lambda/package.json`. No JSON import assertions and no `__dirname` in the Lambda code. Both are common Node 22 breakers.
 - The runtime is effectively forward-only. Rolling back the code leaves Node 22 in place (section 3).
 
 ### 1.6 Static assets (item 6)
 
-All of these come from `migrations/two-app-architecture/landing-from-claude-design/`, copied into `dist/` (`deploy.sh:486-513`). The app gets `public/` under `/app/`.
+All of these come from `migrations/two-app-architecture/landing-from-claude-design/`, copied into `dist/` (`deploy.sh:672-699`). The app gets `public/` under `/app/`.
 - **Landing** `index.html`: new titles and descriptions, "Check a sign" (`:70`, `:109`, `:528`), a reminders caveat, signature wording, an Accuracy footer link (`:546`). Also `landing-demo.js` captions.
 - **Accuracy page**, new: `accuracy/index.html` and `accuracy/accuracy.js`. A module script loads `results.json` next to the page (`accuracy.js:193-211`). There's no `results.json` yet, so the page must show "No numbers yet". A missing file, or a page served in its place, counts as no results.
 - **Verify pages**: `verify/index.html` plus 8 locales rewritten (link chain, evidence file, a Windows section).
 - **OG image**: `og-image.png` changed in both `public/` and the landing. The two files are identical, sha256 `f2d05875…6868`, 168,472 bytes. The meta tags still point at `/og-image.png` with no version (landing `index.html:23`, `:34`, app `index.html:35`, `:43`).
 - **Sitemap**: `/accuracy/` added (`sitemap.xml:32-38`). The landing and verify entries keep `lastmod` 2026-05-24 although their copy changed. That's optional to fix, not a blocker.
-- **PEM**: both copies are 178 bytes, LF only, sha256 `d025dea8…d1f8`. `.gitattributes` pins `*.pem` to LF (`.gitattributes:5`). `deploy.sh` strips CR from every PEM in `dist/` and stops if any CR is left (`:515-533`).
+- **PEM**: both copies are 178 bytes, LF only, sha256 `d025dea8…d1f8`. `.gitattributes` pins `*.pem` to LF (`.gitattributes:5`). `deploy.sh` strips CR from every PEM in `dist/` and stops if any CR is left (`:701-719`).
 - `/accuracy` without a slash may not resolve. The CloudFront function only adds `index.html` to URIs that end in `/` (`scripts/_cloudfront-uri-rewrite.js:33-35`). Every link and the sitemap use `/accuracy/`.
-- `aws s3 sync dist/ … --delete` (`deploy.sh:565`) removes anything in the app bucket that isn't in `dist/`. That includes the Greenfield staging prefix from `scripts/_deploy-staging.sh` if it's still there. Check 4.8.
+- `aws s3 sync dist/ … --delete` (`deploy.sh:751`) removes anything in the app bucket that isn't in `dist/`. That includes the Greenfield staging prefix from `scripts/_deploy-staging.sh` if it's still there. Check 4.8.
 
 ---
 
@@ -202,11 +226,14 @@ The order is what keeps the deploy safe. IAM goes before the code, because the n
   git grep -hoE "(\(|^)\s*['\`]/[a-z][a-z0-9/_-]*['\`]" "$DEPLOY_SHA" -- src ':!*.test.*' ':!**/test-support/**' \
     | sed -E "s/^[( ]*//; s/['\`]//g" | sort -u
   ```
-  Expected, at both `cfdecc7` and `2edc532`: `/app/` plus these 18 and nothing else. `/draft-appeal`, `/feedback`, `/me/delete`, `/me/export`, `/photos/materialize`, `/photos/presign`, `/push/cancel`, `/push/recurring`, `/push/recurring/cancel`, `/push/schedule`, `/push/subscribe`, `/read-notice`, `/sessions/delete`, `/sessions/list`, `/sessions/upload`, `/sign-session`, `/sign-translate`, `/user-feedback`. The three job routes also poll `<path>/status/{id}` (`src/lib/api.ts:194`), and `deploy.sh:403-407` makes all three.
+  Expected, at both `cfdecc7` and `2edc532`: `/app/` plus these 18 and nothing else. `/draft-appeal`, `/feedback`, `/me/delete`, `/me/export`, `/photos/materialize`, `/photos/presign`, `/push/cancel`, `/push/recurring`, `/push/recurring/cancel`, `/push/schedule`, `/push/subscribe`, `/read-notice`, `/sessions/delete`, `/sessions/list`, `/sessions/upload`, `/sign-session`, `/sign-translate`, `/user-feedback`. The three job routes also poll `<path>/status/{id}` (`src/lib/api.ts:194`), and `deploy.sh:585-589` makes all three.
 
 ### Stage 2. Build a deploy clone outside Dropbox [Claude] (item 8)
 
-Why: `deploy.sh` runs `rm -rf node_modules` and `npm install` inside `lambda/` (`:84-87`). In the Dropbox checkout, Dropbox holds file handles there and the delete fails with EBUSY. `set -e` stops the deploy before any AWS change, so it fails safe. It still leaves a half-deleted `lambda/node_modules` behind. Dropbox would also try to sync `dist/` and `function.zip`.
+Why: `deploy.sh` used to run `rm -rf node_modules` and `npm install` inside `lambda/`, and Dropbox's file handles made the delete fail with EBUSY. That's fixed: it now packages the Lambda in a temp folder outside the repo (1.4, "Lambda package"). Deploy from a clone anyway:
+- The build still deletes and rewrites `dist/` in the working tree (`:635`), which Dropbox would sync and can lock.
+- `core.autocrlf=false` in the clone keeps `deploy.sh` runnable after a rollback checkout of `main` (below).
+- The clone is the rollback tool for the 24-hour watch.
 
 Don't deploy from `C:\Users\molte\Downloads\pp-wt\readonly` (read-only, detached) or `pp-wt\t9` (the merge is happening there). Don't use OneDrive either: same locks.
 
@@ -240,16 +267,16 @@ npm ci
 - [ ] `npx vitest run` (includes `copy-lint`, `pdf-font-coverage`, the Lambda tests and `scripts/**/*.test.mjs`, per `vitest.config.ts:34-40`). The fonts here are still the committed ones. If only `pdf-font-coverage` fails, do 3.3 and run it again before calling it a stop.
 - [ ] `npm run lint`, at the same baseline as main
 
-3.2 Feature flag and env:
-- [ ] `env | grep '^VITE_'` prints nothing, or only values you expect.
+3.2 Feature flag and env. `deploy.sh` sets `VITE_FEATURE_WORKDAY=false` itself (1.4). These checks are still stop conditions: a `VITE_` key that `deploy.sh` doesn't set itself still reaches the build from either file.
+- [ ] `env | grep -E '^(VITE_|DEPLOY_ALLOW_WORKDAY)'` prints nothing, or only values you expect. `DEPLOY_ALLOW_WORKDAY=1` in this shell would build workday mode on.
 - [ ] `ls -a | grep '^\.env'` shows only `.env`.
-- [ ] `grep -c '^VITE_' .env` prints `0`.
-- [ ] `grep -c '^VITE_' scripts/.aws-resources` prints `0`. `deploy.sh` sources this file too, so a `VITE_` line here also reaches the build.
+- [ ] `grep -c '^VITE_' .env` prints `0`. Anything else: stop, remove the line, and check again.
+- [ ] `grep -c '^VITE_' scripts/.aws-resources` prints `0`. Anything else: stop, remove the line, and check again.
 
 3.3 PDF fonts, so the fonts that ship are the fonts you tested:
-- `deploy.sh` re-subsets the fonts whenever fontTools is installed (`:438-444`), and it is on this machine. Without `fonts-src/` it re-subsets the committed files in place, which can only drop glyphs (`scripts/_subset_pdf_fonts.py:24-30`, `:183-189`).
+- `deploy.sh` re-subsets the fonts whenever fontTools is installed (`:620-626`), and it is on this machine. Without `fonts-src/` it re-subsets the committed files in place, which can only drop glyphs (`scripts/_subset_pdf_fonts.py:24-30`, `:183-189`).
 - This branch rewrote every locale (about 700 lines each) but didn't touch `public/fonts`. The last change there was `b8c88eb` on main.
-- [ ] `PYTHONIOENCODING=utf-8 python scripts/_subset_pdf_fonts.py` (now cut from `fonts-src/`). Keep the prefix, as `deploy.sh:440` does. The script prints `→` and `↓`, and in Git Bash Python writes to a pipe in cp1252, so without it the run can stop with `UnicodeEncodeError` part way through.
+- [ ] `PYTHONIOENCODING=utf-8 python scripts/_subset_pdf_fonts.py` (now cut from `fonts-src/`). Keep the prefix, as `deploy.sh:622` does. The script prints `→` and `↓`, and in Git Bash Python writes to a pipe in cp1252, so without it the run can stop with `UnicodeEncodeError` part way through.
 - [ ] `npx vitest run src/lib/pdf-font-coverage.test.ts src/lib/pdf-layout.test.ts`
 - [ ] `git status --short public/fonts`. Changes are expected: the fonts gained glyphs. Commit them on the branch afterwards, so the repo matches what shipped. `deploy.sh` will cut the same files again from the same sources.
 
@@ -260,6 +287,17 @@ npm ci
 - [ ] Read one notice photo through "Got a fine? Start here". The terminal shows `[parkproof] notice_call=…`.
 - [ ] Draft one appeal from a saved record.
 - [ ] Any 400 from Anthropic (a schema or parameter error) means stop. Push routes are stubs in dev (`vite.config.ts:325-410`), so push isn't tested here.
+
+3.5 Rehearse the Lambda package, still no AWS:
+- [ ] `bash scripts/deploy.sh --package-only`. It needs no `.env` and makes no AWS call: it exits before the AWS CLI check. It takes about 40 seconds, most of it `npm ci`.
+- [ ] The output starts `▶ Lambda package only. No AWS call is made.` and ends `✓ Package built. Nothing was deployed.`
+- [ ] `• packaging in C:\Users\molte\AppData\Local\Temp\parkproof-lambda.…`, a folder outside the clone.
+- [ ] `• package: … bytes (… MB), … entries`. The rehearsal on 9 Nov 2026 from `fix/final-list` gave 7,768,042 bytes (7.4 MB) and 7,159 entries. Anything near 50 MB stops the real deploy.
+- [ ] `• top-level entries:` lists exactly these 14: `addendum-schema.d.ts`, `addendum-schema.js`, `cloud-sync.d.ts`, `cloud-sync.js`, `index.d.ts`, `index.js`, `node_modules`, `package-lock.json`, `package.json`, `push-tombstone.js`, `recurring-schedule.d.ts`, `recurring-schedule.js`, `sign-reading.d.ts`, `sign-reading.js`. No `*.test.js`. A new file in `lambda/` since then is fine if you expect it.
+- [ ] No `! entry names use backslashes` line. That line means the zip came from Windows PowerShell 5.1 rather than PowerShell 7 (`pwsh`, installed on this machine). Lambda has accepted such packages so far, so it's a warning, not a stop.
+- [ ] `• a full deploy would build the frontend with workday mode off (VITE_FEATURE_WORKDAY=false; …)`.
+- [ ] `git status --short lambda` prints nothing: the working tree wasn't touched.
+- [ ] Delete the kept zip's folder (the `kept for inspection:` path, without `function.zip`).
 
 ### Stage 4. Read-only AWS pre-flight [Claude]
 
@@ -280,13 +318,13 @@ SITE=https://www.parkproof.com.au
 | 4.1 | `aws sts get-caller-identity` | The ParkProof account |
 | 4.2 | `aws kms get-public-key --key-id alias/parkproof-evidence-signing --query PublicKey --output text` against the base64 body of `public/parkproof-public-key.pem`, and the copy in `lambda/index.js` | Identical. If not, stop (as in `aws-test-plan.md` 1.2) |
 | 4.3 | `aws lambda get-function-configuration --function-name $FN --query '{rt:Runtime,state:State,last:LastUpdateStatus,timeout:Timeout,mem:MemorySize,sha:CodeSha256,env:keys(Environment.Variables)}'` | Write the runtime down. Main's `deploy.sh` only sets one on create, `nodejs20.x` (main `deploy.sh:110`), but main's CI comment says the live one is `nodejs22.x`. Either is fine. Every name in 1.4 present, no `ALLOW_TIME_OVERRIDE`. If `JOBS_TABLE` is present, use its value for the jobs table in 4.4, 4.5 and stage 6. Write down `CodeSha256` |
-| 4.4 | IAM simulator, below | Every line `allowed` |
-| 4.5 | `aws dynamodb describe-time-to-live --table-name parkproof-jobs` and the same for `parkproof-push-subscriptions` | Jobs: ENABLED on `ttl`. Push: ENABLED on `expires_at` |
+| 4.4 | IAM simulator, below | Every line `allowed`, except `dynamodb:DeleteItem` on the jobs table until stage 6 |
+| 4.5 | `aws dynamodb describe-time-to-live --table-name parkproof-jobs` and the same for `parkproof-push-subscriptions` | Jobs: ENABLED on `ttl` (it was on 9 Nov 2026). Push: ENABLED on `expires_at` |
 | 4.6 | `aws apigatewayv2 get-routes --api-id tlsmpbft4f --query 'Items[].RouteKey' --output text \| tr -d '\r' \| tr '\t' '\n' \| sort > routes-before.txt` (the `tr -d '\r'` stops a stray CR from the Windows `aws.exe` showing up as a false diff in 8.2) | No `push/recurring` or `read-notice` routes yet |
 | 4.7 | `aws lambda get-policy --function-name $FN --query Policy --output text \| wc -c` | Under about 18,000. The hard limit is 20,480, and four new statements add about 1.6 KB |
-| 4.8 | `aws cloudfront list-distributions --query "DistributionList.Items[?Comment=='parkproof-cdn'].Id" --output text` and `aws s3 ls s3://parkproof-app-$ACCOUNT_ID/` | `E33V8DMM3LQACG` (if blank, `deploy.sh` would create a new distribution, `:571-629`). Top-level prefixes match what `dist/` will hold. Anything else, such as the staging slug, gets deleted |
+| 4.8 | `aws cloudfront list-distributions --query "DistributionList.Items[?Comment=='parkproof-cdn'].Id" --output text` and `aws s3 ls s3://parkproof-app-$ACCOUNT_ID/` | `E33V8DMM3LQACG` (if blank, `deploy.sh` would create a new distribution, `:757-815`). Top-level prefixes match what `dist/` will hold. Anything else, such as the staging slug, gets deleted |
 | 4.9 | `aws scheduler list-schedules --name-prefix parkproof-push- --query 'length(Schedules)'` and the same with `parkproof-push-r-` | A baseline count. `parkproof-push-r-` is 0 |
-| 4.10 | `aws --version` | AWS CLI v2 from late 2023 or newer, so `--action-after-completion` exists for stage 9 |
+| 4.10 | `aws --version` | AWS CLI v2 from late 2023 or newer, so `--action-after-completion` exists for stage 8.5 |
 | 4.11 | Optional: `aws lambda publish-version --function-name $FN --description pre-roadmap-2` | A snapshot of today's code. `deploy.sh` never publishes versions, so `list-versions-by-function` in the CLAUDE.md playbook probably shows only `$LATEST`. This is additive. Say go first |
 
 4.4, the IAM simulator. It's read-only and needs `iam:SimulatePrincipalPolicy`.
@@ -313,8 +351,8 @@ aws iam simulate-principal-policy --policy-source-arn "$ROLE" \
 sim "arn:aws:iam::$ACCOUNT_ID:role/parkproof-push-scheduler-role" "arn:aws:lambda:ap-southeast-2:$ACCOUNT_ID:function:$FN" lambda:InvokeFunction
 ```
 
-- [ ] Everything `allowed`. Expect `dynamodb:DeleteItem` on `parkproof-jobs` to be the one `implicitDeny`. Stage 6 fixes it.
-- [ ] If 4.5 shows the jobs TTL on `expires_at`, or disabled, note it for after the deploy. A table has one TTL attribute. Moving it means disabling TTL, waiting until AWS lets you re-enable (up to an hour), then enabling it on `ttl`. Fix CLAUDE.md's jobs row at the same time. It's not a deploy blocker.
+- [ ] Everything `allowed`, except `dynamodb:DeleteItem` on `parkproof-jobs`, which is `implicitDeny`. That was the result on 9 Nov 2026, and stage 6 fixes it. Any other denial is a stop (section 0).
+- [ ] 4.5 showed the jobs TTL ENABLED on `ttl` on 9 Nov 2026. If it now shows `expires_at` or disabled, someone changed the table since: note it for after the deploy. A table has one TTL attribute. Moving it means disabling TTL, waiting until AWS lets you re-enable (up to an hour), then enabling it on `ttl`. It's not a deploy blocker.
 
 ### Stage 5. Pre-deploy smoke, a baseline on live [Claude and You] (item 10)
 
@@ -332,35 +370,84 @@ curl -s -w ' %{http_code}\n' -X POST "$API/read-notice" -d '{}'   # {"message":"
 - [ ] [You] Optional: save a record with a reminder that fires 20 to 40 minutes after the deploy starts. If it arrives, one-shot dispatch survived the switch.
 - [ ] [Claude] Save the 4.3 output, `routes-before.txt`, `bundle-before.txt` and the 4.9 counts in the clone.
 
-### Stage 6. IAM fix, before the code [Claude, go-ahead]
+### Stage 6. Grants and checks before the code [Claude, go-ahead]
 
-Only if 4.4 denied something. IAM changes are additive and safe with the old code.
+6.1 The jobs-table grant. Not optional: 4.4 showed `dynamodb:DeleteItem` on the jobs table is denied (confirmed on 9 Nov 2026), and the new code deletes notice rows from its first request. Run the setup script's grant, only after you say go. It adds one inline policy, `parkproof-jobs-delete`, to `parkproof-lambda-role` (the statement in 1.2) and changes nothing else. IAM additions are safe with the old code still running.
 
 ```bash
-cat > jobs-delete-policy.tmp.json <<EOF
-{"Version":"2012-10-17","Statement":[{"Sid":"NoticeJobDeleteAfterRead","Effect":"Allow",
- "Action":"dynamodb:DeleteItem","Resource":"arn:aws:dynamodb:ap-southeast-2:$ACCOUNT_ID:table/parkproof-jobs"}]}
-EOF
-aws iam put-role-policy --role-name parkproof-lambda-role \
-  --policy-name parkproof-jobs-delete --policy-document file://jobs-delete-policy.tmp.json
+cd /c/Users/molte/pp-deploy
+bash scripts/setup-jobs-table.sh
+# If 4.3 showed JOBS_TABLE set on the Lambda, run it as: JOBS_TABLE=<that value> bash scripts/setup-jobs-table.sh
 ```
 
-- [ ] Use a project-relative file. The Windows `aws.exe` can't read `/tmp` paths (CLAUDE.md gotcha). `*.tmp.json` is gitignored.
-- [ ] Wait a minute, then re-run the 4.4 line for `parkproof-jobs`. Every action `allowed`.
+- [ ] It prints `role: parkproof-lambda-role`, `table: arn:aws:dynamodb:ap-southeast-2:<account>:table/parkproof-jobs`, then `✓ parkproof-lambda-role can delete rows in parkproof-jobs`, and exits 0.
+- [ ] Wait a minute, then re-run the 4.4 line for `parkproof-jobs`. All four actions `allowed`. The script prints the same check for `DeleteItem` alone.
+- [ ] `aws iam list-role-policies --role-name parkproof-lambda-role` now includes `parkproof-jobs-delete`.
+- It's safe to run again: the same policy is replaced with the same document. It passes the policy inline, so no temp file is involved. It doesn't touch `scripts/.aws-resources`.
+- Don't use `setup-auth.sh` for this (1.2 says why).
+
+6.2 The log retention. Not optional for this build: its privacy text (`privacy.rightsAnonymous` and `privacy.anonymousCloudwatch`) says the server logs are deleted after 90 days. The logs hold each push device's random ID, the random ID of the record or weekly reminder, the push service's host name and, for feedback, the message and any email the driver added. Each "Did we read this right?" answer is logged too, with details of the reading (the start of the sign's rules text, the sign's permit area, the hour at the sign) and the driver's answers to the paid parking, permit zone and accessible parking permit questions. No script ever set a retention on the log group, so today CloudWatch keeps them forever.
+
+Setting it deletes, within a few days, every log event older than 90 days, including the May launch logs and the AI feedback events that only live there. That can't be undone. First decide what to keep. To export, run each Logs Insights query you care about (the CLAUDE.md list) over the full range and download the results, or ask Claude to set up `aws logs create-export-task` to an S3 bucket (one more go-ahead).
+
+```bash
+cd /c/Users/molte/pp-deploy
+bash scripts/setup-log-retention.sh
+```
+
+- [ ] It prints `log group: /aws/lambda/parkproof-sign-translator`, then `✓ /aws/lambda/parkproof-sign-translator keeps log events for 90 days`, and exits 0. It reads the retention back itself and fails if it isn't 90.
+- It changes nothing else, and it's safe to run again. Don't change the 90 in the script on its own: the privacy text names that number in 9 languages (`src/lib/fixlist-cleanups.test.ts` and `scripts/deploy-scripts.test.mjs` check they agree).
+- If you'd rather keep the logs longer, stop here and change the privacy text first (section 0).
+
+6.3 Will Scheduler accept a weekly schedule's settings? This is the part of 8.5 B that doesn't need the new code. One throwaway schedule, created DISABLED (it never fires), read back and deleted at once. Its name sits outside the Lambda's `parkproof-push-*` scope, and it uses the existing scheduler role.
+
+```bash
+cd /c/Users/molte/pp-deploy
+export PUSH_DISPATCH_LAMBDA_ARN=$(grep '^PUSH_DISPATCH_LAMBDA_ARN=' scripts/.aws-resources | cut -d= -f2- | tr -d '\r')
+export PUSH_SCHEDULER_ROLE_ARN=$(grep '^PUSH_SCHEDULER_ROLE_ARN=' scripts/.aws-resources | cut -d= -f2- | tr -d '\r')
+PRE="pp-awscheck-pre-$(date +%Y%m%d-%H%M)"
+END=$(node -e "console.log(new Date(Date.now() + 864e5).toISOString().slice(0, 19) + 'Z')")
+node -e "require('fs').writeFileSync('scheduler-precheck.tmp.json', JSON.stringify({ Arn: process.env.PUSH_DISPATCH_LAMBDA_ARN, RoleArn: process.env.PUSH_SCHEDULER_ROLE_ARN, Input: JSON.stringify({ _async_kind: 'push-recurring', rule_id: 'precheck', reminder: 'awscheck', device_id: 'awscheck' }) }))"
+aws scheduler create-schedule --name "$PRE" \
+  --schedule-expression "cron(0 9 ? * MON *)" \
+  --schedule-expression-timezone Australia/Melbourne \
+  --flexible-time-window Mode=OFF \
+  --end-date "$END" \
+  --action-after-completion DELETE \
+  --state DISABLED \
+  --target file://scheduler-precheck.tmp.json
+echo "create exit: $?"
+aws scheduler get-schedule --name "$PRE" \
+  --query '{e:ScheduleExpression,tz:ScheduleExpressionTimezone,end:EndDate,after:ActionAfterCompletion,state:State}'
+aws scheduler delete-schedule --name "$PRE"
+echo "delete exit: $?"
+rm -f scheduler-precheck.tmp.json
+```
+
+- [ ] `create exit: 0`, and `get-schedule` shows `cron(0 9 ? * MON *)`, `Australia/Melbourne`, the end date `$END`, `DELETE` and `DISABLED`. Then `delete exit: 0`.
+- [ ] Refused with a `ValidationException`: every weekly push booking would fail the same way. Stop and decide (section 0). If the refusal names `ActionAfterCompletion`, the fix is the one in 8.5 "B fails at once", and it needs the privacy text change described there.
+- If `delete-schedule` fails, run it again. A disabled schedule never fires, but don't leave it behind.
+- This doesn't show that a schedule deletes itself after its end date. Only 8.5 step 3 shows that.
 
 ### Stage 7. Deploy [Claude, go-ahead]
 
 ```bash
 cd /c/Users/molte/pp-deploy
 head -1 scripts/deploy.sh | od -c | grep -c '\\r'          # 0
-VITE_FEATURE_WORKDAY=false bash scripts/deploy.sh 2>&1 | tee "deploy-$(date +%Y%m%d-%H%M).log"
+env | grep -c '^DEPLOY_ALLOW_WORKDAY='                       # 0: workday mode stays off
+bash scripts/deploy.sh 2>&1 | tee "deploy-$(date +%Y%m%d-%H%M).log"
 echo "deploy exit: ${PIPESTATUS[0]}"
 ```
 
+`deploy.sh` sets `VITE_FEATURE_WORKDAY=false` itself now (1.4), so the command needs no prefix.
+
 Watch the log for:
-- [ ] `moving runtime from nodejs20.x to nodejs22.x`, or `runtime: nodejs22.x` on a re-run (`:112`, `:120`)
+- [ ] `Workday: off (VITE_FEATURE_WORKDAY=false; DEPLOY_ALLOW_WORKDAY=1 turns it on)` in the opening banner. `ON` means stop: Ctrl+C before the build step, and check the shell for `DEPLOY_ALLOW_WORKDAY`.
+- [ ] `• packaging in C:\Users\molte\AppData\Local\Temp\parkproof-lambda.…`, then `• top-level entries:` with the 14 entries from 3.5, and no `✗` line
+- [ ] `moving runtime from nodejs20.x to nodejs22.x`, or `runtime: nodejs22.x` on a re-run (`:294`, `:302`)
 - [ ] `adding /push/recurring route`, `adding /push/recurring/cancel route`, `adding /read-notice route`, `adding GET /read-notice/status/{job_id}`
 - [ ] `re-subsetting PDF fonts…` with no `WARNING` line
+- [ ] `• workday mode: off (VITE_FEATURE_WORKDAY=false; …)` just before the build
 - [ ] `pem (LF): dist/parkproof-public-key.pem (178 bytes)` and the same for `dist/app/parkproof-public-key.pem`, with no `no .pem in dist/` warning
 - [ ] `✓ Deploy complete` and exit 0
 
@@ -368,13 +455,13 @@ What users see if it stops part way. The steps run in this order, so every state
 
 | Stops at | Live state | Users see | Do |
 |---|---|---|---|
-| `lambda/` npm install (`:84-87`) | Nothing changed | Old site | Fix it, re-run |
-| Runtime switch (`:111-118`) | Old code, maybe on Node 22 | Old site, works | Re-run |
-| Code update or env merge (`:122-179`) | New Lambda, old env (no new variables needed) | Old site, works. The new Lambda serves old clients, with the two visible differences in 1.1 (409 on an unregistered push booking, a plain "no" for a photo with no sign) | Re-run |
-| Route creation (`:296-407`) | Some new routes, maybe without a permission | Old site doesn't call them | See "If a route answers 500", then re-run |
-| `tsc` or `vite build` (`:463`) | New Lambda and routes, old site | Old site, works | Fix it, re-run |
-| S3 sync (`:565`) | Mixed old and new files in the bucket. The edge still serves old cached files | A broken load is possible for uncached assets until the invalidation | Re-run (sync is idempotent) |
-| Invalidation (`:638`) | New files, stale edge | Old site for a while | `aws cloudfront create-invalidation --distribution-id E33V8DMM3LQACG --paths '/*'` |
+| Lambda packaging in the temp folder: `npm ci`, the zip, or the package check (`:276-281`) | Nothing changed. The working tree isn't touched either | Old site | Fix it (3.5 reproduces it without AWS), re-run |
+| Runtime switch (`:293-300`) | Old code, maybe on Node 22 | Old site, works | Re-run |
+| Code update or env merge (`:304-361`) | New Lambda, old env (no new variables needed) | Old site, works. The new Lambda serves old clients, with the two visible differences in 1.1 (409 on an unregistered push booking, a plain "no" for a photo with no sign) | Re-run |
+| Route creation (`:478-589`) | Some new routes, maybe without a permission | Old site doesn't call them | See "If a route answers 500", then re-run |
+| `tsc` or `vite build` (`:649`) | New Lambda and routes, old site | Old site, works | Fix it, re-run |
+| S3 sync (`:751`) | Mixed old and new files in the bucket. The edge still serves old cached files | A broken load is possible for uncached assets until the invalidation | Re-run (sync is idempotent) |
+| Invalidation (`:824`) | New files, stale edge | Old site for a while | `aws cloudfront create-invalidation --distribution-id E33V8DMM3LQACG --paths '/*'` |
 
 Don't start testing until `aws cloudfront list-invalidations --distribution-id E33V8DMM3LQACG --max-items 1` shows `Completed`.
 
@@ -420,7 +507,7 @@ curl -s -w ' %{http_code}\n' "$API/sign-translate/status/$U"
 
 A 404 `{"message":"Not Found"}` means the route is missing. A 500 `{"message":"Internal Server Error"}` with no log means a missing permission (stage 7).
 
-None of the curls above touch `DeleteItem` on the jobs table, the top risk. The `/read-notice/status` 404 is a plain `GetItem` miss, and old code gives the same answer. Optional, one cheap Claude call, no phone needed: read a 1-pixel PNG as a notice, collect the result, then ask again.
+None of the curls above touch `DeleteItem` on the jobs table, the top risk. The `/read-notice/status` 404 is a plain `GetItem` miss, and old code gives the same answer. So prove stage 6's grant with one cheap Claude call, no phone needed: read a 1-pixel PNG as a notice, collect the result, then ask again.
 
 ```bash
 curl -s -w ' %{http_code}\n' -X POST "$API/read-notice" -H 'Content-Type: application/json' \
@@ -430,7 +517,8 @@ curl -s "$API/read-notice/status/$J" | cut -c1-160
 #   Repeat until status is "done" or "error" (about 5 to 20 seconds). Either one deletes the row.
 curl -s -w ' %{http_code}\n' "$API/read-notice/status/$J"
 #   A few seconds later. 404 "job not found or expired": DeleteItem works.
-#   200 with the same answer again: DeleteItem is denied. Do stage 6 now. The log also has "delete after read failed".
+#   200 with the same answer again: DeleteItem is still denied. The log also has "delete after read failed".
+#   Re-run the stage 6 simulator line. If it says allowed, IAM hadn't applied yet: wait a minute and try again.
 ```
 
 The job id is the only key to that row, and the row holds nothing about a real fine.
@@ -480,30 +568,39 @@ grep -rlF "$(grep '^VAPID_PRIVATE_KEY=' scripts/.aws-resources | cut -d= -f2-)" 
   - Delete the rule in the app. `[parkproof.push.recurring_cancel]` shows `deleted` 1 or more, and `list-schedules --name-prefix parkproof-push-r-<rule_id>` comes back empty.
 - [ ] From the new PDF, follow `/verify/` for link 0 with openssl in Git Bash. It prints `Verified OK`.
 
-### Stage 9. T5b checks on real AWS [Claude, go-ahead] (item 7)
+8.5 The three T5b Scheduler checks on real AWS [Claude, go-ahead] (item 7)
 
-Three assumptions from the T5b commit (`86041be`) need a live check:
-- Scheduler fills in `<aws.scheduler.scheduled-time>` in the Lambda's input.
-- Cron schedules follow daylight saving in the given zone.
-- A cron schedule accepts `EndDate` with `ActionAfterCompletion: DELETE`, and deletes itself afterwards.
+Three assumptions from the T5b commit (`86041be`) need real AWS. They can only be checked after the deploy: the probe needs the new dispatcher, and on the old code `push-recurring` is an unknown kind.
+- **A.** Scheduler fills in `<aws.scheduler.scheduled-time>` in the Lambda's input.
+- **B.** A cron schedule accepts `EndDate` with `ActionAfterCompletion: DELETE`, and deletes itself after the end date.
+- **C.** Cron schedules follow the given time zone, including across daylight saving.
 
-One throwaway schedule checks the first and third, and the time-zone half of the second, after the deploy.
+One throwaway schedule checks A, B and the time-zone half of C today. The daylight saving half of C can't happen before April 2027, so it has dated steps at the end. Start step 1 right after 8.2: the probe fires 5 minutes after it's created and needs no phone, so it runs while you do 8.3 and 8.4.
 
 **Why it's safe.**
-- The name `pp-awscheck-<date>` sits outside the Lambda's `parkproof-push-*` scope, so the app never touches it.
+- The name `pp-awscheck-<date>-<time>` sits outside the Lambda's `parkproof-push-*` scope, so the app never touches it.
 - It uses the existing scheduler role, which can only invoke this Lambda.
-- Its input is a `push-recurring` event whose `rule_id` is the placeholder. The dispatcher refuses it as `bad_input` before any lookup, so there's no DynamoDB, no push and no Claude call. It logs the `rule_id`, which is where the substituted time shows (`index.js:2874-2885`, `recurring-schedule.js:455-458`).
-- It needs the new Lambda code. On the old code, `push-recurring` is an unknown kind.
+- Its input is a `push-recurring` event whose `rule_id` is the placeholder. The dispatcher refuses it as `bad_input` before any lookup, so there's no DynamoDB, no push and no Claude call. It logs the `rule_id`, which is where the substituted time shows (`lambda/index.js:2907-2918` and `lambda/recurring-schedule.js:457-462` at this revision).
+- It runs once (the end date is 7 minutes after the fire time) and then deletes itself, or step 3 deletes it.
+
+**Step 1. Create the probe.** In the deploy clone, in the shell from stage 4:
 
 ```bash
 cd /c/Users/molte/pp-deploy
 export PUSH_DISPATCH_LAMBDA_ARN=$(grep '^PUSH_DISPATCH_LAMBDA_ARN=' scripts/.aws-resources | cut -d= -f2- | tr -d '\r')
 export PUSH_SCHEDULER_ROLE_ARN=$(grep '^PUSH_SCHEDULER_ROLE_ARN=' scripts/.aws-resources | cut -d= -f2- | tr -d '\r')
-PROBE="pp-awscheck-$(date +%Y%m%d)"
-# Fire 5 minutes from now on Melbourne's wall clock. End 12 minutes from now.
-read MIN HOUR < <(node -e "const p=new Intl.DateTimeFormat('en-AU',{timeZone:'Australia/Melbourne',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).formatToParts(new Date(Date.now()+5*60e3));const g=t=>Number(p.find(x=>x.type===t).value);console.log(g('minute'),g('hour'))")
-END=$(node -e "console.log(new Date(Date.now()+12*60e3).toISOString().slice(0,19)+'Z')")
-node -e "require('fs').writeFileSync('scheduler-probe.tmp.json',JSON.stringify({Arn:process.env.PUSH_DISPATCH_LAMBDA_ARN,RoleArn:process.env.PUSH_SCHEDULER_ROLE_ARN,Input:JSON.stringify({_async_kind:'push-recurring',rule_id:'<aws.scheduler.scheduled-time>',reminder:'awscheck',device_id:'awscheck'})}))"
+PROBE="pp-awscheck-$(date +%Y%m%d-%H%M)"
+echo "$PROBE" > scheduler-probe-name.tmp.txt          # step 3 needs it an hour from now
+# One clock reading for all four values: fire 5 minutes from now, to the minute;
+# end 7 minutes after the fire.
+read MIN HOUR FIRE_UTC END < <(node -e "
+const fire = new Date(Date.now() + 5 * 60e3); fire.setUTCSeconds(0, 0)
+const p = new Intl.DateTimeFormat('en-AU', { timeZone: 'Australia/Melbourne', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).formatToParts(fire)
+const g = (t) => Number(p.find((x) => x.type === t).value)
+console.log(g('minute'), g('hour'), fire.toISOString().replace('.000Z', 'Z'), new Date(fire.getTime() + 7 * 60e3).toISOString().slice(0, 19) + 'Z')
+")
+echo "fires at $HOUR:$MIN Melbourne time, which is $FIRE_UTC; ends $END"
+node -e "require('fs').writeFileSync('scheduler-probe.tmp.json', JSON.stringify({ Arn: process.env.PUSH_DISPATCH_LAMBDA_ARN, RoleArn: process.env.PUSH_SCHEDULER_ROLE_ARN, Input: JSON.stringify({ _async_kind: 'push-recurring', rule_id: '<aws.scheduler.scheduled-time>', reminder: 'awscheck', device_id: 'awscheck' }) }))"
 aws scheduler create-schedule --name "$PROBE" \
   --schedule-expression "cron($MIN $HOUR ? * * *)" \
   --schedule-expression-timezone Australia/Melbourne \
@@ -511,45 +608,57 @@ aws scheduler create-schedule --name "$PROBE" \
   --end-date "$END" \
   --action-after-completion DELETE \
   --target file://scheduler-probe.tmp.json
-echo "fires $HOUR:$MIN Melbourne time, ends $END"
-aws scheduler get-schedule --name "$PROBE" --query '{e:ScheduleExpression,tz:ScheduleExpressionTimezone,end:EndDate,after:ActionAfterCompletion,state:State}'
+echo "create exit: $?"
+aws scheduler get-schedule --name "$PROBE" \
+  --query '{e:ScheduleExpression,tz:ScheduleExpressionTimezone,end:EndDate,after:ActionAfterCompletion,state:State}'
 ```
 
-A minute after the fire time:
+- [ ] `create exit: 0`, and `get-schedule` shows `cron(<MIN> <HOUR> ? * * *)`, `Australia/Melbourne`, the end date `$END`, `DELETE` and `ENABLED`. That's the first half of **B**.
+- [ ] **B fails at once** if `create-schedule` is refused with a `ValidationException`. Then every weekly push booking fails and the app reports on-device only. No rollback for the rest of the release. Fix forward by taking `ActionAfterCompletion` out of the cron call (`lambda/index.js:2825` at this revision), keeping `EndDate`, and adding a periodic clean-up of expired `parkproof-push-r-*` schedules. Go straight to step 3's clean-up lines. The privacy text matters here: `privacy.anonymousWeeklyPush` and `privacy.rightsAnonymous` say weekly schedules are deleted within 90 days of the last time the app was opened, and a schedule left after its `EndDate` keeps its device ID, the reminder's name, any address, its days and times and its notification text. So the fix forward ships the automatic clean-up (running at least daily) in the same deploy, or changes both strings in the same deploy (all 9 languages, through `scripts/_i18n_inject_fixlist_final.mjs`, which keeps the copy-pass files in step). Never one without the other.
+
+**Step 2. A minute after `$FIRE_UTC`, read the log.**
 
 ```bash
 MSYS_NO_PATHCONV=1 aws logs tail /aws/lambda/parkproof-sign-translator --since 15m --filter-pattern awscheck
-# expect: [parkproof.push.recurring.skip] {"rule_id":"2026-11-..T..:..:00Z","reminder":"awscheck","reason":"bad_input","date":null}
+# expect one line:
+# [parkproof.push.recurring.skip] {"rule_id":"<a time>","reminder":"awscheck","reason":"bad_input","date":null}
+LOGGED='<paste the rule_id value from that line>'
+node -e "const [a, b] = process.argv.slice(1).map(Date.parse); console.log(Number.isFinite(a) && a === b ? 'A and the zone half of C pass' : 'FAIL')" "$LOGGED" "$FIRE_UTC"
 ```
 
-**Assumption 1: the scheduled-time placeholder.**
-- Pass: `rule_id` is an ISO time ending in `Z`, equal to the Melbourne fire time less 11 hours (AEDT in November). Also `node -e "console.log(Date.parse('<that value>'))"` prints a number.
-- Fail: it's the literal `<aws.scheduler.scheduled-time>`, or it won't parse.
-- If it fails: no rollback. The dispatcher falls back to "now, to the minute" (`recurring-schedule.js:464-465`), so on-time fires are still right. Only a fire that Scheduler retries late can pick the wrong day, or be dropped as stale. Fix forward later: read the time from somewhere else, or drop the field.
+- [ ] **A passes** when it prints `A and the zone half of C pass`: Scheduler put the scheduled time into the input, and it's the Melbourne wall-clock minute you asked for. In November that's the Melbourne time less 11 hours (AEDT).
+- [ ] **A fails** if `rule_id` is the literal `<aws.scheduler.scheduled-time>`, or won't parse. No rollback: the dispatcher falls back to "now, to the minute" (`lambda/recurring-schedule.js:464-465`), so on-time fires are still right. Only a fire that Scheduler retries late can pick the wrong day, or be dropped as stale. Fix forward later: read the time from somewhere else, or drop the field.
+- [ ] **The zone half of C fails** if no line arrives within 5 minutes of `$FIRE_UTC`. If Scheduler ignored the zone, the cron would fall 11 hours later, after `$END`, so it never fires. To tell "didn't fire" from "fired, but no log", look at the schedule's metrics in the Scheduler console and the Lambda's Invocations metric. If a line arrives with a different time, the check prints `FAIL`: compare `$LOGGED` with `$FIRE_UTC` to see the offset.
 
-**Assumption 3: `EndDate` with `ActionAfterCompletion: DELETE` on cron.**
-- Pass: `create-schedule` was accepted, `get-schedule` showed both settings, and after `$END` the schedule deletes itself. Allow up to an hour, then `aws scheduler get-schedule --name "$PROBE"` returns `ResourceNotFoundException`.
-- Fail A: `create-schedule` refused with a `ValidationException`. Then every weekly push booking fails and the app reports on-device only. No rollback for the rest of the release. Fix forward by taking `ActionAfterCompletion` out of the cron call (`index.js:2792`), keeping `EndDate`, and adding a periodic clean-up of expired `parkproof-push-r-*` schedules.
-- Fail B: accepted, but still there the next day. Scheduler stops firing it after `EndDate` anyway, so it's inert clutter. Clean up with the loop in section 3, step 2, filtered to schedules whose `EndDate` has passed (`list-schedules` doesn't return `EndDate`, so read each one with `get-schedule` first).
-- Either way, finish with `aws scheduler delete-schedule --name "$PROBE"` if it's still there, then `rm scheduler-probe.tmp.json`.
+**Step 3. An hour after `$END`, check the self-delete, then clean up.**
 
-**Assumption 2, the time-zone half.**
-- Pass: the line arrives at the Melbourne wall-clock minute.
-- Fail: nothing arrives in the window. If Scheduler ignored the zone, the cron would fall 11 hours later, after `$END`. To tell "didn't fire" from "fired, but no log", look at the schedule's metrics in the Scheduler console and the Lambda's Invocations metric.
+```bash
+cd /c/Users/molte/pp-deploy
+PROBE=$(cat scheduler-probe-name.tmp.txt)
+aws scheduler get-schedule --name "$PROBE" 2>&1 | grep -c ResourceNotFoundException   # 1: it deleted itself
+aws scheduler delete-schedule --name "$PROBE" 2>/dev/null || true                      # only does anything if B failed
+rm -f scheduler-probe.tmp.json scheduler-probe-name.tmp.txt
+```
 
-**Assumption 2, the daylight saving half.** It can't be watched live yet. No Australian zone changes its clocks before Sunday 4 April 2027 (3 am back to 2 am in Melbourne). The next change after that is Sunday 3 October 2027. Weekly schedules end after 90 days, so none booked before 4 January 2027 crosses a change.
+- [ ] **B passes** when the first line prints `1`.
+- [ ] **B fails later** if it prints `0`: the schedule is still there. Scheduler stops firing it after `EndDate`, so nothing is sent, but it isn't harmless clutter: each leftover weekly schedule keeps the device ID, the reminder's name, any address, its days and times and its notification text, and the privacy text says those are deleted within 90 days of the last time the app was opened. The delete line above removes the probe. Then, with a deadline:
+  - The first real weekly schedule reaches its `EndDate` 90 days after the deploy. By then, either ship an automatic clean-up of `parkproof-push-r-*` schedules whose `EndDate` has passed (running at least daily), or change `privacy.anonymousWeeklyPush` and `privacy.rightsAnonymous` so they no longer promise the deletion (all 9 languages, through `scripts/_i18n_inject_fixlist_final.mjs`).
+  - Nothing is past its `EndDate` before that day. If the day comes and neither has shipped, run the loop in section 3, step 2 by hand every day from then on, filtered to schedules whose `EndDate` has passed (`list-schedules` doesn't return `EndDate`, so read each one with `get-schedule` first).
+  - Write the deadline down now, with the deploy date.
+
+**C, the daylight saving half.** It can't be watched live yet. No Australian zone changes its clocks before Sunday 4 April 2027 (3 am back to 2 am in Melbourne). The next change after that is Sunday 3 October 2027. Weekly schedules end after 90 days, so none booked before 4 January 2027 crosses a change.
 - [ ] Now, read-only: read the time zone and daylight saving section of the EventBridge Scheduler user guide. My understanding of it, to confirm against the current page:
   - A zoned cron follows the local wall clock across a change.
   - A time inside the skipped hour is skipped, not moved.
   - A time inside the repeated hour runs once.
-  - The app's maths differs on the first point: it moves a skipped time forward and takes the earlier of a repeated time (`recurring-schedule.js:106-126`). That only affects reminders set between 2:00 and 2:59 am on change days. Accept and document it, or stop offering those times.
+  - The app's maths differs on the second point: it moves a skipped time forward and takes the earlier of a repeated time (`lambda/recurring-schedule.js:106-126`). That only affects reminders set between 2:00 and 2:59 am on change days. Accept and document it, or stop offering those times.
 - [ ] Optional, read-only: if your Scheduler console's create wizard previews the next trigger dates, enter `cron(0 9 3-5 4 ? 2027)` with `Australia/Melbourne`. Check the offsets, then cancel without saving.
-- [ ] Decide by early December, before schedules can cross 4 April. If the docs leave any doubt, cap each weekly `EndDate` at the next clock change in the rule's zone (a small code change). The app re-books when it's opened.
-- [ ] Live, in the week of 29 March 2027: repeat the probe with `cron(0 9 ? * * *)` and an `EndDate` of 6 April 2027.
-  - Pass: the fire on Sunday 4 April logs `…-04-03T23:00:00Z` (9 am AEST), where the days before logged `22:00:00Z` (9 am AEDT).
-  - If it fails: in April, Scheduler would fire an hour early on the local clock. In October, an hour late. A late "before" reminder is dropped as stale (`recurring-schedule.js:480-481`), so failure mostly means silence, not wrong pushes. In-tab reminders and the `.ics` alarms (floating local time) aren't affected. Fix forward with the `EndDate` cap.
+- [ ] Decide by early December 2026, before schedules can cross 4 April. If the docs leave any doubt, cap each weekly `EndDate` at the next clock change in the rule's zone (a small code change). The app re-books when it's opened.
+- [ ] Live, in the week of 29 March 2027: repeat steps 1 to 3 with two changes in step 1: `--schedule-expression "cron(0 9 ? * * *)"` and `--end-date 2027-04-06T00:00:00Z` (skip the `read MIN HOUR …` line). In step 2, run the log tail with `--since 4d` on 5 April.
+  - Pass: the fire on Saturday 3 April logs `2027-04-02T22:00:00Z` (9 am AEDT), and the fire on Sunday 4 April logs `2027-04-03T23:00:00Z` (9 am AEST).
+  - If it fails: in April, Scheduler would fire an hour early on the local clock. In October, an hour late. A late "before" reminder is dropped as stale (`lambda/recurring-schedule.js:480-481`), so failure mostly means silence, not wrong pushes. In-tab reminders and the `.ics` alarms (floating local time) aren't affected. Fix forward with the `EndDate` cap.
 
-### Stage 10. Watch window, 24 hours [Claude, read-only]
+### Stage 9. Watch window, 24 hours [Claude, read-only]
 
 Logs Insights on `/aws/lambda/parkproof-sign-translator`:
 
@@ -627,7 +736,7 @@ To roll forward again later, run stage 7 as before. `deploy.sh` re-creates the f
 | Lambda runtime `nodejs22.x` | Stays, because main's `deploy.sh` has no runtime step. Main is tested on Node 22 | Don't move it back. Node 20 is past end of life, and Lambda may refuse it |
 | Four new API routes | Stay unless deleted. Main's Lambda sends them to `handleSignTranslate`, which answers 202, not an error. The old site never calls them, but a phone still on the new shell does | Delete them (step 1). Their Lambda permission statements stay, which is harmless |
 | IAM additions | Stay | Leave them (additive) |
-| Notice job rows not yet read | Expire 10 minutes after their last write, but DynamoDB's TTL sweep is lazy and can take days (the code says so at `index.js:3107-3110`). It only sweeps at all if the TTL attribute is `ttl` (4.5). Main's status routes have no `ttl` or `kind` check, so main hands one back to anyone holding its job id | None. The job id is a random UUID. If 4.5 showed the wrong TTL attribute, delete leftover `kind = read-notice` rows by hand |
+| Notice job rows not yet read | Expire 10 minutes after their last write, but DynamoDB's TTL sweep is lazy and can take days (the code says so at `index.js:3107-3110`). The TTL attribute is `ttl` (confirmed 9 Nov 2026), so the sweep does run. Main's status routes have no `ttl` or `kind` check, so main hands one back to anyone holding its job id | None. The job id is a random UUID. If 4.5 ever shows TTL off `ttl`, delete leftover `kind = read-notice` rows by hand |
 | Data on the phones: `parkproof.profile.v1`, `parkproof.recurring.v1`, `parkproof.recurring.push.v1`, `parkproof.push.registration_sent.v1`, `parkproof.push.turned_off.v1`, `parkproof.workday.v1`, plus new record fields | Old code ignores them. `parkproof.sessions.v1` wasn't bumped, so records still load. Settings, permits and rules come back on roll-forward | None. See `field-test-plan.md` section 7 for T7's "Shared with you" copies |
 | Signed parts (KMS) | Permanent. `lambda/addendum-schema.js` is unchanged, so main's Lambda accepts the same kinds | None |
 | OG image in social caches, crawled pages | Can't be pulled back | None |

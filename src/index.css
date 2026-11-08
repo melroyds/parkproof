@@ -52,6 +52,14 @@
 
   /* ─── Mint spark — RARE: the Verified Seal glow + active-tap only ── */
   --color-mint: #7BE3A4;
+
+  /* ─── Danger: destructive actions on the vault only (Delete record,
+     Remove a shared copy), through Button's "danger" variant. A soft
+     coral, so it reads as destructive on brand-800 and clears WCAG AA:
+     7.44:1 on the vault, 6.67:1 on its guilloché stripe, at least 5.56:1
+     on its hover tint and 5.01:1 on its pressed tint
+     (src/lib/destructive-contrast.test.ts). */
+  --color-danger-300: #FFB4AB;
 }
 
 /* ─── Global defaults ──────────────────────────────────────────────

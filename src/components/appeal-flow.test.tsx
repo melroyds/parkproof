@@ -126,9 +126,11 @@ describe('AppealFlow review', () => {
     render(<AppealFlow session={SESSION} initialNotice={NOTICE} onBack={() => {}} />)
     await screen.findByText(i18n.t('appeal.reviewHeader'))
     const text = document.body.textContent ?? ''
-    for (const key of ['appeal.strongEvidence', 'appeal.moderateEvidence', 'appeal.weakEvidence']) {
-      expect(text).not.toContain(i18n.t(key))
-    }
+    // The old labels ("Strong evidence" and so on), or the model's raw
+    // evidence_strength printed in any other form.
+    expect(text).not.toMatch(/\b(strong|moderate|weak)\s+evidence\b/i)
+    expect(text).not.toMatch(/evidence[_\s]strength/i)
+    expect(text.toLowerCase()).not.toContain(strength)
   })
 })
 

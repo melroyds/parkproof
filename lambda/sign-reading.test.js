@@ -24,6 +24,7 @@ const {
   USER_PERMIT_TYPES,
   WEEKDAYS,
   normalizeModelOutput,
+  permitsInPriorityOrder,
   plainNoteText,
   readPriorSignContext,
   readRecurringRestrictions,
@@ -481,12 +482,10 @@ describe('SYSTEM_PROMPT (T3 item 2)', () => {
   it('limits permit exceptions to listed permits and to what the sign prints', () => {
     expect(SYSTEM_PROMPT).toMatch(/If the user message lists no permits, permit_exception_type is "none" and permit_exception_text is "" at the top level and in every option/)
     // One exception per level now, but the model still checks every listed
-    // permit, and picks the first covered one in list order.
+    // permit, and picks the covered one the app would use (the tie-break
+    // tests below).
     expect(SYSTEM_PROMPT).toMatch(/Check every listed permit type, not only the first\./)
     expect(SYSTEM_PROMPT).not.toMatch(/use the first one in the list/)
-    expect(SYSTEM_PROMPT).toMatch(
-      /When the sign prints exceptions for more than one listed permit type, or one exception covers several of them, give only the first of those types in the order the user message lists them\./,
-    )
     expect(SYSTEM_PROMPT).toMatch(/permit_exception_type: the listed permit type[^\n]*Never a type the user message doesn't list\./)
     expect(SYSTEM_PROMPT).toMatch(/permit_exception_text: the sign's own exception words for that type, copied as printed/)
     expect(SYSTEM_PROMPT).toMatch(/"" when permit_exception_type is "none"/)
@@ -752,6 +751,94 @@ describe('translateSign request handling (T3 item 3)', () => {
     expect(lines.length).toBeGreaterThan(0)
     expect(all).not.toMatch(/accessible/i)
     expect(all).not.toContain('Secret Area 77')
+  })
+})
+
+// ─── The permit tie-break (fix list, 9 Nov 2026) ───────────────────────────
+// The model reports one permit exception per level. When a sign excepts
+// more than one of the driver's permits, it must report the one the app
+// would use (permitAnswerFor: accessible first). src/lib/permit-tiebreak.test.ts
+// checks the whole path against the app.
+
+describe('permit tie-break: the model reports the permit the app would use', () => {
+  const resident25 = { type: 'resident', area: 'Area 25' }
+  const business = { type: 'business', area: null }
+  const accessible = { type: 'accessible', area: null }
+  const resident7 = { type: 'resident', area: 'Area 7' }
+
+  it('ranks an accessible permit first and keeps saved order otherwise, without changing the input', () => {
+    const saved = [resident25, business, accessible, resident7]
+    const before = [...saved]
+    expect(permitsInPriorityOrder(saved)).toEqual([accessible, resident25, business, resident7])
+    expect(saved).toEqual(before)
+    expect(permitsInPriorityOrder([business, resident25])).toEqual([business, resident25])
+    expect(permitsInPriorityOrder([])).toEqual([])
+    expect(permitsInPriorityOrder(null)).toEqual([])
+    expect(permitsInPriorityOrder(undefined)).toEqual([])
+  })
+
+  it('tells the model the priority: accessible, then an area match, then list order', () => {
+    expect(SYSTEM_PROMPT).toMatch(
+      /When the sign prints exceptions for more than one listed permit type, or one exception covers several of them, give only one of those types, by this priority: "accessible" when it is one of them; otherwise a permit whose area label matches the area the sign names; otherwise the first of them in the order the user message lists them\./,
+    )
+    expect(SYSTEM_PROMPT).toMatch(/The user message lists permits in this priority order, accessible first\./)
+    // The rule this replaced picked by saved order alone.
+    expect(SYSTEM_PROMPT).not.toMatch(/give only the first of those types in the order the user message lists them/)
+  })
+
+  // permit-tiebreak.test.ts runs the tie-break with the app's areaKey as the
+  // model's area comparison. That only holds if the prompt tells the model
+  // the app's rule; the examples it gives must agree with areaKey (fix round 1).
+  it("tells the model the app's rule for when two area labels match, with examples areaKey agrees with", async () => {
+    const { areaKey } = await import('../src/lib/permit-answer')
+    const rule = SYSTEM_PROMPT.match(
+      /two area labels match when they are the same after ignoring case, spaces and punctuation, the words AREA, ZONE, PERMIT, PARKING, NUMBER and NO, and leading zeros\. ("[^"]+"), ("[^"]+") and ("[^"]+") all match\. ("[^"]+") and ("[^"]+") don't\./,
+    )
+    expect(rule, 'the area matching sentence in PERMIT EXCEPTIONS').not.toBeNull()
+    const [same1, same2, same3, diff1, diff2] = rule.slice(1).map((q) => JSON.parse(q))
+    expect(new Set([same1, same2, same3].map(areaKey)).size).toBe(1)
+    expect(areaKey(diff1)).not.toBe(areaKey(diff2))
+    // Every word the sentence names is one areaKey ignores, and no other.
+    for (const word of ['AREA', 'ZONE', 'PERMIT', 'PARKING', 'NUMBER', 'NO']) expect(areaKey(`${word} 7`)).toBe('7')
+    expect(areaKey('STREET 7')).not.toBe('7')
+  })
+
+  it('lists the permits accessible first in the user message, for a fresh reading and a re-check', async () => {
+    const saved = [{ type: 'resident', area: 'Area 25' }, { type: 'business' }, { type: 'accessible' }]
+    const listed =
+      'in priority order: [{"type":"accessible","area":null},{"type":"resident","area":"Area 25"},{"type":"business","area":null}]'
+    mockModel(fullAnswer())
+    await fresh({ user_permits: saved })
+    expect(userText(call())).toContain(listed)
+    await refresh({ user_permits: saved })
+    expect(userText(call())).toMatch(/REFRESH/)
+    expect(userText(call())).toContain(listed)
+  })
+
+  it('keeps the answer\'s permit entries in the same priority order', () => {
+    const out = normalizeModelOutput(
+      fullAnswer({ permit_exception_type: 'accessible', permit_exception_text: 'DISABLED PERMIT HOLDERS EXCEPTED' }),
+      { user_permits: [resident25, accessible] },
+    )
+    expect(out.permit_exception).toEqual([
+      { applies: true, permit_type: 'accessible', text: 'DISABLED PERMIT HOLDERS EXCEPTED' },
+      { applies: false, permit_type: 'resident', text: '' },
+    ])
+    // Per position too.
+    const withOptions = normalizeModelOutput(
+      fullAnswer({
+        clarification: {
+          question: 'Where are you parked?',
+          options: [variant({ permit_exception_type: 'resident', permit_exception_text: 'AREA 25 EXCEPTED' })],
+        },
+      }),
+      { user_permits: [business, resident25, accessible] },
+    )
+    expect(withOptions.clarification.options[0].permit_exception.map((e) => e.permit_type)).toEqual([
+      'accessible',
+      'business',
+      'resident',
+    ])
   })
 })
 

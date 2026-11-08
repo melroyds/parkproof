@@ -10,6 +10,7 @@ import Icon from './Icon'
 import VerifiedSeal from './VerifiedSeal'
 import BackButton from './ui/BackButton'
 import { RecordThumbnail } from './RecordPhoto'
+import { DEV_KEY_ALIAS } from '../lib/evidence-chain'
 
 /** Thumbnail priority for a row: the sign photo, then the surroundings photo, then the car photo. */
 const THUMB_ROLES = ['sign', 'ambient', 'car'] as const
@@ -106,7 +107,16 @@ export default function SessionHistory({ onBack, onOpen }: Props) {
                     )}
                     <div className="flex items-center gap-1.5 min-w-0">
                       {s.signature && (
-                        <VerifiedSeal size={16} glow={false} className="flex-none" />
+                        <VerifiedSeal
+                          size={16}
+                          glow={false}
+                          className="flex-none"
+                          label={
+                            s.signature.key_alias === DEV_KEY_ALIAS
+                              ? t('session.devKeySigned')
+                              : t('common.signedSeal')
+                          }
+                        />
                       )}
                       <p className="font-medium text-ink-900 truncate">
                         {arrival.toLocaleDateString('en-AU', {

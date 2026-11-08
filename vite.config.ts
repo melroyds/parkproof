@@ -12,8 +12,14 @@ import { VitePWA } from 'vite-plugin-pwa'
 function applyParsed(parsed: Record<string, string> | undefined): string[] {
   if (!parsed) return []
   // Some local dev tools (e.g. vestauth) wrap dotenv and stop it from
-  // populating process.env — assign parsed values explicitly to be safe.
+  // populating process.env, so assign parsed values explicitly to be safe.
+  // VITE_* keys already in the environment are kept: they are baked into the
+  // client bundle, and Vite's own rule is that the environment beats the env
+  // files for them. Overwriting them here would let a .env line beat what a
+  // build script sets, for example VITE_FEATURE_WORKDAY=false in deploy.sh
+  // (scripts/vite-env-precedence.test.mjs).
   for (const [k, v] of Object.entries(parsed)) {
+    if (k.startsWith('VITE_') && process.env[k] !== undefined) continue
     process.env[k] = v
   }
   return Object.keys(parsed)

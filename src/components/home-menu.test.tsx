@@ -137,3 +137,31 @@ describe("the home card's Share icon", () => {
     expect(screen.getByRole('button', { name: i18n.t('active.morePillAria', { count: 2 }) })).toBeTruthy()
   })
 })
+
+// Fix list clean-ups, item 4: each home row reads one key. The weekly row
+// reads T5's reviewed recurring.homeRow (in ko, hi and pa its street
+// sweeping term is the one the weekly reminders screen uses; T4's
+// home.weeklyReminders differed and is gone). The fine link keeps T4's
+// home.fineStart (T8's notice.homeLink, gone too, used κλήση in el where
+// the verified term for "fine" is πρόστιμο).
+describe('each home row reads one key', () => {
+  afterEach(async () => {
+    await i18n.changeLanguage('en')
+  })
+
+  it.each(['ko', 'hi', 'pa', 'el'])('in %s', async (locale) => {
+    await i18n.changeLanguage(locale)
+    renderMenu({ onOpenWeeklyReminders: vi.fn(), onOpenNoticeLookup: vi.fn() })
+    expect(rowNames()[1]).toBe(i18n.t('recurring.homeRow'))
+    expect(screen.getByRole('button', { name: i18n.t('home.fineStart') })).toBeTruthy()
+    // The keys the rows no longer read are gone from every locale.
+    expect(i18n.exists('home.weeklyReminders')).toBe(false)
+    expect(i18n.exists('notice.homeLink')).toBe(false)
+  })
+
+  it('the weekly row and the weekly screen use the same street sweeping words', async () => {
+    await i18n.changeLanguage('ko')
+    renderMenu({ onOpenWeeklyReminders: vi.fn() })
+    expect(rowNames()[1]).toContain(i18n.t('recurring.kind.street_cleaning'))
+  })
+})

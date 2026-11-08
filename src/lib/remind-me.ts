@@ -28,8 +28,9 @@
  * and why. Nothing is ever skipped quietly.
  */
 import { schedulePushReminders, subscribeToPush, type ScheduledFire, type ScheduledReminder } from './push'
-import type { ScheduleResult } from './notifications'
+import { cancelInTabReminders, type ScheduleResult } from './notifications'
 import { isIosBrowserTab } from './platform'
+import { alertEnvironment, alertReach, type AlertEnvironment } from './alert-reach'
 
 /**
  * Why the reminder can't reach the driver while ParkProof is closed.
@@ -111,7 +112,7 @@ export async function remindMe(args: RemindMeArgs): Promise<RemindMeResult> {
 
   if (permission === 'unsupported') {
     // No notifications of any kind in this browser.
-    return { background: { ok: false, reason: noPushReason() }, inTab }
+    return disarmUnshowable(args.sessionId, { background: { ok: false, reason: noPushReason() }, inTab })
   }
 
   // 3 and 4. The in-tab reminders are armed by now, so a push step that
@@ -124,7 +125,30 @@ export async function remindMe(args: RemindMeArgs): Promise<RemindMeResult> {
     console.error('[remind-me] push booking threw:', err)
     background = { ok: false, reason: 'failed' }
   }
-  return { background, inTab }
+  return disarmUnshowable(args.sessionId, { background, inTab })
+}
+
+/**
+ * When push booked nothing and this phone can't show an alert from an open
+ * tab (alertReach 'none': Android before a service worker controls the
+ * page), the outcome says no reminder was set. The in-tab timers armed in
+ * step 2 are disarmed here, so that stays true: without this, a service
+ * worker that took control later would let them fire after the screen said
+ * nothing would (fix round 1). The result then carries no armed times, and
+ * summariseRemindMe reports 'none' with the push step, whatever the phone
+ * can do by the time it is called.
+ */
+export function disarmUnshowable(
+  sessionId: string,
+  result: RemindMeResult,
+  env: AlertEnvironment = alertEnvironment(),
+): RemindMeResult {
+  const { background, inTab } = result
+  if (background.ok && background.created.length > 0) return result
+  if (inTab.status !== 'scheduled' || inTab.firesAt.length === 0) return result
+  if (alertReach(false, env) !== 'none') return result
+  cancelInTabReminders(sessionId, inTab.firesAt)
+  return { background, inTab: { ...inTab, scheduledCount: 0, firesAt: [] } }
 }
 
 /** Steps 3 and 4: register this device for push, then book the push reminders. */
@@ -160,6 +184,14 @@ async function bookBackground(args: RemindMeArgs): Promise<BackgroundResult> {
  *   - times: the booked fire times, earliest first.
  *   - step: the one next step when push isn't working, else null.
  *     'allPast' when nothing could be booked because the times have passed.
+ *
+ * 'openOnly' is claimed only when this phone can show an alert from an open
+ * tab right now, by the same check the weekly reminders list uses
+ * (alert-reach.ts). On Android before a service worker controls the page
+ * an in-tab alert can't show, so remindMe disarms the timers it armed
+ * (disarmUnshowable) and the outcome says nothing was set, with the push
+ * step that would fix it, exactly as the weekly list says the phone can't
+ * alert.
  */
 export interface RemindMeSummary {
   kind: 'background' | 'openOnly' | 'none'
@@ -167,19 +199,30 @@ export interface RemindMeSummary {
   step: BackgroundFailure | 'allPast' | null
 }
 
-export function summariseRemindMe(result: RemindMeResult): RemindMeSummary {
+export function summariseRemindMe(
+  result: RemindMeResult,
+  env: AlertEnvironment = alertEnvironment(),
+): RemindMeSummary {
   const { background, inTab } = result
   if (background.ok && background.created.length > 0) {
+    // Booked by the server just now, under a granted permission and with a
+    // stored registration: what alertReach calls 'closed'.
     const times = background.created
       .map((c) => new Date(c.fire_at))
       .filter((d) => Number.isFinite(d.getTime()))
       .sort((a, b) => a.getTime() - b.getTime())
     return { kind: 'background', times, step: null }
   }
-  if (inTab.status === 'scheduled' && inTab.firesAt.length > 0) {
-    // Push booked nothing (the server skipped every time) yet the tab armed
-    // some: rare, and a retry is the honest next step.
-    return { kind: 'openOnly', times: inTab.firesAt, step: background.ok ? 'failed' : background.reason }
+  // Push booked nothing. Push booking failed, or (rare) the server skipped
+  // every time while the tab armed some: a retry is the honest next step.
+  const pushStep: BackgroundFailure = background.ok ? 'failed' : background.reason
+  if (inTab.status === 'scheduled') {
+    if (inTab.firesAt.length > 0 && alertReach(false, env) === 'open_only') {
+      return { kind: 'openOnly', times: inTab.firesAt, step: pushStep }
+    }
+    // Armed, but this phone can't show an in-tab alert (remindMe has
+    // disarmed them, disarmUnshowable): say none was set.
+    return { kind: 'none', times: [], step: pushStep }
   }
   // Nothing set. Times that have passed explain it better than any push
   // problem: retrying or installing wouldn't help.

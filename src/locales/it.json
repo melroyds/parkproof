@@ -20,7 +20,8 @@
     "no": "No",
     "close": "Chiudi",
     "sendFeedback": "Invia feedback",
-    "about": "Cosa fa"
+    "about": "Cosa fa",
+    "signedSeal": "Record firmato, con manomissione rilevabile"
   },
   "language": {
     "title": "Lingua",
@@ -48,7 +49,6 @@
     },
     "seeEverything": "Scopri tutto quello che fa ParkProof →",
     "draftAppeal": "Hai preso una multa? Redigi un ricorso",
-    "weeklyReminders": "Pulizia strade e promemoria settimanali",
     "settings": "Impostazioni",
     "settingsSignIn": "Accedi per sincronizzare",
     "startWorkday": "Parcheggi tutto il giorno? Inizia una giornata di lavoro",
@@ -85,8 +85,7 @@
     "expiredHint": "Sei ancora qui? Sposta l'auto ora. Hai già spostato l'auto? Tocca \"Ho lasciato il posto\".",
     "walkBackAria": "Torna a piedi. Apre le indicazioni a piedi per la tua auto.",
     "walkBackAriaDistance_one": "Torna a piedi. Apre le indicazioni a piedi per la tua auto, a {{distance}}, circa {{count}} minuto a piedi.",
-    "walkBackAriaDistance_other": "Torna a piedi. Apre le indicazioni a piedi per la tua auto, a {{distance}}, circa {{count}} minuti a piedi.",
-    "shareAria": "Condividi dov'è l'auto"
+    "walkBackAriaDistance_other": "Torna a piedi. Apre le indicazioni a piedi per la tua auto, a {{distance}}, circa {{count}} minuti a piedi."
   },
   "scanner": {
     "header": "Scansiona cartello di parcheggio",
@@ -116,7 +115,8 @@
     "privacyLine": "Per leggere il cartello inviamo la sua foto a un servizio di AI. Se consenti l'accesso alla posizione, il nostro server la usa per ricavare l'ora locale. La lettura del cartello non conserva una copia della foto sui nostri server. Non serve nessun account.",
     "cameraDeniedTitle": "Accesso alla fotocamera disattivato",
     "cameraDeniedCopy": "Scegli invece una foto dalla libreria, oppure riattiva l'accesso alla fotocamera nelle impostazioni del browser.",
-    "couldntReadPhoto": "Non siamo riusciti a leggere quella foto. Provane un'altra, o scegline una dalla tua libreria."
+    "couldntReadPhoto": "Non siamo riusciti a leggere quella foto. Provane un'altra, o scegline una dalla tua libreria.",
+    "previewAlt": "La tua foto del cartello di sosta"
   },
   "reuse": {
     "scannedHere": "Hai scansionato qui {{age}}",
@@ -354,7 +354,17 @@
     "permitBodyBefore_one": "Il tempo del permesso che hai inserito leggendo il cartello finisce alle {{time}}. Questo è il promemoria di {{count}} minuto prima.",
     "permitBodyBefore_other": "Il tempo del permesso che hai inserito leggendo il cartello finisce alle {{time}}. Questo è il promemoria di {{count}} minuti prima.",
     "calendarPermitTitle": "ParkProof: finisce il tempo del permesso che hai inserito",
-    "calendarPermitSummary": "Il tempo del permesso che hai inserito leggendo il cartello finisce alle {{time}}. ParkProof non calcola gli orari dei permessi."
+    "calendarPermitSummary": "Il tempo del permesso che hai inserito leggendo il cartello finisce alle {{time}}. ParkProof non calcola gli orari dei permessi.",
+    "ics": {
+      "expiresTitle": "ParkProof: il parcheggio scade",
+      "expiresAt": "Il tuo parcheggio scade: {{time}} ({{place}}).",
+      "remindersAt": "Promemoria: {{times}}.",
+      "recordId": "Record ParkProof: {{id}}",
+      "checkOnTitle": "ParkProof: controlla la tua auto",
+      "checkOnAt": "Controlla la tua auto in {{address}} ({{place}}).",
+      "checkOnHere": "Controlla la tua auto dove l'hai parcheggiata ({{place}}).",
+      "buildFailed": "Impossibile creare il file del calendario. Riprova."
+    }
   },
   "history": {
     "header": "Record di parcheggio",
@@ -424,9 +434,6 @@
     "draftingHeader": "Lettura della multa…",
     "draftingSub": "Claude la sta incrociando con la tua prova salvata.",
     "reviewHeader": "Bozza ricorso",
-    "strongEvidence": "Prova forte",
-    "moderateEvidence": "Prova moderata",
-    "weakEvidence": "Prova debole",
     "strategy": "STRATEGIA",
     "subjectLine": "OGGETTO",
     "letter": "LETTERA (MODIFICABILE)",
@@ -531,7 +538,7 @@
     "anonymousThings": "Anche queste cose lasciano il tuo dispositivo, pure senza account:",
     "anonymousAnthropic": "<strong>Ogni foto di cartello che scansioni</strong> viene inviata ad <strong>Anthropic</strong> (Claude) per leggere il cartello, insieme alla posizione e al tipo di ogni permesso che hai salvato (più l'area o zona di un permesso per residenti o per attività). Un ricontrollo invia la lettura precedente al posto della foto. Non conserviamo né la foto né la posizione. La risposta, che può citare i tipi dei tuoi permessi, resta per poco sul nostro server così il telefono può recuperarla. Si applica la policy di conservazione di Anthropic.",
     "anonymousNominatim": "<strong>Le coordinate GPS</strong> vengono inviate a <strong>OpenStreetMap Nominatim</strong> per risolvere l'indirizzo. Nominatim non richiede una chiave e applica la propria policy di conservazione pubblica.",
-    "anonymousCloudwatch": "<strong>Un UUID casuale per ogni risultato</strong> più un verdetto \"corretto / rifai\" vengono registrati su <strong>AWS CloudWatch</strong> quando tocchi la scheda di verifica. Nessun dato personale: solo un segnale aggregato per migliorare il prompt.",
+    "anonymousCloudwatch": "<strong>Quando ci dici se abbiamo letto bene un cartello</strong>, il server di ParkProof registra la tua risposta su <strong>AWS CloudWatch</strong>, insieme a quando l'hai data e a un ID casuale per quella risposta. Con essa vengono registrati i dettagli della lettura: i primi 120 caratteri della descrizione delle regole del cartello, quanto era sicura la lettura, il limite di tempo, gli eventuali metodi di pagamento e l'area del permesso, se ti ha chiesto dove hai parcheggiato e l'opzione che hai scelto, e quanti gruppi di regole, problemi di lettura e restrizioni settimanali ha trovato. Dicono anche se il cartello era leggibile, se la lettura era un ricontrollo, se ha trovato un cartello valido per un'intera area di parcheggio, un parcheggio a pagamento, una zona a permesso o un posto accessibile, e l'ora del giorno nel luogo del cartello. Vengono registrate anche le risposte che avevi dato fino a quel momento alle domande sul parcheggio a pagamento, sulla zona a permesso e sul permesso di parcheggio accessibile, quindi una riga del log può mostrare che hai detto che era esposto un permesso di parcheggio accessibile. Il log non contiene la foto, la sua posizione GPS né un ID tuo o di questo dispositivo. Lo usiamo per capire dove sbaglia la lettura dei cartelli. Viene cancellato dopo 90 giorni.",
     "signedInHeader": "Cosa ci dai quando accedi",
     "signedInIntro": "L'accesso è facoltativo. Attiva la sincronizzazione cloud: gli stessi record visibili su tutti i tuoi dispositivi.",
     "signedInThings": "Quando accedi, ulteriori dati lasciano il tuo dispositivo:",
@@ -555,7 +562,7 @@
     "rightsExport": "<strong>Esporta.</strong> Tocca \"Scarica come PDF\" in Account per ottenere un documento completo con ogni record che hai memorizzato: riepilogo in copertina più una scheda di dettaglio per record con foto.",
     "rightsDelete": "<strong>Elimina.</strong> Tocca \"Elimina account\" in Account. Rimuove la tua registrazione di accesso, ogni riga DynamoDB e ogni foto S3 in pochi secondi. Irreversibile.",
     "rightsCorrect": "<strong>Correggi.</strong> Modifichi i tuoi record nell'app. Ogni modifica si sincronizza subito nel cloud se sei loggato.",
-    "rightsAnonymous": "Se non accedi, i tuoi record di parcheggio sono solo su questo dispositivo. Per eliminarli, svuota lo spazio di archiviazione del browser. Questo non elimina ciò che è già sui nostri server, come un promemoria push che hai impostato (conservato finché non viene inviato, annullato o scade), la registrazione push di questo dispositivo (conservata per circa 90 giorni dall'ultima volta che hai impostato un promemoria) o un feedback che ci invii, con la tua email se la indichi (conservato fino a due anni).",
+    "rightsAnonymous": "Se non accedi, i tuoi record di parcheggio sono solo su questo dispositivo. Per eliminarli, svuota lo spazio di archiviazione del browser. Questo non elimina ciò che è già sui nostri server. Un promemoria push che hai impostato per un record viene conservato finché non viene inviato o finché non lo annulli. Un promemoria settimanale push viene cancellato entro 90 giorni dall'ultima volta che hai aperto ParkProof. La registrazione push di questo dispositivo (un ID casuale del dispositivo, l'indirizzo push e le chiavi di crittografia che il tuo browser ci ha dato, e quando sono stati rinnovati l'ultima volta) viene conservata per circa 90 giorni dall'ultimo rinnovo da parte di ParkProof. ParkProof la rinnova quando apri l'app con i promemoria push attivi e quando imposti un promemoria. Disattivare i promemoria push, in ParkProof o nel browser, non lo comunica al nostro server, quindi la registrazione viene conservata come sopra. Se il servizio push ci dice che quell'indirizzo non funziona più (può succedere quando un promemoria che hai impostato prima viene inviato dopo che li hai disattivati), cancelliamo subito l'indirizzo e le chiavi. Conserviamo solo l'ID di questo dispositivo, un'impronta digitale dell'indirizzo e il momento in cui l'abbiamo saputo, per circa 90 giorni, così l'indirizzo non viene salvato di nuovo. I log del nostro server registrano anche l'ID di questo dispositivo quando si registra per le notifiche push, imposta un promemoria o ne riceve uno, insieme al servizio push che usa, all'ID casuale del record o del promemoria settimanale e al momento in cui ogni promemoria è stato impostato, inviato o saltato. I log vengono cancellati dopo 90 giorni. Un feedback che ci invii, con la tua email se la indichi, viene conservato fino a due anni.",
     "photosHeader": "Foto scattate dentro ParkProof",
     "photosCopy": "Le foto vengono ridimensionate a ≤1200px e ricodificate in JPEG a qualità 0.82 sul tuo dispositivo, prima di lasciare il browser. Lo scatto originale ad alta risoluzione non lascia mai il tuo telefono.",
     "signingHeader": "Firma crittografica",
@@ -568,7 +575,7 @@
     "anonymousPush": "<strong>Promemoria push</strong>, se li attivi: l'indirizzo del record, l'orario di ogni promemoria e il suo testo (che può citare un tempo del permesso che hai inserito) vanno al <strong>server di ParkProof</strong>, che conserva ciascuno finché non viene inviato, poi lo cancella.",
     "anonymousPermits": "<strong>Un permesso che usi per un parcheggio</strong>: il tipo, l'area o zona e l'eventuale tempo del permesso che hai inserito restano con quel record. Firmando il record si invia un'impronta di questi dettagli, non i dettagli, insieme alle tue risposte alle domande sul permesso. Eliminare un permesso nelle Impostazioni non cambia i record già salvati. Eliminando il record si eliminano anche questi dettagli.",
     "signedInPermits": "I <strong>dettagli del permesso</strong> tenuti con un record (tipo, area o zona ed eventuale tempo del permesso che hai inserito, per un parcheggio in cui hai usato un permesso salvato) vengono memorizzati con quel record in AWS DynamoDB. I permessi salvati nelle Impostazioni no. Eliminando il record si eliminano anche questi dettagli.",
-    "anonymousWeeklyPush": "<strong>Promemoria settimanali push</strong>, se li attivi: il nome di ogni promemoria e l'eventuale indirizzo che hai inserito, i suoi giorni, orari e fuso orario e il testo della notifica vanno al <strong>server di ParkProof</strong>. Il server li conserva finché il promemoria è attivo, così può inviarlo ogni settimana. Vengono cancellati quando metti in pausa o elimini il promemoria o ne disattivi le notifiche. Se smetti di aprire ParkProof, vengono cancellati entro 90 giorni."
+    "anonymousWeeklyPush": "<strong>Promemoria settimanali push</strong>, se li attivi: il nome di ogni promemoria e l'eventuale indirizzo che hai inserito, i suoi giorni, orari, ripetizione e fuso orario, quando deve avvisarti e il testo della notifica vanno al <strong>server di ParkProof</strong>, insieme a un ID casuale di questo dispositivo. Il server li conserva finché il promemoria è attivo, così può inviarlo ogni settimana. Vengono cancellati quando metti in pausa o elimini il promemoria o ne disattivi le notifiche, la prossima volta che ParkProof è aperto e online. Ogni volta che ParkProof li invia, il server li conserva al massimo 90 giorni. ParkProof li invia di nuovo di tanto in tanto finché continui ad aprirlo, quindi se smetti vengono cancellati entro 90 giorni dall'ultima volta che hai aperto ParkProof."
   },
   "loading": {
     "step1": "Lettura del cartello…",
@@ -874,20 +881,17 @@
       "title": "Prove con manomissione rilevabile, quando contano.",
       "body": "Ogni record di parcheggio che salvi viene firmato, così chiunque può controllare che i suoi dati non siano cambiati da allora. Una firma non mostra che siano veri, chi guidava, dove si trovava l'auto, né quando è arrivata o partita."
     },
-    "feature": {
-      "translateTitle": "Risposte in linguaggio chiaro",
-      "translateDesc": "Fotografa qualsiasi cartello di parcheggio australiano e ricevi in circa 12 secondi il verdetto: posso parcheggiare adesso?",
-      "evidenceTitle": "Prove con manomissione rilevabile",
-      "evidenceDesc": "Ogni parcheggio ottiene un timestamp firmato crittograficamente, GPS e foto.",
-      "appealTitle": "Lettere di ricorso AI",
-      "appealDesc": "Multa ingiusta? Fotografala e prepariamo un ricorso formale."
-    },
     "accuracyNote": "ParkProof può leggere male un cartello incasinato. Confronta sempre la nostra lettura col cartello vero prima di lasciare l'auto.",
     "trustFree": "Gratis",
     "trustNoAccount": "Senza account",
     "trustOffline": "I record salvati funzionano offline",
     "locationOptional": "La posizione è facoltativa. Rifiutala e potrai comunque leggere i cartelli e digitare tu stesso l'indirizzo.",
-    "heroTitle": "Parcheggiare è <accent>semplice.</accent>"
+    "heroTitle": "Parcheggiare è <accent>semplice.</accent>",
+    "hero": {
+      "aria": "Un cartello di parcheggio che diventa un record di parcheggio firmato: puoi parcheggiare fino alle {{time}}.",
+      "kicker": "RECORD FIRMATO",
+      "canPark": "Puoi parcheggiare"
+    }
   },
   "about": {
     "title": "Tutto quello che fa ParkProof",
@@ -1101,7 +1105,6 @@
     }
   },
   "notice": {
-    "homeLink": "Hai preso una multa? Inizia da qui",
     "title": "Hai preso una multa?",
     "captureIntro": "Scatta una foto del verbale. ParkProof legge data, ora e luogo e cerca i tuoi record di parcheggio intorno a quell'ora.",
     "reading": {
@@ -1335,7 +1338,8 @@
       "alarmTomorrow": "{{what}}: domani, {{range}}. Sposta l'auto prima delle {{start}}.",
       "alarmSoon": "{{what}} inizia alle {{start}}. Sposta l'auto prima.",
       "move": "Sposta l'auto prima che inizi.",
-      "footer": "Promemoria impostato in ParkProof."
+      "footer": "Promemoria impostato in ParkProof.",
+      "noDates": "Questo promemoria settimanale non ha date da aggiungere."
     }
   },
   "photoGrid": {
@@ -1451,7 +1455,6 @@
     "permitExpired": "Scaduto il {{date}}. Non viene inviato con le tue scansioni.",
     "deletePermitLabel": "Elimina {{permit}}",
     "pushUnsupported": "Questo browser non può mostrare promemoria quando ParkProof è chiuso. Su iPhone, aggiungi prima ParkProof alla schermata Home. I promemoria nel calendario funzionano comunque.",
-    "remindersReliability": "I promemoria possono arrivare in ritardo o essere silenziati, per esempio da Full immersion o dal risparmio energetico. Non affidarti solo a loro.",
     "accountHeader": "Account",
     "accountCopy": "Sincronizzazione cloud, esportazione dei dati, uscita ed eliminazione dell'account.",
     "openAccount": "Apri account",

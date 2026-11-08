@@ -273,14 +273,14 @@ export default function ReminderOptions({ session, onDone }: Props) {
       if (permitUntil) {
         // Every alarm at its own time with its own translated text, so the
         // calendar never calls the permit time the driver entered an expiry.
-        downloadIcs(session, [], {
+        downloadIcs(session, [], t, {
           anchor: permitUntil,
           extraAlarms: allFireAtList.map((at) => ({ at, description: reminderCopy(session, at, t).body })),
           title: t('reminders.calendarPermitTitle'),
           description: t('reminders.calendarPermitSummary', { time: expiresLabel }),
         })
       } else {
-        downloadIcs(session, selectedList)
+        downloadIcs(session, selectedList, t)
       }
       setIcsState('downloaded')
     } catch {
@@ -514,7 +514,7 @@ function NoSignReminderPicker({ session, onDone }: Props) {
     }
     try {
       const { downloadIcsAbsolute } = await import('../lib/ics')
-      downloadIcsAbsolute(session, selectedFireAtList)
+      downloadIcsAbsolute(session, selectedFireAtList, t)
       setIcsState('downloaded')
     } catch {
       setIcsState('error')

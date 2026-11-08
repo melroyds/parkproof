@@ -827,8 +827,15 @@ function drawWrapped(
   return y
 }
 
-/** jsPDF's built-in fonts (courier, helvetica) draw WinAnsi (cp1252) characters only. */
-const WIN_ANSI_EXTRA = new Set(Array.from('€‚ƒ„…†‡ˆ‰Š‹ŒŽ‘’“”•–—˜™š›œžŸ', (c) => c.codePointAt(0)!))
+/**
+ * jsPDF's built-in fonts (courier, helvetica) draw WinAnsi (cp1252) characters only.
+ * The printable cp1252 characters in 0x80 to 0x9F, as code points (the
+ * table includes U+2014, which the copy lint bans from string literals).
+ */
+const WIN_ANSI_EXTRA = new Set([
+  0x20ac, 0x201a, 0x0192, 0x201e, 0x2026, 0x2020, 0x2021, 0x02c6, 0x2030, 0x0160, 0x2039, 0x0152, 0x017d, 0x2018,
+  0x2019, 0x201c, 0x201d, 0x2022, 0x2013, 0x2014, 0x02dc, 0x2122, 0x0161, 0x203a, 0x0153, 0x017e, 0x0178,
+])
 
 /** Can courier draw every character of `text`? (Printable ASCII, Latin-1 and the cp1252 extras.) */
 export function isWinAnsiText(text: string): boolean {

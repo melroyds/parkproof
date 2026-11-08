@@ -9,7 +9,15 @@
 //   3. No em-dash in a hardcoded string in src/**/*.tsx: JSX text, attribute
 //      values and other string literals (comments are fine). No banned
 //      wording in JSX text or in the attributes a user reads or hears.
-//   4. The landing pages (the app shell index.html and every page deployed
+//   4. No em-dash in a string literal in src/**/*.ts (comments are fine):
+//      error messages, calendar text and other words the libraries build
+//      can reach a screen, a notification or a downloaded file. No banned
+//      wording in an error message (`new Error(...)`) in src/**/*.ts or
+//      src/**/*.tsx: by this codebase's convention an Error's message is
+//      user-facing (the error view shows it). Other .ts literals are mostly
+//      keys, ids and storage names ("parkproof.sessions.v1"), so the banned
+//      words aren't checked there; user-facing words belong in t().
+//   5. The landing pages (the app shell index.html and every page deployed
 //      from the marketing landing folder) carry no em-dash and never say
 //      "verified record", outside comments.
 //
@@ -107,7 +115,6 @@ const ALLOWED: Record<string, { rule: string; unused?: true }> = {
   'privacy.signedInEmail': { rule: 'reset' }, // "used ... for password reset"
   // Never rendered (no code reads them), left with their old wording until a
   // cleanup deletes them from all 9 locales. Checked unused below.
-  'appeal.strongEvidence': { rule: 'strong evidence', unused: true },
   'reminders.browserNoExpiry': { rule: 'session', unused: true },
 }
 
@@ -135,6 +142,7 @@ function filesUnder(dir: URL, base: URL, keep: (name: string) => boolean): [stri
 
 const isAppSource = (name: string) => /\.tsx?$/.test(name) && !name.includes('.test.') && !name.endsWith('.d.ts')
 const TSX = filesUnder(SRC, REPO, (n) => n.endsWith('.tsx') && isAppSource(n))
+const TS = filesUnder(SRC, REPO, (n) => n.endsWith('.ts') && isAppSource(n))
 
 interface Literal {
   line: number
@@ -168,6 +176,43 @@ function literals(fileName: string, source: string, kind: ts.ScriptKind): Litera
     }
     if (text !== null && text.trim()) {
       out.push({ line: sf.getLineAndCharacterOfPosition(node.getStart(sf)).line + 1, text, shown })
+    }
+    ts.forEachChild(node, visit)
+  }
+  visit(sf)
+  return out
+}
+
+/**
+ * The text of every error message in a source file: the first argument of
+ * `new Error(...)` or `Error(...)`, with its string and template pieces
+ * joined by a space (an interpolation reads as a space).
+ */
+function errorMessages(fileName: string, source: string, kind: ts.ScriptKind): { line: number; text: string }[] {
+  const sf = ts.createSourceFile(fileName, source, ts.ScriptTarget.Latest, true, kind)
+  const out: { line: number; text: string }[] = []
+  const pieces = (node: ts.Node, into: string[]) => {
+    if (ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node)) into.push(node.text)
+    else if (ts.isTemplateExpression(node)) {
+      into.push(node.head.text)
+      for (const span of node.templateSpans) into.push(span.literal.text)
+    } else if (ts.isBinaryExpression(node) && node.operatorToken.kind === ts.SyntaxKind.PlusToken) {
+      pieces(node.left, into)
+      pieces(node.right, into)
+    } else if (ts.isParenthesizedExpression(node)) pieces(node.expression, into)
+  }
+  const visit = (node: ts.Node) => {
+    if (
+      (ts.isNewExpression(node) || ts.isCallExpression(node)) &&
+      ts.isIdentifier(node.expression) &&
+      node.expression.text === 'Error' &&
+      node.arguments &&
+      node.arguments.length > 0
+    ) {
+      const into: string[] = []
+      pieces(node.arguments[0], into)
+      const text = into.join(' ')
+      if (text.trim()) out.push({ line: sf.getLineAndCharacterOfPosition(node.getStart(sf)).line + 1, text })
     }
     ts.forEachChild(node, visit)
   }
@@ -252,6 +297,80 @@ describe('hardcoded strings in src/**/*.tsx', () => {
       for (const l of literals(path, src, ts.ScriptKind.TSX)) {
         if (!l.shown) continue
         for (const rule of bannedIn(l.text)) hits.push(`${path}:${l.line} (${rule}): ${l.text.trim()}`)
+      }
+    }
+    expect(hits).toEqual([])
+  })
+})
+
+describe('string literals in src/**/*.ts', () => {
+  it('found the library sources', () => {
+    const names = TS.map(([p]) => p)
+    expect(names.length).toBeGreaterThan(20)
+    expect(names).toContain('src/lib/ics.ts')
+    // Tests and type declarations aren't app code.
+    expect(names.some((p) => p.includes('.test.') || p.endsWith('.d.ts'))).toBe(false)
+  })
+
+  it('reads string literals and template pieces, never comments', () => {
+    // Built with EM_DASH so this file has no em-dash of its own.
+    const source = [
+      `// a comment ${EM_DASH} is fine`,
+      `/* so is ${EM_DASH} this */`,
+      `const a = 'one ${EM_DASH} two'`,
+      'const b = `three ${a} four ' + EM_DASH + ' five`',
+      'const c = "plain"',
+    ].join(String.fromCharCode(10))
+    const found = literals('sample.ts', source, ts.ScriptKind.TS)
+      .filter((l) => l.text.includes(EM_DASH))
+      .map((l) => l.line)
+    expect(found).toEqual([3, 4])
+  })
+
+  it('no string literal has an em-dash', () => {
+    const hits: string[] = []
+    for (const [path, src] of TS) {
+      for (const l of literals(path, src, ts.ScriptKind.TS)) {
+        if (l.text.includes(EM_DASH)) hits.push(`${path}:${l.line}: ${l.text.trim()}`)
+      }
+    }
+    expect(hits).toEqual([])
+  })
+})
+
+describe('error messages in src/**/*.ts and src/**/*.tsx', () => {
+  it('reads the message of new Error(...) and Error(...), in every form it is written', () => {
+    const source = [
+      "throw new Error('This session has no expiry')",
+      'throw Error(`Upload failed (${status}): try a reset`)',
+      "const e = new Error('Part one ' + 'and the record')",
+      "new Error(message)",
+      "new TypeError('not an Error call')",
+      "// new Error('in a comment')",
+    ].join(String.fromCharCode(10))
+    const found = errorMessages('sample.ts', source, ts.ScriptKind.TS)
+    expect(found).toEqual([
+      { line: 1, text: 'This session has no expiry' },
+      { line: 2, text: 'Upload failed ( ): try a reset' },
+      { line: 3, text: 'Part one  and the record' },
+    ])
+    expect(found.flatMap((m) => bannedIn(m.text))).toEqual(['session', 'reset'])
+  })
+
+  it('found the error messages the libraries throw', () => {
+    const count = [...TS, ...TSX].reduce(
+      (n, [path, src]) => n + errorMessages(path, src, path.endsWith('.tsx') ? ts.ScriptKind.TSX : ts.ScriptKind.TS).length,
+      0,
+    )
+    expect(count).toBeGreaterThan(10)
+  })
+
+  it('no error message uses banned wording', () => {
+    const hits: string[] = []
+    for (const [path, src] of [...TS, ...TSX]) {
+      const kind = path.endsWith('.tsx') ? ts.ScriptKind.TSX : ts.ScriptKind.TS
+      for (const m of errorMessages(path, src, kind)) {
+        for (const rule of bannedIn(m.text)) hits.push(`${path}:${m.line} (${rule}): ${m.text.trim()}`)
       }
     }
     expect(hits).toEqual([])

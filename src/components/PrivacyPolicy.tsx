@@ -1,5 +1,6 @@
 import { Trans, useTranslation } from 'react-i18next'
 import { verifyUrlForLocale } from '../lib/verify-url'
+import { privacyLastUpdatedLabel } from '../lib/privacy-version'
 import BackButton from './ui/BackButton'
 
 interface Props {
@@ -16,11 +17,8 @@ interface Props {
 export default function PrivacyPolicy({ onBack }: Props) {
   const { t, i18n } = useTranslation()
   const verifyHref = verifyUrlForLocale(i18n.language)
-  const formattedDate = new Date().toLocaleDateString('en-AU', {
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric',
-  })
+  // The day the policy's text last changed, never today's date.
+  const formattedDate = privacyLastUpdatedLabel()
 
   return (
     <div className="min-h-screen flex flex-col p-6 max-w-2xl mx-auto w-full">

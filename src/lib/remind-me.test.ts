@@ -8,7 +8,8 @@
 // answer in time" is never a quiet success: the result says the reminder
 // only works while ParkProof is open, and why.
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import type { ScheduleResult } from './notifications'
+import { cancelInTabReminders, scheduleAbsoluteReminders, type ScheduleResult } from './notifications'
+import type { ParkingSession } from '../types'
 import type { PushScheduleResult, SubscribeResult } from './push'
 import { remindMe, summariseRemindMe, type RemindMeResult } from './remind-me'
 
@@ -248,5 +249,72 @@ describe('summariseRemindMe()', () => {
       step: 'allPast',
     })
     expect(summariseRemindMe({ background: { ok: false, reason: 'failed' }, inTab: none }).step).toBe('allPast')
+  })
+})
+
+// Fix round 1: on Android before a service worker controls the page, the
+// outcome says "No reminder was set." The in-tab timers remindMe armed must
+// not then fire anyway once a service worker takes control: it disarms them.
+describe('remindMe() where an open tab cannot show an alert', () => {
+  const ANDROID_UA =
+    'Mozilla/5.0 (Linux; Android 14; SM-S921B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130 Mobile Safari/537.36'
+  const SESSION = { id: 'rec-android' } as ParkingSession
+  const COPY = () => ({ title: 'Swan St', body: 'Your parking expires soon.' })
+
+  function androidPhone(controlled: boolean) {
+    stubNotification('granted')
+    vi.spyOn(navigator, 'userAgent', 'get').mockReturnValue(ANDROID_UA)
+    Object.defineProperty(navigator, 'serviceWorker', { configurable: true, value: { controller: controlled ? {} : null } })
+  }
+
+  /** Arms one REAL in-tab timer (notifications.ts) 10 minutes out. */
+  const armReal = () => scheduleAbsoluteReminders(SESSION, [new Date(Date.now() + 10 * 60_000)], COPY)
+
+  afterEach(() => {
+    cancelInTabReminders(SESSION.id)
+    vi.restoreAllMocks()
+    delete (navigator as unknown as Record<string, unknown>).serviceWorker
+  })
+
+  it('no service worker in control and push failed: says none was set, and nothing stays armed', async () => {
+    androidPhone(false)
+    subscribeResult({ ok: false, reason: 'timeout' })
+
+    const result = await remindMe({ sessionId: SESSION.id, pushReminders: REMINDERS, expiresAt: null, armInTab: armReal })
+
+    expect(result.inTab.status).toBe('scheduled')
+    expect(result.inTab.firesAt).toEqual([])
+    expect(summariseRemindMe(result)).toEqual({ kind: 'none', times: [], step: 'failed' })
+    // Already disarmed: nothing left to cancel.
+    expect(cancelInTabReminders(SESSION.id)).toBe(0)
+  })
+
+  it('stays "none" even if a service worker takes control before the outcome is shown', async () => {
+    androidPhone(false)
+    subscribeResult({ ok: false, reason: 'timeout' })
+    const result = await remindMe({ sessionId: SESSION.id, pushReminders: REMINDERS, expiresAt: null, armInTab: armReal })
+    Object.defineProperty(navigator, 'serviceWorker', { configurable: true, value: { controller: {} } })
+    expect(summariseRemindMe(result).kind).toBe('none')
+  })
+
+  it('with a service worker in control, the in-tab timer stays armed and the outcome says so', async () => {
+    androidPhone(true)
+    subscribeResult({ ok: false, reason: 'timeout' })
+
+    const result = await remindMe({ sessionId: SESSION.id, pushReminders: REMINDERS, expiresAt: null, armInTab: armReal })
+
+    expect(summariseRemindMe(result).kind).toBe('openOnly')
+    expect(cancelInTabReminders(SESSION.id)).toBe(1)
+  })
+
+  it('push booked: the in-tab copy stays armed whatever the tab can show', async () => {
+    androidPhone(false)
+    subscribeResult({ ok: true })
+    scheduleResult({ ok: true, created: [{ name: 'n', fire_at: FIRE }], skipped: 0 })
+
+    const result = await remindMe({ sessionId: SESSION.id, pushReminders: REMINDERS, expiresAt: null, armInTab: armReal })
+
+    expect(summariseRemindMe(result).kind).toBe('background')
+    expect(cancelInTabReminders(SESSION.id)).toBe(1)
   })
 })

@@ -258,6 +258,7 @@ function settleSyncRun(run: Promise<InitialSyncResult>, setUnreachable: (unreach
  * evidence photos stripped to recover localStorage quota.
  */
 function Toast({ message, onClose }: { message: string | null; onClose: () => void }) {
+  const { t } = useTranslation()
   if (!message) return null
   return (
     <div
@@ -267,7 +268,7 @@ function Toast({ message, onClose }: { message: string | null; onClose: () => vo
       <p className="text-sm leading-relaxed flex-1">{message}</p>
       <button
         onClick={onClose}
-        aria-label="Dismiss"
+        aria-label={t('common.close')}
         className="text-white/70 hover:text-white text-sm font-semibold shrink-0 min-w-[44px] min-h-[44px] inline-flex items-center justify-center -my-2.5 -mr-2"
       >
         ✕
