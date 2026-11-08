@@ -14,6 +14,11 @@
 // the browser can keep reporting it. The server keeps a tombstone for it and
 // refuses it with 409 ERR_ENDPOINT_GONE; the app then drops it and registers
 // a fresh one (subscribeToPush), instead of re-sending the dead one forever.
+//
+// Every request to the push API, and every browser push step that goes over
+// the network (subscribe, unsubscribe), gives up after
+// PUSH_REQUEST_TIMEOUT_MS. On a weak signal a request can hang for minutes,
+// and "Remind me" must still finish and say what it set.
 
 import { endpointUrl } from './api'
 
@@ -27,6 +32,8 @@ export const REGISTRATION_RESYNC_INTERVAL_MS = 60 * 60 * 1000
 const REGISTRATION_FRESH_FOR_BOOKING_MS = 60 * 1000
 /** How long to wait for the service worker before giving up on push. */
 const SW_READY_TIMEOUT_MS = 10_000
+/** How long one push request (or browser subscribe / unsubscribe) may take. */
+export const PUSH_REQUEST_TIMEOUT_MS = 10_000
 
 /** The server error code for "no live registration for this device". */
 export const ERR_NOT_SUBSCRIBED = 'ERR_NOT_SUBSCRIBED'
@@ -55,6 +62,86 @@ async function swRegistration(): Promise<ServiceWorkerRegistration | null> {
   } catch {
     return null
   }
+}
+
+const TIMED_OUT: unique symbol = Symbol('timed out')
+
+/** `work`, or TIMED_OUT when it hasn't settled within `ms`. Rejects as `work` does. */
+async function within<T>(work: Promise<T>, ms: number): Promise<T | typeof TIMED_OUT> {
+  let timer: ReturnType<typeof setTimeout> | undefined
+  const timeout = new Promise<typeof TIMED_OUT>((resolve) => {
+    timer = setTimeout(() => resolve(TIMED_OUT), ms)
+  })
+  try {
+    return await Promise.race([work, timeout])
+  } finally {
+    clearTimeout(timer)
+  }
+}
+
+/**
+ * A signal that aborts a request after `ms`: AbortSignal.timeout where the
+ * browser has it, else an AbortController the caller aborts when its own
+ * timer runs out (`abort`). No signal at all on a browser with neither:
+ * the caller's timer still stops the wait.
+ */
+function timeoutSignal(ms: number): { signal?: AbortSignal; abort: () => void } {
+  if (typeof AbortSignal !== 'undefined' && typeof AbortSignal.timeout === 'function') {
+    return { signal: AbortSignal.timeout(ms), abort: () => {} }
+  }
+  if (typeof AbortController === 'function') {
+    const controller = new AbortController()
+    return { signal: controller.signal, abort: () => controller.abort() }
+  }
+  return { abort: () => {} }
+}
+
+/** What one request to the push API came back with. */
+type PushReply =
+  /** The server answered. `body` is its JSON, or null when there was none. */
+  | { kind: 'reply'; status: number; ok: boolean; body: unknown }
+  /** No answer within PUSH_REQUEST_TIMEOUT_MS. */
+  | { kind: 'timeout' }
+  /** The request failed (offline, CORS, DNS). */
+  | { kind: 'error'; error: unknown }
+
+/**
+ * POST `payload` as JSON to a push route and read the JSON reply, giving up
+ * after PUSH_REQUEST_TIMEOUT_MS. The timer covers the whole exchange,
+ * reading the reply included, and also stops the wait when a browser's
+ * fetch ignores the signal. Never throws.
+ */
+async function pushPost(path: string, payload: unknown): Promise<PushReply> {
+  const { signal, abort } = timeoutSignal(PUSH_REQUEST_TIMEOUT_MS)
+  const request = (async (): Promise<PushReply> => {
+    try {
+      const resp = await fetch(endpointUrl(path), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+        signal,
+      })
+      let body: unknown = null
+      try {
+        body = await resp.json()
+      } catch {
+        /* no JSON reply (a 204, or an error page) */
+      }
+      return { kind: 'reply', status: resp.status, ok: resp.ok, body }
+    } catch (error) {
+      return signal?.aborted ? { kind: 'timeout' } : { kind: 'error', error }
+    }
+  })()
+  const reply = await within(request, PUSH_REQUEST_TIMEOUT_MS)
+  if (reply !== TIMED_OUT) return reply
+  abort()
+  return { kind: 'timeout' }
+}
+
+/** The `error` code in a reply body, or null. */
+function errorCodeOf(body: unknown): string | null {
+  const code = body && typeof body === 'object' ? (body as { error?: unknown }).error : undefined
+  return typeof code === 'string' ? code : null
 }
 
 interface RegistrationSent {
@@ -94,9 +181,10 @@ function clearRegistrationSent(): void {
 /**
  * Send this browser's subscription to /push/subscribe under this browser's
  * device id: 'stored' when the server stored it, 'gone' when the server
- * refused it as a dead endpoint (409 ERR_ENDPOINT_GONE), else 'failed'.
+ * refused it as a dead endpoint (409 ERR_ENDPOINT_GONE), 'timeout' when no
+ * answer came in time, else 'failed'.
  */
-async function postRegistration(subscription: PushSubscription): Promise<'stored' | 'gone' | 'failed'> {
+async function postRegistration(subscription: PushSubscription): Promise<'stored' | 'gone' | 'timeout' | 'failed'> {
   // toJSON() gives the wire shape (endpoint + keys.p256dh + keys.auth as base64).
   let json: { endpoint?: string; keys?: { p256dh?: string; auth?: string } }
   try {
@@ -105,29 +193,34 @@ async function postRegistration(subscription: PushSubscription): Promise<'stored
     return 'failed'
   }
   if (!json.endpoint || !json.keys?.p256dh || !json.keys?.auth) return 'failed'
+  let device_id: string
   try {
-    const resp = await fetch(endpointUrl('/push/subscribe'), {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        device_id: getOrCreateDeviceId(),
-        subscription: {
-          endpoint: json.endpoint,
-          keys: { p256dh: json.keys.p256dh, auth: json.keys.auth },
-        },
-      }),
-    })
-    if (!resp.ok) {
-      if (resp.status === 409 && (await errorCodeOf(resp)) === ERR_ENDPOINT_GONE) return 'gone'
-      console.error('[push] backend persist failed:', resp.status)
-      return 'failed'
-    }
-    writeRegistrationSent(json.endpoint)
-    return 'stored'
-  } catch (err) {
-    console.error('[push] backend persist threw:', err)
+    device_id = getOrCreateDeviceId()
+  } catch {
+    return 'failed' // storage blocked
+  }
+  const reply = await pushPost('/push/subscribe', {
+    device_id,
+    subscription: {
+      endpoint: json.endpoint,
+      keys: { p256dh: json.keys.p256dh, auth: json.keys.auth },
+    },
+  })
+  if (reply.kind === 'timeout') {
+    console.error('[push] backend persist timed out')
+    return 'timeout'
+  }
+  if (reply.kind === 'error') {
+    console.error('[push] backend persist threw:', reply.error)
     return 'failed'
   }
+  if (!reply.ok) {
+    if (reply.status === 409 && errorCodeOf(reply.body) === ERR_ENDPOINT_GONE) return 'gone'
+    console.error('[push] backend persist failed:', reply.status)
+    return 'failed'
+  }
+  writeRegistrationSent(json.endpoint)
+  return 'stored'
 }
 
 /** Returns true if the browser supports the APIs we need. iOS Safari < 16.4
@@ -227,10 +320,35 @@ function urlBase64ToUint8Array(base64: string): ArrayBuffer {
 
 export interface SubscribeResult {
   ok: boolean
-  /** Reason the subscribe didn't succeed — for UI display. */
-  reason?: 'unsupported' | 'denied' | 'no_vapid' | 'subscribe_failed' | 'network'
+  /**
+   * Reason the subscribe didn't succeed, for UI display. 'network': the
+   * server didn't store the registration. 'timeout': the browser's push
+   * service or the server didn't answer within PUSH_REQUEST_TIMEOUT_MS.
+   */
+  reason?: 'unsupported' | 'denied' | 'no_vapid' | 'subscribe_failed' | 'network' | 'timeout'
   /** The active subscription, if ok. */
   subscription?: PushSubscription
+}
+
+/** A fresh push subscription from the browser, or TIMED_OUT. Rejects as subscribe() does. */
+function newSubscription(reg: ServiceWorkerRegistration, vapid: string): Promise<PushSubscription | typeof TIMED_OUT> {
+  // userVisibleOnly: true is mandatory: the user must see a notification
+  // for every push (browsers enforce this).
+  return within(
+    reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: urlBase64ToUint8Array(vapid) }),
+    PUSH_REQUEST_TIMEOUT_MS,
+  )
+}
+
+/** Drop a subscription, waiting at most PUSH_REQUEST_TIMEOUT_MS. Never throws. */
+async function dropSubscription(subscription: PushSubscription, why: string): Promise<void> {
+  try {
+    if ((await within(subscription.unsubscribe(), PUSH_REQUEST_TIMEOUT_MS)) === TIMED_OUT) {
+      console.warn(`[push] unsubscribe ${why} timed out`)
+    }
+  } catch (err) {
+    console.warn(`[push] unsubscribe ${why} failed:`, err)
+  }
 }
 
 /** Request notification permission + create a push subscription + persist
@@ -259,18 +377,17 @@ export async function subscribeToPush(): Promise<SubscribeResult> {
   const reg = await swRegistration()
   if (!reg) return { ok: false, reason: 'subscribe_failed' }
 
-  // Create a push subscription. userVisibleOnly: true is mandatory: the
-  // user must see a notification for every push (browsers enforce this).
+  // Create a push subscription, re-using one already on this registration.
+  // Making one asks the browser's push service over the network.
   let subscription: PushSubscription
   try {
-    // Re-use an existing subscription if one's already on this registration.
     const existing = await reg.pushManager.getSubscription()
-    subscription =
-      existing ??
-      (await reg.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(vapid),
-      }))
+    const made = existing ?? (await newSubscription(reg, vapid))
+    if (made === TIMED_OUT) {
+      console.error('[push] subscribe timed out')
+      return { ok: false, reason: 'timeout' }
+    }
+    subscription = made
   } catch (err) {
     console.error('[push] subscribe failed:', err)
     return { ok: false, reason: 'subscribe_failed' }
@@ -282,23 +399,22 @@ export async function subscribeToPush(): Promise<SubscribeResult> {
   if (posted === 'gone') {
     // The server knows this endpoint is dead (the push service answered 410
     // Gone for it). Drop it and register a fresh one, once.
-    try {
-      await subscription.unsubscribe()
-    } catch (err) {
-      console.warn('[push] unsubscribe of a dead registration failed:', err)
-    }
+    await dropSubscription(subscription, 'of a dead registration')
     clearRegistrationSent()
     try {
-      subscription = await reg.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(vapid),
-      })
+      const made = await newSubscription(reg, vapid)
+      if (made === TIMED_OUT) {
+        console.error('[push] subscribe after a dead registration timed out')
+        return { ok: false, reason: 'timeout' }
+      }
+      subscription = made
     } catch (err) {
       console.error('[push] subscribe after a dead registration failed:', err)
       return { ok: false, reason: 'subscribe_failed' }
     }
     posted = await postRegistration(subscription)
   }
+  if (posted === 'timeout') return { ok: false, reason: 'timeout', subscription }
   if (posted !== 'stored') return { ok: false, reason: 'network', subscription }
   return { ok: true, subscription }
 }
@@ -313,6 +429,9 @@ export type RegistrationSyncResult =
   /** The server didn't store it (offline, a server error, or a dead
    *  registration that couldn't be replaced). */
   | 'failed'
+  /** No answer within PUSH_REQUEST_TIMEOUT_MS: the connection is too weak
+   *  for push right now. */
+  | 'timeout'
 
 /**
  * Re-send this browser's existing push registration to the server. Never
@@ -344,7 +463,11 @@ export async function syncPushRegistration(
     if (last && last.endpoint === subscription.endpoint && age >= 0 && age < maxAgeMs) return 'fresh'
   }
   const posted = await postRegistration(subscription)
-  if (posted === 'gone') return (await subscribeToPush()).ok ? 'sent' : 'failed'
+  if (posted === 'gone') {
+    const fresh = await subscribeToPush()
+    return fresh.ok ? 'sent' : fresh.reason === 'timeout' ? 'timeout' : 'failed'
+  }
+  if (posted === 'timeout') return 'timeout'
   return posted === 'stored' ? 'sent' : 'failed'
 }
 
@@ -392,15 +515,20 @@ export function installPushRegistrationRefresh(): () => void {
 export async function reconnectPush(): Promise<SubscribeResult> {
   if (!isPushSupported()) return { ok: false, reason: 'unsupported' }
   if (Notification.permission === 'denied') return { ok: false, reason: 'denied' }
+  // Not asked yet: ask first, while the tap's user gesture is still live
+  // (WebKit shows the prompt only from one).
+  if (Notification.permission === 'default' && (await Notification.requestPermission()) !== 'granted') {
+    return { ok: false, reason: 'denied' }
+  }
   const reg = await swRegistration()
   if (!reg) return { ok: false, reason: 'subscribe_failed' }
   try {
     const old = await reg.pushManager.getSubscription()
-    if (old) await old.unsubscribe()
+    // Carry on whatever happens: subscribe() below still asks for a
+    // registration, and a failure there is reported.
+    if (old) await dropSubscription(old, 'before reconnect')
   } catch (err) {
-    // Carry on: subscribe() below still asks for a registration, and a
-    // failure there is reported.
-    console.warn('[push] unsubscribe before reconnect failed:', err)
+    console.warn('[push] reading the registration before reconnect failed:', err)
   }
   clearRegistrationSent()
   return subscribeToPush()
@@ -469,15 +597,9 @@ export type PushScheduleResult =
   | { ok: true; created: ScheduledFire[]; skipped: number }
   | { ok: false; reason: Extract<PushFailureReason, 'not_owner' | 'unsupported' | 'not_subscribed' | 'network'> }
 
-/** True when a failed response is the server's 403 ERR_NOT_OWNER. */
-async function isNotOwnerResponse(resp: Response): Promise<boolean> {
-  if (resp.status !== 403) return false
-  try {
-    const body = (await resp.json()) as { error?: unknown }
-    return body?.error === 'ERR_NOT_OWNER'
-  } catch {
-    return false
-  }
+/** True when a failed reply is the server's 403 ERR_NOT_OWNER. */
+function isNotOwnerReply(reply: { status: number; body: unknown }): boolean {
+  return reply.status === 403 && errorCodeOf(reply.body) === 'ERR_NOT_OWNER'
 }
 
 export interface ScheduledReminder {
@@ -516,26 +638,26 @@ export async function cancelPushReminders(session_id: string): Promise<PushCance
   if (typeof fetch === 'undefined') return { ok: false, reason: 'network' }
   const device_id = peekDeviceId()
   if (!device_id) return { ok: false, reason: 'no_device' }
-  try {
-    const resp = await fetch(endpointUrl('/push/cancel'), {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ device_id, session_id }),
-    })
-    if (!resp.ok) {
-      if (await isNotOwnerResponse(resp)) return { ok: false, reason: 'not_owner' }
-      console.error('[push] cancel failed:', resp.status)
-      return { ok: false, reason: 'network' }
-    }
-    const result = (await resp.json()) as { deleted: unknown }
-    return {
-      ok: true,
-      deleted: typeof result.deleted === 'number' ? result.deleted : 0,
-    }
-  } catch (err) {
-    console.error('[push] cancel threw:', err)
+  const reply = await pushPost('/push/cancel', { device_id, session_id })
+  if (reply.kind === 'timeout') {
+    console.error('[push] cancel timed out')
     return { ok: false, reason: 'network' }
   }
+  if (reply.kind === 'error') {
+    console.error('[push] cancel threw:', reply.error)
+    return { ok: false, reason: 'network' }
+  }
+  if (!reply.ok) {
+    if (isNotOwnerReply(reply)) return { ok: false, reason: 'not_owner' }
+    console.error('[push] cancel failed:', reply.status)
+    return { ok: false, reason: 'network' }
+  }
+  if (!reply.body || typeof reply.body !== 'object') {
+    console.error('[push] cancel answered without a body')
+    return { ok: false, reason: 'network' }
+  }
+  const deleted = (reply.body as { deleted?: unknown }).deleted
+  return { ok: true, deleted: typeof deleted === 'number' ? deleted : 0 }
 }
 
 export interface ScheduledFire {
@@ -549,50 +671,43 @@ type ScheduleAttempt =
   | { kind: 'ok'; created: ScheduledFire[]; skipped: number }
   | { kind: 'not_owner' | 'not_subscribed' | 'network' }
 
-/** The `error` code of a failed JSON response, or null. */
-async function errorCodeOf(resp: Response): Promise<string | null> {
-  try {
-    const body = (await resp.json()) as { error?: unknown }
-    return typeof body?.error === 'string' ? body.error : null
-  } catch {
-    return null
-  }
-}
-
 /** One POST to /push/schedule. Never throws. */
-async function postSchedule(body: string): Promise<ScheduleAttempt> {
-  try {
-    const resp = await fetch(endpointUrl('/push/schedule'), {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body,
-    })
-    if (!resp.ok) {
-      const code = resp.status === 403 || resp.status === 409 ? await errorCodeOf(resp) : null
-      if (resp.status === 403 && code === 'ERR_NOT_OWNER') return { kind: 'not_owner' }
-      if (resp.status === 409 && code === ERR_NOT_SUBSCRIBED) return { kind: 'not_subscribed' }
-      console.error('[push] schedule failed:', resp.status)
-      return { kind: 'network' }
-    }
-    const result = (await resp.json()) as {
-      created?: Array<{ name?: unknown; fire_at?: unknown }>
-      skipped?: unknown[]
-    }
-    // Defensive shape narrowing: the server's contract is {created: [{name, fire_at}], skipped: [...]}
-    // but a future Lambda change could rearrange. Filter to entries that
-    // actually have both fields rather than passing through garbage.
-    const created: ScheduledFire[] = (result.created ?? [])
-      .filter(
-        (c): c is { name: string; fire_at: string } =>
-          typeof c?.name === 'string' && typeof c?.fire_at === 'string',
-      )
-      .map((c) => ({ name: c.name, fire_at: c.fire_at }))
-    const skipped = Array.isArray(result.skipped) ? result.skipped.length : 0
-    return { kind: 'ok', created, skipped }
-  } catch (err) {
-    console.error('[push] schedule threw:', err)
+async function postSchedule(payload: unknown): Promise<ScheduleAttempt> {
+  const reply = await pushPost('/push/schedule', payload)
+  if (reply.kind === 'timeout') {
+    console.error('[push] schedule timed out')
     return { kind: 'network' }
   }
+  if (reply.kind === 'error') {
+    console.error('[push] schedule threw:', reply.error)
+    return { kind: 'network' }
+  }
+  if (!reply.ok) {
+    const code = errorCodeOf(reply.body)
+    if (reply.status === 403 && code === 'ERR_NOT_OWNER') return { kind: 'not_owner' }
+    if (reply.status === 409 && code === ERR_NOT_SUBSCRIBED) return { kind: 'not_subscribed' }
+    console.error('[push] schedule failed:', reply.status)
+    return { kind: 'network' }
+  }
+  if (!reply.body || typeof reply.body !== 'object') {
+    console.error('[push] schedule answered without a body')
+    return { kind: 'network' }
+  }
+  const result = reply.body as {
+    created?: Array<{ name?: unknown; fire_at?: unknown }>
+    skipped?: unknown[]
+  }
+  // Defensive shape narrowing: the server's contract is {created: [{name, fire_at}], skipped: [...]}
+  // but a future Lambda change could rearrange. Filter to entries that
+  // actually have both fields rather than passing through garbage.
+  const created: ScheduledFire[] = (Array.isArray(result.created) ? result.created : [])
+    .filter(
+      (c): c is { name: string; fire_at: string } =>
+        typeof c?.name === 'string' && typeof c?.fire_at === 'string',
+    )
+    .map((c) => ({ name: c.name, fire_at: c.fire_at }))
+  const skipped = Array.isArray(result.skipped) ? result.skipped.length : 0
+  return { kind: 'ok', created, skipped }
 }
 
 /**
@@ -600,8 +715,10 @@ async function postSchedule(body: string): Promise<ScheduleAttempt> {
  *
  * Server-side semantics: REPLACE-ALL. /push/schedule first deletes every
  * existing schedule for the given session_id, then creates the new set.
- * Callers wanting to ADD or REMOVE a single reminder pass the full desired
- * union/difference, not just the delta.
+ * The one exception: a schedule due within 30 s that the new set still
+ * asks for is left in place (it can't be booked again that late) and comes
+ * back in `created`. Callers wanting to ADD or REMOVE a single reminder
+ * pass the full desired union/difference, not just the delta.
  *
  * Before booking it re-sends this browser's registration to the server
  * (skipped when one went out in the last minute), so a server that forgot
@@ -630,22 +747,29 @@ export async function schedulePushReminders(
   if (reminders.length === 0) return { ok: true, created: [], skipped: 0 }
 
   // Re-send the registration before booking (fix list item 1). A failure
-  // here isn't final: the server decides below.
-  await syncPushRegistration({ maxAgeMs: REGISTRATION_FRESH_FOR_BOOKING_MS })
+  // here isn't final: the server decides below. No answer in time is: the
+  // booking would only wait out another timeout on the same weak signal.
+  if ((await syncPushRegistration({ maxAgeMs: REGISTRATION_FRESH_FOR_BOOKING_MS })) === 'timeout') {
+    return { ok: false, reason: 'network' }
+  }
 
-  const body = JSON.stringify({
-    device_id: getOrCreateDeviceId(),
-    session_id,
-    reminders,
-    expires_at,
-  })
-  let attempt = await postSchedule(body)
+  let device_id: string
+  try {
+    device_id = getOrCreateDeviceId()
+  } catch (err) {
+    console.error('[push] no device id (storage blocked):', err)
+    return { ok: false, reason: 'network' }
+  }
+  const payload = { device_id, session_id, reminders, expires_at }
+  let attempt = await postSchedule(payload)
   if (attempt.kind === 'not_subscribed') {
     // The server has no live registration for this device. Register once
     // more (ignoring the recent-send skip) and retry once.
     clearRegistrationSent()
-    if ((await syncPushRegistration()) !== 'sent') return { ok: false, reason: 'not_subscribed' }
-    attempt = await postSchedule(body)
+    const resent = await syncPushRegistration()
+    if (resent === 'timeout') return { ok: false, reason: 'network' }
+    if (resent !== 'sent') return { ok: false, reason: 'not_subscribed' }
+    attempt = await postSchedule(payload)
   }
   switch (attempt.kind) {
     case 'ok':

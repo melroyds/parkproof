@@ -41,6 +41,12 @@ import {
   clientTimesToCheck,
   validateAddendumBody,
 } from './addendum-schema.js'
+import {
+  PUSH_TTL_DAYS,
+  isDeadEndpointStatus,
+  pushRegistrationPut,
+  pushTombstonePut,
+} from './push-tombstone.js'
 
 // canonicalize lives in addendum-schema.js so the browser uses the very same
 // function; re-exported here for existing importers and tests.
@@ -1706,7 +1712,6 @@ async function handleUserFeedback(event) {
 //
 // Dispatch (handlePushDispatch) reads the row when a booked reminder fires.
 const PUSH_TABLE = process.env.DYNAMODB_TABLE_PUSH || 'parkproof-push-subscriptions'
-const PUSH_TTL_DAYS = 90
 
 // A dead registration (field-test review): when the push service answers a
 // send with 410 Gone or 404, the endpoint will never deliver again. The
@@ -1717,11 +1722,9 @@ const PUSH_TTL_DAYS = 90
 // now leaves a tombstone (the dead endpoint's hash, no keys) and
 // /push/subscribe refuses that endpoint with 409 ERR_ENDPOINT_GONE. The app
 // answers by dropping it and registering a fresh one (src/lib/push.ts).
+// The writes themselves live in ./push-tombstone.js, shared with
+// scripts/send-test-push.mjs.
 export const PUSH_ERR_ENDPOINT_GONE = 'ERR_ENDPOINT_GONE'
-
-function pushEndpointHash(endpoint) {
-  return crypto.createHash('sha256').update(String(endpoint), 'utf8').digest('hex')
-}
 
 async function handlePushSubscribe(event) {
   const body = typeof event.body === 'string' ? JSON.parse(event.body) : event.body || {}
@@ -1767,30 +1770,11 @@ async function handlePushSubscribe(event) {
     }
   }
 
-  // Refuse an endpoint the push service has already said is dead (see
-  // PUSH_ERR_ENDPOINT_GONE). Best-effort: if the row can't be read, store
-  // the registration as before.
   let endpointHost = ''
   try {
     endpointHost = new URL(sub.endpoint).host
   } catch {
     /* logged without a host */
-  }
-  try {
-    const existing = await jobsDdb().send(
-      new GetCommand({ TableName: PUSH_TABLE, Key: { device_id }, ConsistentRead: true }),
-    )
-    const gone = existing?.Item?.gone_endpoint_sha256
-    if (typeof gone === 'string' && gone === pushEndpointHash(sub.endpoint)) {
-      console.log(`[parkproof.push.subscribe.endpoint_gone] ${JSON.stringify({ device_id, endpoint_host: endpointHost })}`)
-      return {
-        statusCode: 409,
-        headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ error: PUSH_ERR_ENDPOINT_GONE }),
-      }
-    }
-  } catch (err) {
-    console.error(`[parkproof.push.subscribe.lookup_failed] ${err?.message || err}`)
   }
 
   const now = Math.floor(Date.now() / 1000)
@@ -1810,14 +1794,21 @@ async function handlePushSubscribe(event) {
     expires_at: now + PUSH_TTL_DAYS * 24 * 60 * 60,
   }
 
+  // Refuse an endpoint the push service has already said is dead (see
+  // PUSH_ERR_ENDPOINT_GONE), in the write itself: a separate read first
+  // left a window in which dispatch could tombstone the endpoint and this
+  // write then put the dead endpoint back, keys and all.
   try {
-    await jobsDdb().send(
-      new PutCommand({
-        TableName: PUSH_TABLE,
-        Item: item,
-      }),
-    )
+    await jobsDdb().send(new PutCommand(pushRegistrationPut({ table: PUSH_TABLE, item })))
   } catch (err) {
+    if (err?.name === 'ConditionalCheckFailedException') {
+      console.log(`[parkproof.push.subscribe.endpoint_gone] ${JSON.stringify({ device_id, endpoint_host: endpointHost })}`)
+      return {
+        statusCode: 409,
+        headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ error: PUSH_ERR_ENDPOINT_GONE }),
+      }
+    }
     console.error(`[parkproof.push.subscribe.error] ${err?.message || err}`)
     return {
       statusCode: 500,
@@ -1871,6 +1862,24 @@ export function toSchedulerAtExpr(iso) {
   const s = pad(d.getUTCSeconds())
   return `at(${y}-${mo}-${da}T${h}:${mi}:${s})`
 }
+
+/**
+ * The fire time (ms since the epoch) of an `at(YYYY-MM-DDTHH:MM:SS)`
+ * expression in UTC, the shape toSchedulerAtExpr writes, or null for
+ * anything else.
+ */
+export function schedulerAtExprMs(expr) {
+  const m = /^at\((\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})\)$/.exec(typeof expr === 'string' ? expr : '')
+  if (!m) return null
+  const [, y, mo, d, h, mi, s] = m.map(Number)
+  const ms = Date.UTC(y, mo - 1, d, h, mi, s)
+  return Number.isFinite(ms) ? ms : null
+}
+
+// A reminder due sooner than this (or already due) is not booked:
+// EventBridge rejects a time in the past, and a push sent at once is no
+// reminder.
+const PUSH_MIN_LEAD_MS = 30_000
 
 // Max reminders per session — matches the chip picker (30/15/10/5/2/0).
 // Also bounds the delete-by-prefix cancel path so it's a fixed-cost 6 calls.
@@ -1989,16 +1998,21 @@ export function scheduleOwnerDeviceId(schedule) {
 
 /**
  * Read every slot of a session's push schedules (GetSchedule per slot).
- * Returns the names that exist and whether the caller owns all of them.
- * Throws on any scheduler error other than not-found: ownership that can't
- * be checked must not be assumed, so the caller then changes nothing.
+ * Returns the schedules that exist (name and `at(...)` expression), their
+ * names, and whether the caller owns all of them. Throws on any scheduler
+ * error other than not-found: ownership that can't be checked must not be
+ * assumed, so the caller then changes nothing.
  */
 async function readSessionPushSchedules(session_id, device_id) {
   const found = await Promise.all(
     pushScheduleNames(session_id).map(async (Name) => {
       try {
         const schedule = await scheduler().send(new GetScheduleCommand({ Name }))
-        return { Name, owner: scheduleOwnerDeviceId(schedule) }
+        return {
+          Name,
+          owner: scheduleOwnerDeviceId(schedule),
+          expression: typeof schedule?.ScheduleExpression === 'string' ? schedule.ScheduleExpression : null,
+        }
       } catch (err) {
         // Not-found is the happy path: slot never used, or already fired.
         if (err?.name === 'ResourceNotFoundException') return null
@@ -2008,9 +2022,36 @@ async function readSessionPushSchedules(session_id, device_id) {
   )
   const existing = found.filter(Boolean)
   return {
+    schedules: existing,
     names: existing.map((s) => s.Name),
     owned: existing.every((s) => s.owner === device_id),
   }
+}
+
+/**
+ * The existing schedules /push/schedule leaves in place instead of
+ * replacing: each one due within PUSH_MIN_LEAD_MS (or already due) whose
+ * exact time the new set still asks for. Such a time can't be booked again
+ * (too soon), so deleting its schedule would silently drop that push.
+ * Returns reminder index → schedule name; each schedule and each reminder
+ * is matched at most once, so a time is never booked twice.
+ */
+function imminentSchedulesToKeep(schedules, reminders, nowMs) {
+  const kept = new Map()
+  for (const schedule of schedules) {
+    const fireMs = schedulerAtExprMs(schedule.expression)
+    if (fireMs === null || fireMs - nowMs >= PUSH_MIN_LEAD_MS) continue
+    const index = reminders.findIndex((r, i) => {
+      if (kept.has(i) || typeof r?.fire_at !== 'string') return false
+      try {
+        return toSchedulerAtExpr(r.fire_at) === schedule.expression
+      } catch {
+        return false
+      }
+    })
+    if (index !== -1) kept.set(index, schedule.Name)
+  }
+  return kept
 }
 
 /**
@@ -2175,7 +2216,8 @@ async function handlePushSchedule(event) {
   }
 
   // Reschedule support: wipe any prior schedules for this session before
-  // creating new ones. CreateSchedule throws ConflictException on a name
+  // creating new ones (all but one about to fire that the new set still
+  // wants, see below). CreateSchedule throws ConflictException on a name
   // collision, so this is mandatory whenever the user re-picks offsets for
   // the same session_id. No-op for first-time scheduling.
   //
@@ -2187,7 +2229,19 @@ async function handlePushSchedule(event) {
     console.log(`[parkproof.push.schedule.not_owner] ${JSON.stringify({ session_id })}`)
     return notOwnerResponse()
   }
-  await deletePushSchedules(prior.names, session_id)
+
+  // One clock for both decisions below, so a time judged too soon to book
+  // again is the same time whose schedule is kept.
+  const now = Date.now()
+  // Replace-all, except a reminder about to fire: adding or removing another
+  // reminder in the last 30 s before one fires must not drop that one. Its
+  // schedule stays (imminentSchedulesToKeep) and is reported as booked.
+  const kept = imminentSchedulesToKeep(prior.schedules, body.reminders, now)
+  const keptNames = new Set(kept.values())
+  await deletePushSchedules(
+    prior.names.filter((name) => !keptNames.has(name)),
+    session_id,
+  )
 
   // Optional: the session's parking expiry, so each push can carry a TTL that
   // ends shortly after the parking does. Absent for no-sign sessions.
@@ -2196,15 +2250,22 @@ async function handlePushSchedule(event) {
       ? body.expires_at
       : null
 
-  const now = Date.now()
   const created = []
   const skipped = []
+  // Slot names in use: the kept schedules', then each one created below.
+  const taken = new Set(keptNames)
 
   // We iterate with an index so the schedule slot number is stable. Slots
   // that get skipped (past times, etc.) leave gaps — that's fine, the cancel
   // path just tries-and-ignores every slot 0..5.
   for (let i = 0; i < body.reminders.length; i++) {
     const r = body.reminders[i]
+    const keptName = kept.get(i)
+    if (keptName) {
+      // Still booked: the schedule left in place fires it. Not created again.
+      created.push({ name: keptName, fire_at: r.fire_at })
+      continue
+    }
     if (typeof r.fire_at !== 'string') {
       skipped.push({ reason: 'missing fire_at', reminder: r })
       continue
@@ -2212,7 +2273,7 @@ async function handlePushSchedule(event) {
     const fire_ms = new Date(r.fire_at).getTime()
     // Skip past times — EventBridge would reject anyway, and the user
     // doesn't want a stale push fired immediately.
-    if (!Number.isFinite(fire_ms) || fire_ms - now < 30_000) {
+    if (!Number.isFinite(fire_ms) || fire_ms - now < PUSH_MIN_LEAD_MS) {
       skipped.push({ reason: 'in past or too soon (<30s)', fire_at: r.fire_at })
       continue
     }
@@ -2223,8 +2284,15 @@ async function handlePushSchedule(event) {
     // Deterministic name encodes the session_id + slot index. The
     // "parkproof-push-" prefix matches the IAM scope in
     // setup-push-scheduler.sh — Lambda can only create/delete schedules
-    // with this prefix.
-    const name = `parkproof-push-${session_id}-${i}`
+    // with this prefix. When a kept schedule holds slot i, the first free
+    // slot instead (there is always one: at most one slot per reminder).
+    const preferred = `parkproof-push-${session_id}-${i}`
+    const name = taken.has(preferred) ? pushScheduleNames(session_id).find((n) => !taken.has(n)) : preferred
+    if (!name) {
+      skipped.push({ reason: 'no free slot', fire_at: r.fire_at })
+      continue
+    }
+    taken.add(name)
     const plan = pushReminderPlan({ session_id, fire_at: r.fire_at, expires_at })
 
     try {
@@ -2278,6 +2346,7 @@ async function handlePushSchedule(event) {
       device_id,
       session_id,
       created: created.length,
+      kept: kept.size,
       skipped: skipped.length,
     })}`,
   )
@@ -2346,11 +2415,14 @@ async function handlePushDispatch(event) {
     return { ok: false }
   }
 
-  // Look up the subscription.
+  // Look up the subscription. Consistent read: a reminder that fires a
+  // moment after Reconnect (or any fresh registration) must see the new
+  // endpoint. An eventually consistent read could return the old one, which
+  // the push service then answers 410 Gone, and the reminder is lost.
   let item
   try {
     const got = await jobsDdb().send(
-      new GetCommand({ TableName: PUSH_TABLE, Key: { device_id } }),
+      new GetCommand({ TableName: PUSH_TABLE, Key: { device_id }, ConsistentRead: true }),
     )
     item = got.Item
   } catch (err) {
@@ -2411,22 +2483,13 @@ async function handlePushDispatch(event) {
     // a tombstone (see PUSH_ERR_ENDPOINT_GONE) rather than deleting it, so a
     // re-send of the same dead endpoint is refused. Only while the row still
     // holds this endpoint: a fresh registration stored since is kept.
-    if (status === 410 || status === 404) {
+    if (isDeadEndpointStatus(status)) {
       const nowSec = Math.floor(Date.now() / 1000)
       try {
         await jobsDdb().send(
-          new PutCommand({
-            TableName: PUSH_TABLE,
-            Item: {
-              device_id,
-              gone_endpoint_sha256: pushEndpointHash(item.endpoint),
-              gone_at: nowSec,
-              expires_at: nowSec + PUSH_TTL_DAYS * 24 * 60 * 60,
-            },
-            ConditionExpression: '#ep = :dead',
-            ExpressionAttributeNames: { '#ep': 'endpoint' },
-            ExpressionAttributeValues: { ':dead': item.endpoint },
-          }),
+          new PutCommand(
+            pushTombstonePut({ table: PUSH_TABLE, device_id, endpoint: item.endpoint, nowSec }),
+          ),
         )
         console.log(`[parkproof.push.dispatch.cleaned_stale] ${device_id}`)
       } catch {

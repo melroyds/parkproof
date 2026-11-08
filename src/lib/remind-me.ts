@@ -9,12 +9,19 @@
  *   1. Ask for notification permission when the browser hasn't been asked.
  *      This is the first await, so it still runs inside the tap: iOS shows
  *      the prompt only from a user gesture.
- *   2. Subscribe to push if needed and make sure the server has this
+ *   2. Arm the in-tab reminders (they work while ParkProof is open). They
+ *      need no connection, so they go first: on a weak signal the push
+ *      steps below can take seconds, or time out, and the driver still has
+ *      these.
+ *   3. Subscribe to push if needed and make sure the server has this
  *      device's registration.
- *   3. Arm the in-tab reminders (they work while ParkProof is open).
  *   4. Book the push reminders on the server (they work when it's closed).
  *      schedulePushReminders re-sends the registration first and retries
  *      once on ERR_NOT_SUBSCRIBED.
+ *
+ * Every push request gives up after PUSH_REQUEST_TIMEOUT_MS (push.ts). A
+ * timeout stops the push steps there: the result says the reminder only
+ * works while ParkProof is open, and to try again.
  *
  * The result says exactly what got booked, so the screen can confirm it in
  * plain words or say that the reminder only works while ParkProof is open,
@@ -31,8 +38,8 @@ import { isIosBrowserTab } from './platform'
  *   - denied: notifications are blocked (or the prompt was dismissed).
  *   - unsupported: this browser has no web push.
  *   - failed: push is possible here but registering or booking failed
- *     (offline, server error, or the server refused the registration even
- *     after one retry). Trying again may work.
+ *     (offline, no answer in time, server error, or the server refused the
+ *     registration even after one retry). Trying again may work.
  *   - not_owner: another device owns this record's reminders (spec N6).
  */
 export type BackgroundFailure = 'ios_install' | 'denied' | 'unsupported' | 'failed' | 'not_owner'
@@ -54,7 +61,10 @@ export interface RemindMeArgs {
   pushReminders: ScheduledReminder[]
   /** The record's parking expiry, or null for a no-sign record. */
   expiresAt: string | null
-  /** Arms the in-tab reminders. Called after permission is settled. */
+  /**
+   * Arms the in-tab reminders. Called once, after permission is settled and
+   * before any push network work, and not at all when permission was refused.
+   */
   armInTab: () => Promise<ScheduleResult>
 }
 
@@ -95,31 +105,51 @@ export async function remindMe(args: RemindMeArgs): Promise<RemindMeResult> {
     }
   }
 
-  if (permission === 'unsupported') {
-    // No notifications of any kind in this browser.
-    return { background: { ok: false, reason: noPushReason() }, inTab: await args.armInTab() }
-  }
-
-  // 2. Subscribe if needed and register with the server. Permission is
-  //    already granted, so this never prompts.
-  const prep = await subscribeToPush()
-
-  // 3. In-tab reminders, whatever happens with push.
+  // 2. In-tab reminders, before any network work and whatever happens with
+  //    push.
   const inTab = await args.armInTab()
 
+  if (permission === 'unsupported') {
+    // No notifications of any kind in this browser.
+    return { background: { ok: false, reason: noPushReason() }, inTab }
+  }
+
+  // 3 and 4. The in-tab reminders are armed by now, so a push step that
+  // fails in a way it shouldn't (they never throw by contract) still ends
+  // in an outcome that tells the truth about them.
+  let background: BackgroundResult
+  try {
+    background = await bookBackground(args)
+  } catch (err) {
+    console.error('[remind-me] push booking threw:', err)
+    background = { ok: false, reason: 'failed' }
+  }
+  return { background, inTab }
+}
+
+/** Steps 3 and 4: register this device for push, then book the push reminders. */
+async function bookBackground(args: RemindMeArgs): Promise<BackgroundResult> {
+  // 3. Subscribe if needed and register with the server. Permission is
+  //    already granted, so this never prompts.
+  const prep = await subscribeToPush()
+  if (!prep.ok && prep.reason === 'timeout') {
+    // No answer in time: the signal is too weak for push right now. Booking
+    // would only wait out another timeout. "Try again" is the next step.
+    return { ok: false, reason: 'failed' }
+  }
   if (!prep.ok && prep.reason !== 'network') {
     const reason: BackgroundFailure =
       prep.reason === 'denied' ? 'denied' : prep.reason === 'subscribe_failed' ? 'failed' : noPushReason()
-    return { background: { ok: false, reason }, inTab }
+    return { ok: false, reason }
   }
 
   // 4. Book. A registration the server didn't store ('network' above) gets
   //    re-sent here, and the server has the final say.
   const booked = await schedulePushReminders(args.sessionId, args.pushReminders, args.expiresAt)
-  if (booked.ok) return { background: { ok: true, created: booked.created }, inTab }
+  if (booked.ok) return { ok: true, created: booked.created }
   const reason: BackgroundFailure =
     booked.reason === 'not_owner' ? 'not_owner' : booked.reason === 'unsupported' ? noPushReason() : 'failed'
-  return { background: { ok: false, reason }, inTab }
+  return { ok: false, reason }
 }
 
 /**
