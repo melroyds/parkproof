@@ -57,6 +57,11 @@ export default function PrivacyPolicy({ onBack }: Props) {
             <li>
               <Trans i18nKey="privacy.anonymousPush" components={{ strong: <strong /> }} />
             </li>
+            {/* Weekly reminders by push (T5b) stay on the server while they
+                are on, unlike a record's reminders above, which go once sent. */}
+            <li>
+              <Trans i18nKey="privacy.anonymousWeeklyPush" components={{ strong: <strong /> }} />
+            </li>
           </ul>
           {/* A permit used for a park stays with its record (T4 item 6, N3). */}
           <p>

@@ -37,6 +37,15 @@
  * `recurring.zone.*` names the place a rule's times are local to (the
  * Australian IANA zones), so a zone id is never shown raw.
  *
+ * T5b also adds `privacy.anonymousWeeklyPush`, the privacy page's line on
+ * weekly reminders by push, rendered after T4's `privacy.anonymousPush`.
+ * That line covers a record's one-off reminders, which the server deletes
+ * once sent; a weekly reminder's details stay on the server as EventBridge
+ * schedules while the rule wants push (lambda/index.js handlePushRecurring),
+ * until the rule is paused, deleted or its notifications switched off
+ * (reconcileRecurringPush cancels them), and at most RECURRING_SCHEDULE_DAYS
+ * (90) after the phone last booked them, which it only does while open.
+ *
  * T5a and T5b are one task in this build's plan, so they share this one
  * script (the task brief names it); `--list` covers both for T10.
  *
@@ -64,7 +73,7 @@ const LOCALES = ['en', 'zh-CN', 'vi', 'id', 'ko', 'it', 'el', 'hi', 'pa']
  * Keys a lawyer should read before launch (docs/legal-review-queue.md, T10):
  * the disclaimers. The reliability line is the shared reminders.reliability.
  */
-const LEGAL = new Set(['recurring.councilNote'])
+const LEGAL = new Set(['recurring.councilNote', 'privacy.anonymousWeeklyPush'])
 
 /** One string per locale, in LOCALES order. */
 const T = (en, zh, vi, id, ko, it, el, hi, pa) => ({ en, 'zh-CN': zh, vi, id, ko, it, el, hi, pa })
@@ -964,6 +973,24 @@ const ADDITIONS = {
     'Υπενθύμιση από το ParkProof.',
     'ParkProof में सेट किया गया रिमाइंडर।',
     'ParkProof ਵਿੱਚ ਸੈੱਟ ਕੀਤਾ ਰਿਮਾਈਂਡਰ।',
+  ),
+  // ── T5b: the privacy page (PrivacyPolicy renders it after privacy.anonymousPush) ──
+  // What POST /push/recurring sends: the title (the address, else the name),
+  // the rule's days, times and IANA zone, and the notification text, which
+  // names it. Kept while the rule wants push; cancelled when it is paused,
+  // deleted or its notifications are switched off; and the schedules end
+  // and delete themselves 90 days after the last booking, which only an open
+  // app makes (so within 90 days of the last time ParkProof is opened).
+  'privacy.anonymousWeeklyPush': T(
+    "<strong>Weekly reminders by push</strong>, if you turn them on: each reminder's name and any address you entered, its days, times and time zone, and its notification text go to <strong>ParkProof's server</strong>. The server keeps them while the reminder is on, so the reminder can go out every week. They're deleted when you pause or delete the reminder or switch off its notifications. If you stop opening ParkProof, they're deleted within 90 days.",
+    '<strong>每周推送提醒</strong>(如果你开启):每条提醒的名称、你输入的地址(如有)、星期、时间和时区,以及通知内容会发送到 <strong>ParkProof 的服务器</strong>。提醒开启期间,服务器会保留这些信息,以便每周发出提醒。你暂停或删除这条提醒,或关闭它的通知时,这些信息会被删除。如果你不再打开 ParkProof,这些信息会在 90 天内删除。',
+    '<strong>Lời nhắc đẩy hằng tuần</strong>, nếu bạn bật: tên của từng lời nhắc và địa chỉ bạn đã nhập (nếu có), các ngày, giờ và múi giờ của lời nhắc, cùng nội dung thông báo được gửi tới <strong>máy chủ của ParkProof</strong>. Máy chủ giữ các thông tin này khi lời nhắc còn bật, để có thể gửi lời nhắc mỗi tuần. Các thông tin này bị xoá khi bạn tạm dừng hoặc xoá lời nhắc, hoặc tắt thông báo của lời nhắc. Nếu bạn không mở ParkProof nữa, chúng sẽ bị xoá trong vòng 90 ngày.',
+    '<strong>Pengingat mingguan lewat push</strong>, kalau kamu menyalakannya: nama setiap pengingat dan alamat yang kamu isi (kalau ada), hari, jam, dan zona waktunya, serta teks notifikasinya dikirim ke <strong>server ParkProof</strong>. Server menyimpannya selama pengingat itu aktif, supaya pengingatnya bisa dikirim setiap minggu. Semuanya dihapus saat kamu menjeda atau menghapus pengingat itu, atau mematikan notifikasinya. Kalau kamu berhenti membuka ParkProof, semuanya dihapus dalam 90 hari.',
+    '<strong>매주 푸시 알림</strong>을 켜면 각 알림의 이름과 입력한 주소(있는 경우), 요일, 시간, 시간대, 알림 내용이 <strong>ParkProof 서버</strong>로 전송됩니다. 서버는 매주 알림을 보낼 수 있도록 알림이 켜져 있는 동안 이 정보를 보관합니다. 알림을 일시 중지하거나 삭제하거나 알림 받기를 끄면 이 정보는 삭제됩니다. ParkProof를 더 이상 열지 않으면 90일 이내에 삭제됩니다.',
+    "<strong>Promemoria settimanali push</strong>, se li attivi: il nome di ogni promemoria e l'eventuale indirizzo che hai inserito, i suoi giorni, orari e fuso orario e il testo della notifica vanno al <strong>server di ParkProof</strong>. Il server li conserva finché il promemoria è attivo, così può inviarlo ogni settimana. Vengono cancellati quando metti in pausa o elimini il promemoria o ne disattivi le notifiche. Se smetti di aprire ParkProof, vengono cancellati entro 90 giorni.",
+    '<strong>Εβδομαδιαίες υπενθυμίσεις push</strong>, αν τις ενεργοποιήσεις: το όνομα κάθε υπενθύμισης και όποια διεύθυνση έβαλες, οι μέρες, οι ώρες και η ζώνη ώρας της, και το κείμενο της ειδοποίησης πηγαίνουν στον <strong>server του ParkProof</strong>. Ο server τα κρατά όσο η υπενθύμιση είναι ενεργή, ώστε να στέλνεται κάθε εβδομάδα. Διαγράφονται όταν βάλεις την υπενθύμιση σε παύση, τη διαγράψεις ή απενεργοποιήσεις τις ειδοποιήσεις της. Αν σταματήσεις να ανοίγεις το ParkProof, διαγράφονται μέσα σε 90 ημέρες.',
+    '<strong>साप्ताहिक पुश रिमाइंडर</strong>, अगर आप इन्हें चालू करते हैं: हर रिमाइंडर का नाम और आपका डाला गया पता (अगर हो), उसके दिन, समय और टाइम ज़ोन, और सूचना का संदेश <strong>ParkProof के सर्वर</strong> को भेजे जाते हैं। रिमाइंडर चालू रहने तक सर्वर इन्हें रखता है, ताकि रिमाइंडर हर हफ़्ते भेजा जा सके। रिमाइंडर को रोकने या मिटाने, या उसकी सूचनाएँ बंद करने पर ये मिटा दिए जाते हैं। अगर आप ParkProof खोलना बंद कर देते हैं, तो ये 90 दिनों के अंदर मिटा दिए जाते हैं।',
+    "<strong>ਹਫ਼ਤਾਵਾਰੀ ਪੁਸ਼ ਰਿਮਾਈਂਡਰ</strong>, ਜੇ ਤੁਸੀਂ ਇਨ੍ਹਾਂ ਨੂੰ ਚਾਲੂ ਕਰਦੇ ਹੋ: ਹਰ ਰਿਮਾਈਂਡਰ ਦਾ ਨਾਮ ਅਤੇ ਤੁਹਾਡਾ ਪਾਇਆ ਪਤਾ (ਜੇ ਹੋਵੇ), ਉਸ ਦੇ ਦਿਨ, ਸਮਾਂ ਅਤੇ ਟਾਈਮ ਜ਼ੋਨ, ਅਤੇ ਸੂਚਨਾ ਦਾ ਸੁਨੇਹਾ <strong>ParkProof ਦੇ ਸਰਵਰ</strong> ਨੂੰ ਭੇਜੇ ਜਾਂਦੇ ਹਨ। ਰਿਮਾਈਂਡਰ ਚਾਲੂ ਰਹਿਣ ਤੱਕ ਸਰਵਰ ਇਨ੍ਹਾਂ ਨੂੰ ਰੱਖਦਾ ਹੈ, ਤਾਂ ਜੋ ਰਿਮਾਈਂਡਰ ਹਰ ਹਫ਼ਤੇ ਭੇਜਿਆ ਜਾ ਸਕੇ। ਰਿਮਾਈਂਡਰ ਨੂੰ ਰੋਕਣ ਜਾਂ ਮਿਟਾਉਣ, ਜਾਂ ਉਸ ਦੀਆਂ ਸੂਚਨਾਵਾਂ ਬੰਦ ਕਰਨ 'ਤੇ ਇਹ ਮਿਟਾ ਦਿੱਤੇ ਜਾਂਦੇ ਹਨ। ਜੇ ਤੁਸੀਂ ParkProof ਖੋਲ੍ਹਣਾ ਬੰਦ ਕਰ ਦਿੰਦੇ ਹੋ, ਤਾਂ ਇਹ 90 ਦਿਨਾਂ ਦੇ ਅੰਦਰ ਮਿਟਾ ਦਿੱਤੇ ਜਾਂਦੇ ਹਨ।",
   ),
 }
 

@@ -198,15 +198,16 @@ export function downloadIcsAbsolute(session: ParkingSession, fireAtList: Date[])
       : mapsUrl!
     : undefined
 
-  // Absolute DATE-TIME triggers. The `ics` package types expect a 5-tuple
-  // [Y, M, D, H, m] for absolute triggers (not a Date object), which the
-  // existing utcParts helper already produces. The library serialises
-  // each tuple as a VALUE=DATE-TIME VTRIGGER in UTC — every modern
-  // calendar app (macOS, iOS, Google) handles these natively.
+  // Absolute DATE-TIME triggers, written as VALUE=DATE-TIME in UTC, which
+  // every modern calendar app (macOS, iOS, Google) handles natively. As a
+  // timestamp, like downloadIcs: the `ics` package reads a date array in an
+  // alarm trigger as the phone's local time (not UTC, unlike start and
+  // end), so utcParts here would put every alarm hours early on any phone
+  // east of UTC.
   const alarms = sorted.map((fireAt) => ({
     action: 'display' as const,
     description: `Check on your car${session.location?.address ? ` at ${session.location.address}` : ''}`,
-    trigger: utcParts(fireAt),
+    trigger: fireAt.getTime(),
   }))
 
   const { error, value } = createEvent({

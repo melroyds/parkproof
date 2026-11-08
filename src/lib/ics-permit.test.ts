@@ -7,12 +7,15 @@
 // and description are the caller's, so the permit time is never called an
 // expiry. Without options nothing changes.
 //
+// Also the no-sign "Check on your car" file (downloadIcsAbsolute), whose
+// alarms all fire at absolute times.
+//
 // The `ics` package reads a date array in an alarm trigger as the machine's
 // local time, so a regression to date arrays only shows east of UTC. This
 // file runs on a Melbourne clock whatever the machine's zone (Node re-reads
 // TZ when it is assigned), so a UTC CI runner catches it too.
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
-import { downloadIcs } from './ics'
+import { downloadIcs, downloadIcsAbsolute } from './ics'
 import type { ParkingSession } from '../types'
 
 const STANDARD = '2026-11-09T05:00:00.000Z'
@@ -94,5 +97,24 @@ describe('downloadIcs', () => {
 
   it('still needs at least one alarm', () => {
     expect(() => downloadIcs(record, [])).toThrow(/Pick at least one reminder time/)
+  })
+})
+
+describe('downloadIcsAbsolute (a record with no sign)', () => {
+  it('puts every alarm at its own fire time, not hours early on a phone east of UTC', async () => {
+    // 2 pm and 4:30 pm AEDT on 9 November 2026.
+    const first = new Date('2026-11-09T03:00:00.000Z')
+    const second = new Date('2026-11-09T05:30:00.000Z')
+    const text = await icsText(() => downloadIcsAbsolute(record, [second, first]))
+    expect(text).toContain('DTSTART:20261109T030000Z')
+    expect(text.match(/BEGIN:VALARM/g)).toHaveLength(2)
+    expect(text).toContain('TRIGGER;VALUE=DATE-TIME:20261109T030000Z')
+    expect(text).toContain('TRIGGER;VALUE=DATE-TIME:20261109T053000Z')
+    // A local clock read as UTC would have put them 11 hours early, the evening before.
+    expect(text).not.toContain('TRIGGER;VALUE=DATE-TIME:20261108T')
+  })
+
+  it('still needs at least one alarm', () => {
+    expect(() => downloadIcsAbsolute(record, [])).toThrow(/Pick at least one reminder time/)
   })
 })

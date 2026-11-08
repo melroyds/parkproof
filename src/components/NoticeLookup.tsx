@@ -27,9 +27,10 @@ interface Props {
   /**
    * "Draft an appeal with this record" (a record) or "Draft an appeal
    * anyway" (null). App opens the appeal flow with the notice photo, which
-   * skips its own capture step.
+   * skips its own capture step. From the error stage nothing was read, so
+   * the snapshot is null too: the appeal flow asks for the photo itself.
    */
-  onDraftAppeal: (session: ParkingSession | null, snapshot: NoticeSnapshot) => void
+  onDraftAppeal: (session: ParkingSession | null, snapshot: NoticeSnapshot | null) => void
 }
 
 type Stage =
@@ -100,6 +101,12 @@ export default function NoticeLookup({ initial = null, onBack, onDraftAppeal }: 
           {stage.message}
         </p>
         <Button onClick={() => setStage({ name: 'capture' })}>{t('appeal.tryDifferentPhoto')}</Button>
+        {/* The home screen's only way in to an appeal is this view (T4 item
+            9), so a notice that can't be read (not_a_notice, a busy or
+            failed reader) must not end there for a driver with no record. */}
+        <Button variant="outline" className="mt-3" onClick={() => onDraftAppeal(null, null)}>
+          {t('notice.actions.draftAnyway')}
+        </Button>
       </div>
     )
   }

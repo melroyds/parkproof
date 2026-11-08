@@ -1153,12 +1153,14 @@ function App() {
           // The appeal flow gets the stored copy of the record (it may have
           // gained a signature since the matches were drawn) and the notice
           // photo, so it drafts at once instead of asking for the photo again.
+          // After a failed reading there is no snapshot: the appeal flow
+          // captures the photo itself, and its Back goes home.
           onDraftAppeal={(session, snapshot) =>
             setView({
               name: 'appeal',
               session: session ? (getSession(session.id) ?? session) : null,
-              notice: snapshot.photo,
-              returnTo: snapshot,
+              notice: snapshot?.photo,
+              returnTo: snapshot ?? undefined,
             })
           }
         />

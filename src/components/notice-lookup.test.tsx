@@ -200,6 +200,18 @@ describe('NoticeLookup: capture and reading', () => {
     fireEvent.click(screen.getByRole('button', { name: i18n.t('appeal.tryDifferentPhoto') }))
     expect(screen.getByText(i18n.t('notice.captureIntro'))).toBeTruthy()
   })
+
+  // The home screen's only way in to an appeal is this view (T4's layout),
+  // so a notice the reader turns down must not be a dead end.
+  it('a reading error still offers "Draft an appeal anyway", with nothing read', async () => {
+    mocks.readNotice.mockRejectedValue(new Error("That photo doesn't look like a parking fine notice."))
+    const onDraftAppeal = vi.fn()
+    render(<NoticeLookup onBack={() => {}} onDraftAppeal={onDraftAppeal} />)
+    pickFile()
+    await screen.findByRole('alert')
+    fireEvent.click(screen.getByRole('button', { name: i18n.t('notice.actions.draftAnyway') }))
+    expect(onDraftAppeal).toHaveBeenCalledWith(null, null)
+  })
 })
 
 describe('NoticeLookup: the fields', () => {

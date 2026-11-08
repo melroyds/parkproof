@@ -4,11 +4,14 @@
 // - anonymousIntro is the spec's wording, rendered as plain text;
 // - the policy says what goes to the AI with each scan (the photo, its
 //   location, the saved permit types) and that fine notice photos do too;
+// - weekly reminders by push (T5b) are kept on the server while they are
+//   on, unlike a record's push reminders, which go once sent;
 // - Account no longer has the push section, which moved to Settings.
 import { cleanup, render, screen } from '@testing-library/react'
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 import i18n from '../lib/i18n'
 import { AuthContext, type AuthContextValue } from '../lib/auth-context-shape'
+import { RECURRING_SCHEDULE_DAYS } from '../../lambda/recurring-schedule.js'
 import AuthSettings from './AuthSettings'
 import PrivacyPolicy from './PrivacyPolicy'
 
@@ -55,7 +58,7 @@ describe('PrivacyPolicy', () => {
     render(<PrivacyPolicy onBack={() => {}} />)
     expect(screen.getByText('These also leave your device, even without an account:')).toBeTruthy()
     const list = screen.getByText('Each sign photo you scan').closest('ul')!
-    expect(list.querySelectorAll('li')).toHaveLength(5)
+    expect(list.querySelectorAll('li')).toHaveLength(6)
   })
 
   it('lists push reminders, whose text can mention a permit time, as kept on the server until sent', () => {
@@ -65,6 +68,19 @@ describe('PrivacyPolicy', () => {
     expect(item.textContent).toMatch(/address, each reminder's time and its text/)
     expect(item.textContent).toMatch(/can mention a permit time you entered/)
     expect(item.textContent).toMatch(/keeps each one until it is sent, then deletes it/)
+  })
+
+  it('lists weekly push reminders as kept on the server while they are on, and when they are deleted', () => {
+    render(<PrivacyPolicy onBack={() => {}} />)
+    const item = screen.getByText('Weekly reminders by push').closest('li')!
+    expect(item.closest('ul')).toBe(screen.getByText('Each sign photo you scan').closest('ul'))
+    expect(item.textContent).toMatch(/name and any address you entered, its days, times and time zone, and its notification text/)
+    expect(item.textContent).toMatch(/keeps them while the reminder is on/)
+    expect(item.textContent).toMatch(/deleted when you pause or delete the reminder or switch off its notifications/)
+    // The server's weekly schedules end and delete themselves this long after the phone last booked them.
+    expect(item.textContent).toContain(`If you stop opening ParkProof, they're deleted within ${RECURRING_SCHEDULE_DAYS} days.`)
+    // Not the one-off promise the record reminders make.
+    expect(item.textContent).not.toMatch(/until it is sent/)
   })
 
   it('says a permit used for a park stays with its record, is signed only as a fingerprint, and goes with the record to the cloud', () => {

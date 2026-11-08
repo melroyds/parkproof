@@ -5,7 +5,9 @@
 // this record" opens the appeal flow with the stored copy of the record and
 // the notice photo (so it skips capture), labelled to go back; "Draft an
 // appeal anyway" opens it without a record; and Back from the appeal flow
-// returns to the notice screen with what it had read, not to capture.
+// returns to the notice screen with what it had read, not to capture. After
+// a failed reading, "Draft an appeal anyway" still opens the appeal flow,
+// which asks for the photo itself.
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import i18n from './lib/i18n'
@@ -57,7 +59,7 @@ vi.mock('./components/NoticeLookup', () => ({
   default: (p: {
     initial: NoticeSnapshot | null
     onBack: () => void
-    onDraftAppeal: (session: ParkingSession | null, snapshot: NoticeSnapshot) => void
+    onDraftAppeal: (session: ParkingSession | null, snapshot: NoticeSnapshot | null) => void
   }) => {
     noticeProps.push(p as unknown as Record<string, unknown>)
     // A stale copy of the record, as the screen drew it before it was signed.
@@ -67,6 +69,8 @@ vi.mock('./components/NoticeLookup', () => ({
         <p>Fake notice {p.initial ? 'read' : 'empty'}</p>
         <button onClick={() => p.onDraftAppeal(stale, SNAPSHOT)}>Fake draft with record</button>
         <button onClick={() => p.onDraftAppeal(null, SNAPSHOT)}>Fake draft anyway</button>
+        {/* The error stage's "Draft an appeal anyway": the reading failed, so nothing was read. */}
+        <button onClick={() => p.onDraftAppeal(null, null)}>Fake draft after error</button>
         <button onClick={p.onBack}>Fake notice back</button>
       </div>
     )
@@ -182,6 +186,22 @@ describe('App: the notice view', () => {
     expect(props.backLabelKey).toBe('common.back')
     fireEvent.click(screen.getByText('Fake appeal back'))
     fireEvent.click(screen.getByText('Fake notice back'))
+    expect(screen.getByRole('button', { name: i18n.t('notice.homeLink') })).toBeTruthy()
+  })
+
+  // A driver with no record whose notice can't be read (not_a_notice, a
+  // rate limit, a timeout) still reaches the appeal flow from the error stage.
+  it('after a failed reading, the appeal is still reachable: no record, no notice photo, Back leads home', () => {
+    renderApp()
+    openNotice()
+    fireEvent.click(screen.getByText('Fake draft after error'))
+    expect(screen.getByText('Fake appeal no record')).toBeTruthy()
+    const props = appealProps.at(-1)!
+    expect(props.session).toBeNull()
+    // No photo: the appeal flow starts at its own capture step.
+    expect(props.initialNotice).toBeNull()
+    expect(props.backLabelKey).toBeUndefined()
+    fireEvent.click(screen.getByText('Fake appeal back'))
     expect(screen.getByRole('button', { name: i18n.t('notice.homeLink') })).toBeTruthy()
   })
 })
