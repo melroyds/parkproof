@@ -44,7 +44,58 @@ const isWinAnsi = (text) =>
     return (cp >= 0x20 && cp <= 0x7e) || (cp >= 0xa0 && cp <= 0xff) || '\u20AC\u201A\u0192\u201E\u2026\u2020\u2021\u02C6\u2030\u0160\u2039\u0152\u017D\u2018\u2019\u201C\u201D\u2022\u2013\u2014\u02DC\u2122\u0161\u203A\u0153\u017E\u0178'.includes(c)
   })
 
-/** A complete, valid answer as the model returns it. */
+/**
+ * The answer's keys as the app gets them (ModelParkingRules), in order.
+ * The model's raw shape differs (flat permit fields, days and weeks as
+ * strings); normalizeModelOutput maps it to exactly these.
+ */
+const ANSWER_KEYS = [
+  'sign_status',
+  'sign_issues',
+  'rules',
+  'observations',
+  'can_park_now',
+  'until',
+  'duration_minutes',
+  'confidence',
+  'requires_ticket',
+  'payment_methods',
+  'requires_disabled_permit',
+  'is_permit_zone',
+  'permit_area',
+  'is_area_sign',
+  'permit_exception',
+  'recurring_restrictions',
+  'next_transition',
+  'clarification',
+]
+const VARIANT_KEYS = [
+  'label',
+  'rules',
+  'observations',
+  'can_park_now',
+  'until',
+  'duration_minutes',
+  'requires_disabled_permit',
+  'is_permit_zone',
+  'permit_area',
+  'is_area_sign',
+  'permit_exception',
+  'next_transition',
+]
+
+/** fullAnswer()'s weekly restriction as the app keeps it. */
+const KEPT_CLEARWAY = {
+  kind: 'clearway',
+  days: ['MO', 'TU', 'WE', 'TH', 'FR'],
+  start: '16:30',
+  end: '18:30',
+  week_of_month: [],
+  exceptions_text: 'PUBLIC HOLIDAYS EXCEPTED',
+  label: 'Clearway Mon-Fri 4:30pm-6:30pm',
+}
+
+/** A complete, valid answer as the model returns it (the raw schema shape). */
 function fullAnswer(overrides = {}) {
   return {
     sign_status: 'readable',
@@ -61,24 +112,33 @@ function fullAnswer(overrides = {}) {
     is_permit_zone: false,
     permit_area: '25',
     is_area_sign: false,
-    permit_exception: [{ applies: true, permit_type: 'resident', text: 'PERMIT ZONE AREA 25 EXCEPTED' }],
-    recurring_restrictions: [
-      {
-        kind: 'clearway',
-        days: ['MO', 'TU', 'WE', 'TH', 'FR'],
-        start: '16:30',
-        end: '18:30',
-        week_of_month: [],
-        exceptions_text: 'PUBLIC HOLIDAYS EXCEPTED',
-        label: 'Clearway Mon-Fri 4:30pm-6:30pm',
-      },
-    ],
+    permit_exception_type: 'resident',
+    permit_exception_text: 'PERMIT ZONE AREA 25 EXCEPTED',
+    recurring_restrictions: [{ ...KEPT_CLEARWAY, days: 'MO,TU,WE,TH,FR', week_of_month: '' }],
     next_transition: { when: '2026-11-09T16:30:00+11:00', change: 'Clearway begins, move by then' },
     clarification: null,
     ...overrides,
   }
 }
 
+/**
+ * fullAnswer() as normalizeModelOutput returns it with RESIDENT listed: the
+ * flat permit fields read into one permit_exception list, the weekly
+ * restriction's strings into lists. `overrides` are in the kept shape.
+ */
+function keptAnswer(overrides = {}) {
+  const kept = fullAnswer()
+  delete kept.permit_exception_type
+  delete kept.permit_exception_text
+  return {
+    ...kept,
+    permit_exception: [{ applies: true, permit_type: 'resident', text: 'PERMIT ZONE AREA 25 EXCEPTED' }],
+    recurring_restrictions: [KEPT_CLEARWAY],
+    ...overrides,
+  }
+}
+
+/** A clarification option as the model returns it (the raw schema shape). */
 function variant(overrides = {}) {
   return {
     label: 'Left side',
@@ -91,10 +151,19 @@ function variant(overrides = {}) {
     is_permit_zone: false,
     permit_area: null,
     is_area_sign: false,
-    permit_exception: [],
+    permit_exception_type: 'none',
+    permit_exception_text: '',
     next_transition: null,
     ...overrides,
   }
+}
+
+/** variant() as normalizeModelOutput returns it. `permit_exception` defaults to "no permits listed". */
+function keptVariant(overrides = {}) {
+  const kept = variant()
+  delete kept.permit_exception_type
+  delete kept.permit_exception_text
+  return { ...kept, permit_exception: [], ...overrides }
 }
 
 const RESIDENT = [{ type: 'resident', area: 'Area 25' }]
@@ -142,26 +211,54 @@ afterEach(() => {
 
 // ─── Item 1: schema ──────────────────────────────────────────────────────
 
-/** Every object node in a schema, with a path for failure messages. */
+/** Every object node in a schema (shared $defs included, once each), with a path for failure messages. */
 function objectNodes(node, path = '$', out = []) {
   if (!node || typeof node !== 'object') return out
   if (node.type === 'object') out.push({ path, node })
   for (const [k, v] of Object.entries(node.properties || {})) objectNodes(v, `${path}.${k}`, out)
   if (node.items) objectNodes(node.items, `${path}[]`, out)
   for (const [i, branch] of (node.anyOf || []).entries()) objectNodes(branch, `${path}|${i}`, out)
+  for (const [k, v] of Object.entries(node.$defs || {})) objectNodes(v, `${path}.$defs.${k}`, out)
   return out
 }
 
-/** Parameters that use anyOf or a type array, as the structured-outputs limit counts them. */
+/**
+ * Parameters that use anyOf or a type array, as the structured-outputs
+ * limit counts them. A shared $defs entry counts once, wherever it is used.
+ */
 function unionParameterCount(node) {
   let n = 0
-  for (const v of Object.values(node.properties || {})) {
+  for (const v of [...Object.values(node.properties || {}), ...Object.values(node.$defs || {})]) {
     if (v.anyOf || Array.isArray(v.type)) n++
     n += unionParameterCount(v)
   }
   if (node.items) n += unionParameterCount(node.items)
   for (const branch of node.anyOf || []) n += unionParameterCount(branch)
   return n
+}
+
+/** Every node of a JSON value, depth first. */
+function* allNodes(value) {
+  if (Array.isArray(value)) {
+    for (const v of value) yield* allNodes(v)
+  } else if (value && typeof value === 'object') {
+    yield value
+    for (const v of Object.values(value)) yield* allNodes(v)
+  }
+}
+
+/** The grammar-relevant counts of a schema (see the schema budget test). */
+function schemaCounts(schema) {
+  const counts = { length: JSON.stringify(schema).length, anyOf: 0, enum: 0, array: 0, properties: 0 }
+  for (const node of allNodes(schema)) {
+    if (node.anyOf) counts.anyOf++
+    if (node.enum) counts.enum++
+    if (node.type === 'array') counts.array++
+    if (node.properties && typeof node.properties === 'object' && !Array.isArray(node.properties)) {
+      counts.properties += Object.keys(node.properties).length
+    }
+  }
+  return counts
 }
 
 const variantSchema = () => RESPONSE_SCHEMA.properties.clarification.anyOf[1].properties.options.items
@@ -178,12 +275,34 @@ describe('RESPONSE_SCHEMA (T3 item 1)', () => {
 
   it('lists every property in required, in property order, at every level, with additionalProperties false', () => {
     const nodes = objectNodes(RESPONSE_SCHEMA)
-    // top level, observation group, permit exception, recurring item,
-    // next transition, clarification, variant (and their nested copies)
-    expect(nodes.length).toBeGreaterThanOrEqual(7)
+    // top level, recurring item, clarification, variant, and the shared
+    // observation group and next transition in $defs
+    expect(nodes.map((n) => n.path)).toEqual([
+      '$',
+      '$.recurring_restrictions[]',
+      '$.clarification|1',
+      '$.clarification|1.options[]',
+      '$.$defs.observation_group',
+      '$.$defs.next_transition|1',
+    ])
     for (const { path, node } of nodes) {
       expect(node.additionalProperties, path).toBe(false)
       expect(node.required, path).toEqual(Object.keys(node.properties))
+    }
+  })
+
+  it('shares the observation group and the next transition through $defs, every reference resolving', () => {
+    expect(Object.keys(RESPONSE_SCHEMA.$defs)).toEqual(['observation_group', 'next_transition'])
+    const refs = [...allNodes(RESPONSE_SCHEMA)].filter((n) => typeof n.$ref === 'string').map((n) => n.$ref)
+    expect(refs.sort()).toEqual([
+      '#/$defs/next_transition',
+      '#/$defs/next_transition',
+      '#/$defs/observation_group',
+      '#/$defs/observation_group',
+    ])
+    for (const where of [RESPONSE_SCHEMA, variantSchema()]) {
+      expect(where.properties.observations).toEqual({ type: 'array', items: { $ref: '#/$defs/observation_group' } })
+      expect(where.properties.next_transition).toEqual({ $ref: '#/$defs/next_transition' })
     }
   })
 
@@ -191,42 +310,41 @@ describe('RESPONSE_SCHEMA (T3 item 1)', () => {
     expect(RESPONSE_SCHEMA.properties.sign_issues).toEqual({ type: 'array', items: { type: 'string' } })
   })
 
-  it('has is_area_sign and permit_exception at the top level and per variant', () => {
+  it('has is_area_sign and the flat permit exception fields at the top level and per variant', () => {
     for (const [where, schema] of [
       ['top', RESPONSE_SCHEMA],
       ['variant', variantSchema()],
     ]) {
       expect(schema.properties.is_area_sign, where).toEqual({ type: 'boolean' })
-      // One entry per user permit type (spec T3 item 1), so a list.
-      const list = schema.properties.permit_exception
-      expect(list.type, where).toBe('array')
-      const pe = list.items
-      expect(pe.type, where).toBe('object')
-      expect(Object.keys(pe.properties), where).toEqual(['applies', 'permit_type', 'text'])
-      expect(pe.required, where).toEqual(['applies', 'permit_type', 'text'])
-      expect(pe.additionalProperties, where).toBe(false)
-      expect(pe.properties.applies).toEqual({ type: 'boolean' })
-      expect(pe.properties.permit_type).toEqual({
-        anyOf: [{ type: 'string', enum: ['accessible', 'resident', 'business'] }, { type: 'null' }],
+      // One exception per level, as two plain fields: a list of objects made
+      // the grammar too large for the API (9 Nov 2026).
+      expect(schema.properties.permit_exception, where).toBeUndefined()
+      expect(schema.properties.permit_exception_type, where).toEqual({
+        type: 'string',
+        enum: ['accessible', 'resident', 'business', 'none'],
       })
-      expect(pe.properties.text).toEqual({ type: 'string' })
+      expect(schema.properties.permit_exception_text, where).toEqual({ type: 'string' })
+      // Right after is_area_sign, where the list used to be.
+      const keys = Object.keys(schema.properties)
+      expect(keys.slice(keys.indexOf('is_area_sign'), keys.indexOf('is_area_sign') + 3), where).toEqual([
+        'is_area_sign',
+        'permit_exception_type',
+        'permit_exception_text',
+      ])
     }
   })
 
-  it('keeps recurring_restrictions top level only, with the exact field shapes', () => {
+  it('keeps recurring_restrictions top level only, with the exact field shapes (days and weeks as one string each)', () => {
     expect(variantSchema().properties.recurring_restrictions).toBeUndefined()
     const rr = RESPONSE_SCHEMA.properties.recurring_restrictions
     expect(rr.type).toBe('array')
     const item = rr.items
     expect(Object.keys(item.properties)).toEqual(['kind', 'days', 'start', 'end', 'week_of_month', 'exceptions_text', 'label'])
     expect(item.properties.kind).toEqual({ type: 'string', enum: ['street_cleaning', 'clearway', 'no_stopping', 'other'] })
-    expect(item.properties.days).toEqual({
-      type: 'array',
-      items: { type: 'string', enum: ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'] },
-    })
+    expect(item.properties.days).toEqual({ type: 'string' })
     expect(item.properties.start).toEqual({ type: 'string' })
     expect(item.properties.end).toEqual({ type: 'string' })
-    expect(item.properties.week_of_month).toEqual({ type: 'array', items: { type: 'integer' } })
+    expect(item.properties.week_of_month).toEqual({ type: 'string' })
     expect(item.properties.exceptions_text).toEqual({ type: 'string' })
     expect(item.properties.label).toEqual({ type: 'string' })
   })
@@ -237,6 +355,73 @@ describe('RESPONSE_SCHEMA (T3 item 1)', () => {
     for (const keyword of ['minimum', 'maximum', 'minLength', 'maxLength', 'maxItems', 'pattern', 'multipleOf']) {
       expect(text, keyword).not.toContain(`"${keyword}"`)
     }
+  })
+
+  // The schema budget. On 9 Nov 2026 a real call found that the API refuses
+  // a structured-output schema whose compiled grammar is too large (400
+  // invalid_request_error "The compiled grammar is too large, which would
+  // cause performance issues."), and T3's first schema was refused: every
+  // scan would have failed after a deploy. These tests mock the client, so
+  // they can't see that. Compile probes then showed the limit is tighter
+  // with the sign reader's adaptive thinking and effort low than for a bare
+  // request, tracks the number of properties more than the length of their
+  // names, and counts a $defs entry once wherever it is used. This shape
+  // (3356 characters as JSON) compiles with the real settings, and with one
+  // more plain string field (3394 characters), and no more was tried.
+  //
+  // So this test fails when the schema grows past that: more than 40
+  // characters longer (3396), more than one more property, or any more
+  // anyOf, enum or array nodes. If it fails, run
+  // `node scripts/check-schema-compiles.mjs` (one tiny real call per
+  // schema, with each route's real settings) and only raise these numbers
+  // when the sign reader's schema prints COMPILES.
+  it('stays inside the grammar budget the API compiles (schema budget, 9 Nov 2026)', () => {
+    const BUDGET = { length: 3356 + 40, anyOf: 9, enum: 5, array: 7, properties: 45 + 1 }
+    const counts = schemaCounts(RESPONSE_SCHEMA)
+    expect(counts.length, 'JSON length').toBeLessThanOrEqual(BUDGET.length)
+    expect(counts.anyOf, 'anyOf nodes').toBeLessThanOrEqual(BUDGET.anyOf)
+    expect(counts.enum, 'enum nodes').toBeLessThanOrEqual(BUDGET.enum)
+    expect(counts.array, 'array nodes').toBeLessThanOrEqual(BUDGET.array)
+    expect(counts.properties, 'properties').toBeLessThanOrEqual(BUDGET.properties)
+  })
+
+  it('the budget check counts what it says it counts', () => {
+    expect(schemaCounts(RESPONSE_SCHEMA)).toEqual({ length: 3356, anyOf: 9, enum: 5, array: 7, properties: 45 })
+    // T3's first shape (the permit exception as a list of objects with a
+    // nullable enum, days and weeks as arrays, everything inlined) is over
+    // budget on every count.
+    const first = structuredClone(RESPONSE_SCHEMA)
+    const permitList = {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          applies: { type: 'boolean' },
+          permit_type: { anyOf: [{ type: 'string', enum: ['accessible', 'resident', 'business'] }, { type: 'null' }] },
+          text: { type: 'string' },
+        },
+        required: ['applies', 'permit_type', 'text'],
+        additionalProperties: false,
+      },
+    }
+    const variantNode = first.properties.clarification.anyOf[1].properties.options.items
+    for (const node of [first, variantNode]) {
+      delete node.properties.permit_exception_type
+      delete node.properties.permit_exception_text
+      node.properties.permit_exception = permitList
+      node.properties.observations.items = RESPONSE_SCHEMA.$defs.observation_group
+      node.properties.next_transition = RESPONSE_SCHEMA.$defs.next_transition
+    }
+    delete first.$defs
+    const item = first.properties.recurring_restrictions.items
+    item.properties.days = { type: 'array', items: { type: 'string', enum: ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'] } }
+    item.properties.week_of_month = { type: 'array', items: { type: 'integer' } }
+    const over = schemaCounts(first)
+    expect(over.length).toBeGreaterThan(3396)
+    expect(over.anyOf).toBeGreaterThan(9)
+    expect(over.enum).toBeGreaterThan(5)
+    expect(over.array).toBeGreaterThan(7)
+    expect(over.properties).toBeGreaterThan(46)
   })
 
   it('is the schema sent with the request, with max_tokens 16384, adaptive thinking and effort low', async () => {
@@ -261,9 +446,22 @@ describe('SYSTEM_PROMPT (T3 item 2)', () => {
   })
 
   it('documents every new field in the field list', () => {
-    for (const field of ['sign_status', 'sign_issues', 'is_area_sign', 'permit_exception', 'recurring_restrictions']) {
+    for (const field of ['sign_status', 'sign_issues', 'is_area_sign', 'permit_exception_type', 'permit_exception_text', 'recurring_restrictions']) {
       expect(SYSTEM_PROMPT, field).toMatch(new RegExp(`^- ${field}: `, 'm'))
     }
+  })
+
+  it('names every field the schema asks for, and never the permit_exception list the model no longer writes', () => {
+    const recurringItem = RESPONSE_SCHEMA.properties.recurring_restrictions.items
+    const names = new Set([
+      ...Object.keys(RESPONSE_SCHEMA.properties),
+      ...Object.keys(variantSchema().properties),
+      ...Object.keys(recurringItem.properties),
+    ])
+    for (const name of names) expect(SYSTEM_PROMPT, name).toMatch(new RegExp(`\\b${name}\\b`))
+    // The bare name (not permit_exception_type or permit_exception_text).
+    expect(SYSTEM_PROMPT).not.toMatch(/\bpermit_exception\b/)
+    expect(SYSTEM_PROMPT).not.toMatch(/\bpermit_type\b/)
   })
 
   it('says a missing sign is not the same as "can\'t park"', () => {
@@ -281,9 +479,17 @@ describe('SYSTEM_PROMPT (T3 item 2)', () => {
   })
 
   it('limits permit exceptions to listed permits and to what the sign prints', () => {
-    expect(SYSTEM_PROMPT).toMatch(/If the user message lists no permits, permit_exception is \[\]/)
-    expect(SYSTEM_PROMPT).toMatch(/exactly one entry for each listed permit type, in the order listed/)
+    expect(SYSTEM_PROMPT).toMatch(/If the user message lists no permits, permit_exception_type is "none" and permit_exception_text is "" at the top level and in every option/)
+    // One exception per level now, but the model still checks every listed
+    // permit, and picks the first covered one in list order.
+    expect(SYSTEM_PROMPT).toMatch(/Check every listed permit type, not only the first\./)
     expect(SYSTEM_PROMPT).not.toMatch(/use the first one in the list/)
+    expect(SYSTEM_PROMPT).toMatch(
+      /When the sign prints exceptions for more than one listed permit type, or one exception covers several of them, give only the first of those types in the order the user message lists them\./,
+    )
+    expect(SYSTEM_PROMPT).toMatch(/permit_exception_type: the listed permit type[^\n]*Never a type the user message doesn't list\./)
+    expect(SYSTEM_PROMPT).toMatch(/permit_exception_text: the sign's own exception words for that type, copied as printed/)
+    expect(SYSTEM_PROMPT).toMatch(/"" when permit_exception_type is "none"/)
     expect(SYSTEM_PROMPT).toMatch(/THE SIGN ITSELF prints an exception or allowance/)
     expect(SYSTEM_PROMPT).toMatch(/Only what the sign prints counts/)
     expect(SYSTEM_PROMPT).toMatch(/Never work out a concession from state law/)
@@ -296,10 +502,21 @@ describe('SYSTEM_PROMPT (T3 item 2)', () => {
     expect(SYSTEM_PROMPT).toMatch(/On its own it does NOT make the sign an area sign/)
   })
 
-  it('defines the recurring restriction fields', () => {
-    expect(SYSTEM_PROMPT).toMatch(/two-letter codes "MO", "TU", "WE", "TH", "FR", "SA", "SU"/)
+  it('defines the recurring restriction fields, days and weeks as one comma-separated string each', () => {
+    expect(SYSTEM_PROMPT).toMatch(/days: the days it runs, as ONE string of two-letter codes "MO", "TU", "WE", "TH", "FR", "SA", "SU", separated by commas/)
+    expect(SYSTEM_PROMPT).toMatch(/"Mon-Fri" is "MO,TU,WE,TH,FR"/)
     expect(SYSTEM_PROMPT).toMatch(/local 24-hour "HH:MM"/)
-    expect(SYSTEM_PROMPT).toMatch(/week_of_month: \[\] when it runs every week/)
+    expect(SYSTEM_PROMPT).toMatch(/week_of_month: "" when it runs every week/)
+    expect(SYSTEM_PROMPT).toMatch(/"1st and 3rd Tuesday" is "1,3"/)
+    expect(SYSTEM_PROMPT).toMatch(/can't express[^\n]*use "" and copy the pattern into label/)
+    // The list forms the schema no longer takes.
+    expect(SYSTEM_PROMPT).not.toMatch(/\["MO"/)
+    expect(SYSTEM_PROMPT).not.toMatch(/\[1, 3\]/)
+    expect(SYSTEM_PROMPT).not.toMatch(/week_of_month: \[\]/)
+  })
+
+  it('says what a missing or non-parking sign puts in the flat permit fields', () => {
+    expect(SYSTEM_PROMPT).toMatch(/For "missing" and "not_a_parking_sign":[^\n]*permit_exception_type is "none", permit_exception_text is ""/)
   })
 
   it('fixes the "Melbourne local time" contradiction in the until contract', () => {
@@ -478,6 +695,8 @@ describe('translateSign request handling (T3 item 3)', () => {
     expect(text).toContain('Area sign recorded at the first reading: yes')
     expect(text).toMatch(/Echo sign_status, sign_issues and is_area_sign as recorded above/)
     expect(text).toMatch(/recurring_restrictions must be \[\]/)
+    expect(text).toMatch(/Work out permit_exception_type and permit_exception_text from the recorded rules only/)
+    expect(text).not.toMatch(/\bpermit_exception\b/)
   })
 
   it('says "not recorded" for an old record without them', async () => {
@@ -509,7 +728,12 @@ describe('translateSign request handling (T3 item 3)', () => {
     const result = await fresh({ user_permits: RESIDENT })
     expect(result.sign_status).toBe('partially_obscured')
     expect(result).not.toHaveProperty('extra_key')
-    expect(Object.keys(result)).toEqual(Object.keys(RESPONSE_SCHEMA.properties))
+    // The kept shape, not the schema's: the flat permit fields become the list.
+    expect(Object.keys(result)).toEqual(ANSWER_KEYS)
+    expect(result).not.toHaveProperty('permit_exception_type')
+    expect(result).not.toHaveProperty('permit_exception_text')
+    expect(result.permit_exception).toEqual([{ applies: true, permit_type: 'resident', text: 'PERMIT ZONE AREA 25 EXCEPTED' }])
+    expect(result.recurring_restrictions).toEqual([KEPT_CLEARWAY])
   })
 
   it('never logs permit types or area labels', async () => {
@@ -517,7 +741,7 @@ describe('translateSign request handling (T3 item 3)', () => {
     for (const level of ['log', 'warn', 'error', 'info']) {
       vi.spyOn(console, level).mockImplementation((...args) => lines.push(args.map(String).join(' ')))
     }
-    mockModel(fullAnswer({ permit_exception: [{ applies: true, permit_type: 'accessible', text: 'EXCEPT DISABLED' }] }))
+    mockModel(fullAnswer({ permit_exception_type: 'accessible', permit_exception_text: 'EXCEPT DISABLED' }))
     await fresh({ user_permits: [{ type: 'accessible', area: 'Secret Area 77' }] })
     await fresh({ user_permits: [{ type: 'accessible', area: 'Secret Area 77\n' }] }).catch(() => {})
     await handler({
@@ -581,21 +805,41 @@ describe('readPriorSignContext', () => {
 // ─── Item 4: normalizeModelOutput ───────────────────────────────────────
 
 describe('normalizeModelOutput (T3 item 4)', () => {
-  it('passes a complete valid answer through unchanged, keys in schema order', () => {
+  it('reads a complete valid answer into the kept shape, keys in a fixed order', () => {
     const answer = fullAnswer({
       clarification: {
         question: 'Where are you parked?',
         options: [
-          variant({ permit_exception: RESIDENT_NONE }),
-          variant({ label: 'Right side', is_area_sign: true, permit_exception: [{ applies: true, permit_type: 'resident', text: 'AREA 25 EXCEPTED' }] }),
+          variant(),
+          variant({ label: 'Right side', is_area_sign: true, permit_exception_type: 'resident', permit_exception_text: 'AREA 25 EXCEPTED' }),
         ],
       },
       is_area_sign: true,
     })
     const out = normalizeModelOutput(structuredClone(answer), { user_permits: RESIDENT })
-    expect(out).toEqual(answer)
-    expect(Object.keys(out)).toEqual(Object.keys(RESPONSE_SCHEMA.properties))
-    expect(Object.keys(out.clarification.options[0])).toEqual(Object.keys(variantSchema().properties))
+    expect(out).toEqual(
+      keptAnswer({
+        is_area_sign: true,
+        clarification: {
+          question: 'Where are you parked?',
+          options: [
+            keptVariant({ permit_exception: RESIDENT_NONE }),
+            keptVariant({ label: 'Right side', is_area_sign: true, permit_exception: [{ applies: true, permit_type: 'resident', text: 'AREA 25 EXCEPTED' }] }),
+          ],
+        },
+      }),
+    )
+    // The contract the client, storage and PDF read: unchanged by the flat
+    // raw shape (the schema's own keys differ).
+    expect(Object.keys(out)).toEqual(ANSWER_KEYS)
+    expect(Object.keys(out.clarification.options[0])).toEqual(VARIANT_KEYS)
+    expect(Object.keys(out.recurring_restrictions[0])).toEqual(Object.keys(KEPT_CLEARWAY))
+    expect(Object.keys(RESPONSE_SCHEMA.properties)).toEqual(
+      ANSWER_KEYS.flatMap((k) => (k === 'permit_exception' ? ['permit_exception_type', 'permit_exception_text'] : [k])),
+    )
+    expect(Object.keys(variantSchema().properties)).toEqual(
+      VARIANT_KEYS.flatMap((k) => (k === 'permit_exception' ? ['permit_exception_type', 'permit_exception_text'] : [k])),
+    )
   })
 
   it('throws ERR_SIGN_UNREADABLE for an answer that is not an object', () => {
@@ -643,7 +887,7 @@ describe('normalizeModelOutput (T3 item 4)', () => {
       const [r] = normalizeModelOutput(
         fullAnswer({
           recurring_restrictions: [
-            { kind: 'parking', days: ['FR', 'MON', 'TU', 'XX', 'TU', 3], start: '7:00', end: '24:00', week_of_month: [], exceptions_text: '', label: 'x' },
+            { kind: 'parking', days: 'FR,MON,tu,XX,TU,3', start: '7:00', end: '24:00', week_of_month: '', exceptions_text: '', label: 'x' },
           ],
         }),
       ).recurring_restrictions
@@ -652,7 +896,7 @@ describe('normalizeModelOutput (T3 item 4)', () => {
     })
 
     it('treats an unknown permit type as no exception', () => {
-      const out = normalizeModelOutput(fullAnswer({ permit_exception: [{ applies: true, permit_type: 'disabled', text: 'DISABLED 4P' }] }), {
+      const out = normalizeModelOutput(fullAnswer({ permit_exception_type: 'disabled', permit_exception_text: 'DISABLED 4P' }), {
         user_permits: [{ type: 'accessible', area: null }],
       })
       expect(out.permit_exception).toEqual([{ applies: false, permit_type: 'accessible', text: '' }])
@@ -689,10 +933,10 @@ describe('normalizeModelOutput (T3 item 4)', () => {
       const days = ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU']
       const many = Array.from({ length: 12 }, (_, i) => ({
         kind: 'street_cleaning',
-        days: [days[i % 7]],
+        days: days[i % 7],
         start: `0${i % 10}:00`,
         end: '23:00',
-        week_of_month: [],
+        week_of_month: '',
         exceptions_text: 'e'.repeat(300),
         label: 'l'.repeat(300),
       }))
@@ -721,63 +965,108 @@ describe('normalizeModelOutput (T3 item 4)', () => {
   })
 
   describe('recurring restrictions', () => {
-    const base = { kind: 'street_cleaning', days: ['TU'], start: '07:00', end: '09:00', week_of_month: [], exceptions_text: '', label: 'Street cleaning Tue 7am-9am' }
+    // As the model writes it (days and weeks one string each) and as the app keeps it.
+    const raw = { kind: 'street_cleaning', days: 'TU', start: '07:00', end: '09:00', week_of_month: '', exceptions_text: '', label: 'Street cleaning Tue 7am-9am' }
+    const base = { ...raw, days: ['TU'], week_of_month: [] }
+    const one = (overrides) => normalizeModelOutput(fullAnswer({ recurring_restrictions: [{ ...raw, ...overrides }] })).recurring_restrictions
 
     it('drops entries that cannot be scheduled', () => {
       const out = normalizeModelOutput(
         fullAnswer({
           recurring_restrictions: [
-            { ...base, days: [] },
-            { ...base, days: ['TUE'] },
-            { ...base, start: '7am' },
-            { ...base, end: '25:00' },
-            { ...base, start: '09:00', end: '09:00' },
+            { ...raw, days: '' },
+            { ...raw, days: 'TUE' },
+            { ...raw, start: '7am' },
+            { ...raw, end: '25:00' },
+            { ...raw, start: '09:00', end: '09:00' },
             'not an object',
-            base,
+            raw,
           ],
         }),
       )
       expect(out.recurring_restrictions).toEqual([base])
     })
 
+    describe('days, one comma-separated string', () => {
+      it('reads the codes trimmed and upper-cased, each once, in weekday order', () => {
+        expect(one({ days: 'MO,TU,WE,TH,FR' })[0].days).toEqual(['MO', 'TU', 'WE', 'TH', 'FR'])
+        expect(one({ days: ' su , mo,Su,MO ' })[0].days).toEqual(['MO', 'SU'])
+        expect(one({ days: 'FR,,MO,' })[0].days).toEqual(['MO', 'FR'])
+      })
+
+      it('ignores unknown tokens, and drops the restriction when no day is left', () => {
+        expect(one({ days: 'MO,MON,TUESDAY,XX,7' })[0].days).toEqual(['MO'])
+        for (const days of ['', ' , ', 'MON', 'Monday', 'MO TU', 'MO;TU', 'MOTU']) {
+          expect(one({ days }), JSON.stringify(days)).toEqual([])
+        }
+      })
+
+      it('takes only a string: the list form the schema replaced is dropped', () => {
+        for (const days of [['MO', 'TU'], null, undefined, 5]) expect(one({ days }), JSON.stringify(days)).toEqual([])
+      })
+    })
+
+    describe('week_of_month, one comma-separated string', () => {
+      it('reads "1,3" as weeks 1 and 3, sorted and unique', () => {
+        expect(one({ week_of_month: '1,3' })[0].week_of_month).toEqual([1, 3])
+        expect(one({ week_of_month: ' 3, 1 ,3' })[0].week_of_month).toEqual([1, 3])
+        expect(one({ week_of_month: '5,4,3,2,1' })[0].week_of_month).toEqual([1, 2, 3, 4, 5])
+      })
+
+      it('reads "" (or only commas and spaces) as every week', () => {
+        for (const week_of_month of ['', '  ', ',', ' , ']) {
+          expect(one({ week_of_month })[0].week_of_month, JSON.stringify(week_of_month)).toEqual([])
+        }
+      })
+
+      it('keeps weeks 1 to 5 only, ignoring other tokens', () => {
+        expect(one({ week_of_month: '3,0,1,3,6,2.5,last, 2 ' })[0].week_of_month).toEqual([1, 2, 3])
+        expect(one({ week_of_month: '1,last' })[0].week_of_month).toEqual([1])
+      })
+
+      it('drops the restriction when weeks are named but none is 1 to 5, rather than show it every week', () => {
+        for (const week_of_month of ['last', '0', '6', '-1', '1st', '01', 'first,third', '2.5']) {
+          expect(one({ week_of_month }), week_of_month).toEqual([])
+        }
+      })
+
+      it('takes only a string: the list form the schema replaced, null or a missing value drops it', () => {
+        for (const week_of_month of [[1, 3], [], null, undefined, 1]) {
+          expect(one({ week_of_month }), JSON.stringify(week_of_month)).toEqual([])
+        }
+      })
+    })
+
     it('keeps an all-day restriction written as 00:00 to 24:00, ending at 23:59', () => {
-      const allDay = { ...base, kind: 'no_stopping', days: ['SU'], start: '00:00', end: '24:00', label: 'No Stopping Sunday' }
-      const [r] = normalizeModelOutput(fullAnswer({ recurring_restrictions: [allDay] })).recurring_restrictions
-      expect(r).toEqual({ ...allDay, end: '23:59' })
+      const [r] = one({ kind: 'no_stopping', days: 'SU', start: '00:00', end: '24:00', label: 'No Stopping Sunday' })
+      expect(r).toEqual({ ...base, kind: 'no_stopping', days: ['SU'], start: '00:00', end: '23:59', label: 'No Stopping Sunday' })
       // 'H:MM' and an evening-to-end-of-day window too.
-      expect(normalizeModelOutput(fullAnswer({ recurring_restrictions: [{ ...base, start: '0:00', end: '24:00' }] })).recurring_restrictions).toHaveLength(1)
-      const [late] = normalizeModelOutput(fullAnswer({ recurring_restrictions: [{ ...base, start: '22:00', end: '24:00' }] })).recurring_restrictions
+      expect(one({ start: '0:00', end: '24:00' })).toHaveLength(1)
+      const [late] = one({ start: '22:00', end: '24:00' })
       expect([late.start, late.end]).toEqual(['22:00', '23:59'])
       // As a start time, 24:00 is midnight.
-      const [overnight] = normalizeModelOutput(fullAnswer({ recurring_restrictions: [{ ...base, start: '24:00', end: '06:00' }] }))
-        .recurring_restrictions
+      const [overnight] = one({ start: '24:00', end: '06:00' })
       expect([overnight.start, overnight.end]).toEqual(['00:00', '06:00'])
     })
 
-    it('keeps weeks 1 to 5 only, sorted and unique', () => {
-      const [r] = normalizeModelOutput(fullAnswer({ recurring_restrictions: [{ ...base, week_of_month: [3, 0, 1, 3, 6, 2.5, '2'] }] }))
-        .recurring_restrictions
-      expect(r.week_of_month).toEqual([1, 3])
-    })
-
     it('lists a restriction repeated on two plates once', () => {
-      const out = normalizeModelOutput(fullAnswer({ recurring_restrictions: [base, { ...base, label: 'Same, other plate' }] }))
+      const out = normalizeModelOutput(fullAnswer({ recurring_restrictions: [raw, { ...raw, days: ' tu', label: 'Same, other plate' }] }))
       expect(out.recurring_restrictions).toEqual([base])
     })
 
     it('becomes [] when the field is missing or not a list', () => {
       expect(normalizeModelOutput(fullAnswer({ recurring_restrictions: undefined })).recurring_restrictions).toEqual([])
-      expect(normalizeModelOutput(fullAnswer({ recurring_restrictions: base })).recurring_restrictions).toEqual([])
+      expect(normalizeModelOutput(fullAnswer({ recurring_restrictions: raw })).recurring_restrictions).toEqual([])
     })
 
     it('answers only restrictions the app keeps as they are: the one check, readRecurringRestrictions (polish list)', () => {
       const out = normalizeModelOutput(
         fullAnswer({
           recurring_restrictions: [
-            { ...base, start: '7:00', end: '24:00', week_of_month: [3, 1] },
-            { ...base, kind: 'parade', days: ['SA', 'MO'] },
-            { ...base, week_of_month: 'first' },
-            { ...base, end: '07:00' },
+            { ...raw, start: '7:00', end: '24:00', week_of_month: '3,1' },
+            { ...raw, kind: 'parade', days: 'SA,MO' },
+            { ...raw, week_of_month: 'first' },
+            { ...raw, end: '07:00' },
           ],
         }),
       ).recurring_restrictions
@@ -786,6 +1075,16 @@ describe('normalizeModelOutput (T3 item 4)', () => {
         { ...base, kind: 'other', days: ['MO', 'SA'] },
       ])
       expect(readRecurringRestrictions(out)).toEqual(out)
+    })
+
+    it('leaves the stored-record check as it was: lists in, lists out', () => {
+      // readRecurringRestriction(s) reads records in storage and the cloud,
+      // which keep days and weeks as lists. Only the model's answer uses strings.
+      expect(readRecurringRestrictions([base, { ...base, days: ['SA', 'MO'], week_of_month: [3, 1] }])).toEqual([
+        base,
+        { ...base, days: ['MO', 'SA'], week_of_month: [1, 3] },
+      ])
+      expect(readRecurringRestrictions([raw])).toEqual([])
     })
   })
 
@@ -839,32 +1138,33 @@ describe('normalizeModelOutput (T3 item 4)', () => {
     })
   })
 
-  describe('permit exceptions (one entry per listed permit type)', () => {
+  describe('permit exceptions (two flat fields in, one entry per listed permit type out)', () => {
     const exception = { applies: true, permit_type: 'resident', text: 'PERMIT ZONE AREA 25 EXCEPTED' }
+    /** The model's flat fields. */
+    const flat = (type, text) => ({ permit_exception_type: type, permit_exception_text: text })
+    const RESIDENT_EXCEPTED = flat('resident', 'PERMIT ZONE AREA 25 EXCEPTED')
 
     it('keeps an exception for a permit type the user listed', () => {
-      expect(normalizeModelOutput(fullAnswer({ permit_exception: [exception] }), { user_permits: RESIDENT }).permit_exception).toEqual([exception])
+      expect(normalizeModelOutput(fullAnswer(RESIDENT_EXCEPTED), { user_permits: RESIDENT }).permit_exception).toEqual([exception])
     })
 
-    it('reports every listed permit type the sign covers, not just the first', () => {
-      // A sign printing "DISABLED PERMIT HOLDERS 4P" and "RESIDENT PERMITS EXCEPTED", with both permits saved.
-      const out = normalizeModelOutput(
-        fullAnswer({
-          permit_exception: [
-            { applies: true, permit_type: 'accessible', text: 'DISABLED PERMIT HOLDERS 4P' },
-            { applies: true, permit_type: 'resident', text: 'RESIDENT PERMITS EXCEPTED' },
-          ],
-        }),
-        { user_permits: [{ type: 'accessible', area: null }, { type: 'resident', area: 'Area 25' }] },
-      )
+    it('reports at most one exception per level: with two permits listed, only the reported type applies', () => {
+      // A sign printing "DISABLED PERMIT HOLDERS 4P" and "RESIDENT PERMITS
+      // EXCEPTED", with both permits saved. The model reports one of them
+      // (the first listed, as the prompt says); the other reads as none.
+      // Before 9 Nov 2026 the model could report both.
+      const out = normalizeModelOutput(fullAnswer(flat('accessible', 'DISABLED PERMIT HOLDERS 4P')), {
+        user_permits: [{ type: 'accessible', area: null }, { type: 'resident', area: 'Area 25' }],
+      })
       expect(out.permit_exception).toEqual([
         { applies: true, permit_type: 'accessible', text: 'DISABLED PERMIT HOLDERS 4P' },
-        { applies: true, permit_type: 'resident', text: 'RESIDENT PERMITS EXCEPTED' },
+        { applies: false, permit_type: 'resident', text: '' },
       ])
+      expect(out.permit_exception.filter((e) => e.applies)).toHaveLength(1)
     })
 
-    it('has exactly one entry per listed type, in list order, filling in the ones the model left out', () => {
-      const out = normalizeModelOutput(fullAnswer({ permit_exception: [exception] }), {
+    it('has exactly one entry per listed type, in list order, a type listed twice once', () => {
+      const out = normalizeModelOutput(fullAnswer(RESIDENT_EXCEPTED), {
         user_permits: [
           { type: 'business', area: null },
           { type: 'resident', area: 'Area 25' },
@@ -874,29 +1174,53 @@ describe('normalizeModelOutput (T3 item 4)', () => {
       expect(out.permit_exception).toEqual([{ applies: false, permit_type: 'business', text: '' }, exception])
     })
 
-    it('drops an entry for a permit type the user did not list', () => {
-      const out = normalizeModelOutput(fullAnswer({ permit_exception: [exception] }), { user_permits: [{ type: 'accessible', area: null }] })
+    it('drops an exception for a permit type the user did not list', () => {
+      const out = normalizeModelOutput(fullAnswer(RESIDENT_EXCEPTED), { user_permits: [{ type: 'accessible', area: null }] })
       expect(out.permit_exception).toEqual([{ applies: false, permit_type: 'accessible', text: '' }])
     })
 
+    it('reads "none" as no exception for any listed type, whatever the text says', () => {
+      const permits = [{ type: 'accessible', area: null }, { type: 'resident', area: 'Area 25' }]
+      for (const answer of [flat('none', ''), flat('none', 'PERMIT ZONE AREA 25 EXCEPTED')]) {
+        expect(normalizeModelOutput(fullAnswer(answer), { user_permits: permits }).permit_exception).toEqual([
+          { applies: false, permit_type: 'accessible', text: '' },
+          { applies: false, permit_type: 'resident', text: '' },
+        ])
+      }
+    })
+
     it('has no entries when no permits were listed', () => {
-      expect(normalizeModelOutput(fullAnswer({ permit_exception: [exception] })).permit_exception).toEqual(NONE)
-      expect(normalizeModelOutput(fullAnswer({ permit_exception: [exception] }), { user_permits: [] }).permit_exception).toEqual(NONE)
+      expect(normalizeModelOutput(fullAnswer(RESIDENT_EXCEPTED)).permit_exception).toEqual(NONE)
+      expect(normalizeModelOutput(fullAnswer(RESIDENT_EXCEPTED), { user_permits: [] }).permit_exception).toEqual(NONE)
     })
 
     it('needs a quote from the sign', () => {
-      const out = normalizeModelOutput(fullAnswer({ permit_exception: [{ ...exception, text: ch(0x202e) + '  ' }] }), { user_permits: RESIDENT })
-      expect(out.permit_exception).toEqual(RESIDENT_NONE)
+      for (const text of [ch(0x202e) + '  ', '', '   ', null, undefined, 25]) {
+        const out = normalizeModelOutput(fullAnswer(flat('resident', text)), { user_permits: RESIDENT })
+        expect(out.permit_exception, JSON.stringify(text)).toEqual(RESIDENT_NONE)
+      }
     })
 
-    it('clears the text when applies is false', () => {
-      const out = normalizeModelOutput(fullAnswer({ permit_exception: [{ ...exception, applies: false }] }), { user_permits: RESIDENT })
-      expect(out.permit_exception).toEqual(RESIDENT_NONE)
+    it('fits the quote to its cap and strips control and bidi characters', () => {
+      const out = normalizeModelOutput(fullAnswer(flat('resident', ' AREA' + ch(0x202e) + '25 ' + 'X'.repeat(300))), { user_permits: RESIDENT })
+      const [entry] = out.permit_exception
+      expect(entry.applies).toBe(true)
+      expect(entry.text.startsWith('AREA 25 X')).toBe(true)
+      expect(entry.text).toHaveLength(SIGN_READING_CAPS.permitExceptionText)
     })
 
-    it('reads a single object instead of a list as no exception rather than guessing', () => {
-      const out = normalizeModelOutput(fullAnswer({ permit_exception: exception }), { user_permits: RESIDENT })
-      expect(out.permit_exception).toEqual(RESIDENT_NONE)
+    it('matches the type exactly: another case, a missing type or a list is no exception', () => {
+      for (const type of ['Resident', 'RESIDENT', ' resident', 'residents', null, undefined, ['resident']]) {
+        const out = normalizeModelOutput(fullAnswer(flat(type, 'PERMIT ZONE AREA 25 EXCEPTED')), { user_permits: RESIDENT })
+        expect(out.permit_exception, JSON.stringify(type)).toEqual(RESIDENT_NONE)
+      }
+    })
+
+    it('ignores the list form the schema replaced rather than guessing', () => {
+      const old = fullAnswer({ permit_exception: [exception] })
+      delete old.permit_exception_type
+      delete old.permit_exception_text
+      expect(normalizeModelOutput(old, { user_permits: RESIDENT }).permit_exception).toEqual(RESIDENT_NONE)
     })
   })
 
@@ -929,8 +1253,8 @@ describe('normalizeModelOutput (T3 item 4)', () => {
           clarification: {
             question: 'Where are you parked?',
             options: [
-              variant({ permit_exception: [{ applies: true, permit_type: 'resident', text: 'AREA 25 EXCEPTED' }] }),
-              variant({ label: 'Right side', permit_exception: [{ applies: true, permit_type: 'business', text: 'TRADERS EXCEPTED' }] }),
+              variant({ permit_exception_type: 'resident', permit_exception_text: 'AREA 25 EXCEPTED' }),
+              variant({ label: 'Right side', permit_exception_type: 'business', permit_exception_text: 'TRADERS EXCEPTED' }),
             ],
           },
         }),
@@ -1013,14 +1337,14 @@ describe('normalizeModelOutput (T3 item 4)', () => {
     })
 
     it('keeps the most restrictive answer and the issues on a contradictory sign', () => {
-      const answer = fullAnswer({
+      const restrictive = {
         sign_status: 'contradictory',
         sign_issues: ['Right arrow plates disagree: 2P and No Parking. Applied No Parking.'],
         can_park_now: false,
         until: null,
         duration_minutes: null,
-      })
-      expect(normalizeModelOutput(structuredClone(answer), { user_permits: RESIDENT })).toEqual(answer)
+      }
+      expect(normalizeModelOutput(fullAnswer(restrictive), { user_permits: RESIDENT })).toEqual(keptAnswer(restrictive))
     })
 
     it.each(NO_READABLE_SIGN_STATUSES)('carries no reading at all when the status is %s', (status) => {

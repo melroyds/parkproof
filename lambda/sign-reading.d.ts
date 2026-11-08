@@ -8,6 +8,8 @@ export type RecurringKind = 'street_cleaning' | 'clearway' | 'no_stopping' | 'ot
 export type WeekdayCode = 'MO' | 'TU' | 'WE' | 'TH' | 'FR' | 'SA' | 'SU'
 
 export declare const USER_PERMIT_TYPES: readonly UserPermitType[]
+/** The model's permit_exception_type when the sign prints no exception for any listed permit. */
+export declare const NO_PERMIT_EXCEPTION_TYPE: 'none'
 export declare const CONFIDENCE_LEVELS: readonly ('low' | 'medium' | 'high')[]
 export declare const RECURRING_KINDS: readonly RecurringKind[]
 export declare const WEEKDAYS: readonly WeekdayCode[]
@@ -80,7 +82,10 @@ export function readPriorSignContext(body: unknown): PriorSignContext
 /**
  * What the sign itself prints for one of the user's permit types. Answers
  * carry one per listed type, in list order ([] when none are listed), so
- * `permit_type` is always set there; the schema keeps it nullable.
+ * `permit_type` is always set there; the type keeps it nullable, as the
+ * client's PermitException does. The model reports one exception per level
+ * (two flat fields, mapped by normalizeModelOutput), so at most one entry
+ * per level applies.
  */
 export interface PermitExceptionShape {
   applies: boolean

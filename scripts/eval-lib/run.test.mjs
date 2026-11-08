@@ -12,7 +12,14 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { promisify } from 'node:util'
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest'
-import { RESPONSE_SCHEMA, SYSTEM_PROMPT, canonicalize, setSignClientWrapper, translateSign } from '../../lambda/index.js'
+import {
+  RESPONSE_SCHEMA,
+  SYSTEM_PROMPT,
+  canonicalize,
+  normalizeModelOutput,
+  setSignClientWrapper,
+  translateSign,
+} from '../../lambda/index.js'
 import { normalizeEntry } from './corpus.mjs'
 import {
   DRY_RUN_USAGE,
@@ -214,12 +221,18 @@ describe('the model clients around the real translateSign', () => {
 
 /**
  * The JSON-schema subset RESPONSE_SCHEMA uses (type, enum, anyOf, items,
- * properties, required, additionalProperties false). Returns the paths
- * that don't match, [] when the value matches.
+ * properties, required, additionalProperties false, and $ref into the
+ * root's $defs). Returns the paths that don't match, [] when the value
+ * matches.
  */
-function schemaErrors(schema, value, path = '$') {
+function schemaErrors(schema, value, path = '$', root = schema) {
+  if (schema.$ref) {
+    const name = /^#\/\$defs\/(.+)$/.exec(schema.$ref)?.[1]
+    const target = name ? root.$defs?.[name] : undefined
+    return target ? schemaErrors(target, value, path, root) : [`${path}: unresolved $ref ${schema.$ref}`]
+  }
   if (schema.anyOf) {
-    return schema.anyOf.some((s) => schemaErrors(s, value, path).length === 0) ? [] : [`${path}: matches no anyOf branch`]
+    return schema.anyOf.some((s) => schemaErrors(s, value, path, root).length === 0) ? [] : [`${path}: matches no anyOf branch`]
   }
   const typeOk = {
     object: () => value !== null && typeof value === 'object' && !Array.isArray(value),
@@ -233,11 +246,11 @@ function schemaErrors(schema, value, path = '$') {
   if (typeOk && !typeOk()) return [`${path}: not ${schema.type}`]
   if (schema.enum && !schema.enum.includes(value)) return [`${path}: ${JSON.stringify(value)} not in enum`]
   const errors = []
-  if (schema.type === 'array' && schema.items) value.forEach((v, i) => errors.push(...schemaErrors(schema.items, v, `${path}[${i}]`)))
+  if (schema.type === 'array' && schema.items) value.forEach((v, i) => errors.push(...schemaErrors(schema.items, v, `${path}[${i}]`, root)))
   if (schema.type === 'object' && schema.properties) {
     for (const key of schema.required ?? []) if (!(key in value)) errors.push(`${path}.${key}: missing`)
     for (const [key, v] of Object.entries(value)) {
-      if (schema.properties[key]) errors.push(...schemaErrors(schema.properties[key], v, `${path}.${key}`))
+      if (schema.properties[key]) errors.push(...schemaErrors(schema.properties[key], v, `${path}.${key}`, root))
       else if (schema.additionalProperties === false) errors.push(`${path}.${key}: not in schema`)
     }
   }
@@ -251,16 +264,27 @@ describe('answerFromLabel', () => {
       sign_status: 'readable',
       sign_issues: [],
       is_area_sign: false,
-      permit_exception: [],
+      permit_exception_type: 'none',
+      permit_exception_text: '',
       recurring_restrictions: [],
     })
+    expect(plain).not.toHaveProperty('permit_exception')
     const stated = answerFromLabel(
       label({ id: 'stated', expected_sign_status: 'partially_obscured', expected_variant: 'Left side', expected_flags: { is_area_sign: true } }),
     )
     expect(stated).toMatchObject({ sign_status: 'partially_obscured', is_area_sign: true })
     for (const option of stated.clarification.options) {
-      expect(option).toMatchObject({ is_area_sign: true, permit_exception: [] })
+      expect(option).toMatchObject({ is_area_sign: true, permit_exception_type: 'none', permit_exception_text: '' })
     }
+  })
+
+  it('reads through the normaliser into the kept shape: no permit exception, no weekly restrictions', () => {
+    const out = normalizeModelOutput(
+      answerFromLabel(label({ id: 'kept', expected_variant: 'Left side', expected_flags: { is_area_sign: true } })),
+    )
+    expect(out.permit_exception).toEqual([])
+    expect(out.recurring_restrictions).toEqual([])
+    for (const option of out.clarification.options) expect(option.permit_exception).toEqual([])
   })
 
   it('matches the sign reader\'s RESPONSE_SCHEMA, with and without a position question', () => {
@@ -277,8 +301,21 @@ describe('answerFromLabel', () => {
       ),
     ]
     for (const a of answers) expect(schemaErrors(RESPONSE_SCHEMA, a)).toEqual([])
-    // The checker itself catches the shape T3 replaced.
-    expect(schemaErrors(RESPONSE_SCHEMA, { ...answers[0], permit_exception: { applies: false, permit_type: null, text: '' } })).not.toEqual([])
+    // The checker itself catches the shapes the schema replaced (9 Nov
+    // 2026): the permit_exception list, and days and weeks as lists.
+    expect(schemaErrors(RESPONSE_SCHEMA, { ...answers[0], permit_exception: [] })).toEqual(['$.permit_exception: not in schema'])
+    const noType = { ...answers[0] }
+    delete noType.permit_exception_type
+    expect(schemaErrors(RESPONSE_SCHEMA, noType)).toEqual(['$.permit_exception_type: missing'])
+    expect(schemaErrors(RESPONSE_SCHEMA, { ...answers[0], permit_exception_type: null })).toEqual(['$.permit_exception_type: not string'])
+    const weekly = { kind: 'street_cleaning', days: 'TU', start: '07:00', end: '09:00', week_of_month: '1,3', exceptions_text: '', label: 'Street cleaning' }
+    expect(schemaErrors(RESPONSE_SCHEMA, { ...answers[0], recurring_restrictions: [weekly] })).toEqual([])
+    expect(schemaErrors(RESPONSE_SCHEMA, { ...answers[0], recurring_restrictions: [{ ...weekly, days: ['TU'], week_of_month: [1, 3] }] })).toEqual([
+      '$.recurring_restrictions[0].days: not string',
+      '$.recurring_restrictions[0].week_of_month: not string',
+    ])
+    // And follows the $defs references.
+    expect(schemaErrors(RESPONSE_SCHEMA, { ...answers[0], observations: [{ scope: 'Whole sign' }] })).toEqual(['$.observations[0].items: missing'])
   })
 })
 
