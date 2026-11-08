@@ -172,7 +172,8 @@
     "aiCaveat": "Đây là kết quả AI đọc biển báo. Luôn liếc nhìn biển báo thực tế trước khi rời xe.",
     "cantParkOverride": "Thấy kết quả này sai? Bạn vẫn có thể ghi nhận chỗ này làm bằng chứng.",
     "cantParkOverrideCta": "Vẫn ghi nhận",
-    "firstSaveValue": "Lưu lại giúp giữ một bản ghi có dấu thời gian, phát hiện được mọi thay đổi. Đây là bằng chứng của bạn phòng khi bị phạt oan."
+    "firstSaveValue": "Lưu lại giúp giữ một bản ghi có dấu thời gian, phát hiện được mọi thay đổi. Đây là bằng chứng của bạn phòng khi bị phạt oan.",
+    "weeklyRestrictionHint": "Biển báo này có hạn chế lặp lại hằng tuần. Bạn có thể đặt lời nhắc sau khi lưu."
   },
   "logger": {
     "header": "Ghi lại bản ghi đỗ xe này",
@@ -547,7 +548,8 @@
         "departureSigned": "Thời điểm ParkProof ký phần rời đi (đồng hồ máy chủ)",
         "departureLocation": "Vị trí điện thoại lúc nhấn \"Tôi đã đi\" (GPS)",
         "departureDistance": "Khoảng cách ước tính từ vị trí lúc đến (GPS điện thoại)",
-        "locationCoords": "Vị trí (tọa độ)"
+        "locationCoords": "Vị trí (tọa độ)",
+        "signCondition": "Tình trạng biển báo"
       },
       "locationSourceValue": {
         "manuallyEntered": "Nhập thủ công",
@@ -589,7 +591,16 @@
         "high": "Cao",
         "medium": "Trung bình",
         "low": "Thấp"
-      }
+      },
+      "signCondition": {
+        "readable": "Đọc được trong ảnh",
+        "partiallyObscured": "Một phần khó đọc trong ảnh",
+        "contradictory": "Các phần của biển báo mâu thuẫn nhau",
+        "missing": "Không tìm thấy biển báo đỗ xe trong ảnh",
+        "notAParkingSign": "Ảnh chụp thứ khác, không phải biển báo đỗ xe",
+        "notes": "Ghi chú của AI: {{notes}}"
+      },
+      "noSignRead": "Không đọc được biển báo. ParkProof không tìm thấy biển báo đỗ xe nào đọc được trong ảnh, và tài xế đã ghi nhận lần đỗ xe này mà không có biển báo."
     },
     "signature": {
       "title": "Chữ ký mã hóa",
@@ -927,5 +938,23 @@
       "returnDetail": "Tình trạng khi quay lại, cận cảnh",
       "compliance": "Ảnh bằng chứng thanh toán hoặc giấy phép"
     }
+  },
+  "unclearSign": {
+    "obscuredTitle": "Một phần biển báo này khó đọc",
+    "contradictoryTitle": "Các phần của biển báo này mâu thuẫn nhau",
+    "strictest": "Câu trả lời ở trên dùng cách hiểu nghiêm ngặt nhất. Hãy tự kiểm tra biển báo trước khi rời xe.",
+    "worthRecording": "Một biển báo không đọc rõ được thì đáng để lưu lại bản ghi.",
+    "notesLabel": "Những gì AI nhận thấy",
+    "noSignTitle": "Không có biển báo đỗ xe đọc được",
+    "noSignBody": "Chúng tôi không tìm thấy biển báo đỗ xe nào đọc được trong ảnh này. Điều đó không có nghĩa là ở đây không có quy định. Các luật giao thông chung vẫn áp dụng, chẳng hạn không được đỗ xe trong phạm vi 10 mét tính từ giao lộ không có đèn giao thông, và một số khu vực có giới hạn thời gian dù không phải con đường nào cũng có biển báo.",
+    "photoAlt": "Ảnh bạn đã chụp",
+    "retake": "Chụp lại ảnh",
+    "logWithoutSign": "Ghi nhận mà không có biển báo",
+    "photoCaption": "Ảnh chụp tại chỗ bạn đỗ xe. ParkProof không tìm thấy biển báo đỗ xe nào đọc được trong ảnh.",
+    "loggerIntro": "Chúng tôi sẽ lưu thời gian và địa điểm bạn đỗ xe, cùng với ảnh bạn đã chụp.",
+    "loggerBanner": "Bản ghi sẽ nêu rằng ParkProof không tìm thấy biển báo đỗ xe nào đọc được trong ảnh của bạn và bạn đã ghi nhận lần đỗ xe này mà không có biển báo. Bản ghi không chứng tỏ ở đây không có biển báo.",
+    "recordNoSignRead": "Không đọc được biển báo. ParkProof không tìm thấy biển báo đỗ xe nào đọc được trong ảnh, và bạn đã ghi nhận lần đỗ xe này mà không có biển báo.",
+    "noSignReadLabel": "Không đọc được biển báo",
+    "remindIntro": "Lần đỗ xe này không đọc được biển báo nào, nên không có giờ hết hạn để nhắc bạn. Bạn vẫn có thể đặt nhắc kiểm tra. Chọn sau bao lâu kể từ bây giờ, chọn bao nhiêu cũng được."
   }
 }

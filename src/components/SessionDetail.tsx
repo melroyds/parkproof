@@ -26,6 +26,7 @@ import { verifyUrlForLocale } from '../lib/verify-url'
 import { signedTimeOf } from '../lib/chain-view'
 import { formatInZone } from '../lib/time-format'
 import { RECORD_STATUS_ID } from '../lib/focus-targets'
+import { isNoSignReadRecord } from '../lib/sign-result'
 
 const NOTE_MAX_LENGTH = 280
 
@@ -80,6 +81,9 @@ export default function SessionDetail({
   // The surroundings photo's caption describes the photo, so it shows only
   // when the photo itself does (not under the "not on this device" line).
   const ambientPhoto = useSessionPhoto(session, 'ambient')
+  // T3: logged from the "no readable sign" screen, so the surroundings
+  // photo is the scan photo in which ParkProof found no readable sign.
+  const noSignRead = isNoSignReadRecord(session)
   const expiresMs = session.expires_at ? new Date(session.expires_at).getTime() : null
   const isExpired = expiresMs !== null && expiresMs < now
   const isEnded = !!session.ended_at
@@ -391,7 +395,7 @@ export default function SessionDetail({
             <dd className="mt-1 text-ink-900">
               {session.no_sign ? (
                 <span className="italic text-ink-600">
-                  {t('session.noSignBadgeLong')}
+                  {noSignRead ? t('unclearSign.recordNoSignRead') : t('session.noSignBadgeLong')}
                 </span>
               ) : (
                 session.rules
@@ -573,10 +577,10 @@ export default function SessionDetail({
       {session.no_sign && (
         <Card className="mb-3 rounded-2xl border-transparent shadow-[0_14px_40px_rgba(7,59,37,0.16),0_2px_6px_rgba(7,59,37,0.08)]">
           <h3 className="text-xs uppercase tracking-widest font-semibold text-ink-600 mb-2">
-            {t('session.noSignLabel')}
+            {noSignRead ? t('unclearSign.noSignReadLabel') : t('session.noSignLabel')}
           </h3>
           <p className="text-sm text-ink-700 leading-relaxed mb-3">
-            {t('session.noSignDescription')}
+            {noSignRead ? t('unclearSign.recordNoSignRead') : t('session.noSignDescription')}
           </p>
           {hasSessionPhoto(session, 'ambient') ? (
             <>
@@ -589,7 +593,7 @@ export default function SessionDetail({
               />
               {ambientPhoto.status === 'available' && (
                 <p className="text-xs text-ink-600 mt-2">
-                  {t('session.ambientPhotoCaption')}
+                  {noSignRead ? t('unclearSign.photoCaption') : t('session.ambientPhotoCaption')}
                 </p>
               )}
             </>

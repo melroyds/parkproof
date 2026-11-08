@@ -22,6 +22,7 @@ import LanguageSelector from './components/LanguageSelector'
 import BrandMark from './components/BrandMark'
 import Icon from './components/Icon'
 import LoadingProgress from './components/LoadingProgress'
+import NoReadableSign from './components/NoReadableSign'
 import { refreshInterpretation, translateSign } from './lib/claude'
 import {
   deleteSession,
@@ -57,6 +58,15 @@ import {
   signNewRecord,
 } from './lib/signing'
 import { emptyLogDraft } from './lib/evidence-chain'
+import {
+  applyRefreshOverride,
+  mergeChosenVariant,
+  noSignReadingOf,
+  refreshPriorOf,
+  viewForReading,
+  type NoSignReading,
+  type ReadingView,
+} from './lib/sign-result'
 import { completeDeparture, requestDepartureFix, type DepartureFixRequest } from './lib/departure'
 import { HOME_SCAN_ID, RECORD_STATUS_ID, firstFocusTarget } from './lib/focus-targets'
 import { useAuth } from './lib/use-auth'
@@ -76,7 +86,7 @@ import type { LogDraft, ParkingRules, ParkingSession, RuleVariant } from './type
 
 type Coords = { lat: number; lng: number } | null
 
-interface ScanView<N extends 'clarify' | 'result' | 'logging'> {
+interface ScanView<N extends 'clarify' | 'result' | 'logging' | 'noReadableSign'> {
   name: N
   result: ParkingRules
   signPhoto: string
@@ -102,11 +112,27 @@ type View =
   | ScanView<'result'>
   | ScanView<'logging'>
   /**
+   * T3: the sign reader found no readable parking sign in the photo
+   * ('missing' or 'not_a_parking_sign'). No answer is shown; the driver
+   * retakes the photo or logs the park without a sign.
+   */
+  | ScanView<'noReadableSign'>
+  /**
    * "No sign here" flow — user parked at a spot with no signage and wants a
    * GPS + time evidence record without the AI translation. The ambient photo
    * (optional, opt-in) demonstrates absence of signs.
+   *
+   * `unread` (T3) is set when the driver came from the "no readable sign"
+   * screen: the scan photo is the surroundings photo, the record keeps the
+   * status ParkProof found, and Cancel goes back to that screen.
    */
-  | { name: 'logNoSign'; coords: Coords; ambientPhoto: string | null; ambientPhotoMeta: PhotoCaptureMeta | null }
+  | {
+      name: 'logNoSign'
+      coords: Coords
+      ambientPhoto: string | null
+      ambientPhotoMeta: PhotoCaptureMeta | null
+      unread?: { reading: NoSignReading; back: ScanView<'noReadableSign'> }
+    }
   | { name: 'remind'; session: ParkingSession }
   | { name: 'history' }
   | { name: 'actives' }
@@ -127,6 +153,18 @@ interface DepartureSheetState {
   session: ParkingSession
   fix: DepartureFixRequest
   confirmKey: 'active.iveLeftConfirm' | 'session.endConfirm'
+}
+
+/** The scan view an answer goes to (viewForReading), carrying the scan's photo, place and draft. */
+function scanViewFor(name: ReadingView, fields: Omit<ScanView<'result'>, 'name'>): View {
+  switch (name) {
+    case 'noReadableSign':
+      return { name, ...fields }
+    case 'clarify':
+      return { name, ...fields }
+    default:
+      return { name: 'result', ...fields }
+  }
 }
 
 function stripDataUrlPrefix(dataUrl: string): string {
@@ -409,11 +447,8 @@ function App() {
       const base64 = stripDataUrlPrefix(dataUrl)
       const result = await translateSign(base64, mediaType, coords)
       const draft = emptyLogDraft()
-      if (result.clarification && result.clarification.options.length > 1) {
-        setView({ name: 'clarify', result, signPhoto: dataUrl, signPhotoMeta, coords, draft })
-      } else {
-        setView({ name: 'result', result, signPhoto: dataUrl, signPhotoMeta, coords, draft })
-      }
+      // 'missing' and 'not_a_parking_sign' have no answer to show (T3).
+      setView(scanViewFor(viewForReading(result), { result, signPhoto: dataUrl, signPhotoMeta, coords, draft }))
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err)
       setView({ name: 'error', message, offline: isOffline() })
@@ -428,32 +463,10 @@ function App() {
     coords: Coords,
     draft: LogDraft,
   ) => {
-    const alternates =
-      base.clarification?.options.filter((o) => o.label !== variant.label) ?? []
-    const merged: ParkingRules = {
-      ...base,
-      rules: variant.rules,
-      observations: variant.observations,
-      can_park_now: variant.can_park_now,
-      until: variant.until,
-      duration_minutes: variant.duration_minutes,
-      // Variant carries its own transition awareness — use it in preference
-      // to the top-level one (which describes the unmerged combined rule).
-      next_transition: variant.next_transition ?? base.next_transition ?? null,
-      // Disability-permit requirement is per-variant on multi-arrow signs
-      // (left = general, right = ♿ only). Carry the chosen variant's flag
-      // up to the top-level result so the ParkingResult gate fires only
-      // when the side the user actually picked is permit-restricted.
-      requires_disabled_permit: variant.requires_disabled_permit ?? false,
-      // Permit-zone flag + area work the same way — variant-scoped on signs
-      // where one side is permit-zone and another is general parking, so
-      // the gate only fires when the chosen side is actually permit-restricted.
-      is_permit_zone: variant.is_permit_zone ?? false,
-      permit_area: variant.permit_area ?? null,
-      clarification: null,
-      chosen_label: variant.label,
-      alternate_variants: alternates,
-    }
+    // The picked position's rules, answer and per-position flags (permit
+    // gates, and from T3 the area flag and permit exception) replace the
+    // whole sign's; see mergeChosenVariant.
+    const merged = mergeChosenVariant(base, variant)
     setView({ name: 'result', result: merged, signPhoto, signPhotoMeta, coords, draft })
   }
 
@@ -488,32 +501,23 @@ function App() {
     const signPhotoMeta = reusedPhotoMeta(session, 'sign')
     setView({ name: 'loading' })
     try {
-      const fresh = await refreshInterpretation(
-        {
-          rules: session.rules,
-          observations: session.observations,
-          chosen_label: session.chosen_label,
-        },
-        session.location,
-      )
+      // The earlier reading, with what it saw in the photo (T3: the sign's
+      // condition and the area flag), which the server echoes back.
+      const fresh = await refreshInterpretation(refreshPriorOf(session), session.location)
       // Trust the model only for current-time fields. Everything else is the
       // user-verified prior reading — we don't want the model to "re-creatively"
-      // change observations, rules text, or the chosen variant.
-      const result: ParkingRules = {
-        ...fresh,
-        rules: session.rules,
-        observations: session.observations,
-        confidence: 'high',
-        clarification: null,
-        chosen_label: session.chosen_label,
-      }
+      // change observations, rules text, the chosen variant, or what the
+      // photo showed (sign condition, area flag, weekly restrictions).
+      const result: ParkingRules = applyRefreshOverride(fresh, session)
       // Reuse the prior session's coords for the result view — they're a
       // strict superset of what handleCapture would pass and they correctly
       // anchor the result-screen timezone to where the user was parked.
       const reusedCoords: Coords = session.location
         ? { lat: session.location.lat, lng: session.location.lng }
         : null
-      setView({ name: 'result', result, signPhoto, signPhotoMeta, coords: reusedCoords, draft: emptyLogDraft() })
+      setView(
+        scanViewFor(viewForReading(result), { result, signPhoto, signPhotoMeta, coords: reusedCoords, draft: emptyLogDraft() }),
+      )
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err)
       setView({ name: 'error', message, offline: isOffline() })
@@ -771,11 +775,38 @@ function App() {
           signPhoto={null}
           ambientPhoto={view.ambientPhoto}
           ambientPhotoMeta={view.ambientPhotoMeta}
+          noSignReading={view.unread?.reading ?? null}
           coords={view.coords}
           // The no-sign path has no scan views to carry a draft, so its
-          // arrival_context starts from an empty one.
-          onComplete={(session) => void handleSessionSaved(session, emptyLogDraft())}
-          onCancel={() => setView({ name: 'home' })}
+          // arrival_context starts from an empty one. From the "no readable
+          // sign" screen it is that scan's draft.
+          onComplete={(session) => void handleSessionSaved(session, view.unread?.back.draft ?? emptyLogDraft())}
+          onCancel={() => setView(view.unread ? view.unread.back : { name: 'home' })}
+        />
+      </main>
+    )
+  }
+
+  if (view.name === 'noReadableSign') {
+    const reading = noSignReadingOf(view.result)
+    return (
+      <main className="min-h-screen">
+        <NoReadableSign
+          result={view.result}
+          signPhoto={view.signPhoto}
+          onRetake={() => setView({ name: 'scan' })}
+          // The scan photo becomes the record's surroundings photo, keeping
+          // its own capture time and source.
+          onLogWithoutSign={() =>
+            setView({
+              name: 'logNoSign',
+              coords: view.coords,
+              ambientPhoto: view.signPhoto,
+              ambientPhotoMeta: view.signPhotoMeta,
+              unread: reading ? { reading, back: view } : undefined,
+            })
+          }
+          onBack={() => setView({ name: 'home' })}
         />
       </main>
     )

@@ -1,15 +1,66 @@
 // Types for the plain-JS Lambda handler so the Vite config can import it
 // during dev without TS complaining about implicit `any`.
 
+import type {
+  CheckedUserPermit,
+  JurisdictionCode,
+  ModelParkingRules,
+  NormalizeContext,
+  SignStatusName,
+  UserPermitInput,
+} from './sign-reading.js'
+
+export type {
+  CheckedUserPermit,
+  JurisdictionCode,
+  ModelParkingRules,
+  ModelRuleVariant,
+  PermitExceptionShape,
+  RecurringRestrictionShape,
+  SignStatusName,
+  UserPermitInput,
+  UserPermitType,
+} from './sign-reading.js'
+
+/**
+ * A /sign-translate body. Fresh mode sends `image_base64`; refresh mode
+ * sends `prior_rules` (and the other `prior_*` fields) instead.
+ */
 export interface TranslateSignInput {
-  image_base64: string
+  image_base64?: string
   media_type?: string
   lat?: number
   lng?: number
   current_datetime?: string
+  prior_rules?: string
+  prior_observations?: Array<{ scope: string; items: string[] }>
+  prior_chosen_label?: string
+  /** Refresh mode echoes these three from the record (build spec T3). */
+  prior_sign_status?: SignStatusName | null
+  prior_sign_issues?: string[] | null
+  prior_is_area_sign?: boolean | null
+  /**
+   * The user's saved permits, at most 3, each exactly `{ type, area? }`.
+   * `area` at most 60 characters after trimming, with no control or bidi
+   * characters. Anything else is a 400. Both modes.
+   */
+  user_permits?: UserPermitInput[] | null
+  /** The state or territory the car is parked in. Both modes. */
+  parking_state?: JurisdictionCode | null
 }
 
-export function translateSign(input: TranslateSignInput): Promise<unknown>
+/** Throws Error('ERR_...') codes, or SignInputError (status 400) for bad permits or state. */
+export function translateSign(input: TranslateSignInput): Promise<ModelParkingRules>
+
+/** The sign reader's system prompt (exported for prompt guard tests and the accuracy harness). */
+export const SYSTEM_PROMPT: string
+/** The structured-output JSON schema sent with every sign reading. */
+export const RESPONSE_SCHEMA: Record<string, unknown>
+export function normalizeModelOutput(raw: unknown, context?: NormalizeContext): ModelParkingRules
+export function validateTranslateExtras(body: unknown): {
+  user_permits: CheckedUserPermit[]
+  parking_state: JurisdictionCode | null
+}
 
 interface LambdaEvent {
   body?: string | Record<string, unknown>
@@ -97,6 +148,12 @@ export interface AppealSessionInput {
   observations?: Array<{ scope: string; items: string[] }>
   chosen_label?: string
   confidence?: string
+  /** A record logged without a sign reading (T3: sent by appealSessionBody). */
+  no_sign?: boolean
+  /** What the reading made of the sign in the photo (T3); null when not recorded. */
+  sign_status?: SignStatusName | null
+  /** The reading's notes on the sign (T3); [] when none. */
+  sign_issues?: string[]
   evidence?: AppealEvidenceInput | null
 }
 

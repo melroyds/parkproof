@@ -5,6 +5,7 @@ import { useNow } from '../lib/use-now'
 import { useLiveRecords } from '../lib/use-records-version'
 import { recordStatus } from '../lib/record-status'
 import { sessionTimezone } from '../lib/timezone'
+import { isNoSignReadRecord } from '../lib/sign-result'
 import Icon from './Icon'
 import VerifiedSeal from './VerifiedSeal'
 import BackButton from './ui/BackButton'
@@ -119,7 +120,7 @@ export default function SessionHistory({ onBack, onOpen }: Props) {
                       <p className="text-xs text-ink-700 mt-0.5 truncate">{s.location.address}</p>
                     )}
                     <p className="text-xs text-ink-600 mt-0.5 line-clamp-2">
-                      {s.no_sign ? t('history.noSignBadge') : s.rules}
+                      {s.no_sign ? t(isNoSignReadRecord(s) ? 'unclearSign.noSignReadLabel' : 'history.noSignBadge') : s.rules}
                     </p>
                     <p className={`text-xs font-semibold mt-1 ${status.color}`}>{status.label}</p>
                   </div>

@@ -4,6 +4,7 @@ import { formatCountdownLocalized, formatElapsedLocalized } from '../lib/countdo
 import { useNow } from '../lib/use-now'
 import { formatExpiryAbsolute } from '../lib/time-format'
 import { sessionTimezone } from '../lib/timezone'
+import { isNoSignReadRecord } from '../lib/sign-result'
 import Icon from './Icon'
 import BackButton from './ui/BackButton'
 
@@ -127,7 +128,9 @@ export default function ActiveSessionsList({ sessions, onBack, onOpen }: Props) 
                         ? t('active.expiredHint')
                         : hasExpiry
                           ? t('active.moveBy', { time: expiryLabel!.combined })
-                          : t('active.noPostedRestrictions')}
+                          : isNoSignReadRecord(session)
+                            ? t('unclearSign.noSignReadLabel')
+                            : t('active.noPostedRestrictions')}
                     </p>
                   </div>
                   <Icon

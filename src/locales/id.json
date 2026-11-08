@@ -294,7 +294,8 @@
     "aiCaveat": "Ini bacaan AI atas rambunya. Selalu lihat sekilas rambu aslinya sebelum meninggalkan mobil.",
     "cantParkOverride": "Menurutmu ini keliru? Kamu tetap bisa mencatat tempat ini sebagai bukti.",
     "cantParkOverrideCta": "Catat saja",
-    "firstSaveValue": "Menyimpan berarti menjaga catatan bertanda waktu yang terbukti tak diubah. Inilah buktimu seandainya suatu saat kamu kena denda tidak adil."
+    "firstSaveValue": "Menyimpan berarti menjaga catatan bertanda waktu yang terbukti tak diubah. Inilah buktimu seandainya suatu saat kamu kena denda tidak adil.",
+    "weeklyRestrictionHint": "Rambu ini punya larangan mingguan. Kamu bisa memasang pengingat setelah menyimpan."
   },
   "logger": {
     "header": "Catat catatan parkir ini",
@@ -693,7 +694,8 @@
         "departureSigned": "Kepergian ditandatangani ParkProof (jam server)",
         "departureLocation": "Lokasi ponsel saat mengetuk \"Sudah pergi\" (GPS)",
         "departureDistance": "Perkiraan jarak dari lokasi kedatangan (GPS ponsel)",
-        "locationCoords": "Lokasi (koordinat)"
+        "locationCoords": "Lokasi (koordinat)",
+        "signCondition": "Kondisi rambu"
       },
       "locationSourceValue": {
         "manuallyEntered": "Dimasukkan manual",
@@ -735,7 +737,16 @@
         "high": "Tinggi",
         "medium": "Sedang",
         "low": "Rendah"
-      }
+      },
+      "signCondition": {
+        "readable": "Terbaca di foto",
+        "partiallyObscured": "Sebagian sulit dibaca di foto",
+        "contradictory": "Bagian-bagian rambu saling bertentangan",
+        "missing": "Tidak ditemukan rambu parkir di foto",
+        "notAParkingSign": "Foto menunjukkan hal lain, bukan rambu parkir",
+        "notes": "Catatan AI: {{notes}}"
+      },
+      "noSignRead": "Tidak ada rambu yang terbaca. ParkProof tidak menemukan rambu parkir yang bisa dibaca di foto, dan pengemudi mencatat parkir ini tanpa rambu."
     },
     "signature": {
       "title": "Tanda tangan kriptografis",
@@ -927,5 +938,23 @@
       "returnDetail": "Kondisi saat kembali, jarak dekat",
       "compliance": "Foto bukti pembayaran atau izin"
     }
+  },
+  "unclearSign": {
+    "obscuredTitle": "Sebagian rambu ini sulit dibaca",
+    "contradictoryTitle": "Bagian-bagian rambu ini saling bertentangan",
+    "strictest": "Jawaban di atas memakai bacaan yang paling ketat. Periksa sendiri rambunya sebelum kamu meninggalkan mobil.",
+    "worthRecording": "Rambu yang tidak bisa dibaca dengan jelas layak dicatat.",
+    "notesLabel": "Yang dilihat AI",
+    "noSignTitle": "Tidak ada rambu parkir yang terbaca",
+    "noSignBody": "Kami tidak menemukan rambu parkir yang bisa dibaca di foto ini. Itu tidak berarti tidak ada aturan di sini. Aturan lalu lintas umum tetap berlaku, misalnya dilarang parkir dalam jarak 10 meter dari persimpangan tanpa lampu lalu lintas, dan beberapa kawasan punya batas waktu parkir walaupun tidak setiap jalan ada rambunya.",
+    "photoAlt": "Foto yang kamu ambil",
+    "retake": "Foto ulang",
+    "logWithoutSign": "Catat tanpa rambu",
+    "photoCaption": "Foto diambil di tempat kamu parkir. ParkProof tidak menemukan rambu parkir yang bisa dibaca di foto ini.",
+    "loggerIntro": "Kami akan menyimpan kapan dan di mana kamu parkir, beserta foto yang kamu ambil.",
+    "loggerBanner": "Catatan ini akan menyebutkan bahwa ParkProof tidak menemukan rambu parkir yang bisa dibaca di fotomu dan kamu mencatat parkir ini tanpa rambu. Catatan ini tidak menunjukkan bahwa di sini tidak ada rambu.",
+    "recordNoSignRead": "Tidak ada rambu yang terbaca. ParkProof tidak menemukan rambu parkir yang bisa dibaca di foto, dan kamu mencatat parkir ini tanpa rambu.",
+    "noSignReadLabel": "Tidak ada rambu yang terbaca",
+    "remindIntro": "Tidak ada rambu yang terbaca untuk parkir ini, jadi tidak ada waktu berakhir untuk diingatkan. Kamu tetap bisa minta pengingat untuk mengecek. Pilih berapa lama lagi dari sekarang, sebanyak yang kamu mau."
   }
 }

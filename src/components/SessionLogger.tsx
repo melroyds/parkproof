@@ -15,6 +15,7 @@ import {
   ACCURACY_USABLE_M,
   formatAccuracy,
 } from '../lib/accuracy'
+import { noSignReadingFields, signReadingFields, type NoSignReading } from '../lib/sign-result'
 import Icon from './Icon'
 import Button from './ui/Button'
 import BackButton from './ui/BackButton'
@@ -43,6 +44,13 @@ interface Props {
   ambientPhoto?: string | null
   /** Capture metadata for the surroundings photo, as for `signPhotoMeta`. */
   ambientPhotoMeta?: PhotoCaptureMeta | null
+  /**
+   * No-sign mode from the "no readable sign" screen (T3): the sign reader
+   * found no readable parking sign in the scan photo, which is now the
+   * surroundings photo. The record keeps that status, and the photo gets
+   * its own caption.
+   */
+  noSignReading?: NoSignReading | null
   /**
    * Pre-seeded coords from a prior screen. When null, SessionLogger fetches
    * GPS itself. Currently unused — geolocation requests cache anyway, so
@@ -98,6 +106,7 @@ export default function SessionLogger({
   signPhotoMeta = null,
   ambientPhoto = null,
   ambientPhotoMeta = null,
+  noSignReading = null,
   mode = 'sign',
   onComplete,
   onCancel,
@@ -387,6 +396,9 @@ export default function SessionLogger({
           no_sign: true,
           ambient_photo: ambientRef ? null : ambientPhoto,
           photos,
+          // T3: the status ParkProof found in the scan photo, when the
+          // driver came from the "no readable sign" screen.
+          ...noSignReadingFields(noSignReading),
         }
       : {
           id: recordId,
@@ -401,6 +413,9 @@ export default function SessionLogger({
           chosen_label: rules!.chosen_label,
           alternate_variants: rules!.alternate_variants,
           photos,
+          // T3: the sign's condition, the rule flags and the weekly
+          // restrictions from the answer (nothing from a pre-T3 answer).
+          ...signReadingFields(rules!),
         }
     onComplete(session)
     // Photos taken and then replaced or removed don't stay on the device,
@@ -423,7 +438,7 @@ export default function SessionLogger({
         {isNoSign ? t('logger.noSignHeader') : t('logger.header')}
       </h2>
       <p className="text-sm mb-6 leading-relaxed" style={{ color: '#A9CFBE' }}>
-        {isNoSign ? t('logger.noSignIntro') : t('logger.intro')}
+        {noSignReading ? t('unclearSign.loggerIntro') : isNoSign ? t('logger.noSignIntro') : t('logger.intro')}
       </p>
 
       {/* No-sign banner — makes the evidentiary framing explicit. The user
@@ -442,7 +457,9 @@ export default function SessionLogger({
                 {t('logger.noSignKicker')}
               </p>
               <p className="text-sm text-ink-900 mt-1 leading-relaxed">
-                {t('logger.noSignBanner')}
+                {/* From the "no readable sign" screen the driver isn't saying
+                    there was no sign here, only logging without one (T3). */}
+                {noSignReading ? t('unclearSign.loggerBanner') : t('logger.noSignBanner')}
               </p>
             </div>
           </div>
@@ -464,7 +481,7 @@ export default function SessionLogger({
             className="w-full rounded-xl border border-paper-300 object-contain max-h-[40vh] bg-paper-50"
           />
           <p className="text-xs text-ink-600 mt-2">
-            {t('logger.ambientCaption')}
+            {noSignReading ? t('unclearSign.photoCaption') : t('logger.ambientCaption')}
           </p>
         </Card>
       )}

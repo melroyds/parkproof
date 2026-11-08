@@ -172,7 +172,8 @@
     "aiCaveat": "这是 AI 对标志的解读。离开车之前,记得看一眼实际的标志。",
     "cantParkOverride": "觉得这判断有误?你仍然可以把此处记录为证据。",
     "cantParkOverrideCta": "仍然记录",
-    "firstSaveValue": "保存会留下一份带时间戳、可验证是否被改动的记录。万一被错误开罚单,这就是你的证据。"
+    "firstSaveValue": "保存会留下一份带时间戳、可验证是否被改动的记录。万一被错误开罚单,这就是你的证据。",
+    "weeklyRestrictionHint": "这个标志有每周重复的限制。保存后,你可以设置提醒。"
   },
   "logger": {
     "header": "记录这次停车",
@@ -547,7 +548,8 @@
         "departureSigned": "离开部分由 ParkProof 签名的时间(服务器时钟)",
         "departureLocation": "点击\"我已离开\"时手机的位置(GPS)",
         "departureDistance": "与到达位置的大约距离(手机 GPS)",
-        "locationCoords": "位置(坐标)"
+        "locationCoords": "位置(坐标)",
+        "signCondition": "标志状况"
       },
       "locationSourceValue": {
         "manuallyEntered": "手动输入",
@@ -589,7 +591,16 @@
         "high": "高",
         "medium": "中",
         "low": "低"
-      }
+      },
+      "signCondition": {
+        "readable": "照片中可以读清",
+        "partiallyObscured": "照片中有一部分看不清",
+        "contradictory": "标志的各部分内容不一致",
+        "missing": "照片中没有找到停车标志",
+        "notAParkingSign": "照片拍到的不是停车标志",
+        "notes": "AI 备注:{{notes}}"
+      },
+      "noSignRead": "未读取标志。ParkProof 在照片里没有找到可读的停车标志,驾驶员在没有标志的情况下记录了这次停车。"
     },
     "signature": {
       "title": "数字签名",
@@ -927,5 +938,23 @@
       "returnDetail": "返回时车况:特写",
       "compliance": "付款或许可证凭证照片"
     }
+  },
+  "unclearSign": {
+    "obscuredTitle": "这个标志有一部分看不清",
+    "contradictoryTitle": "这个标志的各部分内容不一致",
+    "strictest": "上面的答案采用了最严格的解读。离开车之前,请你亲自看一下标志。",
+    "worthRecording": "看不清的标志,值得留下记录。",
+    "notesLabel": "AI 注意到的情况",
+    "noSignTitle": "没有可读的停车标志",
+    "noSignBody": "我们在这张照片里找不到可读的停车标志。这并不代表这里没有规定。一般道路规则仍然适用,例如在没有交通信号灯的路口 10 米以内不得停车。有些区域即使不是每条街都有标志,也有停车时限。",
+    "photoAlt": "你拍的照片",
+    "retake": "重拍照片",
+    "logWithoutSign": "不用标志直接记录",
+    "photoCaption": "在你停车的地方拍的照片。ParkProof 在照片里没有找到可读的停车标志。",
+    "loggerIntro": "我们会保存你停车的时间和地点,以及你拍的照片。",
+    "loggerBanner": "这条记录会写明:ParkProof 在你的照片里没有找到可读的停车标志,你在没有标志的情况下记录了这次停车。它不能说明这里没有标志。",
+    "recordNoSignRead": "未读取标志。ParkProof 在照片里没有找到可读的停车标志,你在没有标志的情况下记录了这次停车。",
+    "noSignReadLabel": "未读取标志",
+    "remindIntro": "这次停车没有读取到标志,所以没有到期时间可以提醒你。你仍然可以设一个查看提醒。挑一下从现在起多久后提醒,可以多选。"
   }
 }

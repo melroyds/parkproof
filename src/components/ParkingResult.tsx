@@ -11,6 +11,7 @@ import { useNow } from '../lib/use-now'
 import { formatCountdownLocalized } from '../lib/countdown'
 import { formatExpiryAbsolute } from '../lib/time-format'
 import { timezoneForCoords } from '../lib/timezone'
+import { hasWeeklyRestriction, isUnclearSign, signIssuesOf, signReadingTelemetry, signStatusOf } from '../lib/sign-result'
 
 interface Props {
   result: ParkingRules
@@ -103,6 +104,8 @@ function buildFeedbackContext(
     permit_area: result.permit_area ?? null,
     permit_zone_acknowledged:
       !!result.is_permit_zone && permitZoneAcknowledged,
+    // T3: the sign's condition, the area flag and the weekly restrictions.
+    ...signReadingTelemetry(result),
   }
 }
 
@@ -227,6 +230,11 @@ export default function ParkingResult({
   const countdown =
     can_park_now && until ? formatCountdownLocalized(new Date(until).getTime() - now, t) : null
   const confidenceDot = CONFIDENCE_DOT[confidence] ?? CONFIDENCE_DOT.low
+  // T3: part of the sign couldn't be read, or two parts disagree. The
+  // answer above is the most restrictive reading; a banner says why.
+  const unclear = isUnclearSign(result)
+  const signIssues = unclear ? signIssuesOf(result) : []
+  const weeklyRestriction = hasWeeklyRestriction(result)
   const confidenceText = t(CONFIDENCE_KEY[confidence] ?? CONFIDENCE_KEY.low)
 
   // Surface the transition banner only when the AI returned one AND it's
@@ -287,6 +295,36 @@ export default function ParkingResult({
         {t('result.aiCaveat')}
       </p>
 
+      {/* Unclear sign (T3): the answer card shows the most restrictive
+          reading; this says why, with the AI's own notes on the sign. */}
+      {unclear && (
+        <section className="gf-card mt-4 bg-amber-50 p-5" aria-labelledby="unclear-sign-title">
+          <div className="flex items-start gap-3">
+            <div className="w-8 h-8 rounded-full bg-amber-500 text-white flex items-center justify-center shrink-0 mt-0.5">
+              <Icon name="warning" className="w-4 h-4" strokeWidth={2.5} />
+            </div>
+            <div className="flex-1 min-w-0">
+              <h3 id="unclear-sign-title" className="font-display font-bold text-ink-900">
+                {signStatusOf(result) === 'contradictory'
+                  ? t('unclearSign.contradictoryTitle')
+                  : t('unclearSign.obscuredTitle')}
+              </h3>
+              <p className="text-sm text-ink-700 mt-1 leading-relaxed">{t('unclearSign.strictest')}</p>
+              {signIssues.length > 0 && (
+                <ul className="mt-2 list-disc pl-5 space-y-0.5 text-sm text-ink-900">
+                  {signIssues.map((issue, i) => (
+                    <li key={i}>{issue}</li>
+                  ))}
+                </ul>
+              )}
+              <p className="text-sm text-ink-900 font-medium mt-2 leading-relaxed">
+                {t('unclearSign.worthRecording')}
+              </p>
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* Transition-awareness banner — surfaces approaching rule changes so
           the user can make a smarter decision than "should I start parking
           now or wait 5 minutes for the restriction to lift". */}
@@ -303,6 +341,20 @@ export default function ParkingResult({
               {next_transition.change}
             </p>
           </div>
+        </div>
+      )}
+
+      {/* Weekly restriction hint (T3 item 7): street cleaning, a clearway
+          and the like come back each week. The reminder for it is set on
+          the reminder screen after saving (T5a). */}
+      {weeklyRestriction && (
+        <div className="mt-4 bg-brand-50 border border-brand-200 rounded-lg p-4 flex items-start gap-3">
+          <div className="w-8 h-8 rounded-full bg-brand-500 text-white flex items-center justify-center shrink-0 mt-0.5">
+            <Icon name="calendar" className="w-4 h-4" strokeWidth={2.5} />
+          </div>
+          <p className="flex-1 min-w-0 text-sm text-ink-900 leading-relaxed pt-1">
+            {t('result.weeklyRestrictionHint')}
+          </p>
         </div>
       )}
 
