@@ -165,7 +165,8 @@ Everything above is fixed on `integration/roadmap-2`, except where this section 
 
 ## Before deploying
 
-- **The sign schema must compile on the real API.** At 5 am a real call showed the API rejected T3's schema ("compiled grammar is too large"). The fix is on `fix/schema-grammar`. Run `node scripts/check-schema-compiles.mjs` before every deploy.
+- **The sign schema must compile on the real API.** Fixed and merged (`863a230`). At 5 am a real call showed the API rejected T3's schema ("compiled grammar is too large"). Real reads now succeed. Run `node scripts/check-schema-compiles.mjs` before every deploy.
+- **Permit tie-break.** When a sign excepts two of the driver's saved permits, the model reports only the first in saved order, while the app elsewhere puts the accessible permit first. Align the prompt with the app.
 - **Deploy from a clone outside Dropbox.** `deploy.sh` still deletes `lambda/node_modules` in place. See `docs/build/deploy-checklist-roadmap-2.md`, Stage 2.
 - **IAM and tables.** Check `dynamodb:DeleteItem` and `UpdateItem` on `parkproof-jobs`, and whether that table's TTL attribute is `ttl` (as the code writes) or `expires_at` (as CLAUDE.md says). See the checklist's Stage 4.
 - **Weekly push (T5b) assumptions need a real AWS check:**

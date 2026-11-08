@@ -18,7 +18,7 @@ Time: about 2.5 hours. Setup and local gates 30 min, read-only pre-flight 20 min
 ## Top risks
 
 1. **The jobs table may not allow `DeleteItem`.** `/read-notice/status` deletes each notice row after it's read. No script grants anything on `parkproof-jobs`, so the live grant was made by hand and nobody has checked it. The delete is best effort, so a missing grant fails quietly and fine-notice details sit in the table. Worse, CLAUDE.md says the table's TTL is on `expires_at`, but the code writes `ttl`. If CLAUDE.md is right, those rows never expire.
-2. **The new prompts and schemas have only met mocks.** T3's sign schema, T8's notice schema and the appeal prompt changes are tested against mocked Anthropic clients. The eval corpus is empty (`eval/corpus/` holds only `.gitkeep`). If the API rejects the schema, every scan fails in production. One real local scan before deploying settles it.
+2. **Schemas must compile on the real API.** This was a real failure, now fixed. On 9 Nov 2026 a real call showed the API refused T3's sign schema ("compiled grammar is too large"), so every scan would have failed in production. Merge `863a230` reshaped it, and real fresh and refresh reads now succeed. Two guards stop it coming back: a size-budget test in `lambda/sign-reading.test.js`, and `node scripts/check-schema-compiles.mjs`, which must print COMPILES for all three schemas before every deploy (stage 3.4). The eval corpus is still empty (`eval/corpus/` holds only `.gitkeep`).
 3. **The T5b Scheduler assumptions are unproven.** If `CreateSchedule` refuses `cron()` with `EndDate` and `ActionAfterCompletion: DELETE`, every weekly push booking fails and the app falls back to on-device reminders. Daylight saving can't be seen live until 4 April 2027, but schedules booked from 4 January 2027 cross it.
 4. **The shipped PDF fonts aren't the tested fonts.** `deploy.sh` re-subsets the fonts after your tests ran. In a clean clone without `fonts-src/`, it re-subsets in place, which can only drop glyphs.
 5. **Dropbox breaks the deploy.** `deploy.sh` runs `rm -rf node_modules` inside `lambda/`, and Dropbox's file locks make that fail (EBUSY). Deploy from a clone outside Dropbox.
@@ -254,6 +254,7 @@ npm ci
 - [ ] `git status --short public/fonts`. Changes are expected: the fonts gained glyphs. Commit them on the branch afterwards, so the repo matches what shipped. `deploy.sh` will cut the same files again from the same sources.
 
 3.4 One real round trip to Anthropic, still no AWS:
+- [ ] `node scripts/check-schema-compiles.mjs` prints COMPILES for RESPONSE_SCHEMA, NOTICE_SCHEMA and APPEAL_RESPONSE_SCHEMA and exits 0. It sends each route's real thinking and effort settings, which matter: a schema that compiles without thinking can still be refused with it. Any FAILS means stop.
 - [ ] `npm run dev` and open the local URL Vite prints. The dev proxy runs the same Lambda code with the real key from `.env` (`vite.config.ts:82-104` for scans, `:180-213` for notices and appeals).
 - [ ] Scan one stacked sign photo, then reuse it (refresh mode). The terminal shows `[parkproof] anthropic_call=… stop=end_turn` and a verdict.
 - [ ] Read one notice photo through "Got a fine? Start here". The terminal shows `[parkproof] notice_call=…`.
