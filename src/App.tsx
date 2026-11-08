@@ -63,7 +63,7 @@ import {
   setSignedRecordListener,
   signNewRecord,
 } from './lib/signing'
-import { emptyLogDraft } from './lib/evidence-chain'
+import { draftWithGateAcks, emptyLogDraft } from './lib/evidence-chain'
 import {
   applyRefreshOverride,
   mergeChosenVariant,
@@ -965,14 +965,16 @@ function App() {
           signPhoto={view.signPhoto}
           coords={view.coords}
           onScanAnother={() => setView({ name: 'scan' })}
-          onLogSession={() =>
+          onLogSession={(gateAcks) =>
             setView({
               name: 'logging',
               result: view.result,
               signPhoto: view.signPhoto,
               signPhotoMeta: view.signPhotoMeta,
               coords: view.coords,
-              draft: view.draft,
+              // The gates the driver ticked reach the record (saved and
+              // signed as gate_acks) through the draft.
+              draft: draftWithGateAcks(view.draft, gateAcks),
             })
           }
           onRetake={() => setView({ name: 'scan' })}

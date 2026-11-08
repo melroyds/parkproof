@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { ParkingRules } from '../types'
+import type { GateAcks, ParkingRules } from '../types'
 import Icon from './Icon'
 import Button from './ui/Button'
 import Card from './ui/Card'
@@ -19,7 +19,12 @@ interface Props {
   /** Coords from the scan that produced this result — used to pin the displayed timezone. */
   coords: { lat: number; lng: number } | null
   onScanAnother: () => void
-  onLogSession: () => void
+  /**
+   * Opens the logger, with the gate acknowledgements for the record (saved
+   * and signed as `gate_acks`): true for a gate the driver ticked, null for
+   * a gate this screen didn't ask.
+   */
+  onLogSession: (gateAcks: GateAcks) => void
   onRetake: () => void
   /**
    * True on the user's first-ever scan (no saved sessions yet). Surfaces the
@@ -226,6 +231,15 @@ export default function ParkingResult({
   const blockedByPermitGate = mustHavePermit && !disabledAcknowledged
   const blockedByPermitZoneGate = isPermitZone && !permitZoneAcknowledged
   const saveBlocked = blockedByPayGate || blockedByPermitGate || blockedByPermitZoneGate
+  // What the driver acknowledged, carried to the logger in the draft. A gate
+  // is asked only when parking is allowed now, so the can't-park override
+  // logs with every gate null ("not asked").
+  const logSession = () =>
+    onLogSession({
+      meter_ticket: mustPay ? ticketAcknowledged : null,
+      permit_zone: isPermitZone ? permitZoneAcknowledged : null,
+      accessible_permit: mustHavePermit ? disabledAcknowledged : null,
+    })
   const paymentActions = resolvePaymentActions(payment_methods, mustPay)
   const timeZone = timezoneForCoords(coords?.lat, coords?.lng)
   const untilLabel = formatUntil(until, timeZone)
@@ -674,7 +688,7 @@ export default function ParkingResult({
               </p>
             )}
             <Button
-              onClick={onLogSession}
+              onClick={logSession}
               disabled={saveBlocked}
               className="disabled:cursor-not-allowed disabled:shadow-none"
             >
@@ -697,7 +711,7 @@ export default function ParkingResult({
               {t('result.cantParkOverride')}
             </p>
             <button
-              onClick={onLogSession}
+              onClick={logSession}
               className="w-full bg-paper-200 hover:bg-paper-300 text-ink-900 font-medium py-2.5 rounded-xl transition-colors"
             >
               {t('result.cantParkOverrideCta')}

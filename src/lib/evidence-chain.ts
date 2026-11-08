@@ -74,6 +74,24 @@ export function emptyLogDraft(): LogDraft {
   }
 }
 
+/**
+ * The draft carrying the result screen's gate acknowledgements, which the
+ * logger saves as the record's `gate_acks`. The same draft object when they
+ * are unchanged, so a scan keeps one draft from scan to save.
+ */
+export function draftWithGateAcks(draft: LogDraft, acks: GateAcks): LogDraft {
+  const next: GateAcks = {
+    meter_ticket: acks.meter_ticket,
+    permit_zone: acks.permit_zone,
+    accessible_permit: acks.accessible_permit,
+  }
+  const same =
+    draft.gate_acks.meter_ticket === next.meter_ticket &&
+    draft.gate_acks.permit_zone === next.permit_zone &&
+    draft.gate_acks.accessible_permit === next.accessible_permit
+  return same ? draft : { ...draft, gate_acks: next }
+}
+
 const FORBIDDEN_GLOBAL = new RegExp(FORBIDDEN_CHARS_RE.source, 'g')
 
 /**

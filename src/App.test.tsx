@@ -10,7 +10,8 @@
 // Also the save path (T0b1): the LogDraft made for a scan travels through
 // clarify, result and logging (and a logging cancel) to the save, the
 // record is prepared (chain key, v1_hashes) before it is stored, and the
-// same draft reaches signNewRecord after the save.
+// same draft reaches signNewRecord after the save. The result screen's gate
+// acknowledgements ride on that draft to the record (T2).
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import i18n from './lib/i18n'
@@ -20,7 +21,8 @@ import { ORPHAN_PHOTO_AGE_MS, createMemoryPhotoBackend, putPhoto, setPhotoBacken
 import { endedStatusTime } from './lib/record-status'
 import { SYNC_ON_RETURN_INTERVAL_MS } from './lib/sync'
 import type { PushCancelResult } from './lib/push'
-import type { AddendumKind, LogDraft, ParkingRules, ParkingSession, SignatureBundle, SignedAddendum } from './types'
+import { buildArrivalContext } from './lib/evidence-chain'
+import type { AddendumKind, GateAcks, LogDraft, ParkingRules, ParkingSession, SignatureBundle, SignedAddendum } from './types'
 import App from './App'
 
 const mocks = vi.hoisted(() => ({
@@ -63,6 +65,8 @@ const { SIGN_BYTES } = vi.hoisted(() => ({ SIGN_BYTES: 'fake-sign-photo-bytes' }
 const { loggerProps } = vi.hoisted(() => ({ loggerProps: [] as Array<Record<string, unknown>> }))
 /** The answer each render of the fake result screen received (latest last). */
 const { resultProps } = vi.hoisted(() => ({ resultProps: [] as Array<{ result: unknown }> }))
+/** The gate acknowledgements the fake result screen hands over on "Fake log" (null: none asked). */
+const { resultAcks } = vi.hoisted(() => ({ resultAcks: { next: null as GateAcks | null } }))
 
 vi.mock('./lib/push', async (importOriginal) => ({
   ...(await importOriginal<typeof import('./lib/push')>()),
@@ -144,8 +148,11 @@ vi.mock('./components/Clarify', () => ({
   ),
 }))
 vi.mock('./components/ParkingResult', () => ({
-  default: (p: { onLogSession: () => void; result: unknown }) => (
-    <button ref={() => void resultProps.push({ result: p.result })} onClick={p.onLogSession}>
+  default: (p: { onLogSession: (acks: GateAcks) => void; result: unknown }) => (
+    <button
+      ref={() => void resultProps.push({ result: p.result })}
+      onClick={() => p.onLogSession(resultAcks.next ?? { meter_ticket: null, permit_zone: null, accessible_permit: null })}
+    >
       Fake log
     </button>
   ),
@@ -156,6 +163,7 @@ vi.mock('./components/SessionLogger', () => ({
     mode?: 'sign' | 'no-sign'
     rules: ParkingRules | null
     signPhoto: string | null
+    draft?: LogDraft | null
     onComplete: (s: ParkingSession) => void
     onCancel: () => void
   }) => (
@@ -173,6 +181,8 @@ vi.mock('./components/SessionLogger', () => ({
             expires_at: null,
             confidence: p.rules?.confidence ?? 'low',
             ...(p.mode === 'no-sign' ? { no_sign: true } : {}),
+            // As the real logger does: the draft's gate acknowledgements are saved on the record.
+            ...(p.draft ? { gate_acks: { ...p.draft.gate_acks } } : {}),
           })
         }
       >
@@ -255,6 +265,7 @@ beforeEach(() => {
   for (const m of Object.values(mocks)) m.mockClear()
   loggerProps.length = 0
   resultProps.length = 0
+  resultAcks.next = null
   mocks.installSigningTriggers.mockImplementation(() => mocks.uninstallSigningTriggers)
   mocks.scheduleDepartureCatchUp.mockImplementation(() => () => {})
   mocks.queueAddendum.mockImplementation((id, kind, data, options = {}) => appendAddendum(id, { kind, data, ...options }))
@@ -681,6 +692,52 @@ describe('App save path: the draft and the prepared record', () => {
     expect(stored?.rules).toBe('2P Left side')
     expect(getSession('new-1')?.chain_key).toBe(stored?.chain_key)
     await screen.findByText('Fake reminders')
+  })
+
+  it('a ticked pay gate on the result screen is saved on the record and queued in its arrival_context', async () => {
+    mocks.translateSign.mockResolvedValueOnce({ ...RESULT, clarification: null, requires_ticket: true })
+    resultAcks.next = { meter_ticket: true, permit_zone: null, accessible_permit: null }
+    // What signNewRecord does, without the signing: queue link 1 from the
+    // saved record and the draft.
+    mocks.signNewRecord.mockImplementation((id: string, draft: LogDraft) => {
+      const saved = getSession(id)
+      if (saved) appendAddendum(id, { kind: 'arrival_context', data: buildArrivalContext(saved, draft) })
+    })
+    renderApp(false)
+    click('Fake start scan')
+    click('Fake capture')
+    fireEvent.click(await screen.findByRole('button', { name: 'Fake log' }))
+
+    const ACKS = { meter_ticket: true, permit_zone: null, accessible_permit: null }
+    // The logger got them in its draft (it opens the proof section from them).
+    expect((loggerProps.at(-1)?.draft as LogDraft).gate_acks).toEqual(ACKS)
+    click('Fake save')
+
+    await waitFor(() => expect(mocks.signNewRecord).toHaveBeenCalledTimes(1))
+    const [id, draft] = mocks.signNewRecord.mock.calls[0]
+    expect(draft.gate_acks).toEqual(ACKS)
+    // The rest of the scan's draft is unchanged.
+    expect({ ...draft, gate_acks: null }).toEqual({ ...realEmptyLogDraft(), gate_acks: null })
+    const saved = getSession(id)
+    expect(saved?.gate_acks).toEqual(ACKS)
+    const link1 = saved?.addenda?.find((a) => a.kind === 'arrival_context')
+    expect(link1?.data.gate_acks).toEqual(ACKS)
+  })
+
+  it('a sign with no gate keeps every gate as not asked', async () => {
+    mocks.translateSign.mockResolvedValueOnce({ ...RESULT, clarification: null })
+    renderApp(false)
+    click('Fake start scan')
+    click('Fake capture')
+    fireEvent.click(await screen.findByRole('button', { name: 'Fake log' }))
+    click('Fake save')
+
+    await waitFor(() => expect(mocks.signNewRecord).toHaveBeenCalledTimes(1))
+    const [id, draft] = mocks.signNewRecord.mock.calls[0]
+    // Still the scan's own draft: nothing was acknowledged.
+    expect(draft).toBe(mocks.emptyLogDraft.mock.results[0].value)
+    expect(getSession(id)?.gate_acks).toEqual({ meter_ticket: null, permit_zone: null, accessible_permit: null })
+    expect(buildArrivalContext(getSession(id)!, draft).gate_acks).toBeNull()
   })
 
   it('the no-sign path saves a prepared record with an empty draft', async () => {
