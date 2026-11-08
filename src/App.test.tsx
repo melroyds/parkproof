@@ -15,7 +15,7 @@ import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-libra
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import i18n from './lib/i18n'
 import { AuthContext, type AuthContextValue } from './lib/auth-context-shape'
-import { appendAddendum, getSession, saveSession } from './lib/storage'
+import { appendAddendum, getSession, saveSession, setArrivalSignature } from './lib/storage'
 import { ORPHAN_PHOTO_AGE_MS, createMemoryPhotoBackend, putPhoto, setPhotoBackendForTests } from './lib/photo-store'
 import { endedStatusTime } from './lib/record-status'
 import { SYNC_ON_RETURN_INTERVAL_MS } from './lib/sync'
@@ -810,6 +810,40 @@ describe('App and the photo store (T0b2)', () => {
     expect(loggerProps.at(-1)?.signPhotoMeta).toEqual({ captured_at: '2026-10-20T00:58:00.000Z', source: 'camera_input' })
   })
 
+  it("the scan's draft reaches the logger (for its gates), and the same draft is signed after the save", async () => {
+    mocks.translateSign.mockResolvedValueOnce(RESULT)
+    renderApp(false)
+    click('Fake start scan')
+    click('Fake capture with meta')
+    fireEvent.click(await screen.findByRole('button', { name: 'Fake log' }))
+    await screen.findByRole('button', { name: 'Fake save' })
+    const draft = loggerProps.at(-1)?.draft as LogDraft
+    expect(draft).toEqual(realEmptyLogDraft())
+    click('Fake save')
+    await waitFor(() => expect(mocks.signNewRecord).toHaveBeenCalledTimes(1))
+    expect(mocks.signNewRecord.mock.calls[0][1]).toBe(draft)
+  })
+
+  it('return photos taken on the departure sheet go into the departure part and the record (T2)', async () => {
+    saveSession(makeSession())
+    const { container } = renderApp(false)
+    fireEvent.click(screen.getByRole('button', { name: i18n.t('active.iveLeftAria') }))
+    const toggleName = i18n.t('departure.condition.toggle').replace(/[()]/g, '\\$&')
+    fireEvent.click(screen.getByRole('button', { name: new RegExp('^' + toggleName) }))
+    const input = container.querySelector<HTMLInputElement>('input[data-role="return-front"]')!
+    fireEvent.change(input, { target: { files: [new File(['after'], 'after.jpg', { type: 'image/jpeg', lastModified: Date.now() })] } })
+    await screen.findByText(i18n.t('photoGrid.saved'))
+    confirmLeft()
+    expect(getSession('rec-1')!.ended_at).toBeDefined()
+    await waitFor(() => expect(getSession('rec-1')!.addenda?.some((a) => a.kind === 'departure')).toBe(true))
+    const s = getSession('rec-1')!
+    const dep = s.addenda!.find((a) => a.kind === 'departure')!
+    const returnPhotos = (dep.data as { return_photos: Array<{ role: string; sha256: string }> }).return_photos
+    expect(returnPhotos.map((p) => p.role)).toEqual(['return-front'])
+    expect(s.photos).toEqual(returnPhotos)
+    expect(photoKeys('rec-1')).toEqual([`rec-1/${returnPhotos[0].sha256}`])
+  })
+
   it('without capture metadata only "library" is claimed for the sign photo', async () => {
     mocks.translateSign.mockResolvedValueOnce(RESULT)
     renderApp(false)
@@ -1028,5 +1062,29 @@ describe('Street sweeping and weekly reminders (T5a)', () => {
     renderApp(false)
     expect(screen.getByRole('heading', { name: 'Weekly reminders' })).toBeTruthy()
     expect(window.location.search).toBe('')
+  })
+})
+
+describe('The one-time backup prompt (T2)', () => {
+  it("waits while the record screen's add-photo sheet is open, so one Escape can't also cancel the sheet", async () => {
+    saveSession(makeSession({ signature: undefined }))
+    window.history.replaceState({}, '', '/app/?session=rec-1')
+    renderApp(false)
+    fireEvent.click(screen.getByRole('button', { name: i18n.t('evidence.addCondition') }))
+    expect(screen.getAllByRole('dialog')).toHaveLength(1)
+    // Link 0 is signed in the background while the sheet is open (signal came back).
+    act(() => {
+      setArrivalSignature('rec-1', {
+        ...SIGNATURE,
+        schema: 'parkproof-evidence-v1',
+        canonical_payload: JSON.stringify({ schema: 'parkproof-evidence-v1', sign_photo_sha256: 'a'.repeat(64) }),
+      })
+    })
+    expect(screen.getAllByRole('dialog')).toHaveLength(1)
+    expect(screen.queryByText(i18n.t('backupPrompt.title'))).toBeNull()
+    // Closing the sheet lets the prompt show.
+    fireEvent.keyDown(window, { key: 'Escape' })
+    expect(await screen.findByText(i18n.t('backupPrompt.title'))).toBeTruthy()
+    expect(screen.getAllByRole('dialog')).toHaveLength(1)
   })
 })

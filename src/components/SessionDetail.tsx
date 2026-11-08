@@ -7,8 +7,19 @@ import { canEndRecord, endedStatusTime } from '../lib/record-status'
 import { DEV_KEY_ALIAS } from '../lib/evidence-chain'
 import { LEGACY_PHOTO_ROLES, hasSessionPhoto, legacyPhotoValue, photoRefFor } from '../lib/session-photos'
 import { useSessionPhoto } from '../lib/use-session-photo'
+import { canAddEvidence, signedPhotoRef } from '../lib/evidence-photos'
+import {
+  collectEvidenceFile,
+  hasEvidenceFile,
+  hasPermitDetails,
+  hasPermitPhoto,
+  saveEvidenceFile,
+} from '../lib/evidence-bundle'
+import { arrivalSigningRejection } from '../lib/signing'
 import ScheduledRemindersSection from './ScheduledRemindersSection'
 import RecordPhoto from './RecordPhoto'
+import EvidencePhotos, { PhotoRefMeta } from './EvidencePhotos'
+import AddEvidenceSheet, { type AddEvidenceKind } from './AddEvidenceSheet'
 import VerifiedSeal from './VerifiedSeal'
 import ChainPanel from './ChainPanel'
 import DepartureRow from './DepartureRow'
@@ -51,6 +62,12 @@ interface Props {
    * screen only asks. The record stays in history with ended_at set.
    */
   onEndSession: (session: ParkingSession) => void
+  /**
+   * Told when one of this screen's own sheets (the add-photo sheets) opens
+   * or closes, and that none is open when the screen goes. App holds the
+   * one-time backup prompt back meanwhile: one dialog at a time.
+   */
+  onSheetOpenChange?: (open: boolean) => void
 }
 
 function fmtLocal(iso: string, timeZone: string): string {
@@ -69,6 +86,7 @@ export default function SessionDetail({
   onDelete,
   onDraftAppeal,
   onEndSession,
+  onSheetOpenChange,
 }: Props) {
   const { t, i18n } = useTranslation()
   const { user } = useAuth()
@@ -95,6 +113,18 @@ export default function SessionDetail({
   // "I've left" is offered on any record that hasn't been ended, including
   // one past its expiry (the driver may come back late).
   const canEnd = canEndRecord(session)
+  // After saving, on a record that hasn't ended: "Add condition photos" and
+  // "Add a photo of your ticket or permit", each its own signed part.
+  const canAdd = canAddEvidence(session)
+  const [addSheet, setAddSheet] = useState<AddEvidenceKind | null>(null)
+  const sheetOpenChange = useRef(onSheetOpenChange)
+  useEffect(() => {
+    sheetOpenChange.current = onSheetOpenChange
+  })
+  useEffect(() => {
+    sheetOpenChange.current?.(addSheet !== null)
+  }, [addSheet])
+  useEffect(() => () => sheetOpenChange.current?.(false), [])
   const timeZone = useMemo(() => sessionTimezone(session.location), [session.location])
   // "Ended 5:23 pm AEDT" on the status line (the I've left tap time).
   const endedTime = isEnded ? endedStatusTime(session, timeZone) : null
@@ -190,6 +220,43 @@ export default function SessionDetail({
       setPdfError(message)
     } finally {
       setPdfBusy(false)
+    }
+  }
+
+  // The evidence file (T2 item 9): every signed payload and signature and
+  // the original photos, for a third party to check. Permit details go in
+  // only when the driver ticks "Include permit details" (N3); the tick
+  // starts off on every visit.
+  const canDownloadFile = hasEvidenceFile(session)
+  // The tick shows when there is something it would add: permit details, or
+  // a proof photo marked as a displayed permit.
+  const permitDetails = hasPermitDetails(session) || hasPermitPhoto(session)
+  const [includePermit, setIncludePermit] = useState(false)
+  const [fileBusy, setFileBusy] = useState(false)
+  const [fileError, setFileError] = useState(false)
+  // After a download: signed photos whose bytes aren't on this device, and
+  // ones whose bytes here don't hash to the signed fingerprint.
+  const [fileMissingPhotos, setFileMissingPhotos] = useState(0)
+  const [fileDifferingPhotos, setFileDifferingPhotos] = useState(0)
+
+  const handleEvidenceFile = async () => {
+    setFileError(false)
+    setFileMissingPhotos(0)
+    setFileDifferingPhotos(0)
+    setFileBusy(true)
+    try {
+      const file = await collectEvidenceFile(session, {
+        includePermit: includePermit && permitDetails,
+        arrivalRejection: arrivalSigningRejection(session.id),
+      })
+      saveEvidenceFile(file)
+      setFileMissingPhotos(file.photos.filter((p) => p.bytes === 'not_on_this_device').length)
+      setFileDifferingPhotos(file.photos.filter((p) => p.bytes === 'differ_from_fingerprint').length)
+    } catch (err) {
+      console.error('[evidence-file] could not make the file:', err)
+      setFileError(true)
+    } finally {
+      setFileBusy(false)
     }
   }
 
@@ -574,6 +641,7 @@ export default function SessionDetail({
             className="w-full rounded-xl border border-paper-300"
             onRemoteLoadError={(url) => noteFailedPhotoUrls([url])}
           />
+          <RefMetaFor session={session} role="sign" timeZone={timeZone} />
         </Card>
       )}
 
@@ -602,6 +670,7 @@ export default function SessionDetail({
                   {noSignRead ? t('unclearSign.photoCaption') : t('session.ambientPhotoCaption')}
                 </p>
               )}
+              <RefMetaFor session={session} role="ambient" timeZone={timeZone} />
             </>
           ) : (
             <p className="text-xs text-ink-600 italic">
@@ -623,7 +692,47 @@ export default function SessionDetail({
             className="w-full rounded-xl border border-paper-300"
             onRemoteLoadError={(url) => noteFailedPhotoUrls([url])}
           />
+          <RefMetaFor session={session} role="car" timeZone={timeZone} />
         </Card>
+      )}
+
+      {/* Condition photos (when parked, on return) and the proof of payment
+          or permit, each with its time, fingerprint and signing state. */}
+      <EvidencePhotos session={session} timeZone={timeZone} />
+
+      {canAdd && (
+        <div className="mb-3 flex flex-col gap-2">
+          <button
+            type="button"
+            onClick={() => setAddSheet('condition')}
+            aria-haspopup="dialog"
+            className="gf-card w-full min-h-[48px] text-paper-50 font-medium py-3 px-5 flex items-center gap-2 transition-colors hover:brightness-110"
+            style={{ background: 'rgba(255,255,255,0.055)' }}
+          >
+            <Icon name="camera" className="w-5 h-5 shrink-0 text-[#A9CFBE]" />
+            <span className="text-left leading-snug">{t('evidence.addCondition')}</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setAddSheet('compliance')}
+            aria-haspopup="dialog"
+            className="gf-card w-full min-h-[48px] text-paper-50 font-medium py-3 px-5 flex items-center gap-2 transition-colors hover:brightness-110"
+            style={{ background: 'rgba(255,255,255,0.055)' }}
+          >
+            <Icon name="camera" className="w-5 h-5 shrink-0 text-[#A9CFBE]" />
+            <span className="text-left leading-snug">{t('evidence.addMeterTicketOrPermit')}</span>
+          </button>
+        </div>
+      )}
+      {addSheet && (
+        <AddEvidenceSheet
+          session={session}
+          kind={addSheet}
+          onAdded={(id) => {
+            if (user) mirrorSessionUpdateToCloud(id)
+          }}
+          onClose={() => setAddSheet(null)}
+        />
       )}
 
       <div className="mt-6 flex flex-col gap-2">
@@ -646,6 +755,48 @@ export default function SessionDetail({
           <p className="text-xs leading-relaxed text-center px-2" style={{ color: '#A9CFBE' }}>
             {t('session.exportPhotoWarning')}
           </p>
+        )}
+        {canDownloadFile && (
+          <div className="flex flex-col gap-2 mt-3">
+            {permitDetails && (
+              <label className="flex items-start gap-3 min-h-[44px] py-2 cursor-pointer text-paper-50">
+                <input
+                  type="checkbox"
+                  checked={includePermit}
+                  onChange={(e) => setIncludePermit(e.target.checked)}
+                  className="mt-0.5 w-5 h-5 shrink-0 accent-[#7BE3A4]"
+                  aria-describedby="evidence-file-permit-help"
+                />
+                <span className="text-sm leading-snug">
+                  <span className="font-semibold">{t('evidenceFile.includePermit')}</span>
+                  <span id="evidence-file-permit-help" className="block text-xs mt-1 leading-relaxed" style={{ color: '#A9CFBE' }}>
+                    {t('evidenceFile.permitHelp')}
+                  </span>
+                </span>
+              </label>
+            )}
+            <Button variant="outline" onClick={handleEvidenceFile} disabled={fileBusy} aria-describedby="evidence-file-help">
+              {fileBusy ? t('evidenceFile.busy') : t('evidenceFile.download')}
+            </Button>
+            <p id="evidence-file-help" className="text-xs leading-relaxed px-1" style={{ color: '#A9CFBE' }}>
+              {t('evidenceFile.help')}
+            </p>
+            {fileMissingPhotos > 0 && (
+              <p className="text-xs leading-relaxed px-1" style={{ color: '#A9CFBE' }} role="status">
+                {t('evidenceFile.photosMissing', { count: fileMissingPhotos })}
+              </p>
+            )}
+            {fileDifferingPhotos > 0 && (
+              <p className="text-xs leading-relaxed px-1" style={{ color: '#A9CFBE' }} role="status">
+                {t('evidenceFile.photosDiffer', { count: fileDifferingPhotos })}
+              </p>
+            )}
+            {fileError && (
+              <p className="bg-accent-50 border-2 border-accent-400 rounded-xl p-3 text-sm text-ink-900" role="alert">
+                {t('evidenceFile.error')}
+              </p>
+            )}
+          </div>
         )}
         {/* #18 — the plain-English "how a council verifies this" walkthrough,
             surfaced at the moment the user is producing evidence. */}
@@ -683,5 +834,25 @@ export default function SessionDetail({
         </button>
       </div>
     </div>
+  )
+}
+
+/**
+ * Time, signing state and the library label under a sign, car or
+ * surroundings photo that has a PhotoRef (records from the photo store).
+ * Its fingerprint is in the chain panel and in the not-on-this-device line.
+ */
+function RefMetaFor({ session, role, timeZone }: { session: ParkingSession; role: 'sign' | 'car' | 'ambient'; timeZone: string }) {
+  const ref = photoRefFor(session, role)
+  if (!ref) return null
+  // Time and source as a signed part carries them, when one does (N2).
+  return (
+    <PhotoRefMeta
+      photoRef={signedPhotoRef(session, ref)}
+      session={session}
+      timeZone={timeZone}
+      showFingerprint={false}
+      showSigning={false}
+    />
   )
 }

@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
 import { Trans, useTranslation } from 'react-i18next'
-import type { ParkingRules, ParkingSession, PhotoRef, PlaceParts } from '../types'
+import type { ComplianceType, LogDraft, ParkingRules, ParkingSession, PhotoRef, PlaceParts } from '../types'
 import { forwardGeocode, reverseGeocodeDetails } from '../lib/geocode'
 import { jurisdictionOfPlace } from '../lib/jurisdiction'
 import { resizeImageFile } from '../lib/image'
-import { deleteSessionPhotos, deleteSessionPhotosExcept, isPhotoStoreAvailable } from '../lib/photo-store'
+import { deleteSessionPhotos, isPhotoStoreAvailable } from '../lib/photo-store'
 import {
   captureMetaFor,
   storeSessionPhoto,
@@ -17,6 +17,19 @@ import {
   formatAccuracy,
 } from '../lib/accuracy'
 import { noSignReadingFields, signReadingFields, type NoSignReading } from '../lib/sign-result'
+import { fitText } from '../lib/evidence-chain'
+import {
+  CONDITION_NOTE_MAX,
+  allowedComplianceType,
+  gridRoles,
+  preselectedComplianceType,
+  proofGates,
+} from '../lib/evidence-photos'
+import { discardUnreferencedPhotos } from '../lib/record-photos'
+import { usePhotoSlots } from '../lib/use-photo-slots'
+import CollapsibleSection from './CollapsibleSection'
+import PhotoAngleGrid from './PhotoAngleGrid'
+import ProofPhotoSection from './ProofPhotoSection'
 import Icon from './Icon'
 import Button from './ui/Button'
 import BackButton from './ui/BackButton'
@@ -64,6 +77,13 @@ interface Props {
    *  - 'no-sign' → simplified flow (no rules, ambient-photo evidence, save → home)
    */
   mode?: 'sign' | 'no-sign'
+  /**
+   * What the scan views carried for this record (the result screen's gate
+   * acknowledgements, later the permit and the driver). The gates decide
+   * whether the proof-of-payment section opens with a preselected type;
+   * `gate_acks` is saved on the record. Missing: an empty draft.
+   */
+  draft?: LogDraft | null
   onComplete: (session: ParkingSession) => void
   onCancel: () => void
 }
@@ -116,6 +136,7 @@ export default function SessionLogger({
   ambientPhotoMeta = null,
   noSignReading = null,
   mode = 'sign',
+  draft = null,
   onComplete,
   onCancel,
 }: Props) {
@@ -132,6 +153,11 @@ export default function SessionLogger({
   const photoWrites = useRef<Promise<unknown>[]>([])
   // The scan screen's photos, written once when the logger opens.
   const scanPhotoWrites = useRef<{ sign?: Promise<PhotoRef | null>; ambient?: Promise<PhotoRef | null> }>({})
+  // The data URL of every sign, surroundings and car photo this logger
+  // wrote. After Save, only these (minus the ones the record keeps) are
+  // tidied away: once saved, the record can gain photos from other screens
+  // (the add-photo sheets, the departure sheet), and those must stay.
+  const writtenUrls = useRef<string[]>([])
   // The current car photo's write. Null when there is no car photo; a
   // newer photo (or Retake) replaces it, so a late result for an older
   // photo is ignored.
@@ -162,6 +188,22 @@ export default function SessionLogger({
   const [editError, setEditError] = useState<string | null>(null)
   const cameraInputRef = useRef<HTMLInputElement>(null)
   const libraryInputRef = useRef<HTMLInputElement>(null)
+  // "Record the car's condition (optional)": collapsed until the driver
+  // opens it. Its photos and the damage note go into the arrival_context.
+  const trackWrite = (write: Promise<unknown>) => {
+    photoWrites.current.push(write)
+  }
+  const conditionSlots = usePhotoSlots(recordId, trackWrite)
+  const [conditionOpen, setConditionOpen] = useState(false)
+  const [conditionNote, setConditionNote] = useState('')
+  // Proof of payment or permit. When the result screen asked a gate (or the
+  // sign reading calls for one), the section is open with one button and
+  // the type preselected from the gate; otherwise it is collapsed.
+  const gates = proofGates(rules, draft?.gate_acks)
+  const proofGated = gates.length > 0
+  const proofSlots = usePhotoSlots(recordId, trackWrite)
+  const [proofOpen, setProofOpen] = useState(false)
+  const [proofType, setProofType] = useState<ComplianceType | null>(() => preselectedComplianceType(gates))
 
   const startEdit = () => {
     if (gps.status !== 'ok' && gps.status !== 'error') return
@@ -286,10 +328,12 @@ export default function SessionLogger({
     if (!isNoSign && signPhoto && !writes.sign) {
       writes.sign = storeSessionPhoto(recordId, 'sign', signPhoto, signPhotoMeta ?? fallback)
       photoWrites.current.push(writes.sign)
+      writtenUrls.current.push(signPhoto)
     }
     if (isNoSign && ambientPhoto && !writes.ambient) {
       writes.ambient = storeSessionPhoto(recordId, 'ambient', ambientPhoto, ambientPhotoMeta ?? fallback)
       photoWrites.current.push(writes.ambient)
+      writtenUrls.current.push(ambientPhoto)
     }
     // Mount-only: the scan photos can't change while the logger is open.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -307,6 +351,7 @@ export default function SessionLogger({
     const entry = { result, dataUrl }
     carWrite.current = entry
     photoWrites.current.push(result)
+    writtenUrls.current.push(dataUrl)
     void result.then((r) => {
       if (carWrite.current !== entry) return // replaced or removed meanwhile
       setCarPhoto(
@@ -363,6 +408,8 @@ export default function SessionLogger({
   const cancel = () => {
     if (submittedRef.current || closed.current) return
     closed.current = true
+    conditionSlots.close()
+    proofSlots.close()
     tidyPhotos([...photoWrites.current], () => deleteSessionPhotos(recordId), 'delete the photos of a cancelled record')
     onCancel()
   }
@@ -371,6 +418,8 @@ export default function SessionLogger({
     if (submittedRef.current || closed.current) return
     submittedRef.current = true
     closed.current = true
+    conditionSlots.close()
+    proofSlots.close()
     setSubmitting(true)
     // Arrival time is the tap, as before; the photo writes (milliseconds)
     // are awaited after it.
@@ -405,7 +454,20 @@ export default function SessionLogger({
     // record itself instead, like the scan photos below.
     const carRef = carResult && carResult !== 'inRecord' ? carResult : null
     const carInRecord = carResult === 'inRecord' && currentCar ? currentCar.dataUrl : null
-    const photos = [signRef, carRef, ambientRef].filter((r): r is PhotoRef => r !== null)
+    // Condition and proof photos are part of the record only when stored
+    // (a failed one showed its error on the tile).
+    const conditionRefs = await conditionSlots.settle(gridRoles('condition'))
+    const proofRefs = await proofSlots.settle(['compliance'])
+    const photos = [signRef, carRef, ambientRef, ...conditionRefs, ...proofRefs].filter(
+      (r): r is PhotoRef => r !== null,
+    )
+    // Facts captured at parking, signed in the arrival_context (link 1).
+    const conditionNoteText = fitText(conditionNote, CONDITION_NOTE_MAX)
+    const extras: Partial<ParkingSession> = {}
+    if (conditionNoteText) extras.condition_note = conditionNoteText
+    // A library photo can only be a payment confirmation, whatever was picked.
+    if (proofRefs.length > 0) extras.compliance_type = allowedComplianceType(proofRefs[0].source, proofType)
+    if (draft) extras.gate_acks = { ...draft.gate_acks }
     // The legacy fields stay null for photo-store photos. Only when the
     // store couldn't take a scan photo (no IndexedDB, a failed or timed-out
     // write) is it kept in the legacy field instead, so the record still has
@@ -431,6 +493,7 @@ export default function SessionLogger({
           // T3: the status ParkProof found in the scan photo, when the
           // driver came from the "no readable sign" screen.
           ...noSignReadingFields(noSignReading),
+          ...extras,
         }
       : {
           id: recordId,
@@ -449,12 +512,20 @@ export default function SessionLogger({
           // T3: the sign's condition, the rule flags and the weekly
           // restrictions from the answer (nothing from a pre-T3 answer).
           ...signReadingFields(rules!),
+          ...extras,
         }
     onComplete(session)
     // Photos taken and then replaced or removed don't stay on the device,
-    // nor do the bytes of a write that timed out and landed later.
+    // nor do the bytes of a write that timed out and landed later. Only
+    // this logger's own photos are looked at, once every write for the
+    // record has settled: a photo another screen adds to the saved record
+    // meanwhile is never touched.
     const keep = photos.map((p) => p.sha256)
-    tidyPhotos([], () => deleteSessionPhotosExcept(recordId, keep), 'tidy replaced photos')
+    void discardUnreferencedPhotos(
+      recordId,
+      [...writtenUrls.current, ...conditionSlots.captured(), ...proofSlots.captured()],
+      keep,
+    )
   }
 
   return (
@@ -756,7 +827,85 @@ export default function SessionLogger({
         />
       </section>
 
-      <div className="mt-auto flex flex-col gap-2">
+      {/* Section order (build spec T2 item 2, fixed for every later task):
+          location, car photo, driver line, condition, proof of payment or
+          permit, boundary question, Save. Only the boundary question may
+          block Save; every other section is optional. */}
+
+      {/* ── Slot: driver line (T7, "Who's driving?"). Renders here, between
+          the car photo and the condition section. Nothing yet. ── */}
+
+      {/* Record the car's condition (optional): collapsed by default. The
+          grid's photos and the damage note go into the arrival_context. */}
+      <CollapsibleSection
+        className="mb-3"
+        title={t('logger.condition.toggle')}
+        open={conditionOpen}
+        onToggle={() => setConditionOpen((o) => !o)}
+        badge={conditionSlots.savedCount > 0 ? t('photoGrid.count', { count: conditionSlots.savedCount }) : null}
+      >
+        <Card pad="sm">
+          <PhotoAngleGrid phase="condition" slots={conditionSlots} disabled={submitting} />
+          <label htmlFor={`${recordId}-damage`} className="block text-xs uppercase tracking-widest font-semibold text-ink-600 mt-4 mb-1">
+            {t('logger.condition.noteLabel')}
+          </label>
+          <textarea
+            id={`${recordId}-damage`}
+            value={conditionNote}
+            onChange={(e) => setConditionNote(e.target.value.slice(0, CONDITION_NOTE_MAX))}
+            maxLength={CONDITION_NOTE_MAX}
+            rows={2}
+            disabled={submitting}
+            placeholder={t('logger.condition.notePlaceholder')}
+            aria-describedby={`${recordId}-damage-count`}
+            className="w-full text-sm text-ink-900 bg-paper-50 border border-paper-300 rounded-xl p-3 leading-relaxed focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 resize-y"
+          />
+          <p id={`${recordId}-damage-count`} className="text-2xs text-ink-600 font-mono text-right">
+            {conditionNote.length}/{CONDITION_NOTE_MAX}
+          </p>
+        </Card>
+      </CollapsibleSection>
+
+      {/* Proof of payment or permit. Open with one button when a gate
+          applies (its type preselected); collapsed otherwise. */}
+      {proofGated ? (
+        <section className="mb-3">
+          <h3 className="font-semibold text-sm text-paper-50 mb-2">{t('logger.proof.heading')}</h3>
+          <Card pad="sm">
+            <ProofPhotoSection
+              slots={proofSlots}
+              type={proofType}
+              onTypeChange={setProofType}
+              addLabel={t('logger.proof.addMeterTicketOrPermit')}
+              disabled={submitting}
+            />
+          </Card>
+        </section>
+      ) : (
+        <CollapsibleSection
+          className="mb-3"
+          title={t('logger.proof.toggle')}
+          open={proofOpen}
+          onToggle={() => setProofOpen((o) => !o)}
+          badge={proofSlots.savedCount > 0 ? t('photoGrid.count', { count: proofSlots.savedCount }) : null}
+        >
+          <Card pad="sm">
+            <ProofPhotoSection
+              slots={proofSlots}
+              type={proofType}
+              onTypeChange={setProofType}
+              addLabel={t('logger.proof.addMeterTicketOrPermit')}
+              disabled={submitting}
+            />
+          </Card>
+        </CollapsibleSection>
+      )}
+
+      {/* ── Slot: boundary question (T6, workday legs only). Renders here,
+          right above Save, and is the only section that may block it.
+          Nothing yet. ── */}
+
+      <div className="mt-auto pt-3 flex flex-col gap-2">
         <Button
           onClick={() => void saveSession()}
           disabled={submitting}

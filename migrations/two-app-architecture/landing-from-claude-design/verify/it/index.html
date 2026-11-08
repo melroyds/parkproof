@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Verifica un record di prova ParkProof — ParkProof</title>
-<meta name="description" content="Procedura passo-passo con openssl per verificare che un PDF di prova ParkProof non sia stato alterato dal salvataggio. Firma crittografica tramite AWS KMS ECDSA P-256.">
+<title>Verifica un record di prova ParkProof | ParkProof</title>
+<meta name="description" content="Procedura passo-passo con openssl per verificare che un record di prova ParkProof non sia cambiato da quando ParkProof lo ha firmato. Firma crittografica tramite AWS KMS ECDSA P-256.">
 <meta name="robots" content="index, follow">
 <link rel="icon" href="../../assets/parkproof-icon.svg" type="image/svg+xml">
 
@@ -128,6 +128,14 @@
     margin-bottom: 14px;
     letter-spacing: -0.01em;
   }
+  h3 {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 18px;
+    color: var(--ink-900);
+    margin-top: 28px;
+    margin-bottom: 10px;
+  }
   p { margin-bottom: 14px; color: var(--ink-700); }
   p.small { font-size: 14px; color: var(--ink-500); }
 
@@ -227,7 +235,7 @@
   footer a { color: var(--brand-700); text-decoration: none; }
   footer a:hover { text-decoration: underline; }
 
-  /* Auto-detect chip — mirrors the landing's pp-locale-chip pattern.
+  /* Auto-detect chip. Mirrors the landing's pp-locale-chip pattern.
      Shown only when the visitor's browser language is supported AND
      different from the current page's language. Dismissable per
      session via sessionStorage. */
@@ -278,69 +286,108 @@
 
   <div class="eyebrow">Verifica</div>
   <h1>Verifica un record di <span class="accent">prova ParkProof</span>.</h1>
-  <p class="lede">Ogni PDF di prova ParkProof porta un'appendice di firma crittografica. Questa pagina è la guida pubblica e offline perché chiunque — un funzionario comunale, un assicuratore, un cancelliere, o il conducente stesso — confermi che il record non è stato alterato dal momento del salvataggio.</p>
+  <p class="lede">Ogni PDF di prova ParkProof contiene un'appendice di firma crittografica, e ogni record si può salvare come file delle prove. Questa pagina mostra a chiunque, per esempio un funzionario del comune, un assicuratore, un cancelliere o il conducente stesso, come verificare offline che un record non è cambiato da quando ParkProof lo ha firmato.</p>
 
   <div class="callout">
-    <strong>Inquadramento onesto.</strong> La firma prova l'<em>integrità</em>: i byte all'interno di questo record sono identici ai byte firmati al momento della scansione. Non prova la <em>veridicità</em> del record (l'AI potrebbe aver letto male il cartello), né determina il peso legale della prova. Quel giudizio spetta a chi la rivede.
+    <strong>Inquadramento onesto.</strong> Una firma valida mostra l'<em>integrità</em>: i dettagli e le impronte digitali delle foto firmati sono esattamente quelli che ParkProof ha firmato, all'ora della firma. Non mostra che il record sia <em>vero</em> (l'AI potrebbe aver letto male il cartello), chi guidava, dove si trovava l'auto, né quando è arrivata o ripartita, e non stabilisce quale peso abbia il record. Questo spetta a chi lo esamina.
   </div>
 
   <h2>Cosa stai verificando</h2>
-  <p>Ogni sessione ParkProof ha un <strong>payload</strong> (un piccolo file di testo contenente i metadati canonici della sessione più gli hash SHA-256 delle foto del cartello + dell'auto) e una <strong>firma</strong> (il payload firmato con una chiave privata ECDSA P-256 gestita da AWS KMS che non lascia mai AWS). Entrambi sono stampati nell'appendice di firma di ogni PDF di prova esportato.</p>
-  <p>La <strong>chiave pubblica</strong> necessaria per verificare la firma è pubblicata su <a class="link" href="/parkproof-public-key.pem"><code>/parkproof-public-key.pem</code></a> — aprila nel browser per confermare il caricamento, poi salvala localmente.</p>
+  <p>Un record ParkProof è firmato in parti, chiamate anelli. L'anello 0 viene firmato quando ParkProof riceve il record salvato. Ogni anello successivo, come i dettagli al parcheggio, le foto delle condizioni dell'auto, una foto della prova di pagamento o la partenza, viene firmato quando ParkProof lo riceve e contiene lo SHA-256 dell'anello precedente, così gli anelli formano una catena. Ogni anello ha un <strong>payload</strong> (il testo esatto che è stato firmato, comprese le impronte digitali SHA-256 delle sue foto) e una <strong>firma</strong> fatta con la chiave privata di ParkProof (ECDSA P-256), che non esce mai da AWS KMS. Il PDF di prova stampa ogni anello nella sua appendice di firma. Il <strong>file delle prove</strong> del record (un file .json che il conducente può scaricare dal record nell'app) contiene gli stessi payload e le stesse firme, più le foto originali.</p>
+  <p>La <strong>chiave pubblica</strong> necessaria per verificare le firme è pubblicata su <a class="link" href="/parkproof-public-key.pem"><code>/parkproof-public-key.pem</code></a>. Aprila nel browser per confermare che si carica, poi salvala.</p>
 
   <h2>Cosa ti serve</h2>
   <ul>
-    <li><strong>Il PDF di prova</strong> — fornito dalla persona che contesta o produce il record.</li>
-    <li><strong><code>openssl</code></strong> — incluso in macOS e nella maggior parte delle distro Linux; su Windows, disponibile tramite Git Bash, WSL, o la build OpenSSL standalone.</li>
-    <li><strong>Circa 60 secondi.</strong></li>
+    <li><strong>Il PDF di prova o il file delle prove</strong>, fornito da chi presenta il record. Per verificare le foto serve il file delle prove.</li>
+    <li><strong><code>openssl</code></strong>. È incluso in macOS e nella maggior parte dei sistemi Linux. Su Windows è incluso in Git for Windows (Git Bash) o in WSL.</li>
+    <li><strong>Qualche minuto.</strong></li>
   </ul>
 
   <h2>Passo-passo</h2>
 
-  <p>Apri il PDF di prova, scorri fino alla pagina <strong>"Appendice firma"</strong> in fondo. Vedrai tre blocchi di testo: <code>payload</code>, <code>sig.base64</code>, e un riferimento all'URL della chiave pubblica. Salva i primi due in file sulla tua macchina, poi esegui la verifica:</p>
+  <p>Nel PDF, vai all'appendice di firma in fondo. Ogni anello ha tre blocchi: il payload come testo, il payload in base64 e la firma in base64. Copia i due blocchi base64 dell'anello 0 in file chiamati <code>link0-payload.b64</code> e <code>link0-sig.b64</code>, poi esegui:</p>
 
-  <pre><span class="comment"># 1. Salva il blocco payload dall'appendice PDF in payload.txt
-#    (copia-incolla esattamente; preserva i fine-riga).
-# 2. Salva il blocco firma base64 in sig.base64.
-# 3. Scarica la chiave pubblica.</span>
+  <pre><span class="comment"># 1. Decodifica il payload. base64 -d ignora gli a capo del PDF.</span>
+base64 -d link0-payload.b64 > link0-payload.txt
+
+<span class="comment"># 2. Decodifica la firma.</span>
+base64 -d link0-sig.b64 > link0-sig.bin
+
+<span class="comment"># 3. Scarica la chiave pubblica di ParkProof.</span>
 curl -O https://www.parkproof.com.au/parkproof-public-key.pem
 
-<span class="comment"># 4. Decodifica la firma base64 in byte grezzi.</span>
-base64 -d sig.base64 > sig.bin
-
-<span class="comment"># 5. Esegui la verifica.</span>
+<span class="comment"># 4. Verifica la firma. Output atteso: "Verified OK".</span>
 openssl dgst -sha256 -verify parkproof-public-key.pem \
-  -signature sig.bin payload.txt</pre>
+  -signature link0-sig.bin link0-payload.txt</pre>
 
-  <p>Il passo 5 verifica la firma <strong>solo sul payload</strong>. Il payload contiene gli hash SHA-256 delle foto, ma <code>Verified OK</code> non ricalcola gli hash delle immagini effettivamente presenti nel PDF. Per confermare che le foto stesse non siano state scambiate, devi rifare l'hash di ciascuna e confrontarlo con il valore nel payload:</p>
+  <p>Ripeti i passaggi 1, 2 e 4 per ogni anello, con i relativi nomi di file (<code>link1-payload.b64</code>, <code>link1-sig.b64</code> e così via). Non copiare il testo leggibile del payload al posto del blocco base64: il PDF manda a capo le righe lunghe, i byte cambiano e la verifica non riesce.</p>
 
-  <pre><span class="comment"># 6. Per OGNI foto del PDF, estraila/salvala su disco
-#    (es. sign-photo.jpg, car-photo.jpg, ambient-photo.jpg),
-#    poi ricalcola il suo SHA-256.</span>
-sha256sum sign-photo.jpg
-<span class="comment"># oppure, in modo equivalente:</span>
-openssl dgst -sha256 sign-photo.jpg
+  <h3>Su Windows</h3>
+  <p>In cmd o PowerShell <code>base64 -d</code> non è disponibile. Decodifica con <code>certutil</code>, incluso in Windows, e in PowerShell digita <code>curl.exe</code> al posto di <code>curl</code>. Puoi anche eseguire tutti i comandi di questa pagina così come sono scritti in Git Bash.</p>
 
-<span class="comment"># 7. Confronta ogni hash prodotto con il valore corrispondente
-#    nel payload:
-#      sign_photo_sha256     ⇄  hash di sign-photo.jpg
-#      car_photo_sha256      ⇄  hash di car-photo.jpg
-#      ambient_photo_sha256  ⇄  hash di ambient-photo.jpg</span></pre>
+  <pre>certutil -decode link0-payload.b64 link0-payload.txt
+certutil -decode link0-sig.b64 link0-sig.bin
+curl.exe -O https://www.parkproof.com.au/parkproof-public-key.pem</pre>
+
+  <h2>Controlla che gli anelli siano collegati in ordine</h2>
+  <p>Ogni anello dopo l'anello 0 contiene <code>parent_payload_sha256</code>: lo SHA-256 del payload dell'anello precedente. Stampa lo SHA-256 di ogni file payload e confrontalo con il valore nell'anello successivo.</p>
+
+  <pre><span class="comment"># 5. Stampa lo SHA-256 del payload dell'anello 0.</span>
+openssl dgst -sha256 link0-payload.txt
+<span class="comment"># Il valore dopo "=" deve essere uguale a parent_payload_sha256 nell'anello 1.
+# Fai lo stesso per ogni anello successivo.</span></pre>
+
+  <p>Se due anelli hanno lo stesso numero (2a e 2b), due dispositivi hanno aggiunto ciascuno una parte in quel punto. Entrambi indicano lo stesso anello precedente.</p>
+
+  <h2>Verifica le foto</h2>
+  <p>Le firme coprono l'impronta digitale SHA-256 di ogni foto, non l'immagine stessa. Le foto stampate nel PDF sono copie ricodificate, quindi i loro byte non corrispondono mai. Per verificare una foto, usa il file delle prove del record. Elenca ogni foto sotto <code>photos</code>, con il suo <code>sha256</code>, gli anelli che la firmano (<code>signed_in</code>) e i byte originali in base64 (<code>bytes_base64</code>). Il nome del file inizia con parkproof-evidence-, seguito dall'inizio dell'ID del record. I comandi qui sotto lo chiamano <code>evidence.json</code>.</p>
+
+  <pre><span class="comment"># 6. Estrai la prima foto dal file con jq, uno strumento JSON gratuito.</span>
+jq -r '.photos[0].bytes_base64' evidence.json | base64 -d > photo1.jpg
+
+<span class="comment"># 7. Stampa il suo SHA-256.</span>
+openssl dgst -sha256 photo1.jpg
+
+<span class="comment"># 8. Guarda quale anello e quale campo la firmano.</span>
+jq '.photos[0].signed_in' evidence.json</pre>
+
+  <p>Il valore esadecimale deve essere uguale allo <code>sha256</code> della foto nel payload firmato di ogni anello in <code>signed_in</code>: <code>sign_photo_sha256</code>, <code>car_photo_sha256</code> o <code>ambient_photo_sha256</code> nell'anello 0, oppure uno <code>sha256</code> sotto <code>photos</code>, <code>photo</code> o <code>return_photos</code> in un anello successivo. Confrontalo con il payload che hai verificato, non solo con lo <code>sha256</code> accanto alla foto nel file, che non è firmato. Usa <code>.photos[1]</code> per la seconda foto, e così via.</p>
+  <p>Senza jq, apri il file in un editor di testo, copia il valore <code>bytes_base64</code> di una foto in un file chiamato <code>photo1.b64</code>, poi esegui <code>base64 -d photo1.b64 &gt; photo1.jpg</code>.</p>
+
+  <h3>Su Windows</h3>
+  <p>Su Windows, PowerShell può leggere il file da sé:</p>
+
+  <pre>$e = Get-Content evidence.json -Raw | ConvertFrom-Json
+[IO.File]::WriteAllBytes((Join-Path $PWD 'photo1.jpg'), [Convert]::FromBase64String($e.photos[0].bytes_base64))
+certutil -hashfile photo1.jpg SHA256
+$e.photos[0].signed_in</pre>
 
   <div class="callout">
-    <strong>Se un hash non corrisponde, quella foto è stata cambiata dopo la firma.</strong> Il <code>Verified OK</code> del passo 5 da solo <em>non</em> verifica le immagini: conferma solo che i valori-hash nel payload sono intatti. Le foto sono confermate solo quando ogni hash ricalcolato corrisponde esattamente al valore nel payload.
+    <strong>La verifica delle foto è un passaggio a parte.</strong> <code>Verified OK</code> mostra che le impronte digitali nel payload non sono cambiate. Solo ricalcolare l'hash della foto originale mostra che la foto è quella firmata. Se gli hash sono diversi, quella foto non è quella firmata da ParkProof, anche se la verifica della firma è riuscita. Se il file non ha i byte di una foto (<code>bytes</code> vale <code>not_on_this_device</code>, oppure <code>withheld_permit</code> per la foto di un permesso che il conducente ha scelto di non includere), non si può usare per verificare quella foto.
   </div>
+
+  <h2>Usare il file delle prove al posto del PDF</h2>
+  <p>Il file delle prove contiene anche il payload e la firma di ogni anello in base64, quindi puoi fare i passaggi da 1 a 5 senza il PDF. Estrai l'anello 0 dal file, poi esegui i passaggi da 3 a 5 come sopra:</p>
+
+  <pre>jq -r '.links[0].canonical_payload_base64' evidence.json | base64 -d > link0-payload.txt
+jq -r '.links[0].signature_base64' evidence.json | base64 -d > link0-sig.bin</pre>
+
+  <p>In PowerShell:</p>
+
+  <pre>$e = Get-Content evidence.json -Raw | ConvertFrom-Json
+[IO.File]::WriteAllBytes((Join-Path $PWD 'link0-payload.txt'), [Convert]::FromBase64String($e.links[0].canonical_payload_base64))
+[IO.File]::WriteAllBytes((Join-Path $PWD 'link0-sig.bin'), [Convert]::FromBase64String($e.links[0].signature_base64))</pre>
 
   <h2>Cosa significa il risultato</h2>
 
   <div class="grid-2">
     <div class="card ok">
       <h3>Verificato <span class="label">PASS</span></h3>
-      <p><code>Verified OK</code> — il payload nel tuo PDF è byte-identico a quello che ParkProof ha firmato al momento della scansione. I metadati (regole del cartello, GPS, timestamp, indirizzo) e i <em>valori</em> degli hash delle foto nel payload sono intatti. Confermare le foto stesse richiede il passo di ri-hash qui sopra (passi 6–7).</p>
+      <p><code>Verified OK</code>: il payload è esattamente ciò che ParkProof ha firmato. I dettagli e le impronte digitali delle foto che contiene non sono cambiati da quando ParkProof li ha firmati, all'ora <code>signed_at</code> indicata al suo interno. Le foto stesse si verificano nei passaggi da 6 a 8.</p>
     </div>
     <div class="card fail">
       <h3>Fallimento <span class="label">FAIL</span></h3>
-      <p><code>Verification failure</code> — il payload, la firma, o entrambi sono stati modificati da quando il record è stato salvato. Il PDF potrebbe essere stato modificato, l'appendice manomessa, o copia-incolla ha introdotto differenze di spaziatura. Ripeti la copia con attenzione prima di trarre conclusioni.</p>
+      <p><code>Verification failure</code>: il payload o la firma non sono ciò che ParkProof ha firmato. Il record potrebbe essere stato modificato, oppure un blocco è stato copiato con un errore. Copia di nuovo i blocchi base64 per intero e riprova prima di trarre conclusioni.</p>
     </div>
   </div>
 
@@ -348,13 +395,14 @@ openssl dgst -sha256 sign-photo.jpg
   <p>Una verifica riuscita conferma l'<em>integrità</em>. Non conferma:</p>
   <ul>
     <li><strong>Che l'AI abbia letto il cartello correttamente.</strong> La scansione ParkProof è una lettura automatica di un cartello di parcheggio, e le macchine possono sbagliare. Il testo del verdetto e le regole nel record sono la migliore lettura dell'AI al momento della scansione, non la verità assoluta.</li>
-    <li><strong>Che le foto raffigurino ciò che la persona dice raffigurino.</strong> La firma prova che le foto non sono state alterate <em>dal salvataggio</em>, non che le foto stesse siano state catturate onestamente.</li>
+    <li><strong>Che le foto raffigurino ciò che la persona dice raffigurino.</strong> Una firma valida mostra che le impronte digitali delle foto non sono cambiate da quando ParkProof le ha firmate, e ricalcolare l'hash mostra se una foto corrisponde alla sua impronta digitale. Nessuna delle due cose mostra che le foto siano state scattate onestamente.</li>
     <li><strong>Qualsiasi esito legale.</strong> Se la prova supporti un ricorso, un rimborso, o un caso giudiziario è la decisione del revisore. ParkProof è uno strumento, non un avvocato.</li>
+    <li><strong>Dove si trovava l'auto, quando è arrivata o ripartita, o chi guidava.</strong> La posizione nel record viene dal telefono del conducente, oppure l'ha inserita il conducente a mano. Gli orari indicati come ora del telefono vengono dal telefono del conducente, e l'ora della firma di ParkProof è il momento in cui ParkProof ha ricevuto ogni parte.</li>
   </ul>
 
   <h2>Perché esiste</h2>
-  <p>La maggior parte delle app di parcheggio che producono "prova" producono uno screenshot. Gli screenshot non hanno storia di integrità — potrebbero essere stati modificati in qualunque momento tra quando sono stati scattati e quando sono stati inviati. La firma crittografica è la differenza tra <em>"ecco cosa ho visto"</em> e <em>"ecco cosa ho visto, ed ecco la prova matematica che non l'ho cambiato da allora."</em></p>
-  <p>La chiave pubblica è pubblicata in modo che la verifica sia interamente offline — non devi fidarti di ParkProof, contattare i nostri server, o eseguire la nostra app per confermare la dichiarazione di integrità. La verifica può essere eseguita anni dopo, anche se ParkProof non è più mantenuta, finché <code>openssl</code> esiste ancora.</p>
+  <p>La maggior parte delle app di parcheggio che producono "prove" producono uno screenshot. Uno screenshot può essere modificato in qualunque momento tra quando viene fatto e quando viene inviato. La firma crittografica è la differenza tra <em>"ecco cosa ho visto"</em> e <em>"ecco cosa ho visto, e chiunque può verificare che non è cambiato da quando ParkProof lo ha firmato."</em></p>
+  <p>La chiave pubblica è pubblicata perché la verifica si possa fare del tutto offline. Non devi fidarti di ParkProof, contattare i nostri server o usare la nostra app. La verifica si può fare anche tra anni, anche se ParkProof non fosse più attivo, finché esiste <code>openssl</code>.</p>
 
   <h2>Domande?</h2>
   <p>Email <a class="link" href="mailto:hello@parkproof.com.au">hello@parkproof.com.au</a>. Rispondiamo.</p>
@@ -365,7 +413,7 @@ openssl dgst -sha256 sign-photo.jpg
   </footer>
 </div>
 
-<!-- Auto-detect chip — nudges visitors whose browser language differs
+<!-- Auto-detect chip: nudges visitors whose browser language differs
      from the current page's language to their language's /verify/
      subdirectory. The locale switcher at top remains for explicit
      switching; this chip is the one-tap discoverability layer. -->

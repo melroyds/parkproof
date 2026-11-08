@@ -12,10 +12,13 @@
 //
 // The location is where the PHONE was when the driver tapped. It doesn't
 // show where the car was or when it moved, and the screens say so.
-import type { DepartureData, GpsLocation, ParkingSession, SignedAddendum } from '../types'
+import type { DepartureData, GpsLocation, ParkingSession, PhotoRef, SignedAddendum } from '../types'
+import { CAPS } from '../../lambda/addendum-schema.js'
 import { ACCURACY_USABLE_M } from './accuracy'
 import { chainKeyForAddenda } from './evidence-chain'
+import { RECORD_PHOTOS_MAX, photoRefData } from './evidence-photos'
 import { haversineMeters } from './geo'
+import { addConditionPhotos, addPhotoRefsToRecord, discardUnreferencedRefs } from './record-photos'
 import { queueAddendum } from './signing'
 import { getSession, updateSession } from './storage'
 
@@ -254,17 +257,22 @@ export function farFromArrival(
   return distanceM - (error(arrivalAccuracyM) + error(departureAccuracyM)) > DEPARTURE_FAR_M
 }
 
-/** The departure addendum's data for a tap (pure). Return photos come with T2. */
+/**
+ * The departure addendum's data for a tap (pure). `returnPhotos` are the
+ * condition photos taken on the departure sheet (return-* roles), at most
+ * five.
+ */
 export function buildDepartureData(
   session: Pick<ParkingSession, 'location'>,
   endedAt: string,
   location: GpsLocation | null,
+  returnPhotos: readonly PhotoRef[] = [],
 ): DepartureData {
   return {
     ended_at: endedAt,
     location,
     distance_from_arrival_m: distanceFromArrival(session, location),
-    return_photos: [],
+    return_photos: returnPhotos.slice(0, CAPS.returnPhotos).map(photoRefData),
   }
 }
 
@@ -282,6 +290,33 @@ export type DepartureResult =
   | { status: 'skipped'; reason: 'missing' | 'shared' | 'not_this_tap' }
 
 /**
+ * Keep return photos that no departure part of this tap carries: signed as
+ * their own condition part (`when: 'return'`) when the chain can take one,
+ * else listed on the record unsigned (the record screen says they aren't
+ * in a signed part) when there is room for their refs. Returns false when
+ * neither worked; the caller then tidies their bytes away. Never throws.
+ */
+function keepReturnPhotos(sessionId: string, canExtend: boolean, returnPhotos: readonly PhotoRef[]): boolean {
+  const photos = returnPhotos.slice(0, CAPS.returnPhotos).map(photoRefData)
+  try {
+    if (canExtend && addConditionPhotos(sessionId, 'return', photos, null)) return true
+  } catch (err) {
+    console.warn('[departure] could not sign the return photos:', err)
+  }
+  try {
+    const session = getSession(sessionId)
+    if (!session || session.shared_from) return false
+    const listed = Array.isArray(session.photos) ? session.photos.length : 0
+    if (listed + photos.length > RECORD_PHOTOS_MAX) return false
+    console.warn('[departure] no part could carry the return photos; they are kept on the record, unsigned')
+    return addPhotoRefsToRecord(sessionId, photos)
+  } catch (err) {
+    console.warn('[departure] could not keep the return photos:', err)
+    return false
+  }
+}
+
+/**
  * Store the departure for a tap: the record's `departure` field (unless it
  * already has one) and the departure addendum, queued for signing on the
  * record's queue. Skipped when the record is gone, is a shared copy, or no
@@ -292,22 +327,39 @@ export type DepartureResult =
  * addendum's data so the record says what is signed. An addendum is queued
  * only when this device can extend the chain (`chainKeyForAddenda`), the
  * same rule the catch-up follows. Never throws.
+ *
+ * `returnPhotos` (the departure sheet's condition photos) go into the
+ * departure addendum and the record's `photos`. When no departure part of
+ * this tap can carry them (one was already queued, another tap ended the
+ * record, or the record can't take the part), they are signed as their own
+ * condition part (`when: 'return'`), or failing that listed on the record
+ * unsigned, so they never silently disappear. `completeDeparture` tidies
+ * the bytes of any the record ends up not referring to.
  */
 export function saveDeparture(
   sessionId: string,
   endedAt: string,
   location: GpsLocation | null,
   onRecordUpdated?: (sessionId: string) => void,
+  returnPhotos: readonly PhotoRef[] = [],
 ): DepartureResult {
   const session = getSession(sessionId)
   if (!session) return { status: 'skipped', reason: 'missing' }
   if (session.shared_from) return { status: 'skipped', reason: 'shared' }
-  if (session.ended_at !== endedAt) return { status: 'skipped', reason: 'not_this_tap' }
+  if (session.ended_at !== endedAt) {
+    // Another tap or device ended the record. Photos taken on this sheet
+    // are still the car's condition on return.
+    if (returnPhotos.length > 0 && keepReturnPhotos(sessionId, chainKeyForAddenda(session) !== undefined, returnPhotos)) {
+      notifyUpdated(sessionId, onRecordUpdated)
+    }
+    return { status: 'skipped', reason: 'not_this_tap' }
+  }
 
   const existing = (session.addenda ?? []).find((a) => a.kind === 'departure') ?? null
   const data = existing
     ? (existing.data as unknown as DepartureData)
-    : buildDepartureData(session, endedAt, location)
+    : buildDepartureData(session, endedAt, location, returnPhotos)
+  const canExtend = chainKeyForAddenda(session) !== undefined
   let changed = false
   if (session.departure === undefined) {
     try {
@@ -318,7 +370,7 @@ export function saveDeparture(
     }
   }
   let addendum: SignedAddendum | null = existing
-  if (!existing && chainKeyForAddenda(session) !== undefined) {
+  if (!existing && canExtend) {
     try {
       addendum = queueAddendum(sessionId, 'departure', data)
       if (addendum) changed = true
@@ -326,19 +378,42 @@ export function saveDeparture(
       console.warn('[departure] could not queue the departure addendum:', err)
     }
   }
-  if (changed) {
-    try {
-      onRecordUpdated?.(sessionId)
-    } catch (err) {
-      console.warn('[departure] record-updated callback failed:', err)
+  if (returnPhotos.length > 0) {
+    if (addendum && !existing) {
+      // Signed in the departure part just queued, which carries them (so
+      // their bytes are kept even if listing them fails).
+      try {
+        addPhotoRefsToRecord(sessionId, data.return_photos)
+        changed = true
+      } catch (err) {
+        console.warn('[departure] the return photos are in the departure part, but could not be listed on the record:', err)
+      }
+    } else if (keepReturnPhotos(sessionId, canExtend, returnPhotos)) {
+      // The departure part was already queued without them, or none could be.
+      changed = true
     }
   }
+  if (changed) notifyUpdated(sessionId, onRecordUpdated)
   return { status: 'saved', data, addendum }
+}
+
+function notifyUpdated(sessionId: string, onRecordUpdated?: (sessionId: string) => void): void {
+  try {
+    onRecordUpdated?.(sessionId)
+  } catch (err) {
+    console.warn('[departure] record-updated callback failed:', err)
+  }
 }
 
 export interface CompleteDepartureOptions {
   /** How long to keep waiting for the fix after the tap. Default DEPARTURE_FIX_WAIT_MS. */
   waitMs?: number
+  /**
+   * The departure sheet's condition photos (return-* roles): their refs once
+   * their writes have settled (each within PHOTO_WRITE_TIMEOUT_MS). Waited
+   * for alongside the fix.
+   */
+  returnPhotos?: Promise<PhotoRef[]> | readonly PhotoRef[]
   /** Starts a fresh fix when the sheet's one is too old (tests inject a fake). */
   requestFix?: () => DepartureFixRequest
   /** Called after the record was written (App mirrors it to the cloud when signed in). */
@@ -362,6 +437,10 @@ export async function completeDeparture(
 ): Promise<DepartureResult> {
   const tapMs = Date.parse(endedAt)
   const requestFix = options.requestFix ?? (() => requestDepartureFix())
+  const photos: Promise<readonly PhotoRef[]> = Promise.resolve(options.returnPhotos ?? []).catch((err) => {
+    console.warn('[departure] could not keep the return photos:', err)
+    return []
+  })
   let location: GpsLocation | null = null
   try {
     let active = request ?? requestFix()
@@ -371,5 +450,38 @@ export async function completeDeparture(
   } catch (err) {
     console.warn('[departure] could not get a location:', err)
   }
-  return saveDeparture(sessionId, endedAt, location, options.onRecordUpdated)
+  const returnPhotos = await photos
+  const result = saveDeparture(sessionId, endedAt, location, options.onRecordUpdated, returnPhotos)
+  // Return photos the record doesn't refer to after all (it's gone, or no
+  // part and no room could take them) don't stay on the device.
+  await discardUnreferencedRefs(sessionId, returnPhotos)
+  return result
+}
+
+/**
+ * The departure sheet's photos after a Confirm that didn't end the record
+ * (it was ended meanwhile, by another tap or device, or it's gone, or the
+ * end couldn't be stored): kept on the record as return photos when it
+ * exists and has ended (see keepReturnPhotos), else tidied away. Never
+ * rejects.
+ */
+export async function settleReturnPhotos(
+  sessionId: string,
+  returnPhotos: Promise<PhotoRef[]> | readonly PhotoRef[] | undefined,
+  onRecordUpdated?: (sessionId: string) => void,
+): Promise<void> {
+  let refs: readonly PhotoRef[]
+  try {
+    refs = await Promise.resolve(returnPhotos ?? [])
+  } catch (err) {
+    console.warn('[departure] could not keep the return photos:', err)
+    return
+  }
+  if (refs.length === 0) return
+  const session = getSession(sessionId)
+  // Only an ended record has a return; one that couldn't be ended (storage full) keeps nothing.
+  if (session && !session.shared_from && session.ended_at && keepReturnPhotos(sessionId, chainKeyForAddenda(session) !== undefined, refs)) {
+    notifyUpdated(sessionId, onRecordUpdated)
+  }
+  await discardUnreferencedRefs(sessionId, refs)
 }

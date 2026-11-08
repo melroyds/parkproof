@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Verify a ParkProof evidence record — ParkProof</title>
-<meta name="description" content="Step-by-step openssl walkthrough for verifying that a ParkProof evidence PDF hasn't been altered since it was saved. Cryptographic signing via AWS KMS ECDSA P-256.">
+<title>Verify a ParkProof evidence record | ParkProof</title>
+<meta name="description" content="Step-by-step openssl walkthrough for checking that a ParkProof evidence record hasn't changed since ParkProof signed it. Cryptographic signing via AWS KMS ECDSA P-256.">
 <meta name="robots" content="index, follow">
 <link rel="icon" href="../assets/parkproof-icon.svg" type="image/svg+xml">
 
@@ -128,6 +128,14 @@
     margin-bottom: 14px;
     letter-spacing: -0.01em;
   }
+  h3 {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 18px;
+    color: var(--ink-900);
+    margin-top: 28px;
+    margin-bottom: 10px;
+  }
   p { margin-bottom: 14px; color: var(--ink-700); }
   p.small { font-size: 14px; color: var(--ink-500); }
 
@@ -227,7 +235,7 @@
   footer a { color: var(--brand-700); text-decoration: none; }
   footer a:hover { text-decoration: underline; }
 
-  /* Auto-detect chip — mirrors the landing's pp-locale-chip pattern.
+  /* Auto-detect chip. Mirrors the landing's pp-locale-chip pattern.
      Shown only when the visitor's browser language is supported AND
      different from the current page's language. Dismissable per
      session via sessionStorage. */
@@ -278,69 +286,108 @@
 
   <div class="eyebrow">Verification</div>
   <h1>Verify a ParkProof <span class="accent">evidence record</span>.</h1>
-  <p class="lede">Every ParkProof evidence PDF carries a cryptographic signature appendix. This page is the public, offline walkthrough for anyone — a council officer, an insurer, a court clerk, or the driver themselves — to confirm that the record hasn't been altered since the moment it was saved.</p>
+  <p class="lede">Every ParkProof evidence PDF carries a cryptographic signature appendix, and every record can be saved as an evidence file. This page shows anyone, such as a council officer, an insurer, a court clerk or the driver, how to check offline that a record hasn't changed since ParkProof signed it.</p>
 
   <div class="callout">
-    <strong>Honest framing.</strong> The signature proves <em>integrity</em>: the bytes inside this record are identical to the bytes signed at scan time. It does not prove the record's <em>truthfulness</em> (the AI could have read the sign incorrectly), nor does it determine the legal weight of the evidence. That's a separate judgement made by whoever's reviewing it.
+    <strong>Honest framing.</strong> A valid signature shows <em>integrity</em>: the signed details and photo fingerprints are exactly what ParkProof signed, at the signed time. It doesn't show that the record is <em>true</em> (the AI could have read the sign wrongly), who was driving, where the car was, or when the car arrived or left, and it doesn't decide what weight the record carries. That's for whoever reviews it.
   </div>
 
   <h2>What you're verifying</h2>
-  <p>Each ParkProof session has a <strong>payload</strong> (a small text file containing the canonical session metadata plus SHA-256 hashes of the sign + car photos) and a <strong>signature</strong> (the payload signed with an AWS KMS-managed ECDSA P-256 private key that never leaves AWS). Both are printed in the signature appendix of every exported evidence PDF.</p>
-  <p>The <strong>public key</strong> needed to verify the signature is published at <a class="link" href="/parkproof-public-key.pem"><code>/parkproof-public-key.pem</code></a> — open it in a browser to confirm it loads, then save it locally.</p>
+  <p>A ParkProof record is signed in parts, called links. Link 0 is signed when ParkProof receives the saved record. Each later link, such as the details at parking, condition photos, a proof of payment photo or the departure, is signed when ParkProof receives it, and carries the SHA-256 of the link before it, so the links form a chain. Each link has a <strong>payload</strong> (the exact text that was signed, including the SHA-256 fingerprints of its photos) and a <strong>signature</strong> made with ParkProof's private key (ECDSA P-256), which never leaves AWS KMS. The evidence PDF prints every link in its signature appendix. The record's <strong>evidence file</strong> (a .json file the driver can download from the record in the app) holds the same payloads and signatures, plus the original photos.</p>
+  <p>The <strong>public key</strong> needed to check the signatures is published at <a class="link" href="/parkproof-public-key.pem"><code>/parkproof-public-key.pem</code></a>. Open it in a browser to confirm it loads, then save it.</p>
 
   <h2>What you'll need</h2>
   <ul>
-    <li><strong>The evidence PDF</strong> — supplied by the person disputing or producing the record.</li>
-    <li><strong><code>openssl</code></strong> — bundled with macOS and most Linux distros; on Windows, available via Git Bash, WSL, or the standalone OpenSSL build.</li>
-    <li><strong>About 60 seconds.</strong></li>
+    <li><strong>The evidence PDF or the evidence file</strong>, from the person producing the record. Checking the photos needs the evidence file.</li>
+    <li><strong><code>openssl</code></strong>. It comes with macOS and most Linux systems. On Windows, it comes with Git for Windows (Git Bash) or WSL.</li>
+    <li><strong>A few minutes.</strong></li>
   </ul>
 
   <h2>Step-by-step</h2>
 
-  <p>Open the evidence PDF, scroll to the <strong>"Signature appendix"</strong> page at the back. You'll see three blocks of text: <code>payload</code>, <code>sig.base64</code>, and a reference to the public key URL. Save the first two to files on your machine, then run the verification:</p>
+  <p>In the PDF, go to the signature appendix at the back. Each link has three blocks: the payload as text, the payload in base64 and the signature in base64. Copy the two base64 blocks of link 0 into files named <code>link0-payload.b64</code> and <code>link0-sig.b64</code>, then run:</p>
 
-  <pre><span class="comment"># 1. Save the payload block from the PDF appendix to payload.txt
-#    (copy-paste exactly; preserve line endings).
-# 2. Save the base64 signature block to sig.base64.
-# 3. Fetch the public key.</span>
+  <pre><span class="comment"># 1. Decode the payload. base64 -d ignores the PDF's line wrapping.</span>
+base64 -d link0-payload.b64 > link0-payload.txt
+
+<span class="comment"># 2. Decode the signature.</span>
+base64 -d link0-sig.b64 > link0-sig.bin
+
+<span class="comment"># 3. Download ParkProof's public key.</span>
 curl -O https://www.parkproof.com.au/parkproof-public-key.pem
 
-<span class="comment"># 4. Decode the base64 signature to raw bytes.</span>
-base64 -d sig.base64 > sig.bin
-
-<span class="comment"># 5. Run the verification.</span>
+<span class="comment"># 4. Check the signature. Expect "Verified OK".</span>
 openssl dgst -sha256 -verify parkproof-public-key.pem \
-  -signature sig.bin payload.txt</pre>
+  -signature link0-sig.bin link0-payload.txt</pre>
 
-  <p>A passing <code>openssl</code> check proves the payload is intact — but the payload only <em>contains</em> the photos' hashes, it isn't the photos themselves. To confirm the images in the PDF are the ones that were signed, you have to recompute each photo's hash and compare it to the value inside the payload.</p>
+  <p>Do steps 1, 2 and 4 for each link, with its own file names (<code>link1-payload.b64</code>, <code>link1-sig.b64</code> and so on). Don't copy the readable payload text instead of the base64 block: the PDF wraps long lines, which changes the bytes, and the check fails.</p>
 
-  <pre><span class="comment"># 6. Save each photo from the PDF to a file (e.g. sign.jpg, car.jpg,
-#    ambient.jpg). Then recompute its SHA-256:</span>
-sha256sum sign.jpg
-<span class="comment"># or, if you don't have sha256sum:</span>
-openssl dgst -sha256 sign.jpg
+  <h3>On Windows</h3>
+  <p>In cmd or PowerShell, <code>base64 -d</code> isn't available. Decode with <code>certutil</code>, which comes with Windows, and in PowerShell type <code>curl.exe</code> in place of <code>curl</code>. You can also run every command on this page as written in Git Bash.</p>
 
-<span class="comment"># 7. Open payload.txt and find the matching hash field:
-#      sign_photo_sha256     ← the sign photo
-#      car_photo_sha256      ← the car photo
-#      ambient_photo_sha256  ← the wider-context photo
-#    Compare each computed hash, character for character, to the value
-#    in payload.txt. They must match exactly.</span></pre>
+  <pre>certutil -decode link0-payload.b64 link0-payload.txt
+certutil -decode link0-sig.b64 link0-sig.bin
+curl.exe -O https://www.parkproof.com.au/parkproof-public-key.pem</pre>
+
+  <h2>Check the links are joined in order</h2>
+  <p>Each link after link 0 carries <code>parent_payload_sha256</code>: the SHA-256 of the payload of the link before it. Print the SHA-256 of each payload file and compare it with the next link's value.</p>
+
+  <pre><span class="comment"># 5. Print the SHA-256 of link 0's payload.</span>
+openssl dgst -sha256 link0-payload.txt
+<span class="comment"># The value after "=" must equal parent_payload_sha256 in link 1.
+# Do the same for each link that follows.</span></pre>
+
+  <p>If two links share a number (2a and 2b), two devices each added a part at that point. Both name the same link before them.</p>
+
+  <h2>Check the photos</h2>
+  <p>The signatures cover each photo's SHA-256 fingerprint, not the image itself. The photos printed in the PDF are re-encoded copies, so their bytes never match. To check a photo, use the record's evidence file. It lists each photo under <code>photos</code>, with its <code>sha256</code>, the links that sign it (<code>signed_in</code>) and the original bytes in base64 (<code>bytes_base64</code>). The file's name starts with parkproof-evidence- and the start of the record's ID. These commands call it <code>evidence.json</code>.</p>
+
+  <pre><span class="comment"># 6. Take the first photo out of the file with jq, a free JSON tool.</span>
+jq -r '.photos[0].bytes_base64' evidence.json | base64 -d > photo1.jpg
+
+<span class="comment"># 7. Print its SHA-256.</span>
+openssl dgst -sha256 photo1.jpg
+
+<span class="comment"># 8. See which link and field sign it.</span>
+jq '.photos[0].signed_in' evidence.json</pre>
+
+  <p>The hex value must equal the photo's <code>sha256</code> inside the signed payload of each link in <code>signed_in</code>: <code>sign_photo_sha256</code>, <code>car_photo_sha256</code> or <code>ambient_photo_sha256</code> in link 0, or a <code>sha256</code> under <code>photos</code>, <code>photo</code> or <code>return_photos</code> in a later link. Check it against the payload you verified, not just the <code>sha256</code> next to the photo in the file, which isn't signed. Use <code>.photos[1]</code> for the second photo, and so on.</p>
+  <p>Without jq, open the file in a text editor, copy a photo's <code>bytes_base64</code> value into a file named <code>photo1.b64</code>, then run <code>base64 -d photo1.b64 &gt; photo1.jpg</code>.</p>
+
+  <h3>On Windows</h3>
+  <p>On Windows, PowerShell can read the file itself:</p>
+
+  <pre>$e = Get-Content evidence.json -Raw | ConvertFrom-Json
+[IO.File]::WriteAllBytes((Join-Path $PWD 'photo1.jpg'), [Convert]::FromBase64String($e.photos[0].bytes_base64))
+certutil -hashfile photo1.jpg SHA256
+$e.photos[0].signed_in</pre>
 
   <div class="callout">
-    <strong>This step is not optional.</strong> If a photo's recomputed hash does <em>not</em> match the corresponding <code>sign_photo_sha256</code> / <code>car_photo_sha256</code> / <code>ambient_photo_sha256</code> value in the payload, that photo was changed after the record was signed — even if <code>openssl</code> reported <code>Verified OK</code>. A passing signature alone proves the metadata and hash <em>values</em> weren't altered; it does <strong>not</strong> verify the images. Only the hash comparison above does that.
+    <strong>The photo check is separate.</strong> <code>Verified OK</code> shows the fingerprints in a payload haven't changed. Only re-hashing the original photo shows a photo is the one that was signed. If the hashes differ, that photo isn't the one ParkProof signed, even when the signature check passed. A file with no bytes for a photo (<code>bytes</code> is <code>not_on_this_device</code>, or <code>withheld_permit</code> for a photo of a permit the driver chose not to include) can't be used to check that photo.
   </div>
+
+  <h2>Using the evidence file instead of the PDF</h2>
+  <p>The evidence file also holds each link's payload and signature in base64, so you can do steps 1 to 5 without the PDF. Take link 0 out of the file, then run steps 3 to 5 as above:</p>
+
+  <pre>jq -r '.links[0].canonical_payload_base64' evidence.json | base64 -d > link0-payload.txt
+jq -r '.links[0].signature_base64' evidence.json | base64 -d > link0-sig.bin</pre>
+
+  <p>In PowerShell:</p>
+
+  <pre>$e = Get-Content evidence.json -Raw | ConvertFrom-Json
+[IO.File]::WriteAllBytes((Join-Path $PWD 'link0-payload.txt'), [Convert]::FromBase64String($e.links[0].canonical_payload_base64))
+[IO.File]::WriteAllBytes((Join-Path $PWD 'link0-sig.bin'), [Convert]::FromBase64String($e.links[0].signature_base64))</pre>
 
   <h2>What the result means</h2>
 
   <div class="grid-2">
     <div class="card ok">
       <h3>Verified <span class="label">PASS</span></h3>
-      <p><code>Verified OK</code> — the payload in your PDF is byte-identical to what ParkProof signed at scan time. The sign rules, GPS, timestamp, address, and the photo <em>hash values</em> recorded in the payload are intact. This does <strong>not</strong> on its own confirm the photos in the PDF — to verify the images, complete the hash-comparison step (steps 6–7) above.</p>
+      <p><code>Verified OK</code>: the payload is exactly what ParkProof signed. The details and photo fingerprints in it haven't changed since ParkProof signed them, at the <code>signed_at</code> time inside it. The photos themselves are checked in steps 6 to 8.</p>
     </div>
     <div class="card fail">
       <h3>Failure <span class="label">FAIL</span></h3>
-      <p><code>Verification failure</code> — the payload, the signature, or both have been modified since the record was saved. The PDF may have been edited, the appendix tampered with, or copy-paste introduced whitespace differences. Repeat the copy carefully before drawing conclusions.</p>
+      <p><code>Verification failure</code>: the payload or the signature isn't what ParkProof signed. The record may have been changed, or a block may have been copied with a mistake. Copy the base64 blocks again in full and retry before drawing conclusions.</p>
     </div>
   </div>
 
@@ -348,13 +395,14 @@ openssl dgst -sha256 sign.jpg
   <p>A successful verification confirms <em>integrity</em>. It does not confirm:</p>
   <ul>
     <li><strong>That the AI read the sign correctly.</strong> The ParkProof scan is a machine read of a parking sign, and machines can be wrong. The verdict text and rules in the record are the AI's best read at scan time, not ground truth.</li>
-    <li><strong>That the photos depict what the person says they depict.</strong> The signature proves the photos haven't been altered <em>since saving</em>, not that the photos themselves were honestly captured.</li>
+    <li><strong>That the photos depict what the person says they depict.</strong> A valid signature shows the photo fingerprints haven't changed since ParkProof signed them, and re-hashing shows whether a photo matches its fingerprint. Neither shows the photos were honestly taken.</li>
     <li><strong>Any legal outcome.</strong> Whether the evidence supports an appeal, a refund, or a court case is the reviewer's call. ParkProof is a tool, not a lawyer.</li>
+    <li><strong>Where the car was, when it arrived or left, or who was driving.</strong> The location in the record comes from the driver's phone, or the driver typed it in. Times marked as phone times come from the driver's phone, and ParkProof's signing time is when ParkProof received each part.</li>
   </ul>
 
   <h2>Why this exists</h2>
-  <p>Most parking apps that produce "evidence" produce a screenshot. Screenshots have no integrity story — they could have been edited at any point between when they were taken and when they were sent. The cryptographic signature is the difference between <em>"here's what I saw"</em> and <em>"here's what I saw, and here's mathematical proof I haven't changed it since."</em></p>
-  <p>The public key is published so the verification is fully offline — you do not need to trust ParkProof, contact our servers, or run our app to confirm the integrity claim. The verification can be performed years from now even if ParkProof is no longer maintained, as long as <code>openssl</code> still exists.</p>
+  <p>Most parking apps that produce "evidence" produce a screenshot. A screenshot could have been edited at any point between when it was taken and when it was sent. The cryptographic signature is the difference between <em>"here's what I saw"</em> and <em>"here's what I saw, and anyone can check it hasn't changed since ParkProof signed it."</em></p>
+  <p>The public key is published so the check works offline. You don't need to trust ParkProof, contact our servers or run our app. The check can be done years from now, even if ParkProof is no longer running, as long as <code>openssl</code> exists.</p>
 
   <h2>Questions?</h2>
   <p>Email <a class="link" href="mailto:hello@parkproof.com.au">hello@parkproof.com.au</a>. We answer.</p>
@@ -365,7 +413,7 @@ openssl dgst -sha256 sign.jpg
   </footer>
 </div>
 
-<!-- Auto-detect chip — nudges visitors whose browser language differs
+<!-- Auto-detect chip: nudges visitors whose browser language differs
      from the current page's language to their language's /verify/
      subdirectory. The locale switcher at top remains for explicit
      switching; this chip is the one-tap discoverability layer. -->

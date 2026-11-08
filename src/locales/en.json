@@ -341,7 +341,17 @@
     "ambientHeader": "Surroundings",
     "ambientCaption": "Captured to demonstrate no signs were posted.",
     "photoSaveFailed": "This photo couldn't be saved on your phone. Try again, or save the record without it.",
-    "saving": "Saving…"
+    "saving": "Saving…",
+    "condition": {
+      "toggle": "Record the car's condition (optional)",
+      "noteLabel": "Damage you noticed",
+      "notePlaceholder": "For example, a scratch on the rear bumper"
+    },
+    "proof": {
+      "heading": "Proof of payment or permit",
+      "toggle": "Proof of payment or permit (optional)",
+      "addMeterTicketOrPermit": "Add a photo of your ticket or permit (optional)"
+    }
   },
   "reminders": {
     "header": "Set reminders",
@@ -763,7 +773,10 @@
         "departureLocation": "Phone location at the I've left tap (GPS)",
         "departureDistance": "Approx. distance from arrival (phone GPS)",
         "locationCoords": "Location (coordinates)",
-        "signCondition": "Sign condition"
+        "signCondition": "Sign condition",
+        "proof": "Proof of payment or permit",
+        "conditionPhotos": "Car condition photos",
+        "damageNote": "Damage the driver noted"
       },
       "locationSourceValue": {
         "manuallyEntered": "Manually entered",
@@ -798,7 +811,15 @@
         "coordsWithAccuracy": "{{coords}}, accuracy {{accuracy}}",
         "distanceUnavailable": "Not available. The arrival location isn't a phone GPS fix accurate enough to compare.",
         "distanceRough": "{{distance}}. The phone's location at the tap was only accurate to {{accuracy}}, so this distance is rough.",
-        "distanceRoughNoAccuracy": "{{distance}}. The phone didn't report how accurate its location at the tap was, so this distance is rough."
+        "distanceRoughNoAccuracy": "{{distance}}. The phone didn't report how accurate its location at the tap was, so this distance is rough.",
+        "complianceDescribed": "{{type}} (as the driver described it)",
+        "complianceNoType": "A photo was added. The driver didn't say what it shows.",
+        "conditionCounts": "When parked: {{parking}}. On return: {{returned}}.",
+        "noteWhenParked": "When parked, in the driver's own words: {{note}}",
+        "noteOnReturn": "On return, in the driver's own words: {{note}}",
+        "notSignedYet": "(not signed yet)",
+        "partRejected": "(this part couldn't be signed)",
+        "notSigned": "(not signed)"
       },
       "carPhotoCaptionTime": "Logged {{time}} (phone clock)",
       "confidence": {
@@ -834,7 +855,7 @@
       "verifyStep4": "4. Decode the signature:",
       "verifyStep5": "5. Verify:",
       "verifyStep6": "6. Expect \"Verified OK\". This shows the signed bytes have not changed since ParkProof signed them.",
-      "verifyStep7": "7. About the photos: the images shown in this PDF are a visual copy, re-encoded for the document, so their bytes differ from the originals and will not reproduce the hashes in the payload. That is expected and is not a sign of tampering. The signature commits to the SHA-256 of each original photo (the sign_photo_sha256, car_photo_sha256 and ambient_photo_sha256 values inside the signed payload), and step 6 showed those values have not changed since signing. To independently confirm a specific image, hash the original captured file (from the ParkProof record or your account export), not the copy printed here, and compare it to the matching value above.",
+      "verifyStep7": "7. About the photos: the images printed in this PDF are copies, re-encoded for the document, so their bytes differ from the originals and won't match the signed fingerprints. That is expected and isn't a sign of tampering. The signed payloads carry the SHA-256 of each original photo: sign_photo_sha256, car_photo_sha256 and ambient_photo_sha256 in link 0, and each sha256 under photos, photo or return_photos in later links. The originals are in the record's evidence file, a .json file the driver can download from the record in ParkProof. To check a photo, save its bytes_base64 value from that file as photo1.b64, then decode it and print its SHA-256:",
       "devKey": "Signed with a development key. It can't be checked with ParkProof's published key.",
       "linkHeading": "Link {{link}}: {{kind}}",
       "forkNote": "Two parts were added at this point in the record, from two devices. Both are signed and shown here.",
@@ -849,7 +870,9 @@
         "compliance": "Proof of payment or permit",
         "departure": "Departure",
         "handover": "Handover"
-      }
+      },
+      "verifyPhotoMatch": "The hex value must equal that photo's sha256 inside a signed payload above, not just the sha256 next to it in the evidence file, which isn't signed. Step 6 showed the signed values have not changed since ParkProof signed them. Do the same for each photo.",
+      "verifyWindows": "On Windows, cmd and PowerShell have no base64 -d. Use certutil -decode in its place, and certutil -hashfile to print a file's SHA-256, as below. In PowerShell, type curl.exe in place of curl. openssl comes with Git for Windows, and its Git Bash runs the commands above as written."
     },
     "appeal": {
       "drafted": "Drafted {{when}}",
@@ -876,6 +899,33 @@
       "sessionHeader": "Record {{n}} of {{total}}",
       "signedBadge": "Cryptographically signed at {{when}}",
       "driverNoteField": "Driver's note"
+    },
+    "complianceType": {
+      "meterTicket": "Meter ticket on the dash",
+      "paymentConfirmation": "Payment confirmation",
+      "permitDisplayed": "Permit displayed",
+      "other": "Other"
+    },
+    "photos": {
+      "complianceHeader": "Proof of payment or permit",
+      "conditionHeader": "Car condition photos",
+      "whenParked": "When parked",
+      "onReturn": "On return",
+      "role": {
+        "front": "Front",
+        "rear": "Rear",
+        "left": "Left side",
+        "right": "Right side",
+        "detail": "Close-up"
+      },
+      "added": "Added {{time}} (phone clock)",
+      "library": "Added from the photo library. The signature shows when it was added, not when it was taken.",
+      "signedAt": "Fingerprint signed by ParkProof at {{time}} (server clock)",
+      "devKey": "Fingerprint signed with a development key at {{time}}. It can't be checked with ParkProof's published key.",
+      "notSignedYet": "Fingerprint not signed yet",
+      "notSigned": "Fingerprint not signed",
+      "rejected": "This part couldn't be signed",
+      "signedNote": "A signed photo shows the photo existed by the time it was signed. It doesn't show who caused any damage."
     }
   },
   "time": {
@@ -922,7 +972,10 @@
     "heading": "DEPARTURE",
     "tapped": "You tapped I've left at {{time}} (phone clock).",
     "far": "Your phone was {{distance}} from where you parked when you tapped I've left. The record shows when you tapped, not when the car moved.",
-    "notSigned": "This departure isn't signed."
+    "notSigned": "This departure isn't signed.",
+    "condition": {
+      "toggle": "Record the car's condition now (optional)"
+    }
   },
   "chain": {
     "heading": "SIGNED PARTS OF THIS RECORD",
@@ -1224,5 +1277,75 @@
       "move": "Move the car before it starts.",
       "footer": "Reminder set in ParkProof."
     }
+  },
+  "photoGrid": {
+    "front": "Front",
+    "rear": "Rear",
+    "left": "Left side",
+    "right": "Right side",
+    "detail": "Close-up (optional)",
+    "take": "Take a photo: {{angle}}",
+    "retake": "Retake: {{angle}}",
+    "saving": "Saving photo…",
+    "saved": "Saved on your phone",
+    "failed": "This photo couldn't be saved on your phone.",
+    "hint": "Walk around the car and take a photo of each side. Add a close-up of any damage.",
+    "signedNote": "A signed photo shows the photo existed by the time it was signed. It doesn't show who caused any damage.",
+    "count_one": "{{count}} photo",
+    "count_other": "{{count}} photos"
+  },
+  "proof": {
+    "fromLibrary": "Paid in an app? Add the payment confirmation from your photos",
+    "typeLegend": "What the photo shows"
+  },
+  "complianceType": {
+    "meterTicket": "Meter ticket on the dash",
+    "paymentConfirmation": "Payment confirmation",
+    "permitDisplayed": "Permit displayed",
+    "other": "Other"
+  },
+  "evidence": {
+    "group": {
+      "parking": "Condition when parked",
+      "return": "Condition on return",
+      "compliance": "Proof of payment or permit"
+    },
+    "noteLabel": "Damage you noticed, in your own words",
+    "addedAt": "Added at {{time}} (phone clock).",
+    "fingerprint": "Fingerprint {{fingerprint}}",
+    "library": "Added from the photo library. The signature shows when it was added, not when it was taken.",
+    "notSigned": "This photo isn't in a signed part of the record.",
+    "photoNotOnDevice": "Photo not on this device. Fingerprint {{fingerprint}}.",
+    "addCondition": "Add condition photos",
+    "addMeterTicketOrPermit": "Add a photo of your ticket or permit",
+    "addIntro": "ParkProof signs each photo's fingerprint as a new part of this record. The photos themselves aren't sent for signing.",
+    "addToRecord": "Add to record",
+    "adding": "Adding…",
+    "needPhoto": "Take at least one photo first.",
+    "needType": "Choose what the photo shows.",
+    "addFailed": "These photos couldn't be added to the record. Try again.",
+    "cantAddNow": "These photos can't be added now. The record may have ended, or it has no room for another part.",
+    "complianceDescribed": "{{type}} (as you described it)",
+    "noteNotSigned": "This note isn't in a signed part of the record."
+  },
+  "backupPrompt": {
+    "title": "Back up your photos",
+    "body": "Your records and their signed photos are kept only in this browser. Safari can clear a site's data after 7 days without a visit.",
+    "homeScreenIos": "Add ParkProof to your Home Screen: tap Share, then Add to Home Screen. Records you save from the Home Screen app stay with the app. Records already saved in Safari stay in Safari and don't move to the app.",
+    "homeScreenOther": "Add ParkProof to your Home Screen from your browser's menu (Install app, or Add to Home screen).",
+    "signIn": "Sign in to back up",
+    "dismiss": "Not now"
+  },
+  "evidenceFile": {
+    "download": "Download evidence file",
+    "busy": "Preparing the file…",
+    "help": "A .json file with every signature and the original photos, so anyone can check this record without ParkProof. A signature shows the details haven't changed since ParkProof signed them. It doesn't show they're true, who was driving, where the car was, or when it arrived or left. The file contains the location and times saved in this record, so share it only with people who need it.",
+    "includePermit": "Include permit details",
+    "permitHelp": "Your permit details, and any photo marked \"Permit displayed\", are only in the file if you tick this. The signed record holds only their fingerprints, which they can be checked against. Accessible permit details are health information.",
+    "error": "The evidence file couldn't be made. Try again.",
+    "photosMissing_one": "{{count}} signed photo isn't on this device, so it isn't in the file. Its signed fingerprint is.",
+    "photosMissing_other": "{{count}} signed photos aren't on this device, so they aren't in the file. Their signed fingerprints are.",
+    "photosDiffer_one": "{{count}} photo on this device doesn't match its signed fingerprint, so it isn't in the file. Its signed fingerprint is.",
+    "photosDiffer_other": "{{count}} photos on this device don't match their signed fingerprints, so they aren't in the file. Their signed fingerprints are."
   }
 }

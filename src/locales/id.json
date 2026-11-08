@@ -333,7 +333,17 @@
     "ambientCaption": "Diambil untuk menunjukkan tidak ada rambu terpasang.",
     "locationContext": "Kami pakai lokasimu cuma untuk menandai waktu dan tempat kamu parkir. Datanya tetap di perangkatmu kecuali kamu masuk.",
     "photoSaveFailed": "Foto ini tidak bisa disimpan di ponselmu. Coba lagi, atau simpan catatan tanpa foto ini.",
-    "saving": "Menyimpan…"
+    "saving": "Menyimpan…",
+    "condition": {
+      "toggle": "Catat kondisi mobil (opsional)",
+      "noteLabel": "Kerusakan yang kamu lihat",
+      "notePlaceholder": "Misalnya, goresan di bemper belakang"
+    },
+    "proof": {
+      "heading": "Bukti pembayaran atau izin",
+      "toggle": "Bukti pembayaran atau izin (opsional)",
+      "addMeterTicketOrPermit": "Tambahkan foto tiket parkir atau izinmu (opsional)"
+    }
   },
   "reminders": {
     "header": "Atur pengingat",
@@ -733,7 +743,10 @@
         "departureLocation": "Lokasi ponsel saat mengetuk \"Sudah pergi\" (GPS)",
         "departureDistance": "Perkiraan jarak dari lokasi kedatangan (GPS ponsel)",
         "locationCoords": "Lokasi (koordinat)",
-        "signCondition": "Kondisi rambu"
+        "signCondition": "Kondisi rambu",
+        "proof": "Bukti pembayaran atau izin",
+        "conditionPhotos": "Foto kondisi mobil",
+        "damageNote": "Kerusakan yang dicatat pengemudi"
       },
       "locationSourceValue": {
         "manuallyEntered": "Dimasukkan manual",
@@ -768,7 +781,15 @@
         "coordsWithAccuracy": "{{coords}}, akurasi {{accuracy}}",
         "distanceUnavailable": "Tidak tersedia. Lokasi kedatangan bukan titik GPS ponsel yang cukup akurat untuk dibandingkan.",
         "distanceRough": "{{distance}}. Lokasi ponsel saat mengetuk hanya akurat sampai {{accuracy}}, jadi jarak ini hanya perkiraan kasar.",
-        "distanceRoughNoAccuracy": "{{distance}}. Ponsel tidak melaporkan seberapa akurat lokasinya saat mengetuk, jadi jarak ini hanya perkiraan kasar."
+        "distanceRoughNoAccuracy": "{{distance}}. Ponsel tidak melaporkan seberapa akurat lokasinya saat mengetuk, jadi jarak ini hanya perkiraan kasar.",
+        "complianceDescribed": "{{type}} (menurut keterangan pengemudi)",
+        "complianceNoType": "Sebuah foto ditambahkan. Pengemudi tidak menyebutkan isi foto itu.",
+        "conditionCounts": "Saat parkir: {{parking}}. Saat kembali: {{returned}}.",
+        "noteWhenParked": "Saat parkir, dengan kata-kata pengemudi sendiri: {{note}}",
+        "noteOnReturn": "Saat kembali, dengan kata-kata pengemudi sendiri: {{note}}",
+        "notSignedYet": "(belum ditandatangani)",
+        "partRejected": "(bagian ini tidak bisa ditandatangani)",
+        "notSigned": "(tidak ditandatangani)"
       },
       "carPhotoCaptionTime": "Dicatat {{time}} (jam ponsel)",
       "confidence": {
@@ -804,7 +825,7 @@
       "verifyStep4": "4. Dekode tanda tangan:",
       "verifyStep5": "5. Verifikasi:",
       "verifyStep6": "6. Keluaran yang diharapkan: \"Verified OK\". Ini menunjukkan bahwa byte yang ditandatangani tidak berubah sejak ParkProof menandatanganinya.",
-      "verifyStep7": "7. Tentang foto: gambar yang ditampilkan dalam PDF ini adalah salinan visual yang dikodekan ulang untuk dokumen, sehingga byte-nya berbeda dari aslinya dan tidak akan menghasilkan hash yang sama dengan yang ada di payload. Itu wajar dan bukan tanda pemalsuan. Tanda tangan mencakup SHA-256 setiap foto asli (nilai sign_photo_sha256, car_photo_sha256, dan ambient_photo_sha256 di dalam payload yang ditandatangani), dan langkah 6 sudah menunjukkan bahwa nilai-nilai itu tidak berubah sejak ditandatangani. Untuk mengecek gambar tertentu secara mandiri, hitung hash berkas foto asli (dari catatan ParkProof atau ekspor data akunmu), bukan salinan yang dicetak di sini, lalu bandingkan dengan nilai yang sesuai di atas.",
+      "verifyStep7": "7. Tentang foto: gambar yang dicetak dalam PDF ini adalah salinan yang dikodekan ulang untuk dokumen, sehingga byte-nya berbeda dari aslinya dan tidak akan cocok dengan sidik jari yang ditandatangani. Itu wajar dan bukan tanda pemalsuan. Payload yang ditandatangani memuat SHA-256 setiap foto asli: sign_photo_sha256, car_photo_sha256, dan ambient_photo_sha256 di mata rantai 0, serta setiap sha256 di bawah photos, photo, atau return_photos di mata rantai berikutnya. Foto aslinya ada di berkas bukti catatan ini, berkas .json yang bisa diunduh pengemudi dari catatan di ParkProof. Untuk mengecek sebuah foto, simpan nilai bytes_base64 foto itu dari berkas tersebut sebagai photo1.b64, lalu dekode dan cetak SHA-256-nya:",
       "devKey": "Ditandatangani dengan kunci pengembangan. Tanda tangan ini tidak bisa dicek dengan kunci publik yang diterbitkan ParkProof.",
       "linkHeading": "Mata rantai {{link}}: {{kind}}",
       "forkNote": "Di titik ini dalam catatan, dua bagian ditambahkan dari dua perangkat. Keduanya ditandatangani dan ditampilkan di sini.",
@@ -819,7 +840,9 @@
         "compliance": "Bukti pembayaran atau izin",
         "departure": "Saat pergi",
         "handover": "Serah terima mobil"
-      }
+      },
+      "verifyPhotoMatch": "Nilai hex itu harus sama dengan sha256 foto tersebut di dalam payload yang ditandatangani di atas, bukan hanya sha256 di sebelahnya dalam berkas bukti, yang tidak ditandatangani. Langkah 6 sudah menunjukkan nilai yang ditandatangani tidak berubah sejak ParkProof menandatanganinya. Lakukan hal yang sama untuk setiap foto.",
+      "verifyWindows": "Di Windows, cmd dan PowerShell tidak punya base64 -d. Gunakan certutil -decode sebagai gantinya, dan certutil -hashfile untuk mencetak SHA-256 sebuah berkas, seperti di bawah. Di PowerShell, ketik curl.exe sebagai ganti curl. openssl disertakan dalam Git for Windows, dan Git Bash-nya menjalankan perintah di atas persis seperti tertulis."
     },
     "appeal": {
       "drafted": "Disusun {{when}}",
@@ -846,6 +869,33 @@
       "sessionHeader": "Catatan {{n}} dari {{total}}",
       "signedBadge": "Ditandatangani kriptografis pada {{when}}",
       "driverNoteField": "Catatan pengemudi"
+    },
+    "complianceType": {
+      "meterTicket": "Tiket parkir di dasbor",
+      "paymentConfirmation": "Konfirmasi pembayaran",
+      "permitDisplayed": "Izin dipajang di mobil",
+      "other": "Lainnya"
+    },
+    "photos": {
+      "complianceHeader": "Bukti pembayaran atau izin",
+      "conditionHeader": "Foto kondisi mobil",
+      "whenParked": "Saat parkir",
+      "onReturn": "Saat kembali",
+      "role": {
+        "front": "Depan",
+        "rear": "Belakang",
+        "left": "Sisi kiri",
+        "right": "Sisi kanan",
+        "detail": "Jarak dekat"
+      },
+      "added": "Ditambahkan {{time}} (jam ponsel)",
+      "library": "Ditambahkan dari galeri foto. Tanda tangan menunjukkan kapan foto ditambahkan, bukan kapan foto diambil.",
+      "signedAt": "Sidik jari ditandatangani ParkProof pada {{time}} (jam server)",
+      "devKey": "Sidik jari ditandatangani dengan kunci pengembangan pada {{time}}. Tidak bisa dicek dengan kunci publik yang diterbitkan ParkProof.",
+      "notSignedYet": "Sidik jari belum ditandatangani",
+      "notSigned": "Sidik jari tidak ditandatangani",
+      "rejected": "Bagian ini tidak bisa ditandatangani",
+      "signedNote": "Foto yang ditandatangani menunjukkan foto itu sudah ada saat ditandatangani. Foto itu tidak menunjukkan siapa yang menyebabkan kerusakan."
     }
   },
   "time": {
@@ -922,7 +972,10 @@
     "heading": "SAAT PERGI",
     "tapped": "Kamu mengetuk \"Sudah pergi\" pada {{time}} (jam ponsel).",
     "far": "Saat kamu mengetuk \"Sudah pergi\", ponselmu berjarak {{distance}} dari tempat kamu parkir. Catatan ini menunjukkan kapan kamu mengetuk, bukan kapan mobil bergerak.",
-    "notSigned": "Kepergian ini tidak ditandatangani."
+    "notSigned": "Kepergian ini tidak ditandatangani.",
+    "condition": {
+      "toggle": "Catat kondisi mobil sekarang (opsional)"
+    }
   },
   "chain": {
     "heading": "BAGIAN CATATAN YANG DITANDATANGANI",
@@ -1224,5 +1277,75 @@
       "move": "Pindahkan mobilmu sebelum dimulai.",
       "footer": "Pengingat diatur di ParkProof."
     }
+  },
+  "photoGrid": {
+    "front": "Depan",
+    "rear": "Belakang",
+    "left": "Sisi kiri",
+    "right": "Sisi kanan",
+    "detail": "Jarak dekat (opsional)",
+    "take": "Ambil foto: {{angle}}",
+    "retake": "Foto ulang: {{angle}}",
+    "saving": "Menyimpan foto…",
+    "saved": "Tersimpan di ponselmu",
+    "failed": "Foto ini tidak bisa disimpan di ponselmu.",
+    "hint": "Kelilingi mobil dan foto setiap sisinya. Jika ada kerusakan, tambahkan foto jarak dekat.",
+    "signedNote": "Foto yang ditandatangani menunjukkan foto itu sudah ada saat ditandatangani. Foto itu tidak menunjukkan siapa yang menyebabkan kerusakan.",
+    "count_one": "{{count}} foto",
+    "count_other": "{{count}} foto"
+  },
+  "proof": {
+    "fromLibrary": "Bayar lewat aplikasi? Tambahkan konfirmasi pembayaran dari galerimu",
+    "typeLegend": "Isi foto ini"
+  },
+  "complianceType": {
+    "meterTicket": "Tiket parkir di dasbor",
+    "paymentConfirmation": "Konfirmasi pembayaran",
+    "permitDisplayed": "Izin dipajang di mobil",
+    "other": "Lainnya"
+  },
+  "evidence": {
+    "group": {
+      "parking": "Kondisi saat parkir",
+      "return": "Kondisi saat kembali",
+      "compliance": "Bukti pembayaran atau izin"
+    },
+    "noteLabel": "Kerusakan yang kamu lihat, dengan kata-katamu sendiri",
+    "addedAt": "Ditambahkan pada {{time}} (jam ponsel).",
+    "fingerprint": "Sidik jari: {{fingerprint}}",
+    "library": "Ditambahkan dari galeri foto. Tanda tangan menunjukkan kapan foto ditambahkan, bukan kapan foto diambil.",
+    "notSigned": "Foto ini tidak ada di bagian catatan yang ditandatangani.",
+    "photoNotOnDevice": "Foto ini tidak ada di perangkat ini. Sidik jari: {{fingerprint}}.",
+    "addCondition": "Tambahkan foto kondisi mobil",
+    "addMeterTicketOrPermit": "Tambahkan foto tiket parkir atau izinmu",
+    "addIntro": "ParkProof menandatangani sidik jari setiap foto sebagai bagian baru dari catatan ini. Fotonya sendiri tidak dikirim untuk ditandatangani.",
+    "addToRecord": "Tambahkan ke catatan",
+    "adding": "Menambahkan…",
+    "needPhoto": "Ambil setidaknya satu foto dulu.",
+    "needType": "Pilih isi foto ini.",
+    "addFailed": "Foto-foto ini tidak bisa ditambahkan ke catatan. Coba lagi.",
+    "cantAddNow": "Foto-foto ini tidak bisa ditambahkan sekarang. Catatan ini mungkin sudah berakhir, atau tidak ada ruang untuk bagian baru.",
+    "complianceDescribed": "{{type}} (sesuai keteranganmu)",
+    "noteNotSigned": "Keterangan ini tidak ada di bagian catatan yang ditandatangani."
+  },
+  "backupPrompt": {
+    "title": "Cadangkan fotomu",
+    "body": "Catatan dan foto bertanda tanganmu hanya disimpan di browser ini. Safari bisa menghapus data situs setelah 7 hari tidak dikunjungi.",
+    "homeScreenIos": "Tambahkan ParkProof ke Layar Utama: ketuk Share, lalu pilih 'Add to Home Screen'. Catatan yang kamu simpan dari aplikasi di Layar Utama tetap ada di aplikasi itu. Catatan yang sudah tersimpan di Safari tetap di Safari dan tidak pindah ke aplikasi.",
+    "homeScreenOther": "Tambahkan ParkProof ke Layar Utama dari menu browser ('Instal aplikasi' atau 'Tambahkan ke Layar utama').",
+    "signIn": "Masuk untuk mencadangkan",
+    "dismiss": "Nanti saja"
+  },
+  "evidenceFile": {
+    "download": "Unduh berkas bukti",
+    "busy": "Menyiapkan berkas…",
+    "help": "Berkas .json berisi semua tanda tangan dan foto asli, sehingga siapa pun bisa mengecek catatan ini tanpa ParkProof. Tanda tangan menunjukkan detailnya tidak berubah sejak ditandatangani ParkProof. Tanda tangan tidak menunjukkan bahwa isinya benar, siapa yang mengemudi, di mana mobil berada, atau kapan mobil tiba atau pergi. Berkas ini memuat lokasi dan waktu yang tersimpan di catatan ini, jadi bagikan hanya kepada orang yang memerlukannya.",
+    "includePermit": "Sertakan detail izin",
+    "permitHelp": "Detail izinmu, dan foto apa pun yang ditandai 'Izin dipajang di mobil', hanya masuk ke berkas jika kamu mencentang ini. Catatan yang ditandatangani hanya menyimpan sidik jarinya, yang bisa dipakai untuk mencocokkannya. Detail izin parkir aksesibel adalah informasi kesehatan.",
+    "error": "Berkas bukti tidak bisa dibuat. Coba lagi.",
+    "photosMissing_one": "{{count}} foto yang ditandatangani tidak ada di perangkat ini, jadi fotonya tidak ada di berkas. Sidik jarinya yang ditandatangani ada di berkas.",
+    "photosMissing_other": "{{count}} foto yang ditandatangani tidak ada di perangkat ini, jadi fotonya tidak ada di berkas. Sidik jarinya yang ditandatangani ada di berkas.",
+    "photosDiffer_one": "{{count}} foto di perangkat ini tidak cocok dengan sidik jarinya yang ditandatangani, jadi fotonya tidak ada di berkas. Sidik jarinya yang ditandatangani ada di berkas.",
+    "photosDiffer_other": "{{count}} foto di perangkat ini tidak cocok dengan sidik jarinya yang ditandatangani, jadi fotonya tidak ada di berkas. Sidik jarinya yang ditandatangani ada di berkas."
   }
 }

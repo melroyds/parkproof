@@ -106,7 +106,11 @@ export const MAX_SESSION_ITEM_BYTES = 300_000
 export const MAX_USER_OBJECTS = 3000 // ~1000 records of photos; bounds bucket-fill abuse
 /** Most addenda a row keeps (the client never queues more, MAX_ADDENDA in src/lib/evidence-chain.ts). */
 export const MAX_ADDENDA = 20
-/** Most photo refs a row keeps. A record has at most ~15 (sign, car, condition, return, compliance). */
+/**
+ * Most photo refs a row keeps. The client keeps every record within it
+ * (RECORD_PHOTOS_MAX in src/lib/evidence-photos.ts, a test keeps the two
+ * equal): photos added after saving are offered only while there is room.
+ */
 export const MAX_PHOTO_REFS = 50
 /** The first conditional write plus up to 3 retries when another write changed `rev` meanwhile. */
 export const MAX_UPLOAD_ATTEMPTS = 4

@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Xác minh bản ghi bằng chứng ParkProof — ParkProof</title>
-<meta name="description" content="Hướng dẫn từng bước bằng openssl để xác minh PDF bằng chứng ParkProof không bị thay đổi từ khi lưu. Ký mật mã qua AWS KMS ECDSA P-256.">
+<title>Xác minh bản ghi bằng chứng ParkProof | ParkProof</title>
+<meta name="description" content="Hướng dẫn từng bước bằng openssl để kiểm tra một bản ghi bằng chứng ParkProof không thay đổi kể từ khi ParkProof ký. Ký mật mã qua AWS KMS ECDSA P-256.">
 <meta name="robots" content="index, follow">
 <link rel="icon" href="../../assets/parkproof-icon.svg" type="image/svg+xml">
 
@@ -128,6 +128,14 @@
     margin-bottom: 14px;
     letter-spacing: -0.01em;
   }
+  h3 {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 18px;
+    color: var(--ink-900);
+    margin-top: 28px;
+    margin-bottom: 10px;
+  }
   p { margin-bottom: 14px; color: var(--ink-700); }
   p.small { font-size: 14px; color: var(--ink-500); }
 
@@ -227,7 +235,7 @@
   footer a { color: var(--brand-700); text-decoration: none; }
   footer a:hover { text-decoration: underline; }
 
-  /* Auto-detect chip — mirrors the landing's pp-locale-chip pattern.
+  /* Auto-detect chip. Mirrors the landing's pp-locale-chip pattern.
      Shown only when the visitor's browser language is supported AND
      different from the current page's language. Dismissable per
      session via sessionStorage. */
@@ -278,70 +286,108 @@
 
   <div class="eyebrow">Xác minh</div>
   <h1>Xác minh một <span class="accent">bản ghi bằng chứng</span> ParkProof.</h1>
-  <p class="lede">Mỗi PDF bằng chứng ParkProof mang một phụ lục chữ ký mật mã. Trang này là hướng dẫn công khai, ngoại tuyến cho bất kỳ ai — viên chức hội đồng, công ty bảo hiểm, thư ký toà án, hoặc chính người lái xe — để xác nhận rằng bản ghi không bị thay đổi từ thời khắc nó được lưu.</p>
+  <p class="lede">Mỗi PDF bằng chứng ParkProof có một phụ lục chữ ký mã hóa, và mỗi bản ghi đều có thể lưu thành tệp bằng chứng. Trang này hướng dẫn bất kỳ ai, chẳng hạn nhân viên hội đồng, công ty bảo hiểm, thư ký tòa án hoặc chính tài xế, cách kiểm tra ngoại tuyến rằng một bản ghi không thay đổi kể từ khi ParkProof ký.</p>
 
   <div class="callout">
-    <strong>Khung trung thực.</strong> Chữ ký chứng minh <em>tính toàn vẹn</em>: các byte bên trong bản ghi này giống hệt với các byte được ký vào thời điểm quét. Nó không chứng minh <em>tính xác thực</em> của bản ghi (AI có thể đọc sai biển báo), cũng không quyết định trọng lượng pháp lý của bằng chứng. Đó là một phán đoán riêng của người xem xét.
+    <strong>Khung trung thực.</strong> Chữ ký hợp lệ cho thấy <em>tính toàn vẹn</em>: các thông tin và dấu vân tay số của ảnh đã ký đúng là những gì ParkProof đã ký, vào thời điểm ký. Nó không cho thấy bản ghi là <em>đúng sự thật</em> (AI có thể đọc sai biển báo), ai đã lái xe, xe ở đâu, hay xe đến hoặc rời đi lúc nào, và không quyết định bản ghi có giá trị đến đâu. Việc đó do người xem xét quyết định.
   </div>
 
   <h2>Bạn đang xác minh điều gì</h2>
-  <p>Mỗi phiên ParkProof có một <strong>payload</strong> (một tệp văn bản nhỏ chứa siêu dữ liệu chính tắc của phiên cộng với hash SHA-256 của các ảnh biển báo + xe) và một <strong>chữ ký</strong> (payload được ký bằng khoá riêng tư ECDSA P-256 do AWS KMS quản lý, không bao giờ rời khỏi AWS). Cả hai được in trong phụ lục chữ ký của mỗi PDF bằng chứng xuất ra.</p>
-  <p><strong>Khoá công khai</strong> cần để xác minh chữ ký được xuất bản tại <a class="link" href="/parkproof-public-key.pem"><code>/parkproof-public-key.pem</code></a> — mở trong trình duyệt để xác nhận tải được, rồi lưu cục bộ.</p>
+  <p>Một bản ghi ParkProof được ký theo từng phần, gọi là mắt xích. Mắt xích 0 được ký khi ParkProof nhận được bản ghi đã lưu. Mỗi mắt xích sau đó, chẳng hạn thông tin lúc đỗ, ảnh tình trạng xe, ảnh bằng chứng thanh toán hoặc lúc rời đi, được ký khi ParkProof nhận được và mang SHA-256 của mắt xích trước nó, nên các mắt xích nối thành một chuỗi. Mỗi mắt xích có một <strong>payload</strong> (đúng đoạn văn bản đã được ký, gồm cả dấu vân tay số SHA-256 của các ảnh) và một <strong>chữ ký</strong> tạo bằng khóa riêng của ParkProof (ECDSA P-256), khóa này không bao giờ rời khỏi AWS KMS. PDF bằng chứng in mọi mắt xích trong phụ lục chữ ký. <strong>Tệp bằng chứng</strong> của bản ghi (một tệp .json mà tài xế có thể tải về từ bản ghi trong ứng dụng) chứa cùng các payload và chữ ký đó, cùng với ảnh gốc.</p>
+  <p><strong>Khóa công khai</strong> cần để kiểm tra chữ ký được công bố tại <a class="link" href="/parkproof-public-key.pem"><code>/parkproof-public-key.pem</code></a>. Mở trong trình duyệt để xác nhận tải được, rồi lưu lại.</p>
 
   <h2>Bạn cần</h2>
   <ul>
-    <li><strong>PDF bằng chứng</strong> — do người tranh chấp hoặc cung cấp bản ghi đưa cho bạn.</li>
-    <li><strong><code>openssl</code></strong> — đi kèm với macOS và hầu hết các bản phân phối Linux; trên Windows, có sẵn qua Git Bash, WSL, hoặc bản OpenSSL độc lập.</li>
-    <li><strong>Khoảng 60 giây.</strong></li>
+    <li><strong>PDF bằng chứng hoặc tệp bằng chứng</strong>, do người cung cấp bản ghi đưa cho bạn. Cần tệp bằng chứng để kiểm tra ảnh.</li>
+    <li><strong><code>openssl</code></strong>. Có sẵn trên macOS và hầu hết các hệ thống Linux. Trên Windows, có trong Git for Windows (Git Bash) hoặc WSL.</li>
+    <li><strong>Vài phút.</strong></li>
   </ul>
 
   <h2>Từng bước</h2>
 
-  <p>Mở PDF bằng chứng, cuộn đến trang <strong>"Phụ lục chữ ký"</strong> ở cuối. Bạn sẽ thấy ba khối văn bản: <code>payload</code>, <code>sig.base64</code>, và tham chiếu đến URL khoá công khai. Lưu hai khối đầu vào tệp trên máy của bạn, sau đó chạy lệnh xác minh:</p>
+  <p>Trong PDF, mở phụ lục chữ ký ở cuối. Mỗi mắt xích có ba khối: payload dạng văn bản, payload dạng base64 và chữ ký dạng base64. Sao chép hai khối base64 của mắt xích 0 vào các tệp tên <code>link0-payload.b64</code> và <code>link0-sig.b64</code>, rồi chạy:</p>
 
-  <pre><span class="comment"># 1. Lưu khối payload từ phụ lục PDF vào payload.txt
-#    (copy-paste chính xác; giữ nguyên kết thúc dòng).
-# 2. Lưu khối chữ ký base64 vào sig.base64.
-# 3. Lấy khoá công khai.</span>
+  <pre><span class="comment"># 1. Giải mã payload. base64 -d bỏ qua việc xuống dòng trong PDF.</span>
+base64 -d link0-payload.b64 > link0-payload.txt
+
+<span class="comment"># 2. Giải mã chữ ký.</span>
+base64 -d link0-sig.b64 > link0-sig.bin
+
+<span class="comment"># 3. Tải khóa công khai của ParkProof.</span>
 curl -O https://www.parkproof.com.au/parkproof-public-key.pem
 
-<span class="comment"># 4. Giải mã chữ ký base64 thành byte thô.</span>
-base64 -d sig.base64 > sig.bin
-
-<span class="comment"># 5. Chạy xác minh.</span>
+<span class="comment"># 4. Kiểm tra chữ ký. Kết quả mong đợi: "Verified OK".</span>
 openssl dgst -sha256 -verify parkproof-public-key.pem \
-  -signature sig.bin payload.txt</pre>
+  -signature link0-sig.bin link0-payload.txt</pre>
 
-  <p><code>Verified OK</code> ở bước 5 chỉ chứng minh <em>payload</em> còn nguyên vẹn. Bản thân payload chỉ chứa <strong>hash SHA-256</strong> của các ảnh, chứ không phải các ảnh. Để xác nhận rằng các ảnh hiển thị trong PDF chính là những ảnh đã được ký, bạn phải tự tính lại hash của từng ảnh và so sánh với hash trong payload. Nếu bạn bỏ qua bước này, một ảnh bị tráo đổi vẫn sẽ vượt qua <code>Verified OK</code>.</p>
+  <p>Làm các bước 1, 2 và 4 cho từng mắt xích, với tên tệp riêng của nó (<code>link1-payload.b64</code>, <code>link1-sig.b64</code>, v.v.). Đừng sao chép payload dạng văn bản thay cho khối base64: PDF ngắt các dòng dài, làm thay đổi các byte, và việc kiểm tra sẽ thất bại.</p>
 
-  <pre><span class="comment"># 6. Với MỖI ảnh trong PDF, trích xuất hoặc lưu ảnh ra một tệp,
-#    rồi tính lại SHA-256 của nó.</span>
-sha256sum sign_photo.jpg
-<span class="comment"># (hoặc, nếu không có sha256sum: openssl dgst -sha256 sign_photo.jpg)</span>
-openssl dgst -sha256 car_photo.jpg
-openssl dgst -sha256 ambient_photo.jpg
+  <h3>Trên Windows</h3>
+  <p>Trong cmd hoặc PowerShell không có <code>base64 -d</code>. Hãy giải mã bằng <code>certutil</code>, có sẵn trong Windows, và trong PowerShell hãy gõ <code>curl.exe</code> thay cho <code>curl</code>. Bạn cũng có thể chạy mọi lệnh trên trang này đúng như đã viết trong Git Bash.</p>
 
-<span class="comment"># 7. Mở payload.txt và so sánh từng giá trị hash bạn vừa tính
-#    với trường tương ứng trong payload:
-#      sign_photo.jpg    ⇄  sign_photo_sha256
-#      car_photo.jpg     ⇄  car_photo_sha256
-#      ambient_photo.jpg ⇄  ambient_photo_sha256
-# Mỗi hash phải khớp chính xác từng ký tự.</span></pre>
+  <pre>certutil -decode link0-payload.b64 link0-payload.txt
+certutil -decode link0-sig.b64 link0-sig.bin
+curl.exe -O https://www.parkproof.com.au/parkproof-public-key.pem</pre>
+
+  <h2>Kiểm tra các mắt xích được nối đúng thứ tự</h2>
+  <p>Mỗi mắt xích sau mắt xích 0 mang <code>parent_payload_sha256</code>: SHA-256 của payload của mắt xích trước nó. In SHA-256 của từng tệp payload và so sánh với giá trị trong mắt xích tiếp theo.</p>
+
+  <pre><span class="comment"># 5. In SHA-256 của payload mắt xích 0.</span>
+openssl dgst -sha256 link0-payload.txt
+<span class="comment"># Giá trị sau dấu "=" phải bằng parent_payload_sha256 trong mắt xích 1.
+# Làm tương tự với từng mắt xích tiếp theo.</span></pre>
+
+  <p>Nếu hai mắt xích có cùng số (2a và 2b), hai thiết bị đã cùng thêm một phần tại điểm đó. Cả hai đều trỏ đến cùng một mắt xích trước.</p>
+
+  <h2>Kiểm tra ảnh</h2>
+  <p>Chữ ký bao gồm dấu vân tay số SHA-256 của từng ảnh, không phải bản thân hình ảnh. Ảnh in trong PDF là bản sao được mã hóa lại, nên các byte không bao giờ khớp. Để kiểm tra một ảnh, hãy dùng tệp bằng chứng của bản ghi. Tệp liệt kê từng ảnh trong <code>photos</code>, kèm <code>sha256</code> của ảnh, các mắt xích ký nó (<code>signed_in</code>) và các byte gốc dạng base64 (<code>bytes_base64</code>). Tên tệp bắt đầu bằng parkproof-evidence-, tiếp theo là phần đầu ID của bản ghi. Các lệnh dưới đây gọi nó là <code>evidence.json</code>.</p>
+
+  <pre><span class="comment"># 6. Lấy ảnh đầu tiên ra khỏi tệp bằng jq, một công cụ JSON miễn phí.</span>
+jq -r '.photos[0].bytes_base64' evidence.json | base64 -d > photo1.jpg
+
+<span class="comment"># 7. In SHA-256 của ảnh.</span>
+openssl dgst -sha256 photo1.jpg
+
+<span class="comment"># 8. Xem mắt xích và trường nào ký ảnh này.</span>
+jq '.photos[0].signed_in' evidence.json</pre>
+
+  <p>Giá trị hex phải bằng <code>sha256</code> của ảnh trong payload đã ký của từng mắt xích trong <code>signed_in</code>: <code>sign_photo_sha256</code>, <code>car_photo_sha256</code> hoặc <code>ambient_photo_sha256</code> ở mắt xích 0, hoặc một <code>sha256</code> trong <code>photos</code>, <code>photo</code> hoặc <code>return_photos</code> ở mắt xích sau. Hãy đối chiếu với payload bạn đã kiểm tra, chứ không chỉ với <code>sha256</code> đặt cạnh ảnh trong tệp, vốn không được ký. Dùng <code>.photos[1]</code> cho ảnh thứ hai, v.v.</p>
+  <p>Nếu không có jq, hãy mở tệp bằng trình soạn thảo văn bản, sao chép giá trị <code>bytes_base64</code> của một ảnh vào tệp tên <code>photo1.b64</code>, rồi chạy <code>base64 -d photo1.b64 &gt; photo1.jpg</code>.</p>
+
+  <h3>Trên Windows</h3>
+  <p>Trên Windows, PowerShell có thể tự đọc tệp:</p>
+
+  <pre>$e = Get-Content evidence.json -Raw | ConvertFrom-Json
+[IO.File]::WriteAllBytes((Join-Path $PWD 'photo1.jpg'), [Convert]::FromBase64String($e.photos[0].bytes_base64))
+certutil -hashfile photo1.jpg SHA256
+$e.photos[0].signed_in</pre>
 
   <div class="callout">
-    <strong>Vì sao bước này quan trọng.</strong> Nếu một hash bạn tính được <em>không</em> khớp với <code>sign_photo_sha256</code> / <code>car_photo_sha256</code> / <code>ambient_photo_sha256</code> trong payload, thì ảnh đó đã bị thay đổi sau khi ký. <code>Verified OK</code> ở bước 5 <strong>tự nó không xác minh các ảnh</strong> — nó chỉ xác minh siêu dữ liệu và các giá trị hash. Việc khớp hash ở bước 6–7 là điều ràng buộc các ảnh hiển thị với chữ ký.
+    <strong>Kiểm tra ảnh là một bước riêng.</strong> <code>Verified OK</code> cho thấy các dấu vân tay số trong payload không thay đổi. Chỉ việc băm lại ảnh gốc mới cho thấy ảnh đó đúng là ảnh đã được ký. Nếu giá trị băm khác nhau, ảnh đó không phải ảnh ParkProof đã ký, kể cả khi kiểm tra chữ ký đã đạt. Nếu tệp không có byte của một ảnh (<code>bytes</code> là <code>not_on_this_device</code>, hoặc <code>withheld_permit</code> với ảnh giấy phép mà tài xế chọn không đưa vào), không thể dùng tệp để kiểm tra ảnh đó.
   </div>
+
+  <h2>Dùng tệp bằng chứng thay cho PDF</h2>
+  <p>Tệp bằng chứng cũng chứa payload và chữ ký của từng mắt xích dạng base64, nên bạn có thể làm các bước 1 đến 5 mà không cần PDF. Lấy mắt xích 0 ra khỏi tệp, rồi chạy các bước 3 đến 5 như trên:</p>
+
+  <pre>jq -r '.links[0].canonical_payload_base64' evidence.json | base64 -d > link0-payload.txt
+jq -r '.links[0].signature_base64' evidence.json | base64 -d > link0-sig.bin</pre>
+
+  <p>Trong PowerShell:</p>
+
+  <pre>$e = Get-Content evidence.json -Raw | ConvertFrom-Json
+[IO.File]::WriteAllBytes((Join-Path $PWD 'link0-payload.txt'), [Convert]::FromBase64String($e.links[0].canonical_payload_base64))
+[IO.File]::WriteAllBytes((Join-Path $PWD 'link0-sig.bin'), [Convert]::FromBase64String($e.links[0].signature_base64))</pre>
 
   <h2>Kết quả có nghĩa là gì</h2>
 
   <div class="grid-2">
     <div class="card ok">
       <h3>Đã xác minh <span class="label">ĐẠT</span></h3>
-      <p><code>Verified OK</code> — payload trong PDF của bạn giống hệt theo từng byte với những gì ParkProof đã ký vào thời điểm quét. Các quy tắc biển báo, GPS, timestamp, địa chỉ và các <em>giá trị</em> hash ảnh trong payload còn nguyên vẹn. Để xác nhận bản thân các ảnh, hãy thực hiện bước tính lại hash (bước 6–7) và khớp từng ảnh với hash của nó.</p>
+      <p><code>Verified OK</code>: payload đúng là những gì ParkProof đã ký. Các thông tin và dấu vân tay số của ảnh trong đó không thay đổi kể từ khi ParkProof ký, vào thời điểm <code>signed_at</code> ghi trong payload. Bản thân các ảnh được kiểm tra ở các bước 6 đến 8.</p>
     </div>
     <div class="card fail">
       <h3>Thất bại <span class="label">KHÔNG ĐẠT</span></h3>
-      <p><code>Verification failure</code> — payload, chữ ký, hoặc cả hai đã bị thay đổi kể từ khi bản ghi được lưu. PDF có thể đã được chỉnh sửa, phụ lục bị giả mạo, hoặc copy-paste tạo ra khác biệt khoảng trắng. Lặp lại việc sao chép cẩn thận trước khi rút ra kết luận.</p>
+      <p><code>Verification failure</code>: payload hoặc chữ ký không phải là những gì ParkProof đã ký. Bản ghi có thể đã bị thay đổi, hoặc một khối đã bị sao chép sai. Hãy sao chép lại đầy đủ các khối base64 và thử lại trước khi kết luận.</p>
     </div>
   </div>
 
@@ -349,13 +395,14 @@ openssl dgst -sha256 ambient_photo.jpg
   <p>Một lần xác minh thành công xác nhận <em>tính toàn vẹn</em>. Nó không xác nhận:</p>
   <ul>
     <li><strong>Rằng AI đọc biển báo đúng.</strong> Quét ParkProof là một lần đọc máy của biển báo đỗ xe, và máy có thể sai. Văn bản phán quyết và các quy tắc trong bản ghi là cách đọc tốt nhất của AI tại thời điểm quét, không phải sự thật tuyệt đối.</li>
-    <li><strong>Rằng các ảnh mô tả những gì người đó nói chúng mô tả.</strong> Chữ ký chứng minh các ảnh chưa bị thay đổi <em>kể từ khi lưu</em>, không phải rằng bản thân các ảnh được chụp một cách trung thực.</li>
+    <li><strong>Rằng các ảnh mô tả những gì người đó nói chúng mô tả.</strong> Chữ ký hợp lệ cho thấy dấu vân tay số của các ảnh không thay đổi kể từ khi ParkProof ký, và việc băm lại cho thấy một ảnh có khớp với dấu vân tay số của nó hay không. Cả hai đều không cho thấy các ảnh được chụp một cách trung thực.</li>
     <li><strong>Bất kỳ kết quả pháp lý nào.</strong> Liệu bằng chứng có hỗ trợ kháng cáo, hoàn tiền, hoặc vụ kiện hay không là quyết định của người xem xét. ParkProof là một công cụ, không phải luật sư.</li>
+    <li><strong>Xe ở đâu, xe đến hoặc rời đi lúc nào, hay ai đã lái xe.</strong> Vị trí trong bản ghi lấy từ điện thoại của tài xế, hoặc do tài xế tự nhập. Các thời điểm ghi là giờ điện thoại lấy từ điện thoại của tài xế, còn thời điểm ký của ParkProof là lúc ParkProof nhận được từng phần.</li>
   </ul>
 
   <h2>Vì sao nó tồn tại</h2>
-  <p>Hầu hết các ứng dụng đỗ xe tạo ra "bằng chứng" chỉ tạo ra ảnh chụp màn hình. Ảnh chụp màn hình không có câu chuyện toàn vẹn — chúng có thể được chỉnh sửa tại bất kỳ thời điểm nào giữa lúc chụp và lúc gửi. Chữ ký mật mã là sự khác biệt giữa <em>"đây là những gì tôi đã thấy"</em> và <em>"đây là những gì tôi đã thấy, và đây là bằng chứng toán học rằng tôi chưa thay đổi nó kể từ đó."</em></p>
-  <p>Khoá công khai được xuất bản để việc xác minh hoàn toàn ngoại tuyến — bạn không cần tin tưởng ParkProof, liên hệ máy chủ của chúng tôi, hoặc chạy ứng dụng của chúng tôi để xác nhận tuyên bố về tính toàn vẹn. Việc xác minh có thể thực hiện sau nhiều năm ngay cả khi ParkProof không còn được duy trì, miễn là <code>openssl</code> vẫn tồn tại.</p>
+  <p>Hầu hết các ứng dụng đỗ xe tạo ra "bằng chứng" chỉ tạo ra ảnh chụp màn hình. Ảnh chụp màn hình có thể bị chỉnh sửa vào bất kỳ lúc nào giữa lúc chụp và lúc gửi. Chữ ký mã hóa là sự khác biệt giữa <em>"đây là những gì tôi đã thấy"</em> và <em>"đây là những gì tôi đã thấy, và bất kỳ ai cũng có thể kiểm tra rằng nó không thay đổi kể từ khi ParkProof ký."</em></p>
+  <p>Khóa công khai được công bố nên việc kiểm tra có thể làm hoàn toàn ngoại tuyến. Bạn không cần tin ParkProof, liên hệ máy chủ của chúng tôi hay chạy ứng dụng của chúng tôi. Việc kiểm tra vẫn làm được sau nhiều năm, kể cả khi ParkProof không còn hoạt động, miễn là <code>openssl</code> vẫn còn.</p>
 
   <h2>Câu hỏi?</h2>
   <p>Email <a class="link" href="mailto:hello@parkproof.com.au">hello@parkproof.com.au</a>. Chúng tôi trả lời.</p>
@@ -366,7 +413,7 @@ openssl dgst -sha256 ambient_photo.jpg
   </footer>
 </div>
 
-<!-- Auto-detect chip — nudges visitors whose browser language differs
+<!-- Auto-detect chip: nudges visitors whose browser language differs
      from the current page's language to their language's /verify/
      subdirectory. The locale switcher at top remains for explicit
      switching; this chip is the one-tap discoverability layer. -->

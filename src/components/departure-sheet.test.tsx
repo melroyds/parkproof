@@ -138,12 +138,13 @@ describe('DepartureSheet', () => {
     document.body.appendChild(opener)
     opener.focus()
     renderSheet()
-    const confirm = screen.getByRole('button', { name: i18n.t('departure.confirm') })
+    // The first control is the collapsed condition section above Confirm (T2).
+    const first = screen.getByRole('button', { name: i18n.t('departure.condition.toggle') })
     const cancel = screen.getByRole('button', { name: i18n.t('common.cancel') })
 
     cancel.focus()
     fireEvent.keyDown(window, { key: 'Tab' })
-    expect(document.activeElement).toBe(confirm)
+    expect(document.activeElement).toBe(first)
     fireEvent.keyDown(window, { key: 'Tab', shiftKey: true })
     expect(document.activeElement).toBe(cancel)
 
