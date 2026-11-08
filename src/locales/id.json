@@ -927,5 +927,14 @@
       "returnDetail": "Kondisi saat kembali, jarak dekat",
       "compliance": "Foto bukti pembayaran atau izin"
     }
+  },
+  "workday": {
+    "reminder": {
+      "headsUp": "Batas waktu parkirmu di ruas jalan ini berakhir pukul {{time}}. Pindahkan mobil keluar dari ruas jalan yang diatur rambu ini, bukan hanya ke petak parkir lain.",
+      "goNow": "Berangkat sekarang untuk memindahkan mobil sebelum pukul {{time}}.",
+      "ended": "Waktu parkirmu di ruas jalan ini sudah berakhir pukul {{time}}.",
+      "headsUpArea": "Batas waktu parkirmu di area parkir ini berakhir pukul {{time}}. Pindahkan mobil keluar dari seluruh area, bukan hanya ke jalan lain di dalamnya.",
+      "endedArea": "Waktu parkirmu di area parkir ini sudah berakhir pukul {{time}}."
+    }
   }
 }

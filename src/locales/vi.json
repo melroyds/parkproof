@@ -927,5 +927,14 @@
       "returnDetail": "Tình trạng khi quay lại, cận cảnh",
       "compliance": "Ảnh bằng chứng thanh toán hoặc giấy phép"
     }
+  },
+  "workday": {
+    "reminder": {
+      "headsUp": "Thời hạn đỗ xe của bạn trên đoạn đường này kết thúc lúc {{time}}. Hãy dời xe ra khỏi đoạn đường có biển báo này, không chỉ sang một chỗ đỗ khác.",
+      "goNow": "Hãy đi ngay để dời xe trước {{time}}.",
+      "ended": "Thời gian đỗ xe của bạn trên đoạn đường này đã kết thúc lúc {{time}}.",
+      "headsUpArea": "Thời hạn đỗ xe của bạn trong khu vực đỗ xe này kết thúc lúc {{time}}. Hãy dời xe ra khỏi toàn bộ khu vực, không chỉ sang một con đường khác trong khu vực.",
+      "endedArea": "Thời gian đỗ xe của bạn trong khu vực đỗ xe này đã kết thúc lúc {{time}}."
+    }
   }
 }
