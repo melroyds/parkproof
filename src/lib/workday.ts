@@ -3,8 +3,8 @@ import type {
   BoundaryAnswer,
   BoundaryAskedBecause,
   BoundaryStatement,
+  ParkingRules,
   ParkingSession,
-  SignStatus,
 } from '../types'
 import { CAPS } from '../../lambda/addendum-schema.js'
 import { ACCURACY_USABLE_M } from './accuracy'
@@ -99,17 +99,13 @@ export function isAreaSignLeg(leg: Pick<StretchLeg, 'is_area_sign' | 'sign_text'
 const underAreaLimit = (leg: StretchLeg): boolean => leg.area_limit === true || isAreaSignLeg(leg)
 
 /**
- * The parts of a sign reading the workday maths uses. `is_area_sign` and
- * `sign_status` arrive with T3 (model response and saved record); they are
- * optional here so this module doesn't depend on T3's types. The
- * integration merge can point this at T3's ParkingRules.
+ * The parts of a sign reading the workday maths uses: T3's answer
+ * (`ParkingRules`, after the clarify merge). `is_area_sign` and
+ * `sign_status` are absent on an answer from a server older than T3, which
+ * reads as "not known". A saved leg's area flag is `rule_flags.is_area_sign`
+ * (T3's signReadingFields), read by `stretchLegFromRecord`.
  */
-export interface WorkdaySignReading {
-  rules: string
-  until: string | null
-  is_area_sign?: boolean | null
-  sign_status?: SignStatus | null
-}
+export type WorkdaySignReading = Pick<ParkingRules, 'rules' | 'until' | 'is_area_sign' | 'sign_status'>
 
 export interface StretchLegFromRecordOptions {
   /**

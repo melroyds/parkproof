@@ -302,7 +302,8 @@
       "copyWithArea": "You can park here only if you hold a valid permit for Permit Area {{area}}. The permit number on your sticker must match. Inspectors check the area code, not just that you have any permit.",
       "ack": "Yes, I hold a valid permit for this area",
       "ackWithArea": "Yes, I hold a valid permit for Permit Area {{area}}"
-    }
+    },
+    "weeklyRestrictionHint": "This sign has a weekly restriction. You can set a reminder after you save."
   },
   "logger": {
     "header": "Log this parking record",
@@ -761,7 +762,8 @@
         "departureSigned": "Departure signed by ParkProof (server clock)",
         "departureLocation": "Phone location at the I've left tap (GPS)",
         "departureDistance": "Approx. distance from arrival (phone GPS)",
-        "locationCoords": "Location (coordinates)"
+        "locationCoords": "Location (coordinates)",
+        "signCondition": "Sign condition"
       },
       "locationSourceValue": {
         "manuallyEntered": "Manually entered",
@@ -803,7 +805,16 @@
         "high": "High",
         "medium": "Medium",
         "low": "Low"
-      }
+      },
+      "signCondition": {
+        "readable": "Readable in the photo",
+        "partiallyObscured": "Partly hard to read in the photo",
+        "contradictory": "Parts of the sign disagree",
+        "missing": "No parking sign found in the photo",
+        "notAParkingSign": "The photo shows something other than a parking sign",
+        "notes": "AI notes: {{notes}}"
+      },
+      "noSignRead": "No sign read. ParkProof found no readable parking sign in the photo, and the driver logged this park without one."
     },
     "signature": {
       "title": "Cryptographic signature",
@@ -1049,5 +1060,23 @@
       "draftAnyway": "Draft an appeal anyway"
     },
     "disclaimer": "This compares your record with what the notice says. It isn't legal advice, and it doesn't say whether the fine should stand. The council or court decides that."
+  },
+  "unclearSign": {
+    "obscuredTitle": "Part of this sign is hard to read",
+    "contradictoryTitle": "Parts of this sign disagree",
+    "strictest": "The answer above uses the most restrictive reading. Check the sign yourself before you leave the car.",
+    "worthRecording": "A sign that can't be read clearly is worth keeping a record of.",
+    "notesLabel": "What the AI noticed",
+    "noSignTitle": "No readable parking sign",
+    "noSignBody": "We couldn't find a readable parking sign in this photo. That doesn't mean there are no rules here. General road rules still apply, such as no parking within 10 metres of an intersection without traffic lights, and some areas have time limits without a sign on every street.",
+    "photoAlt": "The photo you took",
+    "retake": "Retake photo",
+    "logWithoutSign": "Log without a sign",
+    "photoCaption": "Photo taken where you parked. ParkProof found no readable parking sign in it.",
+    "loggerIntro": "We'll save when and where you parked, with the photo you took.",
+    "loggerBanner": "The record will say ParkProof found no readable parking sign in your photo and you logged this park without one. It doesn't show there was no sign here.",
+    "recordNoSignRead": "No sign read. ParkProof found no readable parking sign in the photo, and you logged this park without one.",
+    "noSignReadLabel": "No sign read",
+    "remindIntro": "No sign was read for this park, so there's no expiry to remind you of. You can still ask for a check-in reminder. Pick how long from now, choose as many as you like."
   }
 }

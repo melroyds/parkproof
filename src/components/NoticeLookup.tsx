@@ -6,6 +6,7 @@ import { matchNotice, noticeLocalTime, parseWallClock, type NoticeMatch } from '
 import { noticeComparison, renderComparisonLine } from '../lib/notice-compare'
 import { NOTICE_READING_STAGES, readNoticeSnapshot, type NoticeSnapshot } from '../lib/notice-read'
 import { deviceRecordContext, recordTimes } from '../lib/record-times'
+import { isNoSignReadRecord } from '../lib/sign-result'
 import { formatInZone } from '../lib/time-format'
 import { useLiveRecords } from '../lib/use-records-version'
 import { useNow } from '../lib/use-now'
@@ -433,7 +434,9 @@ function MatchCard({
         {formatInZone(arrived, match.zone)}
       </p>
       {session.location?.address && <p className="text-xs text-ink-700 mt-0.5 break-words">{session.location.address}</p>}
-      <p className="text-xs text-ink-600 mt-0.5 line-clamp-2">{session.no_sign ? t('history.noSignBadge') : session.rules}</p>
+      <p className="text-xs text-ink-600 mt-0.5 line-clamp-2">
+        {session.no_sign ? t(isNoSignReadRecord(session) ? 'unclearSign.noSignReadLabel' : 'history.noSignBadge') : session.rules}
+      </p>
       {match.far && match.distance_m !== null && (
         <p className="text-xs text-accent-800 mt-2">
           {t('notice.match.far', { distance: Math.round(match.distance_m / 1000) })}

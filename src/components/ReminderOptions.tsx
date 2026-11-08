@@ -16,6 +16,7 @@ import { formatExpiryAbsolute, formatReminderTimesLine } from '../lib/time-forma
 import { reminderCopy } from '../lib/reminder-copy'
 import { sessionLink } from '../lib/deep-link'
 import { sessionTimezone } from '../lib/timezone'
+import { isNoSignReadRecord } from '../lib/sign-result'
 import Icon from './Icon'
 import Button from './ui/Button'
 import Card from './ui/Card'
@@ -492,7 +493,7 @@ function NoSignReminderPicker({ session, onDone }: Props) {
         {t('reminders.header')}
       </h2>
       <p className="text-sm mb-6 leading-relaxed" style={{ color: '#A9CFBE' }}>
-        {t('reminders.noSign.intro')}
+        {isNoSignReadRecord(session) ? t('unclearSign.remindIntro') : t('reminders.noSign.intro')}
       </p>
 
       {/* Chip selector */}

@@ -1,7 +1,7 @@
 import { jsPDF } from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import type { TFunction } from 'i18next'
-import type { AppealDraft, ParkingSession, SignatureBundle } from '../types'
+import type { AppealDraft, ParkingSession, SignatureBundle, SignStatus } from '../types'
 import { ACCURACY_USABLE_M, formatAccuracy } from './accuracy'
 import { sessionTimezone } from './timezone'
 import { registerPdfFonts } from './pdf-fonts'
@@ -9,6 +9,7 @@ import { ACTIVE_AFTER_EXPIRY_MS, loadSessions } from './storage'
 import { DEV_KEY_ALIAS } from './evidence-chain'
 import { mergeEvidence } from './evidence-merge'
 import {
+  arrivalContextView,
   departureSummary,
   signedTimeOf,
   type ChainLinkKind,
@@ -30,6 +31,8 @@ import {
   type LegacyPhotoRole,
 } from './session-photos'
 import { createLimiter, type Limiter } from './concurrency'
+import { isNoSignReadRecord, signIssuesOf, signStatusOf } from './sign-result'
+import { plainNoteText } from '../../lambda/sign-reading.js'
 
 const MARGIN = 40
 
@@ -253,6 +256,54 @@ function confidenceText(session: ParkingSession, t: TFunction): string {
   return key ? t(key) : t('pdf.common.dash')
 }
 
+/** The sign condition cell: the reading's status through a key map, never printed raw (T3). */
+const SIGN_CONDITION_KEYS: Readonly<Record<SignStatus, string>> = {
+  readable: 'pdf.evidence.signCondition.readable',
+  partially_obscured: 'pdf.evidence.signCondition.partiallyObscured',
+  contradictory: 'pdf.evidence.signCondition.contradictory',
+  missing: 'pdf.evidence.signCondition.missing',
+  not_a_parking_sign: 'pdf.evidence.signCondition.notAParkingSign',
+}
+
+/** The line under a value of the arrival_context that isn't signed (yet). */
+const UNSIGNED_CONTEXT_KEYS: Readonly<Record<'pending' | 'rejected' | 'none', string>> = {
+  pending: 'pdf.evidence.signing.pending',
+  rejected: 'pdf.evidence.signing.rejected',
+  none: 'pdf.evidence.signing.none',
+}
+
+/**
+ * The "Sign condition" row (build spec T3 item 6): what the AI made of the
+ * sign in the photo when the record was logged, with its notes on what
+ * stopped the sign being read clearly. Only for records read since T3, so
+ * older records keep their table shape.
+ *
+ * The condition is a signed fact (arrival_context, link 1), so it is read
+ * from the signed payload once that is signed (N2). Until then it comes
+ * from the stored arrival_context (or the record) with "Not signed yet",
+ * or "This part couldn't be signed" when it was refused. The notes are
+ * the model's words in plain characters every PDF font can draw.
+ */
+function signConditionRows(session: ParkingSession, t: TFunction): [string, string][] {
+  const context = arrivalContextView(session)
+  const signed = context.signing === 'signed' || context.signing === 'dev_key'
+  const source = signed || context.data ? context.data : session
+  const status = signStatusOf(source)
+  if (status === null) return []
+  const lines = [t(SIGN_CONDITION_KEYS[status])]
+  const issues = signIssuesOf(source).map(plainNoteText).filter((s) => s.length > 0)
+  if (issues.length > 0) lines.push(t('pdf.evidence.signCondition.notes', { notes: issues.join('; ') }))
+  if (context.signing !== 'signed' && context.signing !== 'dev_key') lines.push(t(UNSIGNED_CONTEXT_KEYS[context.signing]))
+  return [[t('pdf.evidence.field.signCondition'), lines.join('\n')]]
+}
+
+/** The sign rules cell of a no-sign record: why no sign was read. */
+function noSignRulesText(session: ParkingSession, t: TFunction): string {
+  // Logged from the "no readable sign" screen: ParkProof looked and found
+  // none in the photo; the driver didn't say there was no sign (T3).
+  return isNoSignReadRecord(session) ? t('pdf.evidence.noSignRead') : t('pdf.evidence.noSignRules')
+}
+
 function buildGuidance(expiresAt: string | null, timezone: string, t: TFunction): string {
   if (!expiresAt) {
     return t('pdf.evidence.guidanceFreeNoExpiry')
@@ -307,7 +358,15 @@ export function sessionRows(
     // left", so the shape matches records saved before the feature shipped.
     ...endedRows(session, timezone, t),
     ...departureRows(times, timezone, t),
-    [t('pdf.evidence.field.guidance'), buildGuidance(times.expires_at, timezone, t)],
+    // A no-sign record without an expiry has no reading to give guidance
+    // from: "Free to park. No expiry shown on the sign." would be a verdict
+    // about a sign nobody read (T3).
+    [
+      t('pdf.evidence.field.guidance'),
+      session.no_sign && !times.expires_at
+        ? t('pdf.evidence.noSignConfidence')
+        : buildGuidance(times.expires_at, timezone, t),
+    ],
     [t('pdf.evidence.field.address'), location?.address ?? dash],
     [
       // Only a phone GPS fix is labelled GPS; a typed address's map point isn't.
@@ -322,8 +381,9 @@ export function sessionRows(
     [t('pdf.evidence.field.sideVariant'), session.chosen_label || dash],
     [
       t('pdf.evidence.field.signRules'),
-      session.no_sign ? t('pdf.evidence.noSignRules') : splitRules(session.rules ?? ''),
+      session.no_sign ? noSignRulesText(session, t) : splitRules(session.rules ?? ''),
     ],
+    ...signConditionRows(session, t),
     // AI confidence is meaningless on no-sign records; surface that explicitly
     // instead of writing "low" (which is the data default but reads as wrong).
     [t('pdf.evidence.field.aiConfidence'), confidenceText(session, t)],
@@ -747,6 +807,10 @@ export function drawSessionBlock(
         doc.setFontSize(9)
         doc.setFont(font, 'italic')
         doc.setTextColor(80)
+        // Also for a record logged from the "no readable sign" screen: the
+        // caption attributes the photo to the driver and says it doesn't
+        // show there was no sign nearby; the sign rules cell says no sign
+        // was read (T3).
         doc.text(t('pdf.evidence.ambientPhotoCaption'), MARGIN, y, { maxWidth: width })
         doc.setTextColor(20)
         y += 18

@@ -172,7 +172,8 @@
     "aiCaveat": "Questa è una lettura del cartello fatta dall'AI. Dai sempre un'occhiata al cartello vero prima di lasciare l'auto.",
     "cantParkOverride": "Pensi che sia sbagliato? Puoi comunque registrare questo posto come prova.",
     "cantParkOverrideCta": "Registralo comunque",
-    "firstSaveValue": "Salvando conservi un record con data, ora e prova di integrità. La tua prova se mai dovessi prendere una multa ingiusta."
+    "firstSaveValue": "Salvando conservi un record con data, ora e prova di integrità. La tua prova se mai dovessi prendere una multa ingiusta.",
+    "weeklyRestrictionHint": "Questo cartello ha una restrizione settimanale. Puoi impostare un promemoria dopo aver salvato."
   },
   "logger": {
     "header": "Registra questo record di parcheggio",
@@ -585,7 +586,8 @@
         "departureSigned": "Parte di partenza firmata da ParkProof (orologio del server)",
         "departureLocation": "Posizione del telefono al tocco su \"Ho lasciato il posto\" (GPS)",
         "departureDistance": "Distanza approssimativa dalla posizione di arrivo (GPS del telefono)",
-        "locationCoords": "Posizione (coordinate)"
+        "locationCoords": "Posizione (coordinate)",
+        "signCondition": "Condizione del cartello"
       },
       "locationSourceValue": {
         "manuallyEntered": "Inserito manualmente",
@@ -627,7 +629,16 @@
         "high": "Alta",
         "medium": "Media",
         "low": "Bassa"
-      }
+      },
+      "signCondition": {
+        "readable": "Leggibile nella foto",
+        "partiallyObscured": "In parte difficile da leggere nella foto",
+        "contradictory": "Alcune parti del cartello si contraddicono",
+        "missing": "Nessun cartello di sosta trovato nella foto",
+        "notAParkingSign": "La foto mostra qualcosa che non è un cartello di sosta",
+        "notes": "Note dell'AI: {{notes}}"
+      },
+      "noSignRead": "Nessun cartello letto. ParkProof non ha trovato un cartello di sosta leggibile nella foto, e il conducente ha registrato questo parcheggio senza cartello."
     },
     "signature": {
       "title": "Firma crittografica",
@@ -1049,5 +1060,23 @@
       "draftAnyway": "Redigi comunque un ricorso"
     },
     "disclaimer": "Questo confronta il tuo record con quanto dice il verbale. Non è una consulenza legale e non dice se la multa è fondata. Lo decidono il comune o il tribunale."
+  },
+  "unclearSign": {
+    "obscuredTitle": "Parte di questo cartello è difficile da leggere",
+    "contradictoryTitle": "Alcune parti di questo cartello si contraddicono",
+    "strictest": "La risposta qui sopra usa la lettura più restrittiva. Controlla il cartello di persona prima di lasciare l'auto.",
+    "worthRecording": "Vale la pena tenere un record di un cartello che non si legge bene.",
+    "notesLabel": "Cosa ha notato l'AI",
+    "noSignTitle": "Nessun cartello di sosta leggibile",
+    "noSignBody": "Non abbiamo trovato in questa foto un cartello di sosta leggibile. Questo non significa che qui non ci siano regole. Le regole generali della strada valgono comunque, per esempio il divieto di sosta entro 10 metri da un incrocio senza semaforo, e in alcune zone ci sono limiti di tempo anche senza un cartello in ogni strada.",
+    "photoAlt": "La foto che hai scattato",
+    "retake": "Rifai la foto",
+    "logWithoutSign": "Registra senza cartello",
+    "photoCaption": "Foto scattata dove hai parcheggiato. ParkProof non ci ha trovato nessun cartello di sosta leggibile.",
+    "loggerIntro": "Salveremo quando e dove hai parcheggiato, con la foto che hai scattato.",
+    "loggerBanner": "Il record dirà che ParkProof non ha trovato un cartello di sosta leggibile nella tua foto e che hai registrato questo parcheggio senza cartello. Non mostra che qui non ci fosse un cartello.",
+    "recordNoSignRead": "Nessun cartello letto. ParkProof non ha trovato un cartello di sosta leggibile nella foto, e hai registrato questo parcheggio senza cartello.",
+    "noSignReadLabel": "Nessun cartello letto",
+    "remindIntro": "Per questo parcheggio non è stato letto nessun cartello, quindi non c'è una scadenza da ricordarti. Puoi comunque chiedere un promemoria di controllo. Scegli tra quanto tempo, quante volte vuoi."
   }
 }

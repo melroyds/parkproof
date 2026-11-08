@@ -37,6 +37,28 @@ export interface RuleVariant {
   permit_area?: string | null
   /** Optional heads-up — set when a meaningful rule change is approaching. */
   next_transition?: NextTransition | null
+  /**
+   * This position's rules come from an area sign (T3). Absent on answers
+   * from a server older than T3.
+   */
+  is_area_sign?: boolean
+  /** What this position's sign prints for each of the user's permit types (T3). */
+  permit_exception?: PermitException[]
+}
+
+/** A permit type the user can save (T3 request input, T4 settings). */
+export type UserPermitType = 'accessible' | 'resident' | 'business'
+
+/**
+ * Whether the sign ITSELF prints an exception or allowance for one of the
+ * user's permit types (T3). Answers carry one per listed permit type, in
+ * list order ([] when none are listed). `text` quotes the sign, '' when
+ * none. The model never derives a concession from state law.
+ */
+export interface PermitException {
+  applies: boolean
+  permit_type: UserPermitType | null
+  text: string
 }
 
 export interface Clarification {
@@ -83,6 +105,27 @@ export interface ParkingRules {
   is_permit_zone?: boolean
   /** Permit area identifier from the yellow plate (e.g. "25"), if visible. */
   permit_area?: string | null
+  // ── T3 fields. Every T3 server answer has them (normalizeModelOutput in
+  // lambda/sign-reading.js); they are optional only for answers from an
+  // older server, which src/lib/sign-result.ts reads as "not known". ──
+  /**
+   * Whether the photo shows a readable parking sign. 'partially_obscured'
+   * and 'contradictory' still carry the most restrictive answer;
+   * 'missing' and 'not_a_parking_sign' carry no answer at all (the app shows
+   * its own screen for them).
+   */
+  sign_status?: SignStatus
+  /** What stops the sign being read clearly (the model's words); [] when readable. */
+  sign_issues?: string[]
+  /** The sign governs an area rather than a length of road. True when any part does. */
+  is_area_sign?: boolean
+  /**
+   * What the sign prints for each of the user's permit types, one entry per
+   * type (top level: an entry applies only when it covers every position).
+   */
+  permit_exception?: PermitException[]
+  /** Restrictions that come back on set days, e.g. street cleaning; [] when none. */
+  recurring_restrictions?: RecurringRestriction[]
   /** Frontend-only — set when the user picked a variant from a clarification step. */
   chosen_label?: string
   /** Frontend-only — variants the user did NOT pick. Carried through for PDF context. */

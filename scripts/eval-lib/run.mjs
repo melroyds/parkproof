@@ -150,17 +150,16 @@ export const DRY_RUN_USAGE = Object.freeze({
   cache_read_input_tokens: 0,
 })
 
-/** T3's "the sign prints no permit exception" value. */
-const NO_PERMIT_EXCEPTION = Object.freeze({ applies: false, permit_type: null, text: '' })
-
 /**
  * A model answer in the response schema's shape built from a label: the
  * right answer, so a dry run of a well-formed corpus scores 100%. A label
  * that names a position gets a position question with that option and one
  * opposite decoy. It carries T3's required fields too (sign_status,
  * sign_issues, is_area_sign, permit_exception, recurring_restrictions,
- * with empty defaults when the label doesn't state them), so a dry run
- * still passes once T3's output normaliser checks them.
+ * with empty defaults when the label doesn't state them), so it matches
+ * RESPONSE_SCHEMA and passes T3's output normaliser. permit_exception is
+ * an array with one entry per permit the request lists; the harness lists
+ * none, so it is [].
  */
 export function answerFromLabel(entry) {
   const exp = entry.expected
@@ -173,7 +172,7 @@ export function answerFromLabel(entry) {
     is_permit_zone: flags.is_permit_zone ?? false,
     permit_area: flags.permit_area ?? null,
     is_area_sign: flags.is_area_sign ?? false,
-    permit_exception: { ...NO_PERMIT_EXCEPTION },
+    permit_exception: [],
     next_transition: null,
   }
   const top = {

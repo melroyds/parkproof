@@ -12,7 +12,7 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { promisify } from 'node:util'
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest'
-import { setSignClientWrapper, translateSign } from '../../lambda/index.js'
+import { RESPONSE_SCHEMA, SYSTEM_PROMPT, canonicalize, setSignClientWrapper, translateSign } from '../../lambda/index.js'
 import { normalizeEntry } from './corpus.mjs'
 import {
   DRY_RUN_USAGE,
@@ -154,6 +154,9 @@ describe('the model clients around the real translateSign', () => {
     expect(fp).toMatchObject({ model: 'claude-sonnet-4-6', thinking: 'adaptive', effort: 'low', max_tokens: calls[0].params.max_tokens })
     expect(fp.prompt_sha256).toBe(createHash('sha256').update(system, 'utf8').digest('hex'))
     expect(fp.schema_sha256).toMatch(/^[0-9a-f]{64}$/)
+    // The hashes are of the sign reader's own prompt and schema (T3 exports both).
+    expect(fp.prompt_sha256).toBe(createHash('sha256').update(SYSTEM_PROMPT, 'utf8').digest('hex'))
+    expect(fp.schema_sha256).toBe(createHash('sha256').update(canonicalize(RESPONSE_SCHEMA), 'utf8').digest('hex'))
   })
 
   it('the user-turn hash is the same for every photo, whatever its zone and time, and changes with the instructions', async () => {
@@ -209,6 +212,38 @@ describe('the model clients around the real translateSign', () => {
   })
 })
 
+/**
+ * The JSON-schema subset RESPONSE_SCHEMA uses (type, enum, anyOf, items,
+ * properties, required, additionalProperties false). Returns the paths
+ * that don't match, [] when the value matches.
+ */
+function schemaErrors(schema, value, path = '$') {
+  if (schema.anyOf) {
+    return schema.anyOf.some((s) => schemaErrors(s, value, path).length === 0) ? [] : [`${path}: matches no anyOf branch`]
+  }
+  const typeOk = {
+    object: () => value !== null && typeof value === 'object' && !Array.isArray(value),
+    array: () => Array.isArray(value),
+    string: () => typeof value === 'string',
+    number: () => typeof value === 'number',
+    integer: () => Number.isInteger(value),
+    boolean: () => typeof value === 'boolean',
+    null: () => value === null,
+  }[schema.type]
+  if (typeOk && !typeOk()) return [`${path}: not ${schema.type}`]
+  if (schema.enum && !schema.enum.includes(value)) return [`${path}: ${JSON.stringify(value)} not in enum`]
+  const errors = []
+  if (schema.type === 'array' && schema.items) value.forEach((v, i) => errors.push(...schemaErrors(schema.items, v, `${path}[${i}]`)))
+  if (schema.type === 'object' && schema.properties) {
+    for (const key of schema.required ?? []) if (!(key in value)) errors.push(`${path}.${key}: missing`)
+    for (const [key, v] of Object.entries(value)) {
+      if (schema.properties[key]) errors.push(...schemaErrors(schema.properties[key], v, `${path}.${key}`))
+      else if (schema.additionalProperties === false) errors.push(`${path}.${key}: not in schema`)
+    }
+  }
+  return errors
+}
+
 describe('answerFromLabel', () => {
   it('carries the fields T3 makes required, with empty defaults, top level and per option', () => {
     const plain = answerFromLabel(label({ id: 'plain' }))
@@ -216,7 +251,7 @@ describe('answerFromLabel', () => {
       sign_status: 'readable',
       sign_issues: [],
       is_area_sign: false,
-      permit_exception: { applies: false, permit_type: null, text: '' },
+      permit_exception: [],
       recurring_restrictions: [],
     })
     const stated = answerFromLabel(
@@ -224,8 +259,26 @@ describe('answerFromLabel', () => {
     )
     expect(stated).toMatchObject({ sign_status: 'partially_obscured', is_area_sign: true })
     for (const option of stated.clarification.options) {
-      expect(option).toMatchObject({ is_area_sign: true, permit_exception: { applies: false, permit_type: null, text: '' } })
+      expect(option).toMatchObject({ is_area_sign: true, permit_exception: [] })
     }
+  })
+
+  it('matches the sign reader\'s RESPONSE_SCHEMA, with and without a position question', () => {
+    const answers = [
+      answerFromLabel(label({ id: 'plain' })),
+      answerFromLabel(label({ id: 'cant', expected: { can_park_now: false, until: null } })),
+      answerFromLabel(
+        label({
+          id: 'flags',
+          expected_sign_status: 'contradictory',
+          expected_variant: 'Left side',
+          expected_flags: { requires_ticket: true, payment_methods: ['meter'], is_permit_zone: true, permit_area: '25', is_area_sign: true },
+        }),
+      ),
+    ]
+    for (const a of answers) expect(schemaErrors(RESPONSE_SCHEMA, a)).toEqual([])
+    // The checker itself catches the shape T3 replaced.
+    expect(schemaErrors(RESPONSE_SCHEMA, { ...answers[0], permit_exception: { applies: false, permit_type: null, text: '' } })).not.toEqual([])
   })
 })
 
@@ -383,4 +436,16 @@ describe('the CLI in --dry-run', () => {
     expect(res.code).toBe(0)
     expect(res.stdout).toMatch(/No labelled signs found/)
   }, 30_000)
+})
+
+describe('the harness and the sign reader agree on sign statuses (T3)', () => {
+  it('labels and scoring use the statuses the schema and the app use', async () => {
+    const { SIGN_STATUSES: CORPUS_STATUSES } = await import('./corpus.mjs')
+    const { NO_SIGN_STATUSES } = await import('./score.mjs')
+    const { SIGN_STATUSES } = await import('../../lambda/addendum-schema.js')
+    const { NO_READABLE_SIGN_STATUSES } = await import('../../lambda/sign-reading.js')
+    expect([...CORPUS_STATUSES].sort()).toEqual([...SIGN_STATUSES].sort())
+    expect(RESPONSE_SCHEMA.properties.sign_status.enum).toEqual([...SIGN_STATUSES])
+    expect([...NO_SIGN_STATUSES].sort()).toEqual([...NO_READABLE_SIGN_STATUSES].sort())
+  })
 })

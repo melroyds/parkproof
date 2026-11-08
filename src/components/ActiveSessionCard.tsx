@@ -7,6 +7,7 @@ import { formatExpiryAbsolute } from '../lib/time-format'
 import { sessionTimezone } from '../lib/timezone'
 import { estimateWalkBack, navigationUrl, type WalkBackEstimate } from '../lib/walk-back'
 import { useSessionPhoto } from '../lib/use-session-photo'
+import { isNoSignReadRecord } from '../lib/sign-result'
 import Icon from './Icon'
 
 interface Props {
@@ -276,7 +277,9 @@ export default function ActiveSessionCard({
               ? t('active.expiredHint')
               : hasExpiry
                 ? t('active.moveBy', { time: expiryLabel!.combined })
-                : t('active.noPostedRestrictions')}
+                : isNoSignReadRecord(session)
+                  ? t('unclearSign.noSignReadLabel')
+                  : t('active.noPostedRestrictions')}
           </p>
           {/* "🔔 Next ping: 4:25 PM" — closes the visibility gap the user
               flagged: previously, after setting reminders, the only way to
