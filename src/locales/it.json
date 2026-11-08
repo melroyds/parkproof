@@ -388,10 +388,8 @@
     "walkBackPill": "Torna a piedi all'auto",
     "aiConfidence": "AFFIDABILITÀ AI",
     "noteLabel": "NOTA",
-    "noNote": "Nessuna nota aggiunta. Tocca",
     "addNote": "Aggiungi nota",
-    "noteHelp": "per annotare con parole tue perché eri qui. Le note non sono firmate.",
-    "notePlaceholder": "Perché eri qui, es. \"Chemio della mamma al Royal\", \"Mercato del sabato a Lygon\". Usata come contesto se mai dovessi fare ricorso contro una multa.",
+    "notePlaceholder": "Perché eri qui, es. \"Chemio della mamma al Royal\", \"Mercato del sabato a Lygon\". Viene inclusa nel PDF di questo record, nel caso dovessi mai fare ricorso contro una multa.",
     "saveNote": "Salva nota",
     "signPhotoLabel": "FOTO DEL CARTELLO",
     "carPhotoLabel": "AUTO SUL POSTO",
@@ -423,15 +421,16 @@
     "photoNotOnDeviceUnsigned": "Foto non presente su questo dispositivo. Impronta digitale: {{fingerprint}}. Non ancora firmata.",
     "signPhotoAlt": "Foto del cartello di sosta che hai scansionato",
     "carPhotoAlt": "Foto della tua auto dove hai parcheggiato",
-    "ended": "Terminata"
+    "ended": "Terminata",
+    "noteEmpty": "Nessuna nota aggiunta. Tocca <add>Aggiungi nota</add> per annotare con parole tue perché eri qui. Le note non sono firmate."
   },
   "appeal": {
     "captureHeader": "Redigi una lettera di ricorso",
     "captureIntro": "Scatta una foto del verbale di multa che hai ricevuto. Claude lo legge, lo incrocia con le prove salvate in questo record e prepara una lettera formale da inviare al comune che ha emesso la multa.",
-    "captureTakePhotoSub": "Fotocamera per la multa",
+    "captureTakePhotoSub": "Fotografa la notifica",
     "captureFromLibrarySub": "Foto / scansione della notifica",
     "captureDisclaimer": "La bozza dell'AI è un punto di partenza, non un parere legale. La lettera finale che invii è una tua responsabilità.",
-    "draftingHeader": "Lettura della multa…",
+    "draftingHeader": "Lettura della notifica…",
     "draftingSub": "Claude la sta incrociando con la tua prova salvata.",
     "reviewHeader": "Bozza ricorso",
     "strategy": "STRATEGIA",
@@ -990,7 +989,7 @@
       "title": "Hai preso una multa lo stesso?",
       "lead": "Non serve scrivere la lettera di ricorso da zero. Te ne prepariamo una bozza da controllare e modificare.",
       "items": [
-        "Fotografa la multa. La incroceremo con quello che abbiamo salvato quando hai parcheggiato.",
+        "Fotografa il verbale. Lo incroceremo con quello che abbiamo salvato quando hai parcheggiato.",
         "Ricevi una bozza di lettera al comune da leggere e modificare prima di inviarla. ParkProof non valuta il tuo caso e non prevede l'esito.",
         "Modifica quello che vuoi, poi scarica come PDF con il registro di parcheggio allegato. Stampa e spedisci, o invia via email."
       ]

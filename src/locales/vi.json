@@ -388,10 +388,8 @@
     "walkBackPill": "Đi bộ về xe",
     "aiConfidence": "ĐỘ TIN CẬY AI",
     "noteLabel": "GHI CHÚ",
-    "noNote": "Chưa có ghi chú. Nhấn",
     "addNote": "Thêm ghi chú",
-    "noteHelp": "để ghi lại lý do bạn ở đây, theo lời của chính bạn. Ghi chú không được ký.",
-    "notePlaceholder": "Vì sao bạn ở đây? Ví dụ: 'Đưa mẹ đi hoá trị tại Royal', 'Chợ thứ Bảy ở Lygon'. Ghi chú được dùng làm ngữ cảnh nếu bạn cần khiếu nại một khoản phạt.",
+    "notePlaceholder": "Vì sao bạn ở đây? Ví dụ: 'Đưa mẹ đi hoá trị tại Royal', 'Chợ thứ Bảy ở Lygon'. Ghi chú sẽ được đưa vào file PDF của bản ghi này, phòng khi bạn cần khiếu nại một khoản phạt.",
     "saveNote": "Lưu ghi chú",
     "signPhotoLabel": "ẢNH BIỂN BÁO",
     "carPhotoLabel": "XE TẠI CHỖ ĐỖ",
@@ -423,15 +421,16 @@
     "photoNotOnDeviceUnsigned": "Ảnh này không có trên thiết bị này. Dấu vân tay số: {{fingerprint}}. Chưa được ký.",
     "signPhotoAlt": "Ảnh biển báo đỗ xe bạn đã quét",
     "carPhotoAlt": "Ảnh xe của bạn tại chỗ bạn đã đỗ",
-    "ended": "Đã kết thúc"
+    "ended": "Đã kết thúc",
+    "noteEmpty": "Chưa có ghi chú. Nhấn <add>Thêm ghi chú</add> để ghi lại lý do bạn ở đây, theo lời của chính bạn. Ghi chú không được ký."
   },
   "appeal": {
     "captureHeader": "Soạn thư khiếu nại",
     "captureIntro": "Chụp ảnh thông báo vi phạm bạn nhận được. Claude sẽ đọc nó, đối chiếu với bằng chứng đã lưu trong bản ghi này, rồi soạn một lá thư chính thức để bạn gửi cho hội đồng địa phương đã ra thông báo đó.",
-    "captureTakePhotoSub": "Chụp ảnh vé phạt bằng máy ảnh",
+    "captureTakePhotoSub": "Chụp ảnh thông báo",
     "captureFromLibrarySub": "Ảnh / bản quét thông báo",
     "captureDisclaimer": "Bản nháp do AI tạo chỉ là điểm khởi đầu, không phải tư vấn pháp lý. Bạn chịu trách nhiệm về lá thư cuối cùng mình gửi đi.",
-    "draftingHeader": "Đang đọc vé phạt…",
+    "draftingHeader": "Đang đọc thông báo…",
     "draftingSub": "Claude đang đối chiếu với bằng chứng đã lưu của bạn.",
     "reviewHeader": "Bản nháp khiếu nại",
     "strategy": "CHIẾN LƯỢC",
@@ -990,7 +989,7 @@
       "title": "Vẫn bị phạt rồi?",
       "lead": "Không cần bắt đầu viết thư khiếu nại từ con số không. Chúng tôi sẽ soạn bản nháp để bạn kiểm tra và chỉnh sửa.",
       "items": [
-        "Chụp ảnh vé phạt. Chúng tôi sẽ đối chiếu với hồ sơ đã lưu khi bạn đỗ xe.",
+        "Chụp ảnh thông báo vi phạm. Chúng tôi sẽ đối chiếu với hồ sơ đã lưu khi bạn đỗ xe.",
         "Bạn nhận được một bản nháp thư gửi hội đồng địa phương để đọc và chỉnh sửa trước khi gửi. ParkProof không đánh giá trường hợp của bạn hay dự đoán kết quả.",
         "Chỉnh sửa thoải mái, rồi tải xuống dưới dạng PDF kèm hồ sơ đỗ xe. In gửi bưu điện, hoặc gửi email."
       ]
@@ -1016,7 +1015,7 @@
     },
     "support": {
       "title": "Thích ParkProof không?",
-      "body": "Tự tay làm một mình trong 10 ngày, miễn phí mãi mãi. Nếu nó giúp bạn tránh được một vé phạt, hãy góp một tay cho hoá đơn AWS.",
+      "body": "Tự tay làm một mình trong 10 ngày, miễn phí mãi mãi. Nếu nó giúp bạn tránh được một khoản tiền phạt, hãy góp một tay cho hoá đơn AWS.",
       "button": "☕ Mời tôi một ly cà phê"
     },
     "sealCaveat": "Dấu niêm phong cho thấy các thông tin đã ký đã tồn tại, không thay đổi, vào thời điểm ParkProof ký. Dấu niêm phong không cho thấy các thông tin đó là đúng, AI đã đọc đúng biển báo, ai là người lái xe, xe ở đâu, hay xe đến và rời đi lúc nào."

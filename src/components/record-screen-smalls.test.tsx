@@ -4,7 +4,10 @@
 // the overnight build):
 //   - the empty note line read "No note added. TapAdd noteto record why...":
 //     a negative horizontal margin on the inline "Add note" button
-//     swallowed the spaces either side of it;
+//     swallowed the spaces either side of it. The line is now one
+//     translated sentence (session.noteEmpty) with the button inside it as
+//     <add>…</add>, so each language orders it naturally (fix list, last
+//     lows); the spaces come from the sentence;
 //   - "Delete record" and, on a shared copy, "Remove" were accent-600 text
 //     on the vault (about 1.5:1). Both are Button's danger variant now
 //     (src/lib/destructive-contrast.test.ts checks its contrast).
@@ -78,8 +81,19 @@ afterEach(async () => {
 })
 
 describe('the empty note line', () => {
-  for (const lng of ['en', 'it', 'zh-CN']) {
-    it(`keeps a space either side of the Add note button (${lng})`, async () => {
+  it('reads as one sentence in English, with a space either side of the button', () => {
+    renderDetail(makeSession())
+    const inline = screen
+      .getAllByRole('button', { name: 'Add note' })
+      .find((b) => b.parentElement?.tagName === 'P')
+    expect(inline).toBeDefined()
+    expect(inline!.parentElement!.textContent).toBe(
+      "No note added. Tap Add note to record why you were here, in your own words. Notes aren't signed.",
+    )
+  })
+
+  for (const lng of ['en', 'zh-CN', 'vi', 'id', 'ko', 'it', 'el', 'hi', 'pa']) {
+    it(`is the one translated sentence with the Add note button inside it (${lng})`, async () => {
       await i18n.changeLanguage(lng)
       renderDetail(makeSession())
       const addNote = i18n.t('session.addNote')
@@ -89,12 +103,32 @@ describe('the empty note line', () => {
         .getAllByRole('button', { name: addNote })
         .find((b) => b.parentElement?.tagName === 'P')
       expect(inline).toBeDefined()
+      expect(inline!.textContent).toBe(addNote)
       const line = inline!.parentElement!
-      expect(line.textContent).toBe(`${i18n.t('session.noNote')} ${addNote} ${i18n.t('session.noteHelp')}`)
-      // A negative side margin overlaps those spaces on screen.
+      // The whole sentence, in the locale's own order, button text in place.
+      const sentence = i18n.t('session.noteEmpty')
+      expect(sentence).toMatch(/<add>[^<]+<\/add>/)
+      expect(line.textContent).toBe(sentence.replace(/<\/?add>/g, ''))
+      // A negative side margin overlaps the spaces around it on screen.
       expect(inline!.className).not.toMatch(NEGATIVE_X_MARGIN)
     })
   }
+
+  it('puts the verb after the button in ko, hi and pa', async () => {
+    for (const lng of ['ko', 'hi', 'pa']) {
+      const sentence = i18n.getFixedT(lng)('session.noteEmpty')
+      const afterButton = sentence.slice(sentence.indexOf('</add>') + '</add>'.length)
+      // "를 누르세요", "पर टैप करें", "'ਤੇ ਟੈਪ ਕਰੋ": the tap comes after the label.
+      expect(afterButton, lng).toMatch(/누르세요|टैप करें|ਟੈਪ ਕਰੋ/)
+    }
+  })
+
+  it('the old split keys are gone', () => {
+    for (const lng of ['en', 'zh-CN', 'vi', 'id', 'ko', 'it', 'el', 'hi', 'pa']) {
+      expect(i18n.exists('session.noNote', { lng, fallbackLng: false }), lng).toBe(false)
+      expect(i18n.exists('session.noteHelp', { lng, fallbackLng: false }), lng).toBe(false)
+    }
+  })
 
   it('the inline button opens the note editor', () => {
     renderDetail(makeSession())

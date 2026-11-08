@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { useTranslation } from 'react-i18next'
+import { Trans, useTranslation } from 'react-i18next'
 import type { ParkingSession } from '../types'
 import { isStorageFullError, updateSession } from '../lib/storage'
 import { useLiveRecord } from '../lib/use-records-version'
@@ -730,17 +730,26 @@ export default function SessionDetail({
           </p>
         ) : (
           <p className="text-xs text-ink-600 italic leading-relaxed">
-            {/* No horizontal negative margin on the inline button: one used
-                to swallow the spaces either side ("TapAdd noteto"). */}
-            {t('session.noNote')}{' '}
-            <button
-              type="button"
-              onClick={startNoteEdit}
-              className="underline font-medium text-brand-700 min-h-[44px] inline-flex items-center py-2.5 -my-2 align-middle"
-            >
-              {t('session.addNote')}
-            </button>{' '}
-            {t('session.noteHelp')}
+            {/* One translated sentence with the button inside it, so each
+                language puts the verb and the button where its word order
+                wants them (ko, hi and pa put the verb last). The button's
+                text is the locale's session.addNote (the inject script
+                checks), so its accessible name is the heading button's. The
+                spaces either side come from the sentence itself, and there's
+                no horizontal negative margin on the button: one used to
+                swallow them ("TapAdd noteto"). */}
+            <Trans
+              i18nKey="session.noteEmpty"
+              components={{
+                add: (
+                  <button
+                    type="button"
+                    onClick={startNoteEdit}
+                    className="underline font-medium text-brand-700 min-h-[44px] inline-flex items-center py-2.5 -my-2 align-middle"
+                  />
+                ),
+              }}
+            />
           </p>
         )}
       </Card>

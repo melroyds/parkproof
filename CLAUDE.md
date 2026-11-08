@@ -206,7 +206,7 @@ Every field added by the roadmap is optional on `ParkingSession` (`src/types.ts`
 | DNS | Cloudflare (`jake` + `nova` for `parkproof.com.au`; `kenia` + `woz` for `parkproof.au`). Page Rules redirect to the canonical. Crazy Domains is registrar only |
 | Email | Titan, `hello@parkproof.com.au` (MX, SPF and DKIM in Cloudflare). The free trial was due to end 20 Jun 2026; this file doesn't record the plan since |
 | CloudWatch logs | `/aws/lambda/parkproof-sign-translator`. No retention until `setup-log-retention.sh` sets 90 days, which the privacy policy promises |
-| Alarms | AWS Budgets `parkproof-monthly` (\$25 a month). CloudWatch `parkproof-anthropic-usage` on the `parkproof-anthropic-calls` metric filter (`anthropic-usage-alarm.sh`; it counts `anthropic_call=` and `appeal_call=` but not `notice_call=`) |
+| Alarms | AWS Budgets `parkproof-monthly` (\$25 a month). CloudWatch `parkproof-anthropic-usage` on the `parkproof-anthropic-calls` metric filter (`anthropic-usage-alarm.sh`; it counts `anthropic_call=`, `appeal_call=` and `notice_call=`. The live filter predates `notice_call=` until the script is re-run, a go-ahead deploy step) |
 
 Region: `ap-southeast-2` (Sydney). Account: `<ACCOUNT_ID>` (`aws sts get-caller-identity`).
 
@@ -233,7 +233,7 @@ All in `scripts/`. Never run any of them, or call AWS, without the owner's go-ah
 | `eval-accuracy.mjs` | The accuracy benchmark harness (T9; `eval/README.md`). `eval/corpus/` is still empty |
 | `smoke-test-auth.mjs`, `send-test-push.mjs` | Live checks of the auth routes and of one push |
 | `screenshots.mjs` | Playwright harness that regenerates `docs/screenshots/*.png` (last run 25 May 2026, before the green identity) |
-| `teardown.sh [--confirm]` | Dry run by default. Removes only what `deploy.sh` creates (CloudFront, OAC, app bucket, API, Lambda, role), and the role delete fails while inline policies exist. It leaves Cognito, the tables, the evidence and feedback buckets, KMS and the scheduler alone |
+| `teardown.sh [--confirm]` | Dry run by default (it reads only the account id). `--confirm` removes everything the setup and deploy scripts create: every `parkproof-push-*` schedule (and a hand-made `parkproof-warmer`), CloudFront and its function, the OAC, the API, the Lambda, its log groups, the usage alarm, its topic and the dashboard, the Cognito pool and domain, the three tables, the app, evidence and feedback buckets (emptied first, old versions included), the KMS key (scheduled for deletion after 7 days, the minimum) and both roles (inline policies deleted first). Keeps the budget alarm and `.aws-resources`. `scripts/teardown.test.mjs` runs it against a fake AWS |
 
 The deploy itself: follow [`docs/build/deploy-checklist-roadmap-2.md`](docs/build/deploy-checklist-roadmap-2.md), from a clone outside Dropbox.
 

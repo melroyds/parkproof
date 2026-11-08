@@ -41,7 +41,7 @@
   },
   "about": {
     "title": "Everything ParkProof does",
-    "lead": "You probably came here thinking oh, it reads parking signs. It does. But while it's at it, we figured we'd also save the evidence in case you get a wrongful ticket, draft a dispute letter for you to check if you do, and remind you to move your car before time runs out. Here's the friendly tour.",
+    "lead": "You probably came here thinking oh, it reads parking signs. It does. But while it's at it, we figured we'd also save the evidence in case you get a wrongful fine, draft a dispute letter for you to check if you do, and remind you to move your car before time runs out. Here's the friendly tour.",
     "scan": {
       "title": "Snap a sign, get an answer",
       "lead": "Point your phone at any parking sign, even the messy stacked ones with arrows and clearways.",
@@ -55,7 +55,7 @@
       "title": "A receipt for your parking spot",
       "lead": "Every park you log saves the time, the GPS, the address, and (if you want) a photo of your car at the spot.",
       "items": [
-        "Download the whole thing as a tidy PDF. Handy if you ever need to dispute a ticket.",
+        "Download the whole thing as a tidy PDF. Handy if you ever need to dispute a fine.",
         "Each record is signed, so anyone can check its signed details haven't changed since ParkProof signed them.",
         "Add a note about why you parked there (mum's hospital visit, Saturday market). It's kept with the record in your own words. Notes aren't signed."
       ]
@@ -80,10 +80,10 @@
       ]
     },
     "appeal": {
-      "title": "Got a ticket anyway?",
+      "title": "Got a fine anyway?",
       "lead": "No need to start the dispute letter from scratch. We'll draft it for you to check and change.",
       "items": [
-        "Photograph the ticket. We'll cross-check it against what we saved when you parked.",
+        "Photograph the infringement notice. We'll cross-check it against what we saved when you parked.",
         "You get a draft letter to the council to read and change before you send it. ParkProof doesn't rate your case or predict the outcome.",
         "Edit anything you want, then download it as a PDF with the parking record attached. Print and post, or email."
       ]
@@ -120,7 +120,7 @@
     "cta": "Try it: scan a sign",
     "support": {
       "title": "Like ParkProof?",
-      "body": "Built solo in 10 days, free forever. If it saved you from a ticket, chip in for the AWS bill.",
+      "body": "Built solo in 10 days, free forever. If it saved you from a fine, chip in for the AWS bill.",
       "button": "☕ Buy me a coffee"
     }
   },
@@ -130,7 +130,7 @@
     "bullet": {
       "plainEnglish": "Plain-English answers",
       "photoEvidence": "Photo evidence saved",
-      "defensible": "Tamper-evident if you're ticketed"
+      "defensible": "Tamper-evident if you're fined"
     },
     "cta": "Check a parking sign",
     "builtFor": "Built for Aussie drivers",
@@ -159,11 +159,11 @@
     }
   },
   "home": {
-    "tagline": "Aussie parking, decoded, with photo evidence in case of a wrongful ticket.",
+    "tagline": "Aussie parking, decoded, with photo evidence in case of a wrongful fine.",
     "scanCta": "Scan a parking sign",
     "scanAnother": "Scan another sign",
     "scanHelp": "We'll read the sign, tell you if you can park now, and offer a reminder before time runs out.",
-    "draftAppeal": "Got a ticket? Draft an appeal",
+    "draftAppeal": "Got a fine? Draft an appeal",
     "history": "History",
     "historyEmpty": "empty",
     "historyCount_one": "{{count}} saved",
@@ -384,7 +384,7 @@
   "reminders": {
     "header": "Set reminders",
     "noExpiry": "This record has no expiry time, so a timed reminder doesn't apply.",
-    "expired": "Parking expired at <strong>{{when}}</strong>. Too late for a reminder, but your record is still saved as evidence if you need to dispute a ticket.",
+    "expired": "Parking expired at <strong>{{when}}</strong>. Too late for a reminder, but your record is still saved as evidence if you need to dispute a fine.",
     "intro": "Parking expires at <strong>{{when}}</strong>. Pick when you want to be reminded, choose as many as you like.",
     "chipAtExpiry": "At expiry",
     "summaryWithSelections": "You'll be reminded at <strong>{{times}}</strong>.",
@@ -541,10 +541,8 @@
     "walkBackPill": "Walk back to the car",
     "aiConfidence": "AI CONFIDENCE",
     "noteLabel": "NOTE",
-    "noNote": "No note added. Tap",
     "addNote": "Add note",
-    "noteHelp": "to record why you were here, in your own words. Notes aren't signed.",
-    "notePlaceholder": "Why you were here, e.g. 'Mum's chemo at the Royal', 'Saturday market on Lygon'. Used as context if you ever need to appeal a ticket.",
+    "notePlaceholder": "Why you were here, e.g. 'Mum's chemo at the Royal', 'Saturday market on Lygon'. It goes in this record's PDF, in case you ever need to appeal a fine.",
     "saveNote": "Save note",
     "signPhotoLabel": "SIGN PHOTO",
     "carPhotoLabel": "CAR AT THE SPOT",
@@ -558,7 +556,7 @@
     "buildingPdf": "Building PDF…",
     "pdfErrorHeader": "Couldn't build the PDF",
     "pdfErrorHelp": "The error has been logged to the browser console. If this keeps happening, take a screenshot of the console output and share it.",
-    "draftAppeal": "Got a ticket? Draft an appeal letter",
+    "draftAppeal": "Got a fine? Draft an appeal letter",
     "howToVerify": "How anyone can check this record's signatures →",
     "photoSyncFailed": "Photo not backed up to the cloud",
     "photoSyncRetry": "Retry upload",
@@ -576,16 +574,17 @@
     "photoNotOnDeviceUnsigned": "Photo not on this device. Fingerprint {{fingerprint}}. Not signed yet.",
     "signPhotoAlt": "Photo of the parking sign you scanned",
     "carPhotoAlt": "Photo of your car where you parked",
-    "ended": "Ended"
+    "ended": "Ended",
+    "noteEmpty": "No note added. Tap <add>Add note</add> to record why you were here, in your own words. Notes aren't signed."
   },
   "appeal": {
     "captureHeader": "Draft an appeal letter",
     "captureIntro": "Take a photo of the infringement notice you received. Claude will read it, cross-reference it with the evidence saved in this record, and draft a formal letter you can send to the issuing council.",
     "captureIntroStandalone": "Take a photo of the infringement notice you received. Claude will read it and draft a formal letter you can send to the issuing council. If you logged this park in ParkProof, open it from history instead so your saved evidence is attached to the letter.",
-    "captureTakePhotoSub": "Camera of the ticket",
+    "captureTakePhotoSub": "Photograph the notice",
     "captureFromLibrarySub": "Photo / scan of the notice",
     "captureDisclaimer": "The AI draft is a starting point, not legal advice. You're responsible for the final letter you send.",
-    "draftingHeader": "Reading the ticket…",
+    "draftingHeader": "Reading the notice…",
     "draftingSub": "Claude is cross-referencing it with your saved evidence.",
     "reviewHeader": "Draft appeal",
     "strategy": "STRATEGY",

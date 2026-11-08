@@ -30,7 +30,6 @@
   "scheduledReminders.noneYet": "Belum ada pengingat push yang diatur untuk catatan ini.",
   "scheduledReminders.cancelAllConfirm": "Batalkan setiap pengingat push terjadwal untuk catatan ini?",
   "scheduledReminders.tooLateAll": "Tidak ada opsi pengingat yang waktunya masih cukup jauh untuk diatur. Kalau kamu sudah memindahkan mobil, ketuk \"Sudah pergi\".",
-  "session.noteHelp": "untuk mencatat kenapa kamu di sana, dengan kata-katamu sendiri. Keterangan seperti ini tidak ditandatangani.",
   "session.noSignDescription": "Kamu mencatat parkir ini sebagai tempat tanpa rambu parkir. Itu pernyataanmu sendiri. Tidak ada rambu yang dibaca.",
   "session.ambientPhotoCaption": "Diambil saat kamu mencatat parkir ini, untuk menunjukkan lingkungan sekitar. Foto ini tidak menunjukkan bahwa tidak ada rambu di dekatnya.",
   "session.noSignBadgeLong": "Tidak ada larangan terpasang yang terekam. Kamu mencatat parkir ini sebagai tempat tanpa rambu.",

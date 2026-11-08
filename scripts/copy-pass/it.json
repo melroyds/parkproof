@@ -30,7 +30,6 @@
   "scheduledReminders.noneYet": "Nessun promemoria push impostato per questo record.",
   "scheduledReminders.cancelAllConfirm": "Annullare ogni promemoria push pianificato per questo record?",
   "scheduledReminders.tooLateAll": "Nessuna opzione di promemoria è abbastanza in là nel tempo da poterla impostare. Se hai già spostato l'auto, tocca Ho lasciato il posto.",
-  "session.noteHelp": "per annotare con parole tue perché eri qui. Le note non sono firmate.",
   "session.noSignDescription": "Hai registrato questo parcheggio come privo di cartelli di parcheggio. È una tua dichiarazione. Nessun cartello è stato letto.",
   "session.ambientPhotoCaption": "Scattata quando hai registrato questo parcheggio, per mostrare la zona circostante. Non mostra che nelle vicinanze non ci fosse nessun cartello.",
   "session.noSignBadgeLong": "Nessuna restrizione affissa registrata. Hai registrato questo parcheggio come privo di cartelli.",

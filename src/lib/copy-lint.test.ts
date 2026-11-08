@@ -20,6 +20,10 @@
 //   5. The landing pages (the app shell index.html and every page deployed
 //      from the marketing landing folder) carry no em-dash and never say
 //      "verified record", outside comments.
+//   6. No English string says "ticket" alone ("ticket" alone, below): in
+//      English it can mean a pay-and-display ticket or a fine. A fine is
+//      "fine", and the paper "infringement notice" or "notice". Nor do the
+//      landing pages.
 //
 // The locale strings are written by scripts/_i18n_inject_*.mjs; the copy
 // pass (scripts/_i18n_inject_copy_pass.mjs) runs the same em-dash and
@@ -120,6 +124,34 @@ const ALLOWED: Record<string, { rule: string; unused?: true }> = {
 
 function bannedIn(text: string): string[] {
   return BANNED.filter((b) => b.re.test(text)).map((b) => b.id)
+}
+
+// ── "ticket" alone ──────────────────────────────────────────────────────
+// The build spec's i18n rules: "ticket" is ambiguous in English. A
+// pay-and-display ticket says so ("meter ticket", "pay-and-display ticket"),
+// and the keys about one are named for it: a key with a segment named
+// meterTicket… (complianceType.meterTicket, logger.proof.addMeterTicketOrPermit)
+// or under complianceType. Everything else that says "ticket", "tickets",
+// "ticketed" or "ticketing" alone fails. scripts/_i18n_inject_last_lows.mjs
+// runs the same check on what it writes.
+const TICKET_OK_PHRASE = /\b(meter|pay-and-display) tickets?\b/gi
+const LONE_TICKET = /\btickets?\b|\bticket(ed|ing)\b/i
+
+function saysLoneTicket(text: string): boolean {
+  return LONE_TICKET.test(text.replace(TICKET_OK_PHRASE, ''))
+}
+
+function isMeterTicketKey(key: string): boolean {
+  return key.split(/[.[\]]/).some((seg) => /^(add)?meterticket/i.test(seg) || seg === 'complianceType')
+}
+
+// Keys allowed to say "ticket" alone anyway. Keep this short: every entry
+// must still exist and still need it, or the test asks for it to be removed.
+const TICKET_ALLOWED: Record<string, string> = {
+  // A paid-parking answer: buy a ticket from the meter (a pay-and-display
+  // ticket, named by the meter in the same sentence).
+  'result.payRequired.copy': 'a ticket from the meter',
+  'result.payRequired.meterHint': 'a ticket from the meter or ticket machine',
 }
 
 // ── Source files ────────────────────────────────────────────────────────
@@ -263,6 +295,36 @@ describe('locale strings', () => {
     expect(stale).toEqual([])
   })
 
+  it('no English string says "ticket" alone', () => {
+    const hits = strings(en)
+      .filter(([key, value]) => !isMeterTicketKey(key) && !(key in TICKET_ALLOWED) && saysLoneTicket(value))
+      .map(([key, value]) => `${key}: ${value}`)
+    expect(hits).toEqual([])
+  })
+
+  it('every "ticket" allowlist entry still exists and still needs it', () => {
+    const en_ = Object.fromEntries(strings(en))
+    const stale = Object.keys(TICKET_ALLOWED).filter(
+      (key) => !(key in en_) || isMeterTicketKey(key) || !saysLoneTicket(en_[key]),
+    )
+    expect(stale).toEqual([])
+  })
+
+  it('the "ticket" check catches what it claims to', () => {
+    expect(saysLoneTicket('Got a ticket? Draft an appeal')).toBe(true)
+    expect(saysLoneTicket("Tamper-evident if you're ticketed")).toBe(true)
+    expect(saysLoneTicket('Handy if you ever need to dispute tickets.')).toBe(true)
+    expect(saysLoneTicket('Meter ticket on the dash')).toBe(false)
+    expect(saysLoneTicket('A photo of a pay-and-display ticket and a meter ticket')).toBe(false)
+    expect(saysLoneTicket('A meter ticket, then a ticket')).toBe(true)
+    expect(saysLoneTicket('Got a fine? Start here')).toBe(false)
+    expect(isMeterTicketKey('complianceType.meterTicket')).toBe(true)
+    expect(isMeterTicketKey('pdf.complianceType.permit')).toBe(true)
+    expect(isMeterTicketKey('evidence.addMeterTicketOrPermit')).toBe(true)
+    expect(isMeterTicketKey('pdf.appeal.ticketPhotoHeader')).toBe(false)
+    expect(isMeterTicketKey('session.draftAppeal')).toBe(false)
+  })
+
   it('the unused keys in the allowlist are still unused', () => {
     const sources = filesUnder(SRC, REPO, isAppSource)
     const used: string[] = []
@@ -384,7 +446,7 @@ describe('landing pages', () => {
     expect(names).toContain('migrations/two-app-architecture/landing-from-claude-design/index.html')
   })
 
-  it.each(PAGES.map(([p]) => p))('%s has no em-dash and never says "verified record"', (path) => {
+  it.each(PAGES.map(([p]) => p))('%s has no em-dash and never says "verified record" or "ticket" alone', (path) => {
     const html = PAGES.find(([p]) => p === path)?.[1] ?? ''
     const { text, scriptStrings } = pageText(html, path)
     const hits: string[] = []
@@ -392,6 +454,7 @@ describe('landing pages', () => {
       for (const line of s.split('\n')) {
         if (line.includes(EM_DASH)) hits.push(`em-dash: ${line.trim()}`)
         if (/\bverified record\b/i.test(line)) hits.push(`verified record: ${line.trim()}`)
+        if (saysLoneTicket(line)) hits.push(`ticket: ${line.trim()}`)
       }
     }
     expect(hits).toEqual([])

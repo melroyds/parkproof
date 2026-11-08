@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# ParkProof — early-warning alarm for Anthropic (Claude) call volume.
+# ParkProof: early-warning alarm for Anthropic (Claude) call volume.
 #
 # WHY: the AWS Budgets alarm (parkproof-monthly) only sees AWS spend. The
 # Anthropic bill is separate and has no alarm, so an anonymous abuse run on the
@@ -8,10 +8,15 @@
 # tells you if cost is climbing anyway (e.g. distributed abuse across IPs).
 #
 # WHAT: a CloudWatch metric filter counts every Claude call (the Lambda logs
-# `anthropic_call=` for translate and `appeal_call=` for appeal), and an alarm
-# emails you if the hourly count crosses a threshold. The TRUE fix — a hard
-# spend cap — lives in the Anthropic Console (Billing -> Usage limits); set one
-# there too. This is the AWS-side proxy.
+# `anthropic_call=` for a sign reading, `appeal_call=` for an appeal draft and
+# `notice_call=` for a fine notice read), and an alarm emails you if the
+# hourly count crosses a threshold. The TRUE fix, a hard spend cap, lives in
+# the Anthropic Console (Billing -> Usage limits); set one there too. This is
+# the AWS-side proxy.
+#
+# Re-running it replaces the metric filter with the pattern below. The live
+# filter only changes when someone runs this script, which changes AWS, so it
+# is a go-ahead deploy step.
 #
 # Idempotent and re-runnable. Pass the alert email + threshold, or use the
 # defaults below.
@@ -44,15 +49,16 @@ if aws sns list-subscriptions-by-topic --topic-arn "$TOPIC_ARN" --region "$REGIO
   echo "  • already subscribed (or pending confirmation)"
 else
   aws sns subscribe --topic-arn "$TOPIC_ARN" --protocol email --notification-endpoint "$EMAIL" --region "$REGION" >/dev/null
-  echo "  • subscribed — CHECK $EMAIL AND CLICK THE CONFIRMATION LINK (alarms won't email until you do)"
+  echo "  • subscribed. CHECK $EMAIL AND CLICK THE CONFIRMATION LINK (alarms won't email until you do)"
 fi
 
 echo "▶ [3/4] Metric filter on $LOG_GROUP"
-# Match either Claude-call log line; emit 1 per call into ParkProof/AnthropicCalls.
+# Match any of the three Claude-call log lines; emit 1 per call into
+# ParkProof/AnthropicCalls.
 MSYS_NO_PATHCONV=1 aws logs put-metric-filter \
   --log-group-name "$LOG_GROUP" \
   --filter-name "$FILTER_NAME" \
-  --filter-pattern '?"anthropic_call=" ?"appeal_call="' \
+  --filter-pattern '?"anthropic_call=" ?"appeal_call=" ?"notice_call="' \
   --metric-transformations \
     "metricName=$METRIC_NAME,metricNamespace=$METRIC_NS,metricValue=1,defaultValue=0" \
   --region "$REGION"
@@ -61,7 +67,7 @@ echo "  • filter $FILTER_NAME -> $METRIC_NS/$METRIC_NAME"
 echo "▶ [4/4] CloudWatch alarm: $ALARM_NAME (> $THRESHOLD Claude calls/hour)"
 aws cloudwatch put-metric-alarm \
   --alarm-name "$ALARM_NAME" \
-  --alarm-description "ParkProof Claude-call volume exceeded ${THRESHOLD}/hour — possible cost abuse on the anonymous AI routes. The Anthropic bill is not covered by the AWS budget alarm." \
+  --alarm-description "ParkProof Claude-call volume exceeded ${THRESHOLD}/hour: possible cost abuse on the anonymous AI routes. The Anthropic bill is not covered by the AWS budget alarm." \
   --namespace "$METRIC_NS" \
   --metric-name "$METRIC_NAME" \
   --statistic Sum \
@@ -77,5 +83,5 @@ echo "  • alarm armed"
 echo ""
 echo "✓ Done. Two manual follow-ups:"
 echo "  1. Confirm the SNS subscription email sent to $EMAIL."
-echo "  2. Set a hard spend cap in the Anthropic Console (Billing -> Usage limits) —"
-echo "     that's the real ceiling; this alarm is the early warning."
+echo "  2. Set a hard spend cap in the Anthropic Console (Billing -> Usage limits)."
+echo "     That's the real ceiling; this alarm is the early warning."

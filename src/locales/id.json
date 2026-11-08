@@ -74,7 +74,7 @@
       "title": "Tetap kena denda?",
       "lead": "Tak perlu mulai menulis surat sanggahan dari nol. Kami buatkan drafnya untuk kamu periksa dan ubah.",
       "items": [
-        "Foto dendanya. Kami cocokkan dengan apa yang tersimpan waktu kamu parkir.",
+        "Foto surat dendanya. Kami cocokkan dengan apa yang tersimpan waktu kamu parkir.",
         "Kamu dapat draf surat untuk dewan kota yang bisa kamu baca dan ubah sebelum dikirim. ParkProof tidak menilai kasusmu atau memprediksi hasilnya.",
         "Edit sesukamu, lalu unduh jadi PDF dengan catatan parkir terlampir. Cetak dan kirim pos, atau kirim email."
       ]
@@ -507,10 +507,8 @@
     "walkBackPill": "Jalan kembali ke mobil",
     "aiConfidence": "KEYAKINAN AI",
     "noteLabel": "CATATAN",
-    "noNote": "Belum ada catatan. Ketuk",
     "addNote": "Tambah catatan",
-    "noteHelp": "untuk mencatat kenapa kamu di sana, dengan kata-katamu sendiri. Keterangan seperti ini tidak ditandatangani.",
-    "notePlaceholder": "Kenapa kamu di sini, misalnya 'kemoterapi ibu di RS Royal', 'pasar Sabtu di Lygon'. Dipakai sebagai konteks kalau suatu saat kamu perlu menyanggah denda.",
+    "notePlaceholder": "Kenapa kamu di sini, misalnya 'kemoterapi ibu di RS Royal', 'pasar Sabtu di Lygon'. Ini ikut dimuat di PDF catatan parkir ini, kalau-kalau suatu saat kamu perlu mengajukan banding atas denda.",
     "saveNote": "Simpan catatan",
     "signPhotoLabel": "FOTO RAMBU",
     "carPhotoLabel": "MOBIL DI LOKASI",
@@ -542,12 +540,13 @@
     "photoNotOnDeviceUnsigned": "Foto ini tidak ada di perangkat ini. Sidik jari: {{fingerprint}}. Belum ditandatangani.",
     "signPhotoAlt": "Foto rambu parkir yang kamu pindai",
     "carPhotoAlt": "Foto mobilmu di tempat kamu parkir",
-    "ended": "Selesai"
+    "ended": "Selesai",
+    "noteEmpty": "Belum ada catatan. Ketuk <add>Tambah catatan</add> untuk menuliskan alasan kamu ada di sana, dengan kata-katamu sendiri. Catatan tidak ditandatangani."
   },
   "appeal": {
     "captureHeader": "Buat draf surat banding",
     "captureIntro": "Foto surat denda yang kamu terima. Claude akan membacanya, mencocokkannya dengan bukti yang tersimpan di catatan ini, lalu menyusun surat resmi yang bisa kamu kirim ke dewan kota penerbit.",
-    "captureTakePhotoSub": "Kamera surat denda",
+    "captureTakePhotoSub": "Foto surat dendanya",
     "captureFromLibrarySub": "Foto / pindaian surat denda",
     "captureDisclaimer": "Draf AI ini titik awal, bukan nasihat hukum. Surat akhir yang kamu kirim jadi tanggung jawabmu.",
     "draftingHeader": "Membaca surat denda…",

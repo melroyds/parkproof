@@ -16,7 +16,7 @@
   <!-- Landing — the marketing front door. -->
   <url>
     <loc>https://www.parkproof.com.au/</loc>
-    <lastmod>2026-05-24</lastmod>
+    <lastmod>2026-11-09</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
@@ -32,7 +32,7 @@
   <!-- Accuracy: how the sign reading is tested, with results once a held-out set is labelled. -->
   <url>
     <loc>https://www.parkproof.com.au/accuracy/</loc>
-    <lastmod>2026-11-08</lastmod>
+    <lastmod>2026-11-09</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
@@ -40,7 +40,7 @@
   <!-- Verify page (English) — public openssl walkthrough for evidence PDFs. -->
   <url>
     <loc>https://www.parkproof.com.au/verify/</loc>
-    <lastmod>2026-05-24</lastmod>
+    <lastmod>2026-11-09</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.parkproof.com.au/verify/"/>
@@ -58,49 +58,49 @@
   <!-- Locale-specific verify pages (each linked from the main /verify/ via hreflang). -->
   <url>
     <loc>https://www.parkproof.com.au/verify/zh-CN/</loc>
-    <lastmod>2026-05-24</lastmod>
+    <lastmod>2026-11-09</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://www.parkproof.com.au/verify/vi/</loc>
-    <lastmod>2026-05-24</lastmod>
+    <lastmod>2026-11-09</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://www.parkproof.com.au/verify/id/</loc>
-    <lastmod>2026-05-24</lastmod>
+    <lastmod>2026-11-09</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://www.parkproof.com.au/verify/ko/</loc>
-    <lastmod>2026-05-24</lastmod>
+    <lastmod>2026-11-09</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://www.parkproof.com.au/verify/it/</loc>
-    <lastmod>2026-05-24</lastmod>
+    <lastmod>2026-11-09</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://www.parkproof.com.au/verify/el/</loc>
-    <lastmod>2026-05-24</lastmod>
+    <lastmod>2026-11-09</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://www.parkproof.com.au/verify/hi/</loc>
-    <lastmod>2026-05-24</lastmod>
+    <lastmod>2026-11-09</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://www.parkproof.com.au/verify/pa/</loc>
-    <lastmod>2026-05-24</lastmod>
+    <lastmod>2026-11-09</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>

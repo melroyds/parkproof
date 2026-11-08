@@ -276,7 +276,7 @@ Idempotent scripts in [`scripts/`](scripts/). Follow [`docs/build/deploy-checkli
 | [`smoke-test-auth.mjs`](scripts/smoke-test-auth.mjs), [`send-test-push.mjs`](scripts/send-test-push.mjs) | Live checks of the auth routes and of one push | After auth or push changes |
 | [`eval-accuracy.mjs`](scripts/eval-accuracy.mjs) | The accuracy benchmark ([`eval/README.md`](eval/README.md)) | When the labelled set grows |
 | [`screenshots.mjs`](scripts/screenshots.mjs) | Regenerates the demo screenshots | After visual changes |
-| [`teardown.sh`](scripts/teardown.sh) | Removes what `deploy.sh` created (dry run by default). Leaves Cognito, tables, buckets, KMS and the scheduler | Only when walking away |
+| [`teardown.sh`](scripts/teardown.sh) | Removes everything the setup and deploy scripts created, user data included (dry run by default). The KMS key goes after KMS's 7-day minimum wait | Only when walking away |
 
 Stack: AWS Lambda (Node.js 22) + API Gateway HTTP API + DynamoDB + S3 + CloudFront + KMS + EventBridge Scheduler, in `ap-southeast-2` (Sydney).
 

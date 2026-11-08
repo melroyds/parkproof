@@ -2,7 +2,7 @@
 
 What this deploys: `integration/roadmap-2`. That's main plus the field-test fixes, T2, T3, T4, T5a and T5b, T6a, T8, T9, the copy pass and the integration fixes, T7 (merged as `2edc532`), the sign schema fix (`863a230`), the overnight fix list (`6d46dfc`) and T6b and T6c (merged as `09d5c24`). Workday mode (T6a to T6c) is in the code but stays off in this deploy: see 1.4.
 
-Evidence comes from commit `cfdecc7` in `C:\Users\molte\Downloads\pp-wt\readonly`, compared with `git diff main...HEAD`. Line numbers are at that commit. T7 has since merged as `2edc532` ("Merge feat/t7-share into integration/roadmap-2"). From `cfdecc7` to `2edc532`, the only change in `lambda/`, `scripts/`, `migrations/`, `public/` or the build config is the new `scripts/_i18n_inject_t7.mjs`. T7 calls no new API route. A share link is `/app/#share=…`, and the fragment never reaches CloudFront or the API (`src/lib/deep-link.ts`). Its handover addendum kind already exists on the server (`lambda/addendum-schema.js:66`, `:309`). Re-check all of this against the final tip in stage 1. The T10 docs pass re-checked the deploy scripts, the setup scripts and the route list at `09d5c24` (second revision note below).
+Evidence comes from commit `cfdecc7` in `C:\Users\molte\Downloads\pp-wt\readonly`, compared with `git diff main...HEAD`. Its line numbers were at that commit; the note before "There's no staging backend" says which are current now. T7 has since merged as `2edc532` ("Merge feat/t7-share into integration/roadmap-2"). From `cfdecc7` to `2edc532`, the only change in `lambda/`, `scripts/`, `migrations/`, `public/` or the build config is the new `scripts/_i18n_inject_t7.mjs`. T7 calls no new API route. A share link is `/app/#share=…`, and the fragment never reaches CloudFront or the API (`src/lib/deep-link.ts`). Its handover addendum kind already exists on the server (`lambda/addendum-schema.js:66`, `:309`). Re-check all of this against the final tip in stage 1. The T10 docs pass re-checked the deploy scripts, the setup scripts and the route list at `09d5c24` (second revision note below).
 
 **Revised 9 Nov 2026 on `fix/final-list`.** What changed in this revision:
 - `scripts/deploy.sh` packages the Lambda in a temp folder outside the repo and never deletes or reinstalls `lambda/node_modules`. `bash scripts/deploy.sh --package-only` builds and lists the package with no AWS call (stage 3.5, rehearsed on 9 Nov 2026).
@@ -18,7 +18,7 @@ Evidence comes from commit `cfdecc7` in `C:\Users\molte\Downloads\pp-wt\readonly
 - `scripts/deploy.sh`, `scripts/_deploy-staging.sh` and the `scripts/setup-*.sh` files are unchanged since the fix list (`b63e8ee`), so every `deploy.sh` line number below still holds. The `vite.config.ts` and `src/lib/recurring-push.ts` line numbers are now at `09d5c24`.
 - CLAUDE.md now says the jobs table's TTL attribute is `ttl`.
 
-Line numbers for `scripts/deploy.sh`, `vite.config.ts` and `src/lib/recurring-push.ts` are at `09d5c24`. Line numbers in `lambda/` are still at `cfdecc7`: `lambda/index.js` changed in `789fdc5` and `b63e8ee`, so look each one up by the function it names, or read that revision with `git show cfdecc7:lambda/index.js`.
+Line numbers for `scripts/deploy.sh`, `vite.config.ts` and `src/lib/recurring-push.ts` are at `09d5c24`. Line numbers in `lambda/` were refreshed for the last lows (9 Nov 2026) and match the code at `573c427`; `lambda/` hasn't changed since `b63e8ee`. The ones that were wrong at `cfdecc7` (the weekly dispatcher's skip line, the cron call's `ActionAfterCompletion`) were corrected, and main's code is named by function. If `lambda/` changes again, look each one up by the function it names: the numbers go stale, the names don't.
 
 There's no staging backend. `scripts/deploy.sh` updates the one production Lambda, the live API and the live site. Nobody relies on the app yet, so production is the test bed, as in `docs/build/aws-test-plan.md`. The phone tests themselves live in `field-test-plan.md` next to this file. This checklist covers getting the build onto AWS safely and proving the plumbing.
 
@@ -27,7 +27,7 @@ Who does what:
 - **[Claude, go-ahead]** changes AWS, only after you say go.
 - **[You]** phone and laptop.
 
-Time: about 2.5 hours, plus any log export you choose in 6.2. Setup and local gates 35 min, read-only pre-flight 20 min, stage 6 (IAM grant, log retention, Scheduler pre-check) 15 min, deploy 10 min, post-deploy smoke and Scheduler checks 65 min. Then a 24-hour watch, and an hour after the deploy one last look at the Scheduler probe (8.5).
+Time: about 2.5 hours, plus any log export you choose in 6.2. Setup and local gates 35 min, read-only pre-flight 20 min, stage 6 (IAM grant, log retention, Scheduler pre-check, usage alarm) 20 min, deploy 10 min, post-deploy smoke and Scheduler checks 65 min. Then a 24-hour watch, and an hour after the deploy one last look at the Scheduler probe (8.5).
 
 ---
 
@@ -82,22 +82,22 @@ Four new routes. `deploy.sh` creates all four.
 
 | Route | Auth and limit | Lambda dispatch (`lambda/index.js`) | `deploy.sh` | Created by deploy.sh? |
 |---|---|---|---|---|
-| `POST /push/recurring` | Anonymous, 30 a minute per IP (`:2720`, `:3345`) | `:3343-3355`, then `handlePushRecurring` `:2741` | `:484` `ensure_route` | Yes, with a Lambda permission (`:455-462`) |
-| `POST /push/recurring/cancel` | Anonymous, 30 a minute per IP (`:3329`) | `:3327-3339`, then `handlePushRecurringCancel` `:2837` | `:485` | Yes, same |
-| `POST /read-notice` | Anonymous, 10 a minute per IP (`:3044`) | `:3415-3422`, then `handleReadNotice` `:3043` | `:487` | Yes, same |
-| `GET /read-notice/status/{job_id}` | Anonymous, the job id is the bearer | `:3271-3284`, then `handleJobStatus` `:3078` with kind `read-notice` | `:589` `ensure_get_anon_route` | Yes, but a failed permission is swallowed (`:582`) |
+| `POST /push/recurring` | Anonymous, 30 a minute per IP (`:2759`, `:3384`) | `:3382-3394`, then `handlePushRecurring` `:2780` | `:484` `ensure_route` | Yes, with a Lambda permission (`:455-462`) |
+| `POST /push/recurring/cancel` | Anonymous, 30 a minute per IP (`:3368`) | `:3366-3378`, then `handlePushRecurringCancel` `:2876` | `:485` | Yes, same |
+| `POST /read-notice` | Anonymous, 10 a minute per IP (`:3083`) | `:3454-3461`, then `handleReadNotice` `:3082` | `:487` | Yes, same |
+| `GET /read-notice/status/{job_id}` | Anonymous, the job id is the bearer | `:3310-3323`, then `handleJobStatus` `:3117` with kind `read-notice` | `:589` `ensure_get_anon_route` | Yes, but a failed permission is swallowed (`:582`) |
 
-One new trigger that isn't an HTTP route. Scheduler events carrying `_async_kind: 'push-recurring'` go to `handleRecurringPushDispatch` (`:3253-3255`, `:2874`).
+One new trigger that isn't an HTTP route. Scheduler events carrying `_async_kind: 'push-recurring'` go to `handleRecurringPushDispatch` (`:3292-3294`, `:2913`).
 
-Order in the dispatcher matters. `/push/recurring/cancel` is matched before `/push/recurring` (`:3327`, then `:3343`). Any path nothing matches falls through to `handleSignTranslate` (`:3475`).
+Order in the dispatcher matters. `/push/recurring/cancel` is matched before `/push/recurring` (`:3366`, then `:3382`). Any path nothing matches falls through to `handleSignTranslate` (`:3514`).
 
 Changed behaviour on existing routes:
-- `POST /push/subscribe` writes with a condition and answers 409 `ERR_ENDPOINT_GONE` for an endpoint that's already dead (`:2079-2089`).
-- `POST /push/schedule` answers 409 `ERR_NOT_SUBSCRIBED` when the device has no live row (`:2509-2512`). It also keeps a schedule that's due within 30 seconds (`:2536`).
-- `GET /sign-translate/status/{id}` and `/draft-appeal/status/{id}` now refuse notice jobs. The notice route serves notice jobs only (`:3106`).
-- `POST /sign-translate` checks `user_permits` and `parking_state` and answers 400 with an ERR code (`:2994`, `:3022-3029`). Old clients don't send these fields, and a missing field passes (`lambda/sign-reading.js:112-147`).
-- Sign answers are now normalised (`index.js:1369`, `lambda/sign-reading.js:547-615`). New fields are added. One change shows on an old cached shell: when the model finds no sign, or not a parking sign, the answer is `can_park_now: false` with empty `rules` and `observations` (`sign-reading.js:569-590`). An old shell shows that as a plain "no" with no rules. Everything else is additive.
-- `POST /feedback` logs the T3 counts (`:1856` onwards).
+- `POST /push/subscribe` writes with a condition and answers 409 `ERR_ENDPOINT_GONE` for an endpoint that's already dead (`:2118-2128`).
+- `POST /push/schedule` answers 409 `ERR_NOT_SUBSCRIBED` when the device has no live row (`:2548-2551`). It also keeps a schedule that's due within 30 seconds (`:2575`).
+- `GET /sign-translate/status/{id}` and `/draft-appeal/status/{id}` now refuse notice jobs. The notice route serves notice jobs only (`:3145`).
+- `POST /sign-translate` checks `user_permits` and `parking_state` and answers 400 with an ERR code (`:3033`, `:3061-3068`). Old clients don't send these fields, and a missing field passes (`lambda/sign-reading.js:120-155`).
+- Sign answers are now normalised (`index.js:1402`, `lambda/sign-reading.js:628-696`). New fields are added. One change shows on an old cached shell: when the model finds no sign, or not a parking sign, the answer is `can_park_now: false` with empty `rules` and `observations` (`sign-reading.js:650-671`). An old shell shows that as a plain "no" with no rules. Everything else is additive.
+- `POST /feedback` logs the T3 counts (`:1895` onwards).
 
 No JWT routes changed. `harden.sh` CORS already allows GET, POST, OPTIONS and the `Content-Type` and `Authorization` headers (`scripts/harden.sh:64-66`). The client sends no new headers.
 
@@ -111,23 +111,23 @@ Every AWS call the Lambda makes that's new or changed, against what the scripts 
 
 | Call | Where | Needs | Granted by | Status |
 |---|---|---|---|---|
-| `CreateSchedule` with `cron()`, `ScheduleExpressionTimezone`, `EndDate` and `ActionAfterCompletion: DELETE`, named `parkproof-push-r-<rule uuid>-<0 or 1>` | `index.js:2775`, `:2782-2800`. Names from `recurring-schedule.js:221`, `:247-255` (55 characters, under the limit of 64) | `scheduler:CreateSchedule` on `schedule/default/parkproof-push-*`, plus `iam:PassRole` on `parkproof-push-scheduler-role` | `parkproof-lambda-schedule-rw` (`setup-push-scheduler.sh:86-115`) | Covered. Verify (4.4) |
-| `GetSchedule` on rule slots (owner check) | `index.js:2291-2311` (`:2295`) | `scheduler:GetSchedule` | same | Covered. Verify |
-| `DeleteSchedule` on rule slots | `index.js:2360-2385` (`:2366`) | `scheduler:DeleteSchedule` | same | Covered |
+| `CreateSchedule` with `cron()`, `ScheduleExpressionTimezone`, `EndDate` and `ActionAfterCompletion: DELETE`, named `parkproof-push-r-<rule uuid>-<0 or 1>` | `index.js:2814`, `:2821-2839`. Names from `recurring-schedule.js:221`, `:247-255` (55 characters, under the limit of 64) | `scheduler:CreateSchedule` on `schedule/default/parkproof-push-*`, plus `iam:PassRole` on `parkproof-push-scheduler-role` | `parkproof-lambda-schedule-rw` (`setup-push-scheduler.sh:86-115`) | Covered. Verify (4.4) |
+| `GetSchedule` on rule slots (owner check) | `index.js:2330-2350` (`:2334`) | `scheduler:GetSchedule` | same | Covered. Verify |
+| `DeleteSchedule` on rule slots | `index.js:2399-2424` (`:2405`) | `scheduler:DeleteSchedule` | same | Covered |
 | Scheduler invoking the Lambda for weekly fires | Target `PUSH_DISPATCH_LAMBDA_ARN` with `PUSH_SCHEDULER_ROLE_ARN` | `lambda:InvokeFunction` for the scheduler role | `parkproof-push-scheduler-invoke` (`setup-push-scheduler.sh:63-81`) | Covered |
-| Jobs table: conditional `PutItem` (`attribute_exists(job_id)`) | `index.js:156-173` | `dynamodb:PutItem` | Hand-made grant, no script | Allowed (checked 9 Nov 2026). Already used by scans |
-| Jobs table: **`DeleteItem`** after a notice is read, and on expired rows | `index.js:183-185`, `:3111-3117`, `:3133-3139` | `dynamodb:DeleteItem` on `table/parkproof-jobs` | **`scripts/setup-jobs-table.sh`** (new), run in stage 6 | **Missing: implicitDeny (checked 9 Nov 2026). Stage 6 adds it** |
-| Jobs table: `UpdateItem` for the per-IP limiter, now also on the two recurring routes and `/read-notice` | `index.js:215-239` | `dynamodb:UpdateItem` | Hand-made | Allowed (checked 9 Nov 2026). The limiter fails open, so a missing grant would only show as `[parkproof.ratelimit] check failed, allowing` |
-| Jobs table: `GetItem` for the status routes | `index.js:3078` onwards | `dynamodb:GetItem` | Hand-made | Allowed (checked 9 Nov 2026) |
-| Push table: conditional `PutItem` (registration and tombstone) | `push-tombstone.js:33-62`, `index.js:2079`, `:2972-2976` | `dynamodb:PutItem` | `parkproof-push-subscriptions-rw` (`setup-push.sh:78-93`) | Covered |
-| Push table: `GetItem` with `ConsistentRead` | `index.js:2418-2426` (`:2420`), `:2906-2909` | `dynamodb:GetItem` (no extra permission for consistent reads) | same | Covered |
-| Push table: conditional `UpdateItem` to push out the expiry | `index.js:2436-2453` | `dynamodb:UpdateItem` | same | Covered |
+| Jobs table: conditional `PutItem` (`attribute_exists(job_id)`) | `index.js:157-174` | `dynamodb:PutItem` | Hand-made grant, no script | Allowed (checked 9 Nov 2026). Already used by scans |
+| Jobs table: **`DeleteItem`** after a notice is read, and on expired rows | `index.js:184-186`, `:3150-3156`, `:3172-3178` | `dynamodb:DeleteItem` on `table/parkproof-jobs` | **`scripts/setup-jobs-table.sh`** (new), run in stage 6 | **Missing: implicitDeny (checked 9 Nov 2026). Stage 6 adds it** |
+| Jobs table: `UpdateItem` for the per-IP limiter, now also on the two recurring routes and `/read-notice` | `index.js:216-238` (`checkRateLimit`) | `dynamodb:UpdateItem` | Hand-made | Allowed (checked 9 Nov 2026). The limiter fails open, so a missing grant would only show as `[parkproof.ratelimit] check failed, allowing` |
+| Jobs table: `GetItem` for the status routes | `index.js:3117` onwards | `dynamodb:GetItem` | Hand-made | Allowed (checked 9 Nov 2026) |
+| Push table: conditional `PutItem` (registration and tombstone) | `push-tombstone.js:33-62`, `index.js:2118`, `:3011-3015` | `dynamodb:PutItem` | `parkproof-push-subscriptions-rw` (`setup-push.sh:78-93`) | Covered |
+| Push table: `GetItem` with `ConsistentRead` | `index.js:2457-2465` (`:2459`), `:2945-2948` | `dynamodb:GetItem` (no extra permission for consistent reads) | same | Covered |
+| Push table: conditional `UpdateItem` to push out the expiry | `index.js:2475-2492` | `dynamodb:UpdateItem` | same | Covered |
 | Sessions table: `Query` with `ConsistentRead` | `cloud-sync.js:482-490` | `dynamodb:Query` | `parkproof-data-access` (`setup-auth.sh:237-244`) | Covered |
-| Self-invoke for `read-notice` jobs | `index.js:189-200`, `:3059` | `lambda:InvokeFunction` on itself | Hand-made (scans already use it) | Covered |
-| KMS | `index.js:1431`, `Sign` only | `kms:Sign` | `parkproof-kms-sign` (`setup-signing.sh:71-75`) | No new KMS use |
+| Self-invoke for `read-notice` jobs | `index.js:193-201` (`asyncSelfInvoke`), `:3098` | `lambda:InvokeFunction` on itself | Hand-made (scans already use it) | Covered |
+| KMS | `index.js:1464`, `Sign` only | `kms:Sign` | `parkproof-kms-sign` (`setup-signing.sh:71-75`) | No new KMS use |
 | S3 | `cloud-sync.js` changed only comments and `ConsistentRead` | none new | | No new S3 use |
 
-A conditional write needs no extra permission. A failed condition comes back as `ConditionalCheckFailedException`, and the code handles every one: a 409 at `:2081`, `false` at `:171`, swallowed at `:2981`, logged at `:2451`.
+A conditional write needs no extra permission. A failed condition comes back as `ConditionalCheckFailedException`, and the code handles every one: a 409 at `:2120`, `false` at `:172`, swallowed at `:3020`, logged at `:2490`.
 
 **The one statement to add.** The simulator showed `DeleteItem` denied, so this isn't optional. `scripts/setup-jobs-table.sh` puts it on `parkproof-lambda-role` as a new inline policy named `parkproof-jobs-delete`, and changes nothing else (stage 6):
 
@@ -152,28 +152,28 @@ Never re-run `scripts/setup-auth.sh` for an IAM fix. It rewrites `scripts/.aws-r
 No new tables, keys or indexes. New item shapes:
 
 **`parkproof-jobs`** (key `job_id`)
-- Notice job rows: `{ job_id, ttl, status, kind: 'read-notice', deadline, result | error }` (`index.js:3058`, `:3204-3218`). The result holds the notice fields (`index.js:617-640`). The error holds only an ERR code (`:3160-3164`). The row is deleted the first time a finished result is read (`:3133-3139`). A worker writing late can't bring it back, because the write is conditional (`:3203`, `:166`).
-- New limiter rows: `RL#pushrecurring#…`, `RL#pushrecurringcancel#…`, `RL#notice#…` with `count` and `ttl` (`:218-231`).
-- **TTL attribute: `ttl` (confirmed 9 Nov 2026).** The code writes `ttl` (`:163`, `:224`, unchanged from main), and a read-only `describe-time-to-live` showed the live table's TTL is on `ttl`, so DynamoDB does sweep these rows. CLAUDE.md's jobs row said `expires_at` until T10 corrected it. The notice route also ignores an expired row by its own `ttl` check (`:3111`).
+- Notice job rows: `{ job_id, ttl, status, kind: 'read-notice', deadline, result | error }` (`index.js:3097`, `:3243-3257`). The result holds the notice fields (`index.js:620-643`). The error holds only an ERR code (`:3199-3203`). The row is deleted the first time a finished result is read (`:3172-3178`). A worker writing late can't bring it back, because the write is conditional (`:3242`, `:167`).
+- New limiter rows: `RL#pushrecurring#…`, `RL#pushrecurringcancel#…`, `RL#notice#…` with `count` and `ttl` (`:219-232`).
+- **TTL attribute: `ttl` (confirmed 9 Nov 2026).** The code writes `ttl` (`:164`, `:225`, unchanged from main), and a read-only `describe-time-to-live` showed the live table's TTL is on `ttl`, so DynamoDB does sweep these rows. CLAUDE.md's jobs row said `expires_at` until T10 corrected it. The notice route also ignores an expired row by its own `ttl` check (`:3150`).
 
 **`parkproof-push-subscriptions`** (key `device_id`, TTL on `expires_at` per `setup-push.sh:60-66`)
-- Tombstone: `{ device_id, gone_endpoint_sha256, gone_at, expires_at }`, with no endpoint and no keys (`push-tombstone.js:33-46`). It's written instead of a delete when a send gets 410 or 404 (`index.js:2964-2982`).
+- Tombstone: `{ device_id, gone_endpoint_sha256, gone_at, expires_at }`, with no endpoint and no keys (`push-tombstone.js:33-46`). It's written instead of a delete when a send gets 410 or 404 (`index.js:3003-3021`).
 - A live registration is now a conditional Put that refuses the dead endpoint's hash (`push-tombstone.js:55-62`). Existing rows have no `gone_endpoint_sha256`, so they pass.
-- `expires_at` is now pushed out after each booking. That's at least 90 days, and for weekly rules the schedule's EndDate plus a day (`index.js:2436-2453`, `:2811`).
+- `expires_at` is now pushed out after each booking. That's at least 90 days, and for weekly rules the schedule's EndDate plus a day (`index.js:2475-2492`, `:2850`).
 - Rows from launch that never got refreshed have expired. Those devices get 409 until the app re-registers. The new app re-sends its registration on open (`src/lib/push.ts`). An old cached shell doesn't.
 
 **`parkproof-sessions`**: no shape change on the server. The list query is now consistent (`cloud-sync.js:482-486`).
 
 **EventBridge Scheduler** (new state outside the code)
-- Up to two cron schedules per weekly rule: `parkproof-push-r-<uuid>-0` (the evening before) and `-1` (before it starts). They live in the `default` group, use the rule's IANA zone, end after 90 days (`recurring-schedule.js:228`) and delete themselves after that (`index.js:2784-2800`).
+- Up to two cron schedules per weekly rule: `parkproof-push-r-<uuid>-0` (the evening before) and `-1` (before it starts). They live in the `default` group, use the rule's IANA zone, end after 90 days (`recurring-schedule.js:228`) and delete themselves after that (`index.js:2823-2839`).
 - The Target Input holds the device_id, the rule's days and times, and the notification words for each day (`recurring-schedule.js:421-445`). That's well under Scheduler's input limit.
 - The one-shot schedules `parkproof-push-<session uuid>-<n>` are unchanged.
 
 ### 1.4 Environment and build config (item 4)
 
-**Lambda: no new variables.** `lambda/*.js` reads the same names as main (`index.js:86-89`, `:1428`, `:1890`, `:1991`, `:2116-2117`, `:2930-2932`, `cloud-sync.js:55-58`).
-- [ ] These must be present: `ANTHROPIC_API_KEY`, `KMS_KEY_ID`, `COGNITO_USER_POOL_ID`, `COGNITO_APP_CLIENT_ID`, `DYNAMODB_TABLE_SESSIONS`, `DYNAMODB_TABLE_PUSH`, `S3_BUCKET_EVIDENCE`, `S3_BUCKET_USER_FEEDBACK`, `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`, `PUSH_SCHEDULER_ROLE_ARN` and `PUSH_DISPATCH_LAMBDA_ARN`. Without the two `PUSH_` names, `/push/recurring` answers 500 (`index.js:2743-2751`).
-- [ ] `ALLOW_TIME_OVERRIDE` must be absent. With it set, any anonymous caller can spoof the clock (`index.js:100-101`). The accuracy harness never needs it, because it imports `lambda/index.js` locally (`scripts/eval-accuracy.mjs:94`).
+**Lambda: no new variables.** `lambda/*.js` reads the same names as main (`index.js:87-90`, `:1461`, `:1929`, `:2030`, `:2155-2156`, `:2969-2971`, `cloud-sync.js:55-58`).
+- [ ] These must be present: `ANTHROPIC_API_KEY`, `KMS_KEY_ID`, `COGNITO_USER_POOL_ID`, `COGNITO_APP_CLIENT_ID`, `DYNAMODB_TABLE_SESSIONS`, `DYNAMODB_TABLE_PUSH`, `S3_BUCKET_EVIDENCE`, `S3_BUCKET_USER_FEEDBACK`, `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`, `PUSH_SCHEDULER_ROLE_ARN` and `PUSH_DISPATCH_LAMBDA_ARN`. Without the two `PUSH_` names, `/push/recurring` answers 500 (`index.js:2781-2789`, at the top of `handlePushRecurring`).
+- [ ] `ALLOW_TIME_OVERRIDE` must be absent. With it set, any anonymous caller can spoof the clock (`index.js:101-102`). The accuracy harness never needs it, because it imports `lambda/index.js` locally (`scripts/eval-accuracy.mjs:94`).
 - `JOBS_TABLE` is optional and defaults to `parkproof-jobs`. If 4.3 shows it set, every `parkproof-jobs` in this checklist (4.4, 4.5, stage 6) means its value instead.
 - `deploy.sh` merges values and never deletes one (`:326-361`). Your `scripts/.aws-resources` has both `S3_BUCKET_*` lines with values (key names checked, values not read), so the deploy prints the bucket names (`:243-244`) and writes them again. `KMS_KEY_ID` isn't in that file or in the merge list, so the live value is kept. That's expected.
 
@@ -206,8 +206,8 @@ All of these come from `migrations/two-app-architecture/landing-from-claude-desi
 - **Landing** `index.html`: new titles and descriptions, "Check a sign" (`:70`, `:109`, `:528`), a reminders caveat, signature wording, an Accuracy footer link (`:546`). Also `landing-demo.js` captions.
 - **Accuracy page**, new: `accuracy/index.html` and `accuracy/accuracy.js`. A module script loads `results.json` next to the page (`accuracy.js:193-211`). There's no `results.json` yet, so the page must show "No numbers yet". A missing file, or a page served in its place, counts as no results.
 - **Verify pages**: `verify/index.html` plus 8 locales rewritten (link chain, evidence file, a Windows section).
-- **OG image**: `og-image.png` changed in both `public/` and the landing. The two files are identical, sha256 `f2d05875…6868`, 168,472 bytes. The meta tags still point at `/og-image.png` with no version (landing `index.html:23`, `:34`, app `index.html:35`, `:43`).
-- **Sitemap**: `/accuracy/` added (`sitemap.xml:32-38`). The landing and verify entries keep `lastmod` 2026-05-24 although their copy changed. That's optional to fix, not a blocker.
+- **OG image**: `og-image.png` changed in both `public/` and the landing. The two files are identical, sha256 `f2d05875…6868`, 168,472 bytes. The share tags now ask for `og-image.png?v=2` (landing `index.html:23`, `:34`, the accuracy page's `accuracy/index.html:15`, app `index.html:35`, `:43`), so a platform that cached the old picture fetches the new one. The file itself keeps its name.
+- **Sitemap**: `/accuracy/` added (`sitemap.xml:32-38`). The landing, accuracy and verify entries (all 9) have `lastmod` 2026-11-09, the day their copy last changed. `/app/` keeps 2026-05-24.
 - **PEM**: both copies are 178 bytes, LF only, sha256 `d025dea8…d1f8`. `.gitattributes` pins `*.pem` to LF (`.gitattributes:5`). `deploy.sh` strips CR from every PEM in `dist/` and stops if any CR is left (`:701-719`).
 - `/accuracy` without a slash may not resolve. The CloudFront function only adds `index.html` to URIs that end in `/` (`scripts/_cloudfront-uri-rewrite.js:33-35`). Every link and the sitemap use `/accuracy/`.
 - `aws s3 sync dist/ … --delete` (`deploy.sh:751`) removes anything in the app bucket that isn't in `dist/`. That includes the Greenfield staging prefix from `scripts/_deploy-staging.sh` if it's still there. Check 4.8.
@@ -436,6 +436,24 @@ rm -f scheduler-precheck.tmp.json
 - If `delete-schedule` fails, run it again. A disabled schedule never fires, but don't leave it behind.
 - This doesn't show that a schedule deletes itself after its end date. Only 8.5 step 3 shows that.
 
+6.4 The usage alarm counts notice reads. `scripts/anthropic-usage-alarm.sh` now counts `notice_call=` lines as well as `anthropic_call=` and `appeal_call=`, but the live metric filter only changes when the script runs, so until then a run of `/read-notice` calls never moves `parkproof-anthropic-usage`. Re-running it changes AWS, so only after you say go. It replaces the `parkproof-anthropic-calls` filter and re-puts the alarm with the threshold and email you pass, so pass the live ones:
+
+```bash
+cd /c/Users/molte/pp-deploy
+MSYS_NO_PATHCONV=1 aws logs describe-metric-filters --log-group-name /aws/lambda/parkproof-sign-translator \
+  --filter-name-prefix parkproof-anthropic-calls --query 'metricFilters[0].filterPattern' --output text
+aws cloudwatch describe-alarms --alarm-names parkproof-anthropic-usage \
+  --query 'MetricAlarms[0].[Threshold,AlarmActions[0]]' --output text
+aws sns list-subscriptions-by-topic --topic-arn <the AlarmActions ARN above> --query 'Subscriptions[].Endpoint' --output text
+bash scripts/anthropic-usage-alarm.sh <that email> <that threshold>
+MSYS_NO_PATHCONV=1 aws logs describe-metric-filters --log-group-name /aws/lambda/parkproof-sign-translator \
+  --filter-name-prefix parkproof-anthropic-calls --query 'metricFilters[0].filterPattern' --output text
+```
+
+- [ ] The first read shows `?"anthropic_call=" ?"appeal_call="`. The last shows `?"anthropic_call=" ?"appeal_call=" ?"notice_call="`.
+- [ ] The script ends with `✓ Done.` and doesn't ask for a new confirmation email (the subscription already exists).
+- Not a stop condition for the deploy: without it, notice reads are only missing from the alarm's count. Do it in this stage or the watch window.
+
 ### Stage 7. Deploy [Claude, go-ahead]
 
 ```bash
@@ -485,8 +503,8 @@ aws lambda add-permission --function-name $FN \
 
 8.1 Runtime [Claude] (item 5):
 - [ ] `aws lambda get-function-configuration --function-name $FN --query '{rt:Runtime,state:State,last:LastUpdateStatus,sha:CodeSha256}'` shows `nodejs22.x`, `Active`, `Successful`, and a new `CodeSha256`.
-- [ ] `MSYS_NO_PATHCONV=1 aws logs tail /aws/lambda/parkproof-sign-translator --since 20m --filter-pattern '?ERROR ?ImportModuleError ?"Task timed out" ?AccessDenied ?"not authorized" ?"check failed"'` shows nothing new. The last two matter: the rate limiter logs a denied `UpdateItem` as `[parkproof.ratelimit] check failed, allowing: User: … is not authorized to perform …` (`index.js:234`), a WARN line with no `AccessDenied` in it.
-- [ ] `… --filter-pattern REPORT` still shows REPORT lines, with an `Init Duration` on cold starts. If the `parkproof-warmer` schedule exists (`index.js:3228-3238` expects one), they come every 5 minutes. Compare with the same query before the deploy.
+- [ ] `MSYS_NO_PATHCONV=1 aws logs tail /aws/lambda/parkproof-sign-translator --since 20m --filter-pattern '?ERROR ?ImportModuleError ?"Task timed out" ?AccessDenied ?"not authorized" ?"check failed"'` shows nothing new. The last two matter: the rate limiter logs a denied `UpdateItem` as `[parkproof.ratelimit] check failed, allowing: User: … is not authorized to perform …` (`index.js:235`), a WARN line with no `AccessDenied` in it.
+- [ ] `… --filter-pattern REPORT` still shows REPORT lines, with an `Init Duration` on cold starts. If the `parkproof-warmer` schedule exists (`index.js:3267-3277` expects one), they come every 5 minutes. Compare with the same query before the deploy.
 
 8.2 Routes, permissions and IAM, by curl [Claude] (item 1). These change nothing.
 
@@ -558,7 +576,8 @@ grep -rlF "$(grep '^VAPID_PRIVATE_KEY=' scripts/.aws-resources | cut -d= -f2-)" 
   - Facebook Sharing Debugger: "Scrape again" on `https://www.parkproof.com.au/`.
   - LinkedIn Post Inspector: the same URL.
   - iMessage, Slack, WhatsApp and X can't be forced. Share `https://www.parkproof.com.au/?v=2` for a while.
-  - The lasting fix is `og-image.png?v=2` in the four meta tags (1.6), as a follow-up commit. Not tonight.
+  - The share tags already ask for `og-image.png?v=2` (1.6), so a page these platforms read again picks up the new picture.
+- [ ] `curl -s "$SITE/" | grep -c 'og-image.png?v=2'` prints 2, and `curl -s "$SITE/app/" | grep -c 'og-image.png?v=2'` prints 2.
 - [ ] Optional: resubmit `sitemap.xml` in Search Console.
 
 8.4 One pass on the phone [You] (item 10). The full tests are E to K in `field-test-plan.md`. This is the minimum that proves the deploy.
@@ -587,7 +606,7 @@ One throwaway schedule checks A, B and the time-zone half of C today. The daylig
 **Why it's safe.**
 - The name `pp-awscheck-<date>-<time>` sits outside the Lambda's `parkproof-push-*` scope, so the app never touches it.
 - It uses the existing scheduler role, which can only invoke this Lambda.
-- Its input is a `push-recurring` event whose `rule_id` is the placeholder. The dispatcher refuses it as `bad_input` before any lookup, so there's no DynamoDB, no push and no Claude call. It logs the `rule_id`, which is where the substituted time shows (`lambda/index.js:2907-2918` and `lambda/recurring-schedule.js:457-462` at this revision).
+- Its input is a `push-recurring` event whose `rule_id` is the placeholder. The dispatcher refuses it as `bad_input` before any lookup, so there's no DynamoDB, no push and no Claude call. It logs the `rule_id`, which is where the substituted time shows (`handleRecurringPushDispatch`, the `[parkproof.push.recurring.skip]` line at `lambda/index.js:2913-2927`, and `lambda/recurring-schedule.js:457-462`).
 - It runs once (the end date is 7 minutes after the fire time) and then deletes itself, or step 3 deletes it.
 
 **Step 1. Create the probe.** In the deploy clone, in the shell from stage 4:
@@ -621,7 +640,7 @@ aws scheduler get-schedule --name "$PROBE" \
 ```
 
 - [ ] `create exit: 0`, and `get-schedule` shows `cron(<MIN> <HOUR> ? * * *)`, `Australia/Melbourne`, the end date `$END`, `DELETE` and `ENABLED`. That's the first half of **B**.
-- [ ] **B fails at once** if `create-schedule` is refused with a `ValidationException`. Then every weekly push booking fails and the app reports on-device only. No rollback for the rest of the release. Fix forward by taking `ActionAfterCompletion` out of the cron call (`lambda/index.js:2825` at this revision), keeping `EndDate`, and adding a periodic clean-up of expired `parkproof-push-r-*` schedules. Go straight to step 3's clean-up lines. The privacy text matters here: `privacy.anonymousWeeklyPush` and `privacy.rightsAnonymous` say weekly schedules are deleted within 90 days of the last time the app was opened, and a schedule left after its `EndDate` keeps its device ID, the reminder's name, any address, its days and times and its notification text. So the fix forward ships the automatic clean-up (running at least daily) in the same deploy, or changes both strings in the same deploy (all 9 languages, through `scripts/_i18n_inject_fixlist_final.mjs`, which keeps the copy-pass files in step). Never one without the other.
+- [ ] **B fails at once** if `create-schedule` is refused with a `ValidationException`. Then every weekly push booking fails and the app reports on-device only. No rollback for the rest of the release. Fix forward by taking `ActionAfterCompletion` out of the cron call (the `CreateScheduleCommand` in `handlePushRecurring`, `lambda/index.js:2831`), keeping `EndDate`, and adding a periodic clean-up of expired `parkproof-push-r-*` schedules. Go straight to step 3's clean-up lines. The privacy text matters here: `privacy.anonymousWeeklyPush` and `privacy.rightsAnonymous` say weekly schedules are deleted within 90 days of the last time the app was opened, and a schedule left after its `EndDate` keeps its device ID, the reminder's name, any address, its days and times and its notification text. So the fix forward ships the automatic clean-up (running at least daily) in the same deploy, or changes both strings in the same deploy (all 9 languages, through `scripts/_i18n_inject_fixlist_final.mjs`, which keeps the copy-pass files in step). Never one without the other.
 
 **Step 2. A minute after `$FIRE_UTC`, read the log.**
 
@@ -695,7 +714,7 @@ This follows the CLAUDE.md playbook. If `integration/roadmap-2` hasn't been merg
 
 Do the three steps in this order. Steps 1 and 2 take a minute. They stop phones still on the new app from booking anything main can't serve.
 
-**Step 1. Delete the four new routes.** Main's dispatcher has no handler for them. They fall through to `handleSignTranslate`, which queues a sign job and answers 202 with a job id (main `lambda/index.js:2073-2110`). The new app doesn't see that as an error:
+**Step 1. Delete the four new routes.** Main's dispatcher has no handler for them. They fall through to `handleSignTranslate`, which queues a sign job and answers 202 with a job id (`handleSignTranslate` in main's `lambda/index.js`, reached from the last line of main's `handler`). The new app doesn't see that as an error:
 - `/push/recurring`: a 202 with no `skipped` list reads as booked (`src/lib/recurring-push.ts:346-350`). The phone shows weekly push as set, and nothing fires.
 - `/push/recurring/cancel`: the 202 reads as cancelled.
 - `/read-notice`: main reads the notice photo as a sign (a real Claude call), and the app polls back a sign answer.
@@ -743,7 +762,7 @@ To roll forward again later, run stage 7 as before. `deploy.sh` re-creates the f
 | Lambda runtime `nodejs22.x` | Stays, because main's `deploy.sh` has no runtime step. Main is tested on Node 22 | Don't move it back. Node 20 is past end of life, and Lambda may refuse it |
 | Four new API routes | Stay unless deleted. Main's Lambda sends them to `handleSignTranslate`, which answers 202, not an error. The old site never calls them, but a phone still on the new shell does | Delete them (step 1). Their Lambda permission statements stay, which is harmless |
 | IAM additions | Stay | Leave them (additive) |
-| Notice job rows not yet read | Expire 10 minutes after their last write, but DynamoDB's TTL sweep is lazy and can take days (the code says so at `index.js:3107-3110`). The TTL attribute is `ttl` (confirmed 9 Nov 2026), so the sweep does run. Main's status routes have no `ttl` or `kind` check, so main hands one back to anyone holding its job id | None. The job id is a random UUID. If 4.5 ever shows TTL off `ttl`, delete leftover `kind = read-notice` rows by hand |
+| Notice job rows not yet read | Expire 10 minutes after their last write, but DynamoDB's TTL sweep is lazy and can take days (the code says so at `index.js:3146-3149`). The TTL attribute is `ttl` (confirmed 9 Nov 2026), so the sweep does run. Main's status routes have no `ttl` or `kind` check, so main hands one back to anyone holding its job id | None. The job id is a random UUID. If 4.5 ever shows TTL off `ttl`, delete leftover `kind = read-notice` rows by hand |
 | Data on the phones: `parkproof.profile.v1`, `parkproof.recurring.v1`, `parkproof.recurring.push.v1`, `parkproof.push.registration_sent.v1`, `parkproof.push.turned_off.v1`, `parkproof.workday.v1`, plus new record fields | Old code ignores them. `parkproof.sessions.v1` wasn't bumped, so records still load. Settings, permits and rules come back on roll-forward | None. See `field-test-plan.md` section 7 for T7's "Shared with you" copies |
 | Signed parts (KMS) | Permanent. `lambda/addendum-schema.js` is unchanged, so main's Lambda accepts the same kinds | None |
 | OG image in social caches, crawled pages | Can't be pulled back | None |
