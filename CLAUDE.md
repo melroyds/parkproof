@@ -1,209 +1,258 @@
-# CLAUDE.md — ParkProof engineering notes
+# CLAUDE.md: ParkProof engineering notes
 
-Quick context for AI assistance on this codebase. Read this before touching things.
+Quick context for AI assistance on this codebase. Read this before touching things. Checked against the code on `integration/roadmap-2` at `09d5c24` (9 Nov 2026).
 
 ## What this is
 
-Mobile-first installable PWA. Photograph an Australian parking sign → Claude vision answers "can I park now?" with structured JSON → optionally log a session (car photo + GPS + address) → get a `.ics` calendar reminder or in-tab browser notification → later, export the session as a PDF for an infringement dispute.
+Mobile-first installable PWA for Australian drivers. Photograph a parking sign → Claude vision answers "can I park now?" as schema-enforced JSON → optionally log a **parking record** (GPS, address, car photo, optional condition photos and proof of payment) → ParkProof's server signs it with a KMS key, and every later part (departure, handover, photos) is signed as a link in a chain → reminders by push, in the open tab and by `.ics` → later, an evidence PDF or evidence file, a notice lookup ("Got a fine? Start here") and an AI-drafted appeal letter. Weekly reminders for street sweeping, saved permits, share links and handovers sit around that. Workday mode (moving the car between time-limited spots all day) is built but switched off in production (see Status).
 
-Live: <https://www.parkproof.com.au> (custom domain on Cloudflare DNS, CloudFront-fronted). Apex `parkproof.com.au` and both forms of `parkproof.au` 301-redirect to the canonical via Cloudflare Page Rules. Old domain `parkproof.dsouza.tech` kept as fallback for ~7 days post-cutover. Hosted on AWS in `ap-southeast-2`.
+The user-facing noun is "parking record" or "record". Code still says `session` everywhere (`ParkingSession`, `parkproof.sessions.v1`); never put "session" in copy.
 
-See [`parkproof-spec.md`](parkproof-spec.md) for the original product brief, [`README.md`](README.md) for the user-facing version, and [`docs/lessons-for-next-project.md`](docs/lessons-for-next-project.md) for the portable takeaways doc — what 10-day-me learned that the *next* project should carry forward.
+Live: <https://www.parkproof.com.au> (custom domain on Cloudflare DNS, CloudFront-fronted). Apex `parkproof.com.au` and both forms of `parkproof.au` 301-redirect to the canonical via Cloudflare Page Rules. Hosted on AWS in `ap-southeast-2`. Production runs `main` (the evidence chain, T0a to T1b, field-tested on real AWS on 8 Nov 2026). `integration/roadmap-2` is not deployed yet: [`docs/build/deploy-checklist-roadmap-2.md`](docs/build/deploy-checklist-roadmap-2.md) is the runbook.
+
+See [`parkproof-spec.md`](parkproof-spec.md) for the original product brief, [`docs/build/roadmap-build-spec.md`](docs/build/roadmap-build-spec.md) for the roadmap tasks (T0a to T10) and their copy, i18n and design rules, [`README.md`](README.md) for the user-facing version, and [`docs/lessons-for-next-project.md`](docs/lessons-for-next-project.md) for the portable takeaways.
 
 ## Run it
 
 ```bash
 npm install
-echo "ANTHROPIC_API_KEY=sk-ant-..." > .env   # required
-npm run dev   # → http://localhost:5173
+(cd lambda && npm ci)                          # the dev proxy and the Lambda tests import the AWS SDK from lambda/
+echo "ANTHROPIC_API_KEY=sk-ant-..." > .env     # required for real scans
+npm run dev                                    # → http://localhost:5173/app/
 ```
+
+- `npm run dev` turns workday mode on (`VITE_FEATURE_WORKDAY` unset means on in dev, off in any build).
+- `/api/sign-session` in dev signs with an ephemeral P-256 key (`key_alias: 'dev-ephemeral'`), never KMS. Never set `KMS_KEY_ID` locally.
+- Gate before you finish any change: `npx tsc -b`, `npx vitest run`, `npx eslint src vite.config.ts vitest.config.ts lambda` (no new problems), and `npx vite build --outDir <scratch folder>` (never into `dist/`).
 
 ## How the backend works
 
-There is **one** Lambda function (`parkproof-sign-translator`) handling thirteen HTTP routes via path dispatch in [`lambda/index.js`](lambda/index.js):
+There is **one** Lambda function (`parkproof-sign-translator`) with path dispatch in [`lambda/index.js`](lambda/index.js) `handler()`. The order matters: `event.warmer` → `event._async_kind` (worker, push dispatch) → `OPTIONS` → any path with `/status/` → the push routes (`/push/recurring/cancel` before `/push/recurring`) → `/user-feedback` before `/feedback` → `/draft-appeal` → `/read-notice` → `/sign-session` → the JWT routes → anything else falls through to `handleSignTranslate`.
 
-**Anonymous routes** (no auth required):
-
-| Route | Handler | Purpose |
-|---|---|---|
-| `POST /sign-translate` | `handleSignTranslate` → `translateSign({...})` | Two modes, inferred from request body — see below. Fresh-image mode is **async** (returns 202 + `job_id`) |
-| `GET /sign-translate/status/{job_id}` | `handleJobStatus` | Poll target for the async sign-translate job — returns `{status, result, error}` |
-| `POST /draft-appeal` | `handleDraftAppeal` | Vision read of an infringement notice + Claude draft of a formal appeal letter. **Async** (returns 202 + `job_id`) |
-| `GET /draft-appeal/status/{job_id}` | `handleJobStatus` | Poll target for the async draft-appeal job |
-| `POST /sign-session` | `handleSignSession` | KMS-backed ECDSA P-256 signature over the canonical session metadata |
-| `POST /feedback` | `handleFeedback` | Layers 1 + 2 telemetry: logs `[parkproof.feedback]` events to CloudWatch with verdict + model context (confidence, sign-pattern, hour, etc.) |
-| `POST /user-feedback` | `handleUserFeedback` | Free-text user feedback (distinct from AI-verdict above). Logs `[parkproof.user_feedback]` to CloudWatch + mirrors record to S3 bucket `parkproof-user-feedback-*` at `YYYY-MM-DD/{uuid}.json`. Anonymous; no JWT. |
-
-**JWT-authenticated routes** (Cognito-issued access token, verified by API Gateway authorizer before Lambda runs — see [`lambda/cloud-sync.js`](lambda/cloud-sync.js)):
+**Anonymous routes** (no auth; per-IP limits are counted in the jobs table and fail open):
 
 | Route | Handler | Purpose |
 |---|---|---|
-| `POST /sessions/upload` | `handleSessionsUpload` | Persist a session record to DynamoDB scoped to the JWT's `sub` claim |
-| `GET\|POST /sessions/list` | `handleSessionsList` | List the caller's sessions |
-| `POST /sessions/delete` | `handleSessionsDelete` | Delete one session (the caller's) by ID + cascade-delete its S3 photos |
-| `POST /photos/presign` | `handlePhotosPresign` | Mint a short-TTL presigned `PUT` URL into the user's prefix on the evidence bucket — browser uploads the photo directly |
-| `GET\|POST /me/export` | `handleMeExport` | Stream every session belonging to the caller as a single JSON export |
-| `POST /me/delete` | `handleMeDelete` | Wipe all of the caller's data: DDB rows, S3 photos, Cognito user record |
+| `POST /sign-translate` | `handleSignTranslate` → `translateSign` | Two modes, inferred from the body (below). Fresh mode is **async**: 202 + `job_id`, 20 a minute per IP. Refresh mode answers inline. A bad `user_permits` or `parking_state` is a 400 with an ERR code |
+| `GET /sign-translate/status/{job_id}` | `handleJobStatus` | Poll target for sign and appeal jobs: `{ status, result, error }`. Refuses notice jobs. `JOB_TIMED_OUT` once a pending job passes its 70 s deadline |
+| `POST /draft-appeal` | enqueue, then `handleDraftAppeal` in the worker | Reads the notice photo and drafts an appeal letter from the chosen record. **Async**, 10 a minute |
+| `GET /draft-appeal/status/{job_id}` | `handleJobStatus` | Same route family as above |
+| `POST /read-notice` | `handleReadNotice`, then `readNotice` in the worker | Reads an infringement notice photo into `NOTICE_SCHEMA` fields (T8). **Async**, 10 a minute. Bad image: 400 with an ERR code |
+| `GET /read-notice/status/{job_id}` | `handleJobStatus` with kind `read-notice` | Serves notice jobs only. Deletes the row once it hands back a finished result, and never serves a row past its `ttl` |
+| `POST /sign-session` | `handleSignSessionRequest` | Signs link 0 (`parkproof-evidence-v1` or `-v2`) or an addendum (`parkproof-addendum-v1`) with KMS ECDSA P-256, after the server checks below. 30 a minute. Validation failures are 400 + ERR code |
+| `POST /feedback` | `handleFeedback` | "Did we read this right?" telemetry. Logs `[parkproof.feedback]` with whitelisted fields only (the privacy policy lists them) |
+| `POST /user-feedback` | `handleUserFeedback` | Free-text feedback, 10 a minute. Logs `[parkproof.user_feedback]` and mirrors to the feedback bucket at `YYYY-MM-DD/{uuid}.json` |
+| `POST /push/subscribe` | `handlePushSubscribe` | Stores the device's push subscription (conditional Put). 409 `ERR_ENDPOINT_GONE` for an endpoint already tombstoned |
+| `POST /push/schedule` | `handlePushSchedule` | One-shot EventBridge schedules for a record, at most 6. Needs `device_id` and only replaces schedules that device owns (403 `ERR_NOT_OWNER`). 409 `ERR_NOT_SUBSCRIBED` when the device has no live row |
+| `POST /push/cancel` | `handlePushCancel` | Deletes a record's one-shot schedules, owner only |
+| `POST /push/recurring` | `handlePushRecurring` | Weekly reminders (T5b): replace-all for one rule's cron schedules, owner only, 30 a minute |
+| `POST /push/recurring/cancel` | `handlePushRecurringCancel` | Deletes one rule's cron schedules, owner only, 30 a minute |
 
-`translateSign` itself has **two modes** controlled by what the body contains:
+**JWT-authenticated routes** (Cognito access token, checked by the API Gateway authorizer before the Lambda runs; handlers in [`lambda/cloud-sync.js`](lambda/cloud-sync.js) scope everything to the token's `sub`):
 
-1. **Fresh translate** — body has `image_base64`. Sends the image + current-time context to Claude vision. Returns full `ParkingRules` JSON. **Async-only**: enqueues a job and returns 202 + `job_id` immediately. The slow Claude call runs in a self-invoked Lambda; the client polls `/sign-translate/status/{job_id}`.
-2. **Refresh** (smart re-scan) — body has `prior_rules` + `prior_observations` instead of `image_base64`. No vision call; pure text-only reasoning about whether the previously-read rules still allow parking right now. ~3× faster, ~4× cheaper. **Synchronous** — fast enough to fit the API Gateway 30s window, so it just returns the result inline (the `postJsonAndPoll` helper transparently handles both shapes). Triggered from the frontend when the user reuses a saved session.
+| Route | Handler | Purpose |
+|---|---|---|
+| `POST /sessions/upload` | `handleSessionsUpload` | Writes a record with a conditional `rev` check (up to 3 tries) and the server merge: addenda unioned by id (signed copy wins, a stored signed addendum is never dropped, at most 20), `signature`, `ended_at` and `departure` kept when the incoming row lacks them, last write wins for the rest. Only `ALLOWED_SESSION_FIELDS` are stored |
+| `GET\|POST /sessions/list` | `handleSessionsList` | The caller's records (consistent read), with legacy photos re-minted |
+| `POST /sessions/delete` | `handleSessionsDelete` | One record, and its S3 photos |
+| `POST /photos/presign` | `handlePhotosPresign` | Short-lived presigned `PUT` for one photo: `{ session_id, sha256 }` for photo refs, the legacy role form for old records |
+| `POST /photos/materialize` | `handlePhotosMaterialize` | Returns a photo's bytes as base64 through the API (the browser never fetches private S3 directly) |
+| `GET\|POST /me/export` | `handleMeExport` | Every record of the caller as JSON |
+| `POST /me/delete` | `handleMeDelete` | Deletes the caller's rows, S3 photos and Cognito user |
 
-**Async-polling architecture** (`POST /sign-translate` + `POST /draft-appeal`):
+**Not HTTP:** `{"warmer": true}` returns at once (a hand-made `parkproof-warmer` schedule, if it exists; no script makes it). `_async_kind: 'sign-translate' | 'draft-appeal' | 'read-notice'` is the self-invoked worker (`handleAsyncWork`). `_async_kind: 'push-dispatch'` is a one-shot reminder firing (`handlePushDispatch`), `'push-recurring'` a weekly cron firing (`handleRecurringPushDispatch`, which decides fortnightly and nth-weekday rules from the occurrence date in the rule's zone).
 
-Stacked Melbourne signs (Clearway + multi-arrow + accessibility + meter) take Claude 30–50s to read carefully. API Gateway HTTP API has a hard 30s timeout — the live site was returning `{"message":"Service Unavailable"}` on complex signs. Pivoted to async polling rather than fighting the gateway:
+`translateSign` has **two modes**:
 
-1. Client `POST`s body → Lambda writes a `pending` row to `parkproof-jobs` (DDB, TTL 600s), self-invokes asynchronously with `InvocationType: 'Event'`, returns `202 { job_id, status: 'pending' }` in <1s.
-2. Worker invocation runs the actual Claude call. On finish (success or error) it updates the DDB row to `done` / `error` with the result/error.
-3. Client polls `GET /sign-translate/status/{job_id}` every 1.5s. Each poll is a single DDB `GetItem` (sub-second), well within the gateway window.
-4. On `status: 'done'` the client treats the `result` field exactly as if it had been the original sync response. The legacy retry-on-5xx layer in `postJsonWithRetry` still wraps the enqueue call.
+1. **Fresh read**: body has `image_base64`. Vision call with the current time in the spot's time zone (from the coordinates via `tz-lookup`), the saved permits and the parking state. Async only (202 + job).
+2. **Refresh** (re-check): body has `prior_rules` + `prior_observations` (and echoes `prior_sign_status`, `prior_sign_issues`, `prior_is_area_sign`). No image; text-only reasoning about whether the recorded rules allow parking now. Synchronous, about 3× faster and 4× cheaper. Workday stops are never re-checked (it would give a car that hasn't moved a new arrival).
 
-Job rows are scoped by random UUID — `job_id` itself is the bearer credential for the status endpoint, so no auth is needed. DDB TTL (`expires_at`) sweeps rows 10 minutes after creation. The dispatcher in `handler()` routes on `event._async_kind` (worker invocation) → `path.includes('/status/')` (status read) → normal route lookup.
+**Async polling** (`/sign-translate`, `/draft-appeal`, `/read-notice`): stacked signs can take 30 to 50 s, past API Gateway's hard 30 s limit. The route writes a `pending` row to `parkproof-jobs` (TTL attribute `ttl`, 10 minutes), self-invokes with `InvocationType: 'Event'` and returns `202 { job_id }` in under a second. The worker writes `done` or `error`. The client polls `<route>/status/{job_id}` every 1.5 s (`postJsonAndPoll` in `src/lib/api.ts`, which also accepts a plain synchronous result). `job_id` is the bearer credential. DynamoDB's TTL sweep is lazy, so the notice route checks `ttl` itself; the shared status route doesn't.
 
-The Lambda is **reused as the local dev proxy** via a Vite plugin in [`vite.config.ts`](vite.config.ts) that intercepts all `/api/*` routes, dynamically imports `lambda/index.js`, and calls the same code paths. Same code in dev and prod — never call the Anthropic API from the browser, the key must stay server-side.
+**Server checks before signing an addendum** (build spec N2): the parent's signature verifies against the public key embedded in the Lambda (`ERR_PARENT_SIGNATURE`); same `session_id`, and `seq` follows the parent (`ERR_PARENT_MISMATCH`); `sha256(chain_key)` equals the chain's `chain_key_sha256` (`ERR_CHAIN_KEY`); no client time more than 5 minutes after server time (`ERR_FUTURE_TIME`); parent payload at most 16 KB, body at most 32 KB. Validation (`lambda/addendum-schema.js`) rejects, never repairs: every key required, unknown keys and control characters refused. It runs before the `KMS_KEY_ID` check.
+
+The Lambda is **reused as the local dev proxy**: a Vite plugin in [`vite.config.ts`](vite.config.ts) mounts `/api/*` middlewares that import `lambda/index.js` in-process. In dev, `/api/draft-appeal` and `/api/read-notice` run the job synchronously (`runJobNow`), `/api/sign-session` uses the dev signer, the JWT routes decode the bearer token without verifying it, and `/api/push/subscribe` and the two weekly push routes are stubs that log (`/api/push/schedule` and `/api/push/cancel` have no dev middleware, so one-shot push isn't testable locally). Never call the Anthropic API from the browser; the key stays server-side.
 
 ## Claude API choices
 
-- **Model: `claude-sonnet-4-6`.** Vision + native JSON Schema enforcement + adaptive thinking. Don't downgrade to Haiku 4.5 — we tried it and Haiku **doesn't support thinking of any kind**, which broke multi-rule time-window math on stacked signs. Sonnet 4.6 with adaptive thinking is the floor for correctness on this task.
-- `thinking: { type: 'adaptive' }`. Required for the multi-rule "compute leave-by per rule, take the earliest" reasoning. **Don't** use `budget_tokens` — deprecated on Sonnet 4.6.
-- `output_config: { format: { type: 'json_schema', schema: RESPONSE_SCHEMA }, effort: 'low' }`. Schema-enforced output; `effort: 'low'` keeps thinking depth tight so we stay in the 6–12s range instead of 15–30s on `medium`.
-- `max_tokens: 16384`. Adaptive thinking shares this budget — keep it generous. If you ever see `stop_reason === 'max_tokens'` or truncated JSON, bump higher; do not lower it.
-- The system prompt has a detailed **"HOW TO COMPUTE `until`"** section with worked examples. The model previously regressed (picked the *farthest* leave-by time instead of the *earliest*) — the examples fix that. Don't remove them.
-- **Refresh mode** uses the same model and parameters but the user message says "This is a REFRESH request, NOT a fresh sign reading" and embeds the prior rules + observations + chosen variant. The frontend then overrides `rules`/`observations`/`chosen_label`/`confidence` from the prior session and trusts only `can_park_now` / `until` / `duration_minutes` from the model.
+- **Model: `claude-sonnet-4-6`** for all three calls (sign reading, notice reading, appeal draft). Don't downgrade the sign reader to Haiku 4.5: it supports no thinking of any kind, and without thinking it got multi-rule time maths wrong on stacked signs.
+- **Sign reading:** `thinking: { type: 'adaptive' }`, `output_config: { format: { type: 'json_schema', schema: RESPONSE_SCHEMA }, effort: 'low' }`, `max_tokens: 16384`. Adaptive thinking shares the `max_tokens` budget, and T3 made every answer longer, so never lower it. `stop_reason` of `max_tokens` or `refusal`, or unparseable JSON, becomes `ERR_SIGN_UNREADABLE`. Don't use `budget_tokens` (deprecated on Sonnet 4.6).
+- **Notice reading:** no thinking, `max_tokens: 1024` (`NOTICE_MAX_TOKENS`), `NOTICE_SCHEMA`. Transcription, not reasoning. The raw model text is never logged.
+- **Appeal draft:** no thinking (it pushed calls past 50 s), `max_tokens: 4096`, `APPEAL_RESPONSE_SCHEMA`. The schema keeps `evidence_strength`, but it only calibrates the letter and is never shown to the driver (no verdict labels, build spec T8). The prompt forbids saying a signature proves when the car arrived or left, or where it was.
+- **The system prompt** (`SYSTEM_PROMPT`, about 25,000 characters) is sent as a block with `cache_control: { type: 'ephemeral' }`, so it must stay byte-identical across requests: time, state and permits go in the user message, never the system prompt. Keep the "HOW TO COMPUTE `until`" worked examples (the model once picked the farthest leave-by instead of the earliest) and the T3 sections (SIGN STATUS, PERMIT EXCEPTIONS, AREA SIGNS, RECURRING RESTRICTIONS).
+- **The sign schema has a grammar budget.** On 9 Nov 2026 a real call showed the API refusing T3's first sign schema with 400 `invalid_request_error` "The compiled grammar is too large, which would cause performance issues". Every scan would have failed after a deploy, and unit tests couldn't see it because they mock the client. Compile probes showed the limit is **tighter with the route's adaptive thinking and `effort: 'low'`** than for a bare request (a shape that compiled bare was refused with the real settings), that it tracks the number of properties more than name length, and that a sub-schema in `$defs` counts once however often it is referenced. So the raw model shape is flat (`permit_exception_type` and `permit_exception_text` per level; `days` and `week_of_month` as one string each; the observation group and next transition in `$defs`), and `normalizeModelOutput` (`lambda/sign-reading.js`) maps it back to the kept shape. Two guards:
+  - the schema budget test in `lambda/sign-reading.test.js` fails if `RESPONSE_SCHEMA` grows past 3,396 characters of JSON, 46 properties, or 9 `anyOf`, 5 `enum` or 7 array nodes (today: 3,356, 45, 9, 5, 7; it compiled with one more plain string field and nothing more was tried);
+  - `node scripts/check-schema-compiles.mjs` sends one tiny real request per schema (sign reading, notice, appeal), each with its route's own thinking and effort, and prints COMPILES or FAILS. Run it after any schema change and before every deploy. It needs `lambda/node_modules` and an `ANTHROPIC_API_KEY`.
+- **Refresh mode** uses the same model and settings. The frontend keeps `rules`, `observations`, `chosen_label` and `confidence` from the record and trusts only `can_park_now`, `until` and `duration_minutes` from the model.
 
 ## Schema shape
 
+What `translateSign` returns (normalised; `ModelParkingRules` in `lambda/sign-reading.d.ts`, `ParkingRules` in `src/types.ts`):
+
 ```ts
 type ParkingRules = {
+  sign_status: 'readable' | 'partially_obscured' | 'missing' | 'contradictory' | 'not_a_parking_sign'
+  sign_issues: string[]                                  // why it isn't clear; never in `rules` (rules are signed)
   rules: string                                          // factual sign description, no time conclusions
-  observations: { scope: string; items: string[] }[]     // grouped by sign element (arrow, both directions, etc.)
-  can_park_now: boolean
-  until: string | null                                   // ISO 8601 in user's local timezone (resolved from coords)
+  observations: { scope: string; items: string[] }[]     // grouped by sign element
+  can_park_now: boolean                                  // the STANDARD answer; permits never change it
+  until: string | null                                   // ISO 8601 with the spot's offset
   duration_minutes: number | null
   confidence: 'low' | 'medium' | 'high'
-  clarification: null | {
-    question: string
-    options: RuleVariant[]                               // each with its own observations + can_park_now + until
-  }
-  chosen_label?: string                                  // frontend-only: set after the user picks a variant
-  alternate_variants?: RuleVariant[]                     // frontend-only: variants the user did NOT pick
+  requires_ticket: boolean
+  payment_methods: string[] | null
+  requires_disabled_permit: boolean
+  is_permit_zone: boolean
+  permit_area: string | null
+  is_area_sign: boolean                                  // the sign governs an area, not a length of road
+  permit_exception: { applies: boolean; permit_type: 'accessible' | 'resident' | 'business' | null; text: string }[]
+  recurring_restrictions: { kind: 'street_cleaning' | 'clearway' | 'no_stopping' | 'other'; days: ('MO' | 'TU' | 'WE' | 'TH' | 'FR' | 'SA' | 'SU')[];
+                            start: string; end: string; week_of_month: number[]; exceptions_text: string; label: string }[]
+  next_transition: { when: string; change: string } | null
+  clarification: null | { question: string; options: RuleVariant[] }   // per-position answers with their own flags
+  chosen_label?: string; alternate_variants?: RuleVariant[]; is_refresh?: boolean   // frontend only
 }
 ```
+
+`missing` and `not_a_parking_sign` carry no answer (empty rules, `can_park_now: false`); the app shows its own "no readable sign" screen. `partially_obscured` and `contradictory` carry the most restrictive reading plus a banner. `permit_exception` has one entry per listed permit type; since the flat schema, at most one applies per level.
 
 ## API request shapes
 
-**Translate (fresh sign):**
-```json
-{
-  "image_base64": "/9j/4AA...",
-  "media_type": "image/jpeg",
-  "lat": -37.7980,
-  "lng": 144.9675
-}
-```
+**Translate (fresh):** `{ image_base64, media_type, lat, lng, user_permits?, parking_state? }`. `user_permits` is at most 3 of `{ type: 'accessible' | 'resident' | 'business', area? }` (area at most 60 characters, never sent for an accessible permit, nothing else from Settings); `parking_state` is `'VIC' | 'NSW' | …`. `current_datetime` is honoured only outside Lambda (local dev and the accuracy harness) or with `ALLOW_TIME_OVERRIDE=1`, which must never be set in production. The app's `?dev_time=` URL parameter feeds it.
 
-**Translate (smart re-scan, text-only):**
-```json
-{
-  "prior_rules": "2P Mon-Fri 8am-6pm; Permit Zone Sat-Sun 8am-11pm",
-  "prior_observations": [{"scope":"→ Right arrow","items":["2P","Mon–Fri 8am–6pm"]}, ...],
-  "prior_chosen_label": "Right side",
-  "lat": -37.7980,
-  "lng": 144.9675
-}
-```
+**Translate (refresh):** `{ prior_rules, prior_observations, prior_chosen_label, prior_sign_status, prior_sign_issues, prior_is_area_sign, lat, lng, user_permits?, parking_state? }`.
 
-**Feedback:**
-```json
-{
-  "verdict": "correct" | "retake",
-  "feedback_id": "<uuid>"
-}
-```
+**Sign session:** link 0 sends the canonical record fields (v2 adds `chain_key_sha256`); an addendum sends exactly `{ schema: 'parkproof-addendum-v1', addendum_id, kind, session_id, seq, captured_at, chain_key, parent: { canonical_payload, signature_base64 }, data }` (`ADDENDUM_BODY_KEYS` in `lambda/addendum-schema.js`; `chain_key` is null for a chain whose link 0 is v1).
+
+**Feedback:** `{ verdict: 'correct' | 'retake', feedback_id, context? }`. The context fields the Lambda keeps are listed in `handleFeedback` and, word for word, in `privacy.anonymousCloudwatch`; `src/lib/privacy-feedback-log.test.tsx` fails if they drift.
 
 ## App.tsx state machine
 
 ```
-home → scan → loading → (clarify? →) result → logging → remind → home
-                                          ↓
-home → history → session → history       └──→ retake → scan
+home → scan → loading → (clarify →) result → logging → remind → home
+                             └→ noReadableSign → scan (retake) | logNoSign
+scan → logNoSign ("No sign here") → remind → home
+home → history → session ⇄ appeal          home → actives → session
+home → notice → appeal → notice            home → recurring | settings → account | privacy | about | signin
+home → workdayStart → home (workday card) → workday → session      [VITE_FEATURE_WORKDAY only]
+#share=… at startup → shared                ?session=<id> (push tap) → session
+any → error
 ```
 
-Plus the smart re-scan branch: `scan` → user picks a recent session (or proximity-matched one) → `loading` (refresh mode) → `result`.
+The re-check branch: `scan` → a proximity-matched record (`ReuseCard`, within 40 m and 7 days) or the recent-scans picker → `loading` (refresh) → `result`. The state is a discriminated union (`View` in [`src/App.tsx`](src/App.tsx)). The scan-to-save views carry a `LogDraft` (`gate_acks`, `permit_context`, `workday`, `driver_name`): later tasks add data to a new record only through it. When adding a view, add the variant and handle each branch.
 
-The state is a discriminated union in [`src/App.tsx`](src/App.tsx). When adding new views, add the variant there and handle each branch.
+## Data model
+
+Every field added by the roadmap is optional on `ParkingSession` (`src/types.ts`), so old records keep loading. A new persisted field goes in `src/types.ts`, in `ALLOWED_SESSION_FIELDS` (`lambda/cloud-sync.js`; a test fails when one is missing), and, if two copies can disagree, in the client merge (`src/lib/evidence-merge.ts`) and the server merge (`mergeSessionRows`).
+
+**The evidence chain** (build spec N2; `src/lib/evidence-chain.ts`, `src/lib/signing.ts`, `src/lib/verify.ts`):
+- **Link 0** is the arrival bundle in `signature`. Old records: `parkproof-evidence-v1`. New records: `parkproof-evidence-v2` (every v1 field plus `chain_key_sha256`). `chain_key` is 32 random bytes (hex), secret, kept on the device and in the owner's own cloud row. `v1_hashes` keeps the link-0 photo hashes so link 0 can always be signed.
+- **Links 1, 2, 3…** are `addenda: SignedAddendum[]` (`{ id, seq, kind, captured_at, data, bundle?, rejected? }`). Payload `parkproof-addendum-v1`: `{ schema, addendum_id, kind, session_id, seq, parent_payload_sha256, chain_key_sha256, captured_at, signed_at, data }`.
+- **Kinds** (`lambda/addendum-schema.js`, every key required, null when empty): `arrival_context` (always link 1 on a new record, queued at save: driver name, sign status and issues, rule flags, gate answers, `permit_commitment`, photo refs, condition note, proof type, jurisdiction, the workday link and boundary statement), `condition` (`when: 'parking' | 'return'`, 1 to 5 photos, note), `compliance` (a proof of payment or permit photo and its type), `departure` (`ended_at` from the phone, GPS fix or null, distance from arrival, return photos), `handover` (`from_driver`, `to_driver`, `handed_over_at`, location always null). `arrival_context` and `departure` are singletons; at most 20 addenda.
+- **Ordering:** `appendAddendum` assigns `seq` from a fresh read; a link is sent only when its parent has a bundle; `setAddendumBundle` is first-write-wins. All signing for a record runs through one promise chain inside `navigator.locks` where available. 400 marks a link `rejected` for good; 429, 5xx and offline are transient and never count against anything. The sweep runs on mount, `online` and `visibilitychange` (at most once a minute per record, records up to 30 days old) and catches up a missing departure. Addendum signing is held (at most 60 s) until the first cloud sync settles, so two devices don't fork a chain.
+- **Signed values are read from the signed payload.** Screens and PDFs show what `canonical_payload` says; anything unsigned is labelled "Not signed yet". Phone times (`arrived_at`, `ended_at`, `captured_at`) are labelled as phone times; only `signed_at` is ParkProof's.
+- The browser verifier checks each signature with WebCrypto against the published key, the chain hashes, forks ("Added from two devices") and every photo it has bytes for. Dev-key links are never called valid.
+
+**Photos** (N4; `src/lib/photo-store.ts`, `src/lib/session-photos.ts`): new records keep every photo in IndexedDB (`parkproof-photos`), content-addressed by `${sessionId}/${sha256}`, written once, and list them in `photos: PhotoRef[]` (`{ role, sha256, captured_at, source: 'camera_input' | 'library' }`). Roles: `sign`, `car`, `ambient`, `condition-*`, `return-*` (front, rear, left, right, detail) and `compliance`. The legacy `sign_photo`, `car_photo` and `ambient_photo` data URLs stay for old records only; every reader goes through `getSessionPhoto(session, role)`. S3 keys: `{sub}/{sessionId}/p/{sha256}.jpg` for refs, `{sub}/{sessionId}/{role}.jpg` for legacy photos. A photo not on the device shows "Photo not on this device. Signed fingerprint …" and the verifier reports it as not checkable.
+
+**Permits** (N3): accessible permit status is health information. `permit_context` (`{ type, area, holder_present, sign_exception_applies, standard_until, permit_until, note }`) and `permit_salt` stay on the device and in the owner's cloud row; only `permit_commitment = sha256(permit_salt + canonicalize(permit_context))` is signed, in `arrival_context`. The PDF and the evidence file reveal the details only when the driver ticks "Include permit details". Never log permit types server-side.
+
+**Other record fields:** `driver_name`, `gate_acks`, `rule_flags`, `sign_status`, `sign_issues`, `recurring_restrictions`, `condition_note`, `compliance_type`, `place` (raw reverse-geocode parts; `place.state_code` is Nominatim's `ISO3166-2-lvl4`, the only source of `jurisdiction`), `departure`, `push_reminders` (a display cache of booked fire times), `photo_sync_failed`, and the workday fields `workday_id`, `leg_index`, `boundary`, `stretch_deadline`.
+
+**Shared copies** (T7): opening a `/app/#share=1.<base64url JSON>` link stores a read-only copy with `shared_from` (`original_session_id`, `received_at`, `shared_at`, the sender's `arrival_bundle` and an unsigned `snapshot`) under a new local id, deduplicated on `original_session_id`. Copies never queue addenda and are left out of active records, the signing sweep and cloud sync. A link carries the arrival bundle and unsigned extras only: no photos, no chain key, no permit details.
+
+**Stores in `localStorage`** (helpers in `src/lib/storage.ts` unless named):
+| Key | What |
+|---|---|
+| `parkproof.sessions.v1` | Every record. Not bumped by the roadmap (all fields additive). Writes fire `parkproof:records-changed`; `useRecordsVersion()` re-renders on it |
+| `parkproof.profile.v1` | Settings (`src/lib/profile.ts`): `driver_name` (at most 60 characters) and up to 3 `permits` (`{ id, type, state, area, expires_on }`). This browser only, never synced |
+| `parkproof.recurring.v1` | Weekly reminders (`RecurringRule[]`: label, kind, days, start, end, frequency `weekly`, `fortnightly` or `monthly_nth`, nth, anchor date, IANA zone, address, reminder offsets, push, paused, calendar sequence). Never signed. `parkproof.recurring.push.v1` holds a fingerprint of what was last booked by push (`src/lib/recurring-push.ts`) |
+| `parkproof.workday.v1` | Workday state (T6a): `{ id, started_at, jurisdiction, status: 'parked' \| 'between_moves' \| 'ended', current_session_id, previous_session_id, ended_at }`, at most one active. The stops are ordinary records with `workday_id` and `leg_index` |
+| Device-local | `parkproof.device_id.v1` (push ownership), `parkproof.push.registration_sent.v1`, `parkproof.push.turned_off.v1`, `parkproof.signing.state.v2` (sweep timestamps, link-0 rejections, pulled marks), `parkproof.sync.uploaded.v1` (photo upload markers), `parkproof.backupPrompt.v1`, `parkproof.install-dismissed.v1`, `parkproof.language` |
 
 ## Conventions
 
 - TypeScript strict. Discriminated unions over boolean flags.
-- Tailwind v4 with `@theme` tokens defined in [`src/index.css`](src/index.css). No CSS modules, no styled-components.
-- Brand colour tokens: `brand-*` (vivid blue, `#275BFF` base), `ink-*` (navy text, `#1A2233` base), `paper-*` (cool off-white, `#F2F4F7` base), `accent-*` (teal, `#20C4C7` base). The semantic green/red on the answer card uses Tailwind's built-in `emerald-*` / `red-*` — those mean "go / stop" and shouldn't be rebrand-overridden.
-- Fonts: Fraunces 700/800 for headings + brand, Inter 400–700 for body.
-- File naming: `PascalCase.tsx` for components, `kebab-case.ts` (no, lowercase no-hyphen) for libs.
-- Async errors: `throw new Error('message')` with a user-facing string. The Lambda handler maps it to a JSON `{ error }` response. The frontend `claude.ts` re-throws so the App's `'error'` view can display it.
-- Storage: any new persisted shape goes in `src/types.ts` and gets a corresponding helper in `src/lib/storage.ts`. Bump the localStorage key (`parkproof.sessions.v1` → `v2`) if you change the saved shape incompatibly. **Additive** fields (e.g. the recent `ended_at` driver-signalled end-of-session timestamp) are forward-compatible and don't require a key bump — old saved sessions just lack the field, which all readers handle as "session has not been explicitly ended".
-- Active-session derivation lives in `loadActiveSessions(now)` in `storage.ts` — three states feed it: `ended_at` ⇒ never active (regardless of expiry); `expires_at > now` ⇒ active (sorted soonest first); `no_sign` with no `ended_at` ⇒ open-ended-active (sorted most-recent first, placed after expiry-bearing sessions). The home `ActiveSessionCard` + the per-session `SessionDetail` both expose an "I've left" action that stamps `ended_at = now()` via the `endSession(id)` helper and mirrors to cloud when signed in.
-- **Anonymous-by-default, opt-in cloud.** No login wall — sessions are always device-local in `localStorage` first, and every feature works without an account. If the user *chooses* to sign in (Cognito email/password or Apple/Google federation), the same sessions opportunistically mirror to DynamoDB + S3 evidence bucket via the `/sessions/*` and `/photos/*` routes. The local copy stays the source of truth; cloud is durability + cross-device recovery. Never gate functionality behind sign-in.
+- Tailwind v4 with `@theme` tokens in [`src/index.css`](src/index.css). No CSS modules, no styled-components.
+- **Brand: the Greenfield vault identity** (since `44ee7a3`, 30 Jun 2026; build spec "Design rules"). The app sits on the vault, `brand-800` `#073B25`, with a faint guilloché stripe; content goes in white `.gf-card` cards (a chamfered top-right corner) or glass rows (`rgba(255,255,255,0.055)`). `brand-*` is pine (`brand-500` `#0E5C3A`), `ink-*` near-black green (`ink-900` `#0B1A14`), `paper-*` green-tinted off-white (`paper-100` `#F3F6F4`), `accent-*` a quiet slate green. Mint `#7BE3A4` only for the verified seal glow and active states; sage `#A9CFBE` (inline, not a token) for muted text on the vault; `danger-300` `#FFB4AB` only for destructive actions on the vault (Button's `danger` variant). The answer card keeps Tailwind's `emerald-*` and `red-*` for go and stop. Fonts: Space Grotesk (display, Latin only) and Inter, with the Noto Sans chain for other scripts. The mark is the Datum P (`BrandMark.tsx`); `theme_color` is `#073B25`.
+- Reuse `src/components/ui/*` (`Alert`, `BackButton`, `Button`, `Card`, `Input`). Screen wrapper `min-h-screen flex flex-col p-6 max-w-md mx-auto w-full`; title `font-display text-3xl font-extrabold text-paper-50 mb-1`. Touch targets at least 44 px. Modals follow `FeedbackModal.tsx` (`role="dialog"`, `aria-modal`, focus trap, Escape). Fixed layers use the `safe-*` utilities so they clear the iPhone notch (`src/lib/app-shell.test.ts`). New icons go in `Icon.tsx` (14 today). Every photo goes through `resizeImageFile`.
+- **Copy rules** (build spec): no em-dashes, Australian spelling, sentence case, second person. Never "reset", "compliant", "admissible", "authentic", "verified location"; never promise an outcome. A signature shows the signed details existed, unchanged, by the signed time, and nothing more. Phone times are labelled as phone times. Every reminder feature carries `reminders.reliability`. `src/lib/copy-lint.test.ts` enforces what a machine can.
+- **i18n**: every user-facing string goes through `t()`, in all 9 locales (`en`, `zh-CN`, `vi`, `id`, `ko`, `it`, `el`, `hi`, `pa`), added only by an idempotent `scripts/_i18n_inject_<task>.mjs` (see Gotchas for the order). Terminology from `docs/legal-pdf-review-worksheet.md`; register el εσύ, id kamu, zh 你; gender-neutral hi and pa. `src/lib/locales.test.ts` enforces key, variable, tag and plural parity. PDF strings use plain text and WinAnsi punctuation only.
+- **Feature flags:** `src/lib/features.ts` (`isWorkdayEnabled()`). Every workday entry point checks it.
+- Async errors: `throw new Error('ERR_…')` codes; the client maps them to copy (an Error's message can reach the screen, so the copy lint checks error strings too).
+- **Anonymous by default, opt-in cloud.** Records live on the device first and every feature works without an account. Signed in (Cognito email and password, or Apple or Google), records mirror to DynamoDB and photos to S3. The local copy stays the source of truth. Never gate a feature behind sign-in.
+- Active records: `loadActiveSessions(now)` keeps a record with `ended_at` out; keeps one with `expires_at` for 12 h after it passes (shown as "Expired at …" with I've left first); keeps a no-sign record until I've left. Shared copies are never active. One end path: `App.handleEndSession` owns `endSession`, the departure addendum, the cloud mirror and the push and in-tab cancels; the departure sheet (`DepartureSheet.tsx`) replaces `window.confirm`.
 
 ## AWS resources
 
 | Resource | Name / ID |
 |---|---|
-| Lambda function | `parkproof-sign-translator` |
-| IAM execution role | `parkproof-lambda-role` (DDB + S3-evidence + KMS-sign + Cognito-admin permissions) |
-| API Gateway HTTP API | `parkproof-api` (id `tlsmpbft4f`); 18 routes — 10 anonymous (incl. 2 async-job status GETs + `/push/{subscribe,schedule,cancel}`) + 8 JWT-gated (GET + POST variants on `/sessions/list` and `/me/export`). Hard 30s timeout per HTTP API; the slow Claude routes (`/sign-translate`, `/draft-appeal`) bypass it via async polling (see "Async-polling architecture" above). `src/lib/api.ts` still catches transient 5xx with one auto-retry and a friendly "complex sign" message as the final fallback. |
-| DynamoDB table — async jobs | `parkproof-jobs` (PK = `job_id`); TTL on `expires_at` (10-min sweep). Holds the `pending` / `done` / `error` status + `result` payload for every fresh `sign-translate` / `draft-appeal` request. |
+| Lambda function | `parkproof-sign-translator` (`deploy.sh` moves it to `nodejs22.x` on the next deploy; main created it on `nodejs20.x`) |
+| IAM execution role | `parkproof-lambda-role`. Inline policies from the setup scripts: `parkproof-kms-sign`, `parkproof-data-access` (sessions table, evidence bucket, Cognito admin), `parkproof-user-feedback-write`, `parkproof-push-subscriptions-rw`, `parkproof-lambda-schedule-rw` (Scheduler on `parkproof-push-*` plus `iam:PassRole`), and `parkproof-jobs-delete` once `setup-jobs-table.sh` has run. The jobs table's `GetItem`, `PutItem` and `UpdateItem` grants were made by hand and no script has them. Self-invoke `lambda:InvokeFunction` is hand-made too |
+| API Gateway HTTP API | `parkproof-api` (id `tlsmpbft4f`). After the roadmap-2 deploy: 23 routes, 14 anonymous (11 POST plus the 3 status GETs) and 9 JWT-gated (7 POST plus GET on `/sessions/list` and `/me/export`). The deploy adds `push/recurring`, `push/recurring/cancel`, `read-notice` and `GET /read-notice/status/{job_id}`. Hard 30 s timeout; the slow routes poll |
 | API Gateway JWT authorizer | id `t1utm6`, issuer = Cognito User Pool |
-| Cognito User Pool | `ap-southeast-2_fBbsYa7VM` |
-| Cognito App Client | `5ldgcdf1qol1qje9h55inl9pq9` |
-| Cognito Hosted UI domain | `parkproof-<ACCOUNT_ID>.auth.ap-southeast-2.amazoncognito.com` (Apple + Google federation wired in) |
-| Apple Sign-in identifiers | App ID `au.com.parkproof.app` + Services ID `au.com.parkproof.signin` + Key ID `43627FRVZ2` (Team `L89J489GL4`). Rotated 2026-05-22 from the original `tech.dsouza.parkproof` set to strip personal identity from the OAuth consent screen. Old Key 5N98KL6J88 + old Services ID + old App ID safe to revoke in Apple Developer Console once you're confident nothing's broken. |
-| DynamoDB table | `parkproof-sessions` (PK = `userId`, SK = `sessionId`) |
-| S3 bucket — static hosting | `parkproof-app-<ACCOUNT_ID>` (private; CloudFront OAC only) |
-| S3 bucket — evidence photos | `parkproof-evidence-<ACCOUNT_ID>` (private; per-user `{sub}/` prefixes; presigned `PUT` only) |
-| S3 bucket — user feedback | `parkproof-user-feedback-<ACCOUNT_ID>` (private; date-partitioned `YYYY-MM-DD/{uuid}.json`; 2-year lifecycle expiry; AES256 SSE; Lambda has `s3:PutObject` only). Provisioned via `scripts/setup-feedback-bucket.sh`. |
-| KMS asymmetric key | alias `alias/parkproof-evidence-signing` (ECDSA P-256). Public key shipped at `/parkproof-public-key.pem` |
-| CloudFront distribution | `E33V8DMM3LQACG` → `www.parkproof.com.au` + legacy `parkproof.dsouza.tech` (both as alt-names) / fallback `d1jmpu2roekssu.cloudfront.net` |
-| CloudFront Origin Access Control | `parkproof-oac` (id `E3JE1OX4WHEIWK`) |
-| ACM certificate (us-east-1) | `www.parkproof.com.au` + `parkproof.com.au` (`8257fd02-fcc0-4958-a092-7e5a3d07fa57`) DNS-validated CNAMEs on Cloudflare. Legacy cert for `parkproof.dsouza.tech` (`3442f3b7-aa80-40ec-b580-331487b7b0cd`) still issued for the 7-day fallback window. |
-| DNS hosting | Cloudflare (`jake.ns.cloudflare.com` + `nova.ns.cloudflare.com` for `parkproof.com.au`; `kenia.ns.cloudflare.com` + `woz.ns.cloudflare.com` for `parkproof.au`). Page Rules handle apex → www redirect (`.com.au`) and both apex + www → canonical (`.au`). Crazy Domains registrar only — DNS migrated off them to dodge their $26/yr URL-forwarding upcharge. |
-| Email | Titan (`hello@parkproof.com.au`) — Free Trial expires 20 Jun 2026. MX/SPF/DKIM TXT records in Cloudflare. The role-style alias replaced the original `melroy@…` mailbox so the user-facing surface (Privacy Policy contact, case-study, VAPID subject) carries no personal identity. |
-| AWS Budgets alarm | `parkproof-monthly` (\$25/mo threshold, emails the account owner — raised from \$10 to allow Reddit-day spike without false-alarm noise) |
+| DynamoDB: async jobs | `parkproof-jobs` (PK `job_id`). **TTL attribute `ttl`** (confirmed on the live table 9 Nov 2026): 10 minutes for job rows, 2 minutes for the per-IP limiter rows (`RL#<route>#<ip>#<minute>`). Made by hand; no script creates it. `JOBS_TABLE` overrides the name |
+| DynamoDB: records | `parkproof-sessions` (PK `userId`, SK `sessionId`, a `rev` attribute for the conditional merge) |
+| DynamoDB: push | `parkproof-push-subscriptions` (PK `device_id`, TTL on `expires_at`, 90 days after the last renewal; tombstone rows keep only a hash of a dead endpoint). `setup-push.sh` |
+| EventBridge Scheduler | One-shot `parkproof-push-<session uuid>-<n>` (`at()` in UTC, at most 6 per record) and weekly `parkproof-push-r-<rule uuid>-<0\|1>` (`cron()` in the rule's IANA zone, `EndDate` 90 days out, `ActionAfterCompletion: DELETE`), both in the `default` group, targeting this Lambda through `parkproof-push-scheduler-role` (`parkproof-push-scheduler-invoke`, invoke only). `setup-push-scheduler.sh` |
+| Cognito User Pool | `ap-southeast-2_fBbsYa7VM`; App Client `5ldgcdf1qol1qje9h55inl9pq9`; Hosted UI `parkproof-<ACCOUNT_ID>.auth.ap-southeast-2.amazoncognito.com` (Apple and Google federation) |
+| Apple Sign-in identifiers | App ID `au.com.parkproof.app`, Services ID `au.com.parkproof.signin`, Key ID `43627FRVZ2` (Team `L89J489GL4`). Rotated 2026-05-22 from `tech.dsouza.parkproof`; the old key `5N98KL6J88`, Services ID and App ID can be revoked |
+| S3: static hosting | `parkproof-app-<ACCOUNT_ID>` (private; CloudFront OAC only). Landing at `/`, the PWA at `/app/`, `/verify/` (9 locales), `/accuracy/` |
+| S3: evidence photos | `parkproof-evidence-<ACCOUNT_ID>` (private; per-user `{sub}/` prefixes; presigned `PUT` only; reads go through `/photos/materialize`) |
+| S3: user feedback | `parkproof-user-feedback-<ACCOUNT_ID>` (private; `YYYY-MM-DD/{uuid}.json`; 730-day lifecycle; AES256; the Lambda may only `PutObject`). `setup-feedback-bucket.sh` |
+| KMS asymmetric key | `alias/parkproof-evidence-signing` (ECDSA P-256, `Sign` only, digest mode). Public key at `/parkproof-public-key.pem` and embedded in `lambda/index.js` (a test keeps them equal) |
+| CloudFront | Distribution `E33V8DMM3LQACG` (comment `parkproof-cdn`) for `www.parkproof.com.au` and the legacy `parkproof.dsouza.tech`; OAC `parkproof-oac` (`E3JE1OX4WHEIWK`); viewer-request function `parkproof-uri-rewrite` (`scripts/_cloudfront-uri-rewrite.js`) |
+| ACM certificate (us-east-1) | `www.parkproof.com.au` + `parkproof.com.au` (`8257fd02-fcc0-4958-a092-7e5a3d07fa57`), DNS-validated on Cloudflare. A legacy cert for `parkproof.dsouza.tech` (`3442f3b7-aa80-40ec-b580-331487b7b0cd`) was kept for the cutover |
+| DNS | Cloudflare (`jake` + `nova` for `parkproof.com.au`; `kenia` + `woz` for `parkproof.au`). Page Rules redirect to the canonical. Crazy Domains is registrar only |
+| Email | Titan, `hello@parkproof.com.au` (MX, SPF and DKIM in Cloudflare). The free trial was due to end 20 Jun 2026; this file doesn't record the plan since |
+| CloudWatch logs | `/aws/lambda/parkproof-sign-translator`. No retention until `setup-log-retention.sh` sets 90 days, which the privacy policy promises |
+| Alarms | AWS Budgets `parkproof-monthly` (\$25 a month). CloudWatch `parkproof-anthropic-usage` on the `parkproof-anthropic-calls` metric filter (`anthropic-usage-alarm.sh`; it counts `anthropic_call=` and `appeal_call=` but not `notice_call=`) |
 
-Region: `ap-southeast-2` (Sydney). Account: `<ACCOUNT_ID>` (resolve with `aws sts get-caller-identity`).
+Region: `ap-southeast-2` (Sydney). Account: `<ACCOUNT_ID>` (`aws sts get-caller-identity`).
 
 ## Deploy scripts
 
-All in `scripts/`. All idempotent. All re-runnable.
+All in `scripts/`. Never run any of them, or call AWS, without the owner's go-ahead.
 
 | Script | What it does |
 |---|---|
-| `deploy.sh` | Builds Lambda zip, updates code + env, builds frontend with prod API URL + Cognito IDs from `.aws-resources`, syncs to S3, invalidates CloudFront, ensures every API route exists + JWT authorizer is attached where needed |
-| `setup-auth.sh` | One-time: creates Cognito User Pool + App Client + Hosted UI domain, DynamoDB sessions table, S3 evidence bucket (private + CORS for both `parkproof.dsouza.tech` and the legacy CloudFront origin), API Gateway JWT authorizer. Writes `scripts/.aws-resources` for `deploy.sh` to consume |
-| `setup-signing.sh` | One-time: creates the KMS ECDSA P-256 asymmetric key, attaches `kms:Sign` to the Lambda role, exports the public key to `public/parkproof-public-key.pem` for client-side verification |
-| `harden.sh` | One-time: locks API Gateway CORS to the allowed origins, creates OAC, migrates S3 origin to private REST endpoint |
-| `set-throttle.sh [burst] [rate]` | API Gateway rate limits (default 100 burst / 25 rate per sec — sized for a Reddit launch day; Lambda's account-level concurrency cap of 10 is the actual cost ceiling) |
-| `billing-alarm.sh [email] [threshold]` | AWS Budgets monthly alarm |
-| `smoke-test-auth.mjs` | End-to-end test of the auth-gated paths: sign-up → upload → list → delete via the live API |
-| `screenshots.mjs` | Playwright harness — drives the local app through every screen, regenerates `docs/screenshots/*.png` for the README demo grid |
-| `teardown.sh [--confirm]` | Destroys everything (dry-run by default) |
+| `deploy.sh` | Stages and zips the Lambda in a temp folder outside the repo (`npm ci --omit=dev` there; `lambda/node_modules` in the tree is never touched), checks the package, moves the runtime to Node 22, updates the code and merges env vars (never deletes one), ensures every route and permission, re-cuts the PDF fonts when fontTools is installed, builds the frontend with `VITE_FEATURE_WORKDAY=false` (or `true` only with `DEPLOY_ALLOW_WORKDAY=1`), layers the landing and the SW shim into `dist/`, strips CR from every PEM, syncs to S3 with `--delete` and invalidates CloudFront |
+| `deploy.sh --package-only` | Builds and lists the Lambda package only. No `.env`, no AWS call. The rehearsal for the real thing |
+| `_deploy-staging.sh` | Temporary Greenfield preview: builds under an obscure base path and syncs only that prefix (noindexed). Same workday rule as `deploy.sh`. A full `deploy.sh` sync deletes the prefix |
+| `setup-auth.sh` | One-time: Cognito pool, app client, Hosted UI domain, sessions table, evidence bucket, JWT authorizer; writes `scripts/.aws-resources`. **Never re-run it for an IAM fix:** it rewrites `.aws-resources` from scratch (dropping the VAPID, push and feedback lines) and resets the app client's identity providers to COGNITO only, which cuts Apple and Google sign-in |
+| `setup-signing.sh` | One-time: the KMS key, `kms:Sign` on the role, exports `public/parkproof-public-key.pem` |
+| `setup-feedback-bucket.sh` | One-time: the feedback bucket and its write policy |
+| `setup-push.sh` | One-time: VAPID keys (never regenerated: that would orphan every subscription) and the push table |
+| `setup-push-scheduler.sh` | One-time: the scheduler role and the Lambda's Scheduler and PassRole policy. Also edits `.aws-resources`; for an IAM-only fix, `put-role-policy` the document instead |
+| `setup-jobs-table.sh` | Adds `dynamodb:DeleteItem` on `parkproof-jobs` (`parkproof-jobs-delete`), which `/read-notice/status` needs. Not yet run (deploy checklist 6.1) |
+| `setup-log-retention.sh` | Sets 90-day retention on the Lambda's log group and reads it back. Deletes older logs, launch day included; export first. Not yet run (deploy checklist 6.2) |
+| `harden.sh` | One-time: CORS lockdown, OAC, private bucket origin. Security-critical; inspect before re-running |
+| `set-throttle.sh [burst] [rate]` | API Gateway limits (default 100 burst, 25 a second). The account's Lambda concurrency cap of 10 is the real cost ceiling |
+| `billing-alarm.sh`, `anthropic-usage-alarm.sh` | The two alarms above |
+| `check-schema-compiles.mjs` | One tiny real Anthropic call per structured-output schema (see Claude API choices). Before every deploy |
+| `eval-accuracy.mjs` | The accuracy benchmark harness (T9; `eval/README.md`). `eval/corpus/` is still empty |
+| `smoke-test-auth.mjs`, `send-test-push.mjs` | Live checks of the auth routes and of one push |
+| `screenshots.mjs` | Playwright harness that regenerates `docs/screenshots/*.png` (last run 25 May 2026, before the green identity) |
+| `teardown.sh [--confirm]` | Dry run by default. Removes only what `deploy.sh` creates (CloudFront, OAC, app bucket, API, Lambda, role), and the role delete fails while inline policies exist. It leaves Cognito, the tables, the evidence and feedback buckets, KMS and the scheduler alone |
+
+The deploy itself: follow [`docs/build/deploy-checklist-roadmap-2.md`](docs/build/deploy-checklist-roadmap-2.md), from a clone outside Dropbox.
 
 ## CloudWatch logs
 
-Two structured log prefixes worth knowing:
+Structured prefixes worth knowing:
 
-- `[parkproof]` — per-request timing: `preflight=Nms model=X tz=Y image_b64_len=Z mode=translate|refresh`, then `anthropic_call=Nms stop=... usage={...}`, then `parse=Nms total=Nms`.
-- `[parkproof.feedback]` — Feedback events. Layer 1 fields: `{verdict, feedback_id, timestamp}`. Layer 2 (additive — old clients still work without these): `{confidence, had_clarification, chosen_label, duration_minutes, observations_count, rules_excerpt, scanned_hour_local, is_refresh}`.
-- `[parkproof.user_feedback]` — Free-text user feedback (distinct from AI-verdict telemetry above). Fields: `{id, timestamp, message, email, page, user_agent, app_version, locale, sessions_count, is_signed_in}`. Also mirrored to S3 bucket `parkproof-user-feedback-{accountId}` at `YYYY-MM-DD/{uuid}.json` for 2-year retention. See `scripts/setup-feedback-bucket.sh` for bucket provisioning (lifecycle, encryption, IAM).
-- `[parkproof.user_feedback.s3_error]` — Rare: indicates the S3 mirror failed (IAM, transient, or bucket env var unset). CloudWatch still has the record. Fix the IAM if you see these.
+- `[parkproof]`: per-request timing. Sign reads: `preflight=Nms model=X mode=translate|refresh tz=Y image_b64_len=Z`, then `anthropic_call=Nms stop=… usage={…}`. Notices: `notice_call=…`. Appeals: `appeal_preflight=…`, `appeal_call=…`.
+- `[parkproof.feedback]`: "Did we read this right?" events: `{verdict, feedback_id, timestamp}` plus the whitelisted context (confidence, had_clarification, chosen_label, duration_minutes, observations_count, rules_excerpt, scanned_hour_local, is_refresh, requires_ticket, ticket_acknowledged, payment_methods, requires_disabled_permit, disabled_permit_acknowledged, is_permit_zone, permit_area, permit_zone_acknowledged, sign_status, sign_issues_count, is_area_sign, recurring_restrictions_count).
+- `[parkproof.user_feedback]`: free-text feedback `{id, timestamp, message, email, page, user_agent, app_version, locale, sessions_count, is_signed_in}`, mirrored to S3. `[parkproof.user_feedback.s3_error]` means the mirror failed.
+- `[parkproof.signing]`: `sign=Nms key=… session_id=… schema=…`, and `rejected code=… field=…` for a 400.
+- `[parkproof.job]`: job done or error, and `delete after read failed` / `expired-row delete failed` on the notice route.
+- `[parkproof.push.*]`: `subscribe`, `schedule`, `cancel`, `recurring`, `recurring_cancel`, `dispatch.ok`, `dispatch.failed`, `dispatch.stale`, `recurring.skip` and their `not_owner`, `not_subscribed` and `error` variants.
+- `[parkproof.ratelimit] check failed, allowing`: the limiter failed open (usually IAM).
 
 **Useful Logs Insights queries** (log group `/aws/lambda/parkproof-sign-translator`):
 
 ```
-# Free-text user feedback — read the actual messages
-# Most useful query during a launch window. Sort newest first; truncate
-# message to ~200 chars for the dashboard view.
+# Free-text user feedback, newest first
 fields @timestamp, @message
 | filter @message like "[parkproof.user_feedback]"
 | parse @message /"message":"(?<msg>[^"]+)"/
@@ -215,7 +264,7 @@ fields @timestamp, @message
 ```
 
 ```
-# Layer 1 — Verdict counts (overall accept rate)
+# Verdict counts (overall accept rate)
 fields @timestamp, @message
 | filter @message like "[parkproof.feedback]"
 | parse @message /"verdict":"(?<verdict>[a-z]+)"/
@@ -223,8 +272,7 @@ fields @timestamp, @message
 ```
 
 ```
-# Layer 2 — Retake rate by model confidence
-# Surfaces "wrongly-confident" failures: high confidence + retake = prompt regression.
+# Retake rate by model confidence: high confidence + retake = prompt regression
 fields @timestamp, @message
 | filter @message like "[parkproof.feedback]"
 | parse @message /"verdict":"(?<verdict>[a-z]+)"/
@@ -234,7 +282,7 @@ fields @timestamp, @message
 ```
 
 ```
-# Layer 2 — Failure rate by hour of day (lighting / night-scan diagnostics)
+# Failure rate by hour of day at the sign
 fields @timestamp, @message
 | filter @message like "[parkproof.feedback]"
 | parse @message /"verdict":"(?<verdict>[a-z]+)"/
@@ -244,7 +292,7 @@ fields @timestamp, @message
 ```
 
 ```
-# Layer 2 — Top failing rule patterns (where to focus prompt work)
+# Top failing rule patterns
 fields @timestamp, @message
 | filter @message like "[parkproof.feedback]"
 | filter @message like "\"verdict\":\"retake\""
@@ -255,7 +303,7 @@ fields @timestamp, @message
 ```
 
 ```
-# Layer 2 — Does clarification (stacked / arrow signs) increase retake rate?
+# Does clarification (stacked or arrow signs) raise the retake rate?
 fields @timestamp, @message
 | filter @message like "[parkproof.feedback]"
 | parse @message /"verdict":"(?<verdict>[a-z]+)"/
@@ -265,216 +313,213 @@ fields @timestamp, @message
 ```
 
 ```
-# Translate latency over time
+# Sign-read latency over time
 fields @timestamp, @message
 | filter @message like "anthropic_call="
-| parse @message /anthropic_call=(?<ms>\d+)ms.*?mode=(?<mode>\w+)/
-| stats avg(ms), p90(ms), max(ms) by bin(1h), mode
+| parse @message /anthropic_call=(?<ms>\d+)ms/
+| stats avg(ms), pct(ms, 90), max(ms) by bin(1h)
+```
+
+```
+# Errors and denials (the deploy checklist's watch-window query)
+fields @timestamp, @message
+| filter @message like /ERROR|Task timed out|ImportModuleError|AccessDenied|not authorized|delete after read failed|ratelimit\] check failed|push\.recurring\.error/
+| sort @timestamp desc | limit 100
 ```
 
 ## Rollback playbook
 
-For when something breaks under live load (Reddit launch, post-deploy regression, etc.) and you need to recover without thinking through it from scratch.
+For when something breaks under live load and you need to recover without thinking it through from scratch. For the roadmap-2 deploy, the checklist's section 3 comes first: it deletes the four new routes and the weekly cron schedules before main is redeployed, because main's Lambda would answer those routes with a 202 and fail on every weekly firing.
 
-### Triage first — match symptom to the right fix
+### Triage first: match the symptom to the fix
 
 | Symptom | First thing to check | Likely fix |
 |---|---|---|
-| 5xx errors on `/sign-translate` | `aws logs tail /aws/lambda/parkproof-sign-translator --follow` | Lambda code regression → revert frontend OR redeploy previous Lambda zip |
-| Slow scans (>30s) | Anthropic API status page + `[parkproof] anthropic_call=` in CloudWatch | Anthropic upstream issue → wait it out, post status update; OR our async polling broke → revert |
-| Broken landing page | `curl -sI https://www.parkproof.com.au/ \| head` for cache status | Bad deploy → revert + redeploy; OR CloudFront invalidation in flight (wait 5 min) |
-| PWA users on stale shell | Service worker is pinning old `index.html` | Users need hard refresh; new visitors fine. No rollback helps. |
-| Sign-in broken | Cognito console → User Pool `ap-southeast-2_fBbsYa7VM` → recent changes | Cognito config drift → restore via console; auth changes can't be git-reverted |
-| `429 Too Many Requests` | `aws apigatewayv2 get-stage --api-id tlsmpbft4f --stage-name $default` | API Gateway throttle hit → `scripts/set-throttle.sh 200 50` (double the burst+rate) |
-| Costs spiking past budget | AWS Console → Billing → Cost Explorer, group by service | Almost always Lambda invocations or Anthropic API; pause traffic via API Gateway disable if extreme |
+| 5xx on `/sign-translate` | `MSYS_NO_PATHCONV=1 aws logs tail /aws/lambda/parkproof-sign-translator --follow` | Lambda regression: revert, or redeploy the previous Lambda code |
+| Every scan fails with a 400 from Anthropic | `[parkproof]` lines; `node scripts/check-schema-compiles.mjs` | A schema the API won't compile. Revert the schema change |
+| Slow scans (over 30 s) | Anthropic status page and `anthropic_call=` in CloudWatch | Upstream issue: wait and post a status. Or async polling broke: revert |
+| Broken landing page | `curl -sI https://www.parkproof.com.au/ \| head` | Bad deploy: revert and redeploy. Or an invalidation still in flight (wait 5 min) |
+| PWA users on a stale shell | The service worker pins the old `index.html` | They need to close and reopen the app; new visitors are fine |
+| Sign-in broken | Cognito console, pool `ap-southeast-2_fBbsYa7VM`, recent changes | Config drift: restore in the console; auth changes can't be git-reverted |
+| `429 Too Many Requests` | `aws apigatewayv2 get-stage --api-id tlsmpbft4f --stage-name '$default'` | Throttle hit: `scripts/set-throttle.sh 200 50` |
+| `AccessDenied` or `not authorized` in the logs | The deploy checklist's IAM simulator (4.4) | A missing grant. Add it with `put-role-policy`; never re-run `setup-auth.sh` |
+| Costs spiking | Cost Explorer by service; the Anthropic console | Usually Lambda invocations or Claude calls. Disable the API stage if extreme |
 
 ### Frontend rollback (most common)
 
-The site is just static files in S3 + a CloudFront cache. Rollback = redeploy a previous git commit.
+The site is static files in S3 behind CloudFront. Rollback = redeploy an earlier commit.
 
 ```bash
-# 1. Identify the last good commit (before the bad one)
 git log --oneline -10
-
-# 2. Revert the bad commit(s) — creates a NEW commit on top, doesn't rewrite history
-git revert <bad-sha>            # for a single bad commit
-git revert <a-sha>..<b-sha>     # for a range
-
-# 3. Redeploy. Frontend ships in ~3 min including CloudFront invalidation.
-./scripts/deploy.sh
-
-# 4. Push the revert so origin matches what's live
-git push
+git revert <bad-sha>            # a NEW commit on top; never reset --hard and force-push
+./scripts/deploy.sh             # about 3 min including the invalidation
+git push                        # so origin matches what's live
 ```
 
-**Do NOT** use `git reset --hard` then force-push to roll back. `main` is already shared with `origin`; `git revert` is the safe choice and preserves the audit trail.
+`main` is shared with `origin`; `git revert` keeps the audit trail.
 
-### Lambda rollback (rare — most regressions are frontend)
+### Lambda rollback (rare: most regressions are frontend)
 
-Lambda keeps every deployed version. `$LATEST` is what the alias points at; previous versions sit there indefinitely (~free until you delete them).
+`deploy.sh` never publishes Lambda versions, so `list-versions-by-function` probably shows only `$LATEST` (the checklist's 4.11 optionally publishes one before a deploy). The reliable rollback is to redeploy the previous commit:
 
 ```bash
-# List versions — the highest non-$LATEST number is the previous deploy
-aws lambda list-versions-by-function \
-  --function-name parkproof-sign-translator \
-  --query 'Versions[*].[Version,LastModified,Description]' --output table
-
-# Roll back: re-publish the previous version's code as $LATEST
-# (simpler than messing with aliases — API Gateway invokes $LATEST directly)
-aws lambda update-function-code \
-  --function-name parkproof-sign-translator \
-  --s3-bucket <build-bucket> --s3-key <previous.zip>
-
-# OR — if the build zip is gone, just redeploy the previous commit:
 git checkout <good-sha> -- lambda/
 ./scripts/deploy.sh
-git checkout HEAD -- lambda/   # restore working tree afterwards
+git checkout HEAD -- lambda/     # restore the working tree afterwards
 ```
 
-### What CANNOT be rolled back via git
+### What can't be rolled back with git
 
-These are stateful and require forward-fix, not revert:
+These are stateful and need a forward fix:
 
-- **Cognito User Pool config** — schema changes, federation providers, callback URLs. Use the AWS Console history or rebuild from `scripts/setup-auth.sh`.
-- **DynamoDB schema changes** — `parkproof-sessions` table layout. Schema-incompatible migrations are forward-only; revert app code that depended on the new shape, then re-deploy with code that handles the old shape.
-- **KMS key rotation / alias swaps** — never roll the signing key. If compromised, the only correct move is to revoke + publish a new public key + invalidate the old signatures (separate incident process).
-- **S3 bucket policy / CloudFront OAC** — `scripts/harden.sh` is idempotent and re-runnable but security-critical. Don't blindly re-run during an incident; use the AWS Console to inspect first.
-- **`parkproof-public-key.pem` once published** — once a user has downloaded it, you can't unship it. Treat as immutable.
+- **Cognito User Pool config**: schema, federation providers, callback URLs. Use the console history.
+- **DynamoDB data**: records merged by the new server code stay merged. Revert app code that needs a new shape, then redeploy code that handles the old one.
+- **Weekly cron schedules** (`parkproof-push-r-*`): they outlive a code rollback and keep firing until their `EndDate`. Delete them by hand (checklist section 3).
+- **The Lambda runtime**: `deploy.sh` moves it to Node 22 and main's script has no runtime step. Don't move it back.
+- **KMS key and the published public key**: never roll the signing key or change `parkproof-public-key.pem` once published. If the key is ever compromised, revoke it and publish a new one (a separate incident process).
+- **S3 bucket policy and CloudFront OAC**: `harden.sh` is idempotent but security-critical; inspect in the console first.
+- **Signed parts**: KMS signatures are permanent. `lambda/addendum-schema.js` must stay compatible so older Lambdas accept the same kinds.
 
-### Comms (the part nobody plans for)
+### Comms
 
-If the bug is user-facing during the Reddit launch window:
+If the bug is user-facing during a launch window:
 
-1. **Within 5 min** — comment on the Reddit post acknowledging the issue. Vague is fine ("hitting a snag, investigating"). Silence is worse than honesty.
-2. **Within 15 min** — edit the Reddit post body to flag the issue at the top with a strikethrough on any specific feature that's broken.
-3. **After fix lands** — comment again confirming the fix + thank anyone who flagged it. The recovery thread is part of the credibility story; people remember the response more than the failure.
-4. **In-app feedback form** is the highest-fidelity signal. Tail it during the launch with the `[parkproof.user_feedback]` query above — users often catch bugs you missed.
+1. **Within 5 min**: acknowledge it where you launched ("hitting a snag, investigating"). Silence is worse than honesty.
+2. **Within 15 min**: edit the post to flag the issue at the top.
+3. **After the fix lands**: confirm it and thank whoever flagged it.
+4. **The in-app feedback form** is the best signal. Tail it with the user-feedback query above.
 
-### Pre-launch checklist (Tuesday morning, before posting)
+### Pre-launch checklist
 
 - [ ] Last deploy on green CI: `gh run list --limit 3`
-- [ ] Smoke test: scan a real sign on prod, log a session, export PDF, draft an appeal. End-to-end in <2 min.
-- [ ] CloudWatch Logs Insights dashboard tab open (the Layer 1 + Layer 2 + free-text queries above)
-- [ ] Billing dashboard tab open (Cost Explorer, MTD spend view)
-- [ ] Anthropic API key still has quota: `aws lambda invoke --function-name parkproof-sign-translator --payload <test> /tmp/out` to confirm a real call works
-- [ ] Phone with PWA installed nearby for sanity checks during the window
+- [ ] `node scripts/check-schema-compiles.mjs` prints COMPILES three times
+- [ ] Smoke test on prod: scan a real sign, log a record, I've left, Check signatures, export a PDF, read a notice, draft an appeal. Under 3 minutes
+- [ ] Logs Insights queries above open in a tab, and Cost Explorer (month to date) in another
+- [ ] A phone with the PWA installed nearby
 
 ## Gotchas
 
-- **vestauth on Windows.** A third-party tool wraps `dotenv` and stops it from populating `process.env`. `vite.config.ts` explicitly assigns parsed values to `process.env`. **Don't remove that block.**
-- **`vite.config.ts` lives in `node_modules/.vite-temp/...` at runtime.** Vite compiles the config to a temp file, so `process.cwd()` ≠ the project root reliably and `__dirname` points at the temp dir. The dotenv loader walks up from `import.meta.url` to find `.env`.
-- **Haiku 4.5 doesn't support adaptive thinking.** Tried, failed with `400 invalid_request_error`. Also doesn't support extended thinking (`budget_tokens`). Without thinking it gets multi-rule time math wrong on stacked signs. Stay on Sonnet 4.6 for now.
-- **`effort: low` works on Sonnet 4.6 / Opus 4.6+ only — NOT on Haiku 4.5 or Sonnet 4.5.** Will 400. If you ever switch models, remove or adjust.
-- **AWS CLI on Windows is at `/c/Program Files/Amazon/AWSCLIV2/aws.exe`.** All deploy scripts prepend that to PATH explicitly. Don't break that.
-- **Git Bash on Windows path-mungs leading `/` in AWS CLI args.** Use `MSYS_NO_PATHCONV=1` when calling `aws logs ...` with log-group names that start with `/aws/lambda/...`.
-- **Git Bash temp files don't work with the Windows `aws.exe`.** `mktemp` creates `/tmp/...` paths that the Windows binary can't read. Use project-relative paths for any file you'll pass via `file://` (e.g. `cloudfront-config.tmp.json`).
-- **No `zip` on Windows Git Bash by default.** The deploy script falls back to PowerShell `Compress-Archive`.
-- **Image quota.** `localStorage.setItem` throws `QuotaExceededError` if total stored data exceeds ~5MB. `src/lib/image.ts` resizes to ≤1200px @ 0.82 JPEG before storage. **Don't remove this** — raw phone photos break the save flow within 1–2 sessions.
-- **`output_config.format` + small `max_tokens` truncates.** Adaptive thinking shares the budget. 2048 is too low; 16384 handles two-variant signs comfortably. The handler surfaces `stop_reason === 'max_tokens'` as a useful error rather than a JSON-parse failure.
-- **`.ics` description newlines.** Use `'\n'` (one backslash) — `'\\n'` writes literal `\n` text into the calendar event. The `ics` package handles RFC-encoding.
-- **Desktop browser geolocation is unreliable.** Chrome returns IP-based coords that can be kilometres off. `SignScanner` treats `accuracy > 100m` as "no usable GPS" and falls back to the manual `RecentScansPicker`.
-- **CloudFront update propagation takes 3–10 min** but the old origin keeps serving. Bucket policy + BlockPublicAccess changes are immediate. Plan the order so the live site doesn't break during a migration.
-- **Social platforms (iMessage, LinkedIn, Slack) cache OG images aggressively.** After updating `og-image.png`, force refresh via each platform's debugger or share with `?v=N` to bust the cache.
-- **Sonnet 4.6's `prompt-caching` minimum is 2048 tokens.** Our system prompt is currently ~1700 tokens — below threshold, so caching never activates. If you grow the prompt past 2048, caching will kick in for free and shave ~0.5–1s per warm call.
-- **CI installs root deps only — `lambda/node_modules` doesn't exist by default.** `lambda/refresh.test.js` imports `lambda/index.js` which transitively pulls in `@aws-sdk/client-{kms,dynamodb,s3,lambda}` etc — those packages live in `lambda/package.json`, NOT root. Without an explicit `npm ci` in `lambda/` during CI, every AWS SDK import fails to resolve before any test runs. The `.github/workflows/test.yml` has an explicit "Install lambda dependencies" step for this. If you add another subdirectory with its own `package.json` (e.g. a future `worker/` or `infra/`), it needs the same treatment.
-- **happy-dom wraps `localStorage` in a Proxy that defeats `vi.spyOn`.** Spies installed via `vi.spyOn(localStorage, 'setItem')` don't reliably restore between tests (the previous test's quota-throw mock leaks into the next test's `localStorage.setItem(...)` seed). Direct assignment (`localStorage.setItem = fn`) is also blocked by the Proxy's set trap. `src/lib/storage.test.ts` works around this by swapping in a custom `Storage`-shaped object via `Object.defineProperty(globalThis, 'localStorage', ...)` for the test file's lifetime. Use that pattern whenever you need to simulate quota errors or other Storage misbehaviour.
-- **`vi.mock` with arrow-fn constructors fails.** Anthropic SDK does `new Anthropic(...)` — if your mock factory returns `vi.fn().mockImplementation(() => ({...}))` with an arrow function inside, Node throws `is not a constructor`. Use a real class form (`class MockAnthropic { constructor() { this.messages = {...} } }`) instead. See `lambda/refresh.test.js`.
-- **Cognito `update-identity-provider` rejects keys passed via inline `--provider-details` shorthand.** The flattened `\n`-separated private key works in `create-identity-provider` (which is what `setup-auth.sh` and `docs/federation-setup.md` Step 5 originally used), but `update-identity-provider` won't accept the same string — it returns `InvalidParameterException: Provided private key cannot be used for Sign in with Apple`. Workaround: write the provider-details to a project-relative JSON file with real `\n` escape sequences and pass `--provider-details file://apple-idp.tmp.json`. See the "Rotating the Apple Bundle ID" section in `docs/federation-setup.md` for the full pattern. Burned ~5 min on this during the 2026-05-22 rotation.
-- **Cloudflare's auto-DNS-import skips underscore-prefixed records.** When migrating DNS from another provider, the ACM cert validation CNAMEs (which always start with `_`) won't carry over — you have to manually add them in Cloudflare before flipping nameservers, or the cert silently fails to auto-renew in 12 months.
-- **Crazy Domains' CNAME validator rejects trailing dots and is strict about underscores.** Paste CNAME values WITHOUT the trailing `.` and the underscore-prefixed records (ACM validation, etc.) will go through. Their DNS panel batches writes — needs an explicit "Update Status" click to publish "Pending" records to their authoritative nameservers.
-- **Crazy Domains charges $26/yr per domain for URL forwarding.** Cloudflare's free tier provides equivalent 301 redirects via Page Rules + Redirect Rules. The migration is ~30-60 min nameserver propagation; saves ~$52/yr on the two-domain setup. Plus you get apex CNAME flattening for free if you ever want `https://parkproof.com.au` (no www) as canonical.
-- **S3 evidence-bucket CORS must follow domain migrations or photo uploads silently die.** `setup-auth.sh` provisioned CORS with the old `parkproof.dsouza.tech` + raw CloudFront origin only. After the cutover to `www.parkproof.com.au` the production domain was missing from `AllowedOrigins` — the browser's direct-to-S3 presigned `PUT` failed CORS preflight on every photo upload, `sync.ts:uploadPhoto` swallowed the error per its "warned-and-swallowed" policy, and the DDB session row landed with NULL photo fields. Symptom: signed-in user sees session counts but **zero images** in the UI and **blank photos in PDFs**, while S3 is literally empty. Diagnostic: `aws s3api get-bucket-cors --bucket parkproof-evidence-<ACCOUNT_ID>` — verify `AllowedOrigins` matches every host the SPA actually runs from (prod + apex + any legacy fallback + localhost). Fixed 2026-05-25 02:30 AEST. Add a CORS-audit step to any future domain migration runbook. The catch surfaced only because the user testing in bed thought to check his actual sessions — silent for two-plus days otherwise.
-- **OAuth callback path orphans after a two-app architecture cutover.** Cognito's app-client `CallbackURLs` were registered at `/auth/callback` back when the React app lived at `/` and CloudFront error-pages routed unknown paths to `/index.html`. After the two-app cutover (marketing landing at `/`, PWA at `/app/`), `/auth/callback` is dead air — no S3 object, no Lambda, just a 404. Cognito still happily redirects to it because the URL is in its whitelist, the browser hits CloudFront, S3 returns 404. Fix lives in the CloudFront viewer-request function `parkproof-uri-rewrite` — see `scripts/_cloudfront-uri-rewrite.js` for the canonical source. The function now rewrites `/auth/callback` → `/app/index.html` so the SPA mounts and `handleCallback()` (in `src/lib/federated-auth.ts`) consumes the `?code=` from `window.location.search` regardless of pathname. The URL bar still shows `/auth/callback` for a beat after auth succeeds — purely cosmetic, the SPA's state machine doesn't care.
-- **`performInitialSync` must trigger a re-render or fresh-device sign-in lands on `LandingFeatures` forever.** The post-sync `.finally(() => setActivesVersion(v => v + 1))` in `App.tsx` is load-bearing. Without it: signed-in user on a fresh device, cloud sessions pull successfully into `localStorage`, but the home view sits at `sessionCount === 0 && !primaryActive` which renders `LandingFeatures` (the first-time-visitor experience). User sees "the OAuth callback landing page" forever — actually just `LandingFeatures`, but visually indistinguishable. Don't remove the `.finally()` bump. **A previous attempt to fix this with `useMemo(() => loadSessions().length, [activesVersion])` on `sessionCount` PLUS an `if (!userId) setActivesVersion(v => v + 1)` branch crashed the entire React tree on every view transition** (auth + scan paths went blank) — reverted at commit `2db84b8`. Root cause of the regression never fully diagnosed under 3am conditions; if you re-attempt the useMemo route, do it with eyes-fresh and a local repro first.
-- **`jsPDF.addImage()` / `.getImageProperties()` only work with data URLs, not HTTPS URLs.** Cross-device sessions arrive with photo fields as short-TTL presigned S3 GET URLs (the Lambda's `hydrateSessionPhotos` mints them), but jsPDF can't fetch HTTPS URLs synchronously — `addImage` throws, the catch block renders "Image could not be embedded" instead of the photo. Fix lives in `src/lib/pdf.ts:materializeRemotePhotos` — fetches the URL, converts to data URL via `FileReader.readAsDataURL`, returns a new session object. Wired into all three PDF entry points (session detail, appeal letter, full export). Per-photo failures tolerated. Same-device users are unaffected because their photos are already data URLs in localStorage. Caught 2026-05-25 ~04:00 AEST from bed-testing.
-- **`@aws-sdk/client-s3` v3.729+ ships "default integrity protections" that inject `x-amz-checksum-mode=ENABLED` into presigned URLs — and that single query parameter breaks browser CORS in a subtle, curl-invisible way.** The S3 bucket's CORS rule is correct, the production origin is allow-listed, the `Access-Control-Allow-Origin` header DOES come back when you curl the URL — but the browser path interprets the response differently and reports `No 'Access-Control-Allow-Origin' header is present`. Symptom: cross-device PDF export shows "Image could not be embedded" because `materializeRemotePhotos`'s `fetch()` is CORS-blocked before it can read the photo. Fix in `lambda/cloud-sync.js:s3()`: pass `requestChecksumCalculation: 'WHEN_REQUIRED'` + `responseChecksumValidation: 'WHEN_REQUIRED'` to the `S3Client` constructor. Removes both `x-amz-checksum-mode=ENABLED` and the related signed-headers from generated URLs. Evidence photos don't need integrity protection — jsPDF re-encodes anyway, and the canonical session metadata is already KMS-signed for tamper detection. **If you bump the SDK version, re-verify cross-device photo loading from a real browser.** Curl tests don't catch this regression.
-- **`alreadyInSync` photo URL replacement in `performInitialSync` is best-effort — stale URLs can survive a hard refresh.** When the cloud-issued presigned URL changes (e.g. after a Lambda fix that changes how URLs are signed), the `alreadyInSync` branch in `src/lib/sync.ts` patches the local URL to the cloud-fresh one. But under some not-fully-diagnosed conditions (possibly a service-worker cache layer, possibly a React state-staleness, possibly the patch landed but the render didn't re-read), the user can still see CORS errors on the OLD URL after a refresh. **Recovery path that always works: sign out, close all tabs, force-quit the browser, reopen, sign in.** This wipes the localStorage entries that the `alreadyInSync` branch tries (and occasionally fails) to patch in-place. ⚠️ **Note:** since the `/photos/materialize` proxy shipped in `5ee4017`, the PDF-embed path no longer depends on this localStorage URL being fresh — it pulls via the API every time. The staleness issue is now only relevant if some future feature directly reads a photo URL from `localStorage` without going through the proxy.
-- **Browsers shouldn't fetch private object storage directly — proxy through the API.** ParkProof originally had the PDF generator fetch presigned S3 URLs directly from `materializeRemotePhotos`. That worked on desktop but failed on mobile in multiple unrelated ways: (1) S3 CORS allow-list missed the production domain after a domain migration, (2) `@aws-sdk/client-s3` v3.729+ injected `x-amz-checksum-mode=ENABLED` into URLs which broke browser CORS invisibly, (3) Android Chrome over 5G blocked the fetch at the network layer with `status=0` errors in 4-6ms — possibly carrier interaction with the long STS-tokened URLs. Each failure mode was diagnosed and patched individually before we realised the *architectural* fix was to stop having the browser fetch cross-origin private storage at all. **`POST /photos/materialize` is the canonical pattern:** JWT-auth'd, Lambda fetches from S3 server-side, returns base64 through the same API origin the browser already trusts. Eliminates every class of cross-origin failure permanently. If a future feature needs to surface another private S3 object to the browser, route it through a similar API endpoint — do not hand the browser a presigned URL.
+- **Dropbox locks (EBUSY).** The canonical folder is in Dropbox, and Dropbox holds file handles on anything it is syncing. Vite rewrites its dependency cache (`node_modules/.vite`) and compiled config (`node_modules/.vite-temp`) on start, and a build rewrites `dist/`; inside Dropbox those writes can fail with EBUSY. `deploy.sh` used to `rm -rf lambda/node_modules` and failed the same way, which is why it now packages the Lambda in a temp folder. Run the dev server, builds and every deploy from a clone or worktree outside Dropbox (this build's worktrees are under `C:\Users\molte\Downloads\pp-wt\`; the deploy checklist's stage 2 makes a deploy clone), or pause Dropbox syncing first. OneDrive has the same locks.
+- **`deploy.sh` stages the Lambda package outside the repo.** It copies `lambda/` without `node_modules` and tests to a `mktemp` folder, runs `npm ci --omit=dev` there, zips it (`zip`, else PowerShell's `Compress-Archive`, preferring PowerShell 7), and refuses a package without `index.js`, `package.json` or `node_modules` at the top, or over 50 MB. The Windows `aws.exe` gets the zip's Windows path via `cygpath -w`. `--package-only` stops there and keeps the zip for inspection.
+- **`DEPLOY_ALLOW_WORKDAY`.** `deploy.sh` and `_deploy-staging.sh` read it from the invoking shell before sourcing `.env` and `scripts/.aws-resources`, make the result read-only, and pass `VITE_FEATURE_WORKDAY=true|false` explicitly on the build command. `vite.config.ts` keeps any `VITE_*` value the environment already has, so a `.env` line can't override it (`scripts/vite-env-precedence.test.mjs`, `scripts/deploy-scripts.test.mjs`, `src/lib/features-build.test.ts`). With T6b and T6c merged, `DEPLOY_ALLOW_WORKDAY=1` ships the whole workday UI. Never set it until every workday key in `docs/legal-review-queue.md` is approved; no lawyer is engaged.
+- **The i18n inject order.** The committed locale files are generated by the roadmap-2 inject scripts, run on top of the evidence-chain build's output in this order: `fix_push`, `t6a`, `t8`, `t3`, `t5`, `t2`, `t4`, `t7`, `t6bc`, `fixlist_final`, `copy_pass`, `t10_review` (`node scripts/_i18n_inject_<name>.mjs`). A script writes its own text for every key it owns, whatever is there (`setOwned`), so re-running one undoes any later edit to those keys, including in-place fixes from a language review. Run one again only to change its own keys, and diff `src/locales/` afterwards. The copy pass runs after the task scripts and wins on any key it overwrites; `t6bc` and `fixlist_final` check their keys against the copy-pass files before writing. The T10 translation review runs last: its corrections are in `scripts/t10-review/<locale>.json`, and a reviewed key that the copy pass also overwrites carries the reviewed text in the copy-pass file too (the script checks), so running the copy pass again changes nothing. After re-running any earlier script, run `t10_review` again; `t7` refuses to run on keys the review changed (its own-key guard) rather than writing its old text back. **Never re-run the T0a to T1b scripts** (`_t0a`, `_t0b1`, `_t0b2`, `_t0b3`, `_t1a`, `_t1b`): their text predates the language review in `b8c88eb`, and re-running them writes the pre-review translations back. The older one-off injectors (`_i18n_inject_about*.mjs`, `_end_session*`, `_user_feedback`, the `.py` ones) aren't part of the order; don't run them either. Every script is idempotent, aborts before writing if any locale's keys, `{{vars}}` or `<tags>` differ from English, and has `--list` (prints its keys, marks `legal` ones, writes nothing). New keys need a new script for the task, appended to the order.
+- **The copy lint** (`src/lib/copy-lint.test.ts`) fails the build on an em-dash in any locale string, any `.tsx` string or any `.ts` string literal; on banned wording ("session", "reset", "verified record" and the rest) in English strings, JSX text and error messages; and on an em-dash or "verified record" in the landing pages. Comments are exempt.
+- **`.gitattributes` keeps `*.pem`, `*.mjs` and `*.sh` LF.** `core.autocrlf=true` is set system-wide on this machine. A CRLF `.sh` breaks bash, a CRLF shebang breaks Node and Vitest, and a CRLF PEM made the live key 182 bytes against 178 in the repo. Merging the rule doesn't rewrite files already checked out; `deploy.sh` strips CR from every PEM in `dist/` anyway. Clone with `-c core.autocrlf=false` for deploys.
+- **The dev signer is ephemeral.** `npm run dev` makes a fresh P-256 key per dev-server process (kept on `globalThis` across config reloads, never written to disk). After a restart, parts signed by the previous key can't be extended: the server answers `ERR_PARENT_SIGNATURE` and the phone marks the part "couldn't be signed". Test chains with fresh records. Dev-key parts are never shown as valid, and a share link signed with one reads as changed in production builds.
+- **PDF fonts are cut to the strings.** `scripts/_subset_pdf_fonts.py` cuts each `public/fonts/Noto*.ttf` to the characters the locales use, from the full fonts in `fonts-src/` (gitignored; `--fetch` downloads them). Without `fonts-src/` it re-subsets the committed files in place, which can only drop glyphs, and a new character prints as a blank box. Re-cut after any locale change, at the latest at deploy time from a clone with `fonts-src/` copied in, and run `src/lib/pdf-font-coverage.test.ts`.
+- **Locales are not lazy-loaded.** `src/lib/i18n.ts` imports all 9 locale files statically, about 1.4 MB of JSON, which is most of the 1.96 MB main chunk. PDF fonts and the heavy libraries are lazy.
+- **vestauth on Windows.** It wraps `dotenv` and stops it filling `process.env`. `vite.config.ts` assigns the parsed values itself (except `VITE_*` keys the environment already has). Don't remove that block.
+- **`vite.config.ts` runs from `node_modules/.vite-temp/...`.** `__dirname` points there, so the dotenv loader walks up from `import.meta.url` to find `.env`.
+- **Haiku 4.5 supports no thinking** (adaptive or extended; 400 `invalid_request_error`). **`effort: 'low'` works on Sonnet 4.6 and Opus 4.6+ only**, not Haiku 4.5 or Sonnet 4.5. If you change models, re-check both, and re-run `check-schema-compiles.mjs`: the grammar limit depends on the thinking settings.
+- **AWS CLI on Windows** is at `/c/Program Files/Amazon/AWSCLIV2/aws.exe`; the scripts prepend it to `PATH`. Git Bash rewrites leading `/` in arguments: use `MSYS_NO_PATHCONV=1` for log group names. Git Bash `/tmp/...` paths mean nothing to the Windows `aws.exe`: use project-relative files for `file://`, or `cygpath -w`.
+- **Image quota.** `localStorage` holds about 5 MB. New records keep photos in IndexedDB, but old records still carry data URLs, so `src/lib/image.ts` resizes every photo to at most 1200 px at JPEG 0.82. Quota recovery (`persistWithQuotaRecovery` in `storage.ts`) evicts shared copies first, then strips legacy car photos, then sign and surroundings photos, then evicts the oldest records. It never touches a record still on the home screen or one whose evidence isn't fully signed, and throws `StorageFullError` rather than break that.
+- **`.ics` description newlines.** Use `'\n'`; `'\\n'` writes a literal `\n`.
+- **Desktop geolocation is unreliable.** Chrome can return IP-based fixes kilometres off. `SignScanner` treats anything coarser than 100 m as no usable GPS and offers the recent-scans picker instead of the proximity card; workday mode treats it as an unreliable location, so the boundary question always asks.
+- **CloudFront propagation takes 3 to 10 min**; bucket policy changes are immediate. Order migrations so the live site never breaks.
+- **Social platforms cache OG images.** Force a refresh in each platform's debugger, or share with `?v=N`.
+- **CI installs root deps, then `npm ci` in `lambda/`** (`.github/workflows/test.yml`). The Lambda tests import the AWS SDK from `lambda/package.json`. A new subfolder with its own `package.json` needs the same step.
+- **happy-dom's `localStorage` defeats `vi.spyOn`.** Swap in a `Storage`-shaped object with `Object.defineProperty(globalThis, 'localStorage', …)` for quota tests (see `src/lib/storage.test.ts`).
+- **`vi.mock` with arrow-function constructors fails** (`new Anthropic(...)` throws "is not a constructor"). Use a real class in the mock factory (see `lambda/refresh.test.js`).
+- **Cognito `update-identity-provider` rejects an inline private key.** Pass `--provider-details file://apple-idp.tmp.json` with real `\n` escapes (`docs/federation-setup.md`, "Rotating the Apple Bundle ID").
+- **Cloudflare's DNS import skips underscore records**, so ACM validation CNAMEs must be added by hand before moving nameservers. Crazy Domains rejects trailing dots in CNAME values and charges for URL forwarding; Cloudflare's Page Rules do it free.
+- **S3 CORS must follow domain moves.** After the move to `www.parkproof.com.au` the evidence bucket's `AllowedOrigins` missed it and every presigned photo `PUT` failed silently (2026-05-25). Audit CORS in any domain migration.
+- **The OAuth callback path.** Cognito redirects to `/auth/callback`, which only exists because the CloudFront function rewrites it to `/app/index.html`; `handleCallback()` reads `?code=` whatever the path.
+- **`performInitialSync` must bump `activesVersion` in `.finally()`**, or a fresh-device sign-in sits on `LandingFeatures`. An earlier `useMemo` fix crashed every view and was reverted (`2db84b8`); re-attempt only with a local repro.
+- **jsPDF only embeds data URLs.** `materializeRemotePhotos` in `src/lib/pdf.ts` turns cloud photos into data URLs first, through `/photos/materialize`, at most 4 at a time, and only the photos the PDF draws.
+- **`@aws-sdk/client-s3` 3.729+ adds `x-amz-checksum-mode=ENABLED` to presigned URLs**, which breaks browser CORS in a way curl doesn't show. `cloud-sync.js` creates the client with `requestChecksumCalculation` and `responseChecksumValidation` set to `'WHEN_REQUIRED'`. Re-check cross-device photos in a real browser after any SDK bump.
+- **Never hand the browser a presigned GET for private storage.** Mobile networks, CORS and SDK changes broke it in three different ways. Route reads through an API endpoint like `/photos/materialize`; presigned `PUT` for uploads is fine.
+- **Stale photo URLs in old local records.** Uploads null any legacy photo value that isn't a `data:` URL, and hydration always re-mints. If a device still shows CORS errors on an old URL: sign out, close every tab, reopen, sign in.
+- **The notice route must be able to delete rows.** Until `setup-jobs-table.sh` runs, `DeleteItem` is denied, the delete after read fails quietly (`delete after read failed` in the log), and notice fields wait for the lazy TTL sweep.
 
 ## Where things are
 
 ```
-src/App.tsx                                    ← view-state machine
-src/types.ts                                   ← shared types
-src/index.css                                  ← Tailwind @theme + body bg + cavalcade pattern
-src/components/SignScanner.tsx                 ← camera/library + silent GPS + reuse card + picker
-src/components/Clarify.tsx                     ← position chooser
-src/components/ParkingResult.tsx               ← answer card + observations + verify + feedback wiring
-src/components/SessionLogger.tsx               ← GPS + reverse-geocode + address edit + car photo
-src/components/ReminderOptions.tsx             ← .ics + browser notification
-src/components/SessionHistory.tsx              ← list + empty state illustration
-src/components/SessionDetail.tsx               ← single session + PDF export + delete
-src/components/BrandMark.tsx                   ← inline SVG layered-P + clock logo
-src/components/Icon.tsx                        ← 8-icon stroke set, currentColor
-src/components/LoadingProgress.tsx             ← stepped progress UI
-src/components/ReuseCard.tsx                   ← proximity-matched smart-rescan card
-src/components/RecentScansPicker.tsx           ← desktop / no-GPS smart-rescan fallback
-src/lib/claude.ts                              ← translateSign + refreshInterpretation
-src/lib/feedback.ts                            ← submitFeedback (fire-and-forget)
-src/lib/storage.ts                             ← localStorage CRUD + quota handling
-src/lib/geocode.ts                             ← Nominatim reverse + forward
-src/lib/geo.ts                                 ← Haversine distance
-src/lib/image.ts                               ← canvas resize + JPEG re-encode
-src/lib/ics.ts                                 ← .ics generator
-src/lib/notifications.ts                       ← Notification API scheduler
-src/lib/pdf.ts                                 ← evidence PDF with caption overlay
-src/lib/time-format.ts                         ← relative-time helper
-src/tz-lookup.d.ts                             ← ambient module declaration
-lambda/index.js                                ← translateSign (vision + refresh) + feedback + AWS handler
-lambda/index.d.ts                              ← types for dev-side import
-vite.config.ts                                 ← API middlewares + .env loader + PWA plugin
-public/parkproof-icon.svg                      ← source for all generated PWA install sizes
-public/parkproof-wordmark.svg                  ← horizontal lockup
-public/parkproof-icon-mono.svg                 ← single-colour variant
-public/parkproof-splash.svg                    ← portrait splash for PWA install
-public/hero-illustration.png                   ← AI-generated photoreal hero (Nano Banana) with brand mark composited on the sign face via scripts/_composite_hero.py
-public/empty-history.svg                       ← parking-bay empty state
-public/cavalcade-pattern.svg                   ← repeating background pattern (body bg)
-public/og-image.png                            ← social share card (1200×630)
-public/icons/*.svg                             ← stroke icons (camera, gallery, etc.)
-archive/old-melbourne-civic/                   ← first-round assets, archived
-scripts/deploy.sh                              ← day-to-day deploy
-scripts/harden.sh                              ← one-time security pass
-scripts/set-throttle.sh                        ← API throttle limits
-scripts/billing-alarm.sh                       ← AWS Budgets alarm
-scripts/teardown.sh                            ← destroy everything (dry-run by default)
+src/App.tsx                        ← the View state machine, home, end-session and departure orchestration, sweeps
+src/types.ts                       ← every shared type (records, the chain, stores, notice fields)
+src/index.css                      ← Tailwind @theme tokens, the vault background, .gf-card, safe-area utilities
+src/components/                    ← screens and sheets. The main ones:
+  SignScanner, Clarify, ParkingResult, NoReadableSign      scan → answer (permit answers, gates, unclear signs)
+  SessionLogger, PhotoAngleGrid, BoundaryQuestion          logging a record (condition photos, proof photo, driver)
+  ReminderOptions, ReminderStatus, ScheduledRemindersSection   Remind me, push status, booked reminders
+  SessionDetail, ChainPanel, EvidencePhotos, DepartureRow  the record screen and its signed parts
+  DepartureSheet, AddEvidenceSheet, HandoverSheet, ShareSheet  the sheets
+  SessionHistory, ActiveSessionCard, ActiveSessionsList, HomeMenu
+  NoticeLookup, AppealFlow                                 "Got a fine? Start here" and the appeal letter
+  RecurringReminders, RecurringRuleEditor, RecurringOffer  weekly reminders
+  Settings, PushManagementSection, AuthSettings, PrivacyPolicy, AboutFeatures
+  SharedLinkView, SharedRecordScreen, SharedFactsPanel     share links and shared copies
+  WorkdayStart, WorkdayCard, WorkdayView, WorkdayPdfExport workday mode (flag)
+  ui/                                                      Alert, BackButton, Button, Card, Input
+src/lib/storage.ts                 ← records, workday and recurring stores, the chain writes, quota recovery
+src/lib/evidence-chain.ts          ← chain rules, arrival_context, departure catch-up
+src/lib/signing.ts                 ← the per-record signing queue and the sweep
+src/lib/verify.ts                  ← the browser verifier
+src/lib/photo-store.ts, session-photos.ts   ← IndexedDB photos and getSessionPhoto
+src/lib/sync.ts, evidence-merge.ts ← cloud mirror and the client merge
+src/lib/claude.ts, api.ts          ← translateSign, refreshInterpretation, draftAppeal, postJsonAndPoll
+src/lib/permit-answer.ts, profile.ts        ← permits on the result screen and in Settings
+src/lib/notice-read.ts, notice-match.ts, notice-compare.ts   ← T8
+src/lib/recurring.ts, recurring-push.ts, ics.ts             ← weekly reminders and calendar files
+src/lib/push.ts, remind-me.ts, alert-reach.ts, notifications.ts   ← push, in-tab reminders, "can this phone alert"
+src/lib/share-link.ts, share-receive.ts, shared-record.ts, handover.ts   ← T7
+src/lib/workday*.ts, jurisdiction.ts, pdf-workday.ts         ← workday maths, flow, reminders, chain, PDF
+src/lib/pdf.ts, pdf-fonts.ts, evidence-bundle.ts             ← PDFs and the evidence file
+src/lib/features.ts                ← VITE_FEATURE_WORKDAY
+src/lib/i18n.ts, src/locales/*.json ← i18next, 9 locales (generated by the inject scripts)
+src/service-worker.ts              ← precache, push receiver, notification click
+lambda/index.js                    ← dispatcher, sign reader, notice reader, appeal, signing, feedback, push
+lambda/sign-reading.js             ← normalizeModelOutput, request checks (no SDK imports)
+lambda/addendum-schema.js          ← addendum schemas, caps, canonicalize (shared with the browser)
+lambda/recurring-schedule.js, push-tombstone.js   ← weekly cron plans and dispatch; push tombstones
+lambda/cloud-sync.js               ← the JWT routes and the server merge
+vite.config.ts                     ← dev /api middlewares, the dev signer, .env loader, PWA plugin
+scripts/                           ← deploy and setup scripts, i18n injectors, schema check, eval harness
+migrations/two-app-architecture/landing-from-claude-design/   ← the landing, /verify/ and /accuracy/
+public/                            ← icons, splash, og-image, parkproof-public-key.pem, fonts/ (PDF subsets)
+eval/                              ← accuracy benchmark corpus (empty) and rubric
+docs/build/                        ← roadmap spec, deploy checklist, field-test plan, fix list, translation review
+docs/legal-review-queue.md         ← every string a lawyer should read (none read yet)
 ```
 
 ## Status
 
-- ✅ Feature 1 — Sign translator
-- ✅ Clarification step for position-dependent signs (bonus UX)
-- ✅ Photo-quality pre-check — blur + brightness pre-flight before any token spend
-- ✅ Restriction-transition heads-up — banner when a rule change is within ~3 hours
-- ✅ Feature 2 — Session logger (GPS + reverse geocode + editable address + car photo)
-- ✅ Feature 3 — Reminders — multi-offset picker + `.ics` (multi-VALARM) + in-tab browser notification
-- ✅ Feature 4 — Evidence PDF export (caption overlay, signature appendix when present)
-- ✅ Feature 5 — Session history + detail + delete
-- ✅ Driver's note — 280-char free-text per session, rendered verbatim in PDF
-- ✅ Live "Currently parked" home — countdown card colour-coded by urgency; explicit "I've left" affordance ends the session and stamps `ended_at`
-- ✅ No-sign open-ended sessions — sessions logged without a sign stay active on home until the driver signals "I've left" (mandatory there; optional shortcut on expiry-bearing sessions when leaving early)
-- ✅ Walk-back navigation — distance + ETA + Apple/Google Maps deep-link
-- ✅ AI-drafted appeal letter — ticket photo → Claude draft → editable + PDF export
-- ✅ Cryptographic evidence signing — KMS ECDSA P-256 + openssl-verify walkthrough in PDF
-- ✅ Background signing retry — sessions self-heal if signing fails mid-flight
-- ✅ Cloud sync (opt-in) — Cognito + DynamoDB + S3 evidence bucket, anonymous-by-default still works without sign-in
-- ✅ Federated auth — Apple + Google via Cognito Hosted UI
-- ✅ Account export + delete — full data dump as PDF; full wipe of DDB rows + S3 photos + Cognito user
-- ✅ PWA — manifest + service worker + install icons in all sizes + Apple splash
-- ✅ AWS deploy — Lambda + API Gateway + S3 + CloudFront in `ap-southeast-2`
-- ✅ Custom domain — `www.parkproof.com.au` via ACM + CloudFront alternate name (apex + `.au` variants 301 to canonical via Cloudflare Page Rules)
-- ✅ Security hardening — CORS lockdown, OAC, private bucket, throttle, billing alarm
-- ✅ Code-split — jsPDF, ics, html2canvas, and non-English locale chunks lazy-loaded; main bundle ~100KB gzipped
-- ✅ Timezone-aware — derived from coords via `tz-lookup` (display + PDF + .ics)
-- ✅ Photo resize + 3-phase quota auto-recovery — keeps localStorage under quota
-- ✅ Smart re-scan — proximity-matched card + desktop picker; refresh-mode API path
-- ✅ Stepped loading state
-- ✅ Brand identity — layered-P + clock, blue/navy/teal, Fraunces serif
-- ✅ Multi-lingual UI — 9 languages (en, zh-CN, vi, id, ko, it, el, hi, pa) including PDF strings
-- ✅ AI feedback Layers 1 + 2 — verdict events + model context (confidence, hour, sign-pattern) to CloudWatch
-- ✅ Two-app architecture — marketing landing at `/`, React PWA at `/app/`; CloudFront Function (`parkproof-uri-rewrite`) handles trailing-slash URI resolution for OAC + S3 REST origin
-- ✅ True Web Push background notifications — VAPID + DDB subscription store + EventBridge scheduler + dispatch Lambda + cancel-on-end-session; falls back to in-tab notification when permission denied
-- ⏳ AI feedback Layer 3 — opt-in photo capture for systematic failures, building a private training dataset
-- ⏳ Citywide parking heatmap — every scan captures the data; needs share-toggle, viewer, cold-start solved
-- 🤔 Voice confirmation (Web Speech API) — considered and deferred. Sketched the full 9-locale design and then deferred on product grounds: the scan-to-verdict flow requires the phone in hand, so voice is redundant for the primary use case. See `docs/features.md` § Considered and deferred for the reasoning + the i18n constraints kept for future reference.
-- ⛔ Council-specific appeal deep-links (auto-submit) — externally blocked by council-side captchas + no public APIs. Shelved, not pending. Revisit only if a council reaches out with a partnership offer.
+### Shipped to production (main)
+
+- ✅ Sign translator, clarification for position-dependent signs, photo-quality pre-check, restriction-transition banner
+- ✅ Record logger (GPS, reverse geocode, editable address, car photo), driver's note (280 characters, unsigned)
+- ✅ Reminders: multi-offset picker, `.ics` with several alarms, in-tab notifications and Web Push through EventBridge Scheduler, booked times on the record screen, cancelled on I've left
+- ✅ Evidence PDF, account export PDF, AI-drafted appeal letter
+- ✅ History, record screen, delete; live home card; no-sign records; walk-back navigation
+- ✅ Cloud sync (opt-in), Apple and Google federation, account export and delete
+- ✅ PWA, custom domain, two-app architecture (landing at `/`, app at `/app/`), security hardening, Web Push via EventBridge Scheduler
+- ✅ 9 languages including the PDFs (per-locale Noto subsets), time zones from the coordinates
+- ✅ Re-check (smart re-scan) by proximity or picker; stepped loading; AI feedback telemetry
+- ✅ Brand: the Greenfield vault identity (`44ee7a3`, 30 Jun 2026)
+- ✅ The evidence chain, T0a to T1b (merged to main as `12d9318`, field-tested 8 Nov 2026): signed addenda, IndexedDB photos, the browser verifier, chain-aware sync, the departure sheet and signed departure, the signed parts panel, time zones in every PDF, chained signature pages, honest appeal evidence
+
+### On `integration/roadmap-2`, not deployed yet
+
+- ✅ Field-test fixes (`b639e76`, `7b10cc1`): self-healing push registration, one Remind me, iPhone safe area, visible back buttons, "Ended 5:23 pm", pull on return
+- ✅ T2: condition photos at parking and on return, proof of payment or permit, the evidence file, verify pages with the chain and photo steps (`2a100f6`)
+- ✅ T3: sign status, area signs, permit exceptions, weekly restrictions, the unclear-sign screens (`4168c72`; schema flattened in `789fdc5`)
+- ✅ T4: Settings (driver name, up to 3 permits, notifications), permit answers and safeguards, `permit_commitment`, the privacy policy rewrite, the home layout (`e60391c`)
+- ✅ T5a and T5b: street sweeping and weekly reminders, on the phone and by weekly push (`86041be`)
+- ✅ T7: "Share where the car is" links, read-only shared copies, "Hand the car over" (`5071dba`)
+- ✅ T8: "Got a fine? Start here", the notice reader, matching and the factual comparison (`598ffdf`)
+- ✅ T9: the accuracy harness, rubric and method page (`d44c191`). No numbers yet: the test corpus is empty, so the in-app link stays off
+- ✅ Copy pass and copy lint (`5902506`), overnight fix list (`b63e8ee`: deploy packaging, the workday build switch, the jobs-table and log-retention scripts, privacy accuracy, contrast, `<html lang>`, calendar text in every language)
+- 🚩 **T6a, T6b, T6c: workday mode** (`c615e66`, `378c4c6`, merged `09d5c24`). Built, tested, and **off in production** behind `VITE_FEATURE_WORKDAY`. Why: moving a few bays along the same signed stretch doesn't restart a time limit, and under an area sign the car must leave the whole area (Road Rules r205(2), r332, r335). A careless version gets drivers fined and hands councils signed proof of the breach. Every workday string must be read by a lawyer first, and none is engaged. VIC and QLD only, when it does ship
+- ✅ T10 items 1, 2 and 5: the language review of every new string in 8 locales and the /verify pages (`scripts/t10-review/`, applied by `scripts/_i18n_inject_t10_review.mjs` and `scripts/_build_verify_pages.py`), these docs, and the legal review queue
+- ⏳ T10 items 3 and 4: the About page and the landing (waiting on the redesign choice)
+
+### Numbers (9 Nov 2026, at `09d5c24`)
+
+- Tests: 168 files, 3,037 tests (`npx vitest run`, which includes `lambda/**` and `scripts/**/*.test.mjs`).
+- Bundle (`npx vite build`, workday flag unset, so off): main chunk 1,964.55 kB minified, 516.75 kB gzipped, most of it the 9 inline locale files (about 1.4 MB of JSON). Lazy chunks include the PDF code (457 kB, 148 kB gzipped), html2canvas (200 kB), ics (72 kB) and the cloud sync code (96 kB). 52 precache entries, 4,339 KiB.
+
+### Later
+
+- ⏳ AI feedback Layer 3: opt-in photo capture for systematic failures
+- ⏳ Citywide parking map: needs a share toggle, a viewer and the cold start solved
+- 🤔 Voice confirmation: considered and deferred (the phone is already in hand at the sign; `docs/features.md`)
+- ⛔ Council appeal auto-submit: blocked by council captchas and no public APIs

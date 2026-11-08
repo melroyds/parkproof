@@ -21,7 +21,7 @@
     "close": "Chiudi",
     "sendFeedback": "Invia feedback",
     "about": "Cosa fa",
-    "signedSeal": "Record firmato, con manomissione rilevabile"
+    "signedSeal": "Record firmato: eventuali manomissioni sono rilevabili"
   },
   "language": {
     "title": "Lingua",
@@ -197,7 +197,7 @@
       "timeToggle": "Il cartello dà al tuo permesso un orario più tardo?",
       "timeLabel": "Il tempo del tuo permesso su questo cartello finisce alle",
       "timeHint": "Leggilo sul cartello. ParkProof non calcola gli orari dei permessi.",
-      "timeSet": "I promemoria conteranno fino alle {{time}}, l'orario che hai inserito, più uno quando finisce il limite standard.",
+      "timeSet": "I tuoi promemoria faranno il conto alla rovescia fino alle {{time}}, l'orario che hai inserito, con uno in più quando finisce il limite standard.",
       "timeNotLater": "Quell'orario non è più tardo del limite standard, quindi i promemoria restano sul limite standard."
     }
   },
@@ -347,7 +347,7 @@
     "permitIntro": "Il tempo del tuo permesso dura fino alle <strong>{{when}}</strong>, l'orario che hai inserito leggendo il cartello. Scegli quando ricevere un promemoria, quante volte vuoi.",
     "permitExtra": "Riceverai anche un promemoria alle {{time}}, quando finisce il limite standard di questo cartello.",
     "permitStandardEnds": "Il limite standard di questo cartello finisce ora. Il tempo del tuo permesso dura fino alle {{time}}.",
-    "chipAtPermitTime": "Alla fine del permesso",
+    "chipAtPermitTime": "Alla fine del tempo del permesso",
     "permitChipLimit_one": "Qui puoi scegliere al massimo {{count}} promemoria, più quello alla fine del limite standard.",
     "permitChipLimit_other": "Qui puoi scegliere al massimo {{count}} promemoria, più quello alla fine del limite standard.",
     "permitBodyAt": "Il tempo del permesso che hai inserito leggendo il cartello finisce alle {{time}}. È ora di spostare l'auto.",
@@ -823,7 +823,7 @@
     },
     "workday": {
       "title": "Registro degli eventi di parcheggio.",
-      "footer": "Questo registra ciò che hai fatto e ciò che ci hai detto. Non è un accertamento legale che hai rispettato le regole. Lo decide il tuo comune.",
+      "footer": "Questo documento registra ciò che hai fatto e ciò che ci hai detto. Non è un accertamento legale del fatto che tu abbia rispettato le regole. Lo decide il tuo comune.",
       "councilLine": "I comuni possono interpretare questa regola in modo più severo. Controlla la pagina sul parcheggio del tuo comune.",
       "started": "Giornata di lavoro iniziata {{time}} (orologio del telefono)",
       "ended": "Giornata di lavoro terminata {{time}} (orologio del telefono)",
@@ -1234,7 +1234,7 @@
         "leftParkingArea": "L'auto è uscita dall'area di parcheggio, oltre un cartello che ne indica la fine",
         "notSure": "Non lo so con certezza"
       },
-      "footer": "Se non lo sai con certezza, il tuo limite di tempo iniziale continua a valere.",
+      "footer": "Se non lo sai con certezza, il tuo limite di tempo iniziale continua a decorrere.",
       "required": "Scegli una risposta per salvare questa sosta.",
       "newLimit": "Nuovo limite in base a quello che ci hai detto: hai superato {{boundary}}.",
       "passed": {
@@ -1243,10 +1243,10 @@
         "tIntersectionOrDeadEnd": "la fine della strada a un incrocio a T o in una strada senza uscita",
         "leftParkingArea": "un cartello che indica la fine dell'area di parcheggio"
       },
-      "notSure": "Il tuo limite su questo tratto continua a contare dalle {{start}}. Sposta l'auto fuori da questo tratto entro le {{deadline}}.",
-      "notSureArea": "Il tuo limite in quest'area di parcheggio continua a contare dalle {{start}}. Sposta l'auto fuori da tutta l'area entro le {{deadline}}.",
-      "notSureNoDeadline": "Il tuo limite su questo tratto continua a contare dalle {{start}}.",
-      "notSureNoDeadlineArea": "Il tuo limite in quest'area di parcheggio continua a contare dalle {{start}}.",
+      "notSure": "Il tuo limite su questo tratto decorre ancora dalle {{start}}. Sposta l'auto fuori da questo tratto entro le {{deadline}}.",
+      "notSureArea": "Il tuo limite in quest'area di parcheggio decorre ancora dalle {{start}}. Sposta l'auto fuori da tutta l'area entro le {{deadline}}.",
+      "notSureNoDeadline": "Il tuo limite su questo tratto decorre ancora dalle {{start}}.",
+      "notSureNoDeadlineArea": "Il tuo limite in quest'area di parcheggio decorre ancora dalle {{start}}.",
       "passedDeadline": "Il tuo tempo su questo tratto è scaduto alle {{time}}. Sposta l'auto fuori da questo tratto adesso.",
       "passedDeadlineArea": "Il tuo tempo in quest'area di parcheggio è scaduto alle {{time}}. Sposta l'auto fuori da tutta l'area adesso.",
       "saveAnyway": "Salva comunque",
@@ -1295,7 +1295,7 @@
     "match": {
       "compare": "Confronta con questo record",
       "far": "Questo record è a circa {{distance}} km dal luogo indicato sul verbale.",
-      "repeatedHour": "In questa data è finita l'ora legale, quindi l'ora sul verbale si è ripetuta due volte. Il record viene confrontato con: {{time}}.",
+      "repeatedHour": "In questa data è finita l'ora legale, quindi l'ora sul verbale c'è stata due volte. Il record viene confrontato con: {{time}}.",
       "skippedHour": "In questa data è iniziata l'ora legale, quindi l'ora sul verbale non è esistita sull'orologio. Il record viene confrontato con: {{time}}."
     },
     "compare": {
@@ -1357,7 +1357,7 @@
   },
   "recurring": {
     "title": "Promemoria settimanali",
-    "intro": "Pulizia strade, clearway e altri divieti che si ripetono negli stessi giorni. Impostali una volta e ricevi un promemoria prima di ognuno.",
+    "intro": "Pulizia strade, clearway e altre restrizioni che si ripetono negli stessi giorni. Impostali una volta e ricevi un promemoria prima di ognuno.",
     "homeRow": "Pulizia strade e promemoria settimanali",
     "homeNext": "Prossimo: {{what}}, {{time}}",
     "homeOnNow": "{{what}} in corso, fino alle {{time}}",
@@ -1373,7 +1373,7 @@
       "street_cleaning": "Pulizia strade",
       "clearway": "Clearway",
       "no_stopping": "Divieto di fermata",
-      "other": "Altro divieto"
+      "other": "Altra restrizione"
     },
     "field": {
       "kind": "Di cosa si tratta?",
@@ -1409,14 +1409,14 @@
       "sydney": "Sydney",
       "canberra": "Canberra",
       "brisbane": "Brisbane",
-      "lindeman": "Lindeman",
+      "lindeman": "Isola Lindeman",
       "adelaide": "Adelaide",
       "brokenHill": "Broken Hill",
       "darwin": "Darwin",
       "perth": "Perth",
       "eucla": "Eucla",
       "hobart": "Hobart",
-      "lordHowe": "Lord Howe"
+      "lordHowe": "Isola di Lord Howe"
     },
     "days": {
       "MO": "lunedì",
@@ -1478,7 +1478,7 @@
       "none": "Al momento questo telefono non può mostrare questo promemoria. Aggiungilo al calendario."
     },
     "offer": {
-      "heading": "Divieto settimanale su questo cartello",
+      "heading": "Restrizione settimanale su questo cartello",
       "body": "ParkProof può ricordartelo prima che inizi, ogni volta.",
       "line": "{{what}}. {{summary}}.",
       "cta": "Ricordamelo ogni settimana",
@@ -1565,7 +1565,7 @@
     "busy": "Preparazione del file…",
     "help": "Un file .json con tutte le firme e le foto originali, così chiunque può verificare questo record senza ParkProof. Una firma mostra che i dati non sono cambiati da quando ParkProof li ha firmati. Non mostra che siano veri, chi guidava, dove si trovava l'auto, né quando è arrivata o partita. Il file contiene il luogo e gli orari salvati in questo record, quindi condividilo solo con chi ne ha bisogno.",
     "includePermit": "Includi i dettagli del permesso",
-    "permitHelp": "I dettagli del permesso, e ogni foto indicata come \"Permesso esposto\", sono nel file solo se selezioni questa opzione. Il record firmato contiene solo le loro impronte digitali, con cui si possono confrontare. I dettagli del permesso di parcheggio accessibile sono informazioni sanitarie.",
+    "permitHelp": "I dettagli del permesso, e ogni foto indicata come \"Permesso esposto\", sono nel file solo se selezioni questa opzione. Il record firmato contiene solo le loro impronte digitali, con cui si possono confrontare. I dati del permesso di parcheggio accessibile sono informazioni sulla salute.",
     "error": "Non è stato possibile creare il file delle prove. Riprova.",
     "photosMissing_one": "{{count}} foto firmata non è su questo dispositivo, quindi non è nel file. La sua impronta digitale firmata sì.",
     "photosMissing_other": "{{count}} foto firmate non sono su questo dispositivo, quindi non sono nel file. Le loro impronte digitali firmate sì.",

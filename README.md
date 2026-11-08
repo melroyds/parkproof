@@ -3,53 +3,53 @@
 [![tests](https://github.com/melroyds/parkproof/actions/workflows/test.yml/badge.svg)](https://github.com/melroyds/parkproof/actions/workflows/test.yml)
 [![license: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-> Photograph any Australian parking sign → get a plain-English answer to **"Can I park here right now?"** plus a timestamped, GPS-tagged evidence record in case you get a wrongful ticket.
+> Photograph any Australian parking sign → get a plain-English answer to **"Can I park here right now?"**, plus a signed record of where and when you parked, in case a fine arrives later.
 
-A mobile-first, installable PWA with end-to-end AI: sign translation, evidence capture, departure reminders, and a tamper-evident PDF export — all working against a real AWS backend.
+A mobile-first, installable PWA with end-to-end AI: sign reading, a signed record of each park, reminders, a notice lookup for when a fine arrives, and evidence PDFs anyone can check with `openssl`, all on a real AWS backend.
 
-> **What this demonstrates (it's a PM portfolio piece).** Solo-built and shipped: a mobile PWA, AI vision with schema-enforced output + adaptive thinking, a single-Lambda AWS backend using an async-polling pattern around the API Gateway 30s ceiling, a KMS-signed tamper-evident evidence chain with an `openssl`-verifiable PDF, nine census-chosen locales, and a deliberately short roadmap where every deferred feature has a named build-trigger. The product decisions, trade-offs, the deliberately-_not_-built list, and the honest limitations are written up in **[the case study →](docs/case-study.md)** — start there if you have five minutes. This README is the exhaustive feature/architecture reference.
+> **What this demonstrates (it's a PM portfolio piece).** Solo-built and shipped: a mobile PWA, AI vision with schema-enforced output and adaptive thinking, a single-Lambda AWS backend with an async-polling pattern around the API Gateway 30 s ceiling, a KMS-signed chain of evidence with an `openssl`-checkable PDF, nine census-chosen languages, a legal-safety discipline (every claim about a signature says what it doesn't show), and a feature built and then deliberately left switched off until a lawyer has read it. The product decisions, trade-offs, the not-built list and the honest limitations are in **[the case study →](docs/case-study.md)**. This README is the feature and architecture reference.
 
 > **🚀 Try it live:** [https://www.parkproof.com.au](https://www.parkproof.com.au)
 >
-> Best on a phone — tap your browser's share menu → **"Add to Home Screen"** and ParkProof installs like a native app (own icon, fullscreen, no browser chrome). Also works fine on desktop if you upload sign photos from your library.
+> Best on a phone: tap your browser's share menu → **"Add to Home Screen"** and ParkProof installs like an app (own icon, full screen). On iPhone, reminders that arrive while ParkProof is closed need it on the Home Screen. Desktop works too, with photos from your library.
+
+> **Status (9 Nov 2026).** The live site runs `main`. The features marked *(roadmap 2)* below are built and tested on `integration/roadmap-2` and not deployed yet; [`docs/build/deploy-checklist-roadmap-2.md`](docs/build/deploy-checklist-roadmap-2.md) is the runbook. Workday mode is built but stays off in production until a lawyer has read its copy.
 
 ---
 
 ## Demo
 
-**Landing.** What a first-time visitor sees — split-colour headline, three checkmark value props, a gradient CTA, and a "How it works" strip that does the explaining without making the visitor read.
+> The screenshots below are from 25 May 2026, before the green "vault" redesign and before roadmap 2. They'll be regenerated (`npm run screenshots`) once the next design direction is chosen.
+
+**Landing.** What a first-time visitor sees: the headline, three value points, the scan button and a "How it works" strip.
 
 <p align="center">
-  <img src="docs/screenshots/00-landing.png" alt="First-time landing — Parking made simple. headline + three checkmark bullets + gradient Check a parking sign CTA + How it works grid + Tamper-evident evidence callout" width="320" />
+  <img src="docs/screenshots/00-landing.png" alt="First-time landing screen with the headline, three value points, the Check a parking sign button and a How it works grid" width="320" />
 </p>
 
-**Live countdown.** When you're actively parked, the home screen swaps the landing for the countdown — open the app, see how much time you have left, walk back to your car, or signal "I've left" to end the session early.
+**Live countdown.** While you're parked, home shows the countdown: how long is left, a walk back to the car, and "I've left".
 
 <p align="center">
-  <img src="docs/screenshots/09-home-active.png" alt="Home screen showing a live 'Currently parked' card with countdown" width="320" />
+  <img src="docs/screenshots/09-home-active.png" alt="Home screen showing a live Currently parked card with a countdown" width="320" />
 </p>
 
 ### Core flow
-
-The seven-step path from photographing a sign to having a tamper-evident evidence record.
 
 | 1. Scan | 2. Clarify (when needed) | 3. Result |
 |---|---|---|
 | ![scan](docs/screenshots/01-scan.png) | ![clarify](docs/screenshots/02-clarify.png) | ![result](docs/screenshots/03-result.png) |
 
-| 4. Log session | 5. Reminder | 6. History |
+| 4. Log the park | 5. Reminder | 6. History |
 |---|---|---|
 | ![logger](docs/screenshots/04-logger.png) | ![remind](docs/screenshots/05-remind.png) | ![history](docs/screenshots/06-history.png) |
 
-| 7. Session detail · PDF export · evidence appendix |
+| 7. The record · PDF export · signature pages |
 |---|
 | ![detail](docs/screenshots/07-session-detail.png) |
 
 ### Smart features
 
-The things you don't expect from a parking app: a pre-flight quality check on your photo before any Claude token is spent, a proximity-matched "you scanned this spot before" card that re-uses the prior reading, and an AI-drafted appeal letter that cross-references your saved evidence.
-
-| Photo-quality warning | Smart re-scan card |
+| Photo-quality warning | Re-check card |
 |---|---|
 | ![photo-quality](docs/screenshots/10-photo-quality-warning.png) | ![reuse](docs/screenshots/11-reuse-card.png) |
 
@@ -57,70 +57,81 @@ The things you don't expect from a parking app: a pre-flight quality check on yo
 |---|
 | ![appeal](docs/screenshots/08-appeal.png) |
 
-### Auth & cloud sync (opt-in)
+### Sign-in and cloud sync (optional)
 
-Sign-in is never required — the app works fully anonymous. When you do choose to sign in (email + password, or Apple / Google federation via Cognito Hosted UI), sessions opportunistically mirror to DynamoDB and photos to a private per-user S3 prefix.
-
-| Sign in (Apple / Google / email) | Account settings |
+| Sign in (Apple / Google / email) | Account |
 |---|---|
 | ![signin](docs/screenshots/12-signin.png) | ![account](docs/screenshots/13-signed-in-account.png) |
 
-### Multilingual UI — 9 languages
-
-Language list chosen from the top non-English languages spoken in the **City of Melbourne LGA** (2021 ABS Census). Same home screen in three of the nine scripts:
+### Nine languages
 
 | 🇦🇺 English | 🇮🇹 Italiano | 🇮🇳 हिन्दी |
 |---|---|---|
 | ![home-en](docs/screenshots/14-home-en.png) | ![home-it](docs/screenshots/15-home-it.png) | ![home-hi](docs/screenshots/16-home-hi.png) |
 
-> _All 17 screenshots are auto-generated by `npm run screenshots` — a Playwright harness in [`scripts/screenshots.mjs`](scripts/screenshots.mjs) drives the real app on an iPhone-15-Pro viewport with mocked Anthropic + AWS calls, so the run is hermetic and offline. Re-run after any UI change and the demo grid updates._
+> _The screenshots come from `npm run screenshots`: a Playwright harness in [`scripts/screenshots.mjs`](scripts/screenshots.mjs) drives the real app on an iPhone 15 Pro viewport with mocked Anthropic and AWS calls, so the run is hermetic and offline._
+
+---
+
+## How to use it
+
+1. **Scan the sign.** Tap **Scan a parking sign** and photograph the sign where you parked. A few seconds later you get **can I park here now** and, when there's a limit, the time to leave by. If the sign has arrows or sides, ParkProof asks where you are first. Always glance at the real sign too: it's an AI read.
+2. **Save the park** *(optional)*. **Save & remind me** records the time, your phone's GPS, the address (editable) and, if you like, a photo of the car. Optional extras *(roadmap 2)*, collapsed by default: who's driving, photos of the car's condition, and a photo of your meter ticket or permit. ParkProof's server signs the record as soon as your phone is online.
+3. **Get a reminder.** Pick when, tap **Remind me** *(roadmap 2)*. It arrives even with ParkProof closed when your phone allows that, and the screen says plainly when it can only remind you while ParkProof is open. **Download .ics** gives you a calendar file with the same alarms. Reminders can be delayed or silenced, for example by Focus or battery saving, so don't rely on them alone.
+4. **Tap I've left** when you drive off. It records the time you tapped (your phone's clock) and where your phone was, and ParkProof signs it.
+5. **Got a fine?** Home → **Got a fine? Start here** *(roadmap 2)*. Photograph the notice: ParkProof reads its date, time and place, finds your records from around then, and compares them, line by line, with what the notice says. From there you can export the evidence PDF or draft an appeal letter. It isn't legal advice, and it doesn't say whether the fine should stand.
+6. **Check a record.** On any record, **Check signatures** checks every signed part and photo on your phone. The PDF's last pages and the [verify page](https://www.parkproof.com.au/verify/) show anyone how to check them with `openssl`. A valid signature shows the signed details haven't changed since ParkProof signed them. It doesn't show they're true, who was driving, where the car was, or when it arrived or left.
 
 ---
 
 ## What it does
 
-### Core flow
-1. **Sign Translator.** Camera-or-library photo → Claude vision reads the sign → plain-English **"can I park now?"** answer in ~8–12 seconds, with the exact moment by which you must leave.
-2. **Photo-quality pre-check.** Before firing the Claude call, a canvas-based pre-flight runs Laplacian-variance blur detection and Rec.709 luminance checks. If the photo is blurry, too dark, or blown out, the user sees a friendly warning *before* spending a token. Informs, doesn't block — they can override.
-3. **Clarify step.** When the model detects position-dependent rules (different arrows, side-specific bays, EV-only spots), it surfaces a chooser before answering, so the time-math matches your actual spot.
-4. **Restriction-transition heads-up.** When a meaningful rule change is approaching within ~3 hours (e.g. "Permit Zone ends — anyone can park free until 8am"), a brand-blue banner appears under the answer card. Helps the user decide *should I park now or wait five minutes*.
-5. **Session Logger.** Capture the moment of parking: GPS coords + reverse-geocoded street address (editable if wrong) + optional car photo. Saved to the device's local storage.
-6. **Multi-reminder picker.** Pick any combination of 30 / 15 / 10 / 5 / 2 / 0 minutes before expiry. Each selected offset becomes **three independent reminders** — a `VALARM` inside an `.ics` calendar event (honoured natively on macOS, iOS, and Google Calendar), an in-tab browser notification, and a **server-side Web Push** scheduled via EventBridge Scheduler that fires even when the tab is closed and the device is asleep. The OS notification title is the parking-spot address; the body is the time-left. Hitting "I've left" before the timer expires cancels every pending push so stale "30 min until your parking expires" pings don't arrive after you've already gone. Past offsets are line-through and auto-disabled as the clock ticks. The reminder picker shows a **subscription-status banner** at the top — green confirmation if push is enabled on this device, a one-tap Enable button if not — so the user knows whether reminders will fire when the tab is closed BEFORE committing to a set. **The session-detail screen lists every scheduled fire time** with a per-row × cancel + a smart-filtered **+ Add reminder** picker (offsets that would fire in the past are greyed), and the home-screen active card shows a **🔔 Next ping: 4:25 PM** line so you can verify the reminder pipeline at a glance.
-7. **Live "Currently parked" home.** When at least one session is still in the future, the home screen swaps its hero illustration for a live countdown card colour-coded by urgency (green > 1h, amber 15–60min, red <15min). One tap takes you into the evidence record. **No-sign sessions** (logged at unsigned spots — see #14) stay on the card with elapsed-time ("Parked for 2h 14m") and a "No posted restrictions" caption; the driver ends them explicitly via the inline **"I've left"** button, which stamps an `ended_at` timestamp on the evidence record and removes the card from home. The same end-session affordance is available in any session's detail screen, useful for **leaving an expiry-bearing session early** so the PDF reflects actual time on-site instead of the sign's posted limit.
-8. **Walk-back navigation.** The active-session card shows distance + estimated walking time to your car, plus a "Walk back →" button that deep-links straight into Apple Maps (iOS) or Google Maps (everywhere else) with walking mode forced.
-9. **Evidence Export.** Multi-page PDF with arrival time in the parker's local timezone, address, GPS, ParkProof Guidance one-liner, sign photo, the user's optional note, and car photo with **address + timestamp burnt into the bottom corner** as caption overlay. Optional signature appendix when the session was cryptographically signed (see below).
-10. **Cryptographic evidence signing.** After each session is saved, the photos are SHA-256 hashed in-browser and the canonical metadata is signed by an **AWS KMS ECDSA P-256** key. The signature appendix in the PDF includes the raw bytes plus a one-paragraph `openssl dgst -verify` walkthrough so a council, court, or insurer can verify the evidence chain without ParkProof being in the loop.
-11. **Driver's note.** A 280-character free-text field on each session for the *why* — "Mum's chemo at the Royal", "Saturday market". Renders verbatim in the evidence PDF. Softens a council review when context matters.
-12. **AI-drafted appeal letter.** If you do get a ticket, photograph it → Claude reads the notice, cross-references your saved evidence, and drafts a formal letter to the issuing council with an evidence-strength rating (strong / moderate / weak) and a one-paragraph strategy note. Editable; export as a separate PDF.
-13. **Session History.** Every saved parking session, with status (active / ended / expired) and the option to re-export the PDF, draft an appeal, or delete.
-14. **No-sign mode.** Sometimes the closest pole is meaningless — a quiet residential street, an open carpark, an apartment laneway with no posted restriction. The "No sign here? Just log my park →" entry on the scan screen captures an *ambient surroundings* photo plus the same GPS + reverse-geocode evidence chain, skipping the AI translation entirely. These sessions are **open-ended**: they stay on the home "Currently parked" card with elapsed-time copy until the driver hits **"I've left"**, at which point an `ended_at` stamp lands on the record and the actual duration is computed into the evidence PDF (`Actual duration: 2h 14m`). Tamper-evident evidence that you parked *here* during *this window* even when the council later puts up a sign.
+### Reading the sign
+1. **Sign reader.** Camera or library photo → Claude reads the sign → a plain-English answer, with the time to leave by, in the timezone of the spot.
+2. **Photo-quality pre-check.** Blur and brightness checks run on the phone before any AI call, and warn rather than block.
+3. **Clarify step.** When the rules depend on where you are (arrows, sides, bays), ParkProof asks first so the answer matches your spot.
+4. **Rule-change heads-up.** A banner when a meaningful change is due within about 3 hours ("Permit Zone ends at 6 pm").
+5. **Unclear signs** *(roadmap 2)*. The reader says whether it found a readable sign. A partly hidden or contradictory sign gets the most restrictive answer and a warning. No readable sign: ParkProof says so, reminds you that general road rules still apply where there's no sign, and lets you retake the photo or log the park without one.
+6. **Area signs and weekly restrictions** *(roadmap 2)*. The reader flags signs that govern a whole area and picks out restrictions that come back on set days (street cleaning, clearways), so you can turn them into a weekly reminder.
+7. **Paid parking and permits.** If the sign needs a ticket, a permit zone permit or an accessible parking permit, you confirm before you save; nothing is ticked for you. With permits saved in Settings *(roadmap 2)*, the answer shows what the sign itself prints for your permit, separately from the standard answer, and checks a permit zone's area against yours. ParkProof never works out a concession: when the sign prints nothing for your permit, it says the permit may allow more time under that state's rules, that ParkProof doesn't calculate that, and to check the permit's conditions. For an accessible permit it asks whether the permit holder is in the car and getting out there.
+8. **Payment app links.** When the sign shows a pay-by-app sticker, the result links to that app (EasyPark, PayStay, OPark, Wilson Parking, Secure Parking).
+9. **Re-check.** Back at a spot you scanned within 40 m and 7 days? Re-check the earlier reading against the current time, with no new photo. About 3× faster and 4× cheaper. Desktop and no-GPS users get a recent-scans picker.
 
-### Smart features
-- **Smart Re-scan.** When you arrive at a spot you've scanned before (within 40m and 7 days), ParkProof recognises it and offers to **reuse the prior reading** — no photo, just refresh the current-time answer. ~3× faster and ~4× cheaper per scan. Desktop and no-GPS users get a "Reuse a recent scan" picker instead.
-- **Timezone-aware everywhere.** Every displayed time — result, reminder, history, PDF, calendar event — is rendered in the *parking spot's* timezone (resolved from GPS via `tz-lookup`), not the user's device locale. Scan in Sydney while travelling, see Sydney times.
-- **Date-aware time labels.** Times more than 24 hours away show the day + numeric date ("Until 10:00 am, Mon 18/05/2026") so a long-window expiry never looks like a today-window expiry.
-- **Photo-resize.** Photos are downscaled to ≤1200px and re-encoded as 0.82-quality JPEG before they touch state — keeps localStorage under quota, makes API payloads small, lowers per-scan cost.
-- **Quota auto-recovery.** When `localStorage` hits its ~5MB ceiling, a 3-phase reclamation runs against expired sessions only (strip car photo, then sign photo, then evict whole session) before anything fails. Active sessions are never touched.
-- **Background signing retry.** If the tab closes mid-signing, the next app load sweeps for unsigned sessions and re-attempts (5-minute throttle, 3-attempt cap, 30-day horizon). Sessions self-heal.
-- **Stepped loading UX.** While the model thinks, the loading screen progresses through "Reading the sign… Identifying parking rules… Computing when you can park… Composing the answer…" with a real progress bar. Timings tuned from actual CloudWatch latency data.
-- **Async-polling architecture for slow Claude calls.** Stacked Melbourne signs (Clearway + multi-arrow + accessibility + meter) take Sonnet 30–50s to read carefully — past the API Gateway HTTP API's hard 30s timeout. Rather than fight the gateway, the slow routes (`/sign-translate`, `/draft-appeal`) write a `pending` row to a DDB jobs table, self-invoke the Lambda asynchronously, return `202 { job_id }` in <1s, then let the client poll `/sign-translate/status/{job_id}` (sub-second DDB GetItem per poll). TTL sweeps the rows 10 minutes after creation. One pattern, two long-running endpoints.
-- **Background Web Push via EventBridge Scheduler.** Selected reminder offsets become server-side EventBridge schedules with deterministic names (`parkproof-push-{session_id}-{i}`), each targeting the Lambda's push-dispatch path. At fire time the Lambda looks up the device's VAPID subscription, sends the notification, and the schedule auto-deletes. Hitting "I've left" before expiry deletes all pending schedules for the session. Stale endpoints (HTTP 410 / 404) are reaped from the subscriptions table automatically.
-- **AI feedback loop (Layers 1 + 2).** After each result, "Yes, looks right" or "Retake photo" fires a structured event to CloudWatch with the model's confidence, the rules-shape, whether clarification fired, the local hour, and a 120-char rules excerpt. Lets you slice failure modes in Logs Insights — *"of all retake verdicts, what's the confidence distribution? Which sign patterns? Which hours-of-day?"* — without any PII. Verdict counts (Layer 1) tell you *whether* there's a problem; Layer 2's context tells you *which kind*.
-- **Multi-lingual UI — 9 languages.** Language picker on the home screen swaps the entire interface between 🇦🇺 English (default), 🇨🇳 简体中文, 🇻🇳 Tiếng Việt, 🇮🇩 Bahasa Indonesia, 🇰🇷 한국어, 🇮🇹 Italiano, 🇬🇷 Ελληνικά, 🇮🇳 हिन्दी, and 🇮🇳 ਪੰਜਾਬੀ. Language list chosen from the top non-English languages spoken in the **City of Melbourne LGA** (2021 ABS Census). Powered by `react-i18next` with browser-language auto-detection (URL `?lng=` overrides localStorage) + localStorage persistence. The Claude AI's sign-translation output stays in English (it reflects what's literally on the sign); the entire UI scaffolding around it — including the evidence PDF, which lazy-loads per-locale subsetted Noto Sans fonts so non-Latin scripts render properly — translates.
+### The record
+10. **Parking record.** Time, GPS, editable address, car photo, and a 280-character note in your own words (notes aren't signed).
+11. **Signed, part by part.** ParkProof's server signs each part of a record with an **AWS KMS ECDSA P-256** key when it receives it: the arrival, the details you gave when you parked, each photo you add later, the departure, a handover. Each part names the one before it, so the parts form a chain. Photos stay on your phone; only their fingerprints are signed.
+12. **Condition photos and proof of payment** *(roadmap 2)*. Optional camera-only photos of the car's front, rear, sides and any damage, at parking and on return, and a photo of your meter ticket, payment confirmation or permit. A signed photo shows the photo existed by the time it was signed. It doesn't show who caused any damage.
+13. **I've left.** The departure sheet records your tap (phone clock) and your phone's location, and ParkProof signs it. If your phone was far from where you parked, the record says so.
+14. **No sign here.** Log a park where there's no sign, with a photo of the surroundings. It stays on home until you tap I've left.
+15. **Evidence PDF.** Every record exports as a PDF: times labelled as phone or server times, address, GPS, the sign reading, photos with captions, and signature pages with step-by-step `openssl` checks for each part and photo. It says plainly what it is: a record of a parking event, not a legal finding.
+16. **Evidence file** *(roadmap 2)*. A `.json` file with every signature and the original photos, so anyone can check the record without ParkProof. Permit details are left out unless you tick "Include permit details".
+17. **Who's driving, sharing and handovers** *(roadmap 2)*. Add a driver's name (it's your statement, not checked). **Share where the car is** makes a link with the signed arrival and the sender's own notes, marked as unsigned; whoever opens it gets a read-only copy. **Hand the car over** records who took the car next, signed as your statement.
+18. **History.** Every record, with its status and its signed parts.
 
-### Opt-in cloud
-- **Sign-in is optional**, never gated. Every feature works fully anonymous. If you choose to sign in (email + password, or Apple / Google federation via Cognito Hosted UI), every saved session opportunistically mirrors to DynamoDB, and photos go into a private per-user prefix in an S3 evidence bucket via short-TTL presigned `PUT` URLs. Local storage stays the source of truth; cloud is durability + cross-device recovery for evidence that might be needed weeks after the fact.
-- **Account export.** One tap exports a complete PDF dump of every session you've saved — handy for legal hand-off or just walking away with your own data.
-- **Account delete.** Wipes everything: DynamoDB rows, S3 photos under your prefix, the Cognito user record itself. No retention, no soft-delete, no "we kept a copy for analytics."
+### Reminders
+19. **Remind me** *(roadmap 2; the live site has the older separate push and browser-notification buttons)*. One button: pick any of 30, 15, 10, 5, 2 or 0 minutes before the limit. It books a server-side **Web Push** through EventBridge Scheduler when your phone can receive one, and in-tab reminders otherwise, and says which. Booked times show on the record and on the home card, and I've left cancels them.
+20. **Calendar file.** **Download .ics**: a calendar event with the same alarms, in your language.
+21. **Street sweeping and weekly reminders** *(roadmap 2)*. Weekly, fortnightly or "first and third Tuesday" rules, set by hand or from a sign, with a reminder the evening before or a set time before. On the phone, in a calendar file with a repeat rule, and by weekly push. Councils change these schedules, so the app says to check the signs.
 
-### PWA
-Installable to the iPhone / Android home screen with a real app icon, theme colour, splash screen, and offline-capable service worker. Main bundle ~225KB gzipped (~750KB raw) — heavier libraries (jsPDF, ics, html2canvas, DOMPurify) are lazy-loaded only when used; UI locale strings are bundled inline so the language picker is instant.
+### When a fine arrives
+22. **Got a fine? Start here** *(roadmap 2)*. Reads the notice's number, date, time, place, offence and due date; finds your records from around then; and compares them in plain statements: when you tapped I've left by your phone's clock, whether ParkProof signed that before the time on the notice, who the record says was driving. Always: check the registration on the notice, and check its due date.
+23. **AI-drafted appeal letter.** Claude reads the notice and drafts a formal letter to the issuing council from your record. You edit it and export it as a PDF. It's a starting point, not legal advice, and it never claims more than the record shows.
+
+### Settings, privacy and access
+24. **Settings** *(roadmap 2)*. Your name for new records, up to 3 permits, and notifications. Saved in this browser only.
+25. **Privacy policy in the app**, in plain English, saying what leaves your phone and how long anything is kept.
+26. **Nine languages.** English, 简体中文, Tiếng Việt, Bahasa Indonesia, 한국어, Italiano, Ελληνικά, हिन्दी and ਪੰਜਾਬੀ, chosen from the top languages spoken at home in the City of Melbourne (2021 Census). The whole app and the PDFs translate; the AI's sign reading stays in English because it quotes the sign.
+27. **No account needed.** Everything works without signing in. Sign in (email, Apple or Google) to back records up and see them on your other devices.
+28. **Account export and delete.** One PDF of every record; or delete everything (database rows, photos, the account itself).
+
+### Workday mode (built, off in production)
+For drivers who move the car between time-limited spots all day: each stop gets its own record from a fresh photo of its sign, ParkProof asks whether you left the signed stretch when a new stop may be on the same one (moving a few bays doesn't restart a limit), keeps the original limit running when you're not sure, and books each stop's reminders. Victoria and Queensland only. It ships only after a lawyer has read every line of its copy (`docs/legal-review-queue.md`).
 
 ---
 
 ## The problem
 
-Australian parking signs are notoriously dense — especially in inner-city Melbourne, Sydney and Brisbane. A typical pole stacks 3–4 signs with overlapping time windows, side-specific arrows, permit-zone overlays, and ticket-machine bays. Existing apps (ParkingMate.ai, Parky.AI, SIGNlanguage) translate the rules — none give you the **evidence trail** you'd need to dispute a ticket later: timestamp, GPS, car-at-the-spot photo. ParkProof does both.
+Australian parking signs are dense, especially in inner Melbourne, Sydney and Brisbane: a pole can stack three or four signs with overlapping times, arrows, permit zones and pay bays. Other apps translate the rules. ParkProof also keeps a record of the park that anyone can check later, and helps when a notice arrives.
 
 ---
 
@@ -131,60 +142,57 @@ flowchart LR
   subgraph Browser
     Cam[Camera input]
     UI[React UI]
-    SW[Service Worker<br/>offline cache + push receiver]
-    LS[(localStorage)]
-    PDF[jsPDF<br/>evidence export]
-    ICS[ics<br/>calendar event]
-    Notif[Notification API<br/>in-tab reminder]
+    SW[Service worker<br/>precache + push receiver]
+    LS[(localStorage<br/>records, settings, weekly rules)]
+    IDB[(IndexedDB<br/>photos by SHA-256)]
+    PDF[jsPDF<br/>evidence PDFs]
+    ICS[ics<br/>calendar files]
+    Ver[WebCrypto<br/>signature checks]
   end
 
   subgraph AWS["AWS (ap-southeast-2)"]
-    CF[CloudFront<br/>+ OAC<br/>www.parkproof.com.au]
-    S3App[(S3 — static hosting<br/>private, OAC-only)]
-    APIGW[API Gateway HTTP API<br/>18 routes — 10 anon + 8 JWT-gated<br/>JWT authorizer on /sessions, /photos, /me]
-    Lambda[Lambda<br/>parkproof-sign-translator<br/>HTTP handler + self-invoked worker<br/>+ push-dispatch target]
-    Sched[EventBridge Scheduler<br/>one-shot push schedules<br/>parkproof-push-&lt;session&gt;-&lt;i&gt;]
-    Cog[Cognito User Pool<br/>+ Hosted UI<br/>Apple · Google federation]
-    DDB[(DynamoDB<br/>sessions · async jobs<br/>· push subscriptions)]
-    S3Ev[(S3 — evidence<br/>per-user prefixes<br/>presigned upload URLs)]
-    S3Fb[(S3 — user feedback<br/>2-year retention)]
-    KMS[AWS KMS<br/>ECDSA P-256<br/>asymmetric signing key]
-    Logs[CloudWatch Logs<br/>feedback Layers 1 + 2<br/>+ per-request timings]
+    CF[CloudFront + OAC<br/>www.parkproof.com.au]
+    S3App[("S3 static hosting<br/>landing, /app/, /verify/")]
+    APIGW[API Gateway HTTP API<br/>23 routes, 14 anonymous + 9 JWT]
+    Lambda[Lambda parkproof-sign-translator<br/>HTTP routes + job worker<br/>+ push dispatch target]
+    Sched[EventBridge Scheduler<br/>one-shot and weekly cron pushes]
+    Cog[Cognito User Pool<br/>Apple and Google federation]
+    DDB[(DynamoDB<br/>records, async jobs,<br/>push subscriptions)]
+    S3Ev[(S3 evidence photos<br/>per-user prefixes)]
+    S3Fb[(S3 user feedback)]
+    KMS[AWS KMS<br/>ECDSA P-256 signing key]
+    Logs[CloudWatch Logs]
   end
 
   subgraph External
-    Claude[Anthropic API<br/>claude-sonnet-4-6<br/>vision · JSON schema · adaptive thinking]
-    Nom[OpenStreetMap<br/>Nominatim]
-    WebPush[Browser push endpoints<br/>FCM · APNs · Mozilla autopush]
+    Claude[Anthropic API<br/>claude-sonnet-4-6]
+    Nom[OpenStreetMap Nominatim]
+    WebPush[Browser push services]
   end
 
   Cam --> UI
   UI -- "GET /" --> CF --> S3App
-  UI -- "anon: /sign-translate · /draft-appeal<br/>/sign-session · /feedback · /user-feedback<br/>/push/{subscribe,schedule,cancel}" --> APIGW --> Lambda
-  UI -- "auth: /sessions/{upload,list,delete}<br/>/photos/presign · /me/{export,delete}" --> APIGW
-  UI -- "OAuth redirect / token exchange" --> Cog
-  Cog -- "JWT" --> APIGW
+  UI -- "anonymous: sign-translate, read-notice, draft-appeal,<br/>sign-session, feedback, user-feedback, push/*" --> APIGW --> Lambda
+  UI -- "JWT: sessions/*, photos/*, me/*" --> APIGW
+  UI -- "OAuth" --> Cog
   Lambda -- "messages.create" --> Claude
-  Claude -- "structured JSON" --> Lambda --> APIGW --> UI
-  Lambda -- "kms:Sign (DER)" --> KMS
-  Lambda -- "Put / Query / Get / Delete" --> DDB
-  Lambda -- "presigned PUT URL" --> S3Ev
-  UI -- "direct PUT photo" --> S3Ev
-  Lambda -- "PutObject (JSON)" --> S3Fb
-  Lambda -- "CreateSchedule · DeleteSchedule" --> Sched
-  Sched -- "at(UTC) → invoke" --> Lambda
-  Lambda -- "web-push (VAPID-signed)" --> WebPush
-  WebPush -- "push event" --> SW
-  SW --> Notif
-  Lambda -- "[parkproof.*] structured logs" --> Logs
+  Lambda -- "kms:Sign" --> KMS
+  Lambda --> DDB
+  Lambda -- "presigned PUT, materialize" --> S3Ev
+  Lambda --> S3Fb
+  Lambda -- "Create/Get/DeleteSchedule" --> Sched
+  Sched -- "invoke" --> Lambda
+  Lambda -- "web-push (VAPID)" --> WebPush --> SW
+  Lambda --> Logs
   UI <-- "reverse + forward geocode" --> Nom
   UI --> LS
+  UI --> IDB
   UI --> PDF
   UI --> ICS
-  UI --> Notif
+  UI --> Ver
 ```
 
-A single Lambda handler ([`lambda/index.js`](lambda/index.js)) is **reused as the local dev proxy** via a small Vite plugin in [`vite.config.ts`](vite.config.ts). One handler, two runtimes — no mocks during dev, no surprise differences on deploy. The handler dispatches by path across **18 API Gateway routes** — ten anonymous (sign translation + async-job status polls + appeal drafting + KMS signing + AI verdict feedback + free-text user feedback + push subscribe / schedule / cancel) and eight JWT-authenticated covering cloud sync (`/sessions/upload`, GET + POST `/sessions/list`, `/sessions/delete`), evidence-photo presigning (`/photos/presign`), and account management (GET + POST `/me/export`, `/me/delete`). Auth-required routes go through API Gateway's Cognito JWT authorizer before the Lambda ever runs. The same Lambda is also the **EventBridge Scheduler target** for one-shot push dispatch and the **self-invoked worker** for async-polled `/sign-translate` and `/draft-appeal` calls that exceed the API Gateway 30s timeout. One Lambda function, one cold-start budget, three invocation modes.
+One Lambda handler ([`lambda/index.js`](lambda/index.js)) is also the **local dev proxy**: a Vite plugin in [`vite.config.ts`](vite.config.ts) imports it in-process, so what you debug locally is what runs in production. It answers 23 API Gateway routes once roadmap 2 is deployed: 14 anonymous (sign reading and its status poll, notice reading and its poll, appeal drafting and its poll, signing, two feedback routes, and five push routes) and 9 behind the Cognito JWT authorizer (cloud sync, photo upload and materialise, account export and delete). It is also the self-invoked worker for the slow AI jobs and the EventBridge Scheduler target for one-shot and weekly reminders. The full route table is in [`CLAUDE.md`](CLAUDE.md).
 
 ---
 
@@ -192,109 +200,105 @@ A single Lambda handler ([`lambda/index.js`](lambda/index.js)) is **reused as th
 
 | Layer | Choice | Why |
 |---|---|---|
-| UI | Vite + React 19 + TypeScript | Fast HMR, type safety, modern ergonomics |
-| Styling | Tailwind CSS 4 (Vite plugin) | One-utility-class-per-thing keeps the JSX legible |
-| Brand | Fraunces (display) + Inter (body), blue/navy/teal palette | Modern + civic, layered serif "P" + clock monogram |
-| AI | Claude Sonnet 4.6 + adaptive thinking + `effort: low` | Multi-rule time-window reasoning needs adaptive thinking; `effort: low` keeps latency in the 6–12s range |
-| Schema | `output_config.format: { json_schema }` | API-enforced JSON shape — no fragile regex parsing |
-| Backend | AWS Lambda (prod) / Vite middleware (dev) | Same handler runs in both — what you debug locally is what runs in prod |
-| Hosting | S3 (private) + CloudFront with Origin Access Control | HTTPS, global CDN, no public bucket |
-| Storage (user data) | `localStorage` | No backend for user data needed at POC scale; sessions are user-private by design |
-| Geocoding | OpenStreetMap Nominatim | Free, no key, in-browser; results cached per coord pair |
-| Timezone | [`tz-lookup`](https://www.npmjs.com/package/tz-lookup) | Offline polygon library; ~200KB; resolves lat/lng → IANA timezone |
-| Calendar | [`ics`](https://www.npmjs.com/package/ics) | RFC 5545 compliant `.ics` with `GEO` field; lazy-loaded |
-| PDF | [`jsPDF`](https://www.npmjs.com/package/jspdf) + [`jspdf-autotable`](https://www.npmjs.com/package/jspdf-autotable) | Multi-page evidence doc with embedded photos and a caption-overlay on the car photo; lazy-loaded |
-| PWA | [`vite-plugin-pwa`](https://www.npmjs.com/package/vite-plugin-pwa) | Manifest + service worker + auto-generated icons in all sizes |
-| i18n | [`react-i18next`](https://react.i18next.com/) + [`country-flag-icons`](https://www.npmjs.com/package/country-flag-icons) | Nine-locale support (EN-AU / zh-CN / VI / ID / KO / IT / EL / HI / PA), chosen from the top non-English languages spoken in the City of Melbourne LGA (2021 ABS Census). Browser-language auto-detection + localStorage persistence. SVG flag icons (not emoji) for consistent rendering. |
-| Auth (opt-in) | AWS Cognito User Pools + [`amazon-cognito-identity-js`](https://www.npmjs.com/package/amazon-cognito-identity-js) | Email/password + federated **Google** + federated **Sign in with Apple** (hosted-UI redirect). Free below 50k MAU; in-bundle SDK, no Amplify. |
-| Cloud sync (opt-in) | AWS DynamoDB (pay-per-request) + S3 (private, OAC) | Mirrors localStorage to the cloud when signed in; localStorage stays canonical. Photos go via presigned PUT URLs. |
-| Telemetry | CloudWatch Logs Insights | Free at this scale; structured log events for feedback aggregation |
+| UI | Vite + React 19 + TypeScript | Fast HMR, type safety |
+| Styling | Tailwind CSS 4 (Vite plugin) | Utility classes keep the JSX legible |
+| Brand | The Greenfield "vault": deep pine `#073B25`, white chamfered cards, a mint spark for the signed seal only; Space Grotesk + Inter | Reads like a document of record, not a game |
+| AI | Claude Sonnet 4.6: adaptive thinking + `effort: low` for signs; no thinking for notices and letters | Multi-rule time maths needs thinking; transcription and drafting don't |
+| Schema | `output_config.format: { json_schema }` | API-enforced JSON shape, with a size budget test and a live compile check |
+| Backend | AWS Lambda, Node.js 22 (prod) / Vite middleware (dev) | Same handler in both |
+| Signing | AWS KMS ECDSA P-256, a chain of signed parts | The private key never leaves AWS; anyone can check with `openssl` or the in-app verifier |
+| Hosting | S3 (private) + CloudFront with Origin Access Control | HTTPS, CDN, no public bucket |
+| Storage (on the phone) | `localStorage` for records and settings, IndexedDB for photos | Local first; photos are content-addressed and immutable |
+| Geocoding | OpenStreetMap Nominatim | Free, no key |
+| Timezone | [`tz-lookup`](https://www.npmjs.com/package/tz-lookup) | lat/lng → IANA zone, offline |
+| Calendar | [`ics`](https://www.npmjs.com/package/ics) | Multi-alarm events and weekly repeat rules; lazy-loaded |
+| PDF | [`jsPDF`](https://www.npmjs.com/package/jspdf) + [`jspdf-autotable`](https://www.npmjs.com/package/jspdf-autotable) | Evidence and appeal PDFs with per-locale Noto font subsets; lazy-loaded |
+| PWA | [`vite-plugin-pwa`](https://www.npmjs.com/package/vite-plugin-pwa) (injectManifest) | Custom service worker for push |
+| i18n | [`react-i18next`](https://react.i18next.com/) | 9 locales, bundled inline (so switching is instant) |
+| Auth (optional) | Cognito + [`amazon-cognito-identity-js`](https://www.npmjs.com/package/amazon-cognito-identity-js) | Email, Google and Apple; no Amplify |
+| Cloud sync (optional) | DynamoDB + S3 | A mirror with a merge that never drops a signed part; the phone stays the source of truth |
+| Push | Web Push (VAPID) + EventBridge Scheduler | Reminders that arrive with the app closed, owned by the device that booked them |
+| Telemetry | CloudWatch Logs Insights | Structured log lines, no analytics SDK |
 
 ---
 
 ## Notable engineering decisions
 
-- **One handler, two runtimes.** The Lambda function and the local dev proxy share the same `translateSign()` function. The Vite plugin dynamically imports `lambda/index.js` on each `/api/sign-translate` request — so what you debug locally is what runs in production.
-- **API-enforced JSON, not prompted JSON.** The response shape is defined as a JSON Schema and passed via `output_config.format`. The model can't return malformed JSON or missing fields — eliminating an entire class of "the LLM forgot the rules field today" bugs. The schema covers nested per-variant clarifications too.
-- **Adaptive thinking + `effort: low`.** Multi-rule parking-sign math (e.g. "compute the earliest leave-by across 1/4P-on-the-left, 2P-on-the-right, Permit-Zone-on-weekends") genuinely needs reasoning. We tried Haiku 4.5 (no thinking) to chase ~3s scans and it produced wrong "until" answers on stacked signs — so we reverted to Sonnet 4.6 with adaptive thinking, but lowered `effort` from `medium` to `low` to cut typical latency from 15–30s to 6–12s while keeping correctness.
-- **Per-variant clarifications when signs are position-dependent.** When the model detects different rules per arrow / bay / side, it returns a `clarification: { question, options[] }`. The UI shows a chooser before the green/red card so the time-to-move calculation matches the user's actual spot.
-- **Grouped observations.** The "On the sign" panel renders `observations: { scope, items[] }[]` — bullets grouped under headings like `→ Right arrow` or `↔ Both directions` — instead of a flat blob, mirroring how a human reads a sign.
-- **Editable reverse geocode.** GPS → Nominatim → address shown next to coords. If the resolved address is wrong (or you parked just up the block), tap **Edit** and type a new one — forward-geocode swaps the coords and the rest of the pipeline (.ics, PDF, history) inherits the corrected location.
-- **Smart re-scan with text-only refresh.** When the user lands within 40m of a recently-scanned spot (or picks one manually on desktop), ParkProof skips the vision call entirely and sends a text-only request: prior rules + current time → updated `can_park_now` + `until`. Same Sonnet model, same schema, but no image input → ~3× faster, ~4× cheaper. The frontend trusts the prior reading for everything except current-time fields.
-- **Photo-resize before state.** Phone photos (3–8MB raw) are downscaled to ≤1200px @ 0.82 JPEG quality the moment they hit `handleFile()`. Originally added to fix a `localStorage` quota crash, but the same resize also shrinks the API payload and cuts per-scan Anthropic cost.
-- **Timezone derived from coords.** The `until` time is computed in the user's actual local timezone, resolved from GPS via `tz-lookup`. Falls back to `Australia/Melbourne` when no coords are sent. Works correctly for anyone scanning anywhere — not just the home market.
-- **Stepped loading state driven by real timings.** The 6–12s wait shows "Reading the sign… → Identifying parking rules… → Computing when you can park… → Composing the answer…" with a progress bar. Stages aren't real streaming (API Gateway HTTP API buffers responses), but the timing was tuned from CloudWatch latency data so it stays in sync with what the model is actually doing.
-- **Anonymous-by-default, opt-in cloud.** Out of the box, no login, no email, no user accounts — localStorage holds the user's data on-device, the Lambda is stateless, and the privacy story stays trivial. Cross-device sync is available as an *opt-in upgrade*: sign in with email/password (or Apple/Google via federation, see [`docs/federation-setup.md`](docs/federation-setup.md)) and sessions mirror to a DynamoDB + S3 cloud store keyed to your Cognito user ID. localStorage stays the canonical source of truth even when signed in — the cloud is a mirror, not a replacement.
-- **Async polling for slow Claude calls.** Stacked signs can take Sonnet 30–50s to read carefully — past API Gateway HTTP API's hard 30s timeout. Rather than fight the gateway, `/sign-translate` and `/draft-appeal` write a `pending` row to a TTL'd DDB jobs table, self-invoke the Lambda with `InvocationType: 'Event'`, and return `202 { job_id }` in <1s. The client polls a sub-second DDB `GetItem` until `done` or `error`. One pattern, two long-running endpoints, and the existing retry-on-5xx layer in `src/lib/api.ts` still wraps the enqueue call as a final fallback.
-- **Background push by deterministic schedule name.** When the user picks reminder offsets, we create one EventBridge schedule per offset with the name `parkproof-push-{session_id}-{i}` instead of a random UUID. That naming choice does two things: rescheduling for the same session collapses to a wipe-then-create with no conflict-handling code, and cancelling on "I've left" fan-outs to 6 parallel `DeleteSchedule` calls (with `ResourceNotFoundException` ignored). Net effect: no `scheduler:ListSchedules` permission needed in the IAM policy — the blast radius stays scoped to `parkproof-push-*`. The exact same Lambda is the dispatch target (`_async_kind: 'push-dispatch'`), so EventBridge fires through to `webpush.sendNotification` with no separate worker.
-- **AI feedback loop.** "Yes, looks right" / "Retake photo" verdicts fire structured events to CloudWatch via `POST /feedback`. Logs Insights aggregates verdict counts and rates without a database — gives a real measured signal for prompt iteration. No PII captured (just verdict + random per-render UUID + timestamp).
+- **One handler, two runtimes.** The Lambda and the local dev proxy run the same code.
+- **API-enforced JSON, not prompted JSON.** The answer's shape is a JSON Schema passed in `output_config.format`, including per-position answers for arrow signs.
+- **A grammar budget for that schema.** The API compiles the schema into a grammar and refused T3's first version as too large, which only a real call could show, and the limit is tighter with adaptive thinking on. The model's raw shape is flattened, a normaliser maps it back, a test caps its size, and `scripts/check-schema-compiles.mjs` sends one tiny real request per schema before every deploy.
+- **Adaptive thinking + `effort: low`.** Haiku 4.5 (no thinking) got stacked signs wrong, so the sign reader stays on Sonnet 4.6 with `effort` lowered to keep scans in the 6 to 12 s range.
+- **A chain of signed parts, not one signature.** Each later fact (a photo, the departure, a handover) is its own signed part naming the hash of the one before, so a record can grow after it was first signed without anything being re-signed. The server refuses malformed parts rather than repairing them, refuses phone times from the future, and every screen shows signed values from the signed payload.
+- **Honest copy as a feature.** Phone times say "phone clock", only ParkProof's signing time is called signed, driver statements are the driver's own, and every place a signature is shown says what it doesn't prove. A copy lint fails the build on banned claims and em-dashes in all 9 languages.
+- **Health information stays out of signatures.** An accessible parking permit is signed only as a salted hash; the details leave the phone only if the driver ticks a box.
+- **Async polling for slow AI calls.** Stacked signs can take 30 to 50 s, past API Gateway's 30 s limit. The slow routes write a job row, self-invoke the Lambda and return `202 { job_id }`; the client polls. Notice reads delete their row as soon as the phone has them.
+- **Push owned by a device, named deterministically.** One-shot reminders are `parkproof-push-{record}-{i}` and weekly ones `parkproof-push-r-{rule}-{0|1}` (cron in the rule's own time zone, deleting themselves after 90 days). Only the device that booked a schedule can change it, and no `ListSchedules` permission is needed.
+- **Self-healing push registration.** The phone re-sends its registration on open and before every booking; the server refuses to book for a device it doesn't know, and remembers dead endpoints so they can't come back.
+- **Anonymous by default, opt-in cloud.** No login wall. The cloud is a mirror, merged both ways without losing a signed part.
+- **A feature behind a legal gate.** Workday mode is built and tested but off in production builds; the deploy scripts set the flag explicitly so no `.env` line can turn it on.
 
 ---
 
 ## Running locally
 
 ```bash
-# 1. Install
 npm install
-
-# 2. Add your Anthropic API key
+(cd lambda && npm ci)                          # the dev proxy imports the AWS SDK from lambda/
 echo "ANTHROPIC_API_KEY=sk-ant-..." > .env
-
-# 3. Run
-npm run dev
-# → http://localhost:5173
+npm run dev                                    # → http://localhost:5173/app/
 ```
 
-You'll need a Claude API key from <https://console.anthropic.com/settings/keys>. Localhost is treated as a secure context, so geolocation, notifications, and the camera input all work without HTTPS.
+You need a Claude API key from <https://console.anthropic.com/settings/keys>. Localhost is a secure context, so geolocation, notifications and the camera input work without HTTPS. In dev, signing uses a throwaway key (records show "Signed with a development key"), and workday mode is on.
 
-> **Gotcha — if you're on Windows with [vestauth](https://www.vestauth.com/) installed**, it wraps `dotenv` and stops it from populating `process.env`. `vite.config.ts` works around this by assigning the parsed values explicitly — leave that bit alone or your `.env` will silently load to nowhere.
+Tests: `npx vitest run` (168 files, 3,037 tests on 9 Nov 2026). Type check: `npx tsc -b`.
+
+> **Windows with [vestauth](https://www.vestauth.com/):** it wraps `dotenv` and stops it filling `process.env`. `vite.config.ts` assigns the values itself; leave that block alone. If the project lives in Dropbox or OneDrive, run the dev server from a copy outside it: their file locks can break Vite's cache.
 
 ---
 
 ## Deploying
 
-The deploy is fully automated by idempotent scripts in [`scripts/`](scripts/):
+Idempotent scripts in [`scripts/`](scripts/). Follow [`docs/build/deploy-checklist-roadmap-2.md`](docs/build/deploy-checklist-roadmap-2.md) for the roadmap 2 deploy.
 
-| Script | What it does | Frequency |
+| Script | What it does | When |
 |---|---|---|
-| [`scripts/deploy.sh`](scripts/deploy.sh) | Day-to-day deploy: rebuilds Lambda zip, updates function code + env (Cognito + DDB + S3 + VAPID + scheduler ARNs merged in), builds the frontend with prod API URL + Cognito IDs + VAPID public key baked in, syncs `dist/` to S3, invalidates CloudFront. Ensures all 18 API Gateway routes exist on every run. | Every code change |
-| [`scripts/harden.sh`](scripts/harden.sh) | One-time security pass: locks API Gateway CORS to the CloudFront origin (with `Authorization` + `GET` allowed for the auth routes), creates a CloudFront Origin Access Control, migrates the S3 origin from public website-endpoint to private REST-endpoint + OAC. | Once after initial deploy |
-| [`scripts/setup-signing.sh`](scripts/setup-signing.sh) | One-time: creates a KMS asymmetric key (ECDSA P-256), attaches `kms:Sign` IAM policy to the Lambda role, exports the public key to `public/parkproof-public-key.pem`. | Once; re-run to rotate |
-| [`scripts/setup-auth.sh`](scripts/setup-auth.sh) | One-time: creates the Cognito User Pool + App Client + hosted-UI domain + DynamoDB sessions table + S3 evidence bucket + JWT authorizer on API Gateway. Writes resource IDs to `scripts/.aws-resources` (gitignored) for `deploy.sh` to consume. | Once; re-run after IAM/scheme changes |
-| [`scripts/setup-feedback-bucket.sh`](scripts/setup-feedback-bucket.sh) | One-time: creates the `parkproof-user-feedback-*` S3 bucket (private, AES256 SSE, 2-year lifecycle expiry) + attaches `s3:PutObject` to the Lambda role. Backs the `/user-feedback` route. | Once; re-run if bucket policy needs updating |
-| [`scripts/setup-push.sh`](scripts/setup-push.sh) | One-time: generates VAPID keypair, creates the `parkproof-push-subscriptions` DynamoDB table (PK = `device_id`, TTL = 90 days), attaches DDB read/write IAM to the Lambda role. Stamps the VAPID keys + table name into `scripts/.aws-resources`. | Once; never re-run unless you want to rotate VAPID (would re-prompt every existing subscriber) |
-| [`scripts/setup-push-scheduler.sh`](scripts/setup-push-scheduler.sh) | One-time: creates the `parkproof-push-scheduler-role` IAM role (trust = `scheduler.amazonaws.com`, inline policy = invoke-our-Lambda-only), attaches `scheduler:CreateSchedule/DeleteSchedule` + `iam:PassRole` to the Lambda role. Stamps the role ARN into `scripts/.aws-resources`. | Once; re-run after IAM changes |
-| [`scripts/set-throttle.sh`](scripts/set-throttle.sh) | Sets API Gateway request rate limits (default 100 burst / 25 rate per second — sized for a Reddit launch). Bot protection without WAF cost. | Once; re-run to retune |
-| [`scripts/billing-alarm.sh`](scripts/billing-alarm.sh) | Creates an AWS Budgets monthly alarm — emails you at 80% actual and 100% forecasted of a USD threshold. | Once; re-run with different threshold/email |
-| [`scripts/smoke-test-auth.mjs`](scripts/smoke-test-auth.mjs) | End-to-end auth + cloud-sync test: throwaway sign-up → confirm → sign-in → upload session → list → presign photo → delete → nuke account. Asserts each step, cleans up on failure. | Run after any auth-touching change |
-| [`scripts/send-test-push.mjs`](scripts/send-test-push.mjs) | CLI tool: reads the most-recently-subscribed `device_id` from the push subscriptions table and fires a real push to the corresponding browser. Useful for verifying the dispatch path end-to-end without waiting for an EventBridge schedule. | Run after any push-pipeline change |
-| [`scripts/screenshots.mjs`](scripts/screenshots.mjs) | Playwright harness — boots Vite, drives the app through every screen with mocked API calls, regenerates the README demo-grid PNGs. | After any visual change |
-| [`scripts/teardown.sh`](scripts/teardown.sh) | Destroys every AWS resource the deploy created. Dry-run by default; pass `--confirm` to actually delete. Handles the CloudFront disable + wait + delete dance. | Only when walking away |
+| [`deploy.sh`](scripts/deploy.sh) | Packages the Lambda in a temp folder, moves it to Node 22, updates code and env, makes sure every route exists, re-cuts the PDF fonts, builds the frontend (workday mode off unless `DEPLOY_ALLOW_WORKDAY=1`), adds the landing, syncs to S3, invalidates CloudFront. `--package-only` rehearses the package with no AWS call | Every release |
+| [`check-schema-compiles.mjs`](scripts/check-schema-compiles.mjs) | One tiny real Anthropic call per schema | Before every deploy |
+| [`harden.sh`](scripts/harden.sh) | CORS lockdown, Origin Access Control, private S3 origin | Once |
+| [`setup-signing.sh`](scripts/setup-signing.sh) | The KMS signing key and `public/parkproof-public-key.pem` | Once |
+| [`setup-auth.sh`](scripts/setup-auth.sh) | Cognito, the records table, the evidence bucket, the JWT authorizer | Once (never for an IAM fix: it resets sign-in providers) |
+| [`setup-feedback-bucket.sh`](scripts/setup-feedback-bucket.sh) | The feedback bucket (2-year expiry) | Once |
+| [`setup-push.sh`](scripts/setup-push.sh) | VAPID keys and the push subscriptions table | Once |
+| [`setup-push-scheduler.sh`](scripts/setup-push-scheduler.sh) | The Scheduler role and the Lambda's Scheduler permissions | Once |
+| [`setup-jobs-table.sh`](scripts/setup-jobs-table.sh) | Lets the Lambda delete notice job rows | Once, before the roadmap 2 deploy |
+| [`setup-log-retention.sh`](scripts/setup-log-retention.sh) | 90-day log retention, as the privacy policy says | Once, before the roadmap 2 deploy |
+| [`set-throttle.sh`](scripts/set-throttle.sh), [`billing-alarm.sh`](scripts/billing-alarm.sh), [`anthropic-usage-alarm.sh`](scripts/anthropic-usage-alarm.sh) | Rate limits, the AWS budget alarm, the Claude call-volume alarm | Once; re-run to retune |
+| [`smoke-test-auth.mjs`](scripts/smoke-test-auth.mjs), [`send-test-push.mjs`](scripts/send-test-push.mjs) | Live checks of the auth routes and of one push | After auth or push changes |
+| [`eval-accuracy.mjs`](scripts/eval-accuracy.mjs) | The accuracy benchmark ([`eval/README.md`](eval/README.md)) | When the labelled set grows |
+| [`screenshots.mjs`](scripts/screenshots.mjs) | Regenerates the demo screenshots | After visual changes |
+| [`teardown.sh`](scripts/teardown.sh) | Removes what `deploy.sh` created (dry run by default). Leaves Cognito, tables, buckets, KMS and the scheduler | Only when walking away |
 
-Stack: AWS Lambda (Node.js 20) + API Gateway HTTP API + S3 (private) + CloudFront. Hosted in `ap-southeast-2` (Sydney) — closest region to the primary use case.
+Stack: AWS Lambda (Node.js 22) + API Gateway HTTP API + DynamoDB + S3 + CloudFront + KMS + EventBridge Scheduler, in `ap-southeast-2` (Sydney).
 
-**Prereqs:** AWS CLI configured with an IAM user that has admin (or scoped) permissions, `node`, plus PowerShell (Windows) or `zip` (everywhere else) on PATH.
+**Prereqs:** the AWS CLI with suitable credentials, `node`, and PowerShell (Windows) or `zip` on PATH. Deploy from a clone outside Dropbox or OneDrive.
 
 ---
 
 ## Optional cloud sync
 
-ParkProof works fully without sign-in — that's the deliberate default. Open the app, scan a sign, log a session, get a reminder. Everything stays on the device.
+ParkProof works fully without signing in: open the app, scan a sign, log a park, set a reminder. Everything stays on the phone.
 
-If you sign in (Cognito-backed email/password, with hosted-UI hooks ready for Apple + Google federation — see [`docs/federation-setup.md`](docs/federation-setup.md)), the same sessions sync to **AWS DynamoDB** + **S3**, viewable from any device you sign into. Cloud writes are mirrored on save, deletes on delete; localStorage stays as the canonical source of truth.
-
-Account management is in-app: **export your data** as a polished multi-page PDF (cover summary + per-session detail block with photos), **delete your account** to remove every DynamoDB row + S3 object + Cognito user record. Smoke-tested end-to-end via `npm run smoke-test:auth` — drives a throwaway account through sign-up → upload → list → presign → delete → account-nuke against the live API, asserting each step.
-
-Anonymous-by-default, opt-in cloud — same code path either way. No login wall, no friction tax on first use.
+Sign in (email and password, or Apple or Google through the Cognito Hosted UI; see [`docs/federation-setup.md`](docs/federation-setup.md)) and records mirror to DynamoDB and photos to a private per-user S3 prefix, merged both ways so a signed part is never lost. Settings (your name and permits) stay in the browser and are never synced. Account management is in the app: export every record as a PDF, or delete the account and everything in it.
 
 ## What's not built yet
 
-- **Citywide parking heatmap.** Every scan captures the raw data needed (translated rules + GPS) for a crowdsourced map of parking rules across Melbourne. Would be a genuine moat — council parking data is fragmented; nobody else has the AI-translation pipeline. The opt-in cloud-sync plumbing is now in place (DynamoDB + S3 + Cognito), but a heatmap also needs: (a) a "share my scans to improve the map" toggle distinct from the private cloud-sync sign-in, (b) the cold-start problem solved (a map with five scans is useless), (c) a Mapbox/Leaflet viewer. Build trigger: a few hundred consistent users *or* a council partnership offer.
-- **Auto-submit infringement appeals.** The current flow drafts the letter and exports it as a PDF the user submits manually. Auto-submit would pre-fill a council's online dispute form with the session ID and a public PDF link — blocked by council-side captchas, login walls, and the absence of public APIs across Australian councils. Realistic version is deep-linking to the form with the metadata pre-encoded.
-- **Voice confirmation.** "Hey ParkProof, when does parking expire?" — Web Speech API + simple intent matching, or an iOS Shortcut routing to a `parkproof://countdown` URL handler. ~half day. Limited by browser support in PWA-installed mode on iOS.
-- **AI feedback Layer 3.** Layers 1 (verdict counts) and 2 (verdict + model context — confidence, sign-pattern, time-of-day) are both live. Layer 3 would add opt-in photo capture for systematic failures, building a private training dataset. Blocked on (a) the opt-in toggle UI, (b) an S3 bucket scoped to "failure samples only", (c) a privacy-policy line item. Sensible build trigger: Layer 2 surfaces a specific failure mode that's worth investing photo storage in.
-
-*Recently shipped (was on this list, no longer): true background Web Push via EventBridge Scheduler + VAPID-signed `web-push`, full subscribe / schedule / cancel pipeline with per-session cleanup on "I've left".*
+- **The About page and landing for roadmap 2.** Waiting for the redesign choice.
+- **Accuracy numbers.** The harness and method page exist ([`eval/README.md`](eval/README.md), `/accuracy/`); the labelled test set doesn't yet, so there are no numbers to publish.
+- **A legal read.** No lawyer is engaged. Workday mode stays off until one has read its copy; [`docs/legal-review-queue.md`](docs/legal-review-queue.md) lists every string they should read.
+- **Citywide parking map.** Every scan has the data, but a map needs an opt-in share toggle, a viewer and enough scans to be useful.
+- **Auto-submitting appeals.** Blocked by council captchas, logins and the lack of public APIs.
+- **AI feedback Layer 3.** Opt-in photo capture for systematic failures, once Layer 2 points at one worth it.
+- **Voice confirmation.** Considered and deferred: the phone is already in your hand at the sign.
 
 ---
 
@@ -303,132 +307,54 @@ Anonymous-by-default, opt-in cloud — same code path either way. No login wall,
 ```
 ParkProof/
 ├── src/
-│   ├── App.tsx                    ← view-state machine + home (active-session card, retry sweep)
-│   ├── types.ts                   ← shared types: ParkingRules, ParkingSession, RuleVariant,
-│   │                                Clarification, SignatureBundle, NextTransition, AppealDraft
-│   ├── tz-lookup.d.ts             ← ambient module declaration
-│   ├── index.css                  ← Tailwind v4 @theme tokens + body bg + cavalcade pattern
-│   ├── components/
-│   │   ├── ActiveSessionCard.tsx  ← live home countdown card with urgency colours + walk-back footer
-│   │   ├── SignScanner.tsx        ← camera/library + silent GPS + reuse card + photo-quality pre-check
-│   │   ├── Clarify.tsx            ← position chooser when the sign has arrows
-│   │   ├── ParkingResult.tsx      ← green/red answer + transition banner + observations + verify + feedback
-│   │   ├── SessionLogger.tsx      ← GPS + reverse-geocode + editable address + car photo
-│   │   ├── ReminderOptions.tsx    ← multi-chip reminder picker + .ics + in-tab notification + server-side Web Push schedule
-│   │   ├── AboutFeatures.tsx      ← /about feature showcase + push-permission preview (Reddit-launch entry point)
-│   │   ├── ActiveSessionsList.tsx ← multi-session active list (used when 2+ sessions are running)
-│   │   ├── LandingFeatures.tsx    ← three feature cards above the scan button for first-time visitors
-│   │   ├── FeedbackModal.tsx      ← free-text user-feedback channel → /user-feedback (CloudWatch + S3 mirror)
-│   │   ├── SessionHistory.tsx     ← list of saved sessions
-│   │   ├── SessionDetail.tsx      ← single session + editable note + walk-back + PDF + appeal + delete
-│   │   ├── AppealFlow.tsx         ← ticket photo capture → AI draft → editable letter → PDF
-│   │   ├── AuthFlow.tsx           ← sign-in / sign-up / verify / forgot / reset, with Apple + Google
-│   │   ├── AuthSettings.tsx       ← signed-in profile, PDF export, account deletion
-│   │   ├── PrivacyPolicy.tsx      ← in-app plain-English privacy policy (uses <Trans> for inline tags)
-│   │   ├── LanguageSelector.tsx   ← 9-language dropdown (Australian English + zh-CN + VI + ID + KO + IT + EL + HI + PA)
-│   │   ├── ReuseCard.tsx          ← proximity-matched "scanned here recently" card
-│   │   ├── RecentScansPicker.tsx  ← desktop / no-GPS fallback for smart re-scan
-│   │   ├── BrandMark.tsx          ← inline SVG layered-P + clock logo
-│   │   ├── Icon.tsx               ← 8-icon stroke set (currentColor)
-│   │   └── LoadingProgress.tsx    ← stepped progress UI during the model call
-│   ├── locales/                   ← nine-language UI translations (en, zh-CN, vi, id, ko, it, el, hi, pa)
-│   ├── service-worker.ts          ← custom SW (injectManifest mode) — precaching + Web Push receiver + notification click handler
-│   └── lib/
-│       ├── api.ts                 ← endpointUrl() — single helper that resolves /api/* in dev and the API Gateway URL in prod
-│       ├── claude.ts              ← translateSign + refreshInterpretation + draftAppeal (async job + status polling)
-│       ├── feedback.ts            ← fire-and-forget AI-verdict submission
-│       ├── user-feedback.ts       ← free-text user feedback → /user-feedback endpoint
-│       ├── push.ts                ← subscribeToPush + schedulePushReminders + cancelPushReminders + hasActiveSubscription
-│       ├── signing.ts             ← signSession (KMS) + retryUnsignedSessions (background sweep)
-│       ├── storage.ts             ← localStorage CRUD + 3-phase quota auto-recovery
-│       ├── sync.ts                ← localStorage ↔ cloud mirror (upload, list, delete, export)
-│       ├── auth.ts                ← amazon-cognito-identity-js wrapper (sign-in / up / verify / reset)
-│       ├── auth-context.tsx       ← AuthProvider — reads Cognito session into React state
-│       ├── auth-context-shape.ts  ← Context type + createContext (split to satisfy react-refresh)
-│       ├── use-auth.ts            ← useAuth hook
-│       ├── federated-auth.ts      ← hosted-UI redirect + callback handler (Apple / Google)
-│       ├── i18n.ts                ← react-i18next init + 9-language resource registry
-│       ├── geocode.ts             ← Nominatim reverse + forward
-│       ├── geo.ts                 ← Haversine distance
-│       ├── walk-back.ts           ← walking ETA + maps deep-link routing (Apple / Google)
-│       ├── photo-quality.ts       ← canvas-based blur + brightness pre-flight
-│       ├── image.ts               ← canvas-based resize + JPEG re-encode
-│       ├── ics.ts                 ← calendar event generator (multi-VALARM)
-│       ├── notifications.ts       ← Notification API multi-offset scheduler
-│       ├── pdf.ts                 ← evidence PDF + appeal PDF + account-export PDF (signature appendix)
-│       ├── time-format.ts         ← relative + date-aware absolute time helpers (+ localized variants)
-│       ├── timezone.ts            ← sessionTimezone + timezoneForCoords (tz-lookup wrapper)
-│       ├── accuracy.ts            ← GPS-accuracy formatting + usability thresholds
-│       ├── countdown.ts           ← time-until-expiry → urgency level + label (+ localized variant)
-│       └── use-now.ts             ← interval-tick hook for live countdowns
+│   ├── App.tsx                ← the view state machine and home
+│   ├── types.ts               ← records, the signed chain, stores, notice fields
+│   ├── index.css              ← Tailwind v4 @theme tokens, the vault background, .gf-card
+│   ├── service-worker.ts      ← precache, push receiver, notification click
+│   ├── components/            ← screens and sheets (scan, result, logger, record, history, notice,
+│   │                            appeal, weekly reminders, settings, sharing, workday) and ui/
+│   ├── locales/               ← 9 languages, generated by scripts/_i18n_inject_*.mjs
+│   └── lib/                   ← storage, signing queue, verifier, photo store, sync and merge,
+│                                API client, permits, notice matching, weekly rules, push, PDFs
 ├── lambda/
-│   ├── index.js                   ← path dispatcher: 18 routes (sign-translate ↔ async polling, draft-appeal ↔ async polling,
-│   │                                sign-session KMS, /feedback, /user-feedback, /push/{subscribe,schedule,cancel},
-│   │                                /sessions/*, /photos/presign, /me/*) + EventBridge push-dispatch target + self-invoke worker
-│   ├── cloud-sync.js              ← sessions/upload, sessions/list, sessions/delete, photos/presign, me/export, me/delete
-│   ├── index.d.ts                 ← types for the local-dev import
-│   └── package.json               ← deploy-zip deps (@anthropic-ai/sdk, @aws-sdk/* DDB / S3 / KMS / Cognito / Scheduler / Lambda, web-push, tz-lookup)
-├── public/
-│   ├── parkproof-icon.svg         ← layered-P + clock app icon
-│   ├── parkproof-wordmark.svg     ← horizontal logo lockup
-│   ├── parkproof-icon-mono.svg    ← single-colour variant
-│   ├── parkproof-splash.svg       ← portrait splash for PWA install
-│   ├── hero-illustration.png      ← AI-generated photoreal hero with brand mark composited on the sign face (see scripts/_composite_hero.py)
-│   ├── empty-history.svg          ← parking-bay empty state
-│   ├── cavalcade-pattern.svg      ← repeating background of stylised cars
-│   ├── og-image.png               ← social share card (1200×630)
-│   ├── parkproof-public-key.pem   ← KMS public key for openssl verification of signatures
-│   ├── icons/                     ← 8 stroke icons (camera, gallery, calendar, bell, list, pin, check, warning)
-│   └── pwa-*.png                  ← auto-generated PWA install icons (gitignored)
-├── archive/old-melbourne-civic/   ← archived first-round assets (Melbourne Civic direction)
+│   ├── index.js               ← the dispatcher and every anonymous route, the job worker, push dispatch
+│   ├── sign-reading.js        ← the sign answer normaliser and request checks
+│   ├── addendum-schema.js     ← signed-part schemas, shared with the browser
+│   ├── recurring-schedule.js  ← weekly cron plans and their dispatch rules
+│   └── cloud-sync.js          ← the JWT routes and the server merge
+├── public/                    ← icons, splash, og-image, parkproof-public-key.pem, fonts/ (PDF subsets)
+├── migrations/two-app-architecture/landing-from-claude-design/   ← landing, /verify/, /accuracy/
+├── eval/                      ← the accuracy benchmark's corpus and rubric
 ├── docs/
-│   ├── asset-brief.md             ← historical brief for asset generation
-│   ├── federation-setup.md        ← step-by-step for wiring Apple + Google OAuth into Cognito
-│   ├── features.md                ← canonical feature showcase (the cheat-sheet for Reddit / LinkedIn / interview)
-│   ├── case-study.md              ← PM-craft narrative
-│   ├── testing.md                 ← test strategy + how to run the suites
-│   ├── lessons-for-next-project.md ← portable takeaways for the next portfolio piece
-│   ├── parkproof-build-journal.pdf ← chronological build journal
-│   ├── how-parkproof-was-built.pdf ← ELI15 explainer
-│   └── screenshots/               ← README demo-grid PNGs, regenerated by npm run screenshots
-├── scripts/
-│   ├── deploy.sh                  ← day-to-day deploy
-│   ├── harden.sh                  ← one-time security pass
-│   ├── set-throttle.sh            ← API rate limits
-│   ├── billing-alarm.sh           ← AWS Budgets alarm
-│   ├── setup-signing.sh           ← one-time: create KMS key, attach IAM policy, export public key
-│   ├── setup-feedback-bucket.sh   ← one-time: S3 bucket for /user-feedback mirroring + IAM
-│   ├── setup-push.sh              ← one-time: VAPID keypair + push-subscriptions DDB table + IAM
-│   ├── setup-push-scheduler.sh    ← one-time: EventBridge Scheduler IAM role + Lambda passrole permission
-│   ├── send-test-push.mjs         ← CLI: fire a real push to the latest subscribed device (skips EventBridge)
-│   ├── setup-auth.sh              ← one-time: Cognito User Pool + DynamoDB table + S3 evidence bucket + JWT authorizer
-│   ├── smoke-test-auth.mjs        ← end-to-end test: sign-up → upload → list → delete via live API
-│   ├── screenshots.mjs            ← Playwright harness — drives the app, regenerates demo PNGs
-│   ├── screenshots-fixtures/      ← inputs consumed by the screenshot harness
-│   └── teardown.sh                ← destroy everything (dry-run by default)
-├── vite.config.ts                 ← API middleware (all 18 routes — same Lambda as prod) + .env loader + Node-global polyfills + PWA
-├── parkproof-spec.md              ← PM-style product brief (problem, scope, success metrics)
-├── CLAUDE.md                      ← engineering notes for future AI sessions
-└── README.md                      ← this file
+│   ├── build/                 ← roadmap spec, deploy checklist, field-test plan, fix list
+│   ├── legal-review-queue.md  ← every string a lawyer should read
+│   ├── features.md            ← the feature showcase
+│   ├── case-study.md          ← the PM narrative
+│   └── screenshots/           ← README images
+├── scripts/                   ← deploy and setup scripts, i18n injectors, schema check, eval harness
+├── vite.config.ts             ← the dev /api proxy, the dev signer, the PWA plugin
+├── CLAUDE.md                  ← engineering notes (routes, data model, gotchas)
+└── README.md                  ← this file
 ```
 
 ---
 
 ## Further reading
 
-- [`docs/features.md`](docs/features.md) — **canonical feature showcase**: every cool thing ParkProof does, grouped thematically, with copy-paste-ready bullets for Reddit / LinkedIn / interview use
-- [`docs/case-study.md`](docs/case-study.md) — PM-craft narrative: how the project was scoped, sequenced, and traded off
-- [`docs/parkproof-build-journal.pdf`](docs/parkproof-build-journal.pdf) — chronological build journal with decision-tree branches at every pivot (7 days, 70+ commits, the failed architectures preserved)
-- [`docs/how-parkproof-was-built.pdf`](docs/how-parkproof-was-built.pdf) — ELI15 explainer of the stack + architecture
-- [`docs/lessons-for-next-project.md`](docs/lessons-for-next-project.md) — portable takeaways: what to do (and not do) on the next portfolio project, distilled from ParkProof
+- [`docs/features.md`](docs/features.md): the feature showcase, grouped, with copy-ready bullets
+- [`docs/case-study.md`](docs/case-study.md): how the project was scoped, sequenced and traded off
+- [`docs/build/roadmap-build-spec.md`](docs/build/roadmap-build-spec.md): roadmap 2, task by task, with its copy and legal rules
+- [`docs/parkproof-build-journal.pdf`](docs/parkproof-build-journal.pdf): the build journal of the first two weeks
+- [`docs/how-parkproof-was-built.pdf`](docs/how-parkproof-was-built.pdf): an ELI15 explainer of the stack
+- [`docs/lessons-for-next-project.md`](docs/lessons-for-next-project.md): portable takeaways
 
 ## Support
 
-ParkProof is free forever — no accounts, no ads, no upsells. If it saved you from a ticket and you'd like to chip in for the AWS bill, there's a tip jar:
+ParkProof is free: no ads, no upsells, and no account needed. If it helped and you'd like to chip in for the AWS bill, there's a tip jar:
 
 [☕ Buy me a coffee](https://buymeacoffee.com/parkproof)
 
-Entirely optional. The app works identically whether you tip or not.
+Entirely optional. The app works the same whether you tip or not.
 
 ## Credits
 

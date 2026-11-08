@@ -159,44 +159,77 @@ Problems found while testing `feat/evidence-chain` on real AWS. None of these co
 
 ---
 
-# Status after the overnight build (9 Nov 2026)
+# Status after the overnight build (9 Nov 2026, updated for T10 at `09d5c24`)
 
-Everything above is fixed on `integration/roadmap-2`, except where this section says otherwise. The Tier 3 em-dash and Windows-verify items are done too. So are the English-only tooltips: the last hardcoded labels (the toast's close button and the scan preview's alt text) go through `t()` now, along with the hero and seal below. The items below are still open.
+Everything above is fixed on `integration/roadmap-2`. None of it is deployed yet: `docs/build/deploy-checklist-roadmap-2.md` is the runbook.
 
-## Before deploying
+| Item above | Fixed in |
+|---|---|
+| Tier 1.1, a phone that looks registered for push | `b639e76` (re-send on open and before every booking, `ERR_NOT_SUBSCRIBED`, tombstones), hardened in `7b10cc1` |
+| Tier 1.2, two taps for one reminder | `b639e76` (one Remind me button); `7b10cc1` arms the in-tab reminders before any network work |
+| Tier 1.3, the iPhone safe area | `b639e76` |
+| Tier 1.4, invisible back buttons | `b639e76` (sage on the vault, 7.4:1) |
+| Tier 1.5, late or lost reminders on Samsung | `b639e76`: the re-registration in 1.1, Reconnect for a fresh registration, and the Android tips |
+| Tier 1.6, which record is this | `b639e76` ("Ended 5:23 pm" in the record's zone; records update as they sync) |
+| Tier 2, changes from another device | `b639e76` (a throttled pull when the app comes back to the screen) |
+| Tier 2, Node 22 | `b639e76` (`deploy.sh` moves the runtime on the next deploy) |
+| Tier 2, public key line endings | `b639e76` (`*.pem` LF in `.gitattributes`; `deploy.sh` strips CR from every PEM); `2f00630` adds `*.mjs` and `*.sh` |
+| Tier 2, `deploy.sh` and Dropbox | `b63e8ee` (the Lambda package is staged in a temp folder; `--package-only` rehearses it) |
+| Tier 2, Android first-run tips | `b639e76` |
+| Tier 3, em-dashes | `5902506` (none left in any locale; the copy lint keeps it that way) |
+| Tier 3, Windows verify steps | `2a100f6` (the verify pages' Windows section, `certutil -decode`) |
+| Tier 3, English-only tooltips | `b63e8ee` |
+| Tier 3, stale `CLAUDE.md` | T10 docs pass (rewritten against the code at `09d5c24`) |
 
-- **The sign schema must compile on the real API.** Fixed and merged (`863a230`). At 5 am a real call showed the API rejected T3's schema ("compiled grammar is too large"). Real reads now succeed. Run `node scripts/check-schema-compiles.mjs` before every deploy.
-- **Permit tie-break.** Fixed on `fix/final-list`. When a sign excepts more than one of the driver's saved permits, the model used to report the first in saved order, while the app puts the accessible permit first. The server now lists permits to the model in the app's order (`permitsInPriorityOrder` in `lambda/sign-reading.js`: accessible first, then saved order), and the prompt picks accessible, then a permit whose area matches the sign's, then list order, which is how `permitAnswerFor` ranks them. The prompt also states the app's rule for when two area labels match (case, punctuation, the words Area, Zone, Permit, Parking, Number and No, and leading zeros are ignored), with examples `lambda/sign-reading.test.js` checks against `areaKey`. `src/lib/permit-tiebreak.test.ts` checks every mix of up to three permits against the app, for a model that follows that rule. The schemas still compile on the real API (the schema didn't change in fix round 1, only the prompt's text).
-- **Deploy from a clone outside Dropbox.** Fixed in `deploy.sh`: it packages the Lambda in a temp folder outside the repo and never touches `lambda/node_modules`. `bash scripts/deploy.sh --package-only` rehearses it with no AWS call. A clone outside Dropbox is still the place to deploy from (checklist, Stage 2).
-- **IAM and tables.** Checked read-only on 9 Nov 2026: `dynamodb:DeleteItem` on `parkproof-jobs` is denied (implicitDeny); `GetItem`, `PutItem` and `UpdateItem` are allowed; the TTL attribute is `ttl`, as the code writes (CLAUDE.md's `expires_at` is stale, for T10). The new `scripts/setup-jobs-table.sh` adds the missing grant. The checklist's Stage 6 runs it, with your go-ahead.
-- **Weekly push (T5b) assumptions need a real AWS check:**
-  - the Scheduler's scheduled-time placeholder in the Lambda input;
-  - cron behaviour across daylight saving;
-  - `EndDate` with `ActionAfterCompletion: DELETE` on cron schedules.
+## Done since the overnight build
 
-  All three are now in the checklist's post-deploy stage (8.5), with exact steps. The daylight saving half can't be watched before April 2027, so it has dated steps. Whether Scheduler accepts the third at all is now checked before the deploy too (stage 6.3, a disabled throwaway schedule). The privacy text promises weekly schedules are deleted within 90 days, so if they turn out not to delete themselves, 8.5 sets a deadline: an automatic clean-up, or new privacy text, within 90 days of the deploy.
-- **Server logs are kept forever.** Found in fix round 1. No script ever set a retention on `/aws/lambda/parkproof-sign-translator`, and CloudWatch keeps logs forever by default. The logs hold push device IDs, record and weekly reminder IDs, push service names, and feedback messages with any email. The privacy text now says the logs are deleted after 90 days, so the new `scripts/setup-log-retention.sh` sets that, in the checklist's stage 6.2, with your go-ahead. It deletes older logs, launch day included: export what you want first. Don't deploy this build without it. The weekly push log line no longer records each rule's repeat pattern and time zone.
-- **Build with `VITE_FEATURE_WORKDAY=false`.** Done in `deploy.sh`: every build gets `VITE_FEATURE_WORKDAY=false` unless the shell that runs it sets `DEPLOY_ALLOW_WORKDAY=1`, and it prints which. A line in `.env` can't turn it on: `vite.config.ts` used to copy `.env` over the `false` from the shell, and now keeps any `VITE_*` value the environment already has (`scripts/vite-env-precedence.test.mjs` runs Vite's real config to check). `scripts/_deploy-staging.sh` follows the same rule. Workday mode still needs a lawyer to read its copy first (`docs/legal-review-queue.md`).
+- **The sign schema compiles on the real API.** `789fdc5`, merged as `863a230`. Run `node scripts/check-schema-compiles.mjs` before every deploy.
+- **Permit tie-break** (accessible first, then an area match, then list order, in the app and the prompt). `b63e8ee`.
+- **`deploy.sh` and Dropbox, `VITE_FEATURE_WORKDAY=false` on every build unless `DEPLOY_ALLOW_WORKDAY=1`, `.env` can't override the shell.** `b63e8ee`.
+- **`scripts/setup-jobs-table.sh` (the missing `dynamodb:DeleteItem`) and `scripts/setup-log-retention.sh` (90 days).** Written in `b63e8ee`. Neither has been run: they are go-ahead steps 6.1 and 6.2 of the deploy checklist.
+- **"Small, found by the end-to-end run"**: the shared "can this phone alert" check, Remove and Delete record contrast, `<html lang>`, and the note spacing. All `b63e8ee`. The note sentence itself is still open (below).
+- **Clean-ups**: calendar text, the hero and seal labels, unused keys, the home rows, duplicate helpers, and the privacy wording. All `b63e8ee`.
+- **T6b and T6c (workday screens and PDF).** `378c4c6`, merged as `09d5c24`. Behind `VITE_FEATURE_WORKDAY`, which stays off in production: no lawyer has read the workday copy.
+- **Home: "Got a fine? Start here"** replaced "Got a ticket? Draft an appeal" (the T4 home layout, `e60391c`; the notice screen is T8, `598ffdf`). The appeal flow starts from the notice screen. Revisit if you want the direct link back.
 
-## Small, found by the end-to-end run
+## Still open
 
-- **Android "only works while ParkProof is open".** The reminder screen says this, while the weekly list on the same phone says it can't alert at all. That happens only before the service worker controls the page. Make both screens use the same check. Fixed on `fix/final-list`: both screens now read `src/lib/alert-reach.ts` (`alertReach`, `alertEnvironment`). Before a service worker controls the page on Android, the Remind me outcome says no reminder was set, with the push step that fixes it, and the weekly line says the phone can't alert. The in-tab timers armed on that tap are disarmed then (`disarmUnshowable` in `src/lib/remind-me.ts`), so no alert follows a screen that said none would. `src/lib/alert-reach.test.ts` checks the two agree for every permission and in-tab state, and `src/lib/remind-me.test.ts` checks nothing stays armed.
-- **"Remove" (shared copy) and "Delete record" are nearly invisible.** Both are `text-accent-600` on the vault, about 1.5:1. Fixed on `fix/final-list`: a new `danger` Button variant (coral `danger-300` #FFB4AB text, a faint border, no fill, 44px tall). Contrast: 7.44:1 on the vault, 6.67:1 on its stripe, at least 5.56:1 on hover and 5.01:1 when pressed (`src/lib/destructive-contrast.test.ts`).
-- **`<html lang>` stays `en` in every language.** Screen readers then use an English voice for Greek and Hindi. Fixed on `fix/final-list`: `src/lib/i18n.ts` sets `lang` (the app's code, so zh-CN stays zh-CN) and `dir` (ltr for all 9) at startup and on every language change.
-- **"No note added. TapAdd noteto record why..."** A negative margin swallows the spaces. This bug is older than tonight. Fixed on `fix/final-list` (the `-mx-1` is gone). The sentence is still three keys around a button, which reads oddly in subject-object-verb languages (ko, hi, pa). One `<Trans>` string per locale is the real fix, for T10's translation review.
+### Waiting on a decision
 
-## Clean-ups
+- **The About page and the landing (T10 items 3 and 4).** Waiting for the design choice. `AboutFeatures.tsx` has no sections yet for the evidence chain, sharing, the notice lookup or workday mode, and the landing's evidence and reminders lists predate this build.
+- **The redesign.** Three directions are in the artifact "ParkProof Redesign Directions". The README screenshots (`docs/screenshots/`, 25 May 2026) predate the green identity, so regenerate them (`npm run screenshots`) once a direction is chosen.
+- **The accessible permit answer in the feedback log.** Keep `disabled_permit_acknowledged` (the privacy text now says it's logged) or drop it and its sentence. `docs/legal-review-queue.md`, privacy section.
+- **Weekly push across daylight saving.** Decide by early December 2026 whether to cap each weekly schedule's `EndDate` at the next clock change (deploy checklist 8.5, C).
+- **A legal read.** No lawyer is engaged. Every key in `docs/legal-review-queue.md` is Not reviewed, and workday mode stays off until its keys are approved.
 
-- `src/lib/ics.ts` calendar text and its error string are English-only and not through `t()`. The copy lint only scans `.tsx`, so extend it to user-facing `.ts` strings. Fixed on `fix/final-list`: every title, description line, alarm and error in the three calendar files is in the reader's language (`reminders.ics.*`, `recurring.ics.noDates`; each alarm reuses the push reminder's own words). Times and alarm triggers are unchanged. The copy lint now fails on an em-dash in any string literal in `src/**/*.ts`, and on banned wording ("session", "reset" and the rest) in any error message (`new Error(...)`) in `src/**/*.ts` and `.tsx`, since this codebase shows an Error's message to the driver. Other `.ts` literals are mostly keys and ids, so banned words aren't checked there.
-- `HeroAnswer.tsx` and `VerifiedSeal.tsx` have hardcoded English SVG text and aria labels. Move them to `t()`. Fixed on `fix/final-list` (`landing.hero.*`, `common.signedSeal`). Each hero line shrinks to fit the card in every language (`src/lib/hero-layout.ts`), and Hindi, Punjabi, Chinese and Korean lines are drawn without letter-spacing, which broke the headline stroke joining Devanagari and Gurmukhi letters. The seal only says "Signed, tamper-evident record" on a History row of a record signed with ParkProof's key (a development-key signature says so instead). It's silent for screen readers where nothing is signed (the result card after "correct", the landing callout) and on the record screen, whose own text says which key signed.
-- Unused locale keys: `appeal.strongEvidence`, `moderateEvidence`, `weakEvidence`, `landing.feature.*`, `prefs.remindersReliability`, `active.shareAria`, `notice.homeLink`. Delete them in one script. Fixed on `fix/final-list`: deleted from all 9 locales by `scripts/_i18n_inject_fixlist_final.mjs`, and the T4, T8 and landing scripts no longer add them.
-- Two home rows use T4's own strings rather than the wording T5 and T8 reviewed. Pick one key each. Fixed on `fix/final-list`: the weekly row reads T5's `recurring.homeRow`. The fine link keeps `home.fineStart`, because T8's Greek used κλήση where the verified word for "fine" is πρόστιμο.
-- Duplicate helpers: `permit-answer.ts` `zonedParts` vs `time-format.ts` `wallClockInZone`, and `DRIVER_NAME_MAX` in two files. Fixed on `fix/final-list`.
-- Privacy wording: `privacy.rightsAnonymous` and `privacy.anonymousWeeklyPush` disagree on how long push data is kept. This needs a legal read and 9 translations (T10). Rewritten on `fix/final-list` in all 9 languages to say exactly what the code keeps and for how long: a record's push reminder until it's sent or cancelled; a weekly push reminder until it's switched off, and at most 90 days after the app last booked it; the push registration about 90 days after it was last renewed (on opening the app with push on, and on setting a reminder). Switching push off tells the server nothing, but a reminder set earlier that is sent afterwards can make the push service report the address dead, and the address and keys are then deleted at once; only the device ID, a fingerprint of the address and when are kept, for about 90 days. The server's logs (device ID, push service, record or weekly reminder ID, when reminders were set, sent or skipped) are deleted after 90 days, once stage 6.2 has run. `src/lib/fixlist-cleanups.test.ts` ties the numbers to the code's constants and to `scripts/setup-log-retention.sh`, and checks the push log lines hold nothing else. The policy's "Last updated" date was always today's date; it is now the day the text last changed (`src/lib/privacy-version.ts`, 9 November 2026), and `src/lib/privacy-version.test.tsx` fails if a privacy string changes without it. A native speaker should still read the 8 translations (T10). Fix round 2: `privacy.anonymousCloudwatch` said only a random ID and a "correct / retake" verdict were logged, with "No PII", but each "Did we read this right?" answer also logs the start of the sign's rules text, the sign's permit area, the hour at the sign, the reading's flags and counts, and the driver's answers to the paid parking, permit zone and accessible parking permit questions. It now names every field, says nothing identifies the driver or the device, and says the logs go after 90 days, in all 9 languages. The server no longer accepts `no_sign` on `/feedback` (no client sent it). `src/lib/privacy-feedback-log.test.tsx` runs a real tap through the result screen and the Lambda and fails if the log line and the policy's list differ. The privacy keys are listed in `docs/legal-review-queue.md`.
-- Home: "Got a ticket? Draft an appeal" became "Got a fine? Start here", as the spec says. The appeal flow now starts from the notice screen. Revisit if you want the direct link back.
+### At or before the deploy
 
-## Not built yet
+- **PDF font subsets: re-cut from `fonts-src/` at deploy time.** The T10 translation review changes 8 locales after `09d5c24`, and the committed subsets (Korean and Chinese last cut in `378c4c6`) can miss characters it adds. With the review applied, `src/lib/pdf-font-coverage.test.ts` passes on the committed subsets, so this re-cut is a safeguard. `deploy.sh` re-cuts them when fontTools is installed, from `fonts-src/` when it's there. Without `fonts-src/` it re-subsets the committed files in place, which can only drop glyphs. So deploy from the clone with `fonts-src/` copied in (checklist stages 2 and 3.3), run `src/lib/pdf-font-coverage.test.ts`, and commit the re-cut fonts.
+- **The Scheduler checks for weekly push** need real AWS: stage 6.3 before the deploy, 8.5 after it.
+- **The jobs-table grant and the log retention** (stages 6.1 and 6.2).
 
-- **T6b and T6c (workday screens and PDF).** Behind the flag, and blocked on legal review anyway.
-- **T10.** Native review of every new string in 8 languages, docs, `CLAUDE.md`, About and the landing page. Do it after you choose a design direction.
-- **The redesign.** Three directions are in the artifact "ParkProof Redesign Directions".
+### Copy and translation
+
+- **The empty-note sentence as one translated string.** "No note added. Tap Add note to record why…" is still three keys around a button (`session.noNote`, `session.addNote`, `session.noteHelp`), which reads oddly in subject-object-verb languages (ko, hi, pa). One `<Trans>` string per locale is the fix. It adds a key in all 9 locales, so do it after the T10 review, in its own inject script.
+- **Privacy facts to check.** Writing the legal queue turned up four places where older policy text and the code may not say the same thing (Anthropic and Nominatim retention, push services, how long sign readings and appeal drafts stay in the jobs table, two unlisted log lines). Listed at the end of `docs/legal-review-queue.md`. Each change needs all 9 languages and a new "Last updated" date.
+- **"ticket" in older English strings.** The build spec says "ticket" alone is ambiguous, but `session.draftAppeal` ("Got a ticket? Draft an appeal letter"), `home.tagline` and `about.evidence.items[0]` still use it for a fine. They predate the roadmap, and the copy lint doesn't check for it.
+
+### Lows found in the git log and the docs
+
+- **The Anthropic usage alarm doesn't count notice reads.** `scripts/anthropic-usage-alarm.sh` counts `anthropic_call=` and `appeal_call=` lines, but T8's notice reader logs `notice_call=`, so a run of `/read-notice` calls never moves the alarm. Add `?"notice_call="` to its filter pattern and re-run it (a go-ahead step).
+- **`scripts/teardown.sh` is out of date.** It removes only what `deploy.sh` creates (CloudFront, the OAC, the app bucket, the API, the Lambda and its role), and its role delete fails while the role has inline policies, which the setup scripts add. It never touches Cognito, the DynamoDB tables, the evidence and feedback buckets, the KMS key, the scheduler role or any push schedule.
+- **`lambda/` line numbers in the deploy checklist are at `cfdecc7`.** The scripts' are current at `09d5c24`. Look the Lambda ones up by function name.
+- **OG image cache.** Social platforms keep the old `og-image.png`. The lasting fix is `og-image.png?v=2` in the four meta tags (checklist 8.3).
+- **Sitemap dates.** The landing and verify entries keep `lastmod` 2026-05-24 although their copy changed (checklist 1.6).
+- **No accuracy numbers yet.** `eval/corpus/` holds only `.gitkeep`, so the accuracy page says no numbers yet and the in-app link stays off (T9 item 4) until a held-out test split is labelled.
+
+### Workday spec questions for later
+
+Workday mode is off in production, so none of these blocks a deploy. Answer them before anyone asks a lawyer to approve the workday keys.
+
+- **(a) "still runs from {{start}}" has no "(phone clock)" label.** `{{start}}` in `workday.boundary.notSure` is a phone time (when the stop that started the limit was logged). The copy rules label phone times, but build spec T6b item 8 gives the line word for word, so it ships without the label. Confirm, or add it.
+- **(b) "stop" or "leg".** The spec says "stop" in some places (T6b: "Workday, {{count}} stops", "Don't save this stop") and "leg" in others (T6a, T6c: "every leg you choose", "previous leg"). The screens say stop. The PDF and its picker say "Leg" in English to match T6c's exact wording, and the other 8 locales use their word for a workday stop. Pick one.
+- **(c) The heads-up reminder's wording.** T6b item 9 gives "Your 2P on this stretch ends at {{time}}. Move off this signed stretch, not just to another bay." The build says "Your time limit on this stretch ends at {{time}}. …" (`workday.reminder.headsUp`), because the deadline can be an earlier sign's limit carried over, so naming this sign's limit could be wrong. Confirm, or ask for the limit to be named.
+- **(d) Should stop 1 be checked against an ended earlier record?** Stop 1 always runs on its own sign's limit. A driver who taps I've left, moves a few bays along the same stretch and then starts a workday gets a fresh limit at stop 1. The start screen steers away from that (`workday.start.useCurrentHelp`, `workday.start.currentIneligible`) but the app doesn't check it. Decide whether stop 1 should be compared with the driver's last record whose limit is still running, and ask the boundary question when it trips.
+
+The legal queue also asks about the area lines marked "(added)" and about "Arrived (phone clock)" against "Logged (phone clock)" in the workday PDF.

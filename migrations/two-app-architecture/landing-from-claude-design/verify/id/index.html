@@ -289,7 +289,7 @@
   <p class="lede">Setiap PDF bukti ParkProof memuat lampiran tanda tangan kriptografis, dan setiap catatan bisa disimpan sebagai berkas bukti. Halaman ini menunjukkan kepada siapa pun, misalnya petugas dewan kota, perusahaan asuransi, panitera pengadilan, atau pengemudi sendiri, cara mengecek secara offline bahwa sebuah catatan tidak berubah sejak ParkProof menandatanganinya.</p>
 
   <div class="callout">
-    <strong>Bingkai jujur.</strong> Tanda tangan yang sah menunjukkan <em>integritas</em>: detail dan sidik jari foto yang ditandatangani persis sama dengan yang ditandatangani ParkProof, pada waktu penandatanganan. Tanda tangan tidak menunjukkan bahwa catatan itu <em>benar</em> (AI bisa salah membaca rambu), siapa yang mengemudi, di mana mobil berada, atau kapan mobil tiba atau pergi, dan tidak menentukan seberapa besar bobot catatan itu. Itu keputusan orang yang meninjaunya.
+    <strong>Terus terang.</strong> Tanda tangan yang valid menunjukkan <em>integritas</em>: detail dan sidik jari foto yang ditandatangani persis sama dengan yang ditandatangani ParkProof, pada waktu penandatanganan. Tanda tangan tidak menunjukkan bahwa catatan itu <em>benar</em> (AI bisa salah membaca rambu), siapa yang mengemudi, di mana mobil berada, atau kapan mobil tiba atau pergi, dan tidak menentukan seberapa besar bobot catatan itu. Itu keputusan orang yang meninjaunya.
   </div>
 
   <h2>Apa yang kamu cek</h2>
@@ -394,7 +394,7 @@ jq -r '.links[0].signature_base64' evidence.json | base64 -d > link0-sig.bin</pr
   <h2>Lebih dari "apakah byte berubah?"</h2>
   <p>Tanda tangan yang valid menunjukkan <em>integritas</em>. Tanda tangan tidak menunjukkan:</p>
   <ul>
-    <li><strong>Bahwa AI membaca rambu dengan benar.</strong> Pemindaian ParkProof adalah pembacaan mesin dari rambu parkir, dan mesin bisa salah. Teks putusan dan aturan dalam catatan adalah pembacaan terbaik AI pada saat pemindaian, bukan kebenaran absolut.</li>
+    <li><strong>Bahwa AI membaca rambu dengan benar.</strong> Pemindaian ParkProof adalah pembacaan mesin dari rambu parkir, dan mesin bisa salah. Teks jawaban dan aturan dalam catatan adalah pembacaan terbaik AI pada saat pemindaian, bukan kebenaran absolut.</li>
     <li><strong>Bahwa foto menggambarkan apa yang orang itu katakan.</strong> Tanda tangan yang valid menunjukkan sidik jari foto tidak berubah sejak ditandatangani ParkProof, dan menghitung ulang hash menunjukkan apakah sebuah foto cocok dengan sidik jarinya. Keduanya tidak menunjukkan bahwa foto diambil dengan jujur.</li>
     <li><strong>Hasil hukum apa pun.</strong> Apakah bukti mendukung banding, pengembalian dana, atau perkara pengadilan adalah keputusan peninjau. ParkProof adalah alat, bukan pengacara.</li>
     <li><strong>Di mana mobil berada, kapan mobil tiba atau pergi, atau siapa yang mengemudi.</strong> Lokasi dalam catatan berasal dari ponsel pengemudi, atau diketik sendiri oleh pengemudi. Waktu yang ditandai sebagai waktu ponsel berasal dari ponsel pengemudi, dan waktu penandatanganan ParkProof adalah saat ParkProof menerima setiap bagian.</li>

@@ -289,11 +289,11 @@
   <p class="lede">Ogni PDF di prova ParkProof contiene un'appendice di firma crittografica, e ogni record si può salvare come file delle prove. Questa pagina mostra a chiunque, per esempio un funzionario del comune, un assicuratore, un cancelliere o il conducente stesso, come verificare offline che un record non è cambiato da quando ParkProof lo ha firmato.</p>
 
   <div class="callout">
-    <strong>Inquadramento onesto.</strong> Una firma valida mostra l'<em>integrità</em>: i dettagli e le impronte digitali delle foto firmati sono esattamente quelli che ParkProof ha firmato, all'ora della firma. Non mostra che il record sia <em>vero</em> (l'AI potrebbe aver letto male il cartello), chi guidava, dove si trovava l'auto, né quando è arrivata o ripartita, e non stabilisce quale peso abbia il record. Questo spetta a chi lo esamina.
+    <strong>In tutta onestà.</strong> Una firma valida mostra l'<em>integrità</em>: i dettagli e le impronte digitali delle foto firmati sono esattamente quelli che ParkProof ha firmato, all'ora della firma. Non mostra che il record sia <em>vero</em> (l'AI potrebbe aver letto male il cartello), chi guidava, dove si trovava l'auto, né quando è arrivata o ripartita, e non stabilisce quale peso abbia il record. Questo spetta a chi lo esamina.
   </div>
 
   <h2>Cosa stai controllando</h2>
-  <p>Un record ParkProof è firmato in parti, chiamate anelli. L'anello 0 viene firmato quando ParkProof riceve il record salvato. Ogni anello successivo, come i dettagli al parcheggio, le foto delle condizioni dell'auto, una foto della prova di pagamento o la partenza, viene firmato quando ParkProof lo riceve e contiene lo SHA-256 dell'anello precedente, così gli anelli formano una catena. Ogni anello ha un <strong>payload</strong> (il testo esatto che è stato firmato, comprese le impronte digitali SHA-256 delle sue foto) e una <strong>firma</strong> fatta con la chiave privata di ParkProof (ECDSA P-256), che non esce mai da AWS KMS. Il PDF di prova stampa ogni anello nella sua appendice di firma. Il <strong>file delle prove</strong> del record (un file .json che il conducente può scaricare dal record nell'app) contiene gli stessi payload e le stesse firme, più le foto originali.</p>
+  <p>Un record ParkProof è firmato in parti, chiamate anelli. L'anello 0 viene firmato quando ParkProof riceve il record salvato. Ogni anello successivo, come i dettagli al momento del parcheggio, le foto delle condizioni dell'auto, una foto della prova di pagamento o la partenza, viene firmato quando ParkProof lo riceve e contiene lo SHA-256 dell'anello precedente, così gli anelli formano una catena. Ogni anello ha un <strong>payload</strong> (il testo esatto che è stato firmato, comprese le impronte digitali SHA-256 delle sue foto) e una <strong>firma</strong> fatta con la chiave privata di ParkProof (ECDSA P-256), che non esce mai da AWS KMS. Il PDF di prova stampa ogni anello nella sua appendice di firma. Il <strong>file delle prove</strong> del record (un file .json che il conducente può scaricare dal record nell'app) contiene gli stessi payload e le stesse firme, più le foto originali.</p>
   <p>La <strong>chiave pubblica</strong> necessaria per verificare le firme è pubblicata su <a class="link" href="/parkproof-public-key.pem"><code>/parkproof-public-key.pem</code></a>. Aprila nel browser per confermare che si carica, poi salvala.</p>
 
   <h2>Cosa ti serve</h2>
@@ -386,8 +386,8 @@ jq -r '.links[0].signature_base64' evidence.json | base64 -d > link0-sig.bin</pr
       <p><code>Verified OK</code>: il payload è esattamente ciò che ParkProof ha firmato. I dettagli e le impronte digitali delle foto che contiene non sono cambiati da quando ParkProof li ha firmati, all'ora <code>signed_at</code> indicata al suo interno. Le foto stesse si verificano nei passaggi da 6 a 8.</p>
     </div>
     <div class="card fail">
-      <h3>Fallimento <span class="label">FAIL</span></h3>
-      <p><code>Verification failure</code>: il payload o la firma non sono ciò che ParkProof ha firmato. Il record potrebbe essere stato modificato, oppure un blocco è stato copiato con un errore. Copia di nuovo i blocchi base64 per intero e riprova prima di trarre conclusioni.</p>
+      <h3>Verifica non riuscita <span class="label">FAIL</span></h3>
+      <p><code>Verification failure</code>: il payload o la firma non sono ciò che ParkProof ha firmato. Il record potrebbe essere stato modificato, oppure un blocco potrebbe essere stato copiato con un errore. Copia di nuovo i blocchi base64 per intero e riprova prima di trarre conclusioni.</p>
     </div>
   </div>
 
@@ -395,8 +395,8 @@ jq -r '.links[0].signature_base64' evidence.json | base64 -d > link0-sig.bin</pr
   <p>Una firma valida mostra l'<em>integrità</em>. Non mostra:</p>
   <ul>
     <li><strong>Che l'AI abbia letto il cartello correttamente.</strong> La scansione ParkProof è una lettura automatica di un cartello di parcheggio, e le macchine possono sbagliare. Il testo del verdetto e le regole nel record sono la migliore lettura dell'AI al momento della scansione, non la verità assoluta.</li>
-    <li><strong>Che le foto raffigurino ciò che la persona dice raffigurino.</strong> Una firma valida mostra che le impronte digitali delle foto non sono cambiate da quando ParkProof le ha firmate, e ricalcolare l'hash mostra se una foto corrisponde alla sua impronta digitale. Nessuna delle due cose mostra che le foto siano state scattate onestamente.</li>
-    <li><strong>Qualsiasi esito legale.</strong> Se la prova supporti un ricorso, un rimborso, o un caso giudiziario è la decisione del revisore. ParkProof è uno strumento, non un avvocato.</li>
+    <li><strong>Che le foto raffigurino ciò che la persona dice che raffigurano.</strong> Una firma valida mostra che le impronte digitali delle foto non sono cambiate da quando ParkProof le ha firmate, e ricalcolare l'hash mostra se una foto corrisponde alla sua impronta digitale. Nessuna delle due cose mostra che le foto siano state scattate onestamente.</li>
+    <li><strong>Qualsiasi esito legale.</strong> Se le prove sostengano un ricorso, un rimborso o una causa in tribunale lo decide chi le esamina. ParkProof è uno strumento, non un avvocato.</li>
     <li><strong>Dove si trovava l'auto, quando è arrivata o ripartita, o chi guidava.</strong> La posizione nel record viene dal telefono del conducente, oppure l'ha inserita il conducente a mano. Gli orari indicati come ora del telefono vengono dal telefono del conducente, e l'ora della firma di ParkProof è il momento in cui ParkProof ha ricevuto ogni parte.</li>
   </ul>
 

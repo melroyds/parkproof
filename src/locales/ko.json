@@ -546,7 +546,7 @@
   },
   "appeal": {
     "captureHeader": "이의신청서 작성",
-    "captureIntro": "받으신 벌금 통지서를 사진으로 찍으세요. Claude가 통지서를 읽고, 이 기록에 저장된 증거와 대조한 다음, 발급한 의회에 보낼 공식 편지를 작성해드립니다.",
+    "captureIntro": "받으신 위반 통지서를 사진으로 찍으세요. Claude가 통지서를 읽고, 이 기록에 저장된 증거와 대조한 다음, 발급한 의회에 보낼 공식 편지를 작성해드립니다.",
     "captureTakePhotoSub": "벌금 카메라",
     "captureFromLibrarySub": "통지서 사진 / 스캔",
     "captureDisclaimer": "AI 초안은 출발점이며 법률 자문이 아닙니다. 최종적으로 보내는 편지의 책임은 당신에게 있습니다.",
@@ -929,7 +929,7 @@
     "complianceType": {
       "meterTicket": "대시보드 위 주차권",
       "paymentConfirmation": "결제 확인",
-      "permitDisplayed": "차에 비치한 허가증",
+      "permitDisplayed": "차에 보이게 둔 허가증",
       "other": "기타"
     },
     "photos": {
@@ -984,7 +984,7 @@
         "notAsked": "묻지 않음. ParkProof가 이번 이동에 대해 묻지 않았습니다.",
         "oppositeDirectionSign": "운전자는 이 구간이 끝났음을 보여 주는 표지판을 지나왔다고 했습니다.",
         "yellowEdgeLine": "운전자는 노란색 가장자리 선을 지나왔다고 했습니다.",
-        "tIntersectionOrDeadEnd": "운전자는 T자형 교차로나 막다른 길에서 끝나는 도로의 끝을 지나왔다고 했습니다.",
+        "tIntersectionOrDeadEnd": "운전자는 도로가 끝나는 곳(T자형 교차로나 막다른 길)을 지나왔다고 했습니다.",
         "leftParkingArea": "운전자는 구역이 끝난다는 표지판을 지나 주차 구역 밖으로 운전해 나왔다고 했습니다.",
         "notSure": "표지판이 적용되는 구간을 벗어났는지 묻자 운전자는 \"잘 모르겠습니다\"라고 답했습니다.",
         "notSureArea": "주차 구역을 벗어났는지 묻자 운전자는 \"잘 모르겠습니다\"라고 답했습니다."
@@ -1230,7 +1230,7 @@
       "option": {
         "oppositeDirectionSign": "이 구간이 끝났음을 보여 주는 표지판 (블록 중간에 있는 양방향 화살표 표지판은 해당되지 않음)",
         "yellowEdgeLine": "노란색 가장자리 선",
-        "tIntersectionOrDeadEnd": "T자형 교차로나 막다른 길에서 끝나는 도로의 끝",
+        "tIntersectionOrDeadEnd": "도로가 끝나는 곳(T자형 교차로나 막다른 길)",
         "leftParkingArea": "구역이 끝난다는 표지판을 지나 주차 구역 밖으로 운전해 나왔습니다",
         "notSure": "잘 모르겠습니다"
       },
@@ -1240,7 +1240,7 @@
       "passed": {
         "oppositeDirectionSign": "이 구간이 끝났음을 보여 주는 표지판",
         "yellowEdgeLine": "노란색 가장자리 선",
-        "tIntersectionOrDeadEnd": "T자형 교차로나 막다른 길에서 끝나는 도로의 끝",
+        "tIntersectionOrDeadEnd": "도로가 끝나는 곳(T자형 교차로나 막다른 길)",
         "leftParkingArea": "주차 구역이 끝난다는 표지판"
       },
       "notSure": "이 구간의 제한 시간은 여전히 {{start}}부터 계산됩니다. {{deadline}}까지 이 구간 밖으로 차를 옮기세요.",
@@ -1342,7 +1342,7 @@
     "contradictoryTitle": "이 표지판의 내용이 서로 맞지 않습니다",
     "strictest": "위의 답은 가장 엄격한 해석을 따른 것입니다. 차를 떠나기 전에 표지판을 직접 확인하세요.",
     "worthRecording": "또렷하게 읽을 수 없는 표지판은 기록해 둘 만합니다.",
-    "notesLabel": "AI가 확인한 내용",
+    "notesLabel": "AI가 발견한 점",
     "noSignTitle": "읽을 수 있는 주차 표지판이 없습니다",
     "noSignBody": "이 사진에서 읽을 수 있는 주차 표지판을 찾지 못했습니다. 그렇다고 이곳에 규칙이 없다는 뜻은 아닙니다. 일반 도로 규칙은 그대로 적용됩니다. 예를 들어 신호등이 없는 교차로에서 10미터 이내에는 주차할 수 없고, 어떤 지역은 거리마다 표지판이 없어도 주차 시간 제한이 있습니다.",
     "photoAlt": "촬영한 사진",
@@ -1525,7 +1525,7 @@
   "complianceType": {
     "meterTicket": "대시보드 위 주차권",
     "paymentConfirmation": "결제 확인",
-    "permitDisplayed": "차에 비치한 허가증",
+    "permitDisplayed": "차에 보이게 둔 허가증",
     "other": "기타"
   },
   "evidence": {
@@ -1549,7 +1549,7 @@
     "needType": "사진 내용을 선택하세요.",
     "addFailed": "이 사진들을 기록에 추가하지 못했습니다. 다시 시도하세요.",
     "cantAddNow": "지금은 이 사진들을 추가할 수 없습니다. 기록이 이미 끝났거나 새 부분을 추가할 공간이 없을 수 있습니다.",
-    "complianceDescribed": "{{type}} (직접 선택한 내용)",
+    "complianceDescribed": "{{type}} (직접 밝힌 내용)",
     "noteNotSigned": "이 메모는 기록의 서명된 부분에 포함되어 있지 않습니다."
   },
   "backupPrompt": {
@@ -1565,7 +1565,7 @@
     "busy": "파일 준비 중…",
     "help": "모든 서명과 원본 사진이 담긴 .json 파일로, 누구나 ParkProof 없이 이 기록을 확인할 수 있습니다. 서명은 ParkProof가 서명한 이후 내용이 바뀌지 않았음을 보여 줍니다. 그 내용이 사실인지, 누가 운전했는지, 차가 어디에 있었는지, 언제 도착하거나 떠났는지는 보여 주지 않습니다. 이 기록에 저장된 위치와 시간이 들어 있으므로 꼭 필요한 사람에게만 공유하세요.",
     "includePermit": "허가증 정보 포함",
-    "permitHelp": "이 항목을 선택해야만 허가증 정보와 '차에 비치한 허가증'으로 표시한 사진이 파일에 들어갑니다. 서명된 기록에는 그 디지털 지문만 담겨 있으며, 이를 대조해 확인할 수 있습니다. 장애인 주차 허가증 정보는 건강 정보입니다.",
+    "permitHelp": "이 항목을 선택해야만 허가증 정보와 '차에 보이게 둔 허가증'으로 표시한 사진이 파일에 들어갑니다. 서명된 기록에는 그 디지털 지문만 담겨 있으며, 이를 대조해 확인할 수 있습니다. 장애인 주차 허가증 정보는 건강 정보입니다.",
     "error": "증거 파일을 만들 수 없었습니다. 다시 시도하세요.",
     "photosMissing_one": "서명된 사진 {{count}}장이 이 기기에 없어 파일에 들어가지 않았습니다. 서명된 디지털 지문은 파일에 있습니다.",
     "photosMissing_other": "서명된 사진 {{count}}장이 이 기기에 없어 파일에 들어가지 않았습니다. 서명된 디지털 지문은 파일에 있습니다.",
@@ -1651,10 +1651,10 @@
       "limitRecorded": "이 기록의 제한 시각",
       "driver": "운전자",
       "rules": "표지판 내용",
-      "standardLimit": "표지판의 기본 제한 시각",
-      "ended": "출발"
+      "standardLimit": "표지판의 일반 기준 시간",
+      "ended": "출차"
     },
-    "permitTimeNote": "이 제한 시각에는 허가증으로 받은 추가 시간이 포함되어 있습니다. 허가증이 없으면 표지판의 기본 제한 시각이 적용됩니다. 보낸 사람에 따르면 기본 제한 시각은 {{time}}입니다.",
+    "permitTimeNote": "이 제한 시각에는 허가증으로 받은 추가 시간이 포함되어 있습니다. 허가증이 없으면 표지판의 일반 기준 시간이 적용됩니다. 보낸 사람에 따르면 일반 기준 시간은 {{time}}에 끝납니다.",
     "phoneClock": "{{time}} (휴대폰 시계)",
     "noLimit": "기록된 제한 시각 없음",
     "noPlace": "기록된 위치 없음",

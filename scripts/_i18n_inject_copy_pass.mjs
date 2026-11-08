@@ -13,7 +13,11 @@
  * that already exists: this script never adds, removes or re-sorts a key,
  * so each file keeps its key order.
  *
- * Run order: last, after every task's inject script. The keys T4 rewrites
+ * Run order: after every task's inject script, and before
+ * scripts/_i18n_inject_t10_review.mjs (the T10 translation review), which
+ * runs last. A key both overwrite carries the reviewed text in both files
+ * (the review script checks), so running this again after the review
+ * changes nothing. The keys T4 rewrites
  * to the spec's exact wording (scripts/_i18n_inject_t4.mjs OVERWRITES:
  * home.history, privacy.anonymousIntro, privacy.anonymousThings and
  * privacy.anonymousAnthropic) are not in the copy-pass files, so T4's text

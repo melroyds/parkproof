@@ -1,0 +1,11 @@
+{
+  "result.permit.kicker": "凭你的许可证",
+  "workday.boundary.body": "换车位不会让时限重新计时。你来这里的路上有没有经过下面其中一项?",
+  "workday.boundary.option.tIntersectionOrDeadEnd": "道路尽头(丁字路口或断头路)",
+  "workday.boundary.passed.tIntersectionOrDeadEnd": "道路尽头(丁字路口或断头路)",
+  "pdf.workday.statement.tIntersectionOrDeadEnd": "驾驶员表示经过了道路尽头(丁字路口或断头路)。",
+  "pdf.complianceType.meterTicket": "仪表台上的停车票",
+  "pdf.evidence.field.damageNote": "驾驶员注明的损伤",
+  "pdf.photos.signedNote": "已签名的照片表明，这张照片在签名时已经存在。它不能说明损伤是谁造成的。",
+  "pdf.shared.field": "分享给你的"
+}

@@ -182,7 +182,7 @@
     "weeklyRestrictionHint": "这个标志有每周重复的限制。保存后,你可以设置提醒。",
     "permit": {
       "standardKicker": "标准答复",
-      "kicker": "使用你的许可证",
+      "kicker": "凭你的许可证",
       "signPrints": "标志上印有针对这类许可证的例外:",
       "checkConditions": "ParkProof 只读取标志上印的内容。也请查看你许可证上的使用条件。",
       "areaMatch": "你保存的 {{area}} 许可证与这个区域相符。",
@@ -654,7 +654,7 @@
         "signCondition": "标志状况",
         "proof": "付款或许可证凭证",
         "conditionPhotos": "车况照片",
-        "damageNote": "驾驶员注明的车况问题",
+        "damageNote": "驾驶员注明的损伤",
         "driver": "驾驶员(在手机上填写,未经核实)",
         "handover": "车辆交接(在手机上填写,未经核实)",
         "handoverSigned": "交接部分由 ParkProof 签名的时间(服务器时钟)"
@@ -791,7 +791,7 @@
       "hoursAndMins": "{{hours}} 小时 {{mins}} 分钟"
     },
     "complianceType": {
-      "meterTicket": "放在车内显眼处的停车票",
+      "meterTicket": "仪表台上的停车票",
       "paymentConfirmation": "付款确认",
       "permitDisplayed": "已展示的许可证",
       "other": "其他"
@@ -815,10 +815,10 @@
       "notSignedYet": "指纹尚未签名",
       "notSigned": "指纹未签名",
       "rejected": "这部分无法签名",
-      "signedNote": "已签名的照片表明，这张照片在签名时已经存在。它不能说明车况问题是谁造成的。"
+      "signedNote": "已签名的照片表明，这张照片在签名时已经存在。它不能说明损伤是谁造成的。"
     },
     "shared": {
-      "field": "他人分享",
+      "field": "分享给你的",
       "madeElsewhere": "这条记录是在他人的手机上创建的。"
     },
     "workday": {
@@ -848,7 +848,7 @@
         "notAsked": "未询问。ParkProof 没有就这次挪车提问。",
         "oppositeDirectionSign": "驾驶员表示经过了一个表示该区段已结束的标志。",
         "yellowEdgeLine": "驾驶员表示经过了一条黄色边线。",
-        "tIntersectionOrDeadEnd": "驾驶员表示经过了道路在丁字路口或尽头路处的尽头。",
+        "tIntersectionOrDeadEnd": "驾驶员表示经过了道路尽头(丁字路口或断头路)。",
         "leftParkingArea": "驾驶员表示把车开出了停车区域,经过了表示区域结束的标志。",
         "notSure": "被问到是否已离开标志适用的路段时,驾驶员回答:我不确定。",
         "notSureArea": "被问到是否已离开停车区域时,驾驶员回答:我不确定。"
@@ -1225,12 +1225,12 @@
     },
     "boundary": {
       "title": "这可能是同一个标志适用的路段。",
-      "body": "换车位不会让时限重新计时。你来这里的路上经过了下面哪一个?",
+      "body": "换车位不会让时限重新计时。你来这里的路上有没有经过下面其中一项?",
       "area": "这里是停车区域。换到区域内的另一条街不算。你需要离开整个区域。",
       "option": {
         "oppositeDirectionSign": "一个表示该区段已结束的标志(街区中间的双向箭头标志不算)",
         "yellowEdgeLine": "一条黄色边线",
-        "tIntersectionOrDeadEnd": "道路在丁字路口或尽头路处的尽头",
+        "tIntersectionOrDeadEnd": "道路尽头(丁字路口或断头路)",
         "leftParkingArea": "我把车开出了停车区域,经过了表示区域结束的标志",
         "notSure": "我不确定"
       },
@@ -1240,7 +1240,7 @@
       "passed": {
         "oppositeDirectionSign": "一个表示该区段已结束的标志",
         "yellowEdgeLine": "一条黄色边线",
-        "tIntersectionOrDeadEnd": "道路在丁字路口或尽头路处的尽头",
+        "tIntersectionOrDeadEnd": "道路尽头(丁字路口或断头路)",
         "leftParkingArea": "一个表示停车区域结束的标志"
       },
       "notSure": "你在此路段的时限仍从 {{start}} 起计算。请在 {{deadline}} 前把车开出该路段。",

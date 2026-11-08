@@ -1,0 +1,5 @@
+{
+  "callout_label": "Terus terang.",
+  "callout_body": "Tanda tangan yang valid menunjukkan <em>integritas</em>: detail dan sidik jari foto yang ditandatangani persis sama dengan yang ditandatangani ParkProof, pada waktu penandatanganan. Tanda tangan tidak menunjukkan bahwa catatan itu <em>benar</em> (AI bisa salah membaca rambu), siapa yang mengemudi, di mana mobil berada, atau kapan mobil tiba atau pergi, dan tidak menentukan seberapa besar bobot catatan itu. Itu keputusan orang yang meninjaunya.",
+  "li_beyond_1": "<strong>Bahwa AI membaca rambu dengan benar.</strong> Pemindaian ParkProof adalah pembacaan mesin dari rambu parkir, dan mesin bisa salah. Teks jawaban dan aturan dalam catatan adalah pembacaan terbaik AI pada saat pemindaian, bukan kebenaran absolut."
+}

@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>核对 ParkProof 记录的签名 | ParkProof</title>
-<meta name="description" content="使用 openssl 一步步核对 ParkProof 证据记录自 ParkProof 签名以来没有改动。基于 AWS KMS ECDSA P-256 的密码学签名。">
+<meta name="description" content="使用 openssl 一步步核对 ParkProof 证据记录自 ParkProof 签名以来没有改动。基于 AWS KMS ECDSA P-256 的数字签名。">
 <meta name="robots" content="index, follow">
 <link rel="icon" href="../../assets/parkproof-icon.svg" type="image/svg+xml">
 
@@ -286,14 +286,14 @@
 
   <div class="eyebrow">签名核对</div>
   <h1>核对一份 ParkProof <span class="accent">记录的签名</span>。</h1>
-  <p class="lede">每份 ParkProof 证据 PDF 都带有密码学签名附录，每条记录也都可以保存为证据文件。本页面向任何人（例如市议会工作人员、保险公司、法院书记员或驾驶员本人）说明，如何离线核对一条记录自 ParkProof 签名以来没有改动。</p>
+  <p class="lede">每份 ParkProof 证据 PDF 都带有数字签名附录，每条记录也都可以保存为证据文件。本页面向任何人（例如市议会工作人员、保险公司、法院书记员或驾驶员本人）说明，如何离线核对一条记录自 ParkProof 签名以来没有改动。</p>
 
   <div class="callout">
-    <strong>诚实表态。</strong> 有效的签名表明的是<em>完整性</em>：已签名的详情和照片指纹与 ParkProof 在签名时间签名的内容完全一致。它不表明记录是<em>真实的</em>（AI 可能读错了路牌），不表明谁在驾驶、车停在哪里，也不表明车辆何时到达或离开，更不决定这条记录有多大分量。那由审阅的人判断。
+    <strong>诚实表态。</strong> 有效的签名表明的是<em>完整性</em>：已签名的详情和照片指纹与 ParkProof 在签名时间签名的内容完全一致。它不表明记录是<em>真实的</em>（AI 可能读错了标志），不表明谁在驾驶、车停在哪里，也不表明车辆何时到达或离开，更不决定这条记录有多大分量。那由审阅的人判断。
   </div>
 
   <h2>你在核对什么</h2>
-  <p>ParkProof 记录是分成几个部分签名的，这些部分称为环节。环节 0 在 ParkProof 收到保存的记录时签名。之后的每个环节（例如停车时的详情、车况照片、付款凭证照片或离开）在 ParkProof 收到时签名，并带有前一个环节的 SHA-256，因此各环节连成一条链。每个环节都有一个<strong>负载</strong>（被签名的确切文本，包括其照片的 SHA-256 指纹）和一个用 ParkProof 私钥（ECDSA P-256）生成的<strong>签名</strong>，该私钥从不离开 AWS KMS。证据 PDF 在签名附录中打印每个环节。记录的<strong>证据文件</strong>（驾驶员可以在应用中的记录页面下载的 .json 文件）包含同样的负载和签名，以及原始照片。</p>
+  <p>ParkProof 记录是分成几个部分签名的，这些部分称为环节。环节 0 在 ParkProof 收到保存的记录时签名。之后的每个环节（例如停车时的补充信息、车况照片、付款凭证照片或离开）在 ParkProof 收到时签名，并带有前一个环节的 SHA-256，因此各环节连成一条链。每个环节都有一个<strong>负载</strong>（被签名的确切文本，包括其照片的 SHA-256 指纹）和一个用 ParkProof 私钥（ECDSA P-256）生成的<strong>签名</strong>，该私钥从不离开 AWS KMS。证据 PDF 在签名附录中打印每个环节。记录的<strong>证据文件</strong>（驾驶员可以在应用中的记录页面下载的 .json 文件）包含同样的负载和签名，以及原始照片。</p>
   <p>核对签名所需的<strong>公钥</strong>发布在 <a class="link" href="/parkproof-public-key.pem"><code>/parkproof-public-key.pem</code></a>。请在浏览器中打开以确认能加载，然后保存下来。</p>
 
   <h2>你需要的</h2>
@@ -337,7 +337,7 @@ openssl dgst -sha256 link0-payload.txt
 <span class="comment"># "=" 后面的值必须等于环节 1 中的 parent_payload_sha256。
 # 对后面的每个环节都这样做。</span></pre>
 
-  <p>如果两个环节的编号相同（2a 和 2b），说明两台设备在同一位置各添加了一个部分。它们指向同一个前一环节。</p>
+  <p>如果两个环节的编号相同（2a 和 2b），说明两台设备在链中的同一处各添加了一个部分。它们指向同一个前一环节。</p>
 
   <h2>核对照片</h2>
   <p>签名针对的是每张照片的 SHA-256 指纹，而不是图像本身。PDF 中打印的照片是重新编码的副本，字节永远不会一致。要核对照片，请使用记录的证据文件。文件在 <code>photos</code> 下列出每张照片，包括它的 <code>sha256</code>、为它签名的环节（<code>signed_in</code>）以及 base64 形式的原始字节（<code>bytes_base64</code>）。文件名以 parkproof-evidence- 开头，后面是记录 ID 的开头部分。下面的命令把它称为 <code>evidence.json</code>。</p>
@@ -394,14 +394,14 @@ jq -r '.links[0].signature_base64' evidence.json | base64 -d > link0-sig.bin</pr
   <h2>不止"字节是否改变?"</h2>
   <p>有效的签名表明<em>完整性</em>。它不表明：</p>
   <ul>
-    <li><strong>AI 是否正确读取了路牌。</strong>ParkProof 扫描是机器对停车标志的读取,机器可能出错。记录中的判定文本和规则是 AI 在扫描时的最佳读取,而非绝对真相。</li>
+    <li><strong>AI 是否正确读取了标志。</strong>ParkProof 扫描是机器对停车标志的读取,机器可能出错。记录中的判定文本和规则是 AI 在扫描时的最佳读取,而非绝对真相。</li>
     <li><strong>照片是否如其所述。</strong>有效的签名表明照片指纹自 ParkProof 签名以来没有改动，重新计算哈希可以表明照片是否与其指纹一致。两者都不表明照片是诚实拍摄的。</li>
     <li><strong>任何法律结果。</strong>证据是否支持申诉、退款或诉讼,是审阅者的判断。ParkProof 是一个工具,不是律师。</li>
     <li><strong>车停在哪里，车辆何时到达或离开，或者谁在驾驶。</strong>记录中的位置来自驾驶员的手机，或由驾驶员手动输入。标为手机时间的时间来自驾驶员的手机，ParkProof 的签名时间是 ParkProof 收到每个部分的时间。</li>
   </ul>
 
   <h2>为什么存在</h2>
-  <p>大多数生成"证据"的停车应用只产出截图。截图在拍下到发送之间的任何时候都可能被编辑。密码学签名的区别在于：<em>"这是我看到的"</em>和<em>"这是我看到的，任何人都可以核对它自 ParkProof 签名以来没有改动"</em>。</p>
+  <p>大多数生成"证据"的停车应用只产出截图。截图在拍下到发送之间的任何时候都可能被编辑。数字签名的区别在于：<em>"这是我看到的"</em>和<em>"这是我看到的，任何人都可以核对它自 ParkProof 签名以来没有改动"</em>。</p>
   <p>公钥已公开发布，所以你保存它之后，核对可以离线进行，不需要我们的应用。签名时间来自 ParkProof 的服务器时钟，所以对于这个时间，你依赖的是 ParkProof。即使多年以后 ParkProof 不再运行，只要你保存了公钥副本并且有 <code>openssl</code>，就可以进行核对。</p>
 
   <h2>有疑问?</h2>

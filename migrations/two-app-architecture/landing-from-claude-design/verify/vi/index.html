@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Kiểm tra chữ ký trên bản ghi ParkProof | ParkProof</title>
-<meta name="description" content="Hướng dẫn từng bước bằng openssl để kiểm tra một bản ghi bằng chứng ParkProof không thay đổi kể từ khi ParkProof ký. Ký mật mã qua AWS KMS ECDSA P-256.">
+<meta name="description" content="Hướng dẫn từng bước bằng openssl để kiểm tra một bản ghi bằng chứng ParkProof không thay đổi kể từ khi ParkProof ký. Chữ ký mã hóa qua AWS KMS ECDSA P-256.">
 <meta name="robots" content="index, follow">
 <link rel="icon" href="../../assets/parkproof-icon.svg" type="image/svg+xml">
 
@@ -289,7 +289,7 @@
   <p class="lede">Mỗi PDF bằng chứng ParkProof có một phụ lục chữ ký mã hóa, và mỗi bản ghi đều có thể lưu thành tệp bằng chứng. Trang này hướng dẫn bất kỳ ai, chẳng hạn nhân viên hội đồng, công ty bảo hiểm, thư ký tòa án hoặc chính tài xế, cách kiểm tra ngoại tuyến rằng một bản ghi không thay đổi kể từ khi ParkProof ký.</p>
 
   <div class="callout">
-    <strong>Khung trung thực.</strong> Chữ ký hợp lệ cho thấy <em>tính toàn vẹn</em>: các thông tin và dấu vân tay số của ảnh đã ký đúng là những gì ParkProof đã ký, vào thời điểm ký. Nó không cho thấy bản ghi là <em>đúng sự thật</em> (AI có thể đọc sai biển báo), ai đã lái xe, xe ở đâu, hay xe đến hoặc rời đi lúc nào, và không quyết định bản ghi có giá trị đến đâu. Việc đó do người xem xét quyết định.
+    <strong>Nói thẳng.</strong> Chữ ký hợp lệ cho thấy <em>tính toàn vẹn</em>: các thông tin và dấu vân tay số của ảnh đã ký đúng là những gì ParkProof đã ký, vào thời điểm ký. Nó không cho thấy bản ghi là <em>đúng sự thật</em> (AI có thể đọc sai biển báo), ai đã lái xe, xe ở đâu, hay xe đến hoặc rời đi lúc nào, và không quyết định bản ghi có giá trị đến đâu. Việc đó do người xem xét quyết định.
   </div>
 
   <h2>Bạn đang kiểm tra điều gì</h2>
@@ -337,7 +337,7 @@ openssl dgst -sha256 link0-payload.txt
 <span class="comment"># Giá trị sau dấu "=" phải bằng parent_payload_sha256 trong mắt xích 1.
 # Làm tương tự với từng mắt xích tiếp theo.</span></pre>
 
-  <p>Nếu hai mắt xích có cùng số (2a và 2b), hai thiết bị đã cùng thêm một phần tại điểm đó. Cả hai đều trỏ đến cùng một mắt xích trước.</p>
+  <p>Nếu hai mắt xích có cùng số (2a và 2b), mỗi mắt xích do một thiết bị khác nhau thêm vào tại điểm đó. Cả hai đều trỏ đến cùng một mắt xích trước.</p>
 
   <h2>Kiểm tra ảnh</h2>
   <p>Chữ ký bao gồm dấu vân tay số SHA-256 của từng ảnh, không phải bản thân hình ảnh. Ảnh in trong PDF là bản sao được mã hóa lại, nên các byte không bao giờ khớp. Để kiểm tra một ảnh, hãy dùng tệp bằng chứng của bản ghi. Tệp liệt kê từng ảnh trong <code>photos</code>, kèm <code>sha256</code> của ảnh, các mắt xích ký nó (<code>signed_in</code>) và các byte gốc dạng base64 (<code>bytes_base64</code>). Tên tệp bắt đầu bằng parkproof-evidence-, tiếp theo là phần đầu ID của bản ghi. Các lệnh dưới đây gọi nó là <code>evidence.json</code>.</p>
@@ -394,9 +394,9 @@ jq -r '.links[0].signature_base64' evidence.json | base64 -d > link0-sig.bin</pr
   <h2>Hơn cả "các byte có thay đổi không?"</h2>
   <p>Chữ ký hợp lệ cho thấy <em>tính toàn vẹn</em>. Nó không cho thấy:</p>
   <ul>
-    <li><strong>Rằng AI đọc biển báo đúng.</strong> Quét ParkProof là một lần đọc máy của biển báo đỗ xe, và máy có thể sai. Văn bản phán quyết và các quy tắc trong bản ghi là cách đọc tốt nhất của AI tại thời điểm quét, không phải sự thật tuyệt đối.</li>
+    <li><strong>Rằng AI đọc biển báo đúng.</strong> Lần quét của ParkProof là máy đọc một biển báo đỗ xe, và máy có thể sai. Câu trả lời và các quy tắc trong bản ghi là cách đọc tốt nhất của AI tại thời điểm quét, không phải sự thật tuyệt đối.</li>
     <li><strong>Rằng các ảnh mô tả những gì người đó nói chúng mô tả.</strong> Chữ ký hợp lệ cho thấy dấu vân tay số của các ảnh không thay đổi kể từ khi ParkProof ký, và việc băm lại cho thấy một ảnh có khớp với dấu vân tay số của nó hay không. Cả hai đều không cho thấy các ảnh được chụp một cách trung thực.</li>
-    <li><strong>Bất kỳ kết quả pháp lý nào.</strong> Liệu bằng chứng có hỗ trợ kháng cáo, hoàn tiền, hoặc vụ kiện hay không là quyết định của người xem xét. ParkProof là một công cụ, không phải luật sư.</li>
+    <li><strong>Bất kỳ kết quả pháp lý nào.</strong> Bằng chứng có hỗ trợ cho việc khiếu nại, hoàn tiền hoặc một vụ kiện hay không là do người xem xét quyết định. ParkProof là một công cụ, không phải luật sư.</li>
     <li><strong>Xe ở đâu, xe đến hoặc rời đi lúc nào, hay ai đã lái xe.</strong> Vị trí trong bản ghi lấy từ điện thoại của tài xế, hoặc do tài xế tự nhập. Các thời điểm ghi là giờ điện thoại lấy từ điện thoại của tài xế, còn thời điểm ký của ParkProof là lúc ParkProof nhận được từng phần.</li>
   </ul>
 

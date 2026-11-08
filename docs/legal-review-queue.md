@@ -1,14 +1,29 @@
 # Legal review queue
 
-Every user-facing string key a lawyer should read before launch. Each section belongs to one roadmap task (`docs/build/roadmap-build-spec.md`); a task adds its keys to its own section. T10 completes the list (permit, notice comparison and signature statements).
+> **Read this first (9 November 2026).** No lawyer is engaged, and nobody qualified has read any string in this file, so every status below is **Not reviewed**.
+> - **Workday mode stays off in production.** Its copy carries the most risk in the app (next section), so no production or staging build turns it on until every workday key here is **Approved** (see "Gate" below).
+> - **The other sections ship with the rest of the app.** They are written to state facts only: what the code does, what a signature does and doesn't show, and which times come from the phone and which from ParkProof's server. They promise no outcome and give no legal advice. Until someone qualified reads them, treat a change to the code they describe as a change to the copy, and change both together.
+
+Every user-facing string key a lawyer should read before launch, grouped by area. Each section names the roadmap task (`docs/build/roadmap-build-spec.md`) and the inject script that wrote its keys. Run that script with `--list` to print every key it owns: `legal` marks the keys listed here. `--list` only prints; it never writes a locale file.
+
+The English is quoted from `src/locales/en.json` on `integration/roadmap-2` at `09d5c24`. The other 8 locales carry the same meaning and need checking by a reviewer who reads that language; `docs/build/translation-human-review.md` lists the translations the language reviewers asked a person to read. `src/lib/legal-review-queue.test.ts` fails when a workday key (`workday.*`, `pdf.workday.*`) is missing from this file. The other sections have no such test, so a task that adds a statement of the same kind adds it here by hand.
 
 Status values: **Not reviewed**, **Changes asked**, **Approved** (with the reviewer and date).
+
+Sections:
+1. Workday mode (T6a, T6b, T6c), off in production
+2. Signature statements (T0a to T3)
+3. Permits (T4)
+4. Weekly reminders (T5)
+5. Sharing the record (T7)
+6. Notice comparison (T8)
+7. Privacy policy (T4, T5 and the fix list)
 
 ---
 
 ## Workday mode (T6a, T6b, T6c)
 
-**Gate.** Workday mode ships behind `VITE_FEATURE_WORKDAY` (`src/lib/features.ts`): on in `npm run dev`, off in production builds unless the build sets it. Do not set it for a production build until every key in this section is **Approved**.
+**Gate.** Workday mode ships behind `VITE_FEATURE_WORKDAY` (`src/lib/features.ts`). Unset, it is on in `npm run dev` and off in any build. `vite.config.ts` and `package.json` never set it. `scripts/deploy.sh` and `scripts/_deploy-staging.sh` always set it on the build command: `false`, unless the shell that runs them sets `DEPLOY_ALLOW_WORKDAY=1`, which makes it `true`. With T6b and T6c merged, that one variable ships the whole workday UI: the home link, the start screen, the workday card, the boundary question, the stop reminders, the workday view and the workday PDF. Don't set `DEPLOY_ALLOW_WORKDAY=1` until every key in this section is **Approved**.
 
 **Why it needs a lawyer.** Continuous parking runs until the car leaves the signed length of road, or the whole area under an area sign (Road Rules r205(2), r332, r335, as adopted in Victoria and Queensland). A record of a move a few bays along the same stretch is signed evidence of a breach. The copy must never say or imply that moving, paying again or topping up restarts the limit, must never promise an outcome, and must never name a distance. See `docs/research/03-workday-shuffle.md` section 2.
 
@@ -30,7 +45,7 @@ Added by `scripts/_i18n_inject_t6a.mjs` (run it with `--list` to print the keys)
 
 **Open question for the spec owner: heads-up wording.** Build spec T6b item 9 gives the heads-up as "Your 2P on this stretch ends at {{time}}. ..." The build says "Your time limit" instead, because the deadline can be an earlier sign's limit carried over (the driver wasn't sure they had left the stretch), so naming this sign's "2P" could be wrong, and records don't reliably carry the limit. The heads-up and go-now lines are T6b item 9's reminder copy, added in T6a because the reminder function that sends them is T6a's. Please confirm the wording or ask for the limit to be named.
 
-The push title reuses `reminders.pushTitleFallback` ("Parking reminder") when the record has no address. Wherever these reminders are offered, the screen also carries the reliability line from the copy rules ("Reminders can be delayed or silenced, for example by Focus or battery saving. Don't rely on them alone."); T6b adds that screen.
+The push title reuses `reminders.pushTitleFallback` ("Parking reminder") when the record has no address. Wherever these reminders are offered, the screen also carries the reliability line from the copy rules (`reminders.reliability`: "Reminders can be delayed or silenced, for example by Focus or battery saving. Don't rely on them alone."). T6b shows it on the start screen's readiness note and with the stop's reminders on the home workday card (`WorkdayReadinessNote`, `WorkdayStopReminders`).
 
 ### Behaviour to read with the copy (T6a, no strings)
 
@@ -45,7 +60,7 @@ These decide what the copy above says and when. They are app rules, not legal ru
 
 ### T6b: screens and flow
 
-**Gate, restated.** The owner has no access to a lawyer, so `VITE_FEATURE_WORKDAY` stays off in production indefinitely. With it off, none of the keys below is shown: no home link, no start screen, no workday card, no workday scan rules, no History grouping (`src/app-workday.test.tsx` renders home and every affected screen with the flag off). `src/lib/features-build.test.ts` checks that a production build reads the flag as off from this checkout's env files and shell, and that no build script sets it.
+**Gate, restated.** The owner has no access to a lawyer, so workday mode stays off in production indefinitely. `vite.config.ts` and `package.json` never set `VITE_FEATURE_WORKDAY`. `scripts/deploy.sh` and `scripts/_deploy-staging.sh` set it to `false` on every build unless the shell that runs them sets `DEPLOY_ALLOW_WORKDAY=1`, which must not be used until every key in this section is **Approved**. With the flag off, none of the keys below is shown: no home link, no start screen, no workday card, no workday scan rules, no History grouping (`src/app-workday.test.tsx` renders home and every affected screen with the flag off). `src/lib/features-build.test.ts` checks that a production build reads the flag as off from this checkout's env files and shell, that neither the Vite config nor `package.json` sets it, and that the two deploy scripts assign it only from `DEPLOY_ALLOW_WORKDAY`. `scripts/deploy-scripts.test.mjs` and `scripts/vite-env-precedence.test.mjs` check that a `.env` line can't turn it on.
 
 #### Items 1 to 7 and 10: start, readiness, explainer, card, moving, readable signs, end
 
@@ -242,6 +257,203 @@ The PDF also prints shared keys a lawyer should read in this context: the signin
 - The spec calls them legs ("every leg you choose", "previous leg"); the workday screens call them stops. The PDF and the picker say "Leg" in English to match the spec's exact wording; the other 8 locales use their word for a workday stop, so the two never read as different things. Please confirm "leg", or ask for "stop" throughout (that changes two spec-wording strings).
 - "Arrived (phone clock)" is the time the leg was logged, which the account export calls "Logged (phone clock)". The spec lists the column as "arrived (phone clock)". Please confirm, or ask for "Logged".
 
+## Signature statements (T0a to T3)
+
+**Why it needs a lawyer.** These lines say what a ParkProof signature shows, on screen, in every PDF and in the evidence file, and which times come from the phone and which from ParkProof's server. Every one follows the build spec's copy rules: a signature shows that the signed details existed, unchanged, by the signed time. It doesn't show they are true, who was driving, where the car was, or when it arrived or left. Phone times are labelled as phone times and never called signed. Driver statements are worded as the driver's own. A reader who finds a line that claims more than that should ask for it to change.
+
+Added or rewritten by `scripts/_i18n_inject_t0a.mjs`, `_t1a.mjs`, `_t1b.mjs`, `_t2.mjs` and `_t3.mjs` (`legal` in their `--list`), then by the copy pass (`scripts/_i18n_inject_copy_pass.mjs`) and, in the other 8 locales, the T10 translation review (`scripts/_i18n_inject_t10_review.mjs`, which runs last). The T0a to T1b scripts must never be re-run: their text predates the language review in `b8c88eb`. The verifier's lines (`verifier.*`, from T0b3) and the photo-not-on-device lines (T0b2) aren't marked `legal` by their scripts, but they say what a check found, so they are listed here too. The signed seal's label (`common.signedSeal`) is in the privacy section's first table.
+
+### Ending a record (T0a)
+
+| Key | Where it shows | English | Status |
+|---|---|---|---|
+| `active.iveLeftConfirm` | Departure sheet opened from the home card's I've left, when the tap is before the record's limit | Mark this record as ended now? It saves the time you tap, from your phone's clock. If you left earlier, that earlier time isn't recorded. | Not reviewed |
+| `session.endConfirm` | Departure sheet opened from the record screen's I've left, when the tap is before the record's limit | Mark this record as ended now? It saves the time you tap, from your phone's clock. If you left earlier, that earlier time isn't recorded. | Not reviewed |
+| `session.endConfirmLate` | Departure sheet, from either screen, when the tap is after the record's limit (or more than 12 hours after a park with no limit was logged) | Mark this record as ended now? It will record {{time}}, the time you tap, from your phone's clock. It won't show when the car actually left. | Not reviewed |
+| `pdf.evidence.field.endedAt` | PDF record table: the I've left tap | Tapped I've left (phone clock) | Not reviewed |
+| `pdf.evidence.field.actualDuration` | PDF record table, after an I've left tap | Time from arrival to the I've left tap (phone clock) | Not reviewed |
+
+### The signed parts on the record screen (T1a)
+
+| Key | Where it shows | English | Status |
+|---|---|---|---|
+| `chain.intro` | Record screen, the signed parts panel, under its heading | ParkProof's server signs each part when it receives it. A valid signature shows the signed details haven't changed since then. It doesn't show they are true, who was driving, where the car was, or when it arrived or left. | Not reviewed |
+| `chain.covers.arrival` | Signed parts panel: what the arrival (link 0) covers, on a record with a sign reading | The time and place you logged on your phone, the sign reading and the photo fingerprints. | Not reviewed |
+| `chain.covers.arrivalNoSign` | The same, on a park logged without a sign | The time and place you logged on your phone, and the photo fingerprints. | Not reviewed |
+| `chain.covers.arrivalContext` | Signed parts panel: what the details at parking (link 1) cover | What you added when you parked, such as who you said was driving, your answers and photo fingerprints. | Not reviewed |
+| `chain.covers.condition` | Signed parts panel: what a part with condition photos covers | Fingerprints of your photos of the car's condition, and your note. | Not reviewed |
+| `chain.covers.compliance` | Signed parts panel: what a proof of payment or permit part covers | The fingerprint of your photo of a meter ticket, payment confirmation or permit. | Not reviewed |
+| `chain.covers.departure` | Signed parts panel: what the departure covers | When you tapped I've left (phone clock), and where your phone was if a location was captured. | Not reviewed |
+| `chain.covers.handover` | Signed parts panel: what a handover covers | Who you said you handed the car to, and when you recorded it. | Not reviewed |
+| `chain.signedAt` | Each signed part's signing time (the panel, the departure row and each signed photo) | Signed by ParkProof at {{time}}. | Not reviewed |
+| `chain.checkValid_one` | After Check signatures, when every part and every photo on this device checks out | {{count}} signature is valid. The signed details haven't changed since ParkProof signed them. That doesn't show they're true. | Not reviewed |
+| `chain.checkValid_other` | The same, more than one part | All {{count}} signatures are valid. The signed details haven't changed since ParkProof signed them. That doesn't show they're true. | Not reviewed |
+| `chain.checkValidPhotosUnchecked_one` | After Check signatures, when every part checks out but some photos aren't on this device | {{count}} signature is valid. Some photos aren't on this device, so they couldn't be compared with their fingerprints. That doesn't show what the record says is true. | Not reviewed |
+| `chain.checkValidPhotosUnchecked_other` | The same, more than one part | All {{count}} signatures are valid. Some photos aren't on this device, so they couldn't be compared with their fingerprints. That doesn't show what the record says is true. | Not reviewed |
+| `departure.tapped` | Record screen, the departure row (and each stop in the workday view) | You tapped I've left at {{time}} (phone clock). | Not reviewed |
+| `departure.far` | Departure row, when the phone was more than 150 m from where the car was logged, after taking off both fixes' stated accuracy | Your phone was {{distance}} from where you parked when you tapped I've left. The record shows when you tapped, not when the car moved. | Not reviewed |
+| `departure.notSigned` | Departure row, when the departure was never signed | This departure isn't signed. | Not reviewed |
+| `about.sealCaveat` | About screen, and the record screen's signature panel | The seal shows the signed details existed, unchanged, by the time ParkProof signed them. It doesn't show they're true, that the AI read the sign correctly, who was driving, where the car was, or when it arrived or left. | Not reviewed |
+| `about.evidence.items[1]` | About screen, the evidence list | Each record is signed, so anyone can check its signed details haven't changed since ParkProof signed them. | Not reviewed |
+
+### What a signature check found (T0b3, T0b2)
+
+| Key | Where it shows | English | Status |
+|---|---|---|---|
+| `verifier.link.valid` | Signed parts panel, per part, after Check signatures | Signature valid. The signed details haven't changed since ParkProof signed them. | Not reviewed |
+| `verifier.link.invalid` | The same, a part whose signature fails | Signature not valid. This part isn't what ParkProof signed for this record. | Not reviewed |
+| `verifier.link.pending` | Wherever a part has no signature yet (panel, departure row, photos) | Not signed yet | Not reviewed |
+| `verifier.link.rejected` | Wherever ParkProof's server refused to sign a part | This part couldn't be signed | Not reviewed |
+| `verifier.link.devKey` | A part signed by the local development server's key | Signed with a development key. It can't be checked with ParkProof's published key. | Not reviewed |
+| `session.devKeySigned` | Record screen and History, a record signed with a development key | Signed with a development key. It can't be checked with ParkProof's published key. | Not reviewed |
+| `verifier.link.chainBroken` | After Check signatures, a part whose parent part is missing or doesn't match | Its place in the record can't be checked. The part signed before it is missing from this device or doesn't match. | Not reviewed |
+| `verifier.fork` | Signed parts panel, when two devices signed a part at the same place in the chain | Added from two devices | Not reviewed |
+| `verifier.photo.matches` | After Check signatures, per photo | This photo matches its signed fingerprint. | Not reviewed |
+| `verifier.photo.differs` | The same, a photo whose bytes don't match its signed fingerprint | This isn't the photo that was signed. Its fingerprint doesn't match. | Not reviewed |
+| `session.photoNotOnDevice` | In place of a photo whose bytes aren't on this device | Photo not on this device. Signed fingerprint {{fingerprint}}. | Not reviewed |
+| `session.photoNotOnDeviceUnsigned` | The same, before the photo's part is signed | Photo not on this device. Fingerprint {{fingerprint}}. Not signed yet. | Not reviewed |
+| `verifier.photo.notOnDeviceDevKey` | The same, when the part was signed with a development key | Photo not on this device. Fingerprint {{fingerprint}}. Signed with a development key. | Not reviewed |
+
+### Photos, proof of payment and the evidence file (T2)
+
+| Key | Where it shows | English | Status |
+|---|---|---|---|
+| `photoGrid.signedNote` | Condition photo grid (logger, after saving, departure sheet) and each signed condition photo | A signed photo shows the photo existed by the time it was signed. It doesn't show who caused any damage. | Not reviewed |
+| `evidence.addIntro` | The sheet for adding condition photos or a proof photo after saving | ParkProof signs each photo's fingerprint as a new part of this record. The photos themselves aren't sent for signing. | Not reviewed |
+| `evidence.addedAt` | Under each added photo on the record screen | Added at {{time}} (phone clock). | Not reviewed |
+| `evidence.library` | Under a photo that came from the photo library (or a file more than 2 minutes old) | Added from the photo library. The signature shows the photo existed by ParkProof's signing time, not when it was taken. | Not reviewed |
+| `evidence.notSigned` | Under a photo whose part isn't signed | This photo isn't in a signed part of the record. | Not reviewed |
+| `evidence.noteLabel` | Record screen, the label above a condition note | Damage you noticed, in your own words | Not reviewed |
+| `evidence.noteNotSigned` | Under that note when its part isn't signed | This note isn't in a signed part of the record. | Not reviewed |
+| `evidence.complianceDescribed` | The proof photo's type on the record screen (the type the driver picked) | {{type}} (as you described it) | Not reviewed |
+| `evidenceFile.help` | Record screen, above Download evidence file | A .json file with every signature and the original photos, so anyone can check this record without ParkProof. A signature shows the details haven't changed since ParkProof signed them. It doesn't show they're true, who was driving, where the car was, or when it arrived or left. The file contains the location and times saved in this record, so share it only with people who need it. | Not reviewed |
+| `evidenceFile.permitHelp` | Under Include permit details | Your permit details, and any photo marked "Permit displayed", are only in the file if you tick this. The signed record holds only their fingerprints, which they can be checked against. Accessible permit details are health information. | Not reviewed |
+| `evidenceFile.photosMissing_one` | After the file is made, when a signed photo isn't on this device | {{count}} signed photo isn't on this device, so it isn't in the file. Its signed fingerprint is. | Not reviewed |
+| `evidenceFile.photosMissing_other` | The same, more than one | {{count}} signed photos aren't on this device, so they aren't in the file. Their signed fingerprints are. | Not reviewed |
+| `evidenceFile.photosDiffer_one` | After the file is made, when a photo doesn't match its signed fingerprint | {{count}} photo on this device doesn't match its signed fingerprint, so it isn't in the file. Its signed fingerprint is. | Not reviewed |
+| `evidenceFile.photosDiffer_other` | The same, more than one | {{count}} photos on this device don't match their signed fingerprints, so they aren't in the file. Their signed fingerprints are. | Not reviewed |
+| `backupPrompt.body` | The one-time prompt after the first signed photo | Your records and their signed photos are kept only in this browser. Safari can clear a site's data after 7 days without a visit. | Not reviewed |
+| `backupPrompt.homeScreenIos` | The same prompt on an iPhone browser tab | Add ParkProof to your Home Screen: tap Share, then Add to Home Screen. Records you save from the Home Screen app stay with the app. Records already saved in Safari stay in Safari and don't move to the app. | Not reviewed |
+
+### Unclear signs (T3)
+
+| Key | Where it shows | English | Status |
+|---|---|---|---|
+| `unclearSign.strictest` | Result screen, when the sign is partly obscured or contradictory | The answer above uses the most restrictive reading. Check the sign yourself before you leave the car. | Not reviewed |
+| `unclearSign.noSignBody` | The no-readable-sign screen (missing, or not a parking sign) | We couldn't find a readable parking sign in this photo. That doesn't mean there are no rules here. General road rules still apply, such as no parking within 10 metres of an intersection without traffic lights, and some areas have time limits without a sign on every street. | Not reviewed |
+| `unclearSign.loggerBanner` | Logger, when the driver logs without a sign from that screen | The record will say ParkProof found no readable parking sign in your photo and you logged this park without one. It doesn't show there was no sign here. | Not reviewed |
+| `unclearSign.photoCaption` | Caption of that photo in the logger and on the record screen | Photo taken where you parked. ParkProof found no readable parking sign in it. | Not reviewed |
+| `unclearSign.recordNoSignRead` | Record screen, the rules section of such a record | No sign read. ParkProof found no readable parking sign in the photo, and you logged this park without one. | Not reviewed |
+
+### The PDFs (T1b, T2, T3)
+
+| Key | Where it shows | English | Status |
+|---|---|---|---|
+| `pdf.evidence.statement` | Every record PDF, the closing statement (also the workday PDF's cover) | This is a record of a parking event made with ParkProof. Times marked as phone times come from the driver's phone. Statements marked as the driver's are the driver's own. It is not a legal finding about what happened. The council or court decides that. | Not reviewed |
+| `pdf.signature.intro` | Every PDF's signature pages, the opening paragraph | Each part of this record was signed by ParkProof's server when the server received it, at the signed_at time shown for that part. A valid signature shows the signed details and photo fingerprints have not changed since then. It does not show that they are true, who was driving, where the car was, or when the car arrived or left. | Not reviewed |
+| `pdf.signature.signedAt` | Signature pages, each part's signing time (also the workday PDF's signing column) | Signed by ParkProof (server clock) | Not reviewed |
+| `pdf.signature.verifyStep6` | Signature pages, the openssl steps | 6. Expect "Verified OK". This shows the signed bytes have not changed since ParkProof signed them. | Not reviewed |
+| `pdf.signature.verifyStep7` | Signature pages, the photo step | 7. About the photos: the images printed in this PDF are copies, re-encoded for the document, so their bytes differ from the originals and won't match the signed fingerprints. That is expected and isn't a sign of tampering. The signed payloads carry the SHA-256 of each original photo: sign_photo_sha256, car_photo_sha256 and ambient_photo_sha256 in link 0, and each sha256 under photos, photo or return_photos in later links. The originals are in the record's evidence file, a .json file the driver can download from the record in ParkProof. To check a photo, save its bytes_base64 value from that file as photo1.b64, then decode it and print its SHA-256: | Not reviewed |
+| `pdf.signature.verifyPhotoMatch` | Signature pages, after the photo hash command | The hex value must equal that photo's sha256 inside a signed payload above, not just the sha256 next to it in the evidence file, which isn't signed. Step 6 showed the signed values have not changed since ParkProof signed them. Do the same for each photo. | Not reviewed |
+| `pdf.fullExport.intro` | Account export PDF, the opening paragraph | This document gathers every parking record saved to this ParkProof account, one section per record. Where a record has signed parts, its signature pages follow its section, with the steps to check each signature. A valid signature shows the signed details haven't changed since ParkProof signed them. It doesn't show that they are true, who was driving, where the car was, or when the car arrived or left. | Not reviewed |
+| `pdf.evidence.field.arrivedAt` | PDF record table: when the park was logged | Logged (phone clock) | Not reviewed |
+| `pdf.evidence.field.arrivalSigned` | PDF record table: when ParkProof signed the arrival | Arrival signed by ParkProof (server clock) | Not reviewed |
+| `pdf.evidence.field.departureSigned` | PDF record table: when ParkProof signed the departure | Departure signed by ParkProof (server clock) | Not reviewed |
+| `pdf.evidence.field.departureLocation` | PDF record table: the phone's fix at the I've left tap | Phone location at the I've left tap (GPS) | Not reviewed |
+| `pdf.evidence.field.departureDistance` | PDF record table: distance between the arrival and the I've left tap | Approx. distance from arrival (phone GPS) | Not reviewed |
+| `pdf.evidence.value.distanceRough` | Its value, when the tap's fix was rough | {{distance}}. The phone's location at the tap was only accurate to {{accuracy}}, so this distance is rough. | Not reviewed |
+| `pdf.evidence.value.distanceRoughNoAccuracy` | Its value, when the phone gave no accuracy for the tap's fix | {{distance}}. The phone didn't report how accurate its location at the tap was, so this distance is rough. | Not reviewed |
+| `pdf.evidence.value.distanceUnavailable` | Its value, when the arrival wasn't a usable phone GPS fix | Not available. The arrival location isn't a phone GPS fix accurate enough to compare. | Not reviewed |
+| `pdf.evidence.gpsNoticeBody` | PDF, a box under the location when the arrival fix was coarse | The GPS reading at capture time was {{accuracy}}, wider than typical for evidence purposes. The coordinates above identify a point within that radius, not an exact spot. Common causes: indoor / multi-storey carparks, Starlink or VPN connections, or weak satellite signal. Reviewers should weight the captured address against this radius. | Not reviewed |
+| `pdf.evidence.noSignRules` | PDF rules section of a park logged without a sign | No sign was read for this record. The driver said there were no parking signs at this spot. | Not reviewed |
+| `pdf.evidence.noSignRead` | PDF rules section of a park logged without a sign after ParkProof found no readable sign | No sign read. ParkProof found no readable parking sign in the photo, and the driver logged this park without one. | Not reviewed |
+| `pdf.evidence.ambientPhotoCaption` | PDF, under the surroundings photo of a park logged without a sign | Taken by the driver when the record was logged, to show the surroundings. It doesn't show there was no sign nearby. | Not reviewed |
+| `pdf.evidence.driverNoteUnsigned` | PDF, under the driver's note | Added by the driver. This note is not covered by the cryptographic signature. | Not reviewed |
+| `pdf.evidence.value.complianceDescribed` | PDF record table: the proof photo's type | {{type}} (as the driver described it) | Not reviewed |
+| `pdf.evidence.value.noteWhenParked` | PDF record table: the condition note made when parking | When parked, in the driver's own words: {{note}} | Not reviewed |
+| `pdf.evidence.value.noteOnReturn` | PDF record table: the condition note made on return | On return, in the driver's own words: {{note}} | Not reviewed |
+| `pdf.photos.added` | PDF, each photo's caption: when it was added | Added {{time}} (phone clock) | Not reviewed |
+| `pdf.photos.library` | PDF, caption of a photo from the photo library | Added from the photo library. The signature shows the photo existed by ParkProof's signing time, not when it was taken. | Not reviewed |
+| `pdf.photos.signedAt` | PDF, each photo's caption: when its fingerprint was signed | Fingerprint signed by ParkProof at {{time}} (server clock) | Not reviewed |
+| `pdf.photos.signedNote` | PDF, under the condition photos | A signed photo shows the photo existed by the time it was signed. It doesn't show who caused any damage. | Not reviewed |
+| `pdf.evidence.value.notSignedYet` | PDF, a value whose part is waiting to be signed | (not signed yet) | Not reviewed |
+| `pdf.evidence.value.partRejected` | PDF, a value whose part ParkProof's server refused to sign | (this part couldn't be signed) | Not reviewed |
+| `pdf.evidence.value.notSigned` | PDF, a value that was never signed | (not signed) | Not reviewed |
+
+### Behaviour to read with the copy (signatures, no strings)
+
+- **What is signed** (`lambda/index.js`, `lambda/addendum-schema.js`, build spec N2): link 0 is the arrival (`parkproof-evidence-v1` on old records, `parkproof-evidence-v2` on new ones: the logged time and place, the sign reading and the photo fingerprints). Each later part is a `parkproof-addendum-v1` link that names the hash of the part before it: the details at parking (always link 1 on a new record), condition photos, a proof of payment or permit photo, the departure, a handover. ParkProof's server signs each part with the KMS key when it receives it and stamps its own time (`signed_at`). Photos are never sent: only their SHA-256 fingerprints.
+- **The server refuses, never repairs.** A part with a missing or unknown field, a string with control characters, or a phone time more than 5 minutes after the server's clock is refused with an ERR code (HTTP 400). The phone marks it "This part couldn't be signed" and never retries it.
+- **Signed values are read from the signed payload.** The record screen, the PDFs and the notice comparison show the signed value parsed from each part's payload. Anything not signed yet says so ("Not signed yet", "(not signed yet)").
+- **Phone times and server times are never mixed.** The I've left tap, the logged time and each photo's capture time are the phone's clock and are labelled that way. Only `signed_at` is ParkProof's, labelled "Signed by ParkProof" or "(server clock)".
+- **Permit details are never signed in plain text** (N3). The details at parking carry only `permit_commitment`, a hash of a random salt and the permit details. The evidence file and the PDF reveal the details and the salt only when the driver ticks "Include permit details".
+- **The development key.** `npm run dev` signs with a key made when the dev server starts (`key_alias: 'dev-ephemeral'`). The app and the verifier never call such a part valid: it shows `verifier.link.devKey`, and in production builds a share link signed with it reads as changed.
+- **The verifier** (`src/lib/verify.ts`) checks each part's ECDSA P-256 signature against the published public key, the chain (session id, sequence, parent hash, chain key hash) and every photo whose bytes are on the device. A photo that isn't on the device is reported as not checkable, never as valid.
+
+---
+
+## Permits (T4)
+
+**Why it needs a lawyer.** Accessible parking permit status is health information (build spec N3). These lines decide what a driver is told about using a permit, and they must never suggest ParkProof worked out a concession: the answer card is always the sign's standard answer, a permit answer is only what the sign itself prints, and a later permit time is only one the driver read off the sign and typed in. No line may tell a driver they can use an accessible bay without the permit holder.
+
+Added by `scripts/_i18n_inject_t4.mjs` (`legal` in its `--list`). Its privacy keys are in the privacy section.
+
+### Settings
+
+| Key | Where it shows | English | Status |
+|---|---|---|---|
+| `prefs.permitsIntro` | Settings, My permits, under the heading | Saved permits are sent with each sign you scan or re-check, so the answer can include what the sign says about them. Only the permit type is sent, plus the area or zone of a resident or business permit. | Not reviewed |
+| `prefs.accessibleWarning` | Settings, before an accessible parking permit is saved ("Save this permit" confirms it) | Saving this permit means its type is sent with each sign photo you scan, so the answer can include what the sign says about permits. Accessible permit details are health information. You can delete them any time. | Not reviewed |
+
+### The result screen
+
+| Key | Where it shows | English | Status |
+|---|---|---|---|
+| `result.permit.areaMatch` | A saved resident or business permit whose area matches the permit zone the sign names (a plain comparison of the two labels, done in the app) | Your saved permit for {{area}} matches this zone. | Not reviewed |
+| `result.permit.areaMismatch` | The same, when the labels don't match | Your saved permit is for {{area}}. This zone is Permit Area {{zone}}. | Not reviewed |
+| `result.permit.accessibleQuestion` | The accessible bay question, when an accessible permit is saved | The permit holder is in the car with me and getting out here, and their permit is displayed. | Not reviewed |
+| `result.permit.accessibleNo` | After No to that question | Then the permit can't be used for this park. Don't park in the accessible bay. | Not reviewed |
+| `result.permit.forThisCarQuestion` | The question for a saved resident or business permit in a permit zone | Is this permit for this car, and displayed or registered to it? | Not reviewed |
+| `result.permit.forThisCarNo` | After No to that question in a permit zone | Then the permit can't be used for this park. Don't park in this permit zone without a valid permit for it. | Not reviewed |
+| `result.permit.noStandardApplies` | After No to either question, when the sign prints an exception for that permit: only the standard answer applies | Then the permit can't be used for this park. Only the standard answer applies. | Not reviewed |
+| `result.permit.checkConditions` | Under the permit answer the sign prints | ParkProof only reads what the sign prints. Check the conditions on your permit too. | Not reviewed |
+| `result.permit.timeHint` | Under the field for a later permit time the driver reads off the sign | Read it from the sign. ParkProof doesn't work out permit times. | Not reviewed |
+| `result.permit.mayAllowMore` | A saved permit, and the sign prints nothing for it, with the state known | Your permit may allow more time under {{state}} rules. ParkProof doesn't calculate that. Check the conditions on your permit or with your council. | Not reviewed |
+| `result.permit.mayAllowMoreNoState` | The same, when the state isn't known | Your permit may allow more time under the rules where you've parked. ParkProof doesn't calculate that. Check the conditions on your permit or with your council. | Not reviewed |
+
+### Reminders on a record that used a permit
+
+| Key | Where it shows | English | Status |
+|---|---|---|---|
+| `reminders.permitStandardEnds` | Reminder at the sign's standard limit, when the driver entered a later permit time (push, in-app and the calendar file) | The standard limit on this sign ends now. Your permit time runs to {{time}}. | Not reviewed |
+| `reminders.permitBodyBefore_one` | Reminder before that permit time | The permit time you entered from the sign ends at {{time}}. This is your {{count}}-minute reminder. | Not reviewed |
+| `reminders.permitBodyBefore_other` | The same, plural form | The permit time you entered from the sign ends at {{time}}. This is your {{count}}-minute reminder. | Not reviewed |
+| `reminders.permitBodyAt` | Reminder at that permit time | The permit time you entered from the sign ends at {{time}}. Time to move the car. | Not reviewed |
+| `reminders.calendarPermitSummary` | Calendar file description for such a record | The permit time you entered from the sign ends at {{time}}. ParkProof doesn't work out permit times. | Not reviewed |
+
+### Behaviour to read with the copy (T4, no strings)
+
+- **What is sent with a scan** (`src/lib/profile.ts`, `lambda/sign-reading.js`): at most 3 saved permits, each as its type (`accessible`, `resident` or `business`), plus the area or zone label of a resident or business permit, and only while the permit hasn't expired. Never the issuing state, the expiry or the driver's name. The Lambda never logs them.
+- **What the sign reader may say** (`lambda/index.js`, PERMIT EXCEPTIONS): only whether the sign itself prints an exception for one of the listed types, quoting the sign. It never works out a concession from state law or council policy.
+- **What the app works out itself** (`src/lib/permit-answer.ts`): the area match is a plain comparison of the two labels (case, punctuation, leading zeros and words such as Area, Zone and Permit are ignored). Nothing ticks a gate: the driver answers every question. After "No", the permit isn't used and the standard answer stands.
+- **What a saved record keeps**: `permit_context` (type, area, the holder-present answer for an accessible permit, whether the sign prints an exception, the standard and permit end times, a note) and `permit_salt`, on the phone and in the driver's own cloud copy when signed in. Only `permit_commitment` is signed.
+- **What the feedback log holds**: the driver's yes or no to the accessible permit question (`disabled_permit_acknowledged`), with the sign's accessible bay flag. See the privacy section: N3 allows a `permit_used` boolean at most, and keeping this field is an open decision for the owner.
+
+---
+
+## Weekly reminders (T5)
+
+**Why it needs a reader.** Street sweeping and other weekly reminders come from the driver's own entries, or from a sign the model read. The copy must never present a council's schedule as certain, and every reminder feature carries the reliability line. The weekly push privacy text is in the privacy section.
+
+Added by `scripts/_i18n_inject_t5.mjs` (`legal` in its `--list`); the reliability line predates T5 and every reminder feature reuses it.
+
+### The weekly reminder copy
+
+| Key | Where it shows | English | Status |
+|---|---|---|---|
+| `recurring.councilNote` | Weekly reminders list and editor, the offer after a scan that found a weekly restriction, and the calendar file | Councils change these schedules, and public holidays may be different. Check the signs where you park. | Not reviewed |
+| `reminders.reliability` | Every reminder feature: the reminder screen after saving, a record's scheduled reminders, the weekly reminders list, editor and offer, Settings (notifications), About, the workday start screen and card, and the calendar files | Reminders can be delayed or silenced, for example by Focus or battery saving. Don't rely on them alone. | Not reviewed |
+
 ---
 
 ## Sharing the record (T7)
@@ -305,13 +517,63 @@ Added by the same script (`legal` in its `--list`). The en text of `pdf.evidence
 - **The share link after a handover** names the record's own driver (who parked it) as the sender, not the person the car was handed to, because the receiving screen reads "Shared by {{driver}}".
 - **The PDF reads signed values from the signed parts**: the driver row from the signed arrival details (marked "(not signed yet)" or "(not signed)" otherwise), each handover from its signed part, with ParkProof's signing time in its own server-clock row. The driver row and the notice screen's driver line use the same reading (`recordDriver`, `src/lib/notice-compare.ts`). Names lose symbols and emoji no PDF font draws.
 
+## Notice comparison (T8)
+
+**Why it needs a lawyer.** "Got a fine? Start here" reads a photo of an infringement notice and lines a parking record up against it. A driver may rely on these lines when deciding whether to seek a review, so each one must state only what the record and its signatures show, keep phone times apart from ParkProof's signing time (N5), never say whether the fine should stand, and word the driver's name as what was entered, not as something ParkProof checked. The nomination line must never encourage nominating anyone but the actual driver.
+
+Added by `scripts/_i18n_inject_t8.mjs` (`legal` in its `--list`). The en text of the departure, arrival, driver, handover and check lines follows build spec T8 item 4.
+
+### The comparison
+
+| Key | Where it shows | English | Status |
+|---|---|---|---|
+| `notice.disclaimer` | Notice screen, above the comparison | This compares your record with what the notice says. It isn't legal advice, and it doesn't say whether the fine should stand. The council or court decides that. | Not reviewed |
+| `notice.compare.noDeparture` | No I've left tap on the record | You haven't tapped I've left on this record. | Not reviewed |
+| `notice.compare.departureSignedBefore` | ParkProof signed the departure before the notice time, and the phone's tap is at least a minute before it | You tapped I've left at {{time}}, {{duration}} before the time on the notice. ParkProof signed that record at {{signedTime}}. The record shows when you tapped, not when the car moved. | Not reviewed |
+| `notice.compare.departureSignedBeforeClock` | ParkProof signed it before the notice time, but the phone's tap is at or after it (a phone clock running fast) | You tapped I've left at {{time}} by your phone's clock. ParkProof signed that record at {{signedTime}}, before the time on the notice. The record shows when you tapped, not when the car moved. | Not reviewed |
+| `notice.compare.departureSignedAfter` | ParkProof signed it at or after the notice time | You tapped I've left at {{time}} by your phone's clock. ParkProof only signed it at {{signedTime}}, after the time on the notice, so the signature can't show you'd left by {{noticeTime}}. | Not reviewed |
+| `notice.compare.departurePending` | Tapped, not signed yet | You tapped I've left at {{time}}. This hasn't been signed yet. | Not reviewed |
+| `notice.compare.departureNotSigned` | Tapped, never signed (refused, or no signature) | You tapped I've left at {{time}}. This wasn't signed. | Not reviewed |
+| `notice.compare.departureDevKey` | Tapped, signed with a development key | You tapped I've left at {{time}} by your phone's clock. It was signed with a development key, not ParkProof's published key, so the signature can't show you'd left by {{noticeTime}}. | Not reviewed |
+| `notice.compare.arrivalBefore` | The logged time (phone clock) is at least a minute before the notice time | You logged this park at {{time}}, {{duration}} before the time on the notice. | Not reviewed |
+| `notice.compare.arrivalAfter` | It is at least a minute after | You logged this park at {{time}}, {{duration}} after the time on the notice. | Not reviewed |
+| `notice.compare.arrivalSame` | It is within the same minute | You logged this park at {{time}}, the same minute as the time on the notice. | Not reviewed |
+| `notice.compare.arrivalSignedBefore` | ParkProof signed the arrival before the notice time, shown when the logged time isn't before it or is more than 5 minutes from the signing time | ParkProof signed this record at {{signedTime}}, before the time on the notice. The signature shows the record existed by then, not when the car arrived or where it was. | Not reviewed |
+| `notice.compare.arrivalSignedAfter` | ParkProof signed the arrival at or after the notice time | ParkProof only signed this record at {{signedTime}}, after the time on the notice, so the signature can't show it existed by {{noticeTime}}. | Not reviewed |
+| `notice.compare.arrivalPending` | The arrival isn't signed yet | ParkProof hasn't signed this record yet. | Not reviewed |
+| `notice.compare.arrivalNotSigned` | ParkProof's server refused to sign the arrival | This record wasn't signed. | Not reviewed |
+| `notice.compare.arrivalDevKey` | The arrival was signed with a development key | This record was signed with a development key, not ParkProof's published key, so the signature can't show it existed by {{noticeTime}}. | Not reviewed |
+| `notice.compare.driver` | The record names a driver (read from its signed details at parking when they are signed) | Your record says {{driver}} was driving. That's what was entered when the park was logged. ParkProof didn't check it. If someone else was driving, the notice explains how to nominate them. Only nominate the person who was actually driving. | Not reviewed |
+| `notice.compare.driverPending` | Under that line, and under the driver on the record screen, when the name isn't signed yet | The driver's name hasn't been signed yet. | Not reviewed |
+| `notice.compare.driverNotSigned` | The same, when the name was never signed | The driver's name wasn't signed. | Not reviewed |
+| `notice.compare.handover` | One line per handover | Your record says the car was handed to {{to_driver}} at {{time}}. | Not reviewed |
+| `notice.compare.handoverPending` | Under a handover that isn't signed yet (here and on the record screen). A development-key signature shows verifier.link.devKey instead | This handover hasn't been signed yet. | Not reviewed |
+| `notice.compare.checkRegistration` | Always, after the lines above | Check the registration on the notice is the car in this record. ParkProof doesn't record registrations. | Not reviewed |
+| `notice.compare.checkDueDate` | Always, last | Check the due date on the notice itself. | Not reviewed |
+
+### The notice time on a daylight saving day
+
+| Key | Where it shows | English | Status |
+|---|---|---|---|
+| `notice.match.repeatedHour` | A matched record, when the notice time fell in the hour that happened twice | Daylight saving ended on this date, so the time on the notice happened twice. This compares the record with {{time}}. | Not reviewed |
+| `notice.match.skippedHour` | A matched record, when the notice time fell in the hour the clocks skipped | Daylight saving started on this date, so the time on the notice didn't exist on the clock. This compares the record with {{time}}. | Not reviewed |
+
+### Behaviour to read with the copy (T8, no strings)
+
+- **What is read off the notice** (`lambda/index.js` `NOTICE_SCHEMA`): the notice number, issuer, the date and time as printed, the place, the offence code and description, the amount, the due date and how legible it was. No registration field: ParkProof never records one, so the comparison always says to check it. The driver can correct a misread date or time on the screen.
+- **What is kept** (`handleJobStatus`): the notice photo is never stored. The fields read off it sit in the jobs table until the phone collects them, then the row is deleted; a row past its 10-minute TTL is never served and is deleted when asked for. A job's error holds only an ERR code. The raw model text is never logged.
+- **Which records are matched** (`src/lib/notice-match.ts`): records from 10 minutes before their logged arrival to 6 hours after the first of the signed departure, the I've left tap, the limit or 24 hours after arrival, ranked by time and by distance from the place on the notice. On a daylight saving day the notice time can be two instants or none; the screen says which instant it compared.
+- **"Signed before the notice"** (`src/lib/notice-compare.ts`) rests only on ParkProof's signing time, and must hold for every reading of the notice time. A signature inside the notice's own minute counts as after it. When the phone's logged time and ParkProof's signing time are more than 5 minutes apart, or disagree about before and after, both are shown.
+- **The driver line** reads the name from the signed details at parking when they are signed, and the line under it says when it isn't signed yet or was never signed. Handover lines come from the signed handover parts.
+- **Actions** (`NoticeLookup`): "Draft an appeal with this record" opens the appeal flow with the notice already captured, and "Export evidence PDF". With no match: "Draft an appeal anyway". The appeal flow shows no verdict on the evidence: the model's `evidence_strength` only calibrates the letter and is never shown.
+
 ---
 
-## Privacy policy (fix list, 9 November 2026)
+## Privacy policy (T4, T5 and the fix list)
 
-**Why it needs a reader.** These statements tell drivers what leaves their phone, what the server keeps and for how long. Each one describes what the code does today, no more and no less, and a test ties it to the code (below). Until someone qualified reads them, treat any change to the code they describe as a change to the policy: update the text in all 9 locales, `PRIVACY_LAST_UPDATED` (`src/lib/privacy-version.ts`) and the tests together.
+**Why it needs a reader.** These statements tell drivers what leaves their phone, what the server keeps and for how long. The fix list rewrote the three in the first table to describe what the code does today, no more and no less, and a test ties each one to the code (below). The older text further down hasn't had that check: "Facts for the reader to check", at the end, lists what this pass found. Until someone qualified reads the policy, treat any change to the code it describes as a change to the policy: update the text in all 9 locales, `PRIVACY_LAST_UPDATED` (`src/lib/privacy-version.ts`) and the tests together.
 
-Rewritten or added by `scripts/_i18n_inject_fixlist_final.mjs` (run it with `--list`; `legal` marks these). The other 8 locales carry the same meaning and need checking by a reviewer who reads that language.
+Rewritten or added by `scripts/_i18n_inject_fixlist_final.mjs` (run it with `--list`; `legal` marks these). `privacy.anonymousWeeklyPush` was first added by `scripts/_i18n_inject_t5.mjs`. The other 8 locales carry the same meaning and need checking by a reviewer who reads that language.
 
 | Key | Where it shows | English | Status |
 |---|---|---|---|
@@ -328,3 +590,53 @@ Rewritten or added by `scripts/_i18n_inject_fixlist_final.mjs` (run it with `--l
 - **Push data periods** (`privacy.anonymousWeeklyPush`, `privacy.rightsAnonymous`): `PUSH_TTL_DAYS` (`lambda/push-tombstone.js`) and `RECURRING_SCHEDULE_DAYS` (`lambda/recurring-schedule.js`), both 90; `src/lib/fixlist-cleanups.test.ts` checks the text against them. That weekly schedules delete themselves (`EndDate` with `ActionAfterCompletion: DELETE`) is checked on real AWS in stages 6.3 and 8.5 of the deploy checklist.
 - **Feedback kept up to two years**: the feedback bucket's lifecycle rule expires objects after 730 days (`scripts/setup-feedback-bucket.sh`).
 - **The policy's "Last updated" date** is the day the text last changed (`src/lib/privacy-version.ts`); `src/lib/privacy-version.test.tsx` fails when a privacy string changes and the date doesn't.
+
+### Earlier privacy text (T4, and the policy before this build)
+
+T4 rewrote the intro and added what is sent with each scan, notice photos, permits and push (`scripts/_i18n_inject_t4.mjs`, `legal` in its `--list`). The rest of the policy is older and no script marks it `legal`, but it is the policy a driver reads, so it is all here. Headings (`privacy.header`, `privacy.*Header`, `privacy.anonymousThings`, `privacy.signedInThings`, `privacy.rightsSignedIn`, `privacy.lastUpdated`, `privacy.verifyLinkLabel`) are left out.
+
+### T4: what leaves the phone, and permits
+
+| Key | Where it shows | English | Status |
+|---|---|---|---|
+| `privacy.anonymousIntro` | Privacy policy, top of "What you give us when you use ParkProof without an account" (the spec's wording) | ParkProof works without an account. Your records are stored in this browser. To sign a record, your phone sends its details (times, location, what you entered, and photo fingerprints, not the photos) to ParkProof's server, which signs them and doesn't keep a copy. | Not reviewed |
+| `privacy.anonymousAnthropic` | Same list | <strong>Each sign photo you scan</strong> is sent to <strong>Anthropic</strong> (Claude) to read the sign, with its location and the type of each permit you've saved (plus the area or zone of a resident or business permit). A re-check sends the earlier reading instead of the photo. We don't keep the photo or the location. The answer, which can mention your permit types, stays on our server briefly so your phone can collect it. Anthropic's retention policy applies. | Not reviewed |
+| `privacy.anonymousFineNotice` | Same list | <strong>Photos of an infringement notice</strong> (a parking fine) are sent to <strong>Anthropic</strong> to read the notice, for example when you draft an appeal. Drafting an appeal also sends the details of the parking record you chose. We don't keep the photo. | Not reviewed |
+| `privacy.anonymousPermits` | Same list | <strong>A permit you use for a park</strong>: its type, its area or zone and any permit time you entered are kept with that record. Signing the record sends a fingerprint of these details, not the details, along with your answers to the permit questions. Deleting a permit in Settings doesn't change records already saved. Deleting the record removes them. | Not reviewed |
+| `privacy.anonymousPush` | Same list | <strong>Push reminders</strong>, if you turn them on: the record's address, each reminder's time and its text (which can mention a permit time you entered) go to <strong>ParkProof's server</strong>, which keeps each one until it is sent, then deletes it. | Not reviewed |
+| `privacy.signedInPermits` | Privacy policy, "What you give us when you sign in" | <strong>Permit details</strong> kept with a record (the type, area or zone and any permit time you entered, for a park where you used a saved permit) are stored with that record in AWS DynamoDB. Your saved permits in Settings aren't. Deleting the record removes them. | Not reviewed |
+
+### The rest of the policy (older text, never marked legal by a script)
+
+| Key | Where it shows | English | Status |
+|---|---|---|---|
+| `privacy.anonymousNominatim` | "Without an account" list | <strong>GPS coordinates</strong> are sent to <strong>OpenStreetMap Nominatim</strong> to resolve the street address. Nominatim does not require a key and applies their public retention policy. | Not reviewed |
+| `privacy.signedInIntro` | "When you sign in" | Signing in is optional. It enables cloud sync, the same records visible across all your devices. | Not reviewed |
+| `privacy.signedInEmail` | Same list | Your <strong>email address</strong>: stored in AWS Cognito; used as your account identifier and for password reset. | Not reviewed |
+| `privacy.signedInSessions` | Same list | Every <strong>parking record</strong> you save: stored in AWS DynamoDB, keyed to your Cognito user ID. Includes timestamps, GPS, sign rules, the AI's translation, your notes, and the cryptographic signature. | Not reviewed |
+| `privacy.signedInPhotos` | Same list | Every <strong>photo</strong> attached to a record: stored in AWS S3 under a path that includes your user ID, accessible only to you while signed in. | Not reviewed |
+| `privacy.federationCopy1` | "Sign-in with Apple or Google" | If you choose Apple or Google sign-in instead of email/password, your authentication is brokered by AWS Cognito's Hosted UI. Your password, biometrics, or passkey never reach ParkProof. They stay with Apple or Google. | Not reviewed |
+| `privacy.federationCopy2` | Same section | From the OAuth handshake we receive two things: a stable opaque user identifier (so Cognito recognises you on return), and your email address. That's it. We do not receive your profile photo, friends list, calendar, contacts, or any other information from your Apple ID or Google account. | Not reviewed |
+| `privacy.federationCopy3` | Same section | Signing out of ParkProof in-app does not revoke Apple's or Google's upstream permission. To revoke that, visit your <apple>Apple ID</apple> ('Sign in with Apple' section) or your <google>Google Account</google> ('Security > Third-party access'). Deleting your ParkProof account in-app removes our record but does not unsubscribe the upstream permission. | Not reviewed |
+| `privacy.locationCopy` | "Where the data lives" | All cloud storage is in <strong>AWS Sydney (ap-southeast-2)</strong>. Data does not leave Australia for storage purposes. Anthropic and Nominatim may process data internationally during a single API call; those calls do not persist. | Not reviewed |
+| `privacy.dontSell` | "What we don't do" | We don't sell your data, ever. | Not reviewed |
+| `privacy.dontShare` | Same list | We don't share it with third parties beyond the AWS, Anthropic and Nominatim flows above. | Not reviewed |
+| `privacy.dontAds` | Same list | We don't use it for advertising. ParkProof has no ads. | Not reviewed |
+| `privacy.dontTrack` | Same list | We don't track you across other sites. | Not reviewed |
+| `privacy.dontFingerprint` | Same list | We don't run analytics that fingerprint your device. | Not reviewed |
+| `privacy.rightsExport` | "Your rights", signed in | <strong>Export.</strong> Tap "Download as PDF" in Account to get a complete document with every record you've stored: cover page summary plus a per-record detail block with photos. | Not reviewed |
+| `privacy.rightsDelete` | Same list | <strong>Delete.</strong> Tap "Delete account" in Account. Removes your sign-in record, every DynamoDB row, and every S3 photo within seconds. Irreversible. | Not reviewed |
+| `privacy.rightsCorrect` | Same list | <strong>Correct.</strong> You edit your records in-app. Every change syncs to the cloud immediately if signed in. | Not reviewed |
+| `privacy.photosCopy` | "Photos taken inside ParkProof" | Photos are resized to ≤1200px and re-encoded as JPEG at 0.82 quality on your device before they leave the browser. The original high-resolution camera capture never leaves your phone. | Not reviewed |
+| `privacy.signingCopy` | "Cryptographic signing" | Signed in or not, each record is signed with an ECDSA P-256 key held in AWS KMS. To sign a record, ParkProof's server receives the details being signed (such as times, location, the sign reading, photo fingerprints and any names you enter, never the photos themselves) and sends back the signature. The private key never leaves AWS. The public key is published at <a>/parkproof-public-key.pem</a> so anyone (a council, court or insurer) can check the signatures with <code>openssl dgst</code>. A signature shows the signed details haven't changed since ParkProof signed them. It doesn't show they're true, who was driving, where the car was, or when the car arrived or left. The appendix in any exported PDF has the steps. | Not reviewed |
+| `privacy.contactCopy` | "Contact + complaints" | For questions or to exercise your rights outside of the in-app controls, email <a>hello@parkproof.com.au</a>. | Not reviewed |
+| `privacy.complaintCopy` | Same section | Unhappy with our response? You can complain to the <a>Office of the Australian Information Commissioner (OAIC)</a>. | Not reviewed |
+
+### Facts for the reader to check against the code (found while writing this list, 9 Nov 2026)
+
+These are places where the policy and the code may not say the same thing. None has been changed: each change needs all 9 languages, and the T10 translation review changed only translations, never the English. Decide each one before launch.
+
+- **Retention by Anthropic and Nominatim.** `privacy.locationCopy` says their calls "do not persist". `privacy.anonymousAnthropic` says "Anthropic's retention policy applies", and `privacy.anonymousNominatim` says Nominatim "applies their public retention policy". ParkProof can't promise what another provider keeps, so the first statement is the one to look at.
+- **Push services.** `privacy.dontShare` names only AWS, Anthropic and Nominatim. A push reminder also goes through the push service the browser uses (Google, Apple or Mozilla), end-to-end encrypted, to the push address the browser gave. `privacy.rightsAnonymous` mentions the push service only as something the server logs.
+- **How long a reading or an appeal draft stays in the jobs table.** Fresh sign readings, appeal drafts and notice reads are written to the DynamoDB jobs table with a 10-minute TTL on `ttl`. DynamoDB's TTL sweep is lazy and can take days. The notice route deletes its row once the phone has the result and never serves an expired row. The shared status route for sign readings and appeal drafts does neither, so a finished reading or appeal letter stays readable by anyone holding its random job id until the sweep removes it (`handleJobStatus`, `lambda/index.js`). `privacy.anonymousAnthropic` says the answer stays "briefly"; `privacy.anonymousFineNotice` doesn't mention the appeal letter.
+- **Two log lines the policy doesn't list.** The signing route logs each signed record's random id, its schema and the key alias (`[parkproof.signing]`), and the sign reader logs the time zone of each scan's location (`[parkproof] preflight=… tz=…`). Both are deleted after 90 days once `scripts/setup-log-retention.sh` has run.

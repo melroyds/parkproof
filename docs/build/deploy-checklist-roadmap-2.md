@@ -1,8 +1,8 @@
 # Deploy checklist for `integration/roadmap-2`
 
-What this deploys: `integration/roadmap-2`. That's main plus the field-test fixes, T2, T3, T4, T5a and T5b, T6a, T8, T9, the copy pass and the integration fixes, with T7 on top (merged as `2edc532`).
+What this deploys: `integration/roadmap-2`. That's main plus the field-test fixes, T2, T3, T4, T5a and T5b, T6a, T8, T9, the copy pass and the integration fixes, T7 (merged as `2edc532`), the sign schema fix (`863a230`), the overnight fix list (`6d46dfc`) and T6b and T6c (merged as `09d5c24`). Workday mode (T6a to T6c) is in the code but stays off in this deploy: see 1.4.
 
-Evidence comes from commit `cfdecc7` in `C:\Users\molte\Downloads\pp-wt\readonly`, compared with `git diff main...HEAD`. Line numbers are at that commit. T7 has since merged as `2edc532` ("Merge feat/t7-share into integration/roadmap-2"). From `cfdecc7` to `2edc532`, the only change in `lambda/`, `scripts/`, `migrations/`, `public/` or the build config is the new `scripts/_i18n_inject_t7.mjs`. T7 calls no new API route. A share link is `/app/#share=…`, and the fragment never reaches CloudFront or the API (`src/lib/deep-link.ts`). Its handover addendum kind already exists on the server (`lambda/addendum-schema.js:66`, `:309`). Re-check all of this against the final tip in stage 1.
+Evidence comes from commit `cfdecc7` in `C:\Users\molte\Downloads\pp-wt\readonly`, compared with `git diff main...HEAD`. Line numbers are at that commit. T7 has since merged as `2edc532` ("Merge feat/t7-share into integration/roadmap-2"). From `cfdecc7` to `2edc532`, the only change in `lambda/`, `scripts/`, `migrations/`, `public/` or the build config is the new `scripts/_i18n_inject_t7.mjs`. T7 calls no new API route. A share link is `/app/#share=…`, and the fragment never reaches CloudFront or the API (`src/lib/deep-link.ts`). Its handover addendum kind already exists on the server (`lambda/addendum-schema.js:66`, `:309`). Re-check all of this against the final tip in stage 1. The T10 docs pass re-checked the deploy scripts, the setup scripts and the route list at `09d5c24` (second revision note below).
 
 **Revised 9 Nov 2026 on `fix/final-list`.** What changed in this revision:
 - `scripts/deploy.sh` packages the Lambda in a temp folder outside the repo and never deletes or reinstalls `lambda/node_modules`. `bash scripts/deploy.sh --package-only` builds and lists the package with no AWS call (stage 3.5, rehearsed on 9 Nov 2026).
@@ -12,7 +12,13 @@ Evidence comes from commit `cfdecc7` in `C:\Users\molte\Downloads\pp-wt\readonly
 - The three T5b Scheduler checks moved into the post-deploy stage (8.5), with exact steps. The old stage 10 (the watch window) is now stage 9.
 - Fix round 1 (same day): `vite.config.ts` no longer lets a `.env` line overwrite a `VITE_*` value the build sets, so the `false` from `deploy.sh` really reaches the bundle (1.4, 3.2). Stage 6 grew two steps. 6.2 sets a 90-day retention on the Lambda's log group with the new `scripts/setup-log-retention.sh`, because this build's privacy text says the logs are deleted after 90 days and no script ever set a retention (CloudWatch keeps logs forever by default). 6.3 checks before the deploy, with a disabled throwaway schedule, that Scheduler accepts a weekly `cron()` with `EndDate` and `ActionAfterCompletion: DELETE`. Both 8.5 failure paths for check B now say what to do about the privacy text, which promises that weekly schedules are deleted.
 
-Line numbers for `scripts/deploy.sh` are at this revision. Other line numbers are still at `cfdecc7`.
+**Revised 9 Nov 2026 again, for T10, at `09d5c24`.** What changed in this revision:
+- T6b and T6c are merged (`378c4c6`, merge `09d5c24`). Every workday screen now checks `isWorkdayEnabled()`, so `DEPLOY_ALLOW_WORKDAY=1` would ship the whole workday UI: the home link, the start screen, the workday card, the boundary question, the stop reminders, the workday view and the workday PDF. No lawyer has read that copy (`docs/legal-review-queue.md`), so this deploy keeps it off (1.4, section 0).
+- `378c4c6` re-cut `public/fonts/NotoSansKR.ttf` and `NotoSansSC.ttf` for the workday strings. The T10 translation review changes locale strings after `09d5c24`, so 3.3 re-cuts the fonts from `fonts-src/` again.
+- `scripts/deploy.sh`, `scripts/_deploy-staging.sh` and the `scripts/setup-*.sh` files are unchanged since the fix list (`b63e8ee`), so every `deploy.sh` line number below still holds. The `vite.config.ts` and `src/lib/recurring-push.ts` line numbers are now at `09d5c24`.
+- CLAUDE.md now says the jobs table's TTL attribute is `ttl`.
+
+Line numbers for `scripts/deploy.sh`, `vite.config.ts` and `src/lib/recurring-push.ts` are at `09d5c24`. Line numbers in `lambda/` are still at `cfdecc7`: `lambda/index.js` changed in `789fdc5` and `b63e8ee`, so look each one up by the function it names, or read that revision with `git show cfdecc7:lambda/index.js`.
 
 There's no staging backend. `scripts/deploy.sh` updates the one production Lambda, the live API and the live site. Nobody relies on the app yet, so production is the test bed, as in `docs/build/aws-test-plan.md`. The phone tests themselves live in `field-test-plan.md` next to this file. This checklist covers getting the build onto AWS safely and proving the plumbing.
 
@@ -27,7 +33,7 @@ Time: about 2.5 hours, plus any log export you choose in 6.2. Setup and local ga
 
 ## Top risks
 
-1. **The jobs table doesn't allow `DeleteItem` (confirmed).** `/read-notice/status` deletes each notice row after it's read. A read-only IAM simulation on 9 Nov 2026 showed `dynamodb:DeleteItem` on `parkproof-jobs` is an implicitDeny for `parkproof-lambda-role` (`GetItem`, `PutItem` and `UpdateItem` are allowed, from a grant made by hand). The delete is best effort, so without the grant it fails quietly and fine-notice details sit in the table until DynamoDB's TTL sweep removes them. The TTL attribute is confirmed as `ttl`, which is what the code writes, so the sweep does happen. CLAUDE.md's `expires_at` is stale (T10 corrects it). Stage 6 runs `scripts/setup-jobs-table.sh` before the code goes up.
+1. **The jobs table doesn't allow `DeleteItem` (confirmed).** `/read-notice/status` deletes each notice row after it's read. A read-only IAM simulation on 9 Nov 2026 showed `dynamodb:DeleteItem` on `parkproof-jobs` is an implicitDeny for `parkproof-lambda-role` (`GetItem`, `PutItem` and `UpdateItem` are allowed, from a grant made by hand). The delete is best effort, so without the grant it fails quietly and fine-notice details sit in the table until DynamoDB's TTL sweep removes them. The TTL attribute is confirmed as `ttl`, which is what the code writes, so the sweep does happen (CLAUDE.md said `expires_at` until T10 corrected it). Stage 6 runs `scripts/setup-jobs-table.sh` before the code goes up.
 2. **Schemas must compile on the real API.** This was a real failure, now fixed. On 9 Nov 2026 a real call showed the API refused T3's sign schema ("compiled grammar is too large"), so every scan would have failed in production. Merge `863a230` reshaped it, and real fresh and refresh reads now succeed. Two guards stop it coming back: a size-budget test in `lambda/sign-reading.test.js`, and `node scripts/check-schema-compiles.mjs`, which must print COMPILES for all three schemas before every deploy (stage 3.4). The eval corpus is still empty (`eval/corpus/` holds only `.gitkeep`).
 3. **The T5b Scheduler assumptions are unproven.** If `CreateSchedule` refuses `cron()` with `EndDate` and `ActionAfterCompletion: DELETE`, every weekly push booking fails and the app falls back to on-device reminders. Stage 6.3 now checks that before the deploy. Whether such a schedule really deletes itself after its end date is only seen after the deploy (8.5 B), and the privacy text says weekly schedules are deleted within 90 days, so a failure there has a deadline (8.5). Daylight saving can't be seen live until 4 April 2027, but schedules booked from 4 January 2027 cross it.
 4. **The shipped PDF fonts aren't the tested fonts.** `deploy.sh` re-subsets the fonts after your tests ran. In a clean clone without `fonts-src/`, it re-subsets in place, which can only drop glyphs.
@@ -47,7 +53,8 @@ Time: about 2.5 hours, plus any log export you choose in 6.2. Setup and local ga
 - [ ] The IAM simulator denies something in stage 4.4 other than `dynamodb:DeleteItem` on the jobs table, or still denies that after stage 6.
 - [ ] A real local scan, notice read or appeal draft errors out (stage 3.4).
 - [ ] The font coverage test fails after the re-subset (stage 3.3).
-- [ ] T7's merge changed `lambda/`, `scripts/deploy.sh` or the landing, and this checklist hasn't been re-run against it.
+- [ ] A commit after `09d5c24` changed `lambda/`, `scripts/deploy.sh` or the landing, and this checklist hasn't been re-checked against it (stage 1).
+- [ ] The deploy banner says `Workday: ON`, or `DEPLOY_ALLOW_WORKDAY` is set in the deploy shell. With T6b and T6c merged that ships the whole workday UI, and no lawyer has read its copy.
 - [ ] Stage 1's route check lists an API path that isn't in the expected list. The frontend would call a route `deploy.sh` doesn't create.
 - [ ] 4.8 finds no distribution with the comment `parkproof-cdn`. `deploy.sh` would create a second distribution and invalidate that one, so the live site would keep serving old files.
 - [ ] Stage 6.2 didn't run, or didn't print `keeps log events for 90 days`. The privacy text in this build says the logs are deleted after 90 days. If you don't want the retention, don't deploy this build: the text has to change first (through `scripts/_i18n_inject_fixlist_final.mjs`, all 9 languages).
@@ -147,7 +154,7 @@ No new tables, keys or indexes. New item shapes:
 **`parkproof-jobs`** (key `job_id`)
 - Notice job rows: `{ job_id, ttl, status, kind: 'read-notice', deadline, result | error }` (`index.js:3058`, `:3204-3218`). The result holds the notice fields (`index.js:617-640`). The error holds only an ERR code (`:3160-3164`). The row is deleted the first time a finished result is read (`:3133-3139`). A worker writing late can't bring it back, because the write is conditional (`:3203`, `:166`).
 - New limiter rows: `RL#pushrecurring#…`, `RL#pushrecurringcancel#…`, `RL#notice#…` with `count` and `ttl` (`:218-231`).
-- **TTL attribute: `ttl` (confirmed 9 Nov 2026).** The code writes `ttl` (`:163`, `:224`, unchanged from main), and a read-only `describe-time-to-live` showed the live table's TTL is on `ttl`, so DynamoDB does sweep these rows. CLAUDE.md's jobs row says `expires_at`, which is stale (T10 updates CLAUDE.md). The notice route also ignores an expired row by its own `ttl` check (`:3111`).
+- **TTL attribute: `ttl` (confirmed 9 Nov 2026).** The code writes `ttl` (`:163`, `:224`, unchanged from main), and a read-only `describe-time-to-live` showed the live table's TTL is on `ttl`, so DynamoDB does sweep these rows. CLAUDE.md's jobs row said `expires_at` until T10 corrected it. The notice route also ignores an expired row by its own `ttl` check (`:3111`).
 
 **`parkproof-push-subscriptions`** (key `device_id`, TTL on `expires_at` per `setup-push.sh:60-66`)
 - Tombstone: `{ device_id, gone_endpoint_sha256, gone_at, expires_at }`, with no endpoint and no keys (`push-tombstone.js:33-46`). It's written instead of a delete when a send gets 410 or 404 (`index.js:2964-2982`).
@@ -179,11 +186,11 @@ No new tables, keys or indexes. New item shapes:
 
 **Frontend build**
 - `deploy.sh` passes `VITE_API_URL`, the `VITE_COGNITO_*` values and `VITE_VAPID_PUBLIC_KEY` (`:641-649`).
-- New: `VITE_FEATURE_WORKDAY` (`src/lib/features.ts:25-38`). It must be off in production until a lawyer has read the workday copy (`docs/legal-review-queue.md:11`).
+- New: `VITE_FEATURE_WORKDAY` (`src/lib/features.ts:25-38`). It must be off in production until a lawyer has read the workday copy (`docs/legal-review-queue.md`, "Workday mode", "Gate"). No lawyer is engaged, so that means off for this deploy and every one after it until then.
 - **`deploy.sh` now sets it on every build** (`:642`): `false`, unless the shell that runs the deploy sets `DEPLOY_ALLOW_WORKDAY=1`, which makes it `true`. It prints which twice: `Workday: off (VITE_FEATURE_WORKDAY=false; DEPLOY_ALLOW_WORKDAY=1 turns it on)` in the opening banner, and `• workday mode: off (...)` just before the build.
 - It decides at the top of the script (`:46-55`), before it sources `.env` and `scripts/.aws-resources` with `set -a` (`:231`, `:239`), so a `VITE_FEATURE_WORKDAY` or `DEPLOY_ALLOW_WORKDAY` line in either file can't turn workday mode on. The value is read-only, so a file that tries to change it stops the deploy instead. An explicit value in the environment also beats `.env.local`, `.env.production` and `.env.production.local`, which Vite reads itself.
 - `vite.config.ts` copies the repo's `.env` onto `process.env` before Vite reads its env files (the vestauth workaround). Until 9 Nov 2026 that copy overwrote every key, so a `VITE_FEATURE_WORKDAY=true` line in `.env` beat the `false` from `deploy.sh` and shipped workday mode on while the banner said off. It now keeps any `VITE_*` key the environment already has (`applyParsed`), which is Vite's own rule for env files.
-- Nothing calls `isWorkdayEnabled()` yet, because T6b isn't merged, so today the flag changes nothing. This keeps T6b from shipping switched on by accident. `scripts/deploy-scripts.test.mjs` runs the script against a fake AWS and checks the build command gets `false` even with both lines in `.env`. `scripts/vite-env-precedence.test.mjs` runs Vite's real config and env resolution with `VITE_FEATURE_WORKDAY=true` in a `.env` and `false` in the environment, and checks the build gets `false`. `scripts/_deploy-staging.sh` follows the same rule.
+- T6b and T6c are merged (`09d5c24`), so the flag now decides real screens. With `true`, the build ships the whole workday UI: the home link "Parking all day? Start a workday", the start screen, the workday card that replaces the active card, the boundary question in the logger, automatic stop reminders, the workday view in History and the workday PDF. With `false` (this deploy), none of it renders and none of its code paths run (`src/app-workday.test.tsx`). Never run this deploy with `DEPLOY_ALLOW_WORKDAY=1`: no lawyer has read the workday copy. `scripts/deploy-scripts.test.mjs` runs the script against a fake AWS and checks the build command gets `false` even with both lines in `.env`. `scripts/vite-env-precedence.test.mjs` runs Vite's real config and env resolution with `VITE_FEATURE_WORKDAY=true` in a `.env` and `false` in the environment, and checks the build gets `false`. `scripts/_deploy-staging.sh` follows the same rule.
 
 ### 1.5 Runtime (item 5)
 
@@ -213,20 +220,20 @@ The order is what keeps the deploy safe. IAM goes before the code, because the n
 
 ### Stage 1. Freeze the commit [Claude]
 
-- [ ] T7's merge has landed on `integration/roadmap-2`, and the tree is clean.
+- [ ] Everything meant for this deploy has landed on `integration/roadmap-2` (at least `09d5c24`, plus the T10 translation review if it's done), and the tree is clean.
 - [ ] Record two SHAs: `DEPLOY_SHA` (the integration tip) and `MAIN_SHA` (current `main`, for rollback).
-- [ ] Re-diff the parts this checklist depends on:
+- [ ] Re-diff the parts this checklist depends on, from the commit it was last checked against:
   ```bash
-  git diff --stat cfdecc7.."$DEPLOY_SHA" -- lambda scripts/deploy.sh 'scripts/setup-*.sh' \
+  git diff --stat 09d5c24.."$DEPLOY_SHA" -- lambda scripts/deploy.sh scripts/_deploy-staging.sh 'scripts/setup-*.sh' \
     migrations/two-app-architecture public .gitattributes package.json package-lock.json index.html vite.config.ts
   ```
-  Expected: no output. That's true at `2edc532`. T7's only new script, `scripts/_i18n_inject_t7.mjs`, is outside this filter. If `lambda/` or `deploy.sh` changed, re-check section 1 before going on. If anything else here changed, re-check 1.6 and stage 8.3.
+  Expected: no output, or only `public/fonts/*.ttf` if fonts re-cut in 3.3 were committed. Locale files, docs and inject scripts are outside this filter. If `lambda/`, `deploy.sh` or a setup script changed, re-check section 1 before going on. If anything else here changed, re-check 1.6 and stage 8.3.
 - [ ] Every API path the frontend calls has a route. This catches a late fix that calls a route `deploy.sh` doesn't make:
   ```bash
   git grep -hoE "(\(|^)\s*['\`]/[a-z][a-z0-9/_-]*['\`]" "$DEPLOY_SHA" -- src ':!*.test.*' ':!**/test-support/**' \
     | sed -E "s/^[( ]*//; s/['\`]//g" | sort -u
   ```
-  Expected, at both `cfdecc7` and `2edc532`: `/app/` plus these 18 and nothing else. `/draft-appeal`, `/feedback`, `/me/delete`, `/me/export`, `/photos/materialize`, `/photos/presign`, `/push/cancel`, `/push/recurring`, `/push/recurring/cancel`, `/push/schedule`, `/push/subscribe`, `/read-notice`, `/sessions/delete`, `/sessions/list`, `/sessions/upload`, `/sign-session`, `/sign-translate`, `/user-feedback`. The three job routes also poll `<path>/status/{id}` (`src/lib/api.ts:194`), and `deploy.sh:585-589` makes all three.
+  Expected, at `cfdecc7`, `2edc532` and `09d5c24` alike: `/app/` plus these 18 and nothing else. `/draft-appeal`, `/feedback`, `/me/delete`, `/me/export`, `/photos/materialize`, `/photos/presign`, `/push/cancel`, `/push/recurring`, `/push/recurring/cancel`, `/push/schedule`, `/push/subscribe`, `/read-notice`, `/sessions/delete`, `/sessions/list`, `/sessions/upload`, `/sign-session`, `/sign-translate`, `/user-feedback`. The three job routes also poll `<path>/status/{id}` (`src/lib/api.ts:194`), and `deploy.sh:585-589` makes all three.
 
 ### Stage 2. Build a deploy clone outside Dropbox [Claude] (item 8)
 
@@ -235,7 +242,7 @@ Why: `deploy.sh` used to run `rm -rf node_modules` and `npm install` inside `lam
 - `core.autocrlf=false` in the clone keeps `deploy.sh` runnable after a rollback checkout of `main` (below).
 - The clone is the rollback tool for the 24-hour watch.
 
-Don't deploy from `C:\Users\molte\Downloads\pp-wt\readonly` (read-only, detached) or `pp-wt\t9` (the merge is happening there). Don't use OneDrive either: same locks.
+Don't deploy from `C:\Users\molte\Downloads\pp-wt\readonly` (read-only, detached) or `pp-wt\t9` (the integration merges and the T10 review happen there). Don't use OneDrive either: same locks.
 
 In Git Bash:
 
@@ -275,18 +282,18 @@ npm ci
 
 3.3 PDF fonts, so the fonts that ship are the fonts you tested:
 - `deploy.sh` re-subsets the fonts whenever fontTools is installed (`:620-626`), and it is on this machine. Without `fonts-src/` it re-subsets the committed files in place, which can only drop glyphs (`scripts/_subset_pdf_fonts.py:24-30`, `:183-189`).
-- This branch rewrote every locale (about 700 lines each) but didn't touch `public/fonts`. The last change there was `b8c88eb` on main.
+- This branch rewrote every locale. `378c4c6` (T6b and T6c) re-cut `NotoSansKR.ttf` and `NotoSansSC.ttf` from `fonts-src/` for the workday strings; the other fonts last changed in `b8c88eb` on main. The T10 translation review changes strings in 8 locales after `09d5c24`, so the committed subsets can miss characters it adds: cut them again here, from `fonts-src/`.
 - [ ] `PYTHONIOENCODING=utf-8 python scripts/_subset_pdf_fonts.py` (now cut from `fonts-src/`). Keep the prefix, as `deploy.sh:622` does. The script prints `→` and `↓`, and in Git Bash Python writes to a pipe in cp1252, so without it the run can stop with `UnicodeEncodeError` part way through.
 - [ ] `npx vitest run src/lib/pdf-font-coverage.test.ts src/lib/pdf-layout.test.ts`
 - [ ] `git status --short public/fonts`. Changes are expected: the fonts gained glyphs. Commit them on the branch afterwards, so the repo matches what shipped. `deploy.sh` will cut the same files again from the same sources.
 
 3.4 One real round trip to Anthropic, still no AWS:
 - [ ] `node scripts/check-schema-compiles.mjs` prints COMPILES for RESPONSE_SCHEMA, NOTICE_SCHEMA and APPEAL_RESPONSE_SCHEMA and exits 0. It sends each route's real thinking and effort settings, which matter: a schema that compiles without thinking can still be refused with it. Any FAILS means stop.
-- [ ] `npm run dev` and open the local URL Vite prints. The dev proxy runs the same Lambda code with the real key from `.env` (`vite.config.ts:82-104` for scans, `:180-213` for notices and appeals).
+- [ ] `npm run dev` and open the local URL Vite prints. The dev proxy runs the same Lambda code with the real key from `.env` (`vite.config.ts:88-121` for scans, `:186-219` for notices and appeals). Workday mode is on in dev (the flag is unset there); that doesn't affect the deploy.
 - [ ] Scan one stacked sign photo, then reuse it (refresh mode). The terminal shows `[parkproof] anthropic_call=… stop=end_turn` and a verdict.
 - [ ] Read one notice photo through "Got a fine? Start here". The terminal shows `[parkproof] notice_call=…`.
 - [ ] Draft one appeal from a saved record.
-- [ ] Any 400 from Anthropic (a schema or parameter error) means stop. Push routes are stubs in dev (`vite.config.ts:325-410`), so push isn't tested here.
+- [ ] Any 400 from Anthropic (a schema or parameter error) means stop. Push routes are stubs in dev (`vite.config.ts:298-416`), so push isn't tested here.
 
 3.5 Rehearse the Lambda package, still no AWS:
 - [ ] `bash scripts/deploy.sh --package-only`. It needs no `.env` and makes no AWS call: it exits before the AWS CLI check. It takes about 40 seconds, most of it `npm ci`.
@@ -555,7 +562,7 @@ grep -rlF "$(grep '^VAPID_PRIVATE_KEY=' scripts/.aws-resources | cut -d= -f2-)" 
 - [ ] Optional: resubmit `sitemap.xml` in Search Console.
 
 8.4 One pass on the phone [You] (item 10). The full tests are E to K in `field-test-plan.md`. This is the minimum that proves the deploy.
-- [ ] Close the installed app fully and reopen it twice (`registerType: 'autoUpdate'`, `vite.config.ts:541`). Settings is on the home screen.
+- [ ] Close the installed app fully and reopen it twice (`registerType: 'autoUpdate'`, `vite.config.ts:547`). Settings is on the home screen, and "Parking all day? Start a workday" is not (workday mode is off).
 - [ ] Scan one real stacked sign, then reuse it. You get a verdict both times.
 - [ ] Save with a car photo and the earliest reminder. Allow notifications and lock the phone. **The test push:** it arrives on time and opens the record. CloudWatch shows `[parkproof.push.subscribe]` when the app opened and `[parkproof.push.dispatch.ok]` when it fired. Optional direct push: `node scripts/send-test-push.mjs <device_id>` (it reads VAPID from `scripts/.aws-resources`).
 - [ ] Tap "I've left", then Check signatures. All valid.
@@ -689,7 +696,7 @@ This follows the CLAUDE.md playbook. If `integration/roadmap-2` hasn't been merg
 Do the three steps in this order. Steps 1 and 2 take a minute. They stop phones still on the new app from booking anything main can't serve.
 
 **Step 1. Delete the four new routes.** Main's dispatcher has no handler for them. They fall through to `handleSignTranslate`, which queues a sign job and answers 202 with a job id (main `lambda/index.js:2073-2110`). The new app doesn't see that as an error:
-- `/push/recurring`: a 202 with no `skipped` list reads as booked (`src/lib/recurring-push.ts:364-367`). The phone shows weekly push as set, and nothing fires.
+- `/push/recurring`: a 202 with no `skipped` list reads as booked (`src/lib/recurring-push.ts:346-350`). The phone shows weekly push as set, and nothing fires.
 - `/push/recurring/cancel`: the 202 reads as cancelled.
 - `/read-notice`: main reads the notice photo as a sign (a real Claude call), and the app polls back a sign answer.
 

@@ -26,8 +26,9 @@ import PrivacyPolicy from '../components/PrivacyPolicy'
 const PINNED = {
   date: '2026-11-09',
   // Fix round 2 (same day): privacy.anonymousCloudwatch now names every
-  // field of the feedback log line.
-  sha256: '29238099dbc9d519b516705f386c30ae4676606eb0e6046caadd11a865d857c1',
+  // field of the feedback log line. T10 (same day): the translation review
+  // rewrote privacy.* strings in vi, id, el, hi and pa.
+  sha256: '86984dacf39ff3d591abe729e07e49b7ae0392078bc50109ef1fef24d57cc765',
 }
 
 /** Every locale's privacy.* strings, in the locales' fixed order. */

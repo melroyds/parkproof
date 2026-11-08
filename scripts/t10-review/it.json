@@ -1,0 +1,18 @@
+{
+  "common.signedSeal": "Record firmato: eventuali manomissioni sono rilevabili",
+  "result.permit.timeSet": "I tuoi promemoria faranno il conto alla rovescia fino alle {{time}}, l'orario che hai inserito, con uno in più quando finisce il limite standard.",
+  "reminders.chipAtPermitTime": "Alla fine del tempo del permesso",
+  "notice.match.repeatedHour": "In questa data è finita l'ora legale, quindi l'ora sul verbale c'è stata due volte. Il record viene confrontato con: {{time}}.",
+  "pdf.workday.footer": "Questo documento registra ciò che hai fatto e ciò che ci hai detto. Non è un accertamento legale del fatto che tu abbia rispettato le regole. Lo decide il tuo comune.",
+  "recurring.intro": "Pulizia strade, clearway e altre restrizioni che si ripetono negli stessi giorni. Impostali una volta e ricevi un promemoria prima di ognuno.",
+  "recurring.kind.other": "Altra restrizione",
+  "recurring.offer.heading": "Restrizione settimanale su questo cartello",
+  "recurring.zone.lindeman": "Isola Lindeman",
+  "recurring.zone.lordHowe": "Isola di Lord Howe",
+  "evidenceFile.permitHelp": "I dettagli del permesso, e ogni foto indicata come \"Permesso esposto\", sono nel file solo se selezioni questa opzione. Il record firmato contiene solo le loro impronte digitali, con cui si possono confrontare. I dati del permesso di parcheggio accessibile sono informazioni sulla salute.",
+  "workday.boundary.footer": "Se non lo sai con certezza, il tuo limite di tempo iniziale continua a decorrere.",
+  "workday.boundary.notSure": "Il tuo limite su questo tratto decorre ancora dalle {{start}}. Sposta l'auto fuori da questo tratto entro le {{deadline}}.",
+  "workday.boundary.notSureArea": "Il tuo limite in quest'area di parcheggio decorre ancora dalle {{start}}. Sposta l'auto fuori da tutta l'area entro le {{deadline}}.",
+  "workday.boundary.notSureNoDeadline": "Il tuo limite su questo tratto decorre ancora dalle {{start}}.",
+  "workday.boundary.notSureNoDeadlineArea": "Il tuo limite in quest'area di parcheggio decorre ancora dalle {{start}}."
+}

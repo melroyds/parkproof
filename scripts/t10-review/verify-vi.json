@@ -1,0 +1,7 @@
+{
+  "callout_label": "Nói thẳng.",
+  "li_beyond_1": "<strong>Rằng AI đọc biển báo đúng.</strong> Lần quét của ParkProof là máy đọc một biển báo đỗ xe, và máy có thể sai. Câu trả lời và các quy tắc trong bản ghi là cách đọc tốt nhất của AI tại thời điểm quét, không phải sự thật tuyệt đối.",
+  "li_beyond_3": "<strong>Bất kỳ kết quả pháp lý nào.</strong> Bằng chứng có hỗ trợ cho việc khiếu nại, hoàn tiền hoặc một vụ kiện hay không là do người xem xét quyết định. ParkProof là một công cụ, không phải luật sư.",
+  "p_chain_fork": "Nếu hai mắt xích có cùng số (2a và 2b), mỗi mắt xích do một thiết bị khác nhau thêm vào tại điểm đó. Cả hai đều trỏ đến cùng một mắt xích trước.",
+  "meta_desc": "Hướng dẫn từng bước bằng openssl để kiểm tra một bản ghi bằng chứng ParkProof không thay đổi kể từ khi ParkProof ký. Chữ ký mã hóa qua AWS KMS ECDSA P-256."
+}
