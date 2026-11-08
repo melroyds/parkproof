@@ -956,6 +956,49 @@
     "shared": {
       "field": "Dibagikan kepadamu",
       "madeElsewhere": "Catatan ini dibuat di ponsel orang lain."
+    },
+    "workday": {
+      "title": "Catatan peristiwa parkir.",
+      "footer": "Catatan ini merekam apa yang kamu lakukan dan apa yang kamu sampaikan kepada kami. Ini bukan putusan hukum bahwa kamu sudah mematuhi aturan. Dewan kotamu yang memutuskannya.",
+      "councilLine": "Dewan kota bisa menafsirkan aturan ini dengan lebih ketat. Cek halaman parkir dewan kotamu.",
+      "started": "Hari kerja dimulai {{time}} (jam ponsel)",
+      "ended": "Hari kerja berakhir {{time}} (jam ponsel)",
+      "legCount": "Perhentian dalam PDF ini: {{chosen}} dari {{total}}",
+      "partial": "Tidak semua perhentian hari kerja ini ada di PDF ini. Setiap jarak dan pernyataan pengemudi menyangkut perhentian tepat sebelumnya pada hari kerja itu, meski perhentian tersebut tidak disertakan.",
+      "intro": "Setiap perhentian adalah catatan parkir tersendiri. Setelah tabel ini ada bagian untuk setiap perhentian, dan halaman tanda tangan ada di akhir.",
+      "col": {
+        "leg": "Perhentian",
+        "arrived": "Tiba (jam ponsel)",
+        "left": "Pergi (jam ponsel)",
+        "distance": "Perkiraan jarak dari perhentian sebelumnya (GPS ponsel)",
+        "statement": "Pernyataan pengemudi"
+      },
+      "cell": {
+        "notLeft": "Belum dicatat",
+        "signedArrival": "Kedatangan: {{value}}",
+        "signedDeparture": "Saat pergi: {{value}}",
+        "noDistance": "Tidak diukur. Perlu titik GPS ponsel di kedua perhentian."
+      },
+      "statement": {
+        "firstLeg": "Tidak ada. Ini perhentian pertama.",
+        "notAsked": "Tidak ditanyakan. ParkProof tidak bertanya tentang pindah kali ini.",
+        "oppositeDirectionSign": "Pengemudi menyatakan melewati rambu yang menunjukkan zona ini sudah berakhir.",
+        "yellowEdgeLine": "Pengemudi menyatakan melewati garis tepi kuning.",
+        "tIntersectionOrDeadEnd": "Pengemudi menyatakan melewati ujung jalan di pertigaan T atau jalan buntu.",
+        "leftParkingArea": "Pengemudi menyatakan mengemudi keluar dari area parkir, melewati rambu yang menyatakan area itu berakhir.",
+        "notSure": "Saat ditanya apakah sudah meninggalkan ruas jalan yang diatur rambu, pengemudi menjawab: Saya tidak yakin.",
+        "notSureArea": "Saat ditanya apakah sudah meninggalkan area parkir, pengemudi menjawab: Saya tidak yakin."
+      },
+      "legHeading": "Perhentian {{number}}",
+      "tagged": "Perhentian ini adalah parkir sebelumnya yang ditambahkan ke hari kerja. Detailnya yang ditandatangani tidak menyebut hari kerja ini.",
+      "chain": {
+        "heading": "Rantai antar perhentian",
+        "intro": "Detail saat parkir setiap perhentian memuat previous_departure_payload_sha256, yaitu SHA-256 dari payload kepergian yang ditandatangani milik perhentian sebelumnya, jika kepergian itu ditandatangani tepat waktu. Simpan berkas setiap perhentian dari halaman tanda tangannya di folder tersendiri (leg1, leg2, dan seterusnya) lalu dekode sesuai langkahnya. Kemudian jalankan perintah yang ditampilkan untuk setiap pasangan.",
+        "equals": "Nilai hex itu harus sama dengan previous_departure_payload_sha256 di mata rantai {{link}} perhentian {{leg}}.",
+        "equalsOneOf": "Salah satu nilai hex ini harus sama dengan previous_departure_payload_sha256 di mata rantai {{link}} perhentian {{leg}}.",
+        "notLinked": "Mata rantai {{link}} perhentian {{leg}} ditandatangani tanpa kepergian dari perhentian sebelumnya, karena tidak ada yang ditandatangani tepat waktu. Tidak ada yang perlu dibandingkan di sini.",
+        "notInPdf": "Mata rantai {{link}} perhentian {{leg}} merujuk ke kepergian yang ditandatangani dari perhentian sebelumnya yang tidak ada di PDF ini."
+      }
     }
   },
   "time": {
@@ -1102,6 +1145,123 @@
       "ended": "Waktu parkirmu di ruas jalan ini sudah berakhir pukul {{time}}.",
       "headsUpArea": "Batas waktu parkirmu di area parkir ini berakhir pukul {{time}}. Pindahkan mobil keluar dari seluruh area, bukan hanya ke jalan lain di dalamnya.",
       "endedArea": "Waktu parkirmu di area parkir ini sudah berakhir pukul {{time}}."
+    },
+    "start": {
+      "title": "Mulai hari kerja",
+      "intro": "Untuk hari ketika kamu memindahkan mobil di antara tempat parkir berbatas waktu. Setiap perhentian punya catatannya sendiri, dibaca dari foto rambu yang baru diambil.",
+      "locating": "Memeriksa kamu berada di negara bagian mana…",
+      "unavailable": "Mode hari kerja tersedia di Victoria dan Queensland selagi kami memeriksa aturan negara bagian lain.",
+      "unknown": "ParkProof tidak bisa mengetahui kamu berada di negara bagian mana dari lokasi ponselmu. Mode hari kerja hanya tersedia di Victoria dan Queensland, jadi perlu diperiksa dulu.",
+      "button": "Mulai hari kerja",
+      "useCurrent": "Gunakan tempat parkir mobil saat ini sebagai perhentian pertama",
+      "useCurrentHelp": "Parkir itu tetap memakai waktu saat kamu mencatatnya dan batas waktunya. Pindah beberapa petak parkir sesudahnya tidak membuat batas waktu itu dimulai ulang, jadi tetap pakai parkir itu. Kalau mobil sudah keluar dari ruas jalan yang diatur rambu, kembali dan ketuk \"Sudah pergi\" pada catatan itu dulu.",
+      "currentIneligible": "Parkirmu saat ini tidak bisa menjadi perhentian hari kerja. Setiap perhentian perlu rambu yang terbaca di Victoria atau Queensland. Ketuk \"Sudah pergi\" pada catatan itu setelah mobil keluar dari ruas jalan yang diatur rambu, lalu mulai hari kerja."
+    },
+    "explainer": {
+      "heading": "Cara kerja batas waktu",
+      "full": "Pindah beberapa petak parkir tidak membuat batas waktu dimulai ulang. Kamu harus meninggalkan ruas jalan yang diatur rambu, atau seluruh area jika rambunya rambu area. Membayar lagi atau menambah pembayaran juga tidak membuat batas waktu dimulai ulang. Setiap pindah perlu foto baru rambu yang baru.",
+      "short": "Pindah beberapa petak parkir tidak membuat batas waktu dimulai ulang. Setiap pindah perlu foto baru rambu yang baru."
+    },
+    "ready": {
+      "heading": "Pengingat",
+      "on": "Notifikasi aktif, jadi pengingat hari kerja bisa sampai ke ponsel ini meski ParkProof tertutup.",
+      "ask": "Aktifkan notifikasi agar pengingat hari kerja bisa sampai ke ponsel ini meski ParkProof tertutup.",
+      "allow": "Aktifkan notifikasi",
+      "cantDeliver": "Pengingat hari kerja memerlukan notifikasi. Tanpa notifikasi, kamu perlu memantau waktu sendiri.",
+      "iosInstall": "Di iPhone, notifikasi memerlukan ParkProof di Layar Utama. Ketuk Bagikan, lalu Tambah ke Layar Utama, dan mulai hari kerja dari sana.",
+      "denied": "Notifikasi untuk ParkProof diblokir. Kamu bisa mengizinkannya di pengaturan situs browser.",
+      "turnedOff": "Notifikasi ParkProof dimatikan di ponsel ini. Kamu bisa menyalakannya lagi di Pengaturan."
+    },
+    "ics": {
+      "button": "Tambahkan pengingat kalender untuk perhentian ini",
+      "title": "Pindahkan mobil keluar dari ruas jalan yang diatur rambu ini sebelum pukul {{time}}",
+      "titleArea": "Pindahkan mobil keluar dari area parkir ini sebelum pukul {{time}}"
+    },
+    "card": {
+      "kicker": "Hari kerja",
+      "stop": "Perhentian {{number}}",
+      "noStops": "Belum ada perhentian. Setiap perhentian dimulai dengan foto rambunya.",
+      "moved": "Perhentian {{number}} berakhir pukul {{time}} (jam ponsel).",
+      "open": "Buka hari kerja ini",
+      "openAria": "Buka hari kerja ini. {{status}}",
+      "expiredHint": "Masih di sini? Pindahkan sekarang. Sudah pindah? Ketuk \"Saya memindahkan mobil sekarang\".",
+      "move": "Saya memindahkan mobil sekarang",
+      "moveHint": "Ketuk sebelum kamu berangkat",
+      "scanFirst": "Sudah parkir? Pindai rambu di tempatmu",
+      "scanNext": "Sudah parkir lagi? Pindai rambu yang baru",
+      "end": "Akhiri hari kerja"
+    },
+    "end": {
+      "title": "Akhiri hari kerja ini?",
+      "body": "Perhentianmu tetap ada di Riwayat. Setelah ini, parkir yang kamu catat adalah catatan biasa, dan ParkProof tidak akan menanyakan apakah kamu sudah meninggalkan ruas jalan yang diatur rambu."
+    },
+    "history": {
+      "row_one": "Hari kerja, {{count}} perhentian",
+      "row_other": "Hari kerja, {{count}} perhentian"
+    },
+    "status": {
+      "active": "Sedang berlangsung",
+      "ended": "Selesai"
+    },
+    "view": {
+      "title": "Hari kerja",
+      "started": "Dimulai {{time}} (jam ponsel)",
+      "ended": "Berakhir {{time}} (jam ponsel)",
+      "stopsHeading": "Perhentian",
+      "noStops": "Belum ada perhentian.",
+      "tagged": "Ditambahkan ke hari kerja ini dari parkir sebelumnya. Detailnya yang ditandatangani tidak menyebut hari kerja ini."
+    },
+    "noSign": {
+      "body": "Mode hari kerja memerlukan rambu yang terbaca di setiap tempat. Beberapa area, seperti pusat kota Brisbane, punya batas waktu meski jalannya tidak punya rambu."
+    },
+    "stopped": {
+      "notAvailable": "Mode hari kerja belum tersedia di sini. Parkir ini disimpan sebagai catatan biasa dengan pembacaan rambunya sendiri.",
+      "unknownState": "ParkProof tidak bisa memastikan parkir ini ada di negara bagian mana, jadi hari kerja sudah berakhir. Parkir ini disimpan sebagai catatan biasa. Kalau kamu bilang tidak yakin, batas waktu awalmu masih berlaku."
+    },
+    "scan": {
+      "fresh": "Perhentian hari kerja: ambil foto baru rambu di tempat mobil berada sekarang.",
+      "cameraDenied": "Nyalakan lagi akses kamera di pengaturan browser. Perhentian hari kerja perlu foto yang diambil saat ini.",
+      "notFresh": "Foto itu tidak baru saja diambil. Perhentian hari kerja perlu foto rambu yang diambil saat ini. Ambil foto baru dengan kamera."
+    },
+    "boundary": {
+      "title": "Ini mungkin masih ruas jalan yang sama yang diatur rambu.",
+      "body": "Pindah petak parkir tidak membuat batas waktu dimulai ulang. Apakah kamu melewati salah satu dari ini dalam perjalanan ke sini?",
+      "area": "Ini area parkir. Pindah ke jalan lain di dalamnya tidak dihitung. Kamu harus meninggalkan seluruh area.",
+      "option": {
+        "oppositeDirectionSign": "Rambu yang menunjukkan zona ini sudah berakhir (rambu panah dua arah di tengah blok tidak dihitung)",
+        "yellowEdgeLine": "Garis tepi kuning",
+        "tIntersectionOrDeadEnd": "Ujung jalan di pertigaan T atau jalan buntu",
+        "leftParkingArea": "Saya mengemudi keluar dari area parkir, melewati rambu yang menyatakan area itu berakhir",
+        "notSure": "Saya tidak yakin"
+      },
+      "footer": "Kalau kamu tidak yakin, batas waktu awalmu masih berjalan.",
+      "required": "Pilih satu jawaban untuk menyimpan perhentian ini.",
+      "newLimit": "Batas baru berdasarkan yang kamu sampaikan: kamu melewati {{boundary}}.",
+      "passed": {
+        "oppositeDirectionSign": "rambu yang menunjukkan zona ini sudah berakhir",
+        "yellowEdgeLine": "garis tepi kuning",
+        "tIntersectionOrDeadEnd": "ujung jalan di pertigaan T atau jalan buntu",
+        "leftParkingArea": "rambu yang menyatakan area parkir berakhir"
+      },
+      "notSure": "Batas waktumu di ruas jalan ini masih dihitung sejak {{start}}. Pindahkan mobil keluar dari ruas jalan ini sebelum {{deadline}}.",
+      "notSureArea": "Batas waktumu di area parkir ini masih dihitung sejak {{start}}. Pindahkan mobil keluar dari seluruh area sebelum {{deadline}}.",
+      "notSureNoDeadline": "Batas waktumu di ruas jalan ini masih dihitung sejak {{start}}.",
+      "notSureNoDeadlineArea": "Batas waktumu di area parkir ini masih dihitung sejak {{start}}.",
+      "passedDeadline": "Waktumu di ruas jalan ini sudah berakhir pukul {{time}}. Pindahkan mobil keluar dari ruas jalan ini sekarang.",
+      "passedDeadlineArea": "Waktumu di area parkir ini sudah berakhir pukul {{time}}. Pindahkan mobil keluar dari seluruh area sekarang.",
+      "saveAnyway": "Tetap simpan",
+      "dontSave": "Jangan simpan perhentian ini"
+    },
+    "reminders": {
+      "notSet": "Pengingat untuk perhentian ini tidak bisa diatur. Perhatikan waktunya sendiri, atau coba lagi."
+    },
+    "pdf": {
+      "open": "Ekspor PDF hari kerja ini",
+      "title": "PDF hari kerja",
+      "warning": "PDF ini memuat setiap perhentian yang kamu pilih, beserta jarak di antaranya dan apa yang kamu sampaikan kepada kami di setiap pindah. Dewan kota bisa membacanya.",
+      "chooseLegs": "Perhentian yang disertakan",
+      "leg": "Perhentian {{number}}",
+      "noneChosen": "Pilih setidaknya satu perhentian untuk diekspor."
     }
   },
   "notice": {

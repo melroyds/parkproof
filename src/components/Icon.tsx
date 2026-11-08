@@ -14,6 +14,7 @@ export type IconName =
   | 'settings'
   | 'share'
   | 'key'
+  | 'briefcase'
 
 interface Props {
   name: IconName
@@ -119,6 +120,13 @@ const PATHS: Record<IconName, ReactNode> = {
       <path d="m11.2 12.3 8.3-8.3" />
       <path d="m16.5 7 2.5 2.5" />
       <path d="m14 9.5 2 2" />
+    </>
+  ),
+  // Workday mode (T6b): a bag for a day at work.
+  briefcase: (
+    <>
+      <rect x="3.5" y="7.5" width="17" height="12" rx="2.5" />
+      <path d="M9 7.5V6a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v1.5M3.5 12.5h17" />
     </>
   ),
 }

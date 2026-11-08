@@ -31,11 +31,21 @@ import HomeMenu from './components/HomeMenu'
 import ShareSheet from './components/ShareSheet'
 import SharedLinkView from './components/SharedLinkView'
 import SharedRecordScreen from './components/SharedRecordScreen'
+import WorkdayStart, { type WorkdayStartInput } from './components/WorkdayStart'
+import WorkdayCard from './components/WorkdayCard'
+import WorkdayView from './components/WorkdayView'
+import WorkdayEndDialog from './components/WorkdayEndDialog'
 import { refreshInterpretation, translateSign } from './lib/claude'
 import {
   deleteSession,
   endSession,
+  endWorkday,
+  getActiveWorkday,
   getSession,
+  loadWorkdays,
+  markWorkdayMoving,
+  setWorkdayLeg,
+  startWorkday,
   isDuplicateRecordError,
   isStorageFullError,
   loadActiveSessions,
@@ -84,7 +94,7 @@ import {
   type ReadingView,
 } from './lib/sign-result'
 import { completeDeparture, requestDepartureFix, settleReturnPhotos, type DepartureFixRequest } from './lib/departure'
-import { HOME_SCAN_ID, RECORD_STATUS_ID, firstFocusTarget } from './lib/focus-targets'
+import { HOME_SCAN_ID, RECORD_STATUS_ID, WORKDAY_SCAN_ID, firstFocusTarget } from './lib/focus-targets'
 import { useAuth } from './lib/use-auth'
 import { authConfigured } from './lib/auth'
 import {
@@ -101,10 +111,41 @@ import { handleCallback as handleFederatedCallback } from './lib/federated-auth'
 import { cancelPushReminders, installPushRegistrationRefresh } from './lib/push'
 import { cancelInTabReminders } from './lib/notifications'
 import { clearDeepLinkParams, parseDeepLink } from './lib/deep-link'
+import { isWorkdayEnabled } from './lib/features'
+import {
+  firstStopOffer,
+  isFirstWorkday,
+  resolveLegSave,
+  showStartWorkdayLink,
+  workdayHome,
+  workdayLegDraft,
+  type LegSaveDecision,
+  type WorkdayHome,
+} from './lib/workday-flow'
+import { useWorkdayReadiness } from './lib/use-workday-readiness'
+import { stopContext, stopLimitFields, withoutStopLimit } from './lib/workday-boundary'
+import { bookWorkdayLegReminders, rearmWorkdayLegInTab } from './lib/workday-reminders'
+import { workdayLegs } from './lib/workday'
+import type { RemindMeSummary } from './lib/remind-me'
 import type { CapturedNotice, NoticeSnapshot } from './lib/notice-read'
 import type { LogDraft, ParkingRules, ParkingSession, RuleVariant } from './types'
 
 type Coords = { lat: number; lng: number } | null
+
+/** Why a workday scan's park ended the workday, when the driver is told. */
+type WorkdayStopReason = 'jurisdiction' | 'unknown_state'
+
+/** The notice the reminder screen shows for each reason. */
+const WORKDAY_STOPPED_KEYS: Record<WorkdayStopReason, string> = {
+  jurisdiction: 'workday.stopped.notAvailable',
+  unknown_state: 'workday.stopped.unknownState',
+}
+
+/** A workday view to open: its workday, and where its Back goes. */
+interface WorkdayViewTarget {
+  workdayId: string
+  back: 'home' | 'history'
+}
 
 interface ScanView<N extends 'clarify' | 'result' | 'logging' | 'noReadableSign'> {
   name: N
@@ -153,10 +194,23 @@ type View =
       ambientPhotoMeta: PhotoCaptureMeta | null
       unread?: { reading: NoSignReading; back: ScanView<'noReadableSign'> }
     }
-  | { name: 'remind'; session: ParkingSession }
+  /**
+   * `workdayStopped` (T6b item 7): a workday scan's park wasn't in
+   * Victoria or Queensland ('jurisdiction'), or its state couldn't be told
+   * ('unknown_state'), so it was saved as a normal record and the workday
+   * stopped. The reminder screen says which.
+   */
+  | { name: 'remind'; session: ParkingSession; workdayStopped?: WorkdayStopReason }
   | { name: 'history' }
   | { name: 'actives' }
-  | { name: 'session'; session: ParkingSession }
+  /** `returnTo`: the workday view this stop was opened from (T6b), for Back. */
+  | { name: 'session'; session: ParkingSession; returnTo?: WorkdayViewTarget }
+  /**
+   * Workday mode (T6b, behind VITE_FEATURE_WORKDAY): the start screen (the
+   * location gate, readiness and the explainer), and one workday's stops.
+   */
+  | { name: 'workdayStart' }
+  | ({ name: 'workday' } & WorkdayViewTarget)
   /**
    * The appeal flow. From the notice lookup it carries the notice photo
    * (`notice`, so the flow skips its capture step) and the lookup's state
@@ -200,6 +254,12 @@ interface DepartureSheetState {
   session: ParkingSession
   fix: DepartureFixRequest
   confirmKey: 'active.iveLeftConfirm' | 'session.endConfirm'
+  /**
+   * Opened by the workday card (T6b): "I'm moving the car now" ('move')
+   * or "End workday" with the car still at the stop ('end'). Confirm then
+   * also moves the workday between moves, or ends it.
+   */
+  workday?: { id: string; action: 'move' | 'end' }
 }
 
 /** The scan view an answer goes to (viewForReading), carrying the scan's photo, place and draft. */
@@ -288,6 +348,7 @@ const SHARE_SAFE_VIEWS: ReadonlySet<View['name']> = new Set<View['name']>([
   'history',
   'actives',
   'session',
+  'workday',
   'shared',
   'privacy',
   'about',
@@ -426,6 +487,40 @@ function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [now, activesVersion],
   )
+  // Workday mode (T6b), only with VITE_FEATURE_WORKDAY on. The active
+  // workday is re-read on every records change (the workday store's writes
+  // fire it too). While it is between moves, every scan is the next stop's:
+  // a fresh photo only, its stop's draft, and Back goes home. The card
+  // offers the calendar file when reminders can't reach the driver.
+  const workdayOn = isWorkdayEnabled()
+  const activeWorkday = useMemo(
+    () => (workdayOn ? getActiveWorkday() : null),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [workdayOn, activesVersion],
+  )
+  const workdayScan = activeWorkday?.status === 'between_moves'
+  const [workdayReadiness, refreshWorkdayReadiness] = useWorkdayReadiness()
+  // "End this workday?" while it is open: the id of the workday it ends.
+  const [workdayEndId, setWorkdayEndId] = useState<string | null>(null)
+  // What setting a stop's reminders did in this page (T6b item 9), for the
+  // workday card: they are set when the stop is saved, with no reminder
+  // screen. `booking` while it runs (the card says nothing yet). No entry:
+  // not tried here (the card then reads the booked times from the record).
+  const [stopReminders, setStopReminders] = useState<{
+    legId: string
+    summary?: RemindMeSummary | null
+    booking: boolean
+  } | null>(null)
+  // In-tab reminders don't survive a reload: arm the parked stop's again
+  // (in-tab only, once per page, never asking for permission).
+  const parkedStopId = activeWorkday?.status === 'parked' ? activeWorkday.current_session_id : null
+  useEffect(() => {
+    if (!parkedStopId || !isWorkdayEnabled()) return
+    const leg = getSession(parkedStopId)
+    if (!leg || typeof leg.workday_id !== 'string') return
+    rearmWorkdayLegInTab(leg, workdayLegs(loadSessions(), leg.workday_id), t)
+  }, [parkedStopId, t])
+
   // Weekly reminders (T5a): the home row reads them, and while the app is
   // open their next 24 hours of reminders stay armed in this tab. T5b keeps
   // the server's push schedules for them in step, for when the app is closed.
@@ -582,6 +677,14 @@ function App() {
     // Without capture metadata, claim no more than we know: now, and not
     // necessarily from the camera.
     const signPhotoMeta: PhotoCaptureMeta = meta ?? { captured_at: new Date().toISOString(), source: 'library' }
+    // Between workday moves the next stop needs a photo taken now (T6b
+    // item 6). The scanner refuses an old one and says why; this is the
+    // backstop: such a photo never becomes a stop, and the driver goes back
+    // to the camera.
+    if (signPhotoMeta.source === 'library' && isWorkdayEnabled() && getActiveWorkday()?.status === 'between_moves') {
+      setView({ name: 'scan' })
+      return
+    }
     setView({ name: 'loading' })
     try {
       const base64 = stripDataUrlPrefix(dataUrl)
@@ -590,8 +693,12 @@ function App() {
       // coordinates place it without doubt (T4 item 3).
       const profile = loadProfile()
       const result = await translateSign(base64, mediaType, coords, signReaderExtras(profile, parkingStateForCoords(coords)))
-      // The new record's driver defaults to the name saved in Settings.
-      const draft = logDraftFromProfile(profile)
+      // The new record's driver defaults to the name saved in Settings. A
+      // scan while a workday is between moves is its next stop (T6b item 6):
+      // the draft carries the workday link, read now, not at render.
+      const profileDraft = logDraftFromProfile(profile)
+      const legDraft = isWorkdayEnabled() ? workdayLegDraft(getActiveWorkday(), loadSessions()) : null
+      const draft: LogDraft = legDraft ? { ...profileDraft, workday: legDraft } : profileDraft
       // 'missing' and 'not_a_parking_sign' have no answer to show (T3).
       setView(scanViewFor(viewForReading(result), { result, signPhoto: dataUrl, signPhotoMeta, coords, draft }))
     } catch (err) {
@@ -632,6 +739,20 @@ function App() {
   }
 
   const reuseSession = async (session: ParkingSession) => {
+    // Workday legs are never re-checked, and nothing is while a workday is
+    // active (T6b items 4 to 6): between moves a stop needs a fresh photo of
+    // its new sign, and at a stop a re-check would give a car that hasn't
+    // moved a second arrival. The scanner and the home card hide every way
+    // in; this is the backstop. A leg is refused whatever the flag says
+    // (such records only exist where it was on).
+    if (typeof session.workday_id === 'string' && session.workday_id !== '') {
+      openScan()
+      return
+    }
+    if (isWorkdayEnabled() && getActiveWorkday()) {
+      openScan()
+      return
+    }
     // A re-check needs the earlier sign photo for the result screen. Without
     // one (no-sign record, photo stripped by quota recovery, or photo-store
     // bytes not on this device) send the driver to a fresh scan instead.
@@ -686,7 +807,95 @@ function App() {
     }
   }
 
-  const handleSessionSaved = async (logged: ParkingSession, draft: LogDraft) => {
+  /**
+   * What a logged record becomes when it came from a workday scan (T6b
+   * item 7): the next stop (its workday id and leg index on the record and
+   * in the draft, so link 1 signs the workday link), or a normal record
+   * with no workday link when it can't be a stop. Anything else passes
+   * through unchanged.
+   */
+  const workdayLegFor = (
+    logged: ParkingSession,
+    draft: LogDraft,
+  ): { record: ParkingSession; draft: LogDraft; decision: LegSaveDecision } => {
+    const decision: LegSaveDecision = isWorkdayEnabled()
+      ? resolveLegSave(logged, draft, getActiveWorkday(), loadSessions())
+      : { kind: 'normal' }
+    if (decision.kind === 'leg') {
+      // Its limit (T6b item 8): its own sign's, or, when the driver didn't
+      // name a boundary, the stretch's still running, from the logger's
+      // boundary statement and the workday's saved legs.
+      const limit = stopLimitFields(logged, stopContext(loadSessions(), decision.workday.workday_id))
+      return {
+        record: { ...logged, workday_id: decision.workday.workday_id, leg_index: decision.workday.leg_index, ...limit },
+        draft: { ...draft, workday: decision.workday },
+        decision,
+      }
+    }
+    const normalDraft = draft.workday ? { ...draft, workday: null } : draft
+    if (
+      decision.kind === 'stop' &&
+      draft.workday &&
+      (decision.reason === 'unknown_state' || decision.reason === 'full')
+    ) {
+      // Not a stop, but not known to be anywhere else either (its state
+      // couldn't be told), or past the most stops a workday holds. The car
+      // may not have left the stretch, so fail safe: keep the limit the
+      // logger showed (the running one after "I'm not sure", never a fresh
+      // one), and the driver's boundary statement, which link 1 signs.
+      const limit = stopLimitFields(logged, stopContext(loadSessions(), draft.workday.workday_id))
+      return { record: { ...logged, ...limit }, draft: normalDraft, decision }
+    }
+    // Not a stop after all: a normal record with its own sign reading.
+    return { record: withoutStopLimit(logged), draft: normalDraft, decision }
+  }
+
+  /**
+   * Set a workday stop's reminders (T6b item 9): T6a's schedule, in-tab and
+   * push, with no reminder screen. The workday card shows what was set.
+   * From "Retry" (`fromTap`) the browser may ask for permission.
+   */
+  const setStopRemindersFor = async (legId: string, fromTap = false) => {
+    if (!isWorkdayEnabled()) return
+    const leg = getSession(legId)
+    if (!leg || typeof leg.workday_id !== 'string') return
+    setStopReminders({ legId, booking: true })
+    const summary = await bookWorkdayLegReminders(leg, workdayLegs(loadSessions(), leg.workday_id), t, {
+      fromTap,
+      signedIn: Boolean(auth.user),
+    })
+    setStopReminders({ legId, summary, booking: false })
+    // A tap may have just allowed notifications: the card reads them again.
+    if (fromTap) refreshWorkdayReadiness()
+  }
+
+  /**
+   * After a workday scan's record is saved: a stop becomes the workday's
+   * current stop (the workday is parked again); a park that couldn't be a
+   * stop ends the workday. Returns 'leg'; the reason the driver must be
+   * told ('jurisdiction': not in Victoria or Queensland; 'unknown_state':
+   * the state couldn't be told); or null.
+   */
+  const settleWorkdayAfterSave = (decision: LegSaveDecision, sessionId: string): 'leg' | WorkdayStopReason | null => {
+    try {
+      if (decision.kind === 'leg') {
+        setWorkdayLeg(decision.workday.workday_id, sessionId)
+        return 'leg'
+      }
+      if (decision.kind === 'stop' && decision.workday_id) {
+        endWorkday(decision.workday_id)
+        return decision.reason === 'jurisdiction' || decision.reason === 'unknown_state' ? decision.reason : null
+      }
+    } catch (err) {
+      console.warn('[workday] could not update the workday after a save:', err)
+    }
+    return null
+  }
+
+  const handleSessionSaved = async (logged: ParkingSession, loggedDraft: LogDraft) => {
+    // A workday scan's park is the next stop, or a normal record (T6b).
+    const leg = workdayLegFor(logged, loggedDraft)
+    const draft = leg.draft
     // The record's chain key and link-0 photo hashes are set at save, so
     // link 0 can always be signed later even if the photos are gone. Never
     // throws; without hashes, link 0 hashes the photos when it signs.
@@ -695,7 +904,7 @@ function App() {
     // The draft also brings the result screen's gate answers and the permit
     // the driver confirmed (T4 items 4 to 6); prepareNewRecord gives a
     // permit its salt.
-    const session = await prepareNewRecord(applyLogDraftDefaults(logged, draft))
+    const session = await prepareNewRecord(applyLogDraftDefaults(leg.record, draft))
     // N3: link 1 signs only a commitment to the permit details, never the
     // details. Worked out before the save, so nothing waits between the
     // save and queueing link 1. Null when no permit was used.
@@ -706,6 +915,12 @@ function App() {
       // them: they get straight to the reminder screen, where the notice
       // shows, and History reflects the cleanup on next render.
       saveSession(session)
+      // A workday stop goes back home, to the workday card (T6b). Its
+      // reminders are workday mode's own (T6b item 9 schedules them here),
+      // not the reminder screen's. A park that ended the workday goes on to
+      // the reminder screen as a normal record, saying why when it has to.
+      const workdayOutcome = settleWorkdayAfterSave(leg.decision, session.id)
+      if (workdayOutcome === 'leg') void setStopRemindersFor(session.id)
       // No-sign sessions skip the reminder step — there's no expiry to remind
       // about. They go straight back to the home screen, where the saved
       // session is visible in History.
@@ -714,7 +929,11 @@ function App() {
       // no-sign session. The picker now supports an open-ended "remind
       // me in N hours" mode, so route everyone through it — the driver
       // can pick "1 hour" / "4 hours" / etc. to check on their car.
-      setView({ name: 'remind', session })
+      setView(
+        workdayOutcome === 'leg'
+          ? { name: 'home' }
+          : { name: 'remind', session, workdayStopped: workdayOutcome ?? undefined },
+      )
       // No manual re-derive needed: saveSession fired records-changed, so
       // the home card picks the new record up without waiting for a tick.
       // Mirror to cloud immediately when signed in. Local is the source of
@@ -749,7 +968,7 @@ function App() {
       if (isDuplicateRecordError(err)) {
         console.warn('[storage] record already saved:', session.id)
         const saved = getSession(session.id)
-        if (saved) setView({ name: 'remind', session: saved })
+        if (saved) setView(isWorkdayEnabled() && saved.workday_id ? { name: 'home' } : { name: 'remind', session: saved })
         return
       }
       // Not saved, so nothing refers to the photos the logger stored. (Only
@@ -838,10 +1057,31 @@ function App() {
   const openDepartureSheet = (
     session: ParkingSession,
     confirmKey: DepartureSheetState['confirmKey'],
+    workday?: DepartureSheetState['workday'],
   ) => {
     const current = getSession(session.id)
     if (!current || current.ended_at || departureSheet) return
-    setDepartureSheet({ session: current, fix: requestDepartureFix(), confirmKey })
+    setDepartureSheet({ session: current, fix: requestDepartureFix(), confirmKey, workday })
+  }
+
+  /**
+   * The workday side of a confirmed departure (T6b items 6 and 10). When
+   * the record just left is the active workday's current stop, the workday
+   * moves between moves ("I'm moving the car now", or I've left on the
+   * stop's record screen), or ends ("End workday" with the car still at the
+   * stop). Also after a tap that found the stop already ended: the driver
+   * still asked to move on or end.
+   */
+  const settleWorkdayDeparture = (sheet: DepartureSheetState) => {
+    if (!isWorkdayEnabled()) return
+    try {
+      const workday = getActiveWorkday()
+      if (!workday || workday.current_session_id !== sheet.session.id) return
+      if (sheet.workday?.action === 'end' && sheet.workday.id === workday.id) endWorkday(workday.id)
+      else markWorkdayMoving(workday.id)
+    } catch (err) {
+      console.warn('[workday] could not record the move:', err)
+    }
   }
 
   /**
@@ -860,6 +1100,7 @@ function App() {
       if (signedIn) mirrorSessionUpdateToCloud(id)
     }
     const endedAt = handleEndSession(sheet.session)
+    settleWorkdayDeparture(sheet)
     if (!endedAt) {
       // This tap didn't end the record (it was ended meanwhile, or is
       // gone): photos taken on the sheet are kept as return photos of an
@@ -895,7 +1136,128 @@ function App() {
       // Confirm ends the record, which removes the I've left button that
       // opened the sheet: focus goes to the record screen's status ("Ended")
       // or, on home, the scan button.
-      returnFocus={() => firstFocusTarget(RECORD_STATUS_ID, HOME_SCAN_ID)}
+      returnFocus={() => firstFocusTarget(RECORD_STATUS_ID, WORKDAY_SCAN_ID, HOME_SCAN_ID)}
+    />
+  ) : null
+
+  /**
+   * "Start workday", or "Use the car's current park as the first stop", on
+   * the start screen (T6b items 1 and 4). The start screen has already
+   * checked the jurisdiction from the phone's location. The first stop is
+   * read again here: when it can no longer be one (ended meanwhile), the
+   * workday starts between moves instead. As leg 0 it is tagged on this
+   * device only, never re-signed, so it keeps its arrival time and limit.
+   */
+  const handleStartWorkday = ({ jurisdiction, firstStopId }: WorkdayStartInput) => {
+    if (!isWorkdayEnabled()) return
+    if (getActiveWorkday()) {
+      setView({ name: 'home' })
+      return
+    }
+    const stored = firstStopId ? getSession(firstStopId) : undefined
+    const firstStop = stored && firstStopOffer(stored).kind === 'offer' ? stored : null
+    const id = crypto.randomUUID()
+    let tagged = false
+    try {
+      if (firstStop) {
+        updateSession(firstStop.id, { workday_id: id, leg_index: 0 })
+        tagged = true
+      }
+      startWorkday({ jurisdiction, current_session_id: firstStop?.id ?? null, id })
+      if (firstStop && auth.user) mirrorSessionUpdateToCloud(firstStop.id)
+      // As a workday stop it gets the workday reminders (T6b item 9), in
+      // place of any it had: same limit, the workday copy.
+      if (firstStop) void setStopRemindersFor(firstStop.id)
+      setView({ name: 'home' })
+    } catch (err) {
+      if (tagged && firstStop) {
+        try {
+          updateSession(firstStop.id, { workday_id: null, leg_index: null })
+        } catch (e) {
+          console.warn('[workday] could not untag the first stop:', e)
+        }
+      }
+      console.warn('[workday] could not start the workday:', err)
+      setView({
+        name: 'error',
+        message: isStorageFullError(err) ? t('errors.storageFull') : err instanceof Error ? err.message : String(err),
+      })
+    }
+  }
+
+  /**
+   * "Parked again? Scan the new sign" (T6b item 6). When home showed the
+   * move from a stop that ended elsewhere (I've left on its record screen,
+   * or on another device) while the workday still said parked, the workday
+   * moves between moves first, so the scan is the next stop's.
+   */
+  const handleWorkdayScan = () => {
+    const workday = isWorkdayEnabled() ? getActiveWorkday() : null
+    // Only between moves: with the car still at a live stop, a scan would
+    // give a car that hasn't moved a second arrival.
+    if (!workday || workdayHome(workday, loadSessions()).phase !== 'moving') return
+    if (workday.status === 'parked') {
+      try {
+        markWorkdayMoving(workday.id)
+      } catch (err) {
+        console.warn('[workday] could not record the move:', err)
+      }
+    }
+    setView({ name: 'scan' })
+  }
+
+  /**
+   * Every other way into the scanner (About's "Try it", the error screen's
+   * "Try again", the first-visit card). While a workday is active the
+   * workday card is the only way to scan (T6b items 5 and 6): between moves
+   * this is the next stop's scan; with the car still at a live stop it goes
+   * home to the card, because a scan there would give a car that hasn't
+   * moved a second arrival.
+   */
+  const openScan = () => {
+    const workday = isWorkdayEnabled() ? getActiveWorkday() : null
+    if (!workday) {
+      setView({ name: 'scan' })
+      return
+    }
+    if (workdayHome(workday, loadSessions()).phase === 'moving') handleWorkdayScan()
+    else setView({ name: 'home' })
+  }
+
+  /**
+   * "End workday" (T6b item 10). With the car still at a stop, the
+   * departure flow for that stop runs first (the departure sheet, which
+   * ends the workday on Confirm). Between moves there is nothing to depart
+   * from, so it asks "End this workday?" and ends it.
+   */
+  const requestEndWorkday = (workdayId: string) => {
+    const workday = getActiveWorkday()
+    if (!workday || workday.id !== workdayId) return
+    const home = workdayHome(workday, loadSessions())
+    if (home.phase === 'parked' && home.currentLeg) {
+      openDepartureSheet(home.currentLeg, 'active.iveLeftConfirm', { id: workday.id, action: 'end' })
+    } else {
+      setWorkdayEndId(workday.id)
+    }
+  }
+
+  const endWorkdayNow = (workdayId: string) => {
+    try {
+      endWorkday(workdayId)
+    } catch (err) {
+      console.warn('[workday] could not end the workday:', err)
+    }
+  }
+
+  const workdayEndDialog = workdayEndId ? (
+    <WorkdayEndDialog
+      onConfirm={() => {
+        const id = workdayEndId
+        setWorkdayEndId(null)
+        endWorkdayNow(id)
+      }}
+      onCancel={() => setWorkdayEndId(null)}
+      returnFocus={() => firstFocusTarget(HOME_SCAN_ID)}
     />
   ) : null
 
@@ -958,6 +1320,7 @@ function App() {
             setView({ name: 'logNoSign', coords, ambientPhoto, ambientPhotoMeta })
           }
           onCancel={() => setView({ name: 'home' })}
+          workdayLeg={workdayScan}
         />
       </main>
     )
@@ -1006,6 +1369,17 @@ function App() {
             })
           }
           onBack={() => setView({ name: 'home' })}
+          // A workday stop needs a readable sign (T6b item 7): Retake photo
+          // or End workday, never "Log without a sign". Between moves there
+          // is no stop to depart from, so the workday just ends.
+          onEndWorkday={
+            view.draft.workday
+              ? () => {
+                  endWorkdayNow(view.draft.workday!.workday_id)
+                  setView({ name: 'home' })
+                }
+              : undefined
+          }
         />
       </main>
     )
@@ -1031,7 +1405,7 @@ function App() {
         </div>
         <div className="flex flex-col gap-2 w-full">
           <button
-            onClick={() => setView({ name: 'scan' })}
+            onClick={openScan}
             className="bg-brand-500 hover:bg-brand-600 active:bg-brand-700 disabled:bg-brand-300 text-white font-semibold py-3 rounded-xl shadow-sm shadow-brand-900/10 transition-colors"
           >
             {t('errors.tryAgain')}
@@ -1069,7 +1443,10 @@ function App() {
           result={view.result}
           signPhoto={view.signPhoto}
           coords={view.coords}
-          onScanAnother={() => setView({ name: 'scan' })}
+          // A workday stop (T6b items 5 and 6): no "Scan another", and Back
+          // goes home with the workday still between moves.
+          onScanAnother={view.draft.workday ? undefined : () => setView({ name: 'scan' })}
+          onBack={view.draft.workday ? () => setView({ name: 'home' }) : undefined}
           // The gate answers and the permit the driver confirmed (T4) go
           // into the draft, and from there onto the record and link 1.
           onLogSession={(answers) =>
@@ -1106,15 +1483,21 @@ function App() {
           signPhotoMeta={view.signPhotoMeta}
           draft={view.draft}
           onComplete={(session) => void handleSessionSaved(session, view.draft)}
+          // Backing out of a workday stop's logger returns home with the
+          // workday still between moves (T6b item 6).
           onCancel={() =>
-            setView({
-              name: 'result',
-              result: view.result,
-              signPhoto: view.signPhoto,
-              signPhotoMeta: view.signPhotoMeta,
-              coords: view.coords,
-              draft: view.draft,
-            })
+            setView(
+              view.draft.workday
+                ? { name: 'home' }
+                : {
+                    name: 'result',
+                    result: view.result,
+                    signPhoto: view.signPhoto,
+                    signPhotoMeta: view.signPhotoMeta,
+                    coords: view.coords,
+                    draft: view.draft,
+                  },
+            )
           }
         />
       </main>
@@ -1124,6 +1507,14 @@ function App() {
   if (view.name === 'remind') {
     return (
       <main className="min-h-screen">
+        {view.workdayStopped && (
+          <div className="max-w-md mx-auto w-full px-6 pt-6">
+            <div role="alert" className="gf-card bg-amber-50 p-4 flex items-start gap-3">
+              <Icon name="warning" className="w-5 h-5 text-amber-700 shrink-0 mt-0.5" />
+              <p className="text-sm text-ink-900 leading-relaxed">{t(WORKDAY_STOPPED_KEYS[view.workdayStopped])}</p>
+            </div>
+          </div>
+        )}
         <ReminderOptions session={view.session} onDone={() => setView({ name: 'home' })} />
         {/* Save-time notice (quota recovery / photo-sync failure) lands here —
             the reminder screen is the view shown immediately after save. */}
@@ -1138,6 +1529,8 @@ function App() {
         <SessionHistory
           onBack={() => setView({ name: 'home' })}
           onOpen={(session) => setView({ name: 'session', session })}
+          // One row per workday, opening the workday view (T6b item 5).
+          onOpenWorkday={workdayOn ? (workdayId) => setView({ name: 'workday', workdayId, back: 'history' }) : undefined}
         />
         {backupPrompt}
       </main>
@@ -1187,7 +1580,9 @@ function App() {
       <main className="min-h-screen">
         <SessionDetail
           session={view.session}
-          onBack={() => setView({ name: 'history' })}
+          onBack={() =>
+            setView(view.returnTo ? { name: 'workday', ...view.returnTo } : { name: 'history' })
+          }
           onDelete={handleDeleteRecord}
           // Hand the appeal flow the stored copy, which may have gained a
           // signature or an end time since this view opened.
@@ -1200,6 +1595,7 @@ function App() {
           onSheetOpenChange={setRecordSheetOpen}
         />
         {departureSheetView}
+        {workdayEndDialog}
         {!departureSheet && !recordSheetOpen && backupPrompt}
         {/* Background writes (the departure after I've left) can free
             space while this screen is open. */}
@@ -1311,12 +1707,46 @@ function App() {
     )
   }
 
+  if (view.name === 'workdayStart' && workdayOn) {
+    return (
+      <main className="min-h-screen">
+        <WorkdayStart
+          // The record home shows as active: the only way in while one is
+          // active is to use it as the first stop (T6b item 4).
+          activeRecord={activeSessions[0] ?? null}
+          firstWorkday={isFirstWorkday(loadWorkdays())}
+          onStart={handleStartWorkday}
+          onBack={() => setView({ name: 'home' })}
+        />
+      </main>
+    )
+  }
+
+  if (view.name === 'workday' && workdayOn) {
+    const back = view.back
+    const target: WorkdayViewTarget = { workdayId: view.workdayId, back }
+    return (
+      <main className="min-h-screen">
+        <WorkdayView
+          workdayId={view.workdayId}
+          backLabelKey={back === 'home' ? 'common.backToHome' : 'common.backToHistory'}
+          onBack={() => setView(back === 'home' ? { name: 'home' } : { name: 'history' })}
+          onOpenStop={(leg) => setView({ name: 'session', session: leg, returnTo: target })}
+          onEnd={activeWorkday?.id === view.workdayId ? () => requestEndWorkday(view.workdayId) : undefined}
+        />
+        {departureSheetView}
+        {workdayEndDialog}
+        <Toast message={notice} onClose={() => setNotice(null)} />
+      </main>
+    )
+  }
+
   if (view.name === 'about') {
     return (
       <main className="min-h-screen">
         <AboutFeatures
           onBack={() => setView({ name: 'home' })}
-          onTryIt={() => setView({ name: 'scan' })}
+          onTryIt={openScan}
         />
       </main>
     )
@@ -1326,11 +1756,20 @@ function App() {
   //  (a) the active-session card's countdown stays live without manual refresh
   //  (b) when an active session crosses its expiry, it falls out of the
   //      filter and the card disappears on the next tick
-  const sessionCount = loadSessions().length
-  const primaryActive = activeSessions[0]
+  const allRecords = loadSessions()
+  const sessionCount = allRecords.length
+  // Workday mode (T6b item 5): while a workday is active, its card replaces
+  // the active card, whether or not the stop's limit has passed. Other
+  // active records wait behind its "+N more" pill.
+  const workdayState: WorkdayHome | null = activeWorkday ? workdayHome(activeWorkday, allRecords) : null
+  const otherActives = workdayState
+    ? activeSessions.filter((s) => s.id !== workdayState.currentLeg?.id)
+    : activeSessions
+  const primaryActive = workdayState ? undefined : activeSessions[0]
+  const hasLiveCard = !!primaryActive || !!workdayState
   // A first visit: nothing saved and nothing active. History (and the weekly
   // reminders row, until a reminder is set) stay off the home screen.
-  const firstVisit = sessionCount === 0 && !primaryActive
+  const firstVisit = sessionCount === 0 && !hasLiveCard
 
   return (
     <main
@@ -1344,11 +1783,11 @@ function App() {
         {/* First-time visitors get LandingFeatures with its own hero block,
             so skip the default "ParkProof + hero illustration + tagline"
             header — otherwise the page reads as two stacked heroes. */}
-        {!primaryActive && sessionCount === 0 ? (
+        {!hasLiveCard && sessionCount === 0 ? (
           <div className="flex justify-end">
             <LanguageSelector />
           </div>
-        ) : primaryActive ? (
+        ) : hasLiveCard ? (
           // Replace the decorative hero with the live status when there's an
           // active session — it's the most useful information on the screen
           // at that moment, and competes for the same visual real estate.
@@ -1385,7 +1824,7 @@ function App() {
             paths, centred under the hero header. First-time visitors get
             theirs rendered in the right-aligned strip above (see the
             sessionCount === 0 branch at the top of the header). */}
-        {!(!primaryActive && sessionCount === 0) && (
+        {!(!hasLiveCard && sessionCount === 0) && (
           <div className="mt-4">
             <LanguageSelector />
           </div>
@@ -1410,6 +1849,39 @@ function App() {
         {/* Home layout (T4 item 9), first: the active card, or the workday
             card while a workday is active (T6b puts it here, in place of
             this one). The card gains only a Share icon (T7). */}
+        {workdayState && (
+          <div className="w-full mb-6">
+            <WorkdayCard
+              home={workdayState}
+              readiness={workdayReadiness}
+              extraCount={otherActives.length}
+              onShowMore={() => setView({ name: 'actives' })}
+              onOpen={() => setView({ name: 'workday', workdayId: workdayState.workday.id, back: 'home' })}
+              onMove={(leg) =>
+                openDepartureSheet(leg, 'active.iveLeftConfirm', { id: workdayState.workday.id, action: 'move' })
+              }
+              onScan={handleWorkdayScan}
+              onEnd={() => requestEndWorkday(workdayState.workday.id)}
+              onShare={(leg) => setShareSheet(getSession(leg.id) ?? leg)}
+              reminderSummary={
+                stopReminders && stopReminders.legId === workdayState.currentLeg?.id ? stopReminders.summary : undefined
+              }
+              reminderBooking={!!stopReminders?.booking && stopReminders.legId === workdayState.currentLeg?.id}
+              onRetryReminders={() => {
+                const legId = workdayState.currentLeg?.id
+                if (legId) void setStopRemindersFor(legId, true)
+              }}
+              // "Turn on notifications" on the card (T6b item 2): the browser
+              // asks inside this tap (remindMe asks first), then the stop's
+              // reminders are booked.
+              onAllowReminders={async () => {
+                const legId = workdayState.currentLeg?.id
+                if (legId) await setStopRemindersFor(legId, true)
+                else refreshWorkdayReadiness()
+              }}
+            />
+          </div>
+        )}
         {primaryActive && (
           <div className="w-full mb-6">
             <ActiveSessionCard
@@ -1418,7 +1890,10 @@ function App() {
               onOpen={(s) => setView({ name: 'session', session: s })}
               onShowMore={() => setView({ name: 'actives' })}
               onEndSession={(s) => openDepartureSheet(s, 'active.iveLeftConfirm')}
-              onRecheck={handleReuseSession}
+              // A workday stop never offers Re-check now (T6b item 5): it
+              // would give a car that hasn't moved a new arrival time. (Its
+              // card shows here only when its workday isn't on this device.)
+              onRecheck={primaryActive.workday_id ? undefined : handleReuseSession}
               // Share slot (T4 item 9): the card shows its Share icon
               // beside the "+N more" pill, and the sheet asks first (T7).
               onShare={(s) => setShareSheet(getSession(s.id) ?? s)}
@@ -1432,9 +1907,9 @@ function App() {
             three value bullets, gradient CTA, How-it-works, evidence
             callout). It includes its own scan-button CTA, so we DON'T
             render the standard scan button below for first-time visitors. */}
-        {!primaryActive && sessionCount === 0 ? (
+        {!hasLiveCard && sessionCount === 0 ? (
           <LandingFeatures
-            onScanCta={() => setView({ name: 'scan' })}
+            onScanCta={openScan}
             // Only pass the sign-in handler when Cognito is wired in AND
             // the user isn't already signed in. LandingFeatures renders
             // the secondary CTA conditionally on this prop being defined,
@@ -1450,7 +1925,9 @@ function App() {
                 : undefined
             }
           />
-        ) : (
+        ) : workdayState ? null : (
+          // During a workday the card's own scan replaces this one, and
+          // "Scan another" is hidden (T6b item 5).
           <>
             <button
               id={HOME_SCAN_ID}
@@ -1479,8 +1956,10 @@ function App() {
               names the next occurrence inline when it is within 24 hours.
               Like History it stays off a first visit (nothing saved,
               nothing active) unless a reminder is already set.
-            - the workday link waits for T6b (and VITE_FEATURE_WORKDAY):
-              onStartWorkday isn't passed yet.
+            - "Parking all day? Start a workday" (T6b item 1) opens the
+              workday start screen. Only with VITE_FEATURE_WORKDAY on, never
+              during a workday, and not when the last record's state is known
+              and isn't Victoria or Queensland (showStartWorkdayLink).
             - "Got a fine? Start here" opens the notice lookup (T8), which is
               also the way in to an appeal (the appeal handler is only
               HomeMenu's fallback while no lookup is wired).
@@ -1497,6 +1976,11 @@ function App() {
           onOpenSettings={() => setView({ name: 'settings' })}
           syncAvailable={auth.configured}
           accountEmail={auth.user?.email ?? null}
+          onStartWorkday={
+            showStartWorkdayLink({ enabled: workdayOn, activeWorkday, sessions: allRecords })
+              ? () => setView({ name: 'workdayStart' })
+              : undefined
+          }
           onOpenNoticeLookup={() => setView({ name: 'notice', snapshot: null })}
           onDraftAppeal={() => setView({ name: 'appeal', session: null })}
         />
@@ -1537,6 +2021,7 @@ function App() {
         }}
       />
       {departureSheetView}
+      {workdayEndDialog}
       {shareSheet && (
         <ShareSheet
           session={shareSheet}
@@ -1544,7 +2029,7 @@ function App() {
           returnFocus={() => firstFocusTarget(HOME_SCAN_ID)}
         />
       )}
-      {!departureSheet && !feedbackOpen && !shareSheet && backupPrompt}
+      {!departureSheet && !feedbackOpen && !shareSheet && !workdayEndId && backupPrompt}
       <Toast message={notice} onClose={() => setNotice(null)} />
     </main>
   )

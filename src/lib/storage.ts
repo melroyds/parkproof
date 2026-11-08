@@ -12,6 +12,7 @@ import type {
 import {
   AddendumValidationError,
   ERR,
+  HEX64_RE,
   UUID_RE,
   isIsoTime,
   normalizeAddendumData,
@@ -592,6 +593,47 @@ export function rejectAddendum(
   persistWithQuotaRecovery(sessions)
   notifyRecordsChanged(sessionId)
   return true
+}
+
+/**
+ * Fill a workday stop's link to the stop before it (build spec T6b item
+ * 11): set `workday.previous_departure_payload_sha256` in a pending
+ * arrival_context, once the previous stop's departure is signed. The only
+ * change ever made to a queued addendum's data, and only before it is
+ * signed: the result is normalised again, so what is stored is still what
+ * will be signed. Returns the updated addendum, the same one when it already
+ * carries this hash, or null (nothing written) when the addendum is missing,
+ * signed, rejected, not an arrival_context with a workday link, already
+ * linked to another hash, or `hash` isn't 64 lower-case hex characters.
+ */
+export function fillPreviousDepartureHash(
+  sessionId: string,
+  addendumId: string,
+  hash: string,
+): SignedAddendum | null {
+  if (!HEX64_RE.test(hash)) return null
+  const sessions = loadSessions()
+  const idx = sessions.findIndex((s) => s.id === sessionId)
+  if (idx === -1) return null
+  const addenda = sessions[idx].addenda ?? []
+  const target = addenda.find((a) => a.id === addendumId)
+  if (!target || target.bundle || target.rejected || target.kind !== 'arrival_context') return null
+  const data = target.data as Record<string, unknown>
+  const workday = data.workday as Record<string, unknown> | null | undefined
+  if (!workday || typeof workday !== 'object') return null
+  if (workday.previous_departure_payload_sha256 === hash) return target
+  if (workday.previous_departure_payload_sha256 !== null) return null
+  const filled: SignedAddendum = {
+    ...target,
+    data: normalizeAddendumData('arrival_context', {
+      ...data,
+      workday: { ...workday, previous_departure_payload_sha256: hash },
+    }),
+  }
+  sessions[idx] = { ...sessions[idx], addenda: addenda.map((a) => (a.id === addendumId ? filled : a)) }
+  persistWithQuotaRecovery(sessions)
+  notifyRecordsChanged(sessionId)
+  return filled
 }
 
 /**

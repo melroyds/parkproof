@@ -820,6 +820,49 @@
     "shared": {
       "field": "Condiviso con te",
       "madeElsewhere": "Questo record è stato creato sul telefono di un'altra persona."
+    },
+    "workday": {
+      "title": "Registro degli eventi di parcheggio.",
+      "footer": "Questo registra ciò che hai fatto e ciò che ci hai detto. Non è un accertamento legale che hai rispettato le regole. Lo decide il tuo comune.",
+      "councilLine": "I comuni possono interpretare questa regola in modo più severo. Controlla la pagina sul parcheggio del tuo comune.",
+      "started": "Giornata di lavoro iniziata {{time}} (orologio del telefono)",
+      "ended": "Giornata di lavoro terminata {{time}} (orologio del telefono)",
+      "legCount": "Soste in questo PDF: {{chosen}} su {{total}}",
+      "partial": "Non tutte le soste di questa giornata di lavoro sono in questo PDF. Ogni distanza e ogni dichiarazione del conducente si riferisce alla sosta immediatamente precedente nella giornata, anche quando quella sosta non è inclusa.",
+      "intro": "Ogni sosta è un record di parcheggio a sé. Dopo questa tabella c'è una sezione per ogni sosta, e le pagine delle firme sono alla fine.",
+      "col": {
+        "leg": "Sosta",
+        "arrived": "Arrivo (orologio del telefono)",
+        "left": "Partenza (orologio del telefono)",
+        "distance": "Distanza approssimativa dalla sosta precedente (GPS del telefono)",
+        "statement": "Dichiarazione del conducente"
+      },
+      "cell": {
+        "notLeft": "Non registrata",
+        "signedArrival": "Arrivo: {{value}}",
+        "signedDeparture": "Partenza: {{value}}",
+        "noDistance": "Non misurata. Serve un rilevamento GPS del telefono in entrambe le soste."
+      },
+      "statement": {
+        "firstLeg": "Nessuna. Questa è la prima sosta.",
+        "notAsked": "Non chiesto. ParkProof non ha fatto domande su questo spostamento.",
+        "oppositeDirectionSign": "Il conducente ha dichiarato di aver superato un cartello che indicava la fine di questa zona.",
+        "yellowEdgeLine": "Il conducente ha dichiarato di aver superato una linea gialla sul bordo della strada.",
+        "tIntersectionOrDeadEnd": "Il conducente ha dichiarato di aver superato la fine della strada a un incrocio a T o in una strada senza uscita.",
+        "leftParkingArea": "Il conducente ha dichiarato che l'auto è uscita dall'area di parcheggio, oltre un cartello che ne indica la fine.",
+        "notSure": "Alla domanda se avesse lasciato il tratto indicato dal cartello, il conducente ha risposto: Non lo so con certezza.",
+        "notSureArea": "Alla domanda se avesse lasciato l'area di parcheggio, il conducente ha risposto: Non lo so con certezza."
+      },
+      "legHeading": "Sosta {{number}}",
+      "tagged": "Questa sosta era un parcheggio precedente aggiunto alla giornata di lavoro. I suoi dati firmati non citano la giornata di lavoro.",
+      "chain": {
+        "heading": "La catena tra le soste",
+        "intro": "I dettagli all'arrivo di ogni sosta contengono previous_departure_payload_sha256, lo SHA-256 del payload di partenza firmato della sosta precedente, quando quella partenza è stata firmata in tempo. Salva i file di ogni sosta dalle sue pagine delle firme in una cartella a sé (leg1, leg2 e così via) e decodificali come nei suoi passaggi. Poi esegui il comando indicato per ogni coppia.",
+        "equals": "Quel valore esadecimale deve essere uguale a previous_departure_payload_sha256 nell'anello {{link}} della sosta {{leg}}.",
+        "equalsOneOf": "Uno di questi valori esadecimali deve essere uguale a previous_departure_payload_sha256 nell'anello {{link}} della sosta {{leg}}.",
+        "notLinked": "L'anello {{link}} della sosta {{leg}} è stato firmato senza una partenza della sosta precedente, perché nessuna è stata firmata in tempo. Qui non c'è nulla da confrontare.",
+        "notInPdf": "L'anello {{link}} della sosta {{leg}} indica una partenza firmata della sosta precedente che non è in questo PDF."
+      }
     }
   },
   "time": {
@@ -1102,6 +1145,123 @@
       "ended": "Il tuo tempo su questo tratto è scaduto alle {{time}}.",
       "headsUpArea": "Il limite di tempo in quest'area di parcheggio scade alle {{time}}. Sposta l'auto fuori da tutta l'area, non solo in un'altra via al suo interno.",
       "endedArea": "Il tuo tempo in quest'area di parcheggio è scaduto alle {{time}}."
+    },
+    "start": {
+      "title": "Inizia una giornata di lavoro",
+      "intro": "Per una giornata in cui sposti l'auto tra posti con limite di tempo. Ogni sosta ha il suo record, letto da una foto nuova del suo cartello.",
+      "locating": "Verifica dello stato in cui ti trovi…",
+      "unavailable": "La modalità giornata di lavoro è disponibile in Victoria e Queensland mentre verifichiamo le regole degli altri stati.",
+      "unknown": "ParkProof non è riuscito a capire in quale stato ti trovi dalla posizione del telefono. La modalità giornata di lavoro è disponibile solo in Victoria e Queensland, quindi deve prima verificarlo.",
+      "button": "Inizia la giornata di lavoro",
+      "useCurrent": "Usa il parcheggio attuale dell'auto come prima sosta",
+      "useCurrentHelp": "Quel parcheggio mantiene l'ora in cui l'hai registrato e il suo limite di tempo. Spostarsi di qualche posto da allora non fa ripartire quel limite, quindi usalo comunque. Se l'auto ha lasciato il tratto indicato dal cartello, torna indietro e prima tocca \"Ho lasciato il posto\" su quel record.",
+      "currentIneligible": "Il tuo parcheggio attuale non può essere una sosta della giornata di lavoro. Le soste richiedono un cartello leggibile in Victoria o Queensland. Tocca \"Ho lasciato il posto\" su quel record quando l'auto ha lasciato il tratto indicato dal cartello, poi inizia la giornata di lavoro."
+    },
+    "explainer": {
+      "heading": "Come funzionano i limiti di tempo",
+      "full": "Spostarsi di qualche posto non fa ripartire il limite di tempo. Devi lasciare il tratto di strada indicato dal cartello, o l'intera area se il cartello è di area. Anche pagare di nuovo o aggiungere tempo non fa ripartire il limite. Ogni spostamento richiede una foto nuova del nuovo cartello.",
+      "short": "Spostarsi di qualche posto non fa ripartire il limite di tempo. Ogni spostamento richiede una foto nuova del nuovo cartello."
+    },
+    "ready": {
+      "heading": "Promemoria",
+      "on": "Le notifiche sono attive, quindi i promemoria della giornata di lavoro possono arrivare su questo telefono anche con ParkProof chiuso.",
+      "ask": "Attiva le notifiche perché i promemoria della giornata di lavoro possano arrivare su questo telefono anche con ParkProof chiuso.",
+      "allow": "Attiva le notifiche",
+      "cantDeliver": "I promemoria della giornata di lavoro hanno bisogno delle notifiche. Senza notifiche, l'orario dovrai controllarlo tu.",
+      "iosInstall": "Su iPhone, le notifiche richiedono ParkProof nella schermata Home. Tocca Condividi, poi Aggiungi alla schermata Home, e inizia la giornata di lavoro da lì.",
+      "denied": "Le notifiche di ParkProof sono bloccate. Puoi consentirle nelle impostazioni del sito del browser.",
+      "turnedOff": "Le notifiche di ParkProof sono disattivate su questo telefono. Puoi riattivarle nelle Impostazioni."
+    },
+    "ics": {
+      "button": "Aggiungi promemoria al calendario per questa sosta",
+      "title": "Esci da questo tratto indicato dal cartello entro le {{time}}",
+      "titleArea": "Sposta l'auto fuori da quest'area di parcheggio entro le {{time}}"
+    },
+    "card": {
+      "kicker": "Giornata di lavoro",
+      "stop": "Sosta {{number}}",
+      "noStops": "Nessuna sosta per ora. Ogni sosta inizia con una foto del suo cartello.",
+      "moved": "Sosta {{number}} terminata alle {{time}} (orologio del telefono).",
+      "open": "Apri questa giornata di lavoro",
+      "openAria": "Apri questa giornata di lavoro. {{status}}",
+      "expiredHint": "Ancora qui? Sposta l'auto ora. L'hai già spostata? Tocca \"Sto spostando l'auto ora\".",
+      "move": "Sto spostando l'auto ora",
+      "moveHint": "Tocca prima di partire",
+      "scanFirst": "Hai parcheggiato? Scansiona il cartello dove sei",
+      "scanNext": "Hai parcheggiato di nuovo? Scansiona il nuovo cartello",
+      "end": "Termina la giornata di lavoro"
+    },
+    "end": {
+      "title": "Terminare questa giornata di lavoro?",
+      "body": "Le tue soste restano nella Cronologia. Dopo, un parcheggio che registri è un record normale e ParkProof non chiederà se hai lasciato il tratto indicato dal cartello."
+    },
+    "history": {
+      "row_one": "Giornata di lavoro, {{count}} sosta",
+      "row_other": "Giornata di lavoro, {{count}} soste"
+    },
+    "status": {
+      "active": "In corso",
+      "ended": "Terminata"
+    },
+    "view": {
+      "title": "Giornata di lavoro",
+      "started": "Iniziata {{time}} (orologio del telefono)",
+      "ended": "Terminata {{time}} (orologio del telefono)",
+      "stopsHeading": "Soste",
+      "noStops": "Nessuna sosta per ora.",
+      "tagged": "Aggiunta a questa giornata di lavoro da un parcheggio precedente. I suoi dati firmati non citano la giornata di lavoro."
+    },
+    "noSign": {
+      "body": "La modalità giornata di lavoro richiede un cartello leggibile in ogni posto. Alcune zone, come il centro di Brisbane, hanno limiti di tempo anche dove la strada non ha cartelli."
+    },
+    "stopped": {
+      "notAvailable": "La modalità giornata di lavoro non è ancora disponibile qui. Questo parcheggio è salvato come record normale con la sua lettura del cartello.",
+      "unknownState": "ParkProof non è riuscito a capire in quale stato si trova questo parcheggio, quindi la giornata di lavoro è terminata. Questo parcheggio è salvato come record normale. Se ci hai detto che non lo sapevi con certezza, il tuo limite di tempo iniziale continua a valere."
+    },
+    "scan": {
+      "fresh": "Sosta della giornata di lavoro: scatta una foto nuova del cartello dove si trova l'auto ora.",
+      "cameraDenied": "Riattiva l'accesso alla fotocamera nelle impostazioni del browser. Le soste della giornata di lavoro richiedono una foto scattata ora.",
+      "notFresh": "Quella foto non è stata scattata adesso. Le soste della giornata di lavoro richiedono una foto del cartello scattata ora. Scattane una nuova con la fotocamera."
+    },
+    "boundary": {
+      "title": "Potrebbe essere lo stesso tratto indicato dal cartello.",
+      "body": "Cambiare posto non fa ripartire il limite di tempo. Venendo qui, hai superato uno di questi?",
+      "area": "Questa è un'area di parcheggio. Spostarti in un'altra via al suo interno non conta. Devi lasciare tutta l'area.",
+      "option": {
+        "oppositeDirectionSign": "Un cartello che indicava la fine di questa zona (un cartello con freccia a doppio senso a metà isolato non conta)",
+        "yellowEdgeLine": "Una linea gialla sul bordo della strada",
+        "tIntersectionOrDeadEnd": "La fine della strada a un incrocio a T o in una strada senza uscita",
+        "leftParkingArea": "L'auto è uscita dall'area di parcheggio, oltre un cartello che ne indica la fine",
+        "notSure": "Non lo so con certezza"
+      },
+      "footer": "Se non lo sai con certezza, il tuo limite di tempo iniziale continua a valere.",
+      "required": "Scegli una risposta per salvare questa sosta.",
+      "newLimit": "Nuovo limite in base a quello che ci hai detto: hai superato {{boundary}}.",
+      "passed": {
+        "oppositeDirectionSign": "un cartello che indicava la fine di questa zona",
+        "yellowEdgeLine": "una linea gialla sul bordo della strada",
+        "tIntersectionOrDeadEnd": "la fine della strada a un incrocio a T o in una strada senza uscita",
+        "leftParkingArea": "un cartello che indica la fine dell'area di parcheggio"
+      },
+      "notSure": "Il tuo limite su questo tratto continua a contare dalle {{start}}. Sposta l'auto fuori da questo tratto entro le {{deadline}}.",
+      "notSureArea": "Il tuo limite in quest'area di parcheggio continua a contare dalle {{start}}. Sposta l'auto fuori da tutta l'area entro le {{deadline}}.",
+      "notSureNoDeadline": "Il tuo limite su questo tratto continua a contare dalle {{start}}.",
+      "notSureNoDeadlineArea": "Il tuo limite in quest'area di parcheggio continua a contare dalle {{start}}.",
+      "passedDeadline": "Il tuo tempo su questo tratto è scaduto alle {{time}}. Sposta l'auto fuori da questo tratto adesso.",
+      "passedDeadlineArea": "Il tuo tempo in quest'area di parcheggio è scaduto alle {{time}}. Sposta l'auto fuori da tutta l'area adesso.",
+      "saveAnyway": "Salva comunque",
+      "dontSave": "Non salvare questa sosta"
+    },
+    "reminders": {
+      "notSet": "Non è stato possibile impostare i promemoria per questa sosta. Tieni d'occhio l'ora o riprova."
+    },
+    "pdf": {
+      "open": "Esporta un PDF di questa giornata di lavoro",
+      "title": "PDF della giornata di lavoro",
+      "warning": "Questo PDF include ogni sosta che scegli, con le distanze tra le soste e quello che ci hai detto a ogni spostamento. Il comune può leggerlo.",
+      "chooseLegs": "Soste da includere",
+      "leg": "Sosta {{number}}",
+      "noneChosen": "Scegli almeno una sosta da esportare."
     }
   },
   "notice": {

@@ -9,7 +9,8 @@
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 import type { TFunction } from 'i18next'
 import i18n from './i18n'
-import { buildRecurringIcs, downloadIcs, downloadIcsAbsolute } from './ics'
+import { buildRecurringIcs, buildWorkdayLegIcs, downloadIcs, downloadIcsAbsolute } from './ics'
+import { workdayReminderCopy, workdayReminderSchedule } from './workday'
 import { reminderCopy } from './reminder-copy'
 import { zonePlace } from './recurring-copy'
 import { formatInZone, formatReminderTimesLine } from './time-format'
@@ -193,6 +194,39 @@ describe('a weekly reminder: buildRecurringIcs', () => {
     const t = fixedT('pa')
     ics.fail = true
     expect(() => buildRecurringIcs({ ...rule, days: ['TU'] } as RecurringRule, t, 'pa')).toThrow(t('reminders.ics.buildFailed'))
+  })
+})
+
+describe('a workday stop: buildWorkdayLegIcs (T6b, merged after the fix list)', () => {
+  const leg = {
+    id: 'rec-ics-workday',
+    location: { lat: -37.8136, lng: 144.9631, address: '12 King St' },
+  } as unknown as ParkingSession
+  const reminders = workdayReminderSchedule({ deadline: EXPIRES, now: new Date('2026-11-09T03:00:00.000Z') })
+
+  it.each(LOCALES)('every word is in %s', (locale) => {
+    const t = fixedT(locale)
+    expect(reminders.length).toBeGreaterThan(0)
+    const text = buildWorkdayLegIcs(leg, reminders, t).replace(/\r\n[ \t]/g, '')
+    const deadline = formatInZone(new Date(EXPIRES), TZ, { withDate: true })
+    expect(text).toContain(`SUMMARY:${escaped(t('workday.ics.title', { time: deadline }))}\r\n`)
+    expect(text).toContain(`\r\nDESCRIPTION:${escaped(t('reminders.reliability'))}\r\n`)
+    expect(alarmDescriptions(text)).toEqual(reminders.map((r) => escaped(workdayReminderCopy(r, leg, t).body)))
+  })
+
+  it.each(['en', 'el', 'zh-CN'])('its errors are in %s', (locale) => {
+    const t = fixedT(locale)
+    expect(() => buildWorkdayLegIcs(leg, [], t)).toThrow(t('workday.reminders.notSet'))
+    ics.fail = true
+    let caught: unknown = null
+    try {
+      buildWorkdayLegIcs(leg, reminders, t)
+    } catch (err) {
+      caught = err
+    }
+    expect(caught).toBeInstanceOf(Error)
+    expect((caught as Error).message).toBe(t('reminders.ics.buildFailed'))
+    expect(((caught as Error).cause as Error).message).toBe('package says no')
   })
 })
 

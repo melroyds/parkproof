@@ -27,6 +27,7 @@ import type {
 import { ADDENDUM_SCHEMA, CAPS, EVIDENCE_V2_SCHEMA, canonicalize } from '../../lambda/addendum-schema.js'
 import {
   appendAddendum,
+  fillPreviousDepartureHash,
   getSession,
   loadSessions,
   notifyRecordsChanged,
@@ -34,6 +35,8 @@ import {
   setAddendumBundle,
   setArrivalSignature,
 } from './storage'
+import { isWorkdayEnabled } from './features'
+import { legsWaitingOnDeparture, previousDepartureStep } from './workday-chain'
 import { endpointUrl } from './api'
 import { hashDataUrlImage, sha256HexUtf8 } from './hash'
 import { LEGACY_PHOTO_ROLES, legacyPhotoField, photoRefFor } from './session-photos'
@@ -617,6 +620,26 @@ async function drainRecord(sessionId: string): Promise<void> {
     const next = nextPendingAddendum(session)
     if (!next) break
     if (awaitingArrivalContext(session)) break
+    // A workday stop's arrival_context links to the previous stop's signed
+    // departure (T6b item 11). The link is filled here, at sign time, once
+    // that departure is signed; until then the arrival_context waits, for
+    // at most 24 hours, and is then signed with null.
+    if (next.kind === 'arrival_context' && isWorkdayEnabled()) {
+      const step = previousDepartureStep(sessionId, next, loadSessions(), Date.now())
+      if (step.kind === 'wait') break
+      if (step.kind === 'fill') {
+        const hash = await sha256HexUtf8(step.payload)
+        let filled: SignedAddendum | null = null
+        try {
+          filled = fillPreviousDepartureHash(sessionId, next.id, hash)
+        } catch (err) {
+          console.warn('[signing] could not link the workday stop to the previous one:', err)
+        }
+        if (!filled) break
+        // Read again from storage on the next pass, so what is sent is what is stored.
+        continue
+      }
+    }
     const parent = parentBundleFor(session, next.seq)
     if (!parent) break // parent not signed yet: wait for it
     const chainKey = chainKeyForAddenda(session)
@@ -629,18 +652,44 @@ async function drainRecord(sessionId: string): Promise<void> {
       const check = checkAddendumBundle(next, session.id, parent, parentHash, outcome.ok)
       if (!check.ok) {
         rejectAddendum(sessionId, next.id, check.code)
+        // A refused departure means the next stop signs with a null link now.
+        if (next.kind === 'departure') wakeLegsWaitingOn(sessionId)
         continue
       }
-      if (setAddendumBundle(sessionId, next.id, outcome.ok)) signedAny = true
+      if (setAddendumBundle(sessionId, next.id, outcome.ok)) {
+        signedAny = true
+        // The next workday stop's arrival_context may be waiting for this departure.
+        if (next.kind === 'departure') wakeLegsWaitingOn(sessionId)
+      }
       continue
     }
     if ('rejected' in outcome) {
       rejectAddendum(sessionId, next.id, outcome.rejected)
+      // The next workday stop's arrival_context was waiting for this
+      // departure: refused, it signs with a null link, now rather than at
+      // the next sweep.
+      if (next.kind === 'departure') wakeLegsWaitingOn(sessionId)
       continue
     }
     break // transient: try again on the next trigger
   }
   if (signedAny) notifySigned(sessionId)
+}
+
+/**
+ * After a workday stop's departure is signed, or refused: try signing the
+ * next stop's arrival_context now, which was waiting for it (T6b item 11),
+ * rather than leave it for the next sweep. Never throws.
+ */
+function wakeLegsWaitingOn(sessionId: string): void {
+  if (!isWorkdayEnabled()) return
+  try {
+    const session = getSession(sessionId)
+    if (!session) return
+    for (const id of legsWaitingOnDeparture(session, loadSessions())) void enqueueSigning(id)
+  } catch (err) {
+    console.warn('[signing] could not wake the next workday stop:', err)
+  }
 }
 
 function recordArrivalRejection(sessionId: string, code: string): void {

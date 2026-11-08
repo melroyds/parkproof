@@ -48,6 +48,8 @@ import { recordDriver, type RecordDriver } from './notice-compare'
 import { handoverParts, type HandoverPart } from './handover'
 
 const MARGIN = 40
+/** The page margin every PDF uses (points), for the workday PDF (pdf-workday.ts). */
+export const PDF_MARGIN = MARGIN
 
 // ─── Time helpers ───────────────────────────────────────────────────────────
 // Every time in every PDF goes through evidenceTime (formatInZone with the
@@ -795,7 +797,9 @@ export async function materializeRemotePhotosBatch(
 }
 
 // ─── PDF layout helpers ─────────────────────────────────────────────────────
-function ensureSpace(doc: jsPDF, y: number, needed: number): number {
+// Exported for the workday PDF (pdf-workday.ts), which lays its pages out
+// with the same helpers.
+export function ensureSpace(doc: jsPDF, y: number, needed: number): number {
   const pageHeight = doc.internal.pageSize.getHeight()
   if (y + needed > pageHeight - MARGIN) {
     doc.addPage()
@@ -804,12 +808,12 @@ function ensureSpace(doc: jsPDF, y: number, needed: number): number {
   return y
 }
 
-function contentWidth(doc: jsPDF): number {
+export function contentWidth(doc: jsPDF): number {
   return doc.internal.pageSize.getWidth() - 2 * MARGIN
 }
 
 /** Wrapped text, a line at a time so it can run onto the next page. Returns the y below it. */
-function drawWrapped(
+export function drawWrapped(
   doc: jsPDF,
   text: string,
   y: number,
@@ -852,7 +856,7 @@ export function isWinAnsiText(text: string): boolean {
  * `font` replaces courier for text courier can't draw (a readable payload
  * with a non-Latin address, say); base64 and commands always use courier.
  */
-function drawMono(doc: jsPDF, text: string, y: number, size = 7, lineHeight = 9, font = 'courier'): number {
+export function drawMono(doc: jsPDF, text: string, y: number, size = 7, lineHeight = 9, font = 'courier'): number {
   doc.setFont(font, 'normal')
   doc.setFontSize(size)
   for (const line of doc.splitTextToSize(text, contentWidth(doc)) as string[]) {
@@ -863,7 +867,7 @@ function drawMono(doc: jsPDF, text: string, y: number, size = 7, lineHeight = 9,
   return y
 }
 
-function lastTableY(doc: jsPDF, fallback: number): number {
+export function lastTableY(doc: jsPDF, fallback: number): number {
   const lastTable = (doc as unknown as { lastAutoTable?: { finalY: number } }).lastAutoTable
   return lastTable?.finalY ?? fallback
 }
@@ -1421,7 +1425,7 @@ export function drawSessionBlock(
  * old one it advances y, but new record sections still go before it, in
  * drawSessionBlock.
  */
-function drawStatement(doc: jsPDF, y: number, t: TFunction, font: string): number {
+export function drawStatement(doc: jsPDF, y: number, t: TFunction, font: string): number {
   y = ensureSpace(doc, y, 60)
   doc.setTextColor(80)
   y = drawWrapped(doc, t('pdf.evidence.statement'), y, { font, style: 'italic', size: 10, lineHeight: 12 })
@@ -1521,7 +1525,7 @@ export function appendixLinks(session: ParkingSession): AppendixLink[] {
 }
 
 /** The appendix, or nothing; a failure is logged and the rest of the PDF still saves. */
-function drawAppendixSafely(
+export function drawAppendixSafely(
   doc: jsPDF,
   session: ParkingSession,
   t: TFunction,

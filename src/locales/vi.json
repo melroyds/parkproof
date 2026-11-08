@@ -820,6 +820,49 @@
     "shared": {
       "field": "Được chia sẻ với bạn",
       "madeElsewhere": "Bản ghi này được tạo trên điện thoại của người khác."
+    },
+    "workday": {
+      "title": "Bản ghi các lần đỗ xe.",
+      "footer": "Bản ghi này ghi lại những gì bạn đã làm và những gì bạn đã cho chúng tôi biết. Đây không phải là kết luận pháp lý rằng bạn đã tuân thủ quy định. Việc đó do hội đồng địa phương của bạn quyết định.",
+      "councilLine": "Hội đồng địa phương có thể diễn giải quy định này nghiêm ngặt hơn. Hãy xem trang về đỗ xe của hội đồng địa phương nơi bạn ở.",
+      "started": "Ngày làm việc bắt đầu {{time}} (đồng hồ điện thoại)",
+      "ended": "Ngày làm việc kết thúc {{time}} (đồng hồ điện thoại)",
+      "legCount": "Số điểm dừng trong PDF này: {{chosen}} trên {{total}}",
+      "partial": "PDF này không gồm mọi điểm dừng của ngày làm việc. Mỗi khoảng cách và lời của tài xế đều nói về điểm dừng ngay trước đó trong ngày làm việc, kể cả khi điểm dừng đó không được đưa vào.",
+      "intro": "Mỗi điểm dừng là một bản ghi đỗ xe riêng. Sau bảng này là một phần cho từng điểm dừng, và các trang chữ ký nằm ở cuối.",
+      "col": {
+        "leg": "Điểm dừng",
+        "arrived": "Đến lúc (đồng hồ điện thoại)",
+        "left": "Rời đi (đồng hồ điện thoại)",
+        "distance": "Khoảng cách ước tính từ điểm dừng trước (GPS điện thoại)",
+        "statement": "Lời của tài xế"
+      },
+      "cell": {
+        "notLeft": "Chưa ghi nhận",
+        "signedArrival": "Lúc đến: {{value}}",
+        "signedDeparture": "Rời đi: {{value}}",
+        "noDistance": "Không đo được. Cần có định vị GPS điện thoại ở cả hai điểm dừng."
+      },
+      "statement": {
+        "firstLeg": "Không có. Đây là điểm dừng đầu tiên.",
+        "notAsked": "Không hỏi. ParkProof không hỏi về lần dời xe này.",
+        "oppositeDirectionSign": "Tài xế cho biết đã đi qua một biển báo cho thấy đoạn đường này đã kết thúc.",
+        "yellowEdgeLine": "Tài xế cho biết đã đi qua một vạch vàng ở mép đường.",
+        "tIntersectionOrDeadEnd": "Tài xế cho biết đã đi qua điểm cuối con đường tại ngã ba chữ T hoặc đường cụt.",
+        "leftParkingArea": "Tài xế cho biết đã lái xe ra khỏi khu vực đỗ xe, qua một biển báo cho biết khu vực kết thúc.",
+        "notSure": "Khi được hỏi đã rời khỏi đoạn đường có biển báo chưa, tài xế trả lời: Tôi không chắc.",
+        "notSureArea": "Khi được hỏi đã rời khỏi khu vực đỗ xe chưa, tài xế trả lời: Tôi không chắc."
+      },
+      "legHeading": "Điểm dừng {{number}}",
+      "tagged": "Điểm dừng này là một lần đỗ xe trước đó được thêm vào ngày làm việc. Các chi tiết đã ký của nó không nhắc đến ngày làm việc.",
+      "chain": {
+        "heading": "Chuỗi giữa các điểm dừng",
+        "intro": "Thông tin khi đỗ xe của mỗi điểm dừng mang previous_departure_payload_sha256, tức SHA-256 của payload rời đi đã ký của điểm dừng trước nó, khi phần rời đi đó được ký kịp thời. Lưu các tệp của mỗi điểm dừng từ các trang chữ ký của nó vào một thư mục riêng (leg1, leg2, v.v.) và giải mã chúng theo các bước của điểm dừng đó. Sau đó chạy lệnh được hiển thị cho từng cặp.",
+        "equals": "Giá trị hex đó phải bằng previous_departure_payload_sha256 trong mắt xích {{link}} của điểm dừng {{leg}}.",
+        "equalsOneOf": "Một trong các giá trị hex này phải bằng previous_departure_payload_sha256 trong mắt xích {{link}} của điểm dừng {{leg}}.",
+        "notLinked": "Mắt xích {{link}} của điểm dừng {{leg}} được ký mà không có phần rời đi của điểm dừng trước nó, vì không có phần rời đi nào được ký kịp thời. Không có gì để so sánh ở đây.",
+        "notInPdf": "Mắt xích {{link}} của điểm dừng {{leg}} nhắc đến một phần rời đi đã ký của điểm dừng trước nó, nhưng phần đó không có trong PDF này."
+      }
     }
   },
   "time": {
@@ -1102,6 +1145,123 @@
       "ended": "Thời gian đỗ xe của bạn trên đoạn đường này đã kết thúc lúc {{time}}.",
       "headsUpArea": "Thời hạn đỗ xe của bạn trong khu vực đỗ xe này kết thúc lúc {{time}}. Hãy dời xe ra khỏi toàn bộ khu vực, không chỉ sang một con đường khác trong khu vực.",
       "endedArea": "Thời gian đỗ xe của bạn trong khu vực đỗ xe này đã kết thúc lúc {{time}}."
+    },
+    "start": {
+      "title": "Bắt đầu một ngày làm việc",
+      "intro": "Dành cho một ngày phải dời xe giữa các chỗ đỗ có giới hạn thời gian. Mỗi điểm dừng có bản ghi riêng, được đọc từ một ảnh mới chụp biển báo ở đó.",
+      "locating": "Đang kiểm tra bạn đang ở tiểu bang nào…",
+      "unavailable": "Chế độ ngày làm việc hiện có ở Victoria và Queensland trong khi chúng tôi kiểm tra quy định của các tiểu bang khác.",
+      "unknown": "ParkProof không xác định được bạn đang ở tiểu bang nào từ vị trí điện thoại. Chế độ ngày làm việc chỉ có ở Victoria và Queensland, nên cần kiểm tra trước.",
+      "button": "Bắt đầu ngày làm việc",
+      "useCurrent": "Dùng chỗ đỗ hiện tại của xe làm điểm dừng đầu tiên",
+      "useCurrentHelp": "Chỗ đỗ đó giữ nguyên thời điểm bạn ghi lại và giới hạn thời gian của nó. Dời xe vài chỗ đỗ sau đó không làm giới hạn đó bắt đầu lại, nên bạn vẫn dùng nó. Nếu xe đã rời khỏi đoạn đường có biển báo, hãy quay lại và nhấn \"Tôi đã đi\" trên bản ghi đó trước.",
+      "currentIneligible": "Chỗ đỗ hiện tại của bạn không thể là một điểm dừng trong ngày làm việc. Mỗi điểm dừng cần một biển báo đọc được ở Victoria hoặc Queensland. Hãy nhấn \"Tôi đã đi\" trên bản ghi đó khi xe đã rời khỏi đoạn đường có biển báo, rồi bắt đầu ngày làm việc."
+    },
+    "explainer": {
+      "heading": "Giới hạn thời gian được tính thế nào",
+      "full": "Dời xe vài chỗ đỗ không làm giới hạn thời gian bắt đầu lại. Bạn cần rời khỏi đoạn đường có biển báo, hoặc rời khỏi toàn bộ khu vực nếu là biển báo khu vực. Trả tiền lại hoặc nạp thêm tiền cũng không làm giới hạn bắt đầu lại. Mỗi lần dời xe cần một ảnh mới của biển báo mới.",
+      "short": "Dời xe vài chỗ đỗ không làm giới hạn thời gian bắt đầu lại. Mỗi lần dời xe cần một ảnh mới của biển báo mới."
+    },
+    "ready": {
+      "heading": "Lời nhắc",
+      "on": "Thông báo đã bật, nên lời nhắc ngày làm việc có thể đến điện thoại này cả khi ParkProof đã đóng.",
+      "ask": "Hãy bật thông báo để lời nhắc ngày làm việc có thể đến điện thoại này cả khi ParkProof đã đóng.",
+      "allow": "Bật thông báo",
+      "cantDeliver": "Lời nhắc ngày làm việc cần thông báo. Nếu không có thông báo, bạn sẽ phải tự theo dõi thời gian.",
+      "iosInstall": "Trên iPhone, thông báo cần ParkProof ở Màn hình chính. Nhấn Chia sẻ, rồi Thêm vào Màn hình chính, và bắt đầu ngày làm việc từ đó.",
+      "denied": "Thông báo của ParkProof đang bị chặn. Bạn có thể cho phép trong phần cài đặt trang web của trình duyệt.",
+      "turnedOff": "Thông báo của ParkProof đã bị tắt trên điện thoại này. Bạn có thể bật lại trong Cài đặt."
+    },
+    "ics": {
+      "button": "Thêm lời nhắc vào lịch cho điểm dừng này",
+      "title": "Dời xe ra khỏi đoạn đường có biển báo này trước {{time}}",
+      "titleArea": "Dời xe ra khỏi khu vực đỗ xe này trước {{time}}"
+    },
+    "card": {
+      "kicker": "Ngày làm việc",
+      "stop": "Điểm dừng {{number}}",
+      "noStops": "Chưa có điểm dừng nào. Mỗi điểm dừng bắt đầu bằng một ảnh biển báo.",
+      "moved": "Điểm dừng {{number}} kết thúc lúc {{time}} (đồng hồ điện thoại).",
+      "open": "Mở ngày làm việc này",
+      "openAria": "Mở ngày làm việc này. {{status}}",
+      "expiredHint": "Vẫn còn ở đây? Hãy dời xe ngay. Đã dời rồi? Nhấn \"Tôi đang dời xe\".",
+      "move": "Tôi đang dời xe",
+      "moveHint": "Nhấn trước khi lái đi",
+      "scanFirst": "Đã đỗ xe? Quét biển báo nơi bạn đang ở",
+      "scanNext": "Đã đỗ lại? Quét biển báo mới",
+      "end": "Kết thúc ngày làm việc"
+    },
+    "end": {
+      "title": "Kết thúc ngày làm việc này?",
+      "body": "Các điểm dừng của bạn vẫn còn trong Lịch sử. Sau đó, chỗ đỗ bạn ghi lại sẽ là bản ghi thông thường, và ParkProof sẽ không hỏi bạn đã rời khỏi đoạn đường có biển báo hay chưa."
+    },
+    "history": {
+      "row_one": "Ngày làm việc, {{count}} điểm dừng",
+      "row_other": "Ngày làm việc, {{count}} điểm dừng"
+    },
+    "status": {
+      "active": "Đang diễn ra",
+      "ended": "Đã kết thúc"
+    },
+    "view": {
+      "title": "Ngày làm việc",
+      "started": "Bắt đầu {{time}} (đồng hồ điện thoại)",
+      "ended": "Kết thúc {{time}} (đồng hồ điện thoại)",
+      "stopsHeading": "Các điểm dừng",
+      "noStops": "Chưa có điểm dừng nào.",
+      "tagged": "Được thêm vào ngày làm việc này từ một lần đỗ xe trước đó. Các chi tiết đã ký của nó không nhắc đến ngày làm việc."
+    },
+    "noSign": {
+      "body": "Chế độ ngày làm việc cần một biển báo đọc được ở mỗi chỗ đỗ. Một số khu vực, như trung tâm Brisbane, có giới hạn thời gian ngay cả khi con đường không có biển báo."
+    },
+    "stopped": {
+      "notAvailable": "Chế độ ngày làm việc chưa có ở đây. Lần đỗ xe này được lưu thành bản ghi thông thường với kết quả đọc biển báo riêng.",
+      "unknownState": "ParkProof không xác định được lần đỗ xe này ở tiểu bang nào, nên ngày làm việc đã kết thúc. Lần đỗ xe này được lưu thành bản ghi thông thường. Nếu bạn đã cho chúng tôi biết là bạn không chắc, giới hạn thời gian ban đầu của bạn vẫn được áp dụng."
+    },
+    "scan": {
+      "fresh": "Điểm dừng trong ngày làm việc: hãy chụp ảnh mới biển báo ở nơi xe đang đỗ.",
+      "cameraDenied": "Hãy bật lại quyền truy cập máy ảnh trong cài đặt trình duyệt. Mỗi điểm dừng trong ngày làm việc cần một ảnh chụp ngay lúc đó.",
+      "notFresh": "Ảnh đó không phải vừa mới chụp. Mỗi điểm dừng trong ngày làm việc cần một ảnh biển báo chụp ngay lúc đó. Hãy chụp ảnh mới bằng máy ảnh."
+    },
+    "boundary": {
+      "title": "Đây có thể vẫn là cùng một đoạn đường có biển báo.",
+      "body": "Dời sang chỗ đỗ khác không làm giới hạn thời gian bắt đầu lại. Trên đường đến đây, bạn có đi qua một trong những thứ này không?",
+      "area": "Đây là khu vực đỗ xe. Chuyển sang một con đường khác trong khu vực không được tính. Bạn cần rời khỏi toàn bộ khu vực.",
+      "option": {
+        "oppositeDirectionSign": "Một biển báo cho thấy đoạn đường này đã kết thúc (biển báo mũi tên hai chiều ở giữa dãy nhà không được tính)",
+        "yellowEdgeLine": "Một vạch vàng ở mép đường",
+        "tIntersectionOrDeadEnd": "Điểm cuối con đường tại ngã ba chữ T hoặc đường cụt",
+        "leftParkingArea": "Tôi đã lái xe ra khỏi khu vực đỗ xe, qua một biển báo cho biết khu vực kết thúc",
+        "notSure": "Tôi không chắc"
+      },
+      "footer": "Nếu bạn không chắc, giới hạn thời gian ban đầu của bạn vẫn đang tính.",
+      "required": "Hãy chọn một câu trả lời để lưu điểm dừng này.",
+      "newLimit": "Giới hạn mới dựa trên những gì bạn cho chúng tôi biết: bạn đã đi qua {{boundary}}.",
+      "passed": {
+        "oppositeDirectionSign": "một biển báo cho thấy đoạn đường này đã kết thúc",
+        "yellowEdgeLine": "một vạch vàng ở mép đường",
+        "tIntersectionOrDeadEnd": "điểm cuối con đường tại ngã ba chữ T hoặc đường cụt",
+        "leftParkingArea": "một biển báo cho biết khu vực đỗ xe kết thúc"
+      },
+      "notSure": "Giới hạn của bạn trên đoạn đường này vẫn tính từ {{start}}. Hãy dời xe ra khỏi đoạn đường này trước {{deadline}}.",
+      "notSureArea": "Giới hạn của bạn trong khu vực đỗ xe này vẫn tính từ {{start}}. Hãy dời xe ra khỏi toàn bộ khu vực trước {{deadline}}.",
+      "notSureNoDeadline": "Giới hạn của bạn trên đoạn đường này vẫn tính từ {{start}}.",
+      "notSureNoDeadlineArea": "Giới hạn của bạn trong khu vực đỗ xe này vẫn tính từ {{start}}.",
+      "passedDeadline": "Thời gian của bạn trên đoạn đường này đã kết thúc lúc {{time}}. Hãy dời xe ra khỏi đoạn đường này ngay bây giờ.",
+      "passedDeadlineArea": "Thời gian của bạn trong khu vực đỗ xe này đã kết thúc lúc {{time}}. Hãy dời xe ra khỏi toàn bộ khu vực ngay bây giờ.",
+      "saveAnyway": "Vẫn lưu",
+      "dontSave": "Không lưu điểm dừng này"
+    },
+    "reminders": {
+      "notSet": "Không thể thiết lập lời nhắc cho điểm dừng này. Hãy tự theo dõi thời gian, hoặc thử lại."
+    },
+    "pdf": {
+      "open": "Xuất PDF của ngày làm việc này",
+      "title": "PDF ngày làm việc",
+      "warning": "PDF này gồm mọi điểm dừng bạn chọn, kèm khoảng cách giữa chúng và những gì bạn đã cho chúng tôi biết ở mỗi lần dời xe. Hội đồng địa phương có thể đọc nó.",
+      "chooseLegs": "Các điểm dừng cần đưa vào",
+      "leg": "Điểm dừng {{number}}",
+      "noneChosen": "Hãy chọn ít nhất một điểm dừng để xuất."
     }
   },
   "notice": {

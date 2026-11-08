@@ -990,6 +990,49 @@
     "shared": {
       "field": "Shared with you",
       "madeElsewhere": "This record was made on someone else's phone."
+    },
+    "workday": {
+      "title": "Record of parking events.",
+      "footer": "This records what you did and what you told us. It is not a legal finding that you complied. Your council decides that.",
+      "councilLine": "Councils may interpret this rule more strictly. Check your council's parking page.",
+      "started": "Workday started {{time}} (phone clock)",
+      "ended": "Workday ended {{time}} (phone clock)",
+      "legCount": "Legs in this PDF: {{chosen}} of {{total}}",
+      "partial": "Not every leg of this workday is in this PDF. Each distance and driver's statement is about the leg just before it on the workday, even when that leg is left out.",
+      "intro": "Each leg is its own parking record. A section for each leg follows this table, and the signature pages come last.",
+      "col": {
+        "leg": "Leg",
+        "arrived": "Arrived (phone clock)",
+        "left": "Left (phone clock)",
+        "distance": "Approx. distance from previous leg (phone GPS)",
+        "statement": "Driver's statement"
+      },
+      "cell": {
+        "notLeft": "Not recorded",
+        "signedArrival": "Arrival: {{value}}",
+        "signedDeparture": "Departure: {{value}}",
+        "noDistance": "Not measured. It needs a phone GPS fix at both legs."
+      },
+      "statement": {
+        "firstLeg": "None. This is the first leg.",
+        "notAsked": "Not asked. ParkProof didn't ask about this move.",
+        "oppositeDirectionSign": "The driver said they passed a sign showing this zone had ended.",
+        "yellowEdgeLine": "The driver said they passed a yellow edge line.",
+        "tIntersectionOrDeadEnd": "The driver said they passed the end of the road at a T-intersection or dead end.",
+        "leftParkingArea": "The driver said they drove out of the parking area, past a sign saying it ends.",
+        "notSure": "Asked whether they had left the signed stretch, the driver answered: I'm not sure.",
+        "notSureArea": "Asked whether they had left the parking area, the driver answered: I'm not sure."
+      },
+      "legHeading": "Leg {{number}}",
+      "tagged": "This leg was an earlier park added to the workday. Its signed details don't mention the workday.",
+      "chain": {
+        "heading": "The chain between legs",
+        "intro": "Each leg's details at parking carry previous_departure_payload_sha256, the SHA-256 of the signed departure payload of the leg before it, when that departure was signed in time. Save each leg's files from its signature pages in a folder of its own (leg1, leg2 and so on) and decode them as in its steps. Then run the command shown for each pair.",
+        "equals": "That hex value must equal previous_departure_payload_sha256 in leg {{leg}}, link {{link}}.",
+        "equalsOneOf": "One of these hex values must equal previous_departure_payload_sha256 in leg {{leg}}, link {{link}}.",
+        "notLinked": "Leg {{leg}}, link {{link}} was signed without a departure of the leg before it, because none was signed in time. There is nothing to compare here.",
+        "notInPdf": "Leg {{leg}}, link {{link}} names a signed departure of the leg before it that isn't in this PDF."
+      }
     }
   },
   "time": {
@@ -1102,6 +1145,123 @@
       "ended": "Your time on this stretch ended at {{time}}.",
       "headsUpArea": "Your time limit in this parking area ends at {{time}}. Move the car out of the whole area, not just to another street inside it.",
       "endedArea": "Your time in this parking area ended at {{time}}."
+    },
+    "start": {
+      "title": "Start a workday",
+      "intro": "For a day of moving the car between time-limited spots. Each stop gets its own record, read from a fresh photo of its sign.",
+      "locating": "Checking which state you're in…",
+      "unavailable": "Workday mode is available in Victoria and Queensland while we check other states' rules.",
+      "unknown": "ParkProof couldn't work out which state you're in from your phone's location. Workday mode is only available in Victoria and Queensland, so it needs to check first.",
+      "button": "Start workday",
+      "useCurrent": "Use the car's current park as the first stop",
+      "useCurrentHelp": "That park keeps the time you logged it and its time limit. Moving a few bays since then doesn't restart that limit, so use it anyway. If the car has left the signed stretch, go back and tap I've left on it first.",
+      "currentIneligible": "Your current park can't be a workday stop. Stops need a readable sign in Victoria or Queensland. Tap I've left on it once the car has left the signed stretch, then start the workday."
+    },
+    "explainer": {
+      "heading": "How time limits work",
+      "full": "Moving a few bays doesn't restart the time limit. You need to leave the signed length of road, or the whole area under an area sign. Paying again or topping up doesn't restart the limit either. Each move needs a fresh photo of the new sign.",
+      "short": "Moving a few bays doesn't restart the time limit. Each move needs a fresh photo of the new sign."
+    },
+    "ready": {
+      "heading": "Reminders",
+      "on": "Notifications are on, so workday reminders can reach this phone while ParkProof is closed.",
+      "ask": "Turn on notifications so workday reminders can reach this phone while ParkProof is closed.",
+      "allow": "Turn on notifications",
+      "cantDeliver": "Workday reminders need notifications. Without them you'll need to watch the time yourself.",
+      "iosInstall": "On iPhone, notifications need ParkProof on your Home Screen. Tap Share, then Add to Home Screen, and start the workday from there.",
+      "denied": "Notifications are blocked for ParkProof. You can allow them in your browser's site settings.",
+      "turnedOff": "Notifications are turned off for ParkProof on this phone. You can turn them on again in Settings."
+    },
+    "ics": {
+      "button": "Add calendar reminders for this stop",
+      "title": "Move off this signed stretch by {{time}}",
+      "titleArea": "Move the car out of this parking area by {{time}}"
+    },
+    "card": {
+      "kicker": "Workday",
+      "stop": "Stop {{number}}",
+      "noStops": "No stops yet. Each stop starts with a photo of its sign.",
+      "moved": "Stop {{number}} ended at {{time}} (phone clock).",
+      "open": "Open this workday",
+      "openAria": "Open this workday. {{status}}",
+      "expiredHint": "Still here? Move now. Already moved? Tap I'm moving the car now.",
+      "move": "I'm moving the car now",
+      "moveHint": "Tap before you drive off",
+      "scanFirst": "Parked? Scan the sign where you are",
+      "scanNext": "Parked again? Scan the new sign",
+      "end": "End workday"
+    },
+    "end": {
+      "title": "End this workday?",
+      "body": "Your stops stay in History. After this, a park you log is a normal record, and ParkProof won't ask whether you left the signed stretch."
+    },
+    "history": {
+      "row_one": "Workday, {{count}} stop",
+      "row_other": "Workday, {{count}} stops"
+    },
+    "status": {
+      "active": "In progress",
+      "ended": "Ended"
+    },
+    "view": {
+      "title": "Workday",
+      "started": "Started {{time}} (phone clock)",
+      "ended": "Ended {{time}} (phone clock)",
+      "stopsHeading": "Stops",
+      "noStops": "No stops yet.",
+      "tagged": "Added to this workday from an earlier park. Its signed details don't mention the workday."
+    },
+    "noSign": {
+      "body": "Workday mode needs a readable sign at each spot. Some areas, like central Brisbane, have time limits even where a street has no sign."
+    },
+    "stopped": {
+      "notAvailable": "Workday mode isn't available here yet. This park is saved as a normal record with its own sign reading.",
+      "unknownState": "ParkProof couldn't tell which state this park is in, so the workday has ended. This park is saved as a normal record. If you told us you weren't sure, your original time limit still applies."
+    },
+    "scan": {
+      "fresh": "Workday stop: take a fresh photo of the sign where the car is now.",
+      "cameraDenied": "Turn camera access back on in your browser settings. Workday stops need a photo taken now.",
+      "notFresh": "That photo wasn't taken just now. Workday stops need a photo of the sign taken now. Take a new one with the camera."
+    },
+    "boundary": {
+      "title": "This may be the same signed stretch.",
+      "body": "Moving bays doesn't restart the time limit. Did you pass one of these on the way here?",
+      "area": "This is a parking area. Moving to another street inside it doesn't count. You need to leave the whole area.",
+      "option": {
+        "oppositeDirectionSign": "A sign showing this zone had ended (a two-way arrow sign in the middle of the block doesn't count)",
+        "yellowEdgeLine": "A yellow edge line",
+        "tIntersectionOrDeadEnd": "The end of the road at a T-intersection or dead end",
+        "leftParkingArea": "I drove out of the parking area, past a sign saying it ends",
+        "notSure": "I'm not sure"
+      },
+      "footer": "If you're not sure, your original time limit is still running.",
+      "required": "Choose an answer to save this stop.",
+      "newLimit": "New limit based on what you told us: you passed {{boundary}}.",
+      "passed": {
+        "oppositeDirectionSign": "a sign showing this zone had ended",
+        "yellowEdgeLine": "a yellow edge line",
+        "tIntersectionOrDeadEnd": "the end of the road at a T-intersection or dead end",
+        "leftParkingArea": "a sign saying the parking area ends"
+      },
+      "notSure": "Your limit on this stretch still runs from {{start}}. Move the car off this stretch by {{deadline}}.",
+      "notSureArea": "Your limit in this parking area still runs from {{start}}. Move the car out of the whole area by {{deadline}}.",
+      "notSureNoDeadline": "Your limit on this stretch still runs from {{start}}.",
+      "notSureNoDeadlineArea": "Your limit in this parking area still runs from {{start}}.",
+      "passedDeadline": "Your time on this stretch ended at {{time}}. Move the car off this stretch now.",
+      "passedDeadlineArea": "Your time in this parking area ended at {{time}}. Move the car out of the whole area now.",
+      "saveAnyway": "Save anyway",
+      "dontSave": "Don't save this stop"
+    },
+    "reminders": {
+      "notSet": "Reminders for this stop couldn't be set up. Watch the time yourself, or try again."
+    },
+    "pdf": {
+      "open": "Export a PDF of this workday",
+      "title": "Workday PDF",
+      "warning": "This PDF includes every leg you choose, with distances between them and what you told us at each move. Councils can read it.",
+      "chooseLegs": "Legs to include",
+      "leg": "Leg {{number}}",
+      "noneChosen": "Choose at least one leg to export."
     }
   },
   "notice": {

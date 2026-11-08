@@ -45,11 +45,202 @@ These decide what the copy above says and when. They are app rules, not legal ru
 
 ### T6b: screens and flow
 
-T6b adds its keys here (start gate, readiness, explainer, workday card, moving, the boundary question and its answers, "not sure" and deadline-passed lines, end workday).
+**Gate, restated.** The owner has no access to a lawyer, so `VITE_FEATURE_WORKDAY` stays off in production indefinitely. With it off, none of the keys below is shown: no home link, no start screen, no workday card, no workday scan rules, no History grouping (`src/app-workday.test.tsx` renders home and every affected screen with the flag off). `src/lib/features-build.test.ts` checks that a production build reads the flag as off from this checkout's env files and shell, and that no build script sets it.
+
+#### Items 1 to 7 and 10: start, readiness, explainer, card, moving, readable signs, end
+
+Added by `scripts/_i18n_inject_t6bc.mjs` (run it with `--list`; `legal` marks the keys this table says a lawyer must read first, `exact` the spec's own wording, which the script refuses to change). Every key in the table is new except `home.startWorkday` (T4's text, shown by T6b). All of them are workday copy; none may be shown in production before a lawyer has read them.
+
+| Key | Where it shows | English | Status |
+|---|---|---|---|
+| `home.startWorkday` | Home, under the glass rows (T4 added the text; T6b shows it). Hidden while a workday is active and when the last record is in another state | Parking all day? Start a workday | Not reviewed |
+| `workday.start.title` | Start screen title | Start a workday | Not reviewed |
+| `workday.start.intro` | Start screen, under the title | For a day of moving the car between time-limited spots. Each stop gets its own record, read from a fresh photo of its sign. | Not reviewed |
+| `workday.start.locating` | Start screen, while the GPS fix and the state lookup run | Checking which state you're in… | Not reviewed |
+| `workday.start.unavailable` | Start screen, the phone is in another state or territory (no Start button) | Workday mode is available in Victoria and Queensland while we check other states' rules. (spec wording) | Not reviewed |
+| `workday.start.unknown` | Start screen, no usable fix or the lookup failed (no Start button; Retry) | ParkProof couldn't work out which state you're in from your phone's location. Workday mode is only available in Victoria and Queensland, so it needs to check first. | Not reviewed |
+| `workday.start.button` | Start screen, the Start button when no record is active | Start workday | Not reviewed |
+| `workday.start.useCurrent` | Start screen, the only Start button while a record is active (it becomes stop 1) | Use the car's current park as the first stop (spec wording) | Not reviewed |
+| `workday.start.useCurrentHelp` | Start screen, under that button | That park keeps the time you logged it and its time limit. Moving a few bays since then doesn't restart that limit, so use it anyway. If the car has left the signed stretch, go back and tap I've left on it first. (reworded in review: it no longer suggests that tapping I've left after a short move gives a fresh limit) | Not reviewed |
+| `workday.start.currentIneligible` | Start screen, in place of a Start button when the active park cannot be a stop | Your current park can't be a workday stop. Stops need a readable sign in Victoria or Queensland. Tap I've left on it once the car has left the signed stretch, then start the workday. (reworded in review: the first stop runs on its own sign's limit, so the driver is told to start only after leaving the stretch) | Not reviewed |
+| `workday.explainer.heading` | Start screen, explainer heading | How time limits work | Not reviewed |
+| `workday.explainer.full` | Start screen, the explainer on the first workday on this device | Moving a few bays doesn't restart the time limit. You need to leave the signed length of road, or the whole area under an area sign. Paying again or topping up doesn't restart the limit either. Each move needs a fresh photo of the new sign. (spec wording) | Not reviewed |
+| `workday.explainer.short` | Start screen, the explainer on every later workday | Moving a few bays doesn't restart the time limit. Each move needs a fresh photo of the new sign. | Not reviewed |
+| `workday.ready.heading` | Start screen, readiness heading | Reminders | Not reviewed |
+| `workday.ready.on` | Start screen, notifications allowed and push available | Notifications are on, so workday reminders can reach this phone while ParkProof is closed. | Not reviewed |
+| `workday.ready.ask` | Start screen and home workday card, the browser has not asked for notifications yet: under `workday.ready.cantDeliver`, above the "Turn on notifications" button | Turn on notifications so workday reminders can reach this phone while ParkProof is closed. (reworded in review: it now follows the spec's can't-deliver line) | Not reviewed |
+| `workday.ready.allow` | Start screen, the button that asks | Turn on notifications | Not reviewed |
+| `workday.ready.cantDeliver` | Start screen and the home card, whenever reminders cannot reach the phone | Workday reminders need notifications. Without them you'll need to watch the time yourself. (spec wording) | Not reviewed |
+| `workday.ready.iosInstall` | Under that line on an iPhone browser tab | On iPhone, notifications need ParkProof on your Home Screen. Tap Share, then Add to Home Screen, and start the workday from there. | Not reviewed |
+| `workday.ready.denied` | Under that line when notifications are blocked | Notifications are blocked for ParkProof. You can allow them in your browser's site settings. | Not reviewed |
+| `workday.ready.turnedOff` | Under that line when notifications were turned off in Settings | Notifications are turned off for ParkProof on this phone. You can turn them on again in Settings. | Not reviewed |
+| `workday.ics.button` | Start screen (for the park becoming stop 1) and the home card, when reminders cannot reach the phone | Add calendar reminders for this stop | Not reviewed |
+| `workday.ics.title` | Calendar event title for a stop on a signed length of road. The alarms reuse the T6a reminder lines above | Move off this signed stretch by {{time}} | Not reviewed |
+| `workday.ics.titleArea` | The same under an area limit | Move the car out of this parking area by {{time}} | Not reviewed |
+| `workday.card.kicker` | Home workday card, top line | Workday | Not reviewed |
+| `workday.card.stop` | Home workday card and the workday view, each stop | Stop {{number}} | Not reviewed |
+| `workday.card.noStops` | Home workday card, before the first stop | No stops yet. Each stop starts with a photo of its sign. | Not reviewed |
+| `workday.card.moved` | Home workday card between moves | Stop {{number}} ended at {{time}} (phone clock). | Not reviewed |
+| `workday.card.open` | Screen-reader name of the card when it shows no status | Open this workday | Not reviewed |
+| `workday.card.openAria` | Screen-reader name of the card | Open this workday. {{status}} | Not reviewed |
+| `workday.card.expiredHint` | Home workday card once the stop's limit has passed | Still here? Move now. Already moved? Tap I'm moving the car now. | Not reviewed |
+| `workday.card.move` | Home workday card's primary button while parked (opens the departure sheet) | I'm moving the car now (spec wording) | Not reviewed |
+| `workday.card.moveHint` | Under that button | Tap before you drive off (spec wording) | Not reviewed |
+| `workday.card.scanFirst` | Home workday card's button before the first stop | Parked? Scan the sign where you are | Not reviewed |
+| `workday.card.scanNext` | Home workday card's button between moves | Parked again? Scan the new sign (spec wording) | Not reviewed |
+| `workday.card.end` | Home workday card, the workday view, the no-readable-sign screen and the end dialog | End workday | Not reviewed |
+| `workday.end.title` | Dialog when ending between moves | End this workday? | Not reviewed |
+| `workday.end.body` | Dialog body | Your stops stay in History. After this, a park you log is a normal record, and ParkProof won't ask whether you left the signed stretch. | Not reviewed |
+| `workday.history.row_one` | History, one row per workday | Workday, {{count}} stop | Not reviewed |
+| `workday.history.row_other` | History, one row per workday | Workday, {{count}} stops (spec wording) | Not reviewed |
+| `workday.status.active` | History row and workday view | In progress | Not reviewed |
+| `workday.status.ended` | History row and workday view | Ended | Not reviewed |
+| `workday.view.title` | Workday view title | Workday | Not reviewed |
+| `workday.view.started` | Workday view | Started {{time}} (phone clock) | Not reviewed |
+| `workday.view.ended` | Workday view | Ended {{time}} (phone clock) | Not reviewed |
+| `workday.view.stopsHeading` | Workday view | Stops | Not reviewed |
+| `workday.view.noStops` | Workday view | No stops yet. | Not reviewed |
+| `workday.view.tagged` | Workday view, on a first stop that was an earlier park | Added to this workday from an earlier park. Its signed details don't mention the workday. | Not reviewed |
+| `workday.noSign.body` | No-readable-sign screen during a workday (only Retake photo and End workday) | Workday mode needs a readable sign at each spot. Some areas, like central Brisbane, have time limits even where a street has no sign. (spec wording) | Not reviewed |
+| `workday.stopped.notAvailable` | Reminder screen after a stop whose own place puts it in a state other than Victoria or Queensland was saved as a normal record | Workday mode isn't available here yet. This park is saved as a normal record with its own sign reading. (spec wording) | Not reviewed |
+| `workday.stopped.unknownState` | Reminder screen after a stop whose state couldn't be told (no GPS fix at Save, a fix too rough to look up, a typed address, a lookup that failed) was saved as a normal record. Not the line above, which would be false in Victoria or Queensland | ParkProof couldn't tell which state this park is in, so the workday has ended. This park is saved as a normal record. If you told us you weren't sure, your original time limit still applies. (added) | Not reviewed |
+| `workday.scan.fresh` | Scanner for a stop (camera only) | Workday stop: take a fresh photo of the sign where the car is now. | Not reviewed |
+| `workday.scan.cameraDenied` | Scanner for a stop, when the camera was refused | Turn camera access back on in your browser settings. Workday stops need a photo taken now. | Not reviewed |
+| `workday.scan.notFresh` | Scanner for a stop, when the camera input handed over a photo that wasn't just taken (a desktop file chooser, an Android chooser's Files or Gallery: the file is more than 2 minutes old) | That photo wasn't taken just now. Workday stops need a photo of the sign taken now. Take a new one with the camera. (added) | Not reviewed |
+
+#### Behaviour to read with the copy (items 1 to 7 and 10, no strings)
+
+- **Where workday mode can start** (`startGateFor`, `WorkdayStart`): a high-accuracy GPS fix (worse than 100 m counts as no fix), then the reverse geocode's ISO 3166-2 state code. Only `AU-VIC` and `AU-QLD` open the gate. No fix, a failed lookup or no code shows `workday.start.unknown` and nothing can start; there is no fallback that can produce Victoria or Queensland. The explainer and the Start button only show once the gate has passed.
+- **The home link** (`showStartWorkdayLink`): hidden while a workday is active, and when the driver's most recent own record has a known state that isn't Victoria or Queensland. An unknown state still shows it, because the start screen checks the phone's location itself.
+- **A car that hasn't moved never gets a new arrival time** (`firstStopOffer`): while a record is active, the start screen's only way in is "Use the car's current park as the first stop". That record becomes stop 1 as it was logged: tagged on the phone with the workday's id, not re-signed, keeping its logged time and limit. Its signed details therefore don't name the workday, and the workday view says so (`workday.view.tagged`). A park that can't be a stop (no readable sign, a no-sign park, a state other than Victoria or Queensland by its own place, or a stop of another workday) offers no way in until the driver taps I've left on it.
+- **Readiness** (`workdayReadiness`): reminders count as deliverable only with web push available, notifications allowed, push not turned off in Settings, and not an iPhone browser tab. Anything else, including notifications not asked for yet, shows the spec's line (`workday.ready.cantDeliver`) and offers the calendar file for the stop, whose alarms are the same three as the push reminders (T6a's schedule: heads-up, go now, at the deadline) with the same text. Not asked yet adds `workday.ready.ask` and the "Turn on notifications" button, on the start screen and on the home card; on the card the tap asks, then books the stop's reminders.
+- **The home card** replaces the active card for the whole workday, whether or not the stop's limit has passed. It never offers "Re-check now" (a re-check would log a new arrival for a car that hasn't moved), and the home "Scan another sign" button is hidden. A workday stop shown on the ordinary card (its workday isn't on this device) also never offers "Re-check now".
+- **Moving**: "I'm moving the car now" opens the same departure sheet as I've left (the phone's GPS at the old bay, the tap time as the stop's end, signed as a departure). Confirm moves the workday between moves. I've left on the stop's record screen does the same.
+- **Every move is a fresh photo of a readable sign**: between moves, every scan is the next stop's. The scanner is camera only (no library, no re-check offers, no "No sign here"), and a file from the camera input that wasn't just taken is refused (`workday.scan.notFresh`); App refuses it again if one gets through. The result screen has Back and no "Scan another"; Back from the scanner, the result or the logger returns home with the workday unchanged. A photo with no readable sign offers only Retake photo and End workday.
+- **No second arrival at a stop**: workday stops are never offered for a re-check anywhere (the scanner's "reuse this read" card and recent-scans picker leave them out, whatever the flag says), and nothing is re-checked while a workday is active. While the car is at a stop, the app's other ways into the scanner (About's "Try it", the error screen's "Try again", the first-visit card) go to the workday card instead; between moves they open the next stop's scan.
+- **A stop must be in Victoria or Queensland by its own place** (`resolveLegSave`): read from the logger's reverse geocode of its own GPS fix. Another state saves the park as a normal record with its own sign's limit and no workday link, ends the workday, and shows `workday.stopped.notAvailable`. A state that couldn't be told (no fix at Save, a fix worse than 100 m, which is never looked up, a typed address, a lookup that failed or took more than 5 seconds after Save) can't be a stop either, because there is no fallback that can produce Victoria or Queensland, so the workday ends. But the car may not have left the stretch, so that park keeps the limit the logger showed: after "I'm not sure" the running limit (never a fresh one), and the driver's boundary statement, which its arrival context signs. It shows `workday.stopped.unknownState`.
+- **End workday**: with the car at a stop, the departure sheet runs first and Confirm ends the stop and the workday. Between moves it asks (`workday.end.*`) and ends the workday; the stops stay in History.
+
+#### Items 8, 9 and 11: the boundary question, a stop's reminders, and the chain between stops
+
+Added by `scripts/_i18n_inject_t6bc.mjs` (`legal` and `exact` in its `--list`). Every key below is new. Marked "(spec wording)": the English is build spec T6b item 8's own text, and the script refuses to write if it drifts. Marked "(added)": a line the spec doesn't give, added so the app never tells a driver under an area sign to leave "this stretch" (r335), or so a line still reads when the running limit has no end time.
+
+| Key | Where it shows | English | Status |
+|---|---|---|---|
+| `workday.boundary.title` | Logger, the boundary question's title, when a stop may be on the same signed stretch | This may be the same signed stretch. (spec wording) | Not reviewed |
+| `workday.boundary.body` | Under the title | Moving bays doesn't restart the time limit. Did you pass one of these on the way here? (spec wording) | Not reviewed |
+| `workday.boundary.area` | In place of the title and body under an area sign (area mode) | This is a parking area. Moving to another street inside it doesn't count. You need to leave the whole area. (spec wording) | Not reviewed |
+| `workday.boundary.option.oppositeDirectionSign` | Answer (stretch question) | A sign showing this zone had ended (a two-way arrow sign in the middle of the block doesn't count) (spec wording) | Not reviewed |
+| `workday.boundary.option.yellowEdgeLine` | Answer (stretch question) | A yellow edge line (spec wording) | Not reviewed |
+| `workday.boundary.option.tIntersectionOrDeadEnd` | Answer (stretch question) | The end of the road at a T-intersection or dead end (spec wording) | Not reviewed |
+| `workday.boundary.option.leftParkingArea` | Answer (area question) | I drove out of the parking area, past a sign saying it ends (spec wording) | Not reviewed |
+| `workday.boundary.option.notSure` | Last answer of both questions; where focus goes when Save is tapped without an answer | I'm not sure (spec wording) | Not reviewed |
+| `workday.boundary.footer` | Under the answers, both questions | If you're not sure, your original time limit is still running. (spec wording) | Not reviewed |
+| `workday.boundary.required` | Save tapped without an answer | Choose an answer to save this stop. | Not reviewed |
+| `workday.boundary.newLimit` | After an answer that names a boundary. `{{boundary}}` is one of the four lines below | New limit based on what you told us: you passed {{boundary}}. (spec wording) | Not reviewed |
+| `workday.boundary.passed.oppositeDirectionSign` | `{{boundary}}` above | a sign showing this zone had ended | Not reviewed |
+| `workday.boundary.passed.yellowEdgeLine` | `{{boundary}}` above | a yellow edge line | Not reviewed |
+| `workday.boundary.passed.tIntersectionOrDeadEnd` | `{{boundary}}` above | the end of the road at a T-intersection or dead end | Not reviewed |
+| `workday.boundary.passed.leftParkingArea` | `{{boundary}}` above (area question) | a sign saying the parking area ends | Not reviewed |
+| `workday.boundary.notSure` | After "I'm not sure" on a signed stretch. `{{start}}` is the logged time of the stop that started the running limit (a phone time), `{{deadline}}` when that limit ends | Your limit on this stretch still runs from {{start}}. Move the car off this stretch by {{deadline}}. (spec wording) | Not reviewed |
+| `workday.boundary.notSureArea` | The same under an area limit | Your limit in this parking area still runs from {{start}}. Move the car out of the whole area by {{deadline}}. (added) | Not reviewed |
+| `workday.boundary.notSureNoDeadline` | "I'm not sure" when the running limit has no end time (the stop it continues had no limit time) | Your limit on this stretch still runs from {{start}}. (added) | Not reviewed |
+| `workday.boundary.notSureNoDeadlineArea` | The same under an area limit | Your limit in this parking area still runs from {{start}}. (added) | Not reviewed |
+| `workday.boundary.passedDeadline` | "I'm not sure" after the running limit has already ended. Save and Cancel give way to the two buttons below | Your time on this stretch ended at {{time}}. Move the car off this stretch now. (spec wording) | Not reviewed |
+| `workday.boundary.passedDeadlineArea` | The same under an area limit | Your time in this parking area ended at {{time}}. Move the car out of the whole area now. (added) | Not reviewed |
+| `workday.boundary.saveAnyway` | With the line above: saves the stop with the driver's answer | Save anyway (spec wording) | Not reviewed |
+| `workday.boundary.dontSave` | With the line above: deletes the stop being logged and its photos; nothing is signed | Don't save this stop (spec wording) | Not reviewed |
+| `workday.reminders.notSet` | Home workday card, when a stop's reminders couldn't be set (a Retry button follows) | Reminders for this stop couldn't be set up. Watch the time yourself, or try again. | Not reviewed |
+
+The card's other reminder lines reuse keys already in the app: `reminders.remindMe.setBackground` and `reminders.remindMe.setOpenOnly` (the times booked), and `reminders.reliability` (the reliability line). The reminders themselves are T6a's keys above.
+
+**Open questions for the spec owner.**
+
+- `{{start}}` in `workday.boundary.notSure` is a phone time (when the stop that started the limit was logged). The copy rules label phone times as such, but the spec gives this line word for word, so it ships without "(phone clock)". Please confirm, or add the label.
+- The area variants marked "(added)" are not in the spec. Without them, a driver under an area sign would be told to move "off this stretch", which could read as "another street inside the area is fine" (r335).
+- Stop 1 always runs on its own sign's limit (T6a's deadline maths has no earlier stop to compare with). A driver who taps I've left, moves a few bays along the same stretch and then starts a workday gets a fresh limit at stop 1. The start screen now steers away from that (`workday.start.useCurrentHelp`, `workday.start.currentIneligible`): use the current park as stop 1, or start only after leaving the signed stretch. The app doesn't check it. Please decide whether stop 1 should also be compared with the driver's last record whose limit is still running, and ask the boundary question when it trips.
+
+#### Behaviour to read with the copy (items 8, 9 and 11, no strings)
+
+- **When the question shows** (`stopBoundaryCheck`, `src/lib/workday-boundary.ts`, on T6a's `sameStretchCheck`): only on a workday stop after the first, never with the flag off. It compares the new stop with the workday's last saved stop. It shows once the phone's GPS fix and its place lookup are in, so it doesn't flash up and vanish while the fix arrives. If Save is tapped while the fix still isn't in, that location counts as unreliable, so the question asks.
+- **Nothing is answered for the driver.** No answer is preselected. "I'm not sure" has the focus when the question first shows (focus only, never checked, and not while the driver is typing in a field). Save without an answer doesn't save: it says an answer is needed and moves focus to "I'm not sure" again. The answer is saved, and signed in the stop's arrival context, as the driver's own statement, with the reasons the app asked (`buildBoundaryStatement`). A stop the question didn't ask about is saved as "not asked", with its distance from the previous stop.
+- **Which answers start a new limit** (`startsNewLimit`, `legDeadline`): only "a sign showing this zone had ended", "a yellow edge line" or "the end of the road", and under an area sign only "I drove out of the parking area". Every other answer keeps the running limit: the stop's limit is then the earlier of its own sign's and the running one, and the stop is saved with that limit (`stopLimitFields`), so its countdown, its reminders and its signed arrival all use it.
+- **The time in the "not sure" and deadline-passed lines** is the stop's saved limit: the running limit's end, or the new sign's own limit when that ends first. So the line, the card's countdown and the reminders always name the same time.
+- **When the running limit has already ended** and the answer keeps it: only "Save anyway" (saves the stop with the driver's answer, its limit already passed) or "Don't save this stop" (deletes the stop being logged and its photos; nothing is saved or signed).
+- **A stop that isn't one after all**: in a state other than Victoria or Queensland, saved as a normal record with its own sign's limit and no boundary statement (`withoutStopLimit`). With a state that couldn't be told, or past the most stops a workday holds, saved as a normal record that keeps the limit the logger showed and the boundary statement (`stopLimitFields`), so a car that may not have left the stretch never gets a fresh limit.
+- **Reminders** (`bookWorkdayLegReminders`, `src/lib/workday-reminders.ts`): workday stops skip the reminder screen. When a stop is saved, or the car's current park becomes the first stop, T6a's three reminders for its limit are set at once (replacing any the record had), in the app and as push notifications, through the same code as "Remind me" (at most 6 per record). A save never asks for notification permission: when notifications aren't allowed nothing is set, and the card shows `workday.ready.cantDeliver` with the calendar file (and, when the browser hasn't asked yet, "Turn on notifications", which asks and then books them). The card lists the times booked, or, whenever none is booked to reach the phone while notifications are allowed (a failed booking, a reload after one, notifications turned on after the stop was saved), `workday.reminders.notSet` with Retry and the calendar file, and always the reliability line. I've left and "I'm moving the car now" cancel them, as for any record. After a reload, the parked stop's in-app reminders are armed again; its push reminders are already booked.
+- **The chain between stops** (`previousDepartureStep`, `src/lib/workday-chain.ts`; the signing queue in `src/lib/signing.ts`): a stop's arrival context carries the sha256 of the previous stop's signed departure (`workday.previous_departure_payload_sha256`). It is filled when the arrival context is signed, so the signing queue holds it until that departure is signed, for at most 24 hours, then signs it with null. If the server refused the previous departure, it signs with null at once (the refusal wakes the next stop's signing, as a signed departure does). The stop's arrival (link 0) is never held. This links the stops' signatures; it doesn't show where the car was or when it moved.
 
 ### T6c: workday record PDF
 
-T6c adds its keys here (export warning, PDF header and footer, cover table headings, rule-sheet line).
+Added by `scripts/_i18n_inject_t6bc.mjs` (unit t6c-pdf; `legal` and `exact` in its `--list`). Every key below is new. Marked "(spec wording)": the English is build spec T6c's own text, and the script refuses to write if it drifts. Marked "(added)": a line the spec doesn't give, needed so the PDF reads correctly when legs are left out, when the first leg was an earlier park, or to explain the chain check. The PDF strings (`pdf.workday.*`) are checked against every locale's PDF font (`src/lib/pdf-font-coverage.test.ts`).
+
+#### The leg picker (on screen)
+
+| Key | Where it shows | English | Status |
+|---|---|---|---|
+| `workday.pdf.open` | Workday view, above the stops: opens the leg picker | Export a PDF of this workday | Not reviewed |
+| `workday.pdf.title` | Leg picker (a dialog), title | Workday PDF | Not reviewed |
+| `workday.pdf.warning` | Leg picker, under the title, before anything is exported | This PDF includes every leg you choose, with distances between them and what you told us at each move. Councils can read it. (spec wording) | Not reviewed |
+| `workday.pdf.chooseLegs` | Leg picker, above the list of legs (every leg starts ticked) | Legs to include | Not reviewed |
+| `workday.pdf.leg` | Leg picker, each leg (with its address and "Logged {{when}} (phone clock)") | Leg {{number}} | Not reviewed |
+| `workday.pdf.noneChosen` | Leg picker, when every leg is unticked (Export is disabled) | Choose at least one leg to export. | Not reviewed |
+
+The picker's buttons reuse `session.exportAsPdf`, `session.buildingPdf`, `common.cancel`, and `session.pdfErrorHeader` with `session.pdfErrorHelp` when the PDF can't be built.
+
+#### The PDF
+
+| Key | Where it shows | English | Status |
+|---|---|---|---|
+| `pdf.workday.title` | PDF page 1, the title, and the running header at the top of every later page | Record of parking events. (spec wording) | Not reviewed |
+| `pdf.workday.footer` | PDF, the footer of every page | This records what you did and what you told us. It is not a legal finding that you complied. Your council decides that. (spec wording) | Not reviewed |
+| `pdf.workday.councilLine` | PDF, in a box at the top of every leg's rule sheet, above its table with the sign's rules | Councils may interpret this rule more strictly. Check your council's parking page. (spec wording) | Not reviewed |
+| `pdf.workday.started` | PDF cover, when the workday state is on this device | Workday started {{time}} (phone clock) | Not reviewed |
+| `pdf.workday.ended` | PDF cover, when the workday has ended | Workday ended {{time}} (phone clock) | Not reviewed |
+| `pdf.workday.legCount` | PDF cover | Legs in this PDF: {{chosen}} of {{total}} | Not reviewed |
+| `pdf.workday.partial` | PDF cover, when the picker left legs out | Not every leg of this workday is in this PDF. Each distance and driver's statement is about the leg just before it on the workday, even when that leg is left out. (added) | Not reviewed |
+| `pdf.workday.intro` | PDF cover, above the table | Each leg is its own parking record. A section for each leg follows this table, and the signature pages come last. (added) | Not reviewed |
+| `pdf.workday.col.leg` | Cover table heading: the leg number | Leg | Not reviewed |
+| `pdf.workday.col.arrived` | Cover table heading: when the leg was logged, by the phone | Arrived (phone clock) | Not reviewed |
+| `pdf.workday.col.left` | Cover table heading: when the leg's departure was tapped, by the phone | Left (phone clock) | Not reviewed |
+| `pdf.workday.col.distance` | Cover table heading: the distance in the leg's signed boundary statement | Approx. distance from previous leg (phone GPS) (spec wording) | Not reviewed |
+| `pdf.workday.col.statement` | Cover table heading: the driver's answer at the move | Driver's statement (spec wording) | Not reviewed |
+| `pdf.workday.cell.notLeft` | Cover table, Left, when no departure was tapped | Not recorded | Not reviewed |
+| `pdf.workday.cell.signedArrival` | Cover table, signing column: link 0's signing time, or why there is none | Arrival: {{value}} | Not reviewed |
+| `pdf.workday.cell.signedDeparture` | Cover table, signing column: the departure's signing time, or why there is none | Departure: {{value}} | Not reviewed |
+| `pdf.workday.cell.noDistance` | Cover table, distance, when either park had no phone GPS fix | Not measured. It needs a phone GPS fix at both legs. | Not reviewed |
+| `pdf.workday.statement.firstLeg` | Cover table, statement, first leg | None. This is the first leg. | Not reviewed |
+| `pdf.workday.statement.notAsked` | Cover table, statement, when the app didn't ask (the parks were not close, same road or same sign text, and both fixes were good) | Not asked. ParkProof didn't ask about this move. | Not reviewed |
+| `pdf.workday.statement.oppositeDirectionSign` | Cover table, statement, for that answer | The driver said they passed a sign showing this zone had ended. | Not reviewed |
+| `pdf.workday.statement.yellowEdgeLine` | Cover table, statement, for that answer | The driver said they passed a yellow edge line. | Not reviewed |
+| `pdf.workday.statement.tIntersectionOrDeadEnd` | Cover table, statement, for that answer | The driver said they passed the end of the road at a T-intersection or dead end. | Not reviewed |
+| `pdf.workday.statement.leftParkingArea` | Cover table, statement, for that answer (area question) | The driver said they drove out of the parking area, past a sign saying it ends. | Not reviewed |
+| `pdf.workday.statement.notSure` | Cover table, statement, "I'm not sure" to the stretch question | Asked whether they had left the signed stretch, the driver answered: I'm not sure. | Not reviewed |
+| `pdf.workday.statement.notSureArea` | Cover table, statement, "I'm not sure" to the area question | Asked whether they had left the parking area, the driver answered: I'm not sure. (added) | Not reviewed |
+| `pdf.workday.legHeading` | Each leg's section heading, and the subtitle of its signature pages | Leg {{number}} | Not reviewed |
+| `pdf.workday.tagged` | A leg that was an earlier park made the first stop | This leg was an earlier park added to the workday. Its signed details don't mention the workday. (added) | Not reviewed |
+| `pdf.workday.chain.heading` | The last page: checking the chain between legs | The chain between legs (added) | Not reviewed |
+| `pdf.workday.chain.intro` | Under that heading | Each leg's details at parking carry previous_departure_payload_sha256, the SHA-256 of the signed departure payload of the leg before it, when that departure was signed in time. Save each leg's files from its signature pages in a folder of its own (leg1, leg2 and so on) and decode them as in its steps. Then run the command shown for each pair. (added) | Not reviewed |
+| `pdf.workday.chain.equals` | Under each `openssl dgst -sha256 leg1/link2-payload.txt` command | That hex value must equal previous_departure_payload_sha256 in leg {{leg}}, link {{link}}. (added) | Not reviewed |
+| `pdf.workday.chain.equalsOneOf` | The same, when the previous departure was added from two devices | One of these hex values must equal previous_departure_payload_sha256 in leg {{leg}}, link {{link}}. (added) | Not reviewed |
+| `pdf.workday.chain.notLinked` | A leg whose details at parking were signed without the previous leg's departure | Leg {{leg}}, link {{link}} was signed without a departure of the leg before it, because none was signed in time. There is nothing to compare here. (added) | Not reviewed |
+| `pdf.workday.chain.notInPdf` | A leg whose previous leg's signed departure isn't in this PDF | Leg {{leg}}, link {{link}} names a signed departure of the leg before it that isn't in this PDF. (added) | Not reviewed |
+
+The PDF also prints shared keys a lawyer should read in this context: the signing column heading is `pdf.signature.signedAt` ("Signed by ParkProof (server clock)"), the address heading `pdf.evidence.field.address`, the closing statement on the cover `pdf.evidence.statement` ("This is a record of a parking event made with ParkProof. Times marked as phone times come from the driver's phone. Statements marked as the driver's are the driver's own. It is not a legal finding about what happened. The council or court decides that."), and the signing marks `pdf.evidence.value.notSignedYet`, `pdf.evidence.value.partRejected` and `pdf.evidence.value.notSigned`. Each leg's section is the same record table, photos and signature pages as every record PDF (T1b to T7).
+
+#### Behaviour to read with the copy (T6c, no strings)
+
+- **Only behind the flag.** The export button is on the workday view only, which App shows only with `VITE_FEATURE_WORKDAY` on, and the button itself renders nothing with it off. `downloadWorkdayPdf` (`src/lib/pdf-workday.ts`) checks the flag again and draws and saves nothing when it is off (`src/lib/pdf-workday.test.ts`, `src/components/workday-pdf-export.test.tsx`, `src/app-workday.test.tsx`).
+- **The warning comes first.** Nothing is exported from the workday view itself: the button opens the picker, which shows `workday.pdf.warning` above the list. Every leg starts ticked; the PDF holds only the legs left ticked, in leg order, and never a leg of another workday or a shared copy.
+- **What the cover table says, and where it comes from.** Arrived is the time the leg was logged and Left the time its departure was tapped ("I'm moving the car now", I've left or End workday), both by the phone's clock, as the labels say. The signing column is ParkProof's server time for each part, or "Not signed yet" and its siblings. The distance and the driver's statement come from the leg's boundary statement as signed in its details at parking (N2), marked "(not signed yet)" until then. The statement is worded as the driver's own answer; the PDF never says the app checked it, or whether a new limit started.
+- **The council line** is on every leg's rule sheet, in a box above the table that holds that leg's sign rules.
+- **Never printed:** permit details or the permit salt (N3). The signed details carry only the permit commitment, a hash, as in every record PDF.
+- **The chain between legs** is checked with `openssl dgst -sha256` on the previous leg's signed departure payload, saved in a folder per leg (`leg1/link2-payload.txt`), against `previous_departure_payload_sha256` in the next leg's details at parking. It links the signatures; it doesn't show where the car was or when it moved.
+
+**Open questions for the spec owner.**
+
+- The spec calls them legs ("every leg you choose", "previous leg"); the workday screens call them stops. The PDF and the picker say "Leg" in English to match the spec's exact wording; the other 8 locales use their word for a workday stop, so the two never read as different things. Please confirm "leg", or ask for "stop" throughout (that changes two spec-wording strings).
+- "Arrived (phone clock)" is the time the leg was logged, which the account export calls "Logged (phone clock)". The spec lists the column as "arrived (phone clock)". Please confirm, or ask for "Logged".
 
 ---
 
