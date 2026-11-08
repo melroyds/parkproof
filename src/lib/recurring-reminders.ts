@@ -10,6 +10,8 @@
  */
 import type { TFunction } from 'i18next'
 import type { RecurringRule } from '../types'
+import { recurringReminderStaleAt, recurringTopicId } from '../../lambda/recurring-schedule.js'
+import { recurringLink } from './deep-link'
 import { disarmInTabNotificationsExcept, replaceInTabNotifications, type InTabNotification } from './notifications'
 import { recurringReminderTag, upcomingReminderFires } from './recurring'
 import { recurringNotificationCopy } from './recurring-copy'
@@ -18,7 +20,13 @@ import { recurringNotificationCopy } from './recurring-copy'
 export const IN_TAB_HORIZON_MS = 24 * 60 * 60 * 1000
 const OWNER_PREFIX = 'recurring:'
 
-/** The in-tab notifications one rule needs for the next `horizonMs`. None when paused or notifications are off. */
+/**
+ * The in-tab notifications one rule needs for the next `horizonMs`. None
+ * when paused or notifications are off. Each carries what its push copy
+ * carries (tag, link, topic) and the push copy's cut-off: a timer that runs
+ * late still shows "Move the car tonight" until the restriction starts, and
+ * the one before the start until just after it.
+ */
 export function inTabNotificationsFor(
   rule: RecurringRule,
   t: TFunction,
@@ -30,6 +38,9 @@ export function inTabNotificationsFor(
     fireAt: fire.fireAt,
     ...recurringNotificationCopy(rule, fire.occurrence, fire.kind, t),
     tag: recurringReminderTag(rule.id, fire.fireAt),
+    url: recurringLink(),
+    topicId: recurringTopicId(rule.id),
+    staleAt: new Date(recurringReminderStaleAt(fire.kind, fire.occurrence.start.getTime())),
   }))
 }
 

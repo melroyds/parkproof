@@ -28,11 +28,16 @@ import {
   zonedWallClock,
   zonedWallClockToUtc,
 } from '../../lambda/recurring-schedule.js'
+// The kinds of weekly restriction are T3's list, the one the sign reader's
+// schema offers the model, so a kind added there reaches the offer, the
+// editor and the store too. Typed against RecurringRule['kind'], so tsc
+// fails if the list ever outgrows that union.
+import { RECURRING_KINDS as SIGN_RECURRING_KINDS } from '../../lambda/sign-reading.js'
 
 export { isValidTimeZone, localDateInZone, zonedWallClock, zonedWallClockToUtc }
 
 export const WEEKDAYS: readonly Weekday[] = SHARED_WEEKDAYS
-export const RECURRING_KINDS: readonly RecurringRule['kind'][] = ['street_cleaning', 'clearway', 'no_stopping', 'other']
+export const RECURRING_KINDS: readonly RecurringRule['kind'][] = SIGN_RECURRING_KINDS
 export const RECURRING_FREQUENCIES: readonly RecurringFrequency[] = ['weekly', 'fortnightly', 'monthly_nth']
 /** Weeks of the month a monthly_nth rule can pick (5 = the fifth, which some months don't have). */
 export const NTH_VALUES = [1, 2, 3, 4, 5] as const

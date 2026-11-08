@@ -57,6 +57,8 @@ export declare const RECURRING_PUSH_REMINDERS: readonly RecurringPushReminder[]
 export declare const RECURRING_PUSH_SLOTS: number
 export declare const RECURRING_SCHEDULE_DAYS: number
 export declare const RECURRING_STALE_AFTER_START_MS: number
+/** When a weekly reminder stops being worth showing (ms): the start for 'evening', 15 minutes after it for 'before'. */
+export function recurringReminderStaleAt(reminder: RecurringPushReminder, startMs: number): number
 export declare const RECURRING_COPY_CAPS: Readonly<{ title: number; body: number; url: number }>
 
 export function recurringScheduleName(ruleId: string, slot: number): string

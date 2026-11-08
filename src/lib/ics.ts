@@ -259,7 +259,8 @@ export function buildRecurringIcs(rule: RecurringRule, t: TFunction, language?: 
     `${ruleSummary(rule, t, language)}.`,
     t('recurring.ics.move'),
     t('recurring.councilNote'),
-    t('recurring.reliability'),
+    // The same reliability line as every reminder screen (ReminderHelp).
+    t('reminders.reliability'),
     t('recurring.ics.footer'),
   ].join('\n')
 

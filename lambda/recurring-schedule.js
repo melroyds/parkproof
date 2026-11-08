@@ -25,8 +25,10 @@
  * day in UTC.
  */
 import { UUID_RE } from './addendum-schema.js'
+// One list of weekday codes for the sign reader (T3) and the reminders (T5).
+import { WEEKDAYS } from './sign-reading.js'
 
-export const WEEKDAYS = Object.freeze(['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'])
+export { WEEKDAYS }
 export const RECURRING_FREQUENCIES = Object.freeze(['weekly', 'fortnightly', 'monthly_nth'])
 export const HHMM_RE = /^([01]\d|2[0-3]):[0-5]\d$/
 
@@ -226,6 +228,16 @@ export const RECURRING_PUSH_SLOTS = RECURRING_PUSH_REMINDERS.length
 export const RECURRING_SCHEDULE_DAYS = 90
 /** A "before it starts" reminder is still worth delivering this long after the start. */
 export const RECURRING_STALE_AFTER_START_MS = 15 * 60 * 1000
+
+/**
+ * When a weekly reminder stops being worth showing: "Move the car tonight"
+ * at the occurrence's start, the one before the start
+ * RECURRING_STALE_AFTER_START_MS after it. One rule for the push dispatcher
+ * here and the in-tab copy on the phone (src/lib/recurring-reminders.ts).
+ */
+export function recurringReminderStaleAt(reminder, startMs) {
+  return reminder === 'evening' ? startMs : startMs + RECURRING_STALE_AFTER_START_MS
+}
 /** Caps on the copy the phone sends (same as /push/schedule). */
 export const RECURRING_COPY_CAPS = Object.freeze({ title: 120, body: 240, url: 256 })
 /** The longest lead between a reminder and its start: the evening before can be 48 hours ahead. */
@@ -465,7 +477,7 @@ export function recurringDispatchDecision(input, nowMs) {
   ).getTime()
   // "Move the car tonight" is no use once it has started; the reminder
   // before the start (if any) carries on for a few minutes after it.
-  const staleMs = input.reminder === 'evening' ? startMs : startMs + RECURRING_STALE_AFTER_START_MS
+  const staleMs = recurringReminderStaleAt(input.reminder, startMs)
   if (nowMs >= staleMs) return { send: false, reason: 'stale', date }
 
   return {

@@ -302,13 +302,27 @@ describe('when push is not available', () => {
     expect(screen.queryByText(NONE)).toBeNull()
   })
 
-  it('Android without push: no "while open" promise, since Android shows no in-tab alerts', async () => {
+  it('Android without push or a service worker: no "while open" promise, since nothing there can show an in-tab alert', async () => {
     const ua = vi.spyOn(navigator, 'userAgent', 'get').mockReturnValue('Mozilla/5.0 (Linux; Android 14; Pixel 8) Chrome/130 Mobile')
     try {
       localStorage.setItem('parkproof.recurring.v1', JSON.stringify([SAVED_RULE]))
       render(<Harness />)
       expect(await screen.findByText(NONE)).toBeTruthy()
       expect(screen.queryByText(OPEN_ONLY)).toBeNull()
+    } finally {
+      ua.mockRestore()
+    }
+  })
+
+  it('Android without push, with a service worker in control: "while open", as the record reminders say', async () => {
+    const ua = vi.spyOn(navigator, 'userAgent', 'get').mockReturnValue('Mozilla/5.0 (Linux; Android 14; Pixel 8) Chrome/130 Mobile')
+    // The page is controlled, but push can't register (no PushManager).
+    Object.defineProperty(navigator, 'serviceWorker', { configurable: true, value: { controller: {} } })
+    try {
+      localStorage.setItem('parkproof.recurring.v1', JSON.stringify([SAVED_RULE]))
+      render(<Harness />)
+      expect(await screen.findByText(OPEN_ONLY)).toBeTruthy()
+      expect(screen.queryByText(NONE)).toBeNull()
     } finally {
       ua.mockRestore()
     }

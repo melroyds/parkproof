@@ -12,6 +12,7 @@ import { useRecurringRules } from '../lib/use-recurring-rules'
 import Icon from './Icon'
 import RecordPhoto from './RecordPhoto'
 import RecurringRuleEditor from './RecurringRuleEditor'
+import { ReminderHelp } from './ReminderStatus'
 import Button from './ui/Button'
 import Card from './ui/Card'
 
@@ -249,9 +250,9 @@ function RecurringSheet({ session, restriction, initial, onClose, onSaved, retur
           onSaved={(rule) => onSaved(rule)}
           onCancel={onClose}
         />
-        <div className="mt-5 space-y-2 text-xs text-ink-600 leading-relaxed">
-          <p>{t('recurring.councilNote')}</p>
-          <p>{t('recurring.reliability')}</p>
+        <div className="mt-5 space-y-2">
+          <p className="text-xs text-ink-600 leading-relaxed">{t('recurring.councilNote')}</p>
+          <ReminderHelp tone="card" />
         </div>
       </div>
     </div>,

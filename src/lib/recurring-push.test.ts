@@ -481,7 +481,8 @@ describe('what the line under a rule may say', () => {
   it('booked and allowed: alerts with ParkProof closed', async () => {
     await withStatus('ready')
     expect(recurringAlertReach(rule(), t, granted)).toBe('closed')
-    // Android, where in-tab alerts can't show: push still reaches it.
+    // Android before a service worker controls the page, where in-tab
+    // alerts can't show: push still reaches it.
     expect(recurringAlertReach(rule(), t, { permission: 'granted', inTab: false })).toBe('closed')
   })
 
@@ -497,7 +498,8 @@ describe('what the line under a rule may say', () => {
 
   it('no push and no in-tab alerts: says nothing can alert, never "while open"', async () => {
     // iPhone Safari outside the Home Screen app (no Notification API), a
-    // dismissed prompt, a blocked one, and Android before push is booked.
+    // dismissed prompt, a blocked one, and Android before push is booked
+    // with no service worker in control of the page.
     for (const env of [
       { permission: 'unsupported' as const, inTab: false },
       { permission: 'default' as const, inTab: false },
@@ -517,19 +519,29 @@ describe('what the line under a rule may say', () => {
     expect(recurringAlertReach(rule({ push: false }), t, granted)).toBeNull()
   })
 
-  it('reads in-tab support from the browser: Android refuses new Notification()', () => {
+  it('reads in-tab support from the browser: Android refuses new Notification(), so it needs the service worker', () => {
     class FakeNotification {
       static permission: NotificationPermission = 'granted'
     }
     vi.stubGlobal('Notification', FakeNotification)
     const ua = vi.spyOn(navigator, 'userAgent', 'get')
-    ua.mockReturnValue('Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 Chrome/130 Mobile Safari/537.36')
-    expect(alertEnvironment()).toEqual({ permission: 'granted', inTab: false })
-    ua.mockReturnValue('Mozilla/5.0 (Macintosh; Intel Mac OS X 14_0) AppleWebKit/605.1.15 Version/17 Safari/605.1.15')
-    expect(alertEnvironment()).toEqual({ permission: 'granted', inTab: true })
-    FakeNotification.permission = 'default'
-    expect(alertEnvironment()).toEqual({ permission: 'default', inTab: false })
-    ua.mockRestore()
+    try {
+      ua.mockReturnValue('Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 Chrome/130 Mobile Safari/537.36')
+      // No service worker controls the page yet: nothing can show an alert.
+      expect(alertEnvironment()).toEqual({ permission: 'granted', inTab: false })
+      // One does: in-tab reminders show through it (notifications.ts showInTab),
+      // as a record's do, so the weekly line says "while open" like the record card.
+      Object.defineProperty(navigator, 'serviceWorker', { configurable: true, value: { controller: {} } })
+      expect(alertEnvironment()).toEqual({ permission: 'granted', inTab: true })
+      ua.mockReturnValue('Mozilla/5.0 (Macintosh; Intel Mac OS X 14_0) AppleWebKit/605.1.15 Version/17 Safari/605.1.15')
+      delete (navigator as unknown as Record<string, unknown>).serviceWorker
+      expect(alertEnvironment()).toEqual({ permission: 'granted', inTab: true })
+      FakeNotification.permission = 'default'
+      expect(alertEnvironment()).toEqual({ permission: 'default', inTab: false })
+    } finally {
+      delete (navigator as unknown as Record<string, unknown>).serviceWorker
+      ua.mockRestore()
+    }
   })
 })
 

@@ -10,6 +10,7 @@ import { recurringAlertReach } from '../lib/recurring-push'
 import { useRecurringPushRevision } from '../lib/use-recurring-push'
 import Icon from './Icon'
 import RecurringRuleEditor from './RecurringRuleEditor'
+import { ReminderHelp } from './ReminderStatus'
 import BackButton from './ui/BackButton'
 import Button from './ui/Button'
 
@@ -66,10 +67,15 @@ export default function RecurringReminders({ onBack }: Props) {
     }
   }
 
+  // The reliability line, Android tips and "Reminders not arriving?
+  // Reconnect" are the shared ReminderHelp: a weekly notification opens
+  // this view, so a driver whose reminder didn't come looks here.
   const notes = (
-    <div className="mt-6 space-y-2 text-xs leading-relaxed" style={{ color: SAGE }}>
-      <p>{t('recurring.councilNote')}</p>
-      <p>{t('recurring.reliability')}</p>
+    <div className="mt-6 space-y-2">
+      <p className="text-xs leading-relaxed" style={{ color: SAGE }}>
+        {t('recurring.councilNote')}
+      </p>
+      <ReminderHelp tone="vault" />
     </div>
   )
 

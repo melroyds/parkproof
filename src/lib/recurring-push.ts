@@ -251,7 +251,8 @@ export function recurringPushStatusOf(rule: RecurringRule, t: TFunction, now: nu
  *    ParkProof is open;
  *  - 'none': nothing on this phone can alert for it right now (no
  *    notification support, permission not granted, or Android before its
- *    push booking went through, since Android refuses in-tab alerts).
+ *    push booking went through with no service worker controlling the
+ *    page, since Android shows in-tab alerts only through one).
  */
 export type RecurringAlertReach = 'closed' | 'open_only' | 'none'
 

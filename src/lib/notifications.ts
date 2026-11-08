@@ -1,6 +1,7 @@
 import type { ParkingSession } from '../types'
 import { reminderTag, type ReminderCopy } from './reminder-copy'
 import { sessionLink } from './deep-link'
+import { isAndroid } from './platform'
 import { getSession } from './storage'
 
 export type ScheduleStatus =
@@ -32,21 +33,25 @@ const MAX_TIMEOUT_MS = 24 * 60 * 60 * 1000
 const SAFETY_MARGIN_MS = 30 * 1000
 
 /**
- * An in-tab reminder this late is dropped, not shown. A backgrounded page
- * is frozen (Android Chrome does this), and on resume every overdue timer
- * runs at once: without this, a driver opening ParkProof after the expiry
- * would get "30 min left" and "5 min left" for parking that has already
- * expired. The push copy covers the time the page was frozen.
+ * A record's in-tab reminder this late is dropped, not shown. A
+ * backgrounded page is frozen (Android Chrome does this), and on resume
+ * every overdue timer runs at once: without this, a driver opening
+ * ParkProof after the expiry would get "30 min left" and "5 min left" for
+ * parking that has already expired. The push copy covers the time the page
+ * was frozen. A weekly reminder carries its own cut-off instead
+ * (InTabNotification.staleAt), the one its push copy follows.
  */
 export const IN_TAB_STALE_MS = 60 * 1000
 
 /**
- * The service worker's notificationclick handler opens data.url. `in_tab`
- * marks the in-tab copy, so the push copy of the same reminder replaces it
- * without a second alert (src/service-worker.ts).
+ * The service worker's notificationclick handler opens data.url.
+ * `session_id` is the push copy's topic (a record's id, or a weekly
+ * reminder's 'r-<rule id>') and `in_tab` marks the in-tab copy, so the push
+ * copy of the same reminder replaces it without a second alert
+ * (src/service-worker.ts).
  */
-function clickData(sessionId: string): { url: string; session_id: string; in_tab: true } {
-  return { url: sessionLink(sessionId), session_id: sessionId, in_tab: true }
+function clickData(url: string, topicId: string): { url: string; session_id: string; in_tab: true } {
+  return { url, session_id: topicId, in_tab: true }
 }
 
 // Armed setTimeout handles per owner (a record's id, or a weekly reminder's
@@ -95,14 +100,18 @@ function arm(
 }
 
 /**
- * Checked when a timer fires: false when it fires too late to help (see
- * IN_TAB_STALE_MS), or, for a record's reminder, when the record has ended
- * since, here or on another device through a cloud pull. A weekly reminder
- * is tied to no record, so only the lateness check applies to it. Never
- * throws.
+ * Checked when a timer fires: false when it fires too late to help, or,
+ * for a record's reminder, when the record has ended since, here or on
+ * another device through a cloud pull. Too late is IN_TAB_STALE_MS after
+ * its time for a record's reminder, and the reminder's own staleAt for a
+ * weekly one (useful until the restriction starts, or just after). A weekly
+ * reminder is tied to no record, so only the lateness check applies to it.
+ * Never throws.
  */
 function stillWanted(ownerId: string, timer: Armed): boolean {
-  if (Date.now() - timer.fireAtMs > IN_TAB_STALE_MS) return false
+  const now = Date.now()
+  const staleAt = timer.item?.staleAt?.getTime()
+  if (staleAt !== undefined ? now >= staleAt : now - timer.fireAtMs > IN_TAB_STALE_MS) return false
   if (!timer.ofRecord) return true
   try {
     if (getSession(ownerId)?.ended_at) return false
@@ -160,15 +169,19 @@ function disarm(ownerId: string): number {
 
 /**
  * True when this browser can show a notification from an open tab right
- * now: the Notification API exists, permission is granted, and it isn't
- * Android, whose browsers refuse `new Notification()` (only a service
- * worker may show one there, which is what push does).
+ * now: the Notification API exists and permission is granted. Android's
+ * browsers refuse `new Notification()`, so there showInTab goes through the
+ * service worker, and this also needs one controlling the page.
  */
 export function canShowInTabNotifications(): boolean {
   if (typeof window === 'undefined' || !('Notification' in window)) return false
   if (Notification.permission !== 'granted') return false
-  const ua = typeof navigator !== 'undefined' ? navigator.userAgent || '' : ''
-  return !/Android/i.test(ua)
+  if (!isAndroid()) return true
+  try {
+    return !!navigator.serviceWorker?.controller
+  } catch {
+    return false
+  }
 }
 
 export interface InTabNotification {
@@ -177,6 +190,16 @@ export interface InTabNotification {
   body: string
   /** Shared with the push copy of the same reminder, so the two collapse into one alert. */
   tag: string
+  /** Opened when the alert is tapped: the push copy's url. */
+  url: string
+  /** The push copy's topic (its session_id), so the push copy can replace this one quietly. */
+  topicId: string
+  /**
+   * From this instant the reminder is no use, and a timer that runs this
+   * late (a frozen page resumed) drops it. Without it, the record rule:
+   * IN_TAB_STALE_MS after fireAt.
+   */
+  staleAt?: Date
 }
 
 const inTabKey = (item: InTabNotification) => `${item.tag}@${item.fireAt.getTime()}`
@@ -191,7 +214,8 @@ const inTabKey = (item: InTabNotification) => `${item.tag}@${item.fireAt.getTime
  * everything, unless notifications are already allowed. Used by the weekly
  * reminders (T5a), which re-arm their next 24 hours whenever the app is
  * open. They belong to no record, so when one fires only the lateness
- * check (IN_TAB_STALE_MS) can drop it. Returns how many are armed
+ * check (each item's staleAt) can drop it. Shown through showInTab, like a
+ * record's reminders, so Android gets them too. Returns how many are armed
  * afterwards.
  */
 export function replaceInTabNotifications(ownerId: string, items: readonly InTabNotification[], now: number = Date.now()): number {
@@ -226,11 +250,7 @@ export function replaceInTabNotifications(ownerId: string, items: readonly InTab
       item.fireAt,
       (timer) => {
         const shown = timer.item ?? item
-        try {
-          new Notification(shown.title, { body: shown.body, tag: shown.tag })
-        } catch {
-          // Permission can be revoked mid-flight: silent best-effort.
-        }
+        showInTab(shown.title, { body: shown.body, tag: shown.tag, data: clickData(shown.url, shown.topicId) })
       },
       delay,
       { key, item, ofRecord: false },
@@ -311,7 +331,7 @@ export async function scheduleAbsoluteReminders(
       const { title, body } = copyFor(fireAt)
       // Same tag as the push copy of this reminder, so the two collapse
       // into one alert when the tab is open.
-      showInTab(title, { body, tag: reminderTag(session.id, fireAt), data: clickData(session.id) })
+      showInTab(title, { body, tag: reminderTag(session.id, fireAt), data: clickData(sessionLink(session.id), session.id) })
     }, delay)
   }
 
@@ -381,7 +401,7 @@ export async function scheduleParkingReminders(
       const { title, body } = copyFor(fireAt)
       // Distinct tag per fire time, shared with the push copy of the same
       // reminder so the two collapse into one alert when the tab is open.
-      showInTab(title, { body, tag: reminderTag(session.id, fireAt), data: clickData(session.id) })
+      showInTab(title, { body, tag: reminderTag(session.id, fireAt), data: clickData(sessionLink(session.id), session.id) })
     }, delay)
   }
 

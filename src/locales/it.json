@@ -1195,7 +1195,6 @@
       "saveFailed": "Impossibile salvare questo promemoria. Riprova."
     },
     "councilNote": "I comuni cambiano questi orari e nei giorni festivi possono essere diversi. Controlla i cartelli dove parcheggi.",
-    "reliability": "I promemoria possono arrivare in ritardo o essere silenziati, per esempio da Full immersion o dal risparmio energetico. Non affidarti solo a loro.",
     "notifyDenied": "Le notifiche di ParkProof sono bloccate, quindi questi promemoria non possono avvisarti su questo telefono. Consenti le notifiche nelle impostazioni del sito del browser, oppure aggiungili al calendario.",
     "pushStatus": {
       "closed": "Impostato per avvisarti su questo telefono anche quando ParkProof è chiuso. Apri ParkProof almeno una volta ogni due mesi per mantenerlo attivo.",

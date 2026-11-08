@@ -242,6 +242,17 @@ describe('RecurringReminders view', () => {
       screen.getByText("Reminders can be delayed or silenced, for example by Focus or battery saving. Don't rely on them alone."),
     ).toBeTruthy()
   })
+
+  it('on Android, carries the shared reminder help (tips, and Reconnect when push works: reminder-help.test.tsx), where a weekly notification lands', () => {
+    const ua = vi.spyOn(navigator, 'userAgent', 'get').mockReturnValue('Mozilla/5.0 (Linux; Android 14; Pixel 8) Chrome/130 Mobile')
+    try {
+      render(<RecurringReminders onBack={() => {}} />)
+      expect(screen.getByText(i18n.t('reminders.androidTips.summary'))).toBeTruthy()
+      expect(screen.getByText(i18n.t('reminders.androidTips.battery'))).toBeTruthy()
+    } finally {
+      ua.mockRestore()
+    }
+  })
 })
 
 describe('RecurringHomeRow', () => {

@@ -1195,7 +1195,6 @@
       "saveFailed": "Pengingat ini tidak bisa disimpan. Coba lagi."
     },
     "councilNote": "Dewan kota bisa mengubah jadwal ini, dan hari libur nasional bisa berbeda. Periksa rambu di tempat kamu parkir.",
-    "reliability": "Pengingat bisa tertunda atau dibisukan, misalnya oleh mode Fokus atau penghemat baterai. Jangan hanya mengandalkan pengingat.",
     "notifyDenied": "Notifikasi untuk ParkProof diblokir, jadi pengingat ini tidak bisa memberi tahu kamu di ponsel ini. Izinkan notifikasi di pengaturan situs browsermu, atau tambahkan ke kalendermu.",
     "pushStatus": {
       "closed": "Diatur untuk mengingatkanmu di ponsel ini meskipun ParkProof sedang ditutup. Buka ParkProof setidaknya sekali setiap dua bulan agar tetap aktif.",

@@ -17,14 +17,20 @@
  *     way through named {{vars}};
  *   - the notification text ("Street sweeping on Tuesday 7 to 9 am. Move the
  *     car tonight.") and the calendar file's text;
- *   - the council note (schedules change, public holidays may differ) and
- *     the reliability line every reminder feature carries.
+ *   - the council note (schedules change, public holidays may differ).
+ *
+ * The reliability line every reminder feature carries is the shared
+ * `reminders.reliability` (scripts/_i18n_inject_fix_push.mjs), shown by
+ * ReminderHelp with the Android tips and Reconnect, and written into the
+ * calendar file. This script once added its own copy of it,
+ * `recurring.reliability`, and now deletes it (REMOVALS).
  *
  * T5b (weekly reminders by push) adds `recurring.pushStatus.*`: the line
  * under each rule in the list saying whether its reminders can alert the
  * phone with ParkProof closed, only while it's open (push unavailable), or
  * not at all right now (no notification support or permission, or Android
- * before push is booked). The push notification words themselves are
+ * before push is booked while no service worker controls the page). The
+ * push notification words themselves are
  * T5a's `recurring.notify.*`, written on the phone and booked with the
  * server.
  *
@@ -54,8 +60,11 @@ const dirArg = process.argv.indexOf('--dir')
 const LOC = dirArg > -1 ? resolve(process.argv[dirArg + 1]) : join(ROOT, 'src', 'locales')
 const LOCALES = ['en', 'zh-CN', 'vi', 'id', 'ko', 'it', 'el', 'hi', 'pa']
 
-/** Keys a lawyer should read before launch (docs/legal-review-queue.md, T10): the disclaimers. */
-const LEGAL = new Set(['recurring.councilNote', 'recurring.reliability'])
+/**
+ * Keys a lawyer should read before launch (docs/legal-review-queue.md, T10):
+ * the disclaimers. The reliability line is the shared reminders.reliability.
+ */
+const LEGAL = new Set(['recurring.councilNote'])
 
 /** One string per locale, in LOCALES order. */
 const T = (en, zh, vi, id, ko, it, el, hi, pa) => ({ en, 'zh-CN': zh, vi, id, ko, it, el, hi, pa })
@@ -731,18 +740,6 @@ const ADDITIONS = {
     'परिषदें ये समय बदलती रहती हैं, और सार्वजनिक छुट्टियों पर ये अलग हो सकते हैं। जहाँ पार्क करें, वहाँ के साइन देख लें।',
     "ਕੌਂਸਲਾਂ ਇਹ ਸਮਾਂ-ਸਾਰਣੀਆਂ ਬਦਲਦੀਆਂ ਰਹਿੰਦੀਆਂ ਹਨ, ਅਤੇ ਜਨਤਕ ਛੁੱਟੀਆਂ 'ਤੇ ਇਹ ਵੱਖਰੀਆਂ ਹੋ ਸਕਦੀਆਂ ਹਨ। ਜਿੱਥੇ ਪਾਰਕ ਕਰੋ, ਉੱਥੇ ਦੇ ਚਿੰਨ੍ਹ ਦੇਖ ਲਓ।",
   ),
-  // The reliability line, word for word from the build spec's copy rules.
-  'recurring.reliability': T(
-    "Reminders can be delayed or silenced, for example by Focus or battery saving. Don't rely on them alone.",
-    '提醒可能会延迟或被静音,例如因为专注模式或省电模式。不要只依赖提醒。',
-    'Nhắc nhở có thể bị trễ hoặc bị tắt tiếng, ví dụ do chế độ Tập trung hoặc tiết kiệm pin. Đừng chỉ dựa vào nhắc nhở.',
-    'Pengingat bisa tertunda atau dibisukan, misalnya oleh mode Fokus atau penghemat baterai. Jangan hanya mengandalkan pengingat.',
-    '알림은 집중 모드나 배터리 절약 모드 등으로 늦어지거나 무음이 될 수 있습니다. 알림에만 의존하지 마세요.',
-    'I promemoria possono arrivare in ritardo o essere silenziati, per esempio da Full immersion o dal risparmio energetico. Non affidarti solo a loro.',
-    'Οι υπενθυμίσεις μπορεί να καθυστερήσουν ή να σιγήσουν, για παράδειγμα από τη λειτουργία Εστίασης ή την εξοικονόμηση μπαταρίας. Μη βασίζεσαι μόνο σε αυτές.',
-    'रिमाइंडर में देरी हो सकती है या वे बंद हो सकते हैं, जैसे फ़ोकस मोड या बैटरी सेवर की वजह से। सिर्फ़ इन पर निर्भर न रहें।',
-    "ਰਿਮਾਈਂਡਰ ਦੇਰ ਨਾਲ ਆ ਸਕਦੇ ਹਨ ਜਾਂ ਬੰਦ ਹੋ ਸਕਦੇ ਹਨ, ਜਿਵੇਂ ਫੋਕਸ ਮੋਡ ਜਾਂ ਬੈਟਰੀ ਸੇਵਰ ਕਰਕੇ। ਸਿਰਫ਼ ਇਨ੍ਹਾਂ 'ਤੇ ਭਰੋਸਾ ਨਾ ਕਰੋ।",
-  ),
   'recurring.notifyDenied': T(
     "Notifications are blocked for ParkProof, so these reminders can't alert you on this phone. Allow notifications in your browser's site settings, or add them to your calendar.",
     'ParkProof 的通知已被阻止,这些提醒无法在这部手机上通知你。请在浏览器的网站设置中允许通知,或把它们加到你的日历里。',
@@ -974,6 +971,13 @@ const ADDITIONS = {
 // Each must already exist in every locale; the script aborts otherwise.
 const OVERWRITES = {}
 
+// ── Keys an earlier version of this script added and T5 no longer uses ──
+// Deleted when present, so a re-run over files that have them converges.
+// recurring.reliability: T5's screens show the shared ReminderHelp and the
+// calendar file uses its key (reminders.reliability), so the line can't
+// drift between two copies.
+const REMOVALS = ['recurring.reliability']
+
 // ── helpers ─────────────────────────────────────────────────────────────
 function fail(msg) {
   console.error(`ABORT (nothing written): ${msg}`)
@@ -1013,6 +1017,18 @@ function overwrite(root, path, value, locale) {
   }
   if (typeof node[leaf] !== 'string') fail(`${locale}: ${path} to overwrite is missing`)
   node[leaf] = value
+}
+
+/** Delete a string key this script once added. Nothing happens when it isn't there. */
+function remove(root, path) {
+  const parts = path.split('.')
+  const leaf = parts.pop()
+  let node = root
+  for (const p of parts) {
+    node = node && typeof node === 'object' ? node[p] : undefined
+    if (!node || typeof node !== 'object' || Array.isArray(node)) return
+  }
+  if (typeof node[leaf] === 'string') delete node[leaf]
 }
 
 function flatten(value, prefix = '', out = {}) {
@@ -1083,10 +1099,13 @@ function validate(all) {
     // "ticket" alone can read as the fine notice; say "meter ticket".
     if (/(?<!meter )\btickets?\b/i.test(byLocale.en)) problems.push(`ambiguous "ticket" in en copy at ${path}`)
   }
-  // The reliability line is the spec's wording, exactly.
-  const reliability = ADDITIONS['recurring.reliability']?.en
+  // The reliability line T5 carries (the shared one) is the spec's wording, exactly.
+  const reliability = all.en?.reminders?.reliability
   if (reliability !== "Reminders can be delayed or silenced, for example by Focus or battery saving. Don't rely on them alone.") {
-    problems.push('recurring.reliability is not the build spec wording')
+    problems.push('reminders.reliability is not the build spec wording')
+  }
+  for (const path of REMOVALS) {
+    if (path in en) problems.push(`en: ${path} should have been deleted`)
   }
   return problems
 }
@@ -1118,6 +1137,7 @@ for (const locale of LOCALES) {
     if (typeof byLocale[locale] !== 'string') fail(`no ${locale} text for overwritten key ${path}`)
     overwrite(data[locale], path, byLocale[locale], locale)
   }
+  for (const path of REMOVALS) remove(data[locale], path)
 }
 
 const problems = validate(data)

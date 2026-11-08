@@ -9,7 +9,7 @@ import type { TFunction } from 'i18next'
 import i18n from './i18n'
 import type { RecurringRule } from '../types'
 import { armRecurringInTabReminders, ensureReminderPermission, inTabNotificationsFor } from './recurring-reminders'
-import { IN_TAB_STALE_MS } from './notifications'
+import { recurringLink } from './deep-link'
 
 const A = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'
 const B = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb'
@@ -36,7 +36,7 @@ function rule(overrides: Partial<RecurringRule> = {}): RecurringRule {
   }
 }
 
-const shown: { title: string; body?: string; tag?: string }[] = []
+const shown: { title: string; body?: string; tag?: string; data?: unknown }[] = []
 let permission: NotificationPermission = 'granted'
 let t: TFunction
 
@@ -59,7 +59,7 @@ beforeEach(() => {
       permission = 'granted'
       return permission
     })
-    constructor(title: string, options: { body?: string; tag?: string } = {}) {
+    constructor(title: string, options: { body?: string; tag?: string; data?: unknown } = {}) {
       shown.push({ title, ...options })
     }
   }
@@ -83,7 +83,11 @@ describe('in-tab weekly reminders', () => {
       title: '12 King St',
       body: 'Street sweeping on Tuesday 7 to 9 am. Move the car tonight.',
       tag: `pp-r-${A}-${Date.parse('2026-11-09T09:00:00Z')}`,
+      url: recurringLink(),
+      topicId: `r-${A}`,
     })
+    // The push copy's cut-offs: the 7 am start, and 15 minutes after it.
+    expect(items.map((i) => i.staleAt?.toISOString())).toEqual(['2026-11-09T20:00:00.000Z', '2026-11-09T20:15:00.000Z'])
     expect(inTabNotificationsFor(rule({ push: false }), t, Date.now())).toEqual([])
     expect(inTabNotificationsFor(rule({ paused: true }), t, Date.now())).toEqual([])
   })
@@ -94,6 +98,9 @@ describe('in-tab weekly reminders', () => {
     expect(shown).toEqual([])
     vi.advanceTimersByTime(2000)
     expect(shown.map((n) => n.body)).toEqual(['Street sweeping on Tuesday 7 to 9 am. Move the car tonight.'])
+    // A click opens the weekly reminders view, and the push copy (same tag
+    // and topic) can replace this one quietly.
+    expect(shown[0].data).toEqual({ url: recurringLink(), session_id: `r-${A}`, in_tab: true })
     vi.advanceTimersByTime(10 * 3600_000)
     expect(shown).toHaveLength(2)
     expect(shown[1].body).toBe('Street sweeping on Tuesday 7 to 9 am. Move the car before 7 am.')
@@ -138,12 +145,66 @@ describe('in-tab weekly reminders', () => {
     expect(shown[0].title).toBe('14 King St')
   })
 
-  it('drops a weekly reminder whose timer runs long after its time (a frozen page resumed), like a record reminder', () => {
+  // A frozen page (or a laptop asleep) runs every overdue timer late on
+  // resume. A weekly reminder follows its push copy's cut-off
+  // (recurringDispatchDecision): the evening one is useful until the
+  // restriction starts, the one before it until 15 minutes after the start.
+  it('a late evening reminder still shows before the restriction starts, like its push copy', () => {
     armRecurringInTabReminders([rule()], t)
-    // The page is frozen past the 8 pm reminder: on resume it runs late.
-    vi.setSystemTime(Date.parse('2026-11-09T09:00:00Z') + IN_TAB_STALE_MS + 60_000)
-    vi.advanceTimersByTime(9 * 3600_000)
+    // Frozen for two hours: the 8 pm reminder runs at 10 pm (still useful),
+    // the 6 am one at 8 am (an hour after the 7 am start: no use).
+    vi.setSystemTime(Date.now() + 2 * 3600_000)
+    vi.advanceTimersByTime(24 * 3600_000)
+    expect(shown.map((n) => n.body)).toEqual(['Street sweeping on Tuesday 7 to 9 am. Move the car tonight.'])
+  })
+
+  it('drops a late evening reminder once the restriction has started', () => {
+    armRecurringInTabReminders([rule()], t)
+    // Frozen for 11.5 hours: the 8 pm reminder runs at 7:30 am, after the start.
+    vi.setSystemTime(Date.now() + 11.5 * 3600_000)
+    vi.advanceTimersByTime(48 * 3600_000)
     expect(shown).toEqual([])
+  })
+
+  it.each([
+    [70, 1],
+    [80, 0],
+  ])('a reminder before the start that runs %i minutes late (6 am reminder, 7 am start) shows %i times', (lateMin, count) => {
+    armRecurringInTabReminders([rule({ remind_evening_before: null })], t)
+    vi.setSystemTime(Date.now() + lateMin * 60_000)
+    vi.advanceTimersByTime(48 * 3600_000)
+    expect(shown).toHaveLength(count)
+  })
+
+  it('on Android, shows through the service worker with the push copy link and topic', async () => {
+    // Android Chrome refuses new Notification() ("Illegal constructor").
+    vi.stubGlobal(
+      'Notification',
+      class {
+        static permission = 'granted'
+        static requestPermission = async () => 'granted'
+        constructor() {
+          throw new TypeError('Illegal constructor')
+        }
+      },
+    )
+    const showNotification = vi.fn(async () => {})
+    Object.defineProperty(navigator, 'serviceWorker', {
+      configurable: true,
+      value: { getRegistration: async () => ({ showNotification }) },
+    })
+    try {
+      armRecurringInTabReminders([rule()], t)
+      await vi.advanceTimersByTimeAsync(9 * 3600_000 + 1000)
+      expect(showNotification).toHaveBeenCalledTimes(1)
+      expect(showNotification).toHaveBeenCalledWith('12 King St', {
+        body: 'Street sweeping on Tuesday 7 to 9 am. Move the car tonight.',
+        tag: `pp-r-${A}-${Date.parse('2026-11-09T09:00:00Z')}`,
+        data: { url: recurringLink(), session_id: `r-${A}`, in_tab: true },
+      })
+    } finally {
+      delete (navigator as unknown as Record<string, unknown>).serviceWorker
+    }
   })
 
   it('is tied to no record, so the ended-record check never drops it', () => {
