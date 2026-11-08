@@ -89,6 +89,9 @@ const BANNED: { id: string; re: RegExp }[] = [
   // The app drafts a dispute letter for the driver to check; the driver is
   // responsible for the letter they send (appeal.captureDisclaimer).
   { id: 'writes the letter for you', re: /\bwrit(e|es|ing) (the |a |your )?((dispute|appeal) )?letters? for you\b/i },
+  // A signature covers the signed details only: "the signed details haven't
+  // changed since ParkProof signed them", never "nothing has changed since".
+  { id: 'nothing has changed', re: /\bnothing (has )?changed since\b/i },
 ]
 
 // Keys allowed to trip one banned rule. Keep this short: every entry must

@@ -1504,7 +1504,7 @@
     "saveFailed": "A copy couldn't be saved on this phone.",
     "badge": "Shared with you",
     "check": "Check the signature",
-    "checkValid": "The signature is valid. Nothing has changed since ParkProof signed it. That doesn't show the details are true, who was driving, where the car was, or when it arrived or left.",
+    "checkValid": "The signature is valid. The signed details haven't changed since ParkProof signed them. That doesn't show they're true, who was driving, where the car was, or when it arrived or left.",
     "remove": "Remove",
     "removeConfirm": "Remove this shared record from this phone? You can open the link again to get it back."
   },

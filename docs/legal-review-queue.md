@@ -76,7 +76,7 @@ Added by `scripts/_i18n_inject_t7.mjs` (run it with `--list` to print every key;
 | `share.unsignedHeading` | Above the sender's unsigned extras (driver, sign reading, standard limit, departure) | From the sender, not signed | Not reviewed |
 | `share.endedValue` | The sender's I've left tap, as an unsigned extra | The sender tapped I've left at {{time}} (phone clock). | Not reviewed |
 | `share.tampered` | A share link whose signature doesn't check out (no details, no map link) | This link has been changed since it was shared | Not reviewed |
-| `share.checkValid` | "Check the signature" on a stored copy, when it checks out | The signature is valid. Nothing has changed since ParkProof signed it. That doesn't show the details are true, who was driving, where the car was, or when it arrived or left. | Not reviewed |
+| `share.checkValid` | "Check the signature" on a stored copy, when it checks out | The signature is valid. The signed details haven't changed since ParkProof signed them. That doesn't show they're true, who was driving, where the car was, or when it arrived or left. | Not reviewed |
 | `pdf.shared.madeElsewhere` | First row of a shared copy's PDF table | This record was made on someone else's phone. | Not reviewed |
 
 ### Behaviour to read with the copy (T7, no strings)

@@ -1504,7 +1504,7 @@
     "saveFailed": "Không thể lưu bản sao trên điện thoại này.",
     "badge": "Được chia sẻ với bạn",
     "check": "Kiểm tra chữ ký",
-    "checkValid": "Chữ ký hợp lệ. Không có gì thay đổi kể từ khi ParkProof ký. Điều đó không cho thấy nội dung bản ghi là đúng, ai là người lái xe, xe ở đâu, hay xe đến và rời đi lúc nào.",
+    "checkValid": "Chữ ký hợp lệ. Các thông tin đã ký chưa thay đổi kể từ khi ParkProof ký. Điều đó không cho thấy các thông tin đó là đúng, ai là người lái xe, xe ở đâu, hay xe đến và rời đi lúc nào.",
     "remove": "Xoá",
     "removeConfirm": "Xoá bản ghi được chia sẻ này khỏi điện thoại? Bạn có thể mở lại liên kết để lấy lại."
   },

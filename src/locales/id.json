@@ -1504,7 +1504,7 @@
     "saveFailed": "Salinan tidak bisa disimpan di ponsel ini.",
     "badge": "Dibagikan kepadamu",
     "check": "Cek tanda tangan",
-    "checkValid": "Tanda tangan valid. Tidak ada yang berubah sejak ParkProof menandatanganinya. Itu tidak menunjukkan bahwa isi catatan ini benar, siapa yang mengemudi, di mana mobil berada, atau kapan mobil tiba atau pergi.",
+    "checkValid": "Tanda tangan valid. Detail yang ditandatangani tidak berubah sejak ParkProof menandatanganinya. Itu tidak menunjukkan bahwa detail ini benar, siapa yang mengemudi, di mana mobil berada, atau kapan mobil tiba atau pergi.",
     "remove": "Hapus",
     "removeConfirm": "Hapus catatan yang dibagikan ini dari ponsel ini? Kamu bisa membuka tautannya lagi untuk mendapatkannya kembali."
   },

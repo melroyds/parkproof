@@ -1504,7 +1504,7 @@
     "saveFailed": "Non è stato possibile salvare una copia su questo telefono.",
     "badge": "Condiviso con te",
     "check": "Verifica la firma",
-    "checkValid": "La firma è valida. Nulla è cambiato da quando ParkProof ha firmato. Questo non mostra che quanto dice il record sia vero, chi guidava, dove si trovava l'auto, né quando è arrivata o partita.",
+    "checkValid": "La firma è valida. I dati firmati non sono cambiati da quando ParkProof li ha firmati. Questo non mostra che siano veri, chi guidava, dove si trovava l'auto, né quando è arrivata o partita.",
     "remove": "Rimuovi",
     "removeConfirm": "Rimuovere questo record condiviso da questo telefono? Puoi riaprire il link per recuperarlo."
   },

@@ -106,6 +106,8 @@ const REVISED = new Set([
   // Fix round 1: the full signature caveat (copy rules) on shared records.
   'share.signedNote',
   'share.signedNoteNoTime',
+  // Fix round 1, then the integration review: "the signed details haven't
+  // changed", as the copy pass words chain.checkValid_*.
   'share.checkValid',
   // Fix round 1: the handover line worded as what the record says.
   'handover.line',
@@ -643,16 +645,19 @@ const ADDITIONS = {
     hi: 'हस्ताक्षर जांचें',
     pa: 'ਹਸਤਾਖਰ ਜਾਂਚੋ',
   },
+  // The middle sentence follows the copy pass's chain.checkValid_* wording
+  // in each locale (scripts/copy-pass/<locale>.json): a signature covers the
+  // signed details, never "nothing has changed".
   'share.checkValid': {
-    en: "The signature is valid. Nothing has changed since ParkProof signed it. That doesn't show the details are true, who was driving, where the car was, or when it arrived or left.",
-    'zh-CN': '签名有效。自 ParkProof 签名以来没有任何改动。但这不能说明这些内容属实,也不能说明是谁在开车、车停在哪里,或车辆何时到达、何时离开。',
-    vi: 'Chữ ký hợp lệ. Không có gì thay đổi kể từ khi ParkProof ký. Điều đó không cho thấy nội dung bản ghi là đúng, ai là người lái xe, xe ở đâu, hay xe đến và rời đi lúc nào.',
-    id: 'Tanda tangan valid. Tidak ada yang berubah sejak ParkProof menandatanganinya. Itu tidak menunjukkan bahwa isi catatan ini benar, siapa yang mengemudi, di mana mobil berada, atau kapan mobil tiba atau pergi.',
-    ko: '서명이 유효합니다. ParkProof가 서명한 뒤로 바뀐 것이 없습니다. 그렇다고 기록 내용이 사실인지, 누가 운전했는지, 차가 어디에 있었는지, 언제 도착하거나 떠났는지를 보여 주는 것은 아닙니다.',
-    it: "La firma è valida. Nulla è cambiato da quando ParkProof ha firmato. Questo non mostra che quanto dice il record sia vero, chi guidava, dove si trovava l'auto, né quando è arrivata o partita.",
-    el: 'Η υπογραφή είναι έγκυρη. Τίποτα δεν έχει αλλάξει από τότε που υπέγραψε το ParkProof. Αυτό δεν δείχνει ότι όσα λέει η εγγραφή είναι αληθινά, ποιος οδηγούσε, πού ήταν το αυτοκίνητο ή πότε έφτασε ή έφυγε.',
-    hi: 'हस्ताक्षर मान्य है। ParkProof के हस्ताक्षर करने के बाद से कुछ नहीं बदला है। इससे यह पता नहीं चलता कि रिकॉर्ड में लिखी बातें सच हैं, चालक कौन था, कार कहाँ थी, या वह कब पहुँची या कब गई।',
-    pa: 'ਹਸਤਾਖਰ ਵੈਧ ਹੈ। ParkProof ਦੇ ਹਸਤਾਖਰ ਕਰਨ ਤੋਂ ਬਾਅਦ ਕੁਝ ਨਹੀਂ ਬਦਲਿਆ। ਇਸ ਤੋਂ ਇਹ ਪਤਾ ਨਹੀਂ ਲੱਗਦਾ ਕਿ ਰਿਕਾਰਡ ਵਿੱਚ ਲਿਖੀਆਂ ਗੱਲਾਂ ਸੱਚ ਹਨ, ਡਰਾਈਵਰ ਕੌਣ ਸੀ, ਕਾਰ ਕਿੱਥੇ ਸੀ, ਜਾਂ ਉਹ ਕਦੋਂ ਪਹੁੰਚੀ ਜਾਂ ਗਈ।',
+    en: "The signature is valid. The signed details haven't changed since ParkProof signed them. That doesn't show they're true, who was driving, where the car was, or when it arrived or left.",
+    'zh-CN': '签名有效。已签名的内容自 ParkProof 签名以来没有改动。但这不能说明这些内容属实,也不能说明是谁在开车、车停在哪里,或车辆何时到达、何时离开。',
+    vi: 'Chữ ký hợp lệ. Các thông tin đã ký chưa thay đổi kể từ khi ParkProof ký. Điều đó không cho thấy các thông tin đó là đúng, ai là người lái xe, xe ở đâu, hay xe đến và rời đi lúc nào.',
+    id: 'Tanda tangan valid. Detail yang ditandatangani tidak berubah sejak ParkProof menandatanganinya. Itu tidak menunjukkan bahwa detail ini benar, siapa yang mengemudi, di mana mobil berada, atau kapan mobil tiba atau pergi.',
+    ko: '서명이 유효합니다. 서명된 내용은 ParkProof가 서명한 뒤로 바뀌지 않았습니다. 그렇다고 그 내용이 사실인지, 누가 운전했는지, 차가 어디에 있었는지, 언제 도착하거나 떠났는지를 보여 주는 것은 아닙니다.',
+    it: "La firma è valida. I dati firmati non sono cambiati da quando ParkProof li ha firmati. Questo non mostra che siano veri, chi guidava, dove si trovava l'auto, né quando è arrivata o partita.",
+    el: 'Η υπογραφή είναι έγκυρη. Τα υπογεγραμμένα στοιχεία δεν έχουν αλλάξει από τότε που τα υπέγραψε το ParkProof. Αυτό δεν δείχνει ότι είναι αληθινά, ποιος οδηγούσε, πού ήταν το αυτοκίνητο ή πότε έφτασε ή έφυγε.',
+    hi: 'हस्ताक्षर मान्य है। ParkProof के हस्ताक्षर करने के बाद से हस्ताक्षरित विवरणों में कोई बदलाव नहीं हुआ है। इससे यह पता नहीं चलता कि वे विवरण सच हैं, चालक कौन था, कार कहाँ थी, या वह कब पहुँची या कब गई।',
+    pa: 'ਹਸਤਾਖਰ ਵੈਧ ਹੈ। ParkProof ਦੇ ਹਸਤਾਖਰ ਕਰਨ ਤੋਂ ਬਾਅਦ ਹਸਤਾਖਰਿਤ ਵੇਰਵਿਆਂ ਵਿੱਚ ਕੋਈ ਬਦਲਾਅ ਨਹੀਂ ਹੋਇਆ। ਇਸ ਤੋਂ ਇਹ ਪਤਾ ਨਹੀਂ ਲੱਗਦਾ ਕਿ ਉਹ ਵੇਰਵੇ ਸੱਚ ਹਨ, ਡਰਾਈਵਰ ਕੌਣ ਸੀ, ਕਾਰ ਕਿੱਥੇ ਸੀ, ਜਾਂ ਉਹ ਕਦੋਂ ਪਹੁੰਚੀ ਜਾਂ ਗਈ।',
   },
   'share.remove': {
     en: 'Remove',
