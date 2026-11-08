@@ -169,45 +169,48 @@ function signTranslateApi(): Plugin {
         }
       })
 
-      server.middlewares.use('/api/draft-appeal', async (req, res) => {
-        if (req.method === 'OPTIONS') {
-          res.statusCode = 204
-          res.end()
-          return
-        }
-        if (req.method !== 'POST') {
-          res.statusCode = 405
-          res.end()
-          return
-        }
-        try {
-          const lambda = await import('./lambda/index.js')
-          const chunks: Buffer[] = []
-          for await (const chunk of req) {
-            chunks.push(chunk as Buffer)
+      // The slow job routes (build spec T8). Deployed, /draft-appeal and
+      // /read-notice write a DynamoDB job row, self-invoke the Lambda and
+      // answer 202 + job_id for the client to poll. None of that exists
+      // locally (going through lambda.handler here failed on the DynamoDB
+      // write, so the appeal flow never worked in dev), so these run the same
+      // work synchronously and answer with the result itself, which
+      // postJsonAndPoll accepts. ERR codes come back as 400 so the client
+      // shows their own copy. No rate limiter here (it is a DynamoDB call).
+      for (const kind of ['draft-appeal', 'read-notice'] as const) {
+        server.middlewares.use(`/api/${kind}`, async (req, res) => {
+          if (req.method === 'OPTIONS') {
+            res.statusCode = 204
+            res.end()
+            return
           }
-          const body = JSON.parse(Buffer.concat(chunks).toString('utf8'))
-          // The Lambda dispatches by path; emulate that by hand-calling handler
-          // with a synthetic event so we exercise the same code path as prod.
-          const result = await lambda.handler({
-            requestContext: { http: { method: 'POST', path: '/draft-appeal' } },
-            body: JSON.stringify(body),
-          })
-          res.statusCode = result.statusCode
-          if (result.headers) {
-            for (const [k, v] of Object.entries(result.headers)) {
-              res.setHeader(k, v as string)
+          // Prefix match: /api/<kind>/status/... lands here too. Nothing
+          // polls in dev (there is never a job id), so it is a 405.
+          if (req.method !== 'POST' || (req.url && req.url !== '/' && !req.url.startsWith('/?'))) {
+            res.statusCode = 405
+            res.end()
+            return
+          }
+          try {
+            const lambda = await import('./lambda/index.js')
+            const chunks: Buffer[] = []
+            for await (const chunk of req) {
+              chunks.push(chunk as Buffer)
             }
+            const result = await lambda.runJobNow(kind, Buffer.concat(chunks).toString('utf8'))
+            res.statusCode = result.statusCode
+            for (const [k, v] of Object.entries(result.headers)) {
+              res.setHeader(k, v)
+            }
+            res.end(result.body)
+          } catch (err) {
+            console.error(`[/api/${kind}]`, err)
+            res.statusCode = 500
+            res.setHeader('Content-Type', 'application/json')
+            res.end(JSON.stringify({ error: 'ERR_INTERNAL' }))
           }
-          res.end(result.body)
-        } catch (err) {
-          const e = err as Error & { status?: number }
-          console.error('[/api/draft-appeal]', e)
-          res.statusCode = e.status || 500
-          res.setHeader('Content-Type', 'application/json')
-          res.end(JSON.stringify({ error: e.message || String(err) }))
-        }
-      })
+        })
+      }
 
       // ── Auth-required routes (cloud sync) ──
       // In production, API Gateway's JWT authorizer validates the JWT and

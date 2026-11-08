@@ -276,6 +276,7 @@ ensure_route "push/subscribe"
 ensure_route "push/schedule"
 ensure_route "push/cancel"
 ensure_route "draft-appeal"
+ensure_route "read-notice"
 ensure_route "sign-session"
 
 # Auth-required routes — JWT authorizer is attached when COGNITO_AUTHORIZER_ID
@@ -375,6 +376,9 @@ ensure_get_anon_route() {
 
 ensure_get_anon_route "/sign-translate/status/{job_id}"
 ensure_get_anon_route "/draft-appeal/status/{job_id}"
+# /read-notice/status serves notice jobs only and deletes each row once it
+# hands back a finished result (lambda/index.js handleJobStatus).
+ensure_get_anon_route "/read-notice/status/{job_id}"
 
 API_URL="https://$API_ID.execute-api.$REGION.amazonaws.com/sign-translate"
 echo "  • endpoint: $API_URL"

@@ -608,7 +608,11 @@
     "step1": "표지판 읽는 중…",
     "step2": "주차 규칙 파악 중…",
     "step3": "주차 가능 시간 계산 중…",
-    "step4": "답변 작성 중…"
+    "step4": "답변 작성 중…",
+    "stepOf": "{{total}}단계 중 {{current}}단계",
+    "usuallyTen": "보통 10초 정도 걸립니다.",
+    "almostThere": "거의 다 됐습니다. 복잡한 표지판입니다…",
+    "stillWorking": "아직 처리 중입니다. 평소보다 오래 걸리고 있습니다…"
   },
   "feedback": {
     "title": "피드백 보내기",
@@ -652,7 +656,11 @@
     "genericRetry": "문제가 발생했습니다. 잠시 후 다시 시도해 주세요.",
     "storageFull": "이 기기의 ParkProof 저장 공간이 가득 찼습니다. 현재 주차 중인 기록과 서명을 기다리는 기록은 유지됩니다. 기록 목록을 열어 더 이상 필요 없는 오래된 기록을 삭제한 뒤 다시 시도하세요.",
     "storageEvicted_one": "기기 저장 공간이 가득 차서, 공간 확보를 위해 오래된 주차 기록 {{count}}개가 삭제되었습니다. 기록을 클라우드에 안전하게 보관하려면 로그인하세요.",
-    "storageEvicted_other": "기기 저장 공간이 가득 차서, 공간 확보를 위해 오래된 주차 기록 {{count}}개가 삭제되었습니다. 기록을 클라우드에 안전하게 보관하려면 로그인하세요."
+    "storageEvicted_other": "기기 저장 공간이 가득 차서, 공간 확보를 위해 오래된 주차 기록 {{count}}개가 삭제되었습니다. 기록을 클라우드에 안전하게 보관하려면 로그인하세요.",
+    "noticeUnreadable": "그 통지서를 읽지 못했습니다. 통지서 전체가 나오도록 평평하게 놓고 밝은 곳에서 더 선명하게 찍어 주세요.",
+    "notANotice": "그 사진은 주차 벌금 통지서로 보이지 않습니다. 위반 통지서 자체를 찍어 주세요.",
+    "noticeHeavyLoad": "지금 ParkProof에 요청이 많아 통지서를 제때 다 읽지 못했습니다. 1분 후 다시 시도해 주세요.",
+    "noticeImageTooLarge": "사진이 너무 큽니다. 통지서를 다른 사진으로 찍어 보세요."
   },
   "pdf": {
     "common": {
@@ -927,5 +935,79 @@
       "returnDetail": "돌아왔을 때 상태, 근접 촬영",
       "compliance": "결제 또는 허가증 증빙 사진"
     }
+  },
+  "notice": {
+    "homeLink": "벌금을 받았나요? 여기서 시작하세요",
+    "title": "벌금을 받았나요?",
+    "captureIntro": "위반 통지서 사진을 찍으세요. ParkProof가 통지서의 날짜, 시간, 장소를 읽고 그 무렵의 주차 기록을 찾습니다.",
+    "reading": {
+      "step1": "통지서 읽는 중…",
+      "step2": "날짜, 시간, 장소 찾는 중…",
+      "step3": "기록 찾는 중…",
+      "slow": "아직 읽는 중입니다. 조금 더 걸릴 수 있습니다…",
+      "hint": "보통 몇 초면 됩니다."
+    },
+    "errorHeader": "통지서를 읽지 못했습니다",
+    "fields": {
+      "heading": "통지서 내용",
+      "intro": "AI가 사진에서 읽은 내용입니다. 각 항목을 통지서와 대조해 보세요.",
+      "noticeNumber": "통지서 번호",
+      "issuedBy": "발급 기관",
+      "date": "통지서의 날짜",
+      "time": "통지서의 시간",
+      "location": "장소",
+      "offence": "위반 내용",
+      "partlyReadable": "통지서 일부를 읽기 어려웠습니다. 이 내용을 통지서 원본과 대조해 보세요.",
+      "checkDateTime": "날짜와 시간을 통지서와 대조해 보세요. 잘못 읽었을 수 있습니다.",
+      "enterDateTime": "날짜와 시간을 읽지 못했습니다. 기록을 찾으려면 통지서에 적힌 대로 입력하세요."
+    },
+    "matches": {
+      "heading": "이 시간 무렵의 기록",
+      "none": "저장된 주차 기록 중 이 날짜와 시간 무렵의 기록이 없습니다. 위의 날짜나 시간이 잘못 읽혔다면 고쳐 주세요."
+    },
+    "match": {
+      "compare": "이 기록과 비교",
+      "far": "이 기록은 통지서에 적힌 장소에서 약 {{distance}}km 떨어져 있습니다.",
+      "repeatedHour": "이날 일광 절약 시간이 끝나서 통지서의 시간이 두 번 있었습니다. 기록을 {{time}}과(와) 비교합니다.",
+      "skippedHour": "이날 일광 절약 시간이 시작되어 통지서의 시간은 시계에 없었습니다. 기록을 {{time}}과(와) 비교합니다."
+    },
+    "compare": {
+      "heading": "통지서와 비교",
+      "departureSignedBefore": "{{time}}에 \"떠났습니다\"를 눌렀습니다. 통지서의 시간보다 {{duration}} 전입니다. ParkProof는 {{signedTime}}에 그 기록에 서명했습니다. 이 기록은 누른 시각을 보여 줄 뿐, 차가 움직인 시각은 보여 주지 않습니다.",
+      "departureSignedBeforeClock": "휴대폰 시계로 {{time}}에 \"떠났습니다\"를 눌렀습니다. ParkProof는 통지서의 시간 전인 {{signedTime}}에 그 기록에 서명했습니다. 이 기록은 누른 시각을 보여 줄 뿐, 차가 움직인 시각은 보여 주지 않습니다.",
+      "departureSignedAfter": "휴대폰 시계로 {{time}}에 \"떠났습니다\"를 눌렀습니다. ParkProof는 통지서의 시간 이후인 {{signedTime}}에야 서명했으므로, 이 서명으로는 {{noticeTime}}까지 떠났다는 것을 보여 줄 수 없습니다.",
+      "departurePending": "{{time}}에 \"떠났습니다\"를 눌렀습니다. 아직 서명되지 않았습니다.",
+      "departureNotSigned": "{{time}}에 \"떠났습니다\"를 눌렀습니다. 서명되지 않았습니다.",
+      "noDeparture": "이 기록에서 \"떠났습니다\"를 누르지 않았습니다.",
+      "arrivalBefore": "{{time}}에 이 주차를 기록했습니다. 통지서의 시간보다 {{duration}} 전입니다.",
+      "arrivalAfter": "{{time}}에 이 주차를 기록했습니다. 통지서의 시간보다 {{duration}} 후입니다.",
+      "arrivalSame": "{{time}}에 이 주차를 기록했습니다. 통지서의 시간과 같은 분입니다.",
+      "driver": "기록에는 운전자가 {{driver}}(으)로 되어 있습니다. 주차를 기록할 때 입력된 내용이며, ParkProof가 확인하지 않았습니다. 다른 사람이 운전했다면 통지서에 운전자 지정 방법이 나와 있습니다. 실제로 운전한 사람만 지정하세요.",
+      "handover": "기록에는 {{time}}에 차가 {{to_driver}}에게 인계되었다고 되어 있습니다.",
+      "checkRegistration": "통지서의 차량 등록 번호가 이 기록의 차가 맞는지 확인하세요. ParkProof는 차량 등록 번호를 기록하지 않습니다.",
+      "checkDueDate": "기한은 통지서에서 직접 확인하세요.",
+      "departureDevKey": "휴대폰 시계로 {{time}}에 \"떠났습니다\"를 눌렀습니다. 이 부분은 ParkProof가 공개한 키가 아닌 개발용 키로 서명되었으므로, 이 서명으로는 {{noticeTime}}까지 떠났다는 것을 보여 줄 수 없습니다.",
+      "arrivalSignedBefore": "ParkProof는 통지서의 시간 전인 {{signedTime}}에 이 기록에 서명했습니다. 이 서명은 그때 이 기록이 이미 있었다는 것을 보여 줄 뿐, 차가 언제 도착했는지나 어디에 있었는지는 보여 주지 않습니다.",
+      "arrivalSignedAfter": "ParkProof는 통지서의 시간 이후인 {{signedTime}}에야 이 기록에 서명했으므로, 이 서명으로는 이 기록이 {{noticeTime}}에 이미 있었다는 것을 보여 줄 수 없습니다.",
+      "arrivalDevKey": "이 기록은 ParkProof가 공개한 키가 아닌 개발용 키로 서명되었으므로, 이 서명으로는 이 기록이 {{noticeTime}}에 이미 있었다는 것을 보여 줄 수 없습니다.",
+      "arrivalPending": "ParkProof가 아직 이 기록에 서명하지 않았습니다.",
+      "arrivalNotSigned": "이 기록은 서명되지 않았습니다.",
+      "driverPending": "운전자 이름은 아직 서명되지 않았습니다.",
+      "driverNotSigned": "운전자 이름은 서명되지 않았습니다.",
+      "handoverPending": "이 차량 인계는 아직 서명되지 않았습니다."
+    },
+    "duration": {
+      "minutes_one": "{{count}}분",
+      "minutes_other": "{{count}}분",
+      "hours_one": "{{count}}시간",
+      "hours_other": "{{count}}시간",
+      "hoursMinutes": "{{hours}} {{minutes}}"
+    },
+    "actions": {
+      "draftAppeal": "이 기록으로 이의신청서 작성",
+      "exportPdf": "증거 PDF 내보내기",
+      "draftAnyway": "그래도 이의신청서 작성"
+    },
+    "disclaimer": "이 화면은 기록을 통지서 내용과 비교할 뿐입니다. 법률 조언이 아니며, 벌금이 타당한지 판단하지 않습니다. 그 판단은 의회나 법원이 합니다."
   }
 }

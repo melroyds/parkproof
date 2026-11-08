@@ -297,6 +297,30 @@ export interface LogDraft {
   driver_name: string | null
 }
 
+/** How readable the model found a fine notice photo (/read-notice, build spec T8). */
+export type NoticeLegibility = 'clear' | 'partly_readable' | 'unreadable' | 'not_a_notice'
+
+/**
+ * What /read-notice read off a parking infringement notice. Text is as
+ * printed (single line) or null. There is no registration field: ParkProof
+ * never records one. `offence_datetime_local` is the model's local reading
+ * ('YYYY-MM-DDTHH:MM', no offset) or null; src/lib/notice-match.ts re-reads
+ * the printed date day first and flags any disagreement.
+ */
+export interface NoticeFields {
+  legibility: NoticeLegibility
+  notice_number: string | null
+  issuing_authority: string | null
+  offence_date_raw: string | null
+  offence_time_raw: string | null
+  offence_datetime_local: string | null
+  location_text: string | null
+  offence_code: string | null
+  offence_description: string | null
+  amount: string | null
+  due_date: string | null
+}
+
 export interface AppealDraft {
   ticket_summary: string
   appeal_subject: string

@@ -76,11 +76,27 @@ export class ApiError extends Error {
  */
 const TRANSIENT_STATUSES = new Set([500, 502, 503, 504, 529])
 
+/** An i18n key and its English fallback (identical to en.json). */
+export type CopyKey = [key: string, fallback: string]
+
+/**
+ * Copy for a route whose failures shouldn't be described as a sign scan
+ * (the defaults talk about "this sign" and "your scan").
+ */
+export interface ErrorCopy {
+  /** A second 5xx in a row. Default: errors.complexSignTimeout. */
+  timeout?: CopyKey
+  /** A job past its deadline, or polling that ran out. Default: errors.heavyLoad. */
+  heavyLoad?: CopyKey
+  /** Per ERR code, in place of the shared ERROR_CODE_KEYS entry. */
+  codes?: Readonly<Record<string, CopyKey>>
+}
+
 /** POST JSON with one automatic retry on transient failures. */
 export async function postJsonWithRetry<T>(
   path: string,
   body: unknown,
-  opts: { authHeader?: string; signal?: AbortSignal } = {},
+  opts: { authHeader?: string; signal?: AbortSignal; copy?: ErrorCopy } = {},
 ): Promise<T> {
   const url = endpointUrl(path)
   const headers: Record<string, string> = { 'Content-Type': 'application/json' }
@@ -116,7 +132,11 @@ export async function postJsonWithRetry<T>(
       const detail = await safeReadDetail(resp)
       const isTimeout = TRANSIENT_STATUSES.has(resp.status)
       throw new ApiError(
-        isTimeout ? complexSignMessage() : friendlyErrorFor(detail),
+        isTimeout
+          ? opts.copy?.timeout
+            ? tr(...opts.copy.timeout)
+            : complexSignMessage()
+          : friendlyErrorFor(detail, opts.copy?.codes),
         resp.status,
         isTimeout,
       )
@@ -149,10 +169,13 @@ export async function postJsonWithRetry<T>(
 export async function postJsonAndPoll<T>(
   path: string,
   body: unknown,
+  opts: { copy?: ErrorCopy } = {},
 ): Promise<T> {
+  const copy = opts.copy
+  const heavyLoad = () => (copy?.heavyLoad ? tr(...copy.heavyLoad) : heavyLoadMessage())
   // Step 1: enqueue the job. Returns 202 with { job_id }.
   type EnqueueResp = { job_id: string; status: string }
-  const enqueueResp = await postJsonWithRetry<EnqueueResp>(path, body)
+  const enqueueResp = await postJsonWithRetry<EnqueueResp>(path, body, { copy })
   if (!enqueueResp.job_id) {
     // If the server happened to return the result synchronously (e.g., the
     // refresh-mode path on /sign-translate), it isn't shaped like an enqueue
@@ -176,7 +199,7 @@ export async function postJsonAndPoll<T>(
         // on a poll shouldn't fail the whole flow. Keep trying.
         continue
       }
-      throw new ApiError(friendlyErrorFor(await safeReadDetail(resp)), resp.status, false)
+      throw new ApiError(friendlyErrorFor(await safeReadDetail(resp), copy?.codes), resp.status, false)
     }
     const payload = (await resp.json()) as {
       status: 'pending' | 'done' | 'error'
@@ -191,15 +214,15 @@ export async function postJsonAndPoll<T>(
       // deadline — that's heavy-load / never-ran, NOT "your sign was too
       // complex". Map it to the honest message.
       if (payload.error === 'JOB_TIMED_OUT') {
-        throw new ApiError(heavyLoadMessage(), 504, true)
+        throw new ApiError(heavyLoad(), 504, true)
       }
-      throw new ApiError(friendlyErrorFor(payload.error), 500, false)
+      throw new ApiError(friendlyErrorFor(payload.error, copy?.codes), 500, false)
     }
     // 'pending' — keep polling
   }
   // Exhausted the poll budget still 'pending'. The work didn't finish in time,
   // which under load is heavy-load, not a too-complex sign.
-  throw new ApiError(heavyLoadMessage(), 504, true)
+  throw new ApiError(heavyLoad(), 504, true)
 }
 
 async function safeReadDetail(resp: Response): Promise<string> {
@@ -269,6 +292,15 @@ const ERROR_CODE_KEYS: Record<string, [string, string]> = {
   ERR_IMAGE_TOO_LARGE: ['errors.imageTooLarge', 'That photo is too large. Retake it a little smaller, or closer to the sign.'],
   ERR_IMAGE_TYPE: ['errors.imageType', "That image type isn't supported. Use a JPEG or PNG photo."],
   ERR_APPEAL_UNDRAFTABLE: ['errors.appealUndraftable', "We couldn't draft an appeal from that photo. Try a clearer photo of the notice."],
+  // Reading a fine notice (/read-notice, build spec T8).
+  ERR_NOTICE_UNREADABLE: [
+    'errors.noticeUnreadable',
+    "We couldn't read that notice. Try a clearer photo of the whole notice, flat and in good light.",
+  ],
+  ERR_NOT_A_NOTICE: [
+    'errors.notANotice',
+    "That photo doesn't look like a parking fine notice. Take a photo of the infringement notice itself.",
+  ],
 }
 function tr(key: string, fallback: string): string {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -279,7 +311,9 @@ function tr(key: string, fallback: string): string {
   }
   return fallback
 }
-export function friendlyErrorFor(raw: string | null | undefined): string {
+export function friendlyErrorFor(raw: string | null | undefined, codes?: Readonly<Record<string, CopyKey>>): string {
+  const own = raw && codes && Object.prototype.hasOwnProperty.call(codes, raw) ? codes[raw] : null
+  if (own) return tr(...own)
   if (raw && ERROR_CODE_KEYS[raw]) {
     const [key, fallback] = ERROR_CODE_KEYS[raw]
     return tr(key, fallback)

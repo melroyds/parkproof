@@ -1,6 +1,7 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { AppealDraft, ParkingSession } from '../types'
+import type { CapturedNotice } from '../lib/notice-read'
 import { draftAppeal } from '../lib/claude'
 import { resizeImageFile } from '../lib/image'
 import Icon from './Icon'
@@ -17,6 +18,14 @@ interface Props {
    */
   session: ParkingSession | null
   onBack: () => void
+  /**
+   * A notice photo the driver already took (the notice lookup, build spec
+   * T8): the flow skips capture and drafts from it straight away. Drafting
+   * starts once per mount, even when StrictMode runs the effect twice.
+   */
+  initialNotice?: CapturedNotice | null
+  /** The back link's label key. Default: back to the record, or home without one. */
+  backLabelKey?: string
 }
 
 type Stage =
@@ -25,33 +34,70 @@ type Stage =
   | { name: 'review'; draft: AppealDraft; ticketPhoto: string }
   | { name: 'error'; message: string }
 
-// Pine tiers: strong = full pine, moderate = muted slate-green accent, weak = neutral paper.
-const STRENGTH_LABEL = {
-  strong: { color: 'text-brand-700 bg-brand-50 border-brand-200', textKey: 'appeal.strongEvidence' },
-  moderate: { color: 'text-accent-700 bg-accent-50 border-accent-200', textKey: 'appeal.moderateEvidence' },
-  weak: { color: 'text-ink-600 bg-paper-200 border-paper-300', textKey: 'appeal.weakEvidence' },
-} as const
+type DraftOutcome = { ok: true; draft: AppealDraft; ticketPhoto: string } | { ok: false; message: string }
 
-export default function AppealFlow({ session, onBack }: Props) {
+/** Draft from a resized notice photo. Never throws: a failure comes back as its message. */
+async function draftFrom(notice: CapturedNotice, session: ParkingSession | null): Promise<DraftOutcome> {
+  try {
+    const base64 = notice.dataUrl.replace(/^data:image\/[a-zA-Z0-9+.-]+;base64,/, '')
+    const draft = await draftAppeal(base64, notice.mediaType, session)
+    return { ok: true, draft, ticketPhoto: notice.dataUrl }
+  } catch (err) {
+    return { ok: false, message: err instanceof Error ? err.message : String(err) }
+  }
+}
+
+export default function AppealFlow({ session, onBack, initialNotice = null, backLabelKey }: Props) {
   const { t, i18n } = useTranslation()
-  const [stage, setStage] = useState<Stage>({ name: 'capture' })
+  // With a notice photo already in hand there is nothing to capture: the
+  // first paint is the drafting screen.
+  const [stage, setStage] = useState<Stage>(() => (initialNotice ? { name: 'drafting' } : { name: 'capture' }))
   const [editedLetter, setEditedLetter] = useState<string>('')
   const [copied, setCopied] = useState(false)
   const cameraInputRef = useRef<HTMLInputElement>(null)
   const libraryInputRef = useRef<HTMLInputElement>(null)
+  const backLabel = t(backLabelKey ?? (session ? 'common.backToSession' : 'common.backToHome'))
+
+  const showOutcome = (outcome: DraftOutcome) => {
+    if (outcome.ok) {
+      setEditedLetter(outcome.draft.appeal_letter)
+      setStage({ name: 'review', draft: outcome.draft, ticketPhoto: outcome.ticketPhoto })
+    } else {
+      setStage({ name: 'error', message: outcome.message })
+    }
+  }
+
+  // The initial notice is drafted once per mount. StrictMode runs this
+  // effect twice (mount, simulated unmount, mount) on the same component,
+  // so the draft request is kept in a ref and the second run only attaches
+  // to it: one model call, and the outcome still reaches the screen. Each
+  // run's cleanup stops only its own listener, so a real unmount never
+  // sets state.
+  const initialDraft = useRef<Promise<DraftOutcome> | null>(null)
+  useEffect(() => {
+    if (!initialNotice) return
+    if (!initialDraft.current) initialDraft.current = draftFrom(initialNotice, session)
+    let active = true
+    void initialDraft.current.then((outcome) => {
+      if (active) showOutcome(outcome)
+    })
+    return () => {
+      active = false
+    }
+    // Mount only: a later prop change never starts a second draft.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const handleFile = async (file: File) => {
     setStage({ name: 'drafting' })
+    let notice: CapturedNotice
     try {
-      const { dataUrl, mediaType } = await resizeImageFile(file)
-      const base64 = dataUrl.replace(/^data:image\/[a-zA-Z0-9+.-]+;base64,/, '')
-      const draft = await draftAppeal(base64, mediaType, session)
-      setEditedLetter(draft.appeal_letter)
-      setStage({ name: 'review', draft, ticketPhoto: dataUrl })
+      notice = await resizeImageFile(file)
     } catch (err) {
-      const message = err instanceof Error ? err.message : String(err)
-      setStage({ name: 'error', message })
+      setStage({ name: 'error', message: err instanceof Error ? err.message : String(err) })
+      return
     }
+    showOutcome(await draftFrom(notice, session))
   }
 
   const handleCopy = async () => {
@@ -136,14 +182,13 @@ export default function AppealFlow({ session, onBack }: Props) {
   }
 
   if (stage.name === 'review') {
-    const strength = STRENGTH_LABEL[stage.draft.evidence_strength] ?? STRENGTH_LABEL.moderate
     return (
       <div className="min-h-screen flex flex-col p-6 max-w-md mx-auto w-full">
         <button
           onClick={onBack}
           className="self-start min-h-[44px] inline-flex items-center -my-2.5 text-[#A9CFBE] hover:text-paper-50 text-sm mb-4"
         >
-          {session ? t('common.backToSession') : t('common.backToHome')}
+          {backLabel}
         </button>
 
         <h2 className="font-display text-3xl font-extrabold text-paper-50 mb-2">
@@ -151,11 +196,9 @@ export default function AppealFlow({ session, onBack }: Props) {
         </h2>
         <p className="text-sm mb-6 leading-relaxed" style={{ color: '#A9CFBE' }}>{stage.draft.ticket_summary}</p>
 
-        <span
-          className={`text-xs font-semibold uppercase tracking-widest border rounded-full px-3 py-1 self-start mb-4 ${strength.color}`}
-        >
-          {t(strength.textKey)}
-        </span>
+        {/* No verdict label: the model's evidence_strength ("strong
+            evidence" and the like) is never shown. ParkProof doesn't rate a
+            case or predict an outcome (copy rules). */}
 
         <Card className="mb-4">
           <h3 className="text-xs uppercase tracking-widest font-semibold text-ink-600 mb-2">
@@ -237,7 +280,7 @@ export default function AppealFlow({ session, onBack }: Props) {
         onClick={onBack}
         className="self-start min-h-[44px] inline-flex items-center -my-2.5 text-[#A9CFBE] hover:text-paper-50 text-sm mb-4 transition-colors"
       >
-        {session ? t('common.backToSession') : t('common.backToHome')}
+        {backLabel}
       </button>
 
       <h2 className="font-display text-3xl font-extrabold text-paper-50 mb-1">

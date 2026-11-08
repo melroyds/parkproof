@@ -111,3 +111,74 @@ export function buildAppealEvidenceText(session: AppealSessionInput): string
 
 /** Draft an appeal letter (the async /draft-appeal worker). */
 export function handleDraftAppeal(event: LambdaEvent): Promise<unknown>
+
+// ── Notice reader (build spec T8) ──
+
+/** The async job kind for POST /read-notice and its status route. */
+export const READ_NOTICE_KIND: 'read-notice'
+/** The notice reader's output cap (no thinking). */
+export const NOTICE_MAX_TOKENS: number
+
+export type NoticeLegibility = 'clear' | 'partly_readable' | 'unreadable' | 'not_a_notice'
+export const NOTICE_LEGIBILITY: readonly NoticeLegibility[]
+
+/**
+ * What /read-notice returns: what is printed on a parking infringement
+ * notice, each text field a single line or null. There is no registration
+ * field. `offence_datetime_local` is the model's 'YYYY-MM-DDTHH:MM' reading
+ * (local wall-clock time, no offset), or null; the app re-reads the date
+ * from `offence_date_raw` day first (src/lib/notice-match.ts).
+ */
+export interface NoticeFields {
+  legibility: NoticeLegibility
+  notice_number: string | null
+  issuing_authority: string | null
+  offence_date_raw: string | null
+  offence_time_raw: string | null
+  offence_datetime_local: string | null
+  location_text: string | null
+  offence_code: string | null
+  offence_description: string | null
+  amount: string | null
+  due_date: string | null
+}
+
+/** The JSON schema the model's answer is held to. */
+export const NOTICE_SCHEMA: {
+  type: 'object'
+  properties: Record<keyof NoticeFields, Record<string, unknown>>
+  required: Array<keyof NoticeFields>
+  additionalProperties: false
+}
+export const NOTICE_SYSTEM_PROMPT: string
+/** Per-field caps for the text fields. A value over its cap is dropped, never cut short. */
+export const NOTICE_TEXT_CAPS: Readonly<Record<Exclude<keyof NoticeFields, 'legibility' | 'offence_datetime_local'>, number>>
+
+export interface ReadNoticeInput {
+  image_base64: string
+  media_type?: string
+}
+
+/** A /read-notice request refused before any work: HTTP 400 with the code as `message`. */
+export class NoticeRequestError extends Error {
+  statusCode: 400
+  constructor(code: string)
+}
+
+/** The image of a /read-notice body. Throws NoticeRequestError (ERR_BAD_REQUEST, ERR_IMAGE_TOO_LARGE, ERR_IMAGE_TYPE). */
+export function validateNoticeBody(body: unknown): { image_base64: string; media_type: string }
+
+/** The model's answer reduced to exactly NoticeFields. */
+export function normalizeNoticeOutput(raw: unknown): NoticeFields
+
+/** Read one notice photo. Throws an Error whose message is an ERR code (ERR_NOT_A_NOTICE, ERR_NOTICE_UNREADABLE, ...). */
+export function readNotice(body: ReadNoticeInput): Promise<NoticeFields>
+
+/**
+ * Run an async job kind synchronously for the local dev server: 200 with the
+ * result, 400 `{ error: ERR_CODE }`, 404 for an unknown kind, or 500.
+ */
+export function runJobNow(
+  kind: 'sign-translate' | 'draft-appeal' | 'read-notice' | string,
+  rawBody: string | Record<string, unknown> | null | undefined,
+): Promise<LambdaResponse>

@@ -486,7 +486,11 @@
     "step1": "Đang đọc biển báo…",
     "step2": "Đang nhận diện quy tắc đỗ xe…",
     "step3": "Đang tính giờ bạn có thể đỗ…",
-    "step4": "Đang soạn câu trả lời…"
+    "step4": "Đang soạn câu trả lời…",
+    "stepOf": "Bước {{current}}/{{total}}",
+    "usuallyTen": "Thường mất khoảng 10 giây.",
+    "almostThere": "Sắp xong. Biển báo này khá phức tạp…",
+    "stillWorking": "Vẫn đang xử lý. Lần này lâu hơn thường lệ…"
   },
   "errors": {
     "somethingWrong": "Đã có lỗi xảy ra",
@@ -513,7 +517,11 @@
     "genericRetry": "Đã có lỗi xảy ra. Vui lòng thử lại sau giây lát.",
     "storageFull": "Bộ nhớ của ParkProof trên thiết bị này đã đầy. Các bản ghi đỗ xe đang diễn ra và các bản ghi đang chờ chữ ký vẫn được giữ lại. Hãy mở Lịch sử, xoá một bản ghi cũ mà bạn không còn cần, rồi thử lại.",
     "storageEvicted_one": "Bộ nhớ thiết bị của bạn đã đầy, nên {{count}} bản ghi đỗ xe cũ đã bị xoá để lấy chỗ trống. Đăng nhập để giữ bản ghi an toàn trên đám mây.",
-    "storageEvicted_other": "Bộ nhớ thiết bị của bạn đã đầy, nên {{count}} bản ghi đỗ xe cũ đã bị xoá để lấy chỗ trống. Đăng nhập để giữ bản ghi an toàn trên đám mây."
+    "storageEvicted_other": "Bộ nhớ thiết bị của bạn đã đầy, nên {{count}} bản ghi đỗ xe cũ đã bị xoá để lấy chỗ trống. Đăng nhập để giữ bản ghi an toàn trên đám mây.",
+    "noticeUnreadable": "Chúng tôi không đọc được thông báo đó. Hãy chụp lại rõ hơn cả tờ thông báo, đặt phẳng và đủ sáng.",
+    "notANotice": "Ảnh đó có vẻ không phải là thông báo phạt đỗ xe. Hãy chụp chính tờ thông báo vi phạm.",
+    "noticeHeavyLoad": "ParkProof đang quá tải nên chưa kịp đọc xong thông báo. Hãy đợi một phút rồi thử lại.",
+    "noticeImageTooLarge": "Ảnh đó quá lớn. Hãy thử một ảnh khác của thông báo."
   },
   "pdf": {
     "common": {
@@ -927,5 +935,79 @@
       "returnDetail": "Tình trạng khi quay lại, cận cảnh",
       "compliance": "Ảnh bằng chứng thanh toán hoặc giấy phép"
     }
+  },
+  "notice": {
+    "homeLink": "Bị phạt? Bắt đầu từ đây",
+    "title": "Bị phạt?",
+    "captureIntro": "Chụp ảnh thông báo vi phạm. ParkProof đọc ngày, giờ và địa điểm trên đó, rồi tìm các bản ghi đỗ xe của bạn quanh thời điểm đó.",
+    "reading": {
+      "step1": "Đang đọc thông báo…",
+      "step2": "Đang tìm ngày, giờ và địa điểm…",
+      "step3": "Đang tìm các bản ghi của bạn…",
+      "slow": "Vẫn đang đọc. Có thể mất thêm một chút thời gian…",
+      "hint": "Thường chỉ mất vài giây."
+    },
+    "errorHeader": "Không đọc được thông báo",
+    "fields": {
+      "heading": "Nội dung trên thông báo",
+      "intro": "AI đọc từ ảnh của bạn. Hãy đối chiếu từng chi tiết với thông báo.",
+      "noticeNumber": "Số thông báo",
+      "issuedBy": "Cơ quan phát hành",
+      "date": "Ngày trên thông báo",
+      "time": "Giờ trên thông báo",
+      "location": "Địa điểm",
+      "offence": "Vi phạm",
+      "partlyReadable": "Một phần thông báo khó đọc. Hãy đối chiếu các chi tiết này với chính thông báo.",
+      "checkDateTime": "Hãy đối chiếu ngày và giờ với thông báo. Có thể chúng đã bị đọc sai.",
+      "enterDateTime": "Chúng tôi không đọc được ngày và giờ. Hãy nhập theo thông báo để tìm các bản ghi của bạn."
+    },
+    "matches": {
+      "heading": "Các bản ghi của bạn quanh thời điểm này",
+      "none": "Không có bản ghi đỗ xe nào đã lưu của bạn ở quanh ngày và giờ này. Nếu ngày hoặc giờ ở trên bị đọc sai, hãy sửa lại."
+    },
+    "match": {
+      "compare": "So sánh với bản ghi này",
+      "far": "Bản ghi này cách địa điểm trên thông báo khoảng {{distance}} km.",
+      "repeatedHour": "Ngày này kết thúc giờ mùa hè, nên giờ trên thông báo xuất hiện hai lần. Bản ghi được so sánh với {{time}}.",
+      "skippedHour": "Ngày này bắt đầu giờ mùa hè, nên giờ trên thông báo không có trên đồng hồ. Bản ghi được so sánh với {{time}}."
+    },
+    "compare": {
+      "heading": "So với thông báo",
+      "departureSignedBefore": "Bạn đã nhấn \"Tôi đã đi\" lúc {{time}}, {{duration}} trước giờ trên thông báo. ParkProof đã ký bản ghi đó lúc {{signedTime}}. Bản ghi cho thấy lúc bạn nhấn, không phải lúc xe di chuyển.",
+      "departureSignedBeforeClock": "Theo đồng hồ điện thoại, bạn đã nhấn \"Tôi đã đi\" lúc {{time}}. ParkProof đã ký bản ghi đó lúc {{signedTime}}, trước giờ trên thông báo. Bản ghi cho thấy lúc bạn nhấn, không phải lúc xe di chuyển.",
+      "departureSignedAfter": "Theo đồng hồ điện thoại, bạn đã nhấn \"Tôi đã đi\" lúc {{time}}. ParkProof chỉ ký lúc {{signedTime}}, sau giờ trên thông báo, nên chữ ký không thể cho thấy bạn đã rời đi trước {{noticeTime}}.",
+      "departurePending": "Bạn đã nhấn \"Tôi đã đi\" lúc {{time}}. Phần này chưa được ký.",
+      "departureNotSigned": "Bạn đã nhấn \"Tôi đã đi\" lúc {{time}}. Phần này không được ký.",
+      "noDeparture": "Bạn chưa nhấn \"Tôi đã đi\" trên bản ghi này.",
+      "arrivalBefore": "Bạn đã ghi lại lần đỗ xe này lúc {{time}}, {{duration}} trước giờ trên thông báo.",
+      "arrivalAfter": "Bạn đã ghi lại lần đỗ xe này lúc {{time}}, {{duration}} sau giờ trên thông báo.",
+      "arrivalSame": "Bạn đã ghi lại lần đỗ xe này lúc {{time}}, cùng phút với giờ trên thông báo.",
+      "driver": "Bản ghi của bạn nói {{driver}} là người lái xe. Đó là thông tin được nhập khi ghi lại lần đỗ xe. ParkProof không kiểm tra điều này. Nếu người khác lái xe, thông báo có giải thích cách chỉ định người đó. Chỉ được chỉ định người thực sự đã lái xe.",
+      "handover": "Bản ghi của bạn nói xe đã được giao cho {{to_driver}} lúc {{time}}.",
+      "checkRegistration": "Hãy kiểm tra biển số xe trên thông báo có phải là xe trong bản ghi này không. ParkProof không ghi lại biển số xe.",
+      "checkDueDate": "Hãy xem hạn chót trên chính thông báo.",
+      "departureDevKey": "Theo đồng hồ điện thoại, bạn đã nhấn \"Tôi đã đi\" lúc {{time}}. Phần này được ký bằng khóa phát triển, không phải khóa mà ParkProof đã công bố, nên chữ ký không thể cho thấy bạn đã rời đi trước {{noticeTime}}.",
+      "arrivalSignedBefore": "ParkProof đã ký bản ghi này lúc {{signedTime}}, trước giờ trên thông báo. Chữ ký cho thấy bản ghi đã có từ lúc đó, không cho thấy xe đến lúc nào hay xe ở đâu.",
+      "arrivalSignedAfter": "ParkProof chỉ ký bản ghi này lúc {{signedTime}}, sau giờ trên thông báo, nên chữ ký không thể cho thấy bản ghi đã có trước {{noticeTime}}.",
+      "arrivalDevKey": "Bản ghi này được ký bằng khóa phát triển, không phải khóa mà ParkProof đã công bố, nên chữ ký không thể cho thấy bản ghi đã có trước {{noticeTime}}.",
+      "arrivalPending": "ParkProof chưa ký bản ghi này.",
+      "arrivalNotSigned": "Bản ghi này không được ký.",
+      "driverPending": "Tên tài xế chưa được ký.",
+      "driverNotSigned": "Tên tài xế không được ký.",
+      "handoverPending": "Việc giao xe này chưa được ký."
+    },
+    "duration": {
+      "minutes_one": "{{count}} phút",
+      "minutes_other": "{{count}} phút",
+      "hours_one": "{{count}} giờ",
+      "hours_other": "{{count}} giờ",
+      "hoursMinutes": "{{hours}} {{minutes}}"
+    },
+    "actions": {
+      "draftAppeal": "Soạn thư khiếu nại với bản ghi này",
+      "exportPdf": "Xuất PDF bằng chứng",
+      "draftAnyway": "Vẫn soạn thư khiếu nại"
+    },
+    "disclaimer": "Phần này so sánh bản ghi của bạn với nội dung trên thông báo. Đây không phải là tư vấn pháp lý và không cho biết khoản phạt có hợp lệ hay không. Việc đó do hội đồng hoặc tòa án quyết định."
   }
 }
