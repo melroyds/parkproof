@@ -544,6 +544,9 @@ function App() {
         confidence: 'high',
         clarification: null,
         chosen_label: session.chosen_label,
+        // A re-check, for the feedback telemetry. Set here as well as in
+        // refreshInterpretation so it survives this object being rebuilt.
+        is_refresh: true,
       }
       // Reuse the prior session's coords for the result view — they're a
       // strict superset of what handleCapture would pass and they correctly

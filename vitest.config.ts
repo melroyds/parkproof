@@ -29,7 +29,15 @@ export default defineConfig({
     // Co-located *.test.ts files next to source — Vite/Vitest convention.
     // Tests in /lambda are also picked up so the Lambda's refresh-mode
     // logic gets the same exercise.
-    include: ['src/**/*.test.ts', 'src/**/*.test.tsx', 'lambda/**/*.test.ts', 'lambda/**/*.test.js'],
+    // The accuracy harness (scripts/eval-lib) and its public page are
+    // tested from scripts/ too.
+    include: [
+      'src/**/*.test.ts',
+      'src/**/*.test.tsx',
+      'lambda/**/*.test.ts',
+      'lambda/**/*.test.js',
+      'scripts/**/*.test.mjs',
+    ],
     // Reset between tests — keeps localStorage / timers clean.
     clearMocks: true,
     restoreMocks: true,

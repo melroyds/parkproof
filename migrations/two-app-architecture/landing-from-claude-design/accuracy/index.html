@@ -1,0 +1,316 @@
+<!doctype html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Sign-reading accuracy | ParkProof</title>
+<meta name="description" content="How ParkProof tests its AI sign reading against labelled photos of real parking signs: the method, what each number means, and the limits of the test.">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://www.parkproof.com.au/accuracy/">
+<link rel="icon" href="../assets/parkproof-icon.svg" type="image/svg+xml">
+
+<meta property="og:type" content="article">
+<meta property="og:title" content="How we test ParkProof's sign reading">
+<meta property="og:description" content="The method, what each number means, and the limits of the test.">
+<meta property="og:image" content="https://www.parkproof.com.au/og-image.png">
+<meta property="og:url" content="https://www.parkproof.com.au/accuracy/">
+<meta property="og:site_name" content="ParkProof">
+<meta property="og:locale" content="en_AU">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="../landing-styles.css">
+<style>
+  /* Page-only additions on top of the landing's tokens and components. */
+  .acc-main { padding-block: clamp(32px, 6vw, 72px) clamp(56px, 8vw, 120px); }
+  .acc-main section + section { padding-top: clamp(48px, 7vw, 88px); }
+  .acc-main section:last-of-type { padding-bottom: 0; }
+  .acc-eyebrow { color: var(--mint); }
+  .acc-main h1 {
+    margin: 16px 0 0;
+    font-size: clamp(38px, 6vw, 72px);
+    text-wrap: balance;
+  }
+  .acc-main h2 {
+    margin: 12px 0 0;
+    font-size: clamp(28px, 4vw, 44px);
+  }
+  .acc-lede {
+    margin: 24px 0 0;
+    max-width: 680px;
+    font-size: clamp(17px, 1.6vw, 20px);
+    line-height: 1.55;
+    color: var(--ink-700);
+  }
+  .acc-body {
+    margin: 18px 0 0;
+    max-width: 720px;
+    font-size: 16px;
+    line-height: 1.6;
+    color: var(--ink-700);
+  }
+  .acc-card { margin-top: 28px; }
+  .acc-card h3 {
+    margin: 0 0 8px;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 24px;
+    letter-spacing: -0.015em;
+  }
+  .acc-card p { margin: 0; color: var(--ink-700); line-height: 1.6; max-width: 640px; }
+  .acc-card p + p { margin-top: 10px; }
+  .acc-status { margin-top: 28px; color: var(--ink-500); font-size: 15px; }
+
+  .acc-table-wrap {
+    margin-top: 28px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: 14px;
+  }
+  .acc-table {
+    width: 100%;
+    min-width: 300px;
+    border-collapse: collapse;
+    font-size: 15px;
+  }
+  .acc-table caption {
+    text-align: left;
+    padding: 16px 18px 4px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-500);
+  }
+  .acc-table th, .acc-table td {
+    text-align: left;
+    padding: 12px 18px;
+    border-top: 1px solid var(--glass-border);
+    vertical-align: top;
+  }
+  .acc-table thead th {
+    border-top: none;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-500);
+  }
+  .acc-table tbody th { font-weight: 500; color: var(--ink-900); }
+  .acc-table .acc-measure { display: block; }
+  .acc-table .acc-count { display: block; margin-top: 2px; font-size: 13px; font-weight: 400; color: var(--ink-500); }
+  .acc-table td { color: var(--ink-700); white-space: nowrap; }
+  @media (max-width: 520px) {
+    .acc-table { font-size: 14px; }
+    .acc-table th, .acc-table td { padding: 10px 10px; }
+    .acc-table caption { padding-inline: 10px; }
+  }
+  .acc-table td.acc-num {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 18px;
+    color: var(--paper-50);
+  }
+  .acc-facts {
+    margin: 18px 0 0;
+    padding: 0 0 0 20px;
+    color: var(--ink-500);
+    font-size: 14px;
+    line-height: 1.6;
+  }
+  .acc-facts li + li { margin-top: 6px; }
+
+  .acc-steps {
+    list-style: none;
+    margin: 28px 0 0;
+    padding: 0;
+    display: grid;
+    gap: 16px;
+    counter-reset: step;
+  }
+  .acc-steps li {
+    counter-increment: step;
+    display: grid;
+    grid-template-columns: 44px 1fr;
+    gap: 16px;
+    align-items: start;
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: 14px;
+    padding: 18px;
+  }
+  .acc-steps li::before {
+    content: counter(step, decimal-leading-zero);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    background: var(--sage-light);
+    border: 1px solid var(--glass-border);
+    color: var(--mint);
+    font-family: var(--font-mono);
+    font-weight: 700;
+  }
+  .acc-steps b { display: block; color: var(--paper-50); margin-bottom: 4px; font-size: 17px; }
+  .acc-steps span { color: var(--ink-700); line-height: 1.6; }
+
+  .acc-defs { margin: 28px 0 0; display: grid; gap: 14px; }
+  .acc-defs div {
+    border-left: 2px solid var(--glass-border);
+    padding: 2px 0 2px 16px;
+  }
+  .acc-defs dt { font-weight: 700; color: var(--paper-50); }
+  .acc-defs dd { margin: 4px 0 0; color: var(--ink-700); line-height: 1.6; max-width: 720px; }
+
+  .acc-limits { margin: 24px 0 0; padding-left: 20px; color: var(--ink-700); line-height: 1.6; max-width: 720px; }
+  .acc-limits li + li { margin-top: 10px; }
+
+  .acc-main a:not(.btn) {
+    color: var(--mint);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+  .nav-cta { min-height: 44px; }
+</style>
+</head>
+
+<body>
+
+<header class="nav">
+  <div class="nav-inner">
+    <a href="/" class="nav-brand" aria-label="ParkProof home">
+      <img src="../assets/parkproof-icon.svg" alt="" width="40" height="40" style="border-radius:10px">
+      <span class="nav-brand-text">ParkProof</span>
+    </a>
+    <a href="/app/" class="nav-cta">Open the app</a>
+  </div>
+</header>
+
+<main class="acc-main container-narrow">
+
+  <section aria-labelledby="acc-title">
+    <span class="allcaps acc-eyebrow">Accuracy</span>
+    <h1 id="acc-title" class="display">How we test ParkProof's <span class="accent">sign reading.</span></h1>
+    <p class="acc-lede">
+      ParkProof uses an AI model to read parking signs. To find out how often it gets them right, we run it over photos of real signs that a person has already read and labelled, and count the mistakes. This page explains the method, what each number means, and what the test can't tell you.
+    </p>
+  </section>
+
+  <section id="results" aria-labelledby="results-title">
+    <span class="allcaps acc-eyebrow">Results</span>
+    <h2 id="results-title" class="heading">The numbers.</h2>
+    <!-- Shown without JavaScript too. When results.json is first published, add
+         hidden to this card (scripts/eval-lib/accuracy-page.test.mjs checks). -->
+    <div id="accuracy-empty" class="card acc-card">
+      <h3>No numbers yet.</h3>
+      <p>The first numbers will appear here once a held-out set of signs has been labelled and tested.</p>
+      <p>Until then there's nothing honest to report, so we don't show a number.</p>
+    </div>
+    <div id="accuracy-results" aria-live="polite" hidden></div>
+    <noscript><p class="acc-status">The results table needs JavaScript.</p></noscript>
+  </section>
+
+  <section id="method" aria-labelledby="method-title">
+    <span class="allcaps acc-eyebrow">The method</span>
+    <h2 id="method-title" class="heading">Labelled photos, held out.</h2>
+    <ol class="acc-steps">
+      <li><div><b>Photograph real signs.</b><span>We collect photos of real parking signs, including stacked poles, arrows, clearways, permit zones and paid parking. Number plates and faces are kept out of frame.</span></div></li>
+      <li><div><b>Label each photo by hand.</b><span>A person reads the sign and writes down the right answer for a fixed date and time: whether you can park, when you'd need to leave, how many minutes that is, and what the sign says about payment and permits. When the answer depends on which side of the pole you're on, the label says which side.</span></div></li>
+      <li><div><b>Hold a set back.</b><span>Each photo goes into one of two sets when it's added, before it's ever run. The development set is used while we improve the instructions the model follows. The test set never is. Only test set numbers appear on this page, so the model hasn't been tuned to the photos it's scored on. Which test photos it got wrong isn't published.</span></div></li>
+      <li><div><b>Run the app's own code.</b><span>Each photo goes through the same sign-reading code the app uses, with the clock set to the labelled date and time, so every run asks the same question.</span></div></li>
+      <li><div><b>Count every read.</b><span>The model can answer differently from one run to the next, so each photo can be read several times. Errors count as wrong answers.</span></div></li>
+    </ol>
+    <p class="acc-body">The labelling rules and the test code are public: <a href="https://github.com/melroyds/parkproof/blob/main/eval/README.md">read the labelling rules</a>.</p>
+  </section>
+
+  <section id="definitions" aria-labelledby="definitions-title">
+    <span class="allcaps acc-eyebrow">Definitions</span>
+    <h2 id="definitions-title" class="heading">What each number means.</h2>
+    <dl class="acc-defs">
+      <div>
+        <dt>You can park</dt>
+        <dd>In this test, "you can park" means a driver who meets the sign's conditions can park there, for example by paying, or by holding the right permit for a permit zone or an accessible parking bay. A read that misses a payment or permit condition is counted under sign details. A leave-by time that's too late is counted under leave-by time.</dd>
+      </div>
+      <div>
+        <dt>Answer right</dt>
+        <dd>The can-park answer matches the label, and so does the leave-by time, to within a minute. When the label says there's no time to leave by, the answer must not give one.</dd>
+      </div>
+      <div>
+        <dt>Said you can park when you can't</dt>
+        <dd>Of the signs where you can't park at the labelled time, the share of reads that said you can. It's one of the mistakes that can cost you a fine, so it's reported on its own. Missing a payment or permit condition and giving a leave-by time that's too late can cost you a fine too. They have their own rows.</dd>
+      </div>
+      <div>
+        <dt>Said you can't park when you can</dt>
+        <dd>Of the signs where you can park, the share of reads that said you can't. This mistake can send you looking for another spot when you didn't need to.</dd>
+      </div>
+      <div>
+        <dt>Leave-by time right, minutes left right</dt>
+        <dd>Among reads that rightly said you can park, the share whose leave-by time, or number of minutes you can stay, is within a minute of the label. This includes signs where the label says there's no time to leave by. There the read must not give one.</dd>
+      </div>
+      <div>
+        <dt>Leave-by time later than the label</dt>
+        <dd>Among the same reads, the share whose leave-by time was later than the label's, or missing when the label has one. Staying past the real leave-by time can cost you a fine.</dd>
+      </div>
+      <div>
+        <dt>Sign details</dt>
+        <dd>Whether the read picked up what the sign says about paying, permit zones and areas, accessible parking bays and area signs. Only details the label states are counted.</dd>
+      </div>
+      <div>
+        <dt>Answer right by confidence</dt>
+        <dd>The model says how confident it is in each read. These rows show whether its high-confidence answers really are right more often.</dd>
+      </div>
+      <div>
+        <dt>95% range</dt>
+        <dd>A Wilson score interval. With a few dozen signs, the true rate is likely to be somewhere in this range, but it could be outside it. Ranges are counted per sign, not per read, because repeat reads of the same photo aren't independent.</dd>
+      </div>
+      <div>
+        <dt>Time per read and cost</dt>
+        <dd>p50 is the time half of all reads finish within, and p90 the time 90% finish within, measured on the test machine rather than your phone. Cost is the model's list price for the tokens each read used.</dd>
+      </div>
+    </dl>
+  </section>
+
+  <section id="limits" aria-labelledby="limits-title">
+    <span class="allcaps acc-eyebrow">Limits</span>
+    <h2 id="limits-title" class="heading">What the test can't tell you.</h2>
+    <ul class="acc-limits">
+      <li>A few dozen photos can't cover every sign in Australia. The ranges give a rough idea of how much the numbers could change with other photos.</li>
+      <li>The test set may not include signs like yours, or signs from your city or state. When results are shown, the tags listed with them say what the test set covers.</li>
+      <li>Your photo may be darker, blurrier, more angled or more blocked than the photos in the test set, and harder to read.</li>
+      <li>A label is a person's reading of the sign. Labels can be wrong, and a council may read a sign differently.</li>
+      <li>The numbers apply to one model, set of instructions and app version, named with the results. A change to any of them needs a fresh run.</li>
+      <li>Numbers about many signs don't tell you whether one particular read is right. Always check the actual sign before you leave the car.</li>
+    </ul>
+  </section>
+
+</main>
+
+<footer class="footer">
+  <div class="footer-inner">
+    <div class="footer-brand">
+      <img src="../assets/parkproof-icon.svg" alt="" width="40" height="40" style="border-radius:10px">
+      <div>
+        <div style="font-family:var(--font-display);font-weight:800;font-size:20px;letter-spacing:-0.015em">ParkProof</div>
+        <div class="footer-tail">Park with proof.</div>
+      </div>
+    </div>
+    <div class="footer-meta">
+      <a href="/">Home</a> · <a href="/app/">Open the app</a> · <a href="/app/?privacy=open">Privacy</a> · <a href="/app/?feedback=open">Send feedback</a><br>
+      <span class="footer-tail">ParkProof is an independent tool, not affiliated with, endorsed by, or operated by any council, government body, or parking authority.</span>
+    </div>
+  </div>
+</footer>
+
+<script type="module">
+  import { init } from './accuracy.js'
+  init()
+</script>
+
+</body>
+</html>

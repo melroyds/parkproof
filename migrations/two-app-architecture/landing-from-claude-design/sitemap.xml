@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
   ParkProof sitemap. Hand-authored rather than generated because the
-  surface is small (landing + /app/ + 9 localized /verify pages) and
+  surface is small (landing + /app/ + /accuracy/ + 9 localized /verify pages) and
   doesn't change often. Edit when adding a top-level page.
 
   lastmod dates reflect the last meaningful content change for that page,
@@ -27,6 +27,14 @@
     <lastmod>2026-05-24</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
+  </url>
+
+  <!-- Accuracy: how the sign reading is tested, with results once a held-out set is labelled. -->
+  <url>
+    <loc>https://www.parkproof.com.au/accuracy/</loc>
+    <lastmod>2026-11-08</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
   </url>
 
   <!-- Verify page (English) — public openssl walkthrough for evidence PDFs. -->

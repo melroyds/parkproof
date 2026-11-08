@@ -171,6 +171,27 @@ export function formatInZone(
 }
 
 /**
+ * The hour of the day (0 to 23) at `value` in the record's zone, not the
+ * phone's: a scan in Perth reads as Perth time whatever zone the phone is
+ * set to. Falls back to the default zone for an unknown zone name, and
+ * returns null for an invalid time.
+ */
+export function hourInZone(value: string | number | Date, timeZone: string): number | null {
+  const date = value instanceof Date ? value : new Date(value)
+  if (!Number.isFinite(date.getTime())) return null
+  let hour: string | undefined
+  try {
+    hour = new Intl.DateTimeFormat('en-AU', { timeZone, hour: 'numeric', hourCycle: 'h23' })
+      .formatToParts(date)
+      .find((p) => p.type === 'hour')?.value
+  } catch {
+    return timeZone === DEFAULT_TZ ? null : hourInZone(date, DEFAULT_TZ)
+  }
+  const n = Number(hour)
+  return Number.isInteger(n) && n >= 0 && n <= 23 ? n : null
+}
+
+/**
  * Format a list of reminder fire-times for a single day into one prose line.
  * Most reminder bundles all fire in the 30-minute window before expiry, so
  * the common case is "all on the same day" — surface the day suffix once at
