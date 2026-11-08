@@ -1157,5 +1157,8 @@ describe.skipIf(!KMS_FIXTURE)('a real KMS bundle', () => {
     const r = await verifyRecord(record, { arrivalRejection: null })
     expect(r.counts.invalid).toBe(0)
     expect(r.links[0].status).toBe('valid')
+    // A whole record fixture also carries its addenda: every link must check out.
+    expect(r.links.map((l) => l.status)).toEqual(r.links.map(() => 'valid'))
+    expect(r.links).toHaveLength(1 + (record.addenda?.length ?? 0))
   })
 })
