@@ -541,7 +541,7 @@
     "signPhotoAlt": "Foto rambu parkir yang kamu pindai",
     "carPhotoAlt": "Foto mobilmu di tempat kamu parkir",
     "ended": "Selesai",
-    "noteEmpty": "Belum ada catatan. Ketuk <add>Tambah catatan</add> untuk menuliskan alasan kamu ada di sana, dengan kata-katamu sendiri. Catatan tidak ditandatangani."
+    "noteEmpty": "Belum ada keterangan. Ketuk <add>Tambah catatan</add> untuk menuliskan alasan kamu ada di sana, dengan kata-katamu sendiri. Keterangan seperti ini tidak ditandatangani."
   },
   "appeal": {
     "captureHeader": "Buat draf surat banding",

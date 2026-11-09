@@ -17,7 +17,13 @@
 //   the role, each bucket's object versions before the bucket, the Cognito
 //   domain before the pool, the three tables, the log groups, and the KMS key
 //   scheduled for deletion after 7 days (the minimum) before its alias goes.
-// - --confirm against an empty account deletes nothing and finishes.
+// - --confirm against an empty account deletes nothing and finishes: each
+//   service's own not-found error reads as "nothing to delete".
+// - A lookup that fails any other way (here, a missing permission) stops the
+//   run at that lookup, says it isn't complete and never says "Teardown
+//   complete". A failed list of CloudFront distributions never lets the app
+//   bucket be deleted, and neither does a distribution that still uses the
+//   bucket as its origin, whatever its comment.
 //
 // Needs bash (Git Bash on Windows). Skipped with a warning without it.
 import { spawnSync } from 'node:child_process'
@@ -59,28 +65,47 @@ function script(path, body) {
 }
 
 // The fake aws: logs each call (arguments split by 0x1f, calls by 0x1e) and
-// answers what teardown.sh reads. With FAKE_EMPTY=1 nothing exists. Anything
-// it doesn't know is an error, so a new AWS call in teardown.sh shows up here.
+// answers what teardown.sh reads. With FAKE_EMPTY=1 nothing exists, and each
+// lookup fails the way AWS CLI v2 does for a missing thing: exit 254 and
+// "An error occurred (<code>)" on stderr, with the service's own not-found
+// code. FAKE_FAIL="<service> <command>" makes that call fail the way a
+// missing permission does. FAKE_STRAY_ORIGIN=1 adds a distribution that its
+// comment doesn't find but that still uses the app bucket as its origin.
+// Anything it doesn't know is an error, so a new AWS call in teardown.sh
+// shows up here.
 const FAKE_AWS = String.raw`#!/usr/bin/env bash
 { printf '%s\x1f' "$@"; printf '\x1e'; } >> "$FAKE_LOG/aws.log"
 args="$*"
+op="$1 $2"
 arg() { local want="$1"; shift; while [[ $# -gt 0 ]]; do [[ "$1" == "$want" ]] && { echo "$2"; return; }; shift; done; }
-missing() { echo "fake aws: not found" >&2; exit 254; }
+fail_with() { printf '\nAn error occurred (%s) when calling the %s operation: %s\n' "$1" "$op" "$2" >&2; exit 254; }
+missing() { fail_with "$1" "not found"; }
 empty="${'$'}{FAKE_EMPTY-}"
-case "$1 $2" in
+if [[ "$op" == "${'$'}{FAKE_FAIL-}" ]]; then fail_with AccessDenied "not authorized to perform this action"; fi
+case "$op" in
   "sts get-caller-identity") echo "${'$'}{FAKE_ACCOUNT-123456789012}" ;;
   "scheduler list-schedules") [[ -n "$empty" ]] || printf 'parkproof-push-rec1-0\tdefault\nparkproof-push-r-rule1-1\tdefault\n' ;;
-  "scheduler get-schedule") [[ -z "$empty" ]] && echo "arn:aws:iam::123456789012:role/hand-made-warmer-role" || missing ;;
+  "scheduler get-schedule") [[ -z "$empty" ]] && echo "arn:aws:iam::123456789012:role/hand-made-warmer-role" || missing ResourceNotFoundException ;;
   "scheduler delete-schedule") ;;
-  "cloudfront list-distributions") [[ -n "$empty" ]] && echo None || echo E123 ;;
+  "cloudfront list-distributions")
+    if [[ "$args" == *Origins* ]]; then
+      # The check before the app bucket goes: what still uses it as an origin.
+      if [[ -n "${'$'}{FAKE_STRAY_ORIGIN-}" ]]; then echo E999
+      elif [[ -n "$empty" ]]; then echo None
+      elif [[ ! -f "$FAKE_LOG/deleted-E123" ]]; then echo E123
+      fi
+    else
+      [[ -n "$empty" ]] && echo None || echo E123
+    fi ;;
   "cloudfront get-distribution-config") if [[ "$args" == *ETag* ]]; then echo ETAG1; else echo '{"Enabled": true, "Comment": "parkproof-cdn"}'; fi ;;
-  "cloudfront update-distribution"|"cloudfront wait"|"cloudfront delete-distribution") ;;
-  "cloudfront describe-function") [[ -z "$empty" ]] && echo FETAG || missing ;;
+  "cloudfront update-distribution"|"cloudfront wait") ;;
+  "cloudfront delete-distribution") touch "$FAKE_LOG/deleted-$(arg --id "$@")" ;;
+  "cloudfront describe-function") [[ -z "$empty" ]] && echo FETAG || missing NoSuchFunctionExists ;;
   "cloudfront delete-function") ;;
   "cloudfront list-origin-access-controls") [[ -n "$empty" ]] && echo None || echo OAC1 ;;
   "cloudfront get-origin-access-control") echo OETAG ;;
   "cloudfront delete-origin-access-control") ;;
-  "s3api head-bucket") [[ -z "$empty" ]] || missing ;;
+  "s3api head-bucket") [[ -z "$empty" ]] || missing 404 ;;
   "s3api list-object-versions")
     bucket=$(arg --bucket "$@")
     if [[ -f "$FAKE_LOG/emptied-$bucket" ]]; then echo '{}'; else
@@ -94,34 +119,34 @@ case "$1 $2" in
   "s3api delete-bucket") ;;
   "apigatewayv2 get-apis") [[ -n "$empty" ]] && echo None || echo api123 ;;
   "apigatewayv2 delete-api") ;;
-  "lambda get-function") [[ -z "$empty" ]] || missing ;;
+  "lambda get-function") [[ -z "$empty" ]] || missing ResourceNotFoundException ;;
   "lambda delete-function") ;;
   "logs describe-log-groups") [[ -n "$empty" ]] || printf '/aws/lambda/parkproof-sign-translator\n' ;;
   "logs delete-log-group") ;;
   "cloudwatch describe-alarms") [[ -n "$empty" ]] && echo None || echo parkproof-anthropic-usage ;;
   "cloudwatch delete-alarms") ;;
-  "cloudwatch get-dashboard") [[ -z "$empty" ]] || missing ;;
+  "cloudwatch get-dashboard") [[ -z "$empty" ]] || missing ResourceNotFound ;;
   "cloudwatch delete-dashboards") ;;
-  "sns get-topic-attributes") [[ -z "$empty" ]] || missing ;;
+  "sns get-topic-attributes") [[ -z "$empty" ]] || missing NotFound ;;
   "sns delete-topic") ;;
   "cognito-idp list-user-pools") [[ -n "$empty" ]] && echo None || echo ap-southeast-2_pool1 ;;
   "cognito-idp describe-user-pool") echo parkproof-123456789012 ;;
   "cognito-idp delete-user-pool-domain"|"cognito-idp delete-user-pool") ;;
-  "dynamodb describe-table") [[ -z "$empty" ]] || missing ;;
+  "dynamodb describe-table") [[ -z "$empty" ]] || missing ResourceNotFoundException ;;
   "dynamodb delete-table") ;;
   "kms describe-key")
-    [[ -z "$empty" ]] || missing
+    [[ -z "$empty" ]] || missing NotFoundException
     if [[ "$args" == *KeyState* ]]; then echo Enabled; else echo key-1234; fi ;;
   "kms schedule-key-deletion") echo 2026-11-16T10:00:00+11:00 ;;
   "kms delete-alias") ;;
-  "iam get-role") [[ -z "$empty" ]] || missing ;;
+  "iam get-role") [[ -z "$empty" ]] || missing NoSuchEntity ;;
   "iam list-role-policies")
     case "$(arg --role-name "$@")" in
       parkproof-lambda-role) printf 'parkproof-data-access\tparkproof-kms-sign\tparkproof-jobs-delete\thand-made-jobs\n' ;;
       parkproof-push-scheduler-role) echo parkproof-push-scheduler-invoke ;;
     esac ;;
   "iam list-attached-role-policies")
-    [[ "$(arg --role-name "$@")" == parkproof-lambda-role ]] && echo arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole ;;
+    if [[ "$(arg --role-name "$@")" == parkproof-lambda-role ]]; then echo arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole; fi ;;
   "iam delete-role-policy"|"iam detach-role-policy"|"iam delete-role") ;;
   *) echo "fake aws: unexpected call: $args" >&2; exit 64 ;;
 esac
@@ -240,6 +265,18 @@ describe('teardown.sh as committed', () => {
     expect(created.filter((n) => !named.includes(n))).toEqual([])
   })
 
+  it('never reads a failed AWS lookup as "not there"', () => {
+    const code = TEARDOWN.split('\n').filter((l) => !/^\s*#/.test(l) && !l.includes('command -v'))
+    // No AWS error is thrown away; the one `|| true` is aws_text's, after
+    // lookup has already stopped the run on any error but not-found.
+    expect(code.filter((l) => /2>\s*\/dev\/null|>\s*\/dev\/null 2>&1|\|\| true/.test(l))).toEqual(['  lookup "$@" || true'])
+    expect(TEARDOWN).not.toContain('read_text')
+    // Every value lookup in $(…) stops the run when its subshell stopped.
+    const valueLookups = TEARDOWN.match(/=\$\(aws_text /g) ?? []
+    expect(valueLookups.length).toBeGreaterThan(10)
+    expect(TEARDOWN.match(/\) \|\| exit 1$/gm)?.length).toBe(valueLookups.length)
+  })
+
   it('schedules the KMS key for deletion after the minimum 7 days, and says so', () => {
     expect(TEARDOWN).toMatch(/^KMS_WAIT_DAYS=7$/m)
     expect(TEARDOWN).toContain('--pending-window-in-days "$KMS_WAIT_DAYS"')
@@ -326,6 +363,11 @@ describe.skipIf(!BASH)('teardown.sh, run against a fake AWS', () => {
     expect(calls.some(op('cloudfront', 'delete-origin-access-control'))).toBe(true)
     expect(existsSync(join(world.repo, 'dist-current.tmp.json'))).toBe(false)
 
+    // Before the app bucket goes, after the distribution: nothing still uses it.
+    const originCheck = at((c) => op('cloudfront', 'list-distributions')(c) && argOf(c, '--query').includes('Origins'))
+    expect(originCheck).toBeGreaterThan(at(op('cloudfront', 'delete-distribution')))
+    expect(originCheck).toBeLessThan(at(op('s3api', 'head-bucket')))
+
     // Each bucket emptied of every version and delete marker, then deleted.
     const buckets = ['parkproof-app-123456789012', 'parkproof-evidence-123456789012', 'parkproof-user-feedback-123456789012']
     for (const bucket of buckets) {
@@ -408,4 +450,54 @@ describe.skipIf(!BASH)('teardown.sh, run against a fake AWS', () => {
     expect(awsCalls(world).filter(isDelete)).toEqual([])
     expect(res.stdout.match(/nothing to delete/g)?.length).toBeGreaterThan(15)
   })
+
+  // The worst case: a failed CloudFront list read as "no distribution" would
+  // skip step 2 and delete the app bucket while the distribution still used
+  // it, leaving the bucket's name free for anyone to create and serve from.
+  it('keeps the app bucket when the CloudFront list fails', { timeout: TIMEOUT }, () => {
+    const world = makeWorld()
+    const res = run(world, ['--confirm'], { FAKE_FAIL: 'cloudfront list-distributions' })
+    expect(res.status).toBe(1)
+    expect(res.out).toContain('An error occurred (AccessDenied)')
+    expect(res.out).toContain("Couldn't look up the CloudFront distributions")
+    expect(res.out).toContain('Teardown stopped before the end. It is NOT complete.')
+    expect(res.stdout).not.toContain('Teardown complete')
+    expect(res.stdout).not.toContain('CloudFront: nothing to delete')
+    const calls = awsCalls(world)
+    expect(calls.filter((c) => c[0] === 's3api')).toEqual([])
+    expect(calls.filter((c) => c[0] === 'cloudfront').map((c) => c[1])).toEqual(['list-distributions'])
+  })
+
+  it('keeps the app bucket while any distribution still uses it as an origin', { timeout: TIMEOUT }, () => {
+    const world = makeWorld()
+    const res = run(world, ['--confirm'], { FAKE_EMPTY: '1', FAKE_STRAY_ORIGIN: '1' })
+    expect(res.status).toBe(1)
+    expect(res.out).toContain('CloudFront distribution E999 still uses parkproof-app-123456789012 as its origin')
+    expect(res.stdout).not.toContain('Teardown complete')
+    expect(awsCalls(world).filter((c) => c[0] === 's3api')).toEqual([])
+  })
+
+  // One of each kind: a list, a get that returns a value, and checks that
+  // only ask whether the thing is there (a 403 from head-bucket included).
+  it.each([
+    ['scheduler list-schedules', 'the push schedules'],
+    ['scheduler get-schedule', 'the parkproof-warmer schedule'],
+    ['s3api head-bucket', 'the app bucket parkproof-app-123456789012'],
+    ['lambda get-function', 'the Lambda parkproof-sign-translator'],
+    ['dynamodb describe-table', 'the table parkproof-sessions'],
+    ['kms describe-key', 'the KMS key alias/parkproof-evidence-signing'],
+    ['iam list-role-policies', 'the inline policies on parkproof-push-scheduler-role'],
+  ])('a failed %s stops the run right there', (failing, what) => {
+    const world = makeWorld()
+    const res = run(world, ['--confirm'], { FAKE_FAIL: failing })
+    expect(res.status, res.out).toBe(1)
+    expect(res.out).toContain('An error occurred (AccessDenied)')
+    expect(res.out).toContain(`Couldn't look up ${what}`)
+    expect(res.out).toContain('It is NOT complete.')
+    expect(res.stdout).not.toContain('Teardown complete')
+    // The failed lookup is the last AWS call: nothing after it ran.
+    const calls = awsCalls(world)
+    expect(`${calls.at(-1)[0]} ${calls.at(-1)[1]}`).toBe(failing)
+    expect(calls.findIndex((c) => `${c[0]} ${c[1]}` === failing)).toBe(calls.length - 1)
+  }, TIMEOUT)
 })

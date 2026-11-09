@@ -93,7 +93,11 @@ export const ADDITIONS = {
     en: 'No note added. Tap <add>Add note</add> to record why you were here, in your own words. Notes aren\'t signed.',
     'zh-CN': '尚未添加备注。点击<add>添加备注</add>，用你自己的话记下你为什么停在这里。备注不会被签名。',
     vi: 'Chưa có ghi chú. Nhấn <add>Thêm ghi chú</add> để ghi lại lý do bạn ở đây, theo lời của chính bạn. Ghi chú không được ký.',
-    id: 'Belum ada catatan. Ketuk <add>Tambah catatan</add> untuk menuliskan alasan kamu ada di sana, dengan kata-katamu sendiri. Catatan tidak ditandatangani.',
+    // id: "catatan" is also the record (history.emptyTitle "Belum ada
+    // catatan", common.signedSeal "Catatan bertanda tangan"), so the note is
+    // "keterangan" here, as in about.evidence.items.2. Only the button keeps
+    // session.addNote's "Tambah catatan".
+    id: 'Belum ada keterangan. Ketuk <add>Tambah catatan</add> untuk menuliskan alasan kamu ada di sana, dengan kata-katamu sendiri. Keterangan seperti ini tidak ditandatangani.',
     ko: '아직 메모가 없습니다. 여기 계셨던 이유를 직접 적어 두시려면 <add>메모 추가</add>를 누르세요. 메모는 서명되지 않습니다.',
     it: 'Nessuna nota aggiunta. Tocca <add>Aggiungi nota</add> per annotare con parole tue perché eri qui. Le note non sono firmate.',
     el: 'Δεν προστέθηκε σημείωση. Πάτα <add>Πρόσθεσε σημείωση</add> για να καταγράψεις με δικά σου λόγια γιατί ήσουν εδώ. Οι σημειώσεις δεν υπογράφονται.',

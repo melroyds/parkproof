@@ -14,7 +14,11 @@
 # recovered. Export anything you want to keep first.
 #
 # What it removes, in this order. Each step skips what isn't there, so a run
-# that stops part way can be run again.
+# that stops part way can be run again. "Isn't there" means AWS answered the
+# lookup with an empty list or its not-found error. A lookup that fails any
+# other way (a missing permission, throttling, no network, an expired
+# sign-in) stops the run with AWS's error, and it never ends "Teardown
+# complete": a failed lookup is never taken for "nothing to delete".
 #   1. Every EventBridge schedule named parkproof-push-* (a record's one-shot
 #      reminders and the weekly ones, which the Lambda books under
 #      setup-push-scheduler.sh's grant), and the hand-made parkproof-warmer
@@ -22,7 +26,11 @@
 #   2. CloudFront (deploy.sh). It must redeploy as "disabled" before it can
 #      be deleted, which takes 5 to 15 minutes; the script waits. Then the
 #      parkproof-uri-rewrite function (made by hand) and the OAC (harden.sh).
-#   3. The app bucket (deploy.sh), emptied first.
+#   3. The app bucket (deploy.sh), emptied first, and only when no CloudFront
+#      distribution in the account still uses it as an origin, whatever its
+#      comment. A deleted bucket's name is free for anyone to create, and a
+#      distribution still pointing at it would serve their files on the
+#      site's domain.
 #   4. The API (deploy.sh), with its routes, its stage and the parkproof-jwt
 #      authorizer (setup-auth.sh).
 #   5. The Lambda (deploy.sh), then every /aws/lambda/parkproof-* log group
@@ -166,9 +174,59 @@ echo "▶ DELETING IN 5 SECONDS. Ctrl+C to abort"
 sleep 5
 echo ""
 
-# Text output of a lookup, without CR, and empty when it fails.
-read_text() {
-  "$@" 2>/dev/null | tr -d '\r' || true
+# Where a lookup's error goes, to be read back. Only bash reads and writes it,
+# so a /tmp path is fine here.
+ERR_FILE=$(mktemp)
+
+# On the way out: no temp files left behind, and a run that stopped part way
+# says so.
+finish() {
+  local status=$?
+  rm -f "$ERR_FILE" teardown-batch.tmp.json dist-current.tmp.json dist-disabled.tmp.json
+  if [[ $status -ne 0 ]]; then
+    echo "" >&2
+    echo "✗ Teardown stopped before the end. It is NOT complete." >&2
+    echo "  What it deleted above stays deleted, and nothing after the failed step was touched." >&2
+    echo "  Fix the cause and run it again: each step skips what's already gone." >&2
+  fi
+}
+trap finish EXIT
+
+# Runs an AWS lookup, the command after the first two arguments, with its
+# output on stdout and CRs stripped. Returns 0 when it worked, and 1 when AWS
+# answered that the thing isn't there: an error code matching $2, a regex.
+# $2 is empty for a list, where nothing there is an empty answer, not an
+# error. Any other failure (a missing permission, throttling, no network, an
+# expired sign-in) stops the run with AWS's error. Taking a failed lookup for
+# "nothing to delete" could, for one, delete the app bucket while CloudFront
+# still serves from it.
+lookup() {
+  local what="$1" absent="$2" err re
+  shift 2
+  if "$@" 2>"$ERR_FILE" | tr -d '\r'; then
+    return 0
+  fi
+  err=$(tr -d '\r' < "$ERR_FILE")
+  re="An error occurred \\((${absent})\\)"
+  if [[ -n "$absent" && "$err" =~ $re ]]; then
+    return 1
+  fi
+  if [[ -n "$err" ]]; then
+    printf '%s\n' "$err" >&2
+  fi
+  echo "✗ Couldn't look up $what (AWS's error is above)." >&2
+  exit 1
+}
+
+# Whether the thing is there. Usage: if aws_exists "<what>" "<not-found codes>" aws ...
+aws_exists() {
+  lookup "$@" >/dev/null
+}
+
+# The lookup's text output, or nothing when the thing isn't there. Called in
+# $(…), so the caller adds `|| exit 1`: a failed lookup exits the subshell.
+aws_text() {
+  lookup "$@" || true
 }
 
 # Empties a bucket, every object version and delete marker included (the
@@ -176,7 +234,9 @@ read_text() {
 # 1000 at a time, then deletes the bucket.
 delete_bucket() {
   local bucket="$1" label="$2"
-  if ! aws s3api head-bucket --bucket "$bucket" --region "$REGION" >/dev/null 2>&1; then
+  # A missing bucket is a bare 404. A 403 (a bucket you can't read, or one
+  # another account owns) stops the run.
+  if ! aws_exists "the $label bucket $bucket" '404|NoSuchBucket' aws s3api head-bucket --bucket "$bucket" --region "$REGION"; then
     echo "▶ S3 $label bucket: nothing to delete"
     return 0
   fi
@@ -211,18 +271,22 @@ delete_bucket() {
 
 # Deletes a role's inline policies, detaches its managed ones, then deletes it.
 delete_role() {
-  local role="$1" name arn
-  if ! aws iam get-role --role-name "$role" >/dev/null 2>&1; then
+  local role="$1" name arn inline attached
+  if ! aws_exists "the role $role" NoSuchEntity aws iam get-role --role-name "$role"; then
     echo "▶ IAM role: $role, nothing to delete"
     return 0
   fi
   echo "▶ IAM role: deleting $role"
-  for name in $(aws iam list-role-policies --role-name "$role" --query 'PolicyNames[]' --output text | tr -d '\r'); do
+  inline=$(aws_text "the inline policies on $role" "" \
+    aws iam list-role-policies --role-name "$role" --query 'PolicyNames[]' --output text) || exit 1
+  for name in $inline; do
     [[ "$name" == "None" ]] && continue
     aws iam delete-role-policy --role-name "$role" --policy-name "$name"
     echo "  • inline policy $name deleted"
   done
-  for arn in $(aws iam list-attached-role-policies --role-name "$role" --query 'AttachedPolicies[].PolicyArn' --output text | tr -d '\r'); do
+  attached=$(aws_text "the managed policies on $role" "" \
+    aws iam list-attached-role-policies --role-name "$role" --query 'AttachedPolicies[].PolicyArn' --output text) || exit 1
+  for arn in $attached; do
     [[ "$arn" == "None" ]] && continue
     aws iam detach-role-policy --role-name "$role" --policy-arn "$arn"
     echo "  • managed policy ${arn##*/} detached"
@@ -232,8 +296,8 @@ delete_role() {
 }
 
 # ───── 1. Push schedules, and the warmer ───────────────────────────────────
-SCHEDULES=$(read_text aws scheduler list-schedules --name-prefix "$PUSH_SCHEDULE_PREFIX" --region "$REGION" \
-  --query 'Schedules[].[Name,GroupName]' --output text)
+SCHEDULES=$(aws_text "the push schedules" "" aws scheduler list-schedules --name-prefix "$PUSH_SCHEDULE_PREFIX" \
+  --region "$REGION" --query 'Schedules[].[Name,GroupName]' --output text) || exit 1
 if [[ -n "$SCHEDULES" && "$SCHEDULES" != "None" ]]; then
   echo "▶ Push schedules: deleting every ${PUSH_SCHEDULE_PREFIX}* schedule"
   while IFS=$'\t' read -r name group; do
@@ -244,8 +308,8 @@ if [[ -n "$SCHEDULES" && "$SCHEDULES" != "None" ]]; then
 else
   echo "▶ Push schedules: nothing to delete"
 fi
-WARMER_ROLE=$(read_text aws scheduler get-schedule --name "$WARMER_SCHEDULE" --region "$REGION" \
-  --query 'Target.RoleArn' --output text)
+WARMER_ROLE=$(aws_text "the $WARMER_SCHEDULE schedule" ResourceNotFoundException \
+  aws scheduler get-schedule --name "$WARMER_SCHEDULE" --region "$REGION" --query 'Target.RoleArn' --output text) || exit 1
 if [[ -n "$WARMER_ROLE" && "$WARMER_ROLE" != "None" ]]; then
   echo "▶ Warmer schedule: deleting $WARMER_SCHEDULE"
   aws scheduler delete-schedule --name "$WARMER_SCHEDULE" --region "$REGION"
@@ -256,9 +320,9 @@ else
 fi
 
 # ───── 2. CloudFront: disable, wait, then delete; its function; the OAC ────
-DIST_ID=$(read_text aws cloudfront list-distributions \
+DIST_ID=$(aws_text "the CloudFront distributions" "" aws cloudfront list-distributions \
   --query "DistributionList.Items[?Comment=='$DIST_COMMENT'].Id | [0]" \
-  --output text)
+  --output text) || exit 1
 if [[ -n "$DIST_ID" && "$DIST_ID" != "None" ]]; then
   echo "▶ CloudFront: disabling $DIST_ID"
   ETAG=$(aws cloudfront get-distribution-config --id "$DIST_ID" --query 'ETag' --output text | tr -d '\r')
@@ -289,7 +353,8 @@ fi
 
 # A function still associated with a distribution can't be deleted, so this
 # comes after the distribution.
-CF_FUNCTION_ETAG=$(read_text aws cloudfront describe-function --name "$CF_FUNCTION_NAME" --query 'ETag' --output text)
+CF_FUNCTION_ETAG=$(aws_text "the CloudFront function $CF_FUNCTION_NAME" NoSuchFunctionExists \
+  aws cloudfront describe-function --name "$CF_FUNCTION_NAME" --query 'ETag' --output text) || exit 1
 if [[ -n "$CF_FUNCTION_ETAG" && "$CF_FUNCTION_ETAG" != "None" ]]; then
   echo "▶ CloudFront function: deleting $CF_FUNCTION_NAME"
   aws cloudfront delete-function --name "$CF_FUNCTION_NAME" --if-match "$CF_FUNCTION_ETAG"
@@ -298,9 +363,9 @@ else
   echo "▶ CloudFront function: nothing to delete"
 fi
 
-OAC_ID=$(read_text aws cloudfront list-origin-access-controls \
+OAC_ID=$(aws_text "the CloudFront origin access controls" "" aws cloudfront list-origin-access-controls \
   --query "OriginAccessControlList.Items[?Name=='$OAC_NAME'].Id | [0]" \
-  --output text)
+  --output text) || exit 1
 if [[ -n "$OAC_ID" && "$OAC_ID" != "None" ]]; then
   echo "▶ OAC: deleting $OAC_ID"
   OAC_ETAG=$(aws cloudfront get-origin-access-control --id "$OAC_ID" --query 'ETag' --output text | tr -d '\r')
@@ -311,10 +376,24 @@ else
 fi
 
 # ───── 3. App bucket: empty then delete ────────────────────────────────────
+# A deleted bucket's name is free for anyone to create. A distribution still
+# using this bucket as its origin would then serve their files on the site's
+# domain. So the bucket goes only when no distribution in the account points
+# at it, whatever its comment says.
+SERVING=$(aws_text "the CloudFront distributions" "" aws cloudfront list-distributions \
+  --query "DistributionList.Items[?Origins.Items[?starts_with(DomainName, '$BUCKET.')]].Id" \
+  --output text) || exit 1
+if [[ -n "$SERVING" && "$SERVING" != "None" ]]; then
+  echo "✗ CloudFront distribution $SERVING still uses $BUCKET as its origin, so the bucket" >&2
+  echo "  wasn't deleted: once it's gone, anyone could create a bucket with that name. Delete that" >&2
+  echo "  distribution, or point it somewhere else, first." >&2
+  exit 1
+fi
 delete_bucket "$BUCKET" app
 
 # ───── 4. API Gateway (routes, stage and JWT authorizer go with it) ────────
-API_ID=$(read_text aws apigatewayv2 get-apis --region "$REGION" --query "Items[?Name=='$API_NAME'].ApiId | [0]" --output text)
+API_ID=$(aws_text "the APIs" "" aws apigatewayv2 get-apis --region "$REGION" \
+  --query "Items[?Name=='$API_NAME'].ApiId | [0]" --output text) || exit 1
 if [[ -n "$API_ID" && "$API_ID" != "None" ]]; then
   echo "▶ API Gateway: deleting $API_ID"
   aws apigatewayv2 delete-api --api-id "$API_ID" --region "$REGION"
@@ -324,7 +403,8 @@ else
 fi
 
 # ───── 5. Lambda function, its logs, the usage alarm, the dashboard ────────
-if aws lambda get-function --function-name "$LAMBDA_NAME" --region "$REGION" >/dev/null 2>&1; then
+if aws_exists "the Lambda $LAMBDA_NAME" ResourceNotFoundException \
+  aws lambda get-function --function-name "$LAMBDA_NAME" --region "$REGION"; then
   echo "▶ Lambda: deleting $LAMBDA_NAME"
   aws lambda delete-function --function-name "$LAMBDA_NAME" --region "$REGION"
   echo "  • deleted"
@@ -334,8 +414,8 @@ fi
 
 # After the Lambda, so nothing writes a new log group. Deleting a group
 # deletes its metric filters ($METRIC_FILTER_NAME) too.
-LOG_GROUPS=$(read_text aws logs describe-log-groups --log-group-name-prefix "$LOG_GROUP_PREFIX" --region "$REGION" \
-  --query 'logGroups[].logGroupName' --output text)
+LOG_GROUPS=$(aws_text "the log groups" "" aws logs describe-log-groups --log-group-name-prefix "$LOG_GROUP_PREFIX" \
+  --region "$REGION" --query 'logGroups[].logGroupName' --output text) || exit 1
 if [[ -n "$LOG_GROUPS" && "$LOG_GROUPS" != "None" ]]; then
   echo "▶ Log groups: deleting every ${LOG_GROUP_PREFIX}* group"
   for group in $LOG_GROUPS; do
@@ -346,8 +426,8 @@ else
   echo "▶ Log groups: nothing to delete"
 fi
 
-ALARM=$(read_text aws cloudwatch describe-alarms --alarm-names "$ALARM_NAME" --region "$REGION" \
-  --query 'MetricAlarms[0].AlarmName' --output text)
+ALARM=$(aws_text "the CloudWatch alarms" "" aws cloudwatch describe-alarms --alarm-names "$ALARM_NAME" \
+  --region "$REGION" --query 'MetricAlarms[0].AlarmName' --output text) || exit 1
 if [[ "$ALARM" == "$ALARM_NAME" ]]; then
   echo "▶ CloudWatch alarm: deleting $ALARM_NAME"
   aws cloudwatch delete-alarms --alarm-names "$ALARM_NAME" --region "$REGION"
@@ -356,7 +436,8 @@ else
   echo "▶ CloudWatch alarm: nothing to delete"
 fi
 
-if aws sns get-topic-attributes --topic-arn "$TOPIC_ARN" --region "$REGION" >/dev/null 2>&1; then
+if aws_exists "the SNS topic $TOPIC_NAME" NotFound \
+  aws sns get-topic-attributes --topic-arn "$TOPIC_ARN" --region "$REGION"; then
   echo "▶ SNS topic: deleting $TOPIC_NAME (and its email subscription)"
   aws sns delete-topic --topic-arn "$TOPIC_ARN" --region "$REGION"
   echo "  • deleted"
@@ -364,7 +445,10 @@ else
   echo "▶ SNS topic: nothing to delete"
 fi
 
-if aws cloudwatch get-dashboard --dashboard-name "$DASHBOARD_NAME" --region "$REGION" >/dev/null 2>&1; then
+# CloudWatch's code for a missing dashboard is ResourceNotFound (its
+# DashboardNotFoundError).
+if aws_exists "the dashboard $DASHBOARD_NAME" 'ResourceNotFound|DashboardNotFoundError' \
+  aws cloudwatch get-dashboard --dashboard-name "$DASHBOARD_NAME" --region "$REGION"; then
   echo "▶ Dashboard: deleting $DASHBOARD_NAME"
   aws cloudwatch delete-dashboards --dashboard-names "$DASHBOARD_NAME" --region "$REGION"
   echo "  • deleted"
@@ -373,12 +457,13 @@ else
 fi
 
 # ───── 6. Cognito: the Hosted UI domain, then the pool ─────────────────────
-USER_POOL_ID=$(read_text aws cognito-idp list-user-pools --max-results 60 --region "$REGION" \
-  --query "UserPools[?Name=='$USER_POOL_NAME'].Id | [0]" --output text)
+USER_POOL_ID=$(aws_text "the Cognito user pools" "" aws cognito-idp list-user-pools --max-results 60 \
+  --region "$REGION" --query "UserPools[?Name=='$USER_POOL_NAME'].Id | [0]" --output text) || exit 1
 if [[ -n "$USER_POOL_ID" && "$USER_POOL_ID" != "None" ]]; then
   echo "▶ Cognito: deleting user pool $USER_POOL_ID ($USER_POOL_NAME)"
-  DOMAIN=$(read_text aws cognito-idp describe-user-pool --user-pool-id "$USER_POOL_ID" --region "$REGION" \
-    --query 'UserPool.Domain' --output text)
+  # The list just found the pool, so any error here stops the run.
+  DOMAIN=$(aws_text "the Hosted UI domain of $USER_POOL_ID" "" aws cognito-idp describe-user-pool \
+    --user-pool-id "$USER_POOL_ID" --region "$REGION" --query 'UserPool.Domain' --output text) || exit 1
   if [[ -n "$DOMAIN" && "$DOMAIN" != "None" ]]; then
     aws cognito-idp delete-user-pool-domain --domain "$DOMAIN" --user-pool-id "$USER_POOL_ID" --region "$REGION"
     echo "  • Hosted UI domain $DOMAIN deleted"
@@ -392,7 +477,8 @@ fi
 
 # ───── 7. DynamoDB tables ──────────────────────────────────────────────────
 for table in "$SESSIONS_TABLE" "$PUSH_TABLE" "$JOBS_TABLE"; do
-  if aws dynamodb describe-table --table-name "$table" --region "$REGION" >/dev/null 2>&1; then
+  if aws_exists "the table $table" ResourceNotFoundException \
+    aws dynamodb describe-table --table-name "$table" --region "$REGION"; then
     echo "▶ DynamoDB: deleting $table"
     aws dynamodb delete-table --table-name "$table" --region "$REGION" >/dev/null
     echo "  • deleted"
@@ -408,7 +494,8 @@ delete_bucket "$FEEDBACK_BUCKET" feedback
 # ───── 9. KMS signing key: schedule deletion, then remove the alias ────────
 # Scheduled before the alias goes, so a run that stops in between still finds
 # the key by its alias next time.
-KEY_ID=$(read_text aws kms describe-key --key-id "$KEY_ALIAS" --region "$REGION" --query 'KeyMetadata.KeyId' --output text)
+KEY_ID=$(aws_text "the KMS key $KEY_ALIAS" NotFoundException \
+  aws kms describe-key --key-id "$KEY_ALIAS" --region "$REGION" --query 'KeyMetadata.KeyId' --output text) || exit 1
 if [[ -n "$KEY_ID" && "$KEY_ID" != "None" ]]; then
   echo "▶ KMS: $KEY_ALIAS ($KEY_ID)"
   KEY_STATE=$(aws kms describe-key --key-id "$KEY_ID" --region "$REGION" --query 'KeyMetadata.KeyState' --output text | tr -d '\r')
