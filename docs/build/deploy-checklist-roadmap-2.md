@@ -1,5 +1,11 @@
 # Deploy checklist for `integration/roadmap-2`
 
+> **Deployed 10 Nov 2026 (about 1 am AEDT)** from `main` at `840120b` (PR #2), run from a clone at `%USERPROFILE%\Downloads\pp-deploy`. Rollback point: `MAIN_SHA` `12d9318`, plus a published Lambda version `1` ("pre-roadmap-2"). Stages 1 to 8.3 passed. In 8.5, A, B (the probe deleted itself after its end date) and the time-zone half of C passed. Only the daylight-saving half of C is left (April 2027). What the run found that this checklist didn't expect:
+> - **6.2:** the log group already had a **30-day** retention, so the May launch logs were long gone and setting 90 days deleted nothing. Aggregate stats were exported first, to a folder outside git.
+> - **6.3:** the pre-check as first written failed with `ValidationException ... will never schedule an invocation`. A Monday-only cron with an end date 24 hours away has no firing on any other day. The command below now uses a daily cron and an end date 2 days out, and it passed.
+> - **6.4:** the alarm topic `parkproof-cost-alerts` had **no subscriber**, so the usage alarm had never emailed anyone. The re-run subscribed the script's default `hello@parkproof.com.au`, pending confirmation. Confirm it, or re-run the script with an address that's read.
+> - **Stage 3.1:** the full `npm run lint` shows 1 error and 2 warnings, identical on `main`. They're older than this build.
+
 What this deploys: `integration/roadmap-2`. That's main plus the field-test fixes, T2, T3, T4, T5a and T5b, T6a, T8, T9, the copy pass and the integration fixes, T7 (merged as `2edc532`), the sign schema fix (`863a230`), the overnight fix list (`6d46dfc`) and T6b and T6c (merged as `09d5c24`). Workday mode (T6a to T6c) is in the code but stays off in this deploy: see 1.4.
 
 Evidence comes from commit `cfdecc7` in `%USERPROFILE%\Downloads\pp-wt\readonly`, compared with `git diff main...HEAD`. Its line numbers were at that commit; the note before "There's no staging backend" says which are current now. T7 has since merged as `2edc532` ("Merge feat/t7-share into integration/roadmap-2"). From `cfdecc7` to `2edc532`, the only change in `lambda/`, `scripts/`, `migrations/`, `public/` or the build config is the new `scripts/_i18n_inject_t7.mjs`. T7 calls no new API route. A share link is `/app/#share=…`, and the fragment never reaches CloudFront or the API (`src/lib/deep-link.ts`). Its handover addendum kind already exists on the server (`lambda/addendum-schema.js:66`, `:309`). Re-check all of this against the final tip in stage 1. The T10 docs pass re-checked the deploy scripts, the setup scripts and the route list at `09d5c24` (second revision note below).
@@ -413,10 +419,10 @@ cd $HOME/pp-deploy
 export PUSH_DISPATCH_LAMBDA_ARN=$(grep '^PUSH_DISPATCH_LAMBDA_ARN=' scripts/.aws-resources | cut -d= -f2- | tr -d '\r')
 export PUSH_SCHEDULER_ROLE_ARN=$(grep '^PUSH_SCHEDULER_ROLE_ARN=' scripts/.aws-resources | cut -d= -f2- | tr -d '\r')
 PRE="pp-awscheck-pre-$(date +%Y%m%d-%H%M)"
-END=$(node -e "console.log(new Date(Date.now() + 864e5).toISOString().slice(0, 19) + 'Z')")
+END=$(node -e "console.log(new Date(Date.now() + 2 * 864e5).toISOString().slice(0, 19) + 'Z')")
 node -e "require('fs').writeFileSync('scheduler-precheck.tmp.json', JSON.stringify({ Arn: process.env.PUSH_DISPATCH_LAMBDA_ARN, RoleArn: process.env.PUSH_SCHEDULER_ROLE_ARN, Input: JSON.stringify({ _async_kind: 'push-recurring', rule_id: 'precheck', reminder: 'awscheck', device_id: 'awscheck' }) }))"
 aws scheduler create-schedule --name "$PRE" \
-  --schedule-expression "cron(0 9 ? * MON *)" \
+  --schedule-expression "cron(0 9 * * ? *)" \
   --schedule-expression-timezone Australia/Melbourne \
   --flexible-time-window Mode=OFF \
   --end-date "$END" \
@@ -431,7 +437,7 @@ echo "delete exit: $?"
 rm -f scheduler-precheck.tmp.json
 ```
 
-- [ ] `create exit: 0`, and `get-schedule` shows `cron(0 9 ? * MON *)`, `Australia/Melbourne`, the end date `$END`, `DELETE` and `DISABLED`. Then `delete exit: 0`.
+- [ ] `create exit: 0`, and `get-schedule` shows `cron(0 9 * * ? *)`, `Australia/Melbourne`, the end date `$END`, `DELETE` and `DISABLED`. Then `delete exit: 0`.
 - [ ] Refused with a `ValidationException`: every weekly push booking would fail the same way. Stop and decide (section 0). If the refusal names `ActionAfterCompletion`, the fix is the one in 8.5 "B fails at once", and it needs the privacy text change described there.
 - If `delete-schedule` fails, run it again. A disabled schedule never fires, but don't leave it behind.
 - This doesn't show that a schedule deletes itself after its end date. Only 8.5 step 3 shows that.

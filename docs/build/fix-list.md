@@ -213,12 +213,21 @@ Everything above is fixed on `integration/roadmap-2`. None of it is deployed yet
 - **Weekly push across daylight saving.** Decide by early December 2026 whether to cap each weekly schedule's `EndDate` at the next clock change (deploy checklist 8.5, C).
 - **A legal read.** No lawyer is engaged. Every key in `docs/legal-review-queue.md` is Not reviewed, and workday mode stays off until its keys are approved.
 
-### At or before the deploy
+### The deploy: done 10 Nov 2026 (`840120b`, see the top of the deploy checklist)
 
-- **PDF font subsets: re-cut from `fonts-src/` at deploy time.** The T10 translation review changes 8 locales after `09d5c24`, and the committed subsets (Korean and Chinese last cut in `378c4c6`) can miss characters it adds. With the review applied, `src/lib/pdf-font-coverage.test.ts` passes on the committed subsets, so this re-cut is a safeguard. `deploy.sh` re-cuts them when fontTools is installed, from `fonts-src/` when it's there. Without `fonts-src/` it re-subsets the committed files in place, which can only drop glyphs. So deploy from the clone with `fonts-src/` copied in (checklist stages 2 and 3.3), run `src/lib/pdf-font-coverage.test.ts`, and commit the re-cut fonts.
-- **The Scheduler checks for weekly push** need real AWS: stage 6.3 before the deploy, 8.5 after it.
-- **The jobs-table grant and the log retention** (stages 6.1 and 6.2).
-- **Re-run `scripts/anthropic-usage-alarm.sh`** so the live filter counts notice reads (stage 6.4, a go-ahead step).
+- **Done at the deploy:**
+  - the PDF fonts re-cut from `fonts-src/` and committed as shipped;
+  - the jobs-table `DeleteItem` grant, proven live;
+  - 90-day log retention (it was already 30 days, so nothing was deleted);
+  - the usage alarm counting notice reads;
+  - the Scheduler pre-check;
+  - 8.5 A, B and the time-zone half of C, all passed;
+  - a rollback snapshot (Lambda version 1).
+- **Still yours after the deploy:**
+  - **The phone pass (checklist 8.4), then the field test** (`docs/build/field-test-plan-roadmap-2.md`).
+  - **Confirm the usage alarm's email.** The `parkproof-cost-alerts` topic had no subscriber, so the alarm never emailed anyone. A confirmation link went to `hello@parkproof.com.au`. Confirm it if that mailbox works, or re-run `scripts/anthropic-usage-alarm.sh <your email> 300`.
+  - **Weekly push across daylight saving (8.5 C).** Decide by early December 2026 (see "Waiting on a decision").
+  - **The 24-hour watch** (checklist stage 9). Keep `%USERPROFILE%\Downloads\pp-deploy` until it's over (it's the rollback tool), then delete it, or at least its `.env` and `scripts/.aws-resources`.
 
 ### Copy and translation
 
