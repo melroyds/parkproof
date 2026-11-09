@@ -135,7 +135,7 @@ The real gap between A and B is about 3 to 5 days, not 10.
 - **The em-dash problem is bigger than any designer found.** `en` and `zh-CN` are clean. The other seven locales have 307 between them (hi 65, vi 64, pa 53, el 39, it 31, id 29, ko 26). B spotted three. The spec bans them "anywhere", so the lint will fail on day one. Budget about a day of locale rewrites, done properly rather than by regex.
 - **About 40 percent of the work doesn't depend on the look.** The verdict-state logic, one shared urgency function, the Start parking merge (once the reminders branch lands), actions that change with record state, and sorting history are logic and copy. All of it can start before you choose a look.
 - **A surface change can't ship half done.** With A or B, if Settings, sign-in, appeal, About and verify stay on the old vault while the main flow goes light, you've recreated problem 13. Build on a branch, and ship once the secondary screens are done too.
-- **This is three to four weeks on a shipped piece while SubToll waits.** That's worth it only if ParkProof stays your lead portfolio piece through the next interview round. If SubToll is the next thing a hiring PM sees, do the legal pass and the logic now, and take on the look later.
+- **This is three to four weeks on a shipped piece.** That's worth it only if ParkProof stays your lead portfolio piece through the next interview round. If the interviews need something sooner, do the legal pass and the logic now, and take on the look later.
 - **All three landings keep "Works offline"** next to "Check a sign", but checking a sign needs a connection. A's landing also says "about 12 seconds" while its own loading screen says "up to 40". Fix both in the copy pass.
 
 ---

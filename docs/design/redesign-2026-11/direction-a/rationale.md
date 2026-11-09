@@ -117,7 +117,7 @@ If you like B but want it to stop a design-literate scroller, this is that versi
 
 ## Risks (honest)
 
-1. **It's the most expensive of the three.** Every screen changes, plus navigation. On a four-to-six-week runway with live interviews and SubToll waiting, that is real opportunity cost.
+1. **It's the most expensive of the three.** Every screen changes, plus navigation. On a four-to-six-week runway with live interviews, that is real opportunity cost.
 2. **Navigation is a model change, not a restyle.** The dock adds tabs to a view-state machine in `App.tsx` that has no tabs today. Deep links (`?session=`), back behaviour and the OAuth callback landing all need checking.
 3. **The stop state needs data the model may not return.** "You can park from 6:30 pm" needs a reliable next-legal-time. `next_transition` exists but is only a heads-up within about 3 hours. A `can_park_from` field plus prompt examples plus an eval run is needed, or the stop plate falls back to "Check the sign for when parking opens". Never invent a time.
 4. **Light UI at 11 pm.** Kerb white is right in sun and harsh in a dark street. Night tokens are drafted (bg `#0F1613`, plate `#1A2420`, ink `#EEF2EF` 14.1:1, go `#4CCB88` 7.8:1, stop `#FF7A88` 6.4:1, warn fill unchanged 10.2:1), but they are Tier 3, not in these mocks.
@@ -192,4 +192,4 @@ The remaining bullets (44px targets, FeedbackModal sheet pattern, icons in `Icon
 
 ## My call on this direction
 
-Build Tier 1 only if the honest answer to "is the dark green the brand?" is no, and you can spare about 17 days before SubToll starts. If the interviews need a portfolio refresh sooner than that, take B's surface split and steal three things from here: ink primary, the four-state verdict plate and the Start parking sheet. That is about 7 days and gets most of the "this person has taste" signal.
+Build Tier 1 only if the honest answer to "is the dark green the brand?" is no, and you can spare about 17 days. If the interviews need a portfolio refresh sooner than that, take B's surface split and steal three things from here: ink primary, the four-state verdict plate and the Start parking sheet. That is about 7 days and gets most of the "this person has taste" signal.
