@@ -3,7 +3,7 @@
     "back": "← Kembali",
     "backToHome": "← Beranda",
     "backToHistory": "← Kembali ke riwayat",
-    "backToSession": "← Kembali ke sesi",
+    "backToSession": "← Kembali ke catatan",
     "cancel": "Batal",
     "save": "Simpan",
     "done": "Selesai",
@@ -20,7 +20,8 @@
     "mediumConfidence": "Tingkat keyakinan sedang",
     "lowConfidence": "Tingkat keyakinan rendah",
     "yes": "Ya",
-    "no": "Tidak"
+    "no": "Tidak",
+    "signedSeal": "Catatan bertanda tangan, perubahannya bisa terdeteksi"
   },
   "language": {
     "title": "Bahasa",
@@ -32,12 +33,12 @@
   },
   "about": {
     "title": "Semua yang ParkProof lakukan",
-    "lead": "Kamu mungkin ke sini berpikir oh, ini cuma baca rambu parkir. Memang iya. Tapi sekalian saja, kami juga menyimpan bukti kalau-kalau kamu kena denda tidak adil, menuliskan surat sanggahannya untukmu kalau sampai kena, dan mengingatkanmu memindahkan mobil sebelum waktunya habis. Ini tur singkatnya.",
+    "lead": "Kamu mungkin ke sini berpikir oh, ini cuma baca rambu parkir. Memang iya. Tapi sekalian saja, kami juga menyimpan bukti kalau-kalau kamu kena denda tidak adil, membuatkan draf surat sanggahan untuk kamu periksa kalau sampai kena, dan mengingatkanmu memindahkan mobil sebelum waktunya habis. Ini tur singkatnya.",
     "scan": {
       "title": "Foto rambunya, dapatkan jawaban",
       "lead": "Arahkan ponselmu ke rambu parkir apa pun, bahkan yang bertumpuk dengan panah dan jalur clearway.",
       "items": [
-        "Kamu dapat jawaban ya atau tidak yang jelas dalam sekitar 12 detik.",
+        "Kamu dapat jawaban ya atau tidak yang jelas, biasanya dalam sekitar 10 detik. Rambu bertumpuk yang rumit bisa makan waktu lebih lama.",
         "Kalau rambunya beda aturan untuk sisi jalan yang berbeda, kami tinggal tanya kamu parkir di sisi mana.",
         "Kami cek dulu apakah fotomu terlalu buram atau gelap sebelum dikirim ke AI."
       ]
@@ -47,8 +48,8 @@
       "lead": "Setiap parkir yang kamu catat menyimpan waktunya, GPS-nya, alamatnya, dan (kalau mau) foto mobilmu di lokasi.",
       "items": [
         "Unduh semuanya jadi satu PDF rapi. Berguna kalau suatu saat kamu perlu menyanggah denda.",
-        "Setiap catatan ditandatangani, jadi siapa pun bisa mengecek bahwa catatan itu tidak diubah sejak ditandatangani.",
-        "Tambahkan catatan kenapa kamu parkir di situ (mengantar ibu ke rumah sakit, pasar Sabtu). Dewan kota memperhitungkan konteks seperti ini."
+        "Setiap catatan ditandatangani, jadi siapa pun bisa mengecek bahwa detail yang ditandatangani tidak berubah sejak ParkProof menandatanganinya.",
+        "Tambahkan keterangan kenapa kamu parkir di situ (mengantar ibu ke rumah sakit, pasar Sabtu). Keterangan itu disimpan bersama catatan parkirnya, dengan kata-katamu sendiri. Keterangan tidak ditandatangani."
       ]
     },
     "reminders": {
@@ -62,19 +63,19 @@
     },
     "gates": {
       "title": "Sedikit \"sebentar dulu\"",
-      "lead": "Pemeriksaan-pemeriksaan kecil yang mencegahmu kena denda tak terduga.",
+      "lead": "Pemeriksaan kecil untuk kondisi yang mudah terlewat, sebelum kamu meninggalkan mobil.",
       "items": [
         "Kalau lokasinya berbayar (meter, EasyPark, PayStay), kami minta kamu centang dulu bahwa sudah bayar sebelum menyimpan.",
         "Kalau lokasinya khusus pemegang izin parkir aksesibel, kami tampilkan peringatan merah yang jelas.",
-        "Parkir di tempat yang tidak ada rambunya sama sekali? Tetap bisa kamu catat, lengkap dengan foto sekitar untuk menunjukkan memang tidak ada rambu."
+        "Parkir di tempat yang tidak ada rambunya sama sekali? Tetap bisa kamu catat, lengkap dengan foto sekitar. Foto itu menunjukkan apa yang terlihat saat itu, bukan bahwa tidak ada rambu di dekatnya."
       ]
     },
     "appeal": {
       "title": "Tetap kena denda?",
-      "lead": "Tak perlu menulis sendiri surat sanggahannya. Biar kami yang tuliskan untukmu.",
+      "lead": "Tak perlu mulai menulis surat sanggahan dari nol. Kami buatkan drafnya untuk kamu periksa dan ubah.",
       "items": [
-        "Foto dendanya. Kami cocokkan dengan apa yang tersimpan waktu kamu parkir.",
-        "Kamu dapat draf surat untuk dewan kota, plus penilaian jujur seberapa kuat kasusmu.",
+        "Foto surat dendanya. Kami cocokkan dengan apa yang tersimpan waktu kamu parkir.",
+        "Kamu dapat draf surat untuk dewan kota yang bisa kamu baca dan ubah sebelum dikirim. ParkProof tidak menilai kasusmu atau memprediksi hasilnya.",
         "Edit sesukamu, lalu unduh jadi PDF dengan catatan parkir terlampir. Cetak dan kirim pos, atau kirim email."
       ]
     },
@@ -82,7 +83,7 @@
       "title": "Beberapa kebaikan kecil",
       "lead": "Hal-hal yang harusnya tidak perlu kamu pusingkan, dan sudah kami pikirkan untukmu.",
       "items": [
-        "Gratis. Tanpa app store. Tambahkan ke layar utama dan ia jalan seperti aplikasi biasa, bahkan saat kamu offline.",
+        "Gratis. Tanpa app store. Tambahkan ke layar utama dan ia jalan seperti aplikasi biasa. Catatan yang tersimpan tetap bisa dibuka tanpa koneksi, tapi mengecek rambu butuh koneksi.",
         "Tersedia dalam 9 bahasa termasuk 中文, Tiếng Việt, Italiano, Ελληνικά, हिन्दी, ਪੰਜਾਬੀ, dan 한국어.",
         "Waktunya selalu ikut lokasi parkir. Pindai di Sydney saat bepergian, yang kamu lihat waktu Sydney. Bukan zona waktu asal ponselmu.",
         "Kamu tidak perlu masuk untuk pakai semua ini. Anonim juga jalan kok."
@@ -99,28 +100,28 @@
     },
     "push": {
       "title": "Aktifkan notifikasi push di perangkat ini",
-      "body": "Pengingat bekerja tanpa perlu dipegang, bahkan saat ParkProof sedang tidak terbuka. Beri izin sekarang, dan pengingat parkir berikutnya bunyi diam-diam di latar belakang, tanpa permintaan izin lagi di tengah jalan.",
-      "subscribed": "✓ Perangkat ini sudah berlangganan. Pengingat push akan aktif untuk catatan parkir mendatang.",
+      "body": "Izinkan notifikasi sekarang supaya nanti kamu tidak ditanya lagi. Pengingat baru diatur setelah kamu mengetuk 'Ingatkan saya' di catatan parkir.",
+      "subscribed": "✓ Notifikasi sudah aktif di perangkat ini. Untuk mengatur pengingat, ketuk 'Ingatkan saya' di catatan parkir.",
       "denied": "Kamu telah memblokir notifikasi untuk situs ini. Untuk mengaktifkan, ubah izin di pengaturan situs browsermu.",
-      "errorRetry": "Ada yang tidak beres — coba lagi",
+      "errorRetry": "Ada yang tidak beres. Coba lagi",
       "enable": "Aktifkan notifikasi",
       "requesting": "Bertanya pada browsermu…"
     },
     "footerNote": "Dibuat di Melbourne.",
-    "cta": "Coba — pindai rambu",
+    "cta": "Coba pindai rambu sekarang",
     "support": {
       "title": "Suka ParkProof?",
       "body": "Dibangun sendirian dalam 10 hari, gratis selamanya. Kalau ini menyelamatkanmu dari denda, bantu patungan tagihan AWS-nya.",
       "button": "☕ Belikan saya kopi"
     },
-    "sealCaveat": "Segel ini menunjukkan bahwa detail yang ditandatangani tidak berubah sejak ParkProof menandatanganinya. Segel ini tidak menunjukkan bahwa AI membaca rambu dengan benar, atau bahwa dewan kota akan menerimanya."
+    "sealCaveat": "Segel ini menunjukkan bahwa detail yang ditandatangani sudah ada, tanpa perubahan, saat ParkProof menandatanganinya. Segel ini tidak menunjukkan bahwa isinya benar, bahwa AI membaca rambu dengan benar, siapa yang mengemudi, di mana mobil berada, atau kapan mobil tiba atau pergi."
   },
   "landing": {
-    "heroSubhead": "Foto rambu parkir Australia mana pun dan dapatkan jawaban jelas dalam bahasa sehari-hari dalam <accent>12 detik</accent>.",
+    "heroSubhead": "Foto rambu parkir Australia mana pun dan dapatkan jawaban jelas dalam bahasa sehari-hari <accent>dalam hitungan detik</accent>.",
     "bullet": {
       "plainEnglish": "Jawaban yang mudah dimengerti",
       "photoEvidence": "Bukti foto tersimpan",
-      "defensible": "Bukti yang terbukti tak diubah, seandainya kamu kena denda"
+      "defensible": "Setiap perubahan bisa terdeteksi, seandainya kamu kena denda"
     },
     "cta": "Periksa rambu parkir",
     "builtFor": "Dibuat untuk pengemudi di Australia",
@@ -134,30 +135,27 @@
       "answerDesc": "Putusan dalam bahasa sehari-hari untuk kamu cocokkan dengan rambunya."
     },
     "evidenceCallout": {
-      "title": "Bukti yang terbukti tak diubah, saat kamu membutuhkannya.",
-      "body": "Setiap pemeriksaan mendapat tanda waktu, GPS, dan foto yang ditandatangani secara kriptografis."
-    },
-    "feature": {
-      "translateTitle": "Jawaban mudah dimengerti",
-      "translateDesc": "Foto rambu parkir Australia mana pun — dapatkan putusan 'bisa parkir sekarang?' dalam sekitar 12 detik.",
-      "evidenceTitle": "Bukti yang terbukti tak diubah",
-      "evidenceDesc": "Setiap parkir mendapat tanda waktu, GPS, dan foto yang ditandatangani secara kriptografis.",
-      "appealTitle": "Surat banding AI",
-      "appealDesc": "Kena denda tidak adil? Foto dendanya dan kami susunkan sanggahan resmi."
+      "title": "Bukti yang perubahannya bisa terdeteksi, saat kamu membutuhkannya.",
+      "body": "Setiap catatan parkir yang kamu simpan ditandatangani, jadi siapa pun bisa mengecek bahwa detailnya tidak berubah sejak itu. Tanda tangan tidak menunjukkan bahwa isinya benar, siapa yang mengemudi, di mana mobil berada, atau kapan mobil tiba atau pergi."
     },
     "accuracyNote": "ParkProof bisa salah baca rambu yang berantakan. Selalu cocokkan bacaan kami dengan rambu aslinya sebelum meninggalkan mobil.",
     "trustFree": "Gratis",
     "trustNoAccount": "Tanpa akun",
-    "trustOffline": "Bekerja offline",
+    "trustOffline": "Catatan tersimpan bisa dibuka offline",
     "locationOptional": "Lokasi sifatnya opsional. Tolak saja, kamu tetap bisa membaca rambu dan mengetik alamatnya sendiri.",
-    "heroTitle": "Parkir jadi <accent>mudah.</accent>"
+    "heroTitle": "Parkir jadi <accent>mudah.</accent>",
+    "hero": {
+      "aria": "Rambu parkir yang berubah menjadi catatan parkir bertanda tangan: kamu bisa parkir sampai {{time}}.",
+      "kicker": "CATATAN BERTANDA TANGAN",
+      "canPark": "Kamu bisa parkir"
+    }
   },
   "home": {
     "tagline": "Parkir di Australia, diterjemahkan, lengkap dengan bukti foto kalau-kalau kamu kena denda tidak adil.",
     "scanCta": "Pindai rambu parkir",
     "scanAnother": "Pindai rambu lain",
     "scanHelp": "Kami akan membaca rambunya, memberitahu kamu bisa parkir sekarang atau tidak, dan menawarkan pengingat sebelum waktunya habis.",
-    "history": "Riwayat sesi",
+    "history": "Riwayat",
     "historyEmpty": "kosong",
     "historyCount_one": "{{count}} tersimpan",
     "historyCount_other": "{{count}} tersimpan",
@@ -169,7 +167,11 @@
       "log": "Foto mobil → catatan bukti bertanda waktu",
       "remind": "Dapatkan pengingat kalender sebelum parkir habis"
     },
-    "draftAppeal": "Kena denda? Buat draf surat banding"
+    "draftAppeal": "Kena denda? Buat draf surat banding",
+    "settings": "Pengaturan",
+    "settingsSignIn": "Masuk untuk sinkronisasi",
+    "startWorkday": "Parkir seharian? Mulai hari kerja",
+    "fineStart": "Kena denda? Mulai di sini"
   },
   "active": {
     "currentlyParked": "SEDANG PARKIR",
@@ -195,7 +197,7 @@
     "iveLeftConfirm": "Tandai catatan ini selesai sekarang? Waktu saat kamu mengetuk akan disimpan, menurut jam ponselmu. Jika kamu sudah pergi lebih awal, waktu yang lebih awal itu tidak tercatat.",
     "nextPing": "Pengingat berikutnya: {{when}}",
     "recheckNow": "Cek ulang sekarang",
-    "recheckSub": "Masih sah? Verifikasi ulang dalam hitungan detik",
+    "recheckSub": "Cek ulang sekarang. Lihat apakah kamu masih boleh parkir di sini, dalam hitungan detik.",
     "cardAria": "Catatan parkir aktif di {{address}}, {{status}}. Ketuk untuk detail.",
     "listCardAria": "Buka catatan parkir di {{address}}, {{status}}.",
     "expiredAt": "Waktu parkir habis pukul {{time}}",
@@ -221,18 +223,19 @@
     "qualityTiny": "Resolusi fotonya rendah sekali. AI bisa melewatkan detail. Foto ulang lebih dekat ke rambu?",
     "noSignHere": "Tidak ada rambu di sini? Catat saja parkirku →",
     "noSignChooseHeader": "Mencatat tempat tanpa rambu",
-    "noSignChooseCopy": "Kalau mau, foto sekitarnya untuk menunjukkan tidak ada rambu yang terlihat. Ini memperkuat catatan buktimu saat ada sengketa.",
+    "noSignChooseCopy": "Kamu bisa memotret sekitar untuk menunjukkan apa yang terlihat saat itu. Foto itu tidak akan menunjukkan bahwa tidak ada rambu di dekatnya.",
     "noSignTakeAmbient": "Foto sekitar",
-    "noSignTakeAmbientSub": "Tunjukkan tidak ada rambu yang terlihat",
+    "noSignTakeAmbientSub": "Tunjukkan apa yang terlihat",
     "noSignFromLibrary": "Pilih dari galeri",
-    "noSignSkip": "Lewati — simpan GPS + waktu saja",
-    "noSignAmbientAlt": "Sekitar — tidak ada rambu terlihat",
-    "noSignAmbientCaption": "Diambil untuk menunjukkan tidak ada rambu terpasang di lokasi ini.",
+    "noSignSkip": "Lewati dan simpan GPS serta waktu saja",
+    "noSignAmbientAlt": "Foto sekitar yang kamu ambil",
+    "noSignAmbientCaption": "Diambil untuk menunjukkan lingkungan sekitar. Foto ini tidak menunjukkan bahwa tidak ada rambu di dekatnya.",
     "noSignContinue": "Lanjut mencatat",
-    "privacyLine": "Fotomu dibaca di ponselmu sendiri. Hanya foto rambu yang dikirim untuk diterjemahkan, dan tidak pernah disimpan di server kami. Tanpa akun.",
+    "privacyLine": "Untuk membaca rambu, kami mengirim foto rambunya ke layanan AI. Kalau kamu mengizinkan lokasi, server kami memakainya untuk mengetahui waktu setempat. Membaca rambu tidak menyimpan salinan foto di server kami. Tidak perlu akun.",
     "cameraDeniedTitle": "Akses kamera mati",
     "cameraDeniedCopy": "Pilih saja foto dari galerimu, atau aktifkan lagi akses kamera di pengaturan browsermu.",
-    "couldntReadPhoto": "Tidak bisa membaca foto itu. Coba foto lain, atau pilih satu dari galerimu."
+    "couldntReadPhoto": "Tidak bisa membaca foto itu. Coba foto lain, atau pilih satu dari galerimu.",
+    "previewAlt": "Foto rambu parkirmu"
   },
   "reuse": {
     "scannedHere": "Kamu memindai di sini {{age}}",
@@ -273,7 +276,7 @@
       "openPaystay": "Buka PayStay",
       "openEasypark": "Buka EasyPark",
       "openApp": "Buka {{app}}",
-      "meterHint": "Beli tiket dari meter atau mesin tiket terdekat — biasanya dalam 30m dari rambu.",
+      "meterHint": "Beli tiket dari meter atau mesin tiket terdekat, yang biasanya ada dalam jarak 30m dari rambu.",
       "ack": "Saya sudah bayar (atau akan bayar sebelum pergi)"
     },
     "permitRequired": {
@@ -294,17 +297,38 @@
     "aiCaveat": "Ini bacaan AI atas rambunya. Selalu lihat sekilas rambu aslinya sebelum meninggalkan mobil.",
     "cantParkOverride": "Menurutmu ini keliru? Kamu tetap bisa mencatat tempat ini sebagai bukti.",
     "cantParkOverrideCta": "Catat saja",
-    "firstSaveValue": "Menyimpan berarti menjaga catatan bertanda waktu yang terbukti tak diubah. Inilah buktimu seandainya suatu saat kamu kena denda tidak adil."
+    "firstSaveValue": "Menyimpan berarti menjaga catatan parkir ini, yang setiap perubahannya bisa terdeteksi, kalau-kalau suatu saat kamu memerlukannya untuk urusan denda.",
+    "weeklyRestrictionHint": "Rambu ini punya larangan mingguan. Kamu bisa memasang pengingat setelah menyimpan.",
+    "permit": {
+      "standardKicker": "Jawaban standar",
+      "kicker": "Dengan izinmu",
+      "signPrints": "Rambu ini mencantumkan pengecualian untuk izin ini:",
+      "checkConditions": "ParkProof hanya membaca apa yang tercetak di rambu. Periksa juga ketentuan di izinmu.",
+      "areaMatch": "Izin yang kamu simpan untuk {{area}} cocok dengan zona ini.",
+      "areaMismatch": "Izin yang kamu simpan berlaku untuk {{area}}. Zona ini adalah Area Izin {{zone}}.",
+      "mayAllowMore": "Menurut aturan {{state}}, izinmu mungkin membolehkan waktu lebih lama. ParkProof tidak menghitungnya. Periksa ketentuan di izinmu atau tanyakan ke dewan kota.",
+      "mayAllowMoreNoState": "Menurut aturan di tempatmu parkir, izinmu mungkin membolehkan waktu lebih lama. ParkProof tidak menghitungnya. Periksa ketentuan di izinmu atau tanyakan ke dewan kota.",
+      "accessibleQuestion": "Pemegang izin ada di mobil bersama saya dan turun di sini, dan izinnya dipajang di mobil.",
+      "accessibleNo": "Kalau begitu, izin ini tidak bisa dipakai untuk parkir kali ini. Jangan parkir di tempat parkir aksesibel.",
+      "forThisCarQuestion": "Apakah izin ini untuk mobil ini, dan dipajang di mobil atau terdaftar untuk mobil ini?",
+      "forThisCarNo": "Kalau begitu, izin ini tidak bisa dipakai untuk parkir kali ini. Jangan parkir di zona izin ini tanpa izin yang berlaku untuk zona ini.",
+      "noStandardApplies": "Kalau begitu, izin ini tidak bisa dipakai untuk parkir kali ini. Hanya jawaban standar yang berlaku.",
+      "timeToggle": "Apakah rambu ini memberi izinmu batas waktu yang lebih lama?",
+      "timeLabel": "Waktu izinmu di rambu ini berakhir pukul",
+      "timeHint": "Baca dari rambunya. ParkProof tidak menghitung waktu izin.",
+      "timeSet": "Pengingatmu akan menghitung mundur ke {{time}}, waktu yang kamu isi, ditambah satu pengingat saat batas standar berakhir.",
+      "timeNotLater": "Waktu itu tidak melewati batas standar, jadi pengingatmu tetap mengikuti batas standar."
+    }
   },
   "logger": {
     "header": "Catat catatan parkir ini",
-    "intro": "Kami akan menyimpan catatan bertanda waktu lengkap dengan fotomu dan GPS. Bukti yang berguna kalau suatu saat kamu menyanggah denda tidak adil.",
+    "intro": "Kami akan menyimpan catatan berisi waktu, fotomu, dan GPS, kalau-kalau suatu saat kamu perlu menyanggah denda.",
     "location": "Lokasi",
     "acquiringGps": "Mengambil GPS…",
     "captured": "Tersimpan ✓",
-    "gpsImprecise": "GPS terlalu tidak presisi untuk memverifikasi lokasimu",
-    "gpsImpreciseCopy": "Pembacaannya <strong>{{accuracy}}</strong>, cukup untuk cari kafe, tapi tidak untuk bukti parkir. Masukkan alamat jalan secara manual supaya catatannya tetap andal.",
-    "gpsImpreciseDanger": "Pembacaannya <strong>{{accuracy}}</strong>, bisa-bisa areanya salah total (sering terjadi di Starlink, VPN, atau GPS dalam ruangan). Masukkan alamat jalan secara manual supaya catatannya tetap andal.",
+    "gpsImprecise": "GPS kurang akurat untuk menentukan titik parkirmu",
+    "gpsImpreciseCopy": "Pembacaannya <strong>{{accuracy}}</strong>. Itu cukup untuk cari kafe, tapi terlalu kasar untuk menunjukkan di jalan mana kamu parkir. Kamu bisa mengetik alamat jalannya sebagai gantinya.",
+    "gpsImpreciseDanger": "Pembacaannya <strong>{{accuracy}}</strong>, jadi bisa saja malah salah kawasan (sering terjadi dengan Starlink, VPN, atau di dalam ruangan). Kamu bisa mengetik alamat jalannya sebagai gantinya.",
     "enterAddress": "Masukkan alamat secara manual",
     "manuallyEntered": "Dimasukkan manual",
     "accuracyLabel": "Akurasi {{accuracy}}",
@@ -322,17 +346,32 @@
     "resolvingAddress": "mencari alamat…",
     "carAtSpot": "Mobil di lokasi",
     "carRetake": "Foto ulang",
-    "carOptionalHelp": "Opsional, tapi sangat disarankan sebagai bukti",
+    "carOptionalHelp": "Opsional. Foto ini disimpan bersama catatan.",
     "saveSession": "Simpan catatan",
     "noSignHeader": "Catat parkir tanpa rambu",
     "noSignIntro": "Kami akan menyimpan catatan GPS bertanda waktu. Tidak ada terjemahan AI, soalnya tidak ada rambu untuk diterjemahkan.",
     "noSignKicker": "CATATAN BUKTI",
-    "noSignBanner": "Kamu mencatat bahwa tidak ada rambu yang terlihat di lokasi ini. Tanda tangan kriptografisnya mencakup kapan dan di mana, bukan benar-tidaknya rambu itu tidak ada. Jujurlah, ini buktimu sendiri.",
+    "noSignBanner": "Kamu mencatat bahwa kamu tidak melihat rambu parkir di lokasi ini. Itu pernyataanmu sendiri. Tanda tangan menunjukkan bahwa catatan ini sudah ada, tanpa perubahan, saat ParkProof menandatanganinya. Tanda tangan tidak menunjukkan bahwa isinya benar, siapa yang mengemudi, di mana mobil berada, atau kapan mobil tiba atau pergi.",
     "ambientHeader": "Sekitar",
-    "ambientCaption": "Diambil untuk menunjukkan tidak ada rambu terpasang.",
-    "locationContext": "Kami pakai lokasimu cuma untuk menandai waktu dan tempat kamu parkir. Datanya tetap di perangkatmu kecuali kamu masuk.",
+    "ambientCaption": "Foto sekitar yang kamu ambil. Foto ini tidak menunjukkan bahwa tidak ada rambu di dekatnya.",
+    "locationContext": "Kami pakai lokasimu hanya untuk catatan ini. Lokasinya disimpan di perangkat ini, dan dicadangkan ke cloud hanya kalau kamu masuk.",
     "photoSaveFailed": "Foto ini tidak bisa disimpan di ponselmu. Coba lagi, atau simpan catatan tanpa foto ini.",
-    "saving": "Menyimpan…"
+    "saving": "Menyimpan…",
+    "condition": {
+      "toggle": "Catat kondisi mobil (opsional)",
+      "noteLabel": "Kerusakan yang kamu lihat",
+      "notePlaceholder": "Misalnya, goresan di bemper belakang"
+    },
+    "proof": {
+      "heading": "Bukti pembayaran atau izin",
+      "toggle": "Bukti pembayaran atau izin (opsional)",
+      "addMeterTicketOrPermit": "Tambahkan foto tiket parkir atau izinmu (opsional)"
+    },
+    "driver": {
+      "label": "Siapa yang mengemudi? (opsional)",
+      "placeholder": "Nama",
+      "help": "Disimpan bersama catatan ini. ParkProof tidak memeriksanya."
+    }
   },
   "reminders": {
     "header": "Atur pengingat",
@@ -347,7 +386,7 @@
     "calendarCta_one": "Unduh .ics dengan 1 alarm",
     "calendarCta_other": "Unduh .ics dengan {{count}} alarm",
     "calendarDownloaded": "✓ Terunduh. Buka filenya untuk menambahkan",
-    "calendarError": "Unduhan gagal — coba lagi",
+    "calendarError": "Unduhan gagal. Coba lagi",
     "calendarPickAtLeastOne": "Pilih setidaknya satu pengingat di atas",
     "browserHeader": "Notifikasi browser",
     "browserCopy": "Bunyi selama tab ini terbuka. Satu notifikasi per pilihan. Bagus sebagai cadangan opsi kalender.",
@@ -356,12 +395,12 @@
     "browserRequesting": "Meminta izin…",
     "browserScheduled_one": "✓ 1 notifikasi terjadwal",
     "browserScheduled_other": "✓ {{count}} notifikasi terjadwal",
-    "browserScheduledSkipped": "✓ {{count}} terjadwal ({{skipped}} dilewati — sudah lewat)",
-    "browserDenied": "Izin ditolak — gunakan opsi kalender",
+    "browserScheduledSkipped": "✓ {{count}} terjadwal ({{skipped}} dilewati karena waktunya sudah lewat)",
+    "browserDenied": "Izin ditolak. Gunakan opsi kalender saja",
     "browserUnsupported": "Tidak didukung di browser ini",
     "browserNoExpiry": "Sesi ini tidak punya waktu berakhir",
     "browserAllPast": "Semua pengingat yang dipilih sudah lewat",
-    "browserTooFar": "Berakhir lebih dari 24 jam — gunakan opsi kalender",
+    "browserTooFar": "Berakhir lebih dari 24 jam lagi. Gunakan opsi kalender saja",
     "browserNothingSelected": "Pilih setidaknya satu pengingat di atas",
     "pushTitleFallback": "Pengingat parkir",
     "pushBodyAtExpiry": "Parkirmu berakhir pukul {{time}}. Saatnya memindahkan mobil.",
@@ -383,7 +422,7 @@
       "enable": "Aktifkan push",
       "requesting": "Bertanya pada browser…",
       "denied": "Kamu memblokir notifikasi untuk situs ini. Ubah izinnya di pengaturan situs browsermu untuk mengaktifkan.",
-      "errorRetry": "Tidak bisa mengaktifkan — coba lagi",
+      "errorRetry": "Tidak bisa mengaktifkan. Coba lagi",
       "unsupported": "Browser ini tidak mendukung notifikasi push."
     },
     "pushScheduled": {
@@ -393,7 +432,58 @@
     },
     "pushScheduleFailed": "Tidak bisa mengatur pengingat latar belakang. Mungkin cuma akan bunyi saat tab ini terbuka. Ketuk untuk coba lagi.",
     "chipMin_one": "{{count}} mnt",
-    "chipMin_other": "{{count}} mnt"
+    "chipMin_other": "{{count}} mnt",
+    "remindMe": {
+      "cta": "Ingatkan saya",
+      "busy": "Sedang menyiapkan…",
+      "setBackground_one": "{{count}} pengingat diatur untuk <strong>{{times}}</strong>. Pengingat tetap dikirim ke perangkat ini walaupun ParkProof ditutup.",
+      "setBackground_other": "{{count}} pengingat diatur untuk <strong>{{times}}</strong>. Pengingat tetap dikirim ke perangkat ini walaupun ParkProof ditutup.",
+      "setOpenOnly_one": "{{count}} pengingat diatur untuk <strong>{{times}}</strong>, tapi cuma berfungsi selama ParkProof terbuka.",
+      "setOpenOnly_other": "{{count}} pengingat diatur untuk <strong>{{times}}</strong>, tapi cuma berfungsi selama ParkProof terbuka.",
+      "notSet": "Tidak ada pengingat yang diatur.",
+      "stepInstall": "Di iPhone, pengingat butuh ParkProof ada di Layar Utama. Ketuk Bagikan, pilih 'Tambah ke Layar Utama', lalu buka ParkProof dari sana dan ketuk 'Ingatkan saya' lagi.",
+      "stepAllow": "Notifikasi ParkProof sedang mati. Izinkan saat browsermu bertanya, atau di pengaturan situs browsermu, lalu ketuk 'Ingatkan saya' lagi.",
+      "stepUnsupported": "Browser ini tidak bisa mengirim pengingat saat ParkProof ditutup. Gunakan pengingat kalender saja.",
+      "stepRetry": "Pengingat untuk saat ParkProof ditutup tidak bisa diatur. Cek koneksimu, lalu ketuk 'Ingatkan saya' lagi.",
+      "stepAllPast": "Waktu yang kamu pilih sudah lewat. Pilih waktu yang lebih lambat."
+    },
+    "reliability": "Pengingat bisa tertunda atau dibisukan, misalnya oleh mode Fokus atau penghemat baterai. Jangan hanya mengandalkan pengingat.",
+    "androidTips": {
+      "summary": "Tips untuk ponsel Android",
+      "spam": "Kalau Chrome menandai pengingat sebagai kemungkinan spam, ketuk Izinkan.",
+      "battery": "Di Samsung, atur penggunaan baterai Chrome ke Tidak dibatasi."
+    },
+    "chipFiresAt": "Berbunyi pukul {{when}}",
+    "chipPast": "Sudah lewat",
+    "reconnect": {
+      "cta": "Pengingat tidak masuk? Sambungkan ulang",
+      "busy": "Menyambungkan ulang…",
+      "done": "Tersambung ulang. Pengingat berikutnya di perangkat ini akan memakai sambungan baru.",
+      "failed": "Tidak bisa menyambung ulang. Cek koneksimu lalu coba lagi.",
+      "denied": "Notifikasi ParkProof diblokir. Izinkan di pengaturan situs browsermu, lalu coba lagi."
+    },
+    "timesOnDay": "{{times}} pada {{day}}",
+    "permitIntro": "Waktu izinmu berlaku sampai <strong>{{when}}</strong>, waktu yang kamu isi dari rambu. Pilih kapan kamu mau diingatkan, sebanyak yang kamu mau.",
+    "permitExtra": "Kamu juga akan mendapat pengingat pukul {{time}}, saat batas standar di rambu ini berakhir.",
+    "permitStandardEnds": "Batas standar di rambu ini berakhir sekarang. Waktu izinmu berlaku sampai {{time}}.",
+    "chipAtPermitTime": "Saat waktu izin berakhir",
+    "permitChipLimit_one": "Kamu bisa memilih sampai {{count}} pengingat di sini, ditambah satu saat batas standar berakhir.",
+    "permitChipLimit_other": "Kamu bisa memilih sampai {{count}} pengingat di sini, ditambah satu saat batas standar berakhir.",
+    "permitBodyAt": "Waktu izin yang kamu isi dari rambu berakhir pukul {{time}}. Saatnya memindahkan mobil.",
+    "permitBodyBefore_one": "Waktu izin yang kamu isi dari rambu berakhir pukul {{time}}. Ini pengingat {{count}} menit sebelumnya.",
+    "permitBodyBefore_other": "Waktu izin yang kamu isi dari rambu berakhir pukul {{time}}. Ini pengingat {{count}} menit sebelumnya.",
+    "calendarPermitTitle": "ParkProof: waktu izin yang kamu isi berakhir",
+    "calendarPermitSummary": "Waktu izin yang kamu isi dari rambu berakhir pukul {{time}}. ParkProof tidak menghitung waktu izin.",
+    "ics": {
+      "expiresTitle": "ParkProof: waktu parkir berakhir",
+      "expiresAt": "Waktu parkirmu berakhir: {{time}} ({{place}}).",
+      "remindersAt": "Pengingat: {{times}}.",
+      "recordId": "Catatan ParkProof: {{id}}",
+      "checkOnTitle": "ParkProof: cek mobilmu",
+      "checkOnAt": "Cek mobilmu di {{address}} ({{place}}).",
+      "checkOnHere": "Cek mobilmu di tempat kamu memarkirnya ({{place}}).",
+      "buildFailed": "Gagal membuat file kalender. Coba lagi."
+    }
   },
   "history": {
     "header": "Catatan parkir",
@@ -406,7 +496,7 @@
   },
   "session": {
     "header": "Catatan parkir",
-    "arrived": "Tiba {{when}}",
+    "arrived": "Dicatat {{when}} (jam ponsel)",
     "cryptoSigned": "Ditandatangani kriptografis",
     "status": "STATUS",
     "active": "Aktif sampai {{when}}",
@@ -417,19 +507,17 @@
     "walkBackPill": "Jalan kembali ke mobil",
     "aiConfidence": "KEYAKINAN AI",
     "noteLabel": "CATATAN",
-    "noNote": "Belum ada catatan. Ketuk",
     "addNote": "Tambah catatan",
-    "noteHelp": "untuk mencatat kenapa kamu di sana. Ini melembutkan tinjauan dewan kota saat konteksnya penting.",
-    "notePlaceholder": "Kenapa kamu di sini, misalnya 'kemoterapi ibu di RS Royal', 'pasar Sabtu di Lygon'. Dipakai sebagai konteks kalau suatu saat kamu perlu menyanggah denda.",
+    "notePlaceholder": "Kenapa kamu di sini, misalnya 'kemoterapi ibu di RS Royal', 'pasar Sabtu di Lygon'. Ini ikut dimuat di PDF catatan parkir ini, kalau-kalau suatu saat kamu perlu mengajukan banding atas denda.",
     "saveNote": "Simpan catatan",
     "signPhotoLabel": "FOTO RAMBU",
     "carPhotoLabel": "MOBIL DI LOKASI",
     "noSignLabel": "TIDAK ADA LARANGAN TERPASANG",
-    "noSignDescription": "Catatan ini dibuat di tempat yang tidak ada rambu parkirnya. Tidak ada terjemahan AI yang dilakukan.",
+    "noSignDescription": "Kamu mencatat parkir ini sebagai tempat tanpa rambu parkir. Itu pernyataanmu sendiri. Tidak ada rambu yang dibaca.",
     "ambientPhotoLabel": "Sekitar",
-    "ambientPhotoCaption": "Diambil saat parkir untuk membuktikan ketiadaan rambu.",
+    "ambientPhotoCaption": "Diambil saat kamu mencatat parkir ini, untuk menunjukkan lingkungan sekitar. Foto ini tidak menunjukkan bahwa tidak ada rambu di dekatnya.",
     "noAmbientCaptured": "Tidak ada foto sekitar yang diambil.",
-    "noSignBadgeLong": "Tidak ada larangan terpasang terekam. Ini dicatat sebagai tempat tanpa rambu.",
+    "noSignBadgeLong": "Tidak ada larangan terpasang yang terekam. Kamu mencatat parkir ini sebagai tempat tanpa rambu.",
     "exportAsPdf": "Ekspor sebagai PDF",
     "buildingPdf": "Membuat PDF…",
     "pdfErrorHeader": "Tidak bisa membuat PDF",
@@ -441,10 +529,10 @@
     "noExpiryRecorded": "Tidak ada waktu berakhir tercatat",
     "deleteSession": "Hapus catatan",
     "deleteConfirm": "Hapus catatan parkir ini? Tidak bisa dibatalkan.",
-    "howToVerify": "Cara dewan kota memverifikasi catatan ini →",
+    "howToVerify": "Cara siapa pun bisa mengecek tanda tangan catatan ini →",
     "photoSyncFailed": "Foto belum tercadangkan ke cloud",
     "photoSyncRetry": "Coba unggah lagi",
-    "exportPhotoWarning": "Ada satu atau lebih foto yang tidak bisa dimuat dari cloud untuk sesi lama ini. Kamu tetap bisa mengekspor, atau buka di perangkat tempat sesi ini dibuat.",
+    "exportPhotoWarning": "Ada satu atau lebih foto yang tidak bisa dimuat dari cloud untuk catatan lama ini. Kamu tetap bisa mengekspor, atau buka di perangkat tempat catatan ini dibuat.",
     "photoHashMismatch": "Foto ini tidak cocok dengan bukti yang ditandatangani, dan mungkin sudah diubah sejak disimpan.",
     "endConfirmLate": "Tandai catatan ini selesai sekarang? Catatan akan menyimpan {{time}}, yaitu waktu saat kamu mengetuk, menurut jam ponselmu. Catatan ini tidak menunjukkan kapan mobil benar-benar pergi.",
     "devKeySigned": "Ditandatangani dengan kunci pengembangan. Tanda tangan ini tidak bisa dicek dengan kunci publik yang diterbitkan ParkProof.",
@@ -452,24 +540,22 @@
     "photoNotOnDeviceUnsigned": "Foto ini tidak ada di perangkat ini. Sidik jari: {{fingerprint}}. Belum ditandatangani.",
     "signPhotoAlt": "Foto rambu parkir yang kamu pindai",
     "carPhotoAlt": "Foto mobilmu di tempat kamu parkir",
-    "ended": "Selesai"
+    "ended": "Selesai",
+    "noteEmpty": "Belum ada keterangan. Ketuk <add>Tambah catatan</add> untuk menuliskan alasan kamu ada di sana, dengan kata-katamu sendiri. Keterangan seperti ini tidak ditandatangani."
   },
   "appeal": {
     "captureHeader": "Buat draf surat banding",
-    "captureIntro": "Foto surat denda yang kamu terima. Claude akan membacanya, mencocokkan dengan bukti yang tersimpan di sesi ini, lalu menyusun surat resmi yang bisa kamu kirim ke dewan kota penerbit.",
-    "captureTakePhotoSub": "Kamera surat denda",
+    "captureIntro": "Foto surat denda yang kamu terima. Claude akan membacanya, mencocokkannya dengan bukti yang tersimpan di catatan ini, lalu menyusun surat resmi yang bisa kamu kirim ke dewan kota penerbit.",
+    "captureTakePhotoSub": "Foto surat dendanya",
     "captureFromLibrarySub": "Foto / pindaian surat denda",
     "captureDisclaimer": "Draf AI ini titik awal, bukan nasihat hukum. Surat akhir yang kamu kirim jadi tanggung jawabmu.",
     "draftingHeader": "Membaca surat denda…",
     "draftingSub": "Claude memeriksa silang dengan buktimu yang tersimpan.",
     "reviewHeader": "Draf banding",
-    "strongEvidence": "Bukti kuat",
-    "moderateEvidence": "Bukti sedang",
-    "weakEvidence": "Bukti lemah",
     "strategy": "STRATEGI",
     "subjectLine": "BARIS SUBJEK",
     "letter": "SURAT (BISA DIEDIT)",
-    "resetDraft": "Reset ke draf AI",
+    "resetDraft": "Pakai draf AI lagi",
     "copyToClipboard": "Salin surat ke clipboard",
     "copied": "Tersalin ✓",
     "downloadPdf": "Unduh sebagai PDF",
@@ -481,13 +567,13 @@
   },
   "auth": {
     "signInHeader": "Masuk",
-    "signInIntro": "Selamat datang kembali — lanjutkan dari tempatmu berhenti.",
+    "signInIntro": "Selamat datang kembali. Lanjutkan dari tempatmu berhenti.",
     "signUpHeader": "Buat akun",
-    "signUpIntro": "Sinkronkan sesi antar perangkat, pulihkan kalau ponselmu hilang, dan simpan bukti dengan aman bahkan setelah kamu uninstal.",
+    "signUpIntro": "Sinkronkan catatan antar perangkat, pulihkan kalau ponselmu hilang, dan simpan bukti dengan aman bahkan setelah kamu uninstal.",
     "verifyHeader": "Verifikasi emailmu",
     "verifyIntro": "Masukkan kode 6 digit yang kami kirim ke {{email}}.",
     "forgotHeader": "Lupa kata sandi",
-    "forgotIntro": "Masukkan emailmu — kami akan kirim kode reset.",
+    "forgotIntro": "Masukkan emailmu dan kami akan mengirim kode untuk mengatur ulang kata sandi.",
     "resetHeader": "Reset kata sandi",
     "resetIntro": "Masukkan kode dari emailmu + kata sandi baru.",
     "email": "Email",
@@ -514,12 +600,12 @@
     "continueWithApple": "Lanjut dengan Apple",
     "continueWithGoogle": "Lanjut dengan Google",
     "orDivider": "ATAU",
-    "footer": "Sinkronisasi cloud sifatnya opsional. ParkProof jalan sepenuhnya offline tanpa akun, datamu ada di perangkat ini. Masuk cuma supaya kamu bisa melihatnya di perangkat lain.",
+    "footer": "Sinkronisasi cloud sifatnya opsional. ParkProof bisa dipakai tanpa akun, dan datamu ada di perangkat ini. Masuk cuma supaya kamu bisa melihatnya di perangkat lain.",
     "needVerifyFirst": "Kamu belum memverifikasi emailmu. Masukkan kodenya di bawah.",
     "accountCreated": "Akun dibuat. Kami telah mengirim kode verifikasi.",
     "codeResent": "Kode terkirim ulang. Cek inbox.",
     "resetCodeSent": "Kami telah mengirim kode reset.",
-    "emailVerified": "Email terverifikasi — masuk untuk lanjut.",
+    "emailVerified": "Email sudah terverifikasi. Masuk untuk lanjut.",
     "passwordReset": "Kata sandi direset. Masuk dengan kata sandi baru.",
     "errWrongCredentials": "Email atau kata sandi salah.",
     "errAccountExists": "Kamu sudah punya akun. Coba masuk saja.",
@@ -534,7 +620,7 @@
     "intro": "Atur sinkronisasi cloud, ekspor datamu, atau tutup akunmu.",
     "signedInAs": "MASUK SEBAGAI",
     "exportHeader": "Ekspor datamu",
-    "exportCopy": "Mengunduh PDF berisi setiap catatan parkir yang kamu simpan di cloud: ringkasan di halaman sampul plus blok detail per catatan lengkap dengan foto. Siap dibagikan, siap dicetak, siap untuk dewan kota.",
+    "exportCopy": "Mengunduh PDF berisi setiap catatan parkir yang kamu simpan di cloud: ringkasan di halaman sampul, lalu detail setiap catatan lengkap dengan foto. Siap dicetak atau dibagikan.",
     "exportCta": "Unduh sebagai PDF",
     "exportBuilding": "Membuat PDF…",
     "privacyHeader": "Privasi",
@@ -552,7 +638,7 @@
     "deleteTypoError": "Ketik DELETE dengan huruf kapital untuk konfirmasi.",
     "youSignedOut": "Kamu telah keluar.",
     "pushHeader": "Notifikasi push di perangkat ini",
-    "pushCopy": "Pengingat cuma bunyi saat aplikasi tertutup kalau push diaktifkan. Langganannya per browser per perangkat, terpisah dari akunmu.",
+    "pushCopy": "Push memungkinkan pengingat sampai ke perangkat ini saat ParkProof ditutup. Mengaktifkan push saja tidak mengatur pengingat apa pun. Ketuk 'Ingatkan saya' di catatan parkir untuk mengaturnya. Push diatur per browser di setiap perangkat, terpisah dari akunmu.",
     "pushSubscribed": "✓ Berlangganan di perangkat ini",
     "pushEnable": "Aktifkan push",
     "pushDisable": "Nonaktifkan push di perangkat ini",
@@ -560,23 +646,23 @@
     "pushDisableNote": "Ini cuma menghentikan langganan di perangkat ini. Untuk mencabut izin browser sepenuhnya, ubah pengaturan situs di browsermu.",
     "pushDenied": "Kamu memblokir notifikasi untuk situs ini. Untuk mengaktifkan, ubah izinnya di pengaturan situs browsermu, lalu kunjungi lagi halaman ini.",
     "pushRequesting": "Bertanya pada browser…",
-    "pushErrorRetry": "Tidak bisa mengaktifkan — coba lagi"
+    "pushErrorRetry": "Tidak bisa mengaktifkan. Coba lagi"
   },
   "privacy": {
     "header": "Privasi",
     "lastUpdated": "Terakhir diperbarui: {{date}}",
     "anonymousHeader": "Apa yang kamu berikan saat menggunakan ParkProof tanpa akun",
-    "anonymousIntro": "ParkProof jalan sepenuhnya anonim secara default. Kami tidak mewajibkan masuk, kami tidak menyimpan akun, dan catatan parkir yang kamu buat ada di <code>localStorage</code> browsermu sendiri. Tidak pernah meninggalkan perangkatmu.",
-    "anonymousThings": "Tiga hal meninggalkan perangkatmu, bahkan dalam mode anonim:",
-    "anonymousAnthropic": "<strong>Foto rambu + koordinat GPS</strong> dikirim ke <strong>Anthropic</strong> (Claude vision) untuk menerjemahkan rambunya. Kami tidak menyimpannya di sisi server; kebijakan penyimpanan Anthropic yang berlaku.",
+    "anonymousIntro": "ParkProof bisa dipakai tanpa akun. Catatanmu disimpan di browser ini. Untuk menandatangani catatan, ponselmu mengirim detailnya (waktu, lokasi, apa yang kamu isi, dan sidik jari foto, bukan fotonya) ke server ParkProof, yang menandatanganinya dan tidak menyimpan salinannya.",
+    "anonymousThings": "Hal-hal ini juga meninggalkan perangkatmu, bahkan tanpa akun:",
+    "anonymousAnthropic": "<strong>Setiap foto rambu yang kamu pindai</strong> dikirim ke <strong>Anthropic</strong> (Claude) untuk membaca rambunya, bersama lokasinya dan jenis setiap izin yang kamu simpan (ditambah area atau zona untuk izin penghuni atau usaha). Cek ulang mengirim hasil bacaan sebelumnya, bukan fotonya. Kami tidak menyimpan foto atau lokasinya. Jawabannya, yang bisa menyebut jenis izinmu, disimpan sebentar di server kami supaya ponselmu bisa mengambilnya. Kebijakan penyimpanan data Anthropic berlaku.",
     "anonymousNominatim": "<strong>Koordinat GPS</strong> dikirim ke <strong>OpenStreetMap Nominatim</strong> untuk menyelesaikan alamat jalan. Nominatim tidak memerlukan kunci dan menerapkan kebijakan penyimpanan publiknya.",
-    "anonymousCloudwatch": "<strong>UUID acak per hasil</strong> + putusan \"benar / foto ulang\" dicatat ke <strong>AWS CloudWatch</strong> saat kamu ketuk kartu verifikasi. Tanpa PII; sinyal agregat untuk penyetelan prompt.",
+    "anonymousCloudwatch": "<strong>Saat kamu memberi tahu kami apakah rambu terbaca dengan benar</strong>, server ParkProof mencatat jawabanmu di <strong>AWS CloudWatch</strong>, beserta waktu kamu menjawab dan ID acak untuk jawaban itu. Bersamanya dicatat juga rincian bacaannya: 120 karakter pertama dari deskripsi aturan rambu, seberapa yakin bacaannya, batas waktunya, cara pembayaran dan area izin (kalau ada), apakah kamu ditanya di posisi mana kamu parkir dan pilihan yang kamu ambil, serta berapa kelompok aturan, masalah saat membaca, dan larangan mingguan yang ditemukan. Rincian itu juga menyebut apakah rambunya bisa dibaca, apakah bacaan itu cek ulang, apakah ditemukan rambu untuk seluruh area parkir, parkir berbayar, zona izin, atau tempat parkir aksesibel, serta jam berapa saat itu di lokasi rambu. Jawabanmu sampai saat itu untuk pertanyaan parkir berbayar, zona izin, dan izin parkir aksesibel juga dicatat, jadi satu baris log bisa menunjukkan bahwa kamu menyatakan izin parkir aksesibel dipajang. Log ini tidak memuat foto, lokasi GPS foto, atau ID untuk kamu maupun perangkat ini. Kami memakainya untuk menemukan di mana pembacaan rambu salah. Log ini dihapus setelah 90 hari.",
     "signedInHeader": "Apa yang kamu berikan saat masuk",
-    "signedInIntro": "Masuk itu opsional. Memungkinkan sinkronisasi cloud — catatan yang sama terlihat di semua perangkatmu.",
+    "signedInIntro": "Masuk itu opsional. Dengan masuk, sinkronisasi cloud aktif, jadi catatan yang sama terlihat di semua perangkatmu.",
     "signedInThings": "Saat kamu masuk, data tambahan meninggalkan perangkatmu:",
-    "signedInEmail": "<strong>Alamat emailmu</strong> — disimpan di AWS Cognito; digunakan sebagai pengenal akunmu dan untuk reset kata sandi.",
-    "signedInSessions": "Setiap <strong>catatan parkir</strong> yang kamu simpan — disimpan di AWS DynamoDB, dikunci ke ID pengguna Cognito-mu. Termasuk stempel waktu, GPS, aturan rambu, terjemahan AI, catatanmu, dan tanda tangan kriptografis.",
-    "signedInPhotos": "Setiap <strong>foto</strong> yang dilampirkan ke catatan — disimpan di AWS S3 di bawah jalur yang menyertakan ID penggunamu, hanya bisa diakses olehmu saat masuk.",
+    "signedInEmail": "<strong>Alamat emailmu</strong> disimpan di AWS Cognito dan digunakan sebagai pengenal akunmu serta untuk mengatur ulang kata sandi.",
+    "signedInSessions": "Setiap <strong>catatan parkir</strong> yang kamu simpan akan tersimpan di AWS DynamoDB, terkait dengan ID pengguna Cognito-mu. Isinya termasuk stempel waktu, GPS, aturan rambu, terjemahan AI, keteranganmu, dan tanda tangan kriptografis.",
+    "signedInPhotos": "Setiap <strong>foto</strong> yang dilampirkan ke catatan disimpan di AWS S3 di bawah jalur yang menyertakan ID penggunamu, dan hanya bisa diakses olehmu saat masuk.",
     "federationHeader": "Masuk dengan Apple atau Google",
     "federationCopy1": "Kalau kamu memilih masuk dengan Apple atau Google ketimbang email/kata sandi, otentikasimu diperantarai AWS Cognito Hosted UI. Kata sandi, biometrik, atau passkey kamu tidak pernah sampai ke ParkProof. Semuanya tetap di Apple atau Google.",
     "federationCopy2": "Dari jabat tangan OAuth, kami menerima dua hal: pengenal pengguna yang stabil dan tidak terbaca (supaya Cognito mengenalimu saat kembali), dan alamat emailmu. Cuma itu. Kami tidak menerima foto profil, daftar teman, kalender, kontak, atau informasi lain dari Apple ID atau akun Google-mu.",
@@ -591,24 +677,33 @@
     "dontFingerprint": "Kami tidak menjalankan analitik yang membuat sidik jari perangkatmu.",
     "rightsHeader": "Hakmu",
     "rightsSignedIn": "Jika kamu masuk:",
-    "rightsExport": "<strong>Ekspor.</strong> Ketuk \"Unduh sebagai PDF\" di Akun untuk mendapat dokumen lengkap dengan setiap catatan yang kamu simpan — ringkasan halaman sampul plus blok detail per catatan dengan foto.",
+    "rightsExport": "<strong>Ekspor.</strong> Ketuk \"Unduh sebagai PDF\" di Akun untuk mendapat dokumen lengkap berisi setiap catatan yang kamu simpan, dengan ringkasan di halaman sampul lalu detail setiap catatan beserta fotonya.",
     "rightsDelete": "<strong>Hapus.</strong> Ketuk \"Hapus akun\" di Akun. Menghapus catatan masukmu, setiap baris DynamoDB, dan setiap foto S3 dalam hitungan detik. Tidak bisa dibatalkan.",
     "rightsCorrect": "<strong>Perbaiki.</strong> Kamu bisa mengedit catatanmu di dalam aplikasi. Setiap perubahan langsung disinkronkan ke cloud kalau kamu sedang masuk.",
-    "rightsAnonymous": "Jika kamu tidak masuk, semua datamu ada di perangkatmu — hapus penyimpanan browsermu untuk menghapusnya.",
+    "rightsAnonymous": "Jika kamu tidak masuk, catatan parkirmu hanya ada di perangkat ini. Hapus penyimpanan browsermu untuk menghapusnya. Itu tidak menghapus data yang sudah ada di server kami. Pengingat push yang kamu atur untuk sebuah catatan disimpan sampai terkirim atau kamu membatalkannya. Pengingat mingguan lewat push dihapus dalam 90 hari sejak terakhir kali kamu membuka ParkProof. Pendaftaran push perangkat ini (ID acak untuk perangkat ini, alamat push dan kunci enkripsi yang diberikan browsermu kepada kami, serta kapan semua itu terakhir diperbarui) disimpan sekitar 90 hari sejak ParkProof terakhir memperbaruinya. ParkProof memperbaruinya saat kamu membuka aplikasi dengan pengingat push menyala dan saat kamu mengatur pengingat. Mematikan pengingat push, di ParkProof atau di browsermu, tidak memberi tahu server kami, jadi pendaftaran itu tetap disimpan seperti di atas. Kalau layanan push memberi tahu kami bahwa alamat itu sudah tidak berfungsi (ini bisa terjadi saat pengingat yang kamu atur sebelumnya dikirim setelah kamu mematikan pengingat push), kami langsung menghapus alamat dan kunci itu. Kami hanya menyimpan ID perangkat ini, sidik jari alamat itu, dan waktu kami mengetahuinya, selama sekitar 90 hari, supaya alamat itu tidak disimpan lagi. Log server kami juga mencatat ID perangkat ini saat perangkat ini mendaftar push, mengatur pengingat, atau menerima pengingat, beserta layanan push yang dipakainya, ID acak catatan atau pengingat mingguan terkait, dan kapan setiap pengingat diatur, dikirim, atau dilewati. Log ini dihapus setelah 90 hari. Masukan yang kamu kirim, beserta emailmu kalau kamu mengisinya, disimpan paling lama dua tahun.",
     "photosHeader": "Foto diambil di dalam ParkProof",
     "photosCopy": "Foto diubah ukurannya menjadi ≤1200px dan dikodekan ulang sebagai JPEG kualitas 0.82 di perangkatmu sebelum meninggalkan browser. Tangkapan kamera resolusi tinggi asli tidak pernah meninggalkan ponselmu.",
     "signingHeader": "Penandatanganan kriptografis",
-    "signingCopy": "Saat kamu masuk (atau tetap anonim, dua-duanya jalan), setiap catatan ditandatangani oleh kunci AWS KMS ECDSA P-256 yang dikelola. Kunci privatnya tidak pernah meninggalkan AWS. Kunci publiknya diterbitkan di <a>/parkproof-public-key.pem</a> supaya siapa saja (dewan kota, pengadilan, asuransi) bisa memverifikasi rantai buktinya pakai <code>openssl dgst</code>. Lihat lampiran di PDF ekspor mana pun untuk langkah demi langkahnya.",
-    "verifyLinkLabel": "Lihat cara memverifikasi catatan →",
+    "signingCopy": "Masuk atau tidak, setiap catatan ditandatangani dengan kunci ECDSA P-256 yang disimpan di AWS KMS. Untuk menandatangani catatan, server ParkProof menerima detail yang akan ditandatangani (seperti waktu, lokasi, hasil pembacaan rambu, sidik jari foto, dan nama yang kamu masukkan, tidak pernah fotonya sendiri) lalu mengirim balik tanda tangannya. Kunci privatnya tidak pernah meninggalkan AWS. Kunci publiknya diterbitkan di <a>/parkproof-public-key.pem</a> supaya siapa saja (dewan kota, pengadilan, atau perusahaan asuransi) bisa mengecek tanda tangannya pakai <code>openssl dgst</code>. Tanda tangan menunjukkan bahwa detail yang ditandatangani tidak berubah sejak ParkProof menandatanganinya. Tanda tangan tidak menunjukkan bahwa isinya benar, siapa yang mengemudi, di mana mobil berada, atau kapan mobil tiba atau pergi. Lampiran di PDF ekspor mana pun memuat langkah-langkahnya.",
+    "verifyLinkLabel": "Lihat cara mengecek tanda tangan sebuah catatan →",
     "contactHeader": "Kontak + keluhan",
     "contactCopy": "Untuk pertanyaan atau untuk menggunakan hakmu di luar kontrol dalam aplikasi, email <a>hello@parkproof.com.au</a>.",
-    "complaintCopy": "Tidak puas dengan respons kami? Kamu bisa mengeluh ke <a>Office of the Australian Information Commissioner (OAIC)</a>."
+    "complaintCopy": "Tidak puas dengan respons kami? Kamu bisa mengeluh ke <a>Office of the Australian Information Commissioner (OAIC)</a>.",
+    "anonymousFineNotice": "<strong>Foto surat denda</strong> (denda parkir) dikirim ke <strong>Anthropic</strong> untuk membaca suratnya, misalnya saat kamu menyusun banding. Menyusun banding juga mengirim detail catatan parkir yang kamu pilih. Kami tidak menyimpan fotonya.",
+    "anonymousPush": "<strong>Pengingat push</strong>, kalau kamu menyalakannya: alamat catatan, waktu setiap pengingat dan isinya (yang bisa menyebut waktu izin yang kamu isi) dikirim ke <strong>server ParkProof</strong>, yang menyimpan setiap pengingat sampai terkirim, lalu menghapusnya.",
+    "anonymousPermits": "<strong>Izin yang kamu pakai untuk suatu parkir</strong>: jenisnya, area atau zonanya, dan waktu izin yang kamu isi disimpan bersama catatan itu. Saat catatan ditandatangani, yang dikirim adalah sidik jari detail ini, bukan detailnya, bersama jawabanmu atas pertanyaan tentang izin. Menghapus izin di Pengaturan tidak mengubah catatan yang sudah disimpan. Menghapus catatannya akan menghapus detail ini.",
+    "signedInPermits": "<strong>Detail izin</strong> yang disimpan bersama catatan (jenis, area atau zona, dan waktu izin yang kamu isi, untuk parkir yang memakai izin tersimpan) disimpan bersama catatan itu di AWS DynamoDB. Izin yang kamu simpan di Pengaturan tidak. Menghapus catatannya akan menghapus detail ini.",
+    "anonymousWeeklyPush": "<strong>Pengingat mingguan lewat push</strong>, kalau kamu menyalakannya: nama setiap pengingat dan alamat yang kamu isi (kalau ada), hari, jam, pola pengulangan, dan zona waktunya, kapan kamu ingin diingatkan, serta teks notifikasinya dikirim ke <strong>server ParkProof</strong>, bersama ID acak untuk perangkat ini. Server menyimpannya selama pengingat itu aktif, supaya pengingatnya bisa dikirim setiap minggu. Semuanya dihapus saat kamu menjeda atau menghapus pengingat itu, atau mematikan notifikasinya, begitu ParkProof terbuka dan tersambung ke internet. Setiap kali ParkProof mengirimnya, server menyimpannya paling lama 90 hari. ParkProof mengirimnya lagi sesekali selama kamu terus membukanya, jadi kalau kamu berhenti, semuanya dihapus dalam 90 hari sejak terakhir kali kamu membuka ParkProof."
   },
   "loading": {
     "step1": "Membaca rambu…",
     "step2": "Mengidentifikasi aturan parkir…",
     "step3": "Menghitung kapan kamu bisa parkir…",
-    "step4": "Menyusun jawaban…"
+    "step4": "Menyusun jawaban…",
+    "stepOf": "Langkah {{current}} dari {{total}}",
+    "usuallyTen": "Biasanya sekitar 10 detik.",
+    "almostThere": "Hampir selesai. Rambu ini cukup rumit…",
+    "stillWorking": "Masih diproses. Ini lebih lama dari biasanya…"
   },
   "feedback": {
     "title": "Kirim masukan",
@@ -624,7 +719,7 @@
     "successTitle": "Terima kasih!",
     "successBody": "Masukanmu sudah sampai. Kami baca begitu kembali ke keyboard.",
     "error": {
-      "generic": "Tidak bisa mengirim — coba lagi sebentar."
+      "generic": "Tidak bisa mengirim. Silakan coba lagi sebentar lagi."
     }
   },
   "errors": {
@@ -633,16 +728,16 @@
     "backHome": "Kembali ke beranda",
     "complexSignTimeout": "Rambu ini terlalu lama diproses. Biasanya karena aturannya bertumpuk banyak. Coba foto yang lebih jelas, atau potong sampai aturan yang berlaku di tempatmu parkir saja.",
     "offlineTitle": "Kamu sedang offline",
-    "offlineBody": "Membaca rambu butuh koneksi. Sesi dan pengingat tersimpanmu tetap jalan. Coba pindai lagi setelah kamu kembali online.",
+    "offlineBody": "Membaca rambu butuh koneksi. Catatan dan pengingat tersimpanmu tetap jalan. Coba pindai lagi setelah kamu kembali online.",
     "boundaryTitle": "Ada yang rusak",
-    "boundaryBody": "ParkProof mengalami kesalahan tak terduga. Memuat ulang biasanya memperbaikinya, dan sesi tersimpanmu aman di perangkat ini.",
+    "boundaryBody": "ParkProof mengalami kesalahan tak terduga. Memuat ulang biasanya memperbaikinya, dan catatan tersimpanmu aman di perangkat ini.",
     "boundaryReload": "Muat ulang ParkProof",
     "storageRecovered_one": "Penyimpanan perangkatmu penuh, jadi foto dari 1 catatan parkir lama dihapus untuk memberi ruang. Masuk untuk menjaga bukti tetap aman di cloud.",
     "storageRecovered_other": "Penyimpanan perangkatmu penuh, jadi foto dari {{count}} catatan parkir lama dihapus untuk memberi ruang. Masuk untuk menjaga bukti tetap aman di cloud.",
-    "photoSyncFailed": "Ada foto yang tidak tercadangkan ke cloud. Aman di perangkat ini — buka sesinya untuk coba lagi.",
+    "photoSyncFailed": "Ada foto yang tidak tercadangkan ke cloud. Foto itu aman di perangkat ini. Buka catatannya untuk coba lagi.",
     "heavyLoad": "ParkProof sedang sibuk saat ini dan pindaianmu tidak selesai tepat waktu. Tunggu sebentar lalu coba lagi.",
     "rateLimited": "Terlalu banyak permintaan dari koneksimu. Tunggu sebentar, lalu coba lagi.",
-    "syncFailed": "Tidak bisa memuat sesi tersimpanmu barusan.",
+    "syncFailed": "Tidak bisa memuat catatan tersimpanmu barusan.",
     "scanFailed": "Kami tidak bisa menyelesaikan pembacaan rambu itu. Coba lagi sebentar.",
     "signUnreadable": "Kami tidak bisa membaca rambu itu dengan jelas. Coba foto yang lebih jelas dan lebih dekat.",
     "imageTooLarge": "Foto itu terlalu besar. Foto ulang sedikit lebih kecil, atau lebih dekat ke rambu.",
@@ -652,7 +747,11 @@
     "genericRetry": "Ada yang tidak beres. Coba lagi sebentar.",
     "storageFull": "Penyimpanan ParkProof di perangkat ini penuh. Catatan yang sedang berjalan dan catatan yang masih menunggu tanda tangan tetap disimpan. Buka Riwayat, hapus catatan lama yang tidak kamu perlukan lagi, lalu coba lagi.",
     "storageEvicted_one": "Penyimpanan perangkatmu penuh, jadi {{count}} catatan parkir lama dihapus untuk memberi ruang. Masuk untuk menjaga catatan tetap aman di cloud.",
-    "storageEvicted_other": "Penyimpanan perangkatmu penuh, jadi {{count}} catatan parkir lama dihapus untuk memberi ruang. Masuk untuk menjaga catatan tetap aman di cloud."
+    "storageEvicted_other": "Penyimpanan perangkatmu penuh, jadi {{count}} catatan parkir lama dihapus untuk memberi ruang. Masuk untuk menjaga catatan tetap aman di cloud.",
+    "noticeUnreadable": "Kami tidak bisa membaca surat denda itu. Coba foto seluruh surat dengan lebih jelas, diletakkan rata dan di tempat yang terang.",
+    "notANotice": "Foto itu sepertinya bukan surat denda parkir. Foto langsung surat dendanya.",
+    "noticeHeavyLoad": "ParkProof sedang sibuk saat ini dan tidak sempat selesai membaca surat denda. Tunggu sebentar lalu coba lagi.",
+    "noticeImageTooLarge": "Foto itu terlalu besar. Coba foto lain dari surat dendanya."
   },
   "pdf": {
     "common": {
@@ -693,7 +792,14 @@
         "departureSigned": "Kepergian ditandatangani ParkProof (jam server)",
         "departureLocation": "Lokasi ponsel saat mengetuk \"Sudah pergi\" (GPS)",
         "departureDistance": "Perkiraan jarak dari lokasi kedatangan (GPS ponsel)",
-        "locationCoords": "Lokasi (koordinat)"
+        "locationCoords": "Lokasi (koordinat)",
+        "signCondition": "Kondisi rambu",
+        "proof": "Bukti pembayaran atau izin",
+        "conditionPhotos": "Foto kondisi mobil",
+        "damageNote": "Kerusakan yang dicatat pengemudi",
+        "driver": "Pengemudi (dimasukkan di ponsel, tidak diperiksa)",
+        "handover": "Serah terima mobil (dimasukkan di ponsel, tidak diperiksa)",
+        "handoverSigned": "Serah terima ditandatangani ParkProof (jam server)"
       },
       "locationSourceValue": {
         "manuallyEntered": "Dimasukkan manual",
@@ -728,18 +834,37 @@
         "coordsWithAccuracy": "{{coords}}, akurasi {{accuracy}}",
         "distanceUnavailable": "Tidak tersedia. Lokasi kedatangan bukan titik GPS ponsel yang cukup akurat untuk dibandingkan.",
         "distanceRough": "{{distance}}. Lokasi ponsel saat mengetuk hanya akurat sampai {{accuracy}}, jadi jarak ini hanya perkiraan kasar.",
-        "distanceRoughNoAccuracy": "{{distance}}. Ponsel tidak melaporkan seberapa akurat lokasinya saat mengetuk, jadi jarak ini hanya perkiraan kasar."
+        "distanceRoughNoAccuracy": "{{distance}}. Ponsel tidak melaporkan seberapa akurat lokasinya saat mengetuk, jadi jarak ini hanya perkiraan kasar.",
+        "complianceDescribed": "{{type}} (menurut keterangan pengemudi)",
+        "complianceNoType": "Sebuah foto ditambahkan. Pengemudi tidak menyebutkan isi foto itu.",
+        "conditionCounts": "Saat parkir: {{parking}}. Saat kembali: {{returned}}.",
+        "noteWhenParked": "Saat parkir, dengan kata-kata pengemudi sendiri: {{note}}",
+        "noteOnReturn": "Saat kembali, dengan kata-kata pengemudi sendiri: {{note}}",
+        "notSignedYet": "(belum ditandatangani)",
+        "partRejected": "(bagian ini tidak bisa ditandatangani)",
+        "notSigned": "(tidak ditandatangani)",
+        "handoverTo": "Diserahkan kepada {{to_driver}} pada {{time}} (jam ponsel).",
+        "handoverFromTo": "{{from_driver}} menyerahkan mobil kepada {{to_driver}} pada {{time}} (jam ponsel)."
       },
       "carPhotoCaptionTime": "Dicatat {{time}} (jam ponsel)",
       "confidence": {
         "high": "Tinggi",
         "medium": "Sedang",
         "low": "Rendah"
-      }
+      },
+      "signCondition": {
+        "readable": "Terbaca di foto",
+        "partiallyObscured": "Sebagian sulit dibaca di foto",
+        "contradictory": "Bagian-bagian rambu saling bertentangan",
+        "missing": "Tidak ditemukan rambu parkir di foto",
+        "notAParkingSign": "Foto menunjukkan hal lain, bukan rambu parkir",
+        "notes": "Catatan AI: {{notes}}"
+      },
+      "noSignRead": "Tidak ada rambu yang terbaca. ParkProof tidak menemukan rambu parkir yang bisa dibaca di foto, dan pengemudi mencatat parkir ini tanpa rambu."
     },
     "signature": {
       "title": "Tanda tangan kriptografis",
-      "intro": "Setiap bagian catatan ini ditandatangani oleh server ParkProof saat server menerimanya, pada waktu signed_at yang ditampilkan untuk bagian itu. Tanda tangan yang valid menunjukkan bahwa detail yang ditandatangani dan sidik jari foto tidak berubah sejak saat itu. Tanda tangan tidak menunjukkan bahwa isinya benar, siapa yang mengemudi, atau kapan mobil tiba atau pergi.",
+      "intro": "Setiap bagian catatan ini ditandatangani oleh server ParkProof saat server menerimanya, pada waktu signed_at yang ditampilkan untuk bagian itu. Tanda tangan yang valid menunjukkan bahwa detail yang ditandatangani dan sidik jari foto tidak berubah sejak saat itu. Tanda tangan tidak menunjukkan bahwa isinya benar, siapa yang mengemudi, di mana mobil berada, atau kapan mobil tiba atau pergi.",
       "algorithm": "Algoritma",
       "keyAlias": "Alias kunci",
       "signedAt": "Ditandatangani ParkProof (jam server)",
@@ -755,7 +880,7 @@
       "verifyStep4": "4. Dekode tanda tangan:",
       "verifyStep5": "5. Verifikasi:",
       "verifyStep6": "6. Keluaran yang diharapkan: \"Verified OK\". Ini menunjukkan bahwa byte yang ditandatangani tidak berubah sejak ParkProof menandatanganinya.",
-      "verifyStep7": "7. Tentang foto: gambar yang ditampilkan dalam PDF ini adalah salinan visual yang dikodekan ulang untuk dokumen, sehingga byte-nya berbeda dari aslinya dan tidak akan menghasilkan hash yang sama dengan yang ada di payload. Itu wajar dan bukan tanda pemalsuan. Tanda tangan mencakup SHA-256 setiap foto asli (nilai sign_photo_sha256, car_photo_sha256, dan ambient_photo_sha256 di dalam payload yang ditandatangani), dan langkah 6 sudah menunjukkan bahwa nilai-nilai itu tidak berubah sejak ditandatangani. Untuk mengecek gambar tertentu secara mandiri, hitung hash berkas foto asli (dari catatan ParkProof atau ekspor data akunmu), bukan salinan yang dicetak di sini, lalu bandingkan dengan nilai yang sesuai di atas.",
+      "verifyStep7": "7. Tentang foto: gambar yang dicetak dalam PDF ini adalah salinan yang dikodekan ulang untuk dokumen, sehingga byte-nya berbeda dari aslinya dan tidak akan cocok dengan sidik jari yang ditandatangani. Itu wajar dan bukan tanda pemalsuan. Payload yang ditandatangani memuat SHA-256 setiap foto asli: sign_photo_sha256, car_photo_sha256, dan ambient_photo_sha256 di mata rantai 0, serta setiap sha256 di bawah photos, photo, atau return_photos di mata rantai berikutnya. Foto aslinya ada di berkas bukti catatan ini, berkas .json yang bisa diunduh pengemudi dari catatan di ParkProof. Untuk mengecek sebuah foto, simpan nilai bytes_base64 foto itu dari berkas tersebut sebagai photo1.b64, lalu dekode dan cetak SHA-256-nya:",
       "devKey": "Ditandatangani dengan kunci pengembangan. Tanda tangan ini tidak bisa dicek dengan kunci publik yang diterbitkan ParkProof.",
       "linkHeading": "Mata rantai {{link}}: {{kind}}",
       "forkNote": "Di titik ini dalam catatan, dua bagian ditambahkan dari dua perangkat. Keduanya ditandatangani dan ditampilkan di sini.",
@@ -770,7 +895,9 @@
         "compliance": "Bukti pembayaran atau izin",
         "departure": "Saat pergi",
         "handover": "Serah terima mobil"
-      }
+      },
+      "verifyPhotoMatch": "Nilai hex itu harus sama dengan sha256 foto tersebut di dalam payload yang ditandatangani di atas, bukan hanya sha256 di sebelahnya dalam berkas bukti, yang tidak ditandatangani. Langkah 6 sudah menunjukkan nilai yang ditandatangani tidak berubah sejak ParkProof menandatanganinya. Lakukan hal yang sama untuk setiap foto.",
+      "verifyWindows": "Di Windows, cmd dan PowerShell tidak punya base64 -d. Gunakan certutil -decode sebagai gantinya, dan certutil -hashfile untuk mencetak SHA-256 sebuah berkas, seperti di bawah. Di PowerShell, ketik curl.exe sebagai ganti curl. openssl disertakan dalam Git for Windows, dan Git Bash-nya menjalankan perintah di atas persis seperti tertulis."
     },
     "appeal": {
       "drafted": "Disusun {{when}}",
@@ -788,7 +915,7 @@
       "userId": "ID Pengguna: {{id}}",
       "exportedAt": "Diekspor: {{when}}",
       "sessionCount": "Catatan dalam ekspor ini: {{count}}",
-      "intro": "Dokumen ini mengumpulkan setiap catatan parkir yang disimpan ke akun ParkProof ini, satu bagian per catatan. Jika sebuah catatan punya bagian yang ditandatangani, halaman tanda tangannya ada setelah bagiannya, lengkap dengan langkah untuk mengecek setiap tanda tangan. Tanda tangan yang valid menunjukkan bahwa detail yang ditandatangani tidak berubah sejak ParkProof menandatanganinya. Tanda tangan tidak menunjukkan bahwa isinya benar.",
+      "intro": "Dokumen ini mengumpulkan setiap catatan parkir yang disimpan ke akun ParkProof ini, satu bagian per catatan. Jika sebuah catatan punya bagian yang ditandatangani, halaman tanda tangannya ada setelah bagiannya, lengkap dengan langkah untuk mengecek setiap tanda tangan. Tanda tangan yang valid menunjukkan bahwa detail yang ditandatangani tidak berubah sejak ParkProof menandatanganinya. Tanda tangan tidak menunjukkan bahwa isinya benar, siapa yang mengemudi, di mana mobil berada, atau kapan mobil tiba atau pergi.",
       "emptyState": "Belum ada catatan parkir yang disimpan ke akun ini.",
       "summaryColIndex": "#",
       "summaryColArrived": "Dicatat (jam ponsel)",
@@ -797,6 +924,80 @@
       "sessionHeader": "Catatan {{n}} dari {{total}}",
       "signedBadge": "Ditandatangani kriptografis pada {{when}}",
       "driverNoteField": "Catatan pengemudi"
+    },
+    "complianceType": {
+      "meterTicket": "Tiket parkir di dasbor",
+      "paymentConfirmation": "Konfirmasi pembayaran",
+      "permitDisplayed": "Izin dipajang di mobil",
+      "other": "Lainnya"
+    },
+    "photos": {
+      "complianceHeader": "Bukti pembayaran atau izin",
+      "conditionHeader": "Foto kondisi mobil",
+      "whenParked": "Saat parkir",
+      "onReturn": "Saat kembali",
+      "role": {
+        "front": "Depan",
+        "rear": "Belakang",
+        "left": "Sisi kiri",
+        "right": "Sisi kanan",
+        "detail": "Jarak dekat"
+      },
+      "added": "Ditambahkan {{time}} (jam ponsel)",
+      "library": "Ditambahkan dari galeri foto. Tanda tangan menunjukkan foto ini sudah ada saat ParkProof menandatanganinya, bukan kapan foto diambil.",
+      "signedAt": "Sidik jari ditandatangani ParkProof pada {{time}} (jam server)",
+      "devKey": "Sidik jari ditandatangani dengan kunci pengembangan pada {{time}}. Tidak bisa dicek dengan kunci publik yang diterbitkan ParkProof.",
+      "notSignedYet": "Sidik jari belum ditandatangani",
+      "notSigned": "Sidik jari tidak ditandatangani",
+      "rejected": "Bagian ini tidak bisa ditandatangani",
+      "signedNote": "Foto yang ditandatangani menunjukkan foto itu sudah ada saat ditandatangani. Foto itu tidak menunjukkan siapa yang menyebabkan kerusakan."
+    },
+    "shared": {
+      "field": "Dibagikan kepadamu",
+      "madeElsewhere": "Catatan ini dibuat di ponsel orang lain."
+    },
+    "workday": {
+      "title": "Catatan peristiwa parkir.",
+      "footer": "Catatan ini merekam apa yang kamu lakukan dan apa yang kamu sampaikan kepada kami. Ini bukan putusan hukum bahwa kamu sudah mematuhi aturan. Dewan kotamu yang memutuskannya.",
+      "councilLine": "Dewan kota bisa menafsirkan aturan ini dengan lebih ketat. Cek halaman parkir dewan kotamu.",
+      "started": "Hari kerja dimulai {{time}} (jam ponsel)",
+      "ended": "Hari kerja berakhir {{time}} (jam ponsel)",
+      "legCount": "Perhentian dalam PDF ini: {{chosen}} dari {{total}}",
+      "partial": "Tidak semua perhentian hari kerja ini ada di PDF ini. Setiap jarak dan pernyataan pengemudi menyangkut perhentian tepat sebelumnya pada hari kerja itu, meski perhentian tersebut tidak disertakan.",
+      "intro": "Setiap perhentian adalah catatan parkir tersendiri. Setelah tabel ini ada bagian untuk setiap perhentian, dan halaman tanda tangan ada di akhir.",
+      "col": {
+        "leg": "Perhentian",
+        "arrived": "Tiba (jam ponsel)",
+        "left": "Pergi (jam ponsel)",
+        "distance": "Perkiraan jarak dari perhentian sebelumnya (GPS ponsel)",
+        "statement": "Pernyataan pengemudi"
+      },
+      "cell": {
+        "notLeft": "Belum dicatat",
+        "signedArrival": "Kedatangan: {{value}}",
+        "signedDeparture": "Saat pergi: {{value}}",
+        "noDistance": "Tidak diukur. Perlu titik GPS ponsel di kedua perhentian."
+      },
+      "statement": {
+        "firstLeg": "Tidak ada. Ini perhentian pertama.",
+        "notAsked": "Tidak ditanyakan. ParkProof tidak menanyakan perpindahan ini.",
+        "oppositeDirectionSign": "Pengemudi menyatakan melewati rambu yang menunjukkan zona ini sudah berakhir.",
+        "yellowEdgeLine": "Pengemudi menyatakan melewati garis tepi kuning.",
+        "tIntersectionOrDeadEnd": "Pengemudi menyatakan melewati ujung jalan di pertigaan T atau jalan buntu.",
+        "leftParkingArea": "Pengemudi menyatakan mengemudi keluar dari area parkir, melewati rambu yang menyatakan area itu berakhir.",
+        "notSure": "Saat ditanya apakah sudah meninggalkan ruas jalan yang diatur rambu, pengemudi menjawab: Saya tidak yakin.",
+        "notSureArea": "Saat ditanya apakah sudah meninggalkan area parkir, pengemudi menjawab: Saya tidak yakin."
+      },
+      "legHeading": "Perhentian {{number}}",
+      "tagged": "Perhentian ini adalah parkir sebelumnya yang ditambahkan ke hari kerja. Detailnya yang ditandatangani tidak menyebut hari kerja ini.",
+      "chain": {
+        "heading": "Rantai antar perhentian",
+        "intro": "Detail saat parkir setiap perhentian memuat previous_departure_payload_sha256, yaitu SHA-256 dari payload kepergian yang ditandatangani milik perhentian sebelumnya, jika kepergian itu ditandatangani tepat waktu. Simpan berkas setiap perhentian dari halaman tanda tangannya di folder tersendiri (leg1, leg2, dan seterusnya) lalu dekode sesuai langkahnya. Kemudian jalankan perintah yang ditampilkan untuk setiap pasangan.",
+        "equals": "Nilai hex itu harus sama dengan previous_departure_payload_sha256 di mata rantai {{link}} perhentian {{leg}}.",
+        "equalsOneOf": "Salah satu nilai hex ini harus sama dengan previous_departure_payload_sha256 di mata rantai {{link}} perhentian {{leg}}.",
+        "notLinked": "Mata rantai {{link}} perhentian {{leg}} ditandatangani tanpa kepergian dari perhentian sebelumnya, karena tidak ada yang ditandatangani tepat waktu. Tidak ada yang perlu dibandingkan di sini.",
+        "notInPdf": "Mata rantai {{link}} perhentian {{leg}} merujuk ke kepergian yang ditandatangani dari perhentian sebelumnya yang tidak ada di PDF ini."
+      }
     }
   },
   "time": {
@@ -821,31 +1022,36 @@
   },
   "scheduledReminders": {
     "header": "Pengingat terjadwal",
-    "noneYet": "Belum ada pengingat push diatur untuk sesi ini.",
-    "firesAtExpiry": "{{when}} — saat berakhir",
-    "firesBefore_one": "{{when}} — 1 menit sebelum berakhir",
-    "firesBefore_other": "{{when}} — {{count}} menit sebelum berakhir",
-    "firesFromNow_one": "{{when}} — 1 menit setelah tiba",
-    "firesFromNow_other": "{{when}} — {{count}} menit setelah tiba",
+    "noneYet": "Belum ada pengingat push yang diatur untuk catatan ini.",
+    "firesAtExpiry": "{{when}}: saat berakhir",
+    "firesBefore_one": "{{when}}: 1 menit sebelum berakhir",
+    "firesBefore_other": "{{when}}: {{count}} menit sebelum berakhir",
+    "firesFromNow_one": "{{when}}: 1 menit setelah tiba",
+    "firesFromNow_other": "{{when}}: {{count}} menit setelah tiba",
     "firesAbsolute": "{{when}}",
     "addAnother": "+ Tambah pengingat",
     "cancelAll": "Batalkan semua pengingat",
-    "cancelAllConfirm": "Batalkan setiap pengingat push terjadwal untuk sesi ini?",
+    "cancelAllConfirm": "Batalkan setiap pengingat push terjadwal untuk catatan ini?",
     "cancelOne": "Hapus pengingat ini",
     "pickHeader": "Kapan kami harus mengingatkanmu?",
     "pickCancel": "Batal",
-    "tooLateAll": "Tidak ada opsi pengingat yang masih bisa dijadwalkan di masa depan. Ketuk Akhiri sesi jika kamu sudah pergi.",
+    "tooLateAll": "Tidak ada opsi pengingat yang waktunya masih cukup jauh untuk diatur. Kalau kamu sudah memindahkan mobil, ketuk \"Sudah pergi\".",
     "pushNotEnabled": "Aktifkan notifikasi push di perangkat ini untuk menambah pengingat yang menyala saat aplikasi tertutup.",
     "saving": "Menyimpan…",
-    "errorRetry": "Tidak bisa memperbarui — coba lagi",
-    "otherDevice": "Pengingat ini diatur di perangkat lain. Ubah di perangkat itu."
+    "errorRetry": "Tidak bisa memperbarui. Coba lagi",
+    "otherDevice": "Pengingat ini diatur di perangkat lain. Ubah di perangkat itu.",
+    "chipAlreadySet": "Sudah diatur",
+    "firesAtStandardEnd": "{{when}}: batas standar berakhir",
+    "firesAtPermitTime": "{{when}}: saat waktu izin yang kamu isi berakhir",
+    "firesBeforePermitTime_one": "{{when}}: {{count}} menit sebelum waktu izin yang kamu isi berakhir",
+    "firesBeforePermitTime_other": "{{when}}: {{count}} menit sebelum waktu izin yang kamu isi berakhir"
   },
   "installPrompt": {
     "available": "Pasang ParkProof",
     "install": "Pasang",
     "installing": "Memasang…",
     "iosTitle": "Pasang ParkProof di iPhone-mu",
-    "iosBody": "Ketuk tombol Share, lalu pilih 'Add to Home Screen'. Ia terbuka layar penuh dan jalan offline.",
+    "iosBody": "Ketuk tombol Bagikan, lalu pilih 'Tambah ke Layar Utama'. Aplikasinya terbuka layar penuh, dan catatan yang kamu simpan di sana tetap bisa dibuka tanpa koneksi. Catatan yang sudah tersimpan di Safari tetap di Safari.",
     "iosDismiss": "Mengerti"
   },
   "verifier": {
@@ -872,7 +1078,10 @@
     "heading": "SAAT PERGI",
     "tapped": "Kamu mengetuk \"Sudah pergi\" pada {{time}} (jam ponsel).",
     "far": "Saat kamu mengetuk \"Sudah pergi\", ponselmu berjarak {{distance}} dari tempat kamu parkir. Catatan ini menunjukkan kapan kamu mengetuk, bukan kapan mobil bergerak.",
-    "notSigned": "Kepergian ini tidak ditandatangani."
+    "notSigned": "Kepergian ini tidak ditandatangani.",
+    "condition": {
+      "toggle": "Catat kondisi mobil sekarang (opsional)"
+    }
   },
   "chain": {
     "heading": "BAGIAN CATATAN YANG DITANDATANGANI",
@@ -898,8 +1107,8 @@
     "devKeySignedAt": "Ditandatangani pada {{time}} dengan kunci pengembangan, bukan kunci publik yang diterbitkan ParkProof.",
     "check": "Cek tanda tangan",
     "checking": "Mengecek…",
-    "checkValid_one": "Semua tanda tangan valid ({{count}}). Tidak ada yang berubah sejak ParkProof menandatanganinya. Itu tidak menunjukkan bahwa isi catatan ini benar.",
-    "checkValid_other": "Semua tanda tangan valid ({{count}}). Tidak ada yang berubah sejak ParkProof menandatanganinya. Itu tidak menunjukkan bahwa isi catatan ini benar.",
+    "checkValid_one": "Semua tanda tangan valid ({{count}}). Detail yang ditandatangani tidak berubah sejak ParkProof menandatanganinya. Itu tidak menunjukkan bahwa isinya benar.",
+    "checkValid_other": "Semua tanda tangan valid ({{count}}). Detail yang ditandatangani tidak berubah sejak ParkProof menandatanganinya. Itu tidak menunjukkan bahwa isinya benar.",
     "checkValidPhotosUnchecked_one": "Semua tanda tangan valid ({{count}}). Beberapa foto tidak ada di perangkat ini, jadi tidak bisa dicocokkan dengan sidik jarinya. Itu tidak menunjukkan bahwa isi catatan ini benar.",
     "checkValidPhotosUnchecked_other": "Semua tanda tangan valid ({{count}}). Beberapa foto tidak ada di perangkat ini, jadi tidak bisa dicocokkan dengan sidik jarinya. Itu tidak menunjukkan bahwa isi catatan ini benar.",
     "checkProblem": "Setidaknya satu bagian atau foto tidak lolos pengecekan. Hasil masing-masing ditampilkan di sini.",
@@ -927,5 +1136,552 @@
       "returnDetail": "Kondisi saat kembali, jarak dekat",
       "compliance": "Foto bukti pembayaran atau izin"
     }
+  },
+  "workday": {
+    "reminder": {
+      "headsUp": "Batas waktu parkirmu di ruas jalan ini berakhir pukul {{time}}. Pindahkan mobil keluar dari ruas jalan yang diatur rambu ini, bukan hanya ke petak parkir lain.",
+      "goNow": "Berangkat sekarang untuk memindahkan mobil sebelum pukul {{time}}.",
+      "ended": "Waktu parkirmu di ruas jalan ini sudah berakhir pukul {{time}}.",
+      "headsUpArea": "Batas waktu parkirmu di area parkir ini berakhir pukul {{time}}. Pindahkan mobil keluar dari seluruh area, bukan hanya ke jalan lain di dalamnya.",
+      "endedArea": "Waktu parkirmu di area parkir ini sudah berakhir pukul {{time}}."
+    },
+    "start": {
+      "title": "Mulai hari kerja",
+      "intro": "Untuk hari ketika kamu memindahkan mobil di antara tempat parkir berbatas waktu. Setiap perhentian punya catatannya sendiri, dibaca dari foto rambu yang baru diambil.",
+      "locating": "Memeriksa kamu berada di negara bagian mana…",
+      "unavailable": "Mode hari kerja tersedia di Victoria dan Queensland selagi kami memeriksa aturan negara bagian lain.",
+      "unknown": "ParkProof tidak bisa mengetahui kamu berada di negara bagian mana dari lokasi ponselmu. Mode hari kerja hanya tersedia di Victoria dan Queensland, jadi perlu diperiksa dulu.",
+      "button": "Mulai hari kerja",
+      "useCurrent": "Gunakan tempat parkir mobil saat ini sebagai perhentian pertama",
+      "useCurrentHelp": "Parkir itu tetap memakai waktu saat kamu mencatatnya dan batas waktunya. Pindah beberapa petak parkir sesudahnya tidak membuat batas waktu itu dimulai ulang, jadi tetap pakai parkir itu. Kalau mobil sudah keluar dari ruas jalan yang diatur rambu, kembali dan ketuk \"Sudah pergi\" pada catatan itu dulu.",
+      "currentIneligible": "Parkirmu saat ini tidak bisa menjadi perhentian hari kerja. Setiap perhentian perlu rambu yang terbaca di Victoria atau Queensland. Ketuk \"Sudah pergi\" pada catatan itu setelah mobil keluar dari ruas jalan yang diatur rambu, lalu mulai hari kerja."
+    },
+    "explainer": {
+      "heading": "Cara kerja batas waktu",
+      "full": "Pindah beberapa petak parkir tidak membuat batas waktu dimulai ulang. Kamu harus meninggalkan ruas jalan yang diatur rambu, atau seluruh area jika rambunya rambu area. Membayar lagi atau menambah pembayaran juga tidak membuat batas waktu dimulai ulang. Setiap kali pindah, kamu perlu foto baru dari rambu yang baru.",
+      "short": "Pindah beberapa petak parkir tidak membuat batas waktu dimulai ulang. Setiap kali pindah, kamu perlu foto baru dari rambu yang baru."
+    },
+    "ready": {
+      "heading": "Pengingat",
+      "on": "Notifikasi aktif, jadi pengingat hari kerja bisa sampai ke ponsel ini meski ParkProof tertutup.",
+      "ask": "Aktifkan notifikasi agar pengingat hari kerja bisa sampai ke ponsel ini meski ParkProof tertutup.",
+      "allow": "Aktifkan notifikasi",
+      "cantDeliver": "Pengingat hari kerja memerlukan notifikasi. Tanpa notifikasi, kamu perlu memantau waktu sendiri.",
+      "iosInstall": "Di iPhone, notifikasi memerlukan ParkProof di Layar Utama. Ketuk Bagikan, lalu Tambah ke Layar Utama, dan mulai hari kerja dari sana.",
+      "denied": "Notifikasi untuk ParkProof diblokir. Kamu bisa mengizinkannya di pengaturan situs browser.",
+      "turnedOff": "Notifikasi ParkProof dimatikan di ponsel ini. Kamu bisa menyalakannya lagi di Pengaturan."
+    },
+    "ics": {
+      "button": "Tambahkan pengingat kalender untuk perhentian ini",
+      "title": "Pindahkan mobil keluar dari ruas jalan yang diatur rambu ini sebelum pukul {{time}}",
+      "titleArea": "Pindahkan mobil keluar dari area parkir ini sebelum pukul {{time}}"
+    },
+    "card": {
+      "kicker": "Hari kerja",
+      "stop": "Perhentian {{number}}",
+      "noStops": "Belum ada perhentian. Setiap perhentian dimulai dengan foto rambunya.",
+      "moved": "Perhentian {{number}} berakhir pukul {{time}} (jam ponsel).",
+      "open": "Buka hari kerja ini",
+      "openAria": "Buka hari kerja ini. {{status}}",
+      "expiredHint": "Masih di sini? Pindahkan sekarang. Sudah pindah? Ketuk \"Saya memindahkan mobil sekarang\".",
+      "move": "Saya memindahkan mobil sekarang",
+      "moveHint": "Ketuk sebelum kamu berangkat",
+      "scanFirst": "Sudah parkir? Pindai rambu di tempatmu",
+      "scanNext": "Sudah parkir lagi? Pindai rambu yang baru",
+      "end": "Akhiri hari kerja"
+    },
+    "end": {
+      "title": "Akhiri hari kerja ini?",
+      "body": "Perhentianmu tetap ada di Riwayat. Setelah ini, parkir yang kamu catat adalah catatan biasa, dan ParkProof tidak akan menanyakan apakah kamu sudah meninggalkan ruas jalan yang diatur rambu."
+    },
+    "history": {
+      "row_one": "Hari kerja, {{count}} perhentian",
+      "row_other": "Hari kerja, {{count}} perhentian"
+    },
+    "status": {
+      "active": "Sedang berlangsung",
+      "ended": "Selesai"
+    },
+    "view": {
+      "title": "Hari kerja",
+      "started": "Dimulai {{time}} (jam ponsel)",
+      "ended": "Berakhir {{time}} (jam ponsel)",
+      "stopsHeading": "Perhentian",
+      "noStops": "Belum ada perhentian.",
+      "tagged": "Ditambahkan ke hari kerja ini dari parkir sebelumnya. Detailnya yang ditandatangani tidak menyebut hari kerja ini."
+    },
+    "noSign": {
+      "body": "Mode hari kerja memerlukan rambu yang terbaca di setiap tempat. Beberapa area, seperti pusat kota Brisbane, punya batas waktu meski jalannya tidak punya rambu."
+    },
+    "stopped": {
+      "notAvailable": "Mode hari kerja belum tersedia di sini. Parkir ini disimpan sebagai catatan biasa dengan pembacaan rambunya sendiri.",
+      "unknownState": "ParkProof tidak bisa memastikan parkir ini ada di negara bagian mana, jadi hari kerja sudah berakhir. Parkir ini disimpan sebagai catatan biasa. Kalau kamu bilang tidak yakin, batas waktu awalmu masih berlaku."
+    },
+    "scan": {
+      "fresh": "Perhentian hari kerja: ambil foto baru rambu di tempat mobil berada sekarang.",
+      "cameraDenied": "Nyalakan lagi akses kamera di pengaturan browser. Perhentian hari kerja perlu foto yang diambil saat ini.",
+      "notFresh": "Foto itu bukan foto yang baru diambil. Perhentian hari kerja perlu foto rambu yang diambil saat ini. Ambil foto baru dengan kamera."
+    },
+    "boundary": {
+      "title": "Ini mungkin masih ruas jalan yang sama yang diatur rambu.",
+      "body": "Pindah petak parkir tidak membuat batas waktu dimulai ulang. Apakah kamu melewati salah satu dari ini dalam perjalanan ke sini?",
+      "area": "Ini area parkir. Pindah ke jalan lain di dalamnya tidak dihitung. Kamu harus meninggalkan seluruh area.",
+      "option": {
+        "oppositeDirectionSign": "Rambu yang menunjukkan zona ini sudah berakhir (rambu panah dua arah di tengah blok tidak dihitung)",
+        "yellowEdgeLine": "Garis tepi kuning",
+        "tIntersectionOrDeadEnd": "Ujung jalan di pertigaan T atau jalan buntu",
+        "leftParkingArea": "Saya mengemudi keluar dari area parkir, melewati rambu yang menyatakan area itu berakhir",
+        "notSure": "Saya tidak yakin"
+      },
+      "footer": "Kalau kamu tidak yakin, batas waktu awalmu masih berjalan.",
+      "required": "Pilih satu jawaban untuk menyimpan perhentian ini.",
+      "newLimit": "Batas baru berdasarkan yang kamu sampaikan: kamu melewati {{boundary}}.",
+      "passed": {
+        "oppositeDirectionSign": "rambu yang menunjukkan zona ini sudah berakhir",
+        "yellowEdgeLine": "garis tepi kuning",
+        "tIntersectionOrDeadEnd": "ujung jalan di pertigaan T atau jalan buntu",
+        "leftParkingArea": "rambu yang menyatakan area parkir berakhir"
+      },
+      "notSure": "Batas waktumu di ruas jalan ini masih dihitung sejak {{start}}. Pindahkan mobil keluar dari ruas jalan ini sebelum {{deadline}}.",
+      "notSureArea": "Batas waktumu di area parkir ini masih dihitung sejak {{start}}. Pindahkan mobil keluar dari seluruh area sebelum {{deadline}}.",
+      "notSureNoDeadline": "Batas waktumu di ruas jalan ini masih dihitung sejak {{start}}.",
+      "notSureNoDeadlineArea": "Batas waktumu di area parkir ini masih dihitung sejak {{start}}.",
+      "passedDeadline": "Waktumu di ruas jalan ini sudah berakhir pukul {{time}}. Pindahkan mobil keluar dari ruas jalan ini sekarang.",
+      "passedDeadlineArea": "Waktumu di area parkir ini sudah berakhir pukul {{time}}. Pindahkan mobil keluar dari seluruh area sekarang.",
+      "saveAnyway": "Tetap simpan",
+      "dontSave": "Jangan simpan perhentian ini"
+    },
+    "reminders": {
+      "notSet": "Pengingat untuk perhentian ini tidak bisa diatur. Perhatikan waktunya sendiri, atau coba lagi."
+    },
+    "pdf": {
+      "open": "Ekspor PDF hari kerja ini",
+      "title": "PDF hari kerja",
+      "warning": "PDF ini memuat setiap perhentian yang kamu pilih, beserta jarak di antaranya dan apa yang kamu sampaikan kepada kami setiap kali pindah. Dewan kota bisa membacanya.",
+      "chooseLegs": "Perhentian yang disertakan",
+      "leg": "Perhentian {{number}}",
+      "noneChosen": "Pilih setidaknya satu perhentian untuk diekspor."
+    }
+  },
+  "notice": {
+    "title": "Kena denda?",
+    "captureIntro": "Foto surat dendanya. ParkProof membaca tanggal, waktu, dan tempat di surat itu, lalu mencari catatan parkirmu di sekitar waktu tersebut.",
+    "reading": {
+      "step1": "Membaca surat denda…",
+      "step2": "Mencari tanggal, waktu, dan tempat…",
+      "step3": "Mencari catatanmu…",
+      "slow": "Masih membaca. Ini bisa sedikit lebih lama…",
+      "hint": "Biasanya hanya beberapa detik."
+    },
+    "errorHeader": "Tidak bisa membaca surat denda",
+    "fields": {
+      "heading": "Isi surat denda",
+      "intro": "Dibaca oleh AI dari fotomu. Cocokkan setiap detail dengan surat dendanya.",
+      "noticeNumber": "Nomor surat",
+      "issuedBy": "Diterbitkan oleh",
+      "date": "Tanggal di surat",
+      "time": "Waktu di surat",
+      "location": "Tempat",
+      "offence": "Pelanggaran",
+      "partlyReadable": "Sebagian surat denda sulit dibaca. Cocokkan detail ini dengan surat dendanya langsung.",
+      "checkDateTime": "Cocokkan tanggal dan waktu dengan surat denda. Mungkin salah terbaca.",
+      "enterDateTime": "Kami tidak bisa membaca tanggal dan waktunya. Masukkan sesuai surat denda untuk mencari catatanmu."
+    },
+    "matches": {
+      "heading": "Catatanmu di sekitar waktu ini",
+      "none": "Tidak ada catatan parkir tersimpan milikmu di sekitar tanggal dan waktu ini. Jika tanggal atau waktu di atas salah terbaca, perbaiki."
+    },
+    "match": {
+      "compare": "Bandingkan dengan catatan ini",
+      "far": "Catatan ini berjarak sekitar {{distance}} km dari tempat di surat denda.",
+      "repeatedHour": "Waktu musim panas berakhir pada tanggal ini, jadi waktu di surat denda terjadi dua kali. Catatan ini dibandingkan dengan {{time}}.",
+      "skippedHour": "Waktu musim panas dimulai pada tanggal ini, jadi waktu di surat denda tidak ada di jam. Catatan ini dibandingkan dengan {{time}}."
+    },
+    "compare": {
+      "heading": "Dibandingkan dengan surat denda",
+      "departureSignedBefore": "Kamu mengetuk \"Sudah pergi\" pada {{time}}, {{duration}} sebelum waktu di surat denda. ParkProof menandatangani catatan itu pada {{signedTime}}. Catatan ini menunjukkan kapan kamu mengetuk, bukan kapan mobil bergerak.",
+      "departureSignedBeforeClock": "Menurut jam ponselmu, kamu mengetuk \"Sudah pergi\" pada {{time}}. ParkProof menandatangani catatan itu pada {{signedTime}}, sebelum waktu di surat denda. Catatan ini menunjukkan kapan kamu mengetuk, bukan kapan mobil bergerak.",
+      "departureSignedAfter": "Menurut jam ponselmu, kamu mengetuk \"Sudah pergi\" pada {{time}}. ParkProof baru menandatanganinya pada {{signedTime}}, setelah waktu di surat denda, jadi tanda tangan itu tidak bisa menunjukkan bahwa kamu sudah pergi pada {{noticeTime}}.",
+      "departurePending": "Kamu mengetuk \"Sudah pergi\" pada {{time}}. Ini belum ditandatangani.",
+      "departureNotSigned": "Kamu mengetuk \"Sudah pergi\" pada {{time}}. Ini tidak ditandatangani.",
+      "noDeparture": "Kamu belum mengetuk \"Sudah pergi\" di catatan ini.",
+      "arrivalBefore": "Kamu mencatat parkir ini pada {{time}}, {{duration}} sebelum waktu di surat denda.",
+      "arrivalAfter": "Kamu mencatat parkir ini pada {{time}}, {{duration}} setelah waktu di surat denda.",
+      "arrivalSame": "Kamu mencatat parkir ini pada {{time}}, pada menit yang sama dengan waktu di surat denda.",
+      "driver": "Catatanmu menyebut {{driver}} yang mengemudi. Itu yang dimasukkan saat parkir ini dicatat. ParkProof tidak memeriksanya. Jika orang lain yang mengemudi, surat denda menjelaskan cara menominasikan orang itu. Nominasikan hanya orang yang benar-benar mengemudi.",
+      "handover": "Catatanmu menyebut mobil diserahkan kepada {{to_driver}} pada {{time}}.",
+      "checkRegistration": "Pastikan nomor registrasi di surat denda adalah mobil dalam catatan ini. ParkProof tidak mencatat nomor registrasi.",
+      "checkDueDate": "Periksa tanggal jatuh tempo di surat dendanya langsung.",
+      "departureDevKey": "Menurut jam ponselmu, kamu mengetuk \"Sudah pergi\" pada {{time}}. Ini ditandatangani dengan kunci pengembangan, bukan kunci yang diterbitkan ParkProof, jadi tanda tangan itu tidak bisa menunjukkan bahwa kamu sudah pergi pada {{noticeTime}}.",
+      "arrivalSignedBefore": "ParkProof menandatangani catatan ini pada {{signedTime}}, sebelum waktu di surat denda. Tanda tangan itu menunjukkan bahwa catatan ini sudah ada saat itu, bukan kapan mobil tiba atau di mana mobil berada.",
+      "arrivalSignedAfter": "ParkProof baru menandatangani catatan ini pada {{signedTime}}, setelah waktu di surat denda, jadi tanda tangan itu tidak bisa menunjukkan bahwa catatan ini sudah ada pada {{noticeTime}}.",
+      "arrivalDevKey": "Catatan ini ditandatangani dengan kunci pengembangan, bukan kunci yang diterbitkan ParkProof, jadi tanda tangan itu tidak bisa menunjukkan bahwa catatan ini sudah ada pada {{noticeTime}}.",
+      "arrivalPending": "ParkProof belum menandatangani catatan ini.",
+      "arrivalNotSigned": "Catatan ini tidak ditandatangani.",
+      "driverPending": "Nama pengemudi belum ditandatangani.",
+      "driverNotSigned": "Nama pengemudi tidak ditandatangani.",
+      "handoverPending": "Serah terima mobil ini belum ditandatangani."
+    },
+    "duration": {
+      "minutes_one": "{{count}} menit",
+      "minutes_other": "{{count}} menit",
+      "hours_one": "{{count}} jam",
+      "hours_other": "{{count}} jam",
+      "hoursMinutes": "{{hours}} {{minutes}}"
+    },
+    "actions": {
+      "draftAppeal": "Buat draf surat banding dengan catatan ini",
+      "exportPdf": "Ekspor PDF bukti",
+      "draftAnyway": "Tetap buat draf surat banding"
+    },
+    "disclaimer": "Ini membandingkan catatanmu dengan isi surat denda. Ini bukan nasihat hukum, dan tidak menyatakan apakah dendanya sah. Dewan kota atau pengadilan yang memutuskan."
+  },
+  "unclearSign": {
+    "obscuredTitle": "Sebagian rambu ini sulit dibaca",
+    "contradictoryTitle": "Bagian-bagian rambu ini saling bertentangan",
+    "strictest": "Jawaban di atas memakai bacaan yang paling ketat. Periksa sendiri rambunya sebelum kamu meninggalkan mobil.",
+    "worthRecording": "Rambu yang tidak bisa dibaca dengan jelas layak dicatat.",
+    "notesLabel": "Yang dilihat AI",
+    "noSignTitle": "Tidak ada rambu parkir yang terbaca",
+    "noSignBody": "Kami tidak menemukan rambu parkir yang bisa dibaca di foto ini. Itu tidak berarti tidak ada aturan di sini. Aturan lalu lintas umum tetap berlaku, misalnya dilarang parkir dalam jarak 10 meter dari persimpangan tanpa lampu lalu lintas, dan beberapa kawasan punya batas waktu parkir walaupun tidak setiap jalan ada rambunya.",
+    "photoAlt": "Foto yang kamu ambil",
+    "retake": "Foto ulang",
+    "logWithoutSign": "Catat tanpa rambu",
+    "photoCaption": "Foto diambil di tempat kamu parkir. ParkProof tidak menemukan rambu parkir yang bisa dibaca di foto ini.",
+    "loggerIntro": "Kami akan menyimpan kapan dan di mana kamu parkir, beserta foto yang kamu ambil.",
+    "loggerBanner": "Catatan ini akan menyebutkan bahwa ParkProof tidak menemukan rambu parkir yang bisa dibaca di fotomu dan kamu mencatat parkir ini tanpa rambu. Catatan ini tidak menunjukkan bahwa di sini tidak ada rambu.",
+    "recordNoSignRead": "Tidak ada rambu yang terbaca. ParkProof tidak menemukan rambu parkir yang bisa dibaca di foto, dan kamu mencatat parkir ini tanpa rambu.",
+    "noSignReadLabel": "Tidak ada rambu yang terbaca",
+    "remindIntro": "Tidak ada rambu yang terbaca untuk parkir ini, jadi tidak ada waktu berakhir untuk diingatkan. Kamu tetap bisa minta pengingat untuk mengecek. Pilih berapa lama lagi dari sekarang, sebanyak yang kamu mau."
+  },
+  "recurring": {
+    "title": "Pengingat mingguan",
+    "intro": "Penyapuan jalan, clearway, dan larangan lain yang berulang di hari yang sama. Atur sekali, lalu dapatkan pengingat sebelum setiap kali dimulai.",
+    "homeRow": "Penyapuan jalan dan pengingat mingguan",
+    "homeNext": "Berikutnya: {{what}}, {{time}}",
+    "homeOnNow": "{{what}} sedang berlaku, sampai {{time}}",
+    "homeCount_one": "{{count}} diatur",
+    "homeCount_other": "{{count}} diatur",
+    "homeNone": "Belum ada",
+    "empty": "Belum ada pengingat mingguan",
+    "emptyHelp": "Tambahkan satu untuk penyapuan jalan atau clearway di tempat kamu biasa parkir.",
+    "add": "Tambah pengingat mingguan",
+    "editTitleNew": "Pengingat mingguan baru",
+    "editTitle": "Ubah pengingat mingguan",
+    "kind": {
+      "street_cleaning": "Penyapuan jalan",
+      "clearway": "Clearway",
+      "no_stopping": "Dilarang berhenti",
+      "other": "Larangan lain"
+    },
+    "field": {
+      "kind": "Apa ini?",
+      "label": "Nama",
+      "days": "Hari",
+      "start": "Mulai",
+      "end": "Selesai",
+      "frequency": "Seberapa sering",
+      "anchor": "Tanggal berikutnya",
+      "nth": "Minggu ke berapa dalam sebulan",
+      "address": "Lokasi",
+      "addressPlaceholder": "Jalan atau tempat (opsional)",
+      "remind": "Ingatkan saya",
+      "push": "Beri tahu saya di ponsel ini"
+    },
+    "frequency": {
+      "weekly": "Setiap minggu",
+      "fortnightly": "Setiap dua minggu",
+      "monthly_nth": "Minggu tertentu tiap bulan"
+    },
+    "remind": {
+      "evening": "Malam sebelumnya, pukul",
+      "before": "Sebelum dimulai",
+      "minutes_one": "{{count}} menit sebelumnya",
+      "minutes_other": "{{count}} menit sebelumnya",
+      "hours_one": "{{count}} jam sebelumnya",
+      "hours_other": "{{count}} jam sebelumnya"
+    },
+    "pushHint": "Supaya pengingatnya paling andal, tambahkan juga ke kalendermu.",
+    "zoneNote": "Hari dan jam mengikuti waktu setempat di {{place}}.",
+    "zone": {
+      "melbourne": "Melbourne",
+      "sydney": "Sydney",
+      "canberra": "Canberra",
+      "brisbane": "Brisbane",
+      "lindeman": "Pulau Lindeman",
+      "adelaide": "Adelaide",
+      "brokenHill": "Broken Hill",
+      "darwin": "Darwin",
+      "perth": "Perth",
+      "eucla": "Eucla",
+      "hobart": "Hobart",
+      "lordHowe": "Pulau Lord Howe"
+    },
+    "days": {
+      "MO": "Senin",
+      "TU": "Selasa",
+      "WE": "Rabu",
+      "TH": "Kamis",
+      "FR": "Jumat",
+      "SA": "Sabtu",
+      "SU": "Minggu"
+    },
+    "daysShort": {
+      "MO": "Sen",
+      "TU": "Sel",
+      "WE": "Rab",
+      "TH": "Kam",
+      "FR": "Jum",
+      "SA": "Sab",
+      "SU": "Min"
+    },
+    "dayRange": "{{from}} sampai {{to}}",
+    "nth": {
+      "n1": "pertama",
+      "n2": "kedua",
+      "n3": "ketiga",
+      "n4": "keempat",
+      "n5": "kelima"
+    },
+    "schedule": {
+      "weekly": "Setiap minggu pada hari {{days}}",
+      "fortnightly": "Setiap dua minggu pada hari {{days}}",
+      "monthly_nth": "Hari {{days}} {{nths}} setiap bulan"
+    },
+    "timeRange": "{{start}} sampai {{end}}",
+    "summary": "{{schedule}}, {{range}}",
+    "next": "Berikutnya: {{time}}",
+    "onNow": "Sedang berlaku, sampai {{time}}",
+    "paused": "Dijeda",
+    "noNext": "Tidak ada tanggal mendatang",
+    "pause": "Jeda",
+    "resume": "Lanjutkan",
+    "pausedHint": "Pengingat yang dijeda tidak akan memberi tahu kamu di sini. Jika kamu sudah menambahkannya ke kalender, kalender itu tetap menyimpan alarmnya sendiri.",
+    "delete": "Hapus pengingat",
+    "deleteConfirm": "Hapus pengingat mingguan ini? Jika kamu sudah menambahkannya ke kalender, kalender itu tetap menyimpan salinannya.",
+    "calendar": "Tambah ke kalender",
+    "calendarDone": "Sudah diunduh. Buka file untuk menambahkannya.",
+    "saved": "Pengingat mingguan disimpan.",
+    "errors": {
+      "days": "Pilih setidaknya satu hari.",
+      "times": "Pilih jam mulai dan jam selesai yang berbeda.",
+      "nth": "Pilih setidaknya satu minggu dalam sebulan.",
+      "anchor": "Pilih tanggal berikutnya.",
+      "saveFailed": "Pengingat ini tidak bisa disimpan. Coba lagi."
+    },
+    "councilNote": "Dewan kota bisa mengubah jadwal ini, dan hari libur umum bisa berbeda. Periksa rambu di tempat kamu parkir.",
+    "notifyDenied": "Notifikasi untuk ParkProof diblokir, jadi pengingat ini tidak bisa memberi tahu kamu di ponsel ini. Izinkan notifikasi di pengaturan situs browsermu, atau tambahkan ke kalendermu.",
+    "pushStatus": {
+      "closed": "Diatur untuk mengingatkanmu di ponsel ini meskipun ParkProof sedang ditutup. Buka ParkProof setidaknya sekali setiap dua bulan agar tetap aktif.",
+      "openOnly": "Hanya mengingatkanmu di ponsel ini saat ParkProof terbuka. Tambahkan juga ke kalendermu.",
+      "none": "Ponsel ini belum bisa menampilkan pengingat ini. Tambahkan ke kalendermu."
+    },
+    "offer": {
+      "heading": "Rambu ini punya larangan mingguan",
+      "body": "ParkProof bisa mengingatkanmu setiap kali sebelum dimulai.",
+      "line": "{{what}}. {{summary}}.",
+      "cta": "Ingatkan saya setiap minggu",
+      "already": "Kamu sudah punya pengingat mingguan untuk ini."
+    },
+    "sheet": {
+      "title": "Ingatkan saya setiap minggu",
+      "check": "Cocokkan hari dan jam ini dengan rambu",
+      "signSays": "Rambu juga bertuliskan: {{text}}"
+    },
+    "notify": {
+      "moveTonight": "{{what}} pada hari {{day}}, {{range}}. Pindahkan mobilmu malam ini.",
+      "moveBefore": "{{what}} pada hari {{day}}, {{range}}. Pindahkan mobilmu sebelum {{start}}."
+    },
+    "ics": {
+      "alarmTonight": "{{what}} besok, {{range}}. Pindahkan mobilmu malam ini.",
+      "alarmTomorrow": "{{what}} besok, {{range}}. Pindahkan mobilmu sebelum {{start}}.",
+      "alarmSoon": "{{what}} mulai pukul {{start}}. Pindahkan mobilmu sebelum itu.",
+      "move": "Pindahkan mobilmu sebelum dimulai.",
+      "footer": "Pengingat diatur di ParkProof.",
+      "noDates": "Pengingat mingguan ini tidak punya tanggal untuk ditambahkan."
+    }
+  },
+  "photoGrid": {
+    "front": "Depan",
+    "rear": "Belakang",
+    "left": "Sisi kiri",
+    "right": "Sisi kanan",
+    "detail": "Jarak dekat (opsional)",
+    "take": "Ambil foto: {{angle}}",
+    "retake": "Foto ulang: {{angle}}",
+    "saving": "Menyimpan foto…",
+    "saved": "Tersimpan di ponselmu",
+    "failed": "Foto ini tidak bisa disimpan di ponselmu.",
+    "hint": "Kelilingi mobil dan foto setiap sisinya. Jika ada kerusakan, tambahkan foto jarak dekat.",
+    "signedNote": "Foto yang ditandatangani menunjukkan foto itu sudah ada saat ditandatangani. Foto itu tidak menunjukkan siapa yang menyebabkan kerusakan.",
+    "count_one": "{{count}} foto",
+    "count_other": "{{count}} foto"
+  },
+  "proof": {
+    "fromLibrary": "Bayar lewat aplikasi? Tambahkan konfirmasi pembayaran dari galerimu",
+    "typeLegend": "Isi foto ini"
+  },
+  "complianceType": {
+    "meterTicket": "Tiket parkir di dasbor",
+    "paymentConfirmation": "Konfirmasi pembayaran",
+    "permitDisplayed": "Izin dipajang di mobil",
+    "other": "Lainnya"
+  },
+  "evidence": {
+    "group": {
+      "parking": "Kondisi saat parkir",
+      "return": "Kondisi saat kembali",
+      "compliance": "Bukti pembayaran atau izin"
+    },
+    "noteLabel": "Kerusakan yang kamu lihat, dengan kata-katamu sendiri",
+    "addedAt": "Ditambahkan pada {{time}} (jam ponsel).",
+    "fingerprint": "Sidik jari: {{fingerprint}}",
+    "library": "Ditambahkan dari galeri foto. Tanda tangan menunjukkan foto ini sudah ada saat ParkProof menandatanganinya, bukan kapan foto diambil.",
+    "notSigned": "Foto ini tidak ada di bagian catatan yang ditandatangani.",
+    "photoNotOnDevice": "Foto ini tidak ada di perangkat ini. Sidik jari: {{fingerprint}}.",
+    "addCondition": "Tambahkan foto kondisi mobil",
+    "addMeterTicketOrPermit": "Tambahkan foto tiket parkir atau izinmu",
+    "addIntro": "ParkProof menandatangani sidik jari setiap foto sebagai bagian baru dari catatan ini. Fotonya sendiri tidak dikirim untuk ditandatangani.",
+    "addToRecord": "Tambahkan ke catatan",
+    "adding": "Menambahkan…",
+    "needPhoto": "Ambil setidaknya satu foto dulu.",
+    "needType": "Pilih isi foto ini.",
+    "addFailed": "Foto-foto ini tidak bisa ditambahkan ke catatan. Coba lagi.",
+    "cantAddNow": "Foto-foto ini tidak bisa ditambahkan sekarang. Catatan ini mungkin sudah berakhir, atau tidak ada ruang untuk bagian baru.",
+    "complianceDescribed": "{{type}} (sesuai keteranganmu)",
+    "noteNotSigned": "Keterangan ini tidak ada di bagian catatan yang ditandatangani."
+  },
+  "backupPrompt": {
+    "title": "Cadangkan fotomu",
+    "body": "Catatan dan foto bertanda tanganmu hanya disimpan di browser ini. Safari bisa menghapus data situs setelah 7 hari tidak dikunjungi.",
+    "homeScreenIos": "Tambahkan ParkProof ke Layar Utama: ketuk Bagikan, lalu pilih 'Tambah ke Layar Utama'. Catatan yang kamu simpan dari aplikasi di Layar Utama tetap ada di aplikasi itu. Catatan yang sudah tersimpan di Safari tetap di Safari dan tidak pindah ke aplikasi.",
+    "homeScreenOther": "Tambahkan ParkProof ke Layar Utama dari menu browser ('Instal aplikasi' atau 'Tambahkan ke Layar utama').",
+    "signIn": "Masuk untuk mencadangkan",
+    "dismiss": "Nanti saja"
+  },
+  "evidenceFile": {
+    "download": "Unduh berkas bukti",
+    "busy": "Menyiapkan berkas…",
+    "help": "Berkas .json berisi semua tanda tangan dan foto asli, sehingga siapa pun bisa mengecek catatan ini tanpa ParkProof. Tanda tangan menunjukkan detailnya tidak berubah sejak ditandatangani ParkProof. Tanda tangan tidak menunjukkan bahwa isinya benar, siapa yang mengemudi, di mana mobil berada, atau kapan mobil tiba atau pergi. Berkas ini memuat lokasi dan waktu yang tersimpan di catatan ini, jadi bagikan hanya kepada orang yang memerlukannya.",
+    "includePermit": "Sertakan detail izin",
+    "permitHelp": "Detail izinmu, dan foto apa pun yang ditandai 'Izin dipajang di mobil', hanya masuk ke berkas jika kamu mencentang ini. Catatan yang ditandatangani hanya menyimpan sidik jarinya, yang bisa dipakai untuk mencocokkannya. Detail izin parkir aksesibel adalah informasi kesehatan.",
+    "error": "Berkas bukti tidak bisa dibuat. Coba lagi.",
+    "photosMissing_one": "{{count}} foto yang ditandatangani tidak ada di perangkat ini, jadi fotonya tidak ada di berkas. Sidik jarinya yang ditandatangani ada di berkas.",
+    "photosMissing_other": "{{count}} foto yang ditandatangani tidak ada di perangkat ini, jadi fotonya tidak ada di berkas. Sidik jarinya yang ditandatangani ada di berkas.",
+    "photosDiffer_one": "{{count}} foto di perangkat ini tidak cocok dengan sidik jarinya yang ditandatangani, jadi fotonya tidak ada di berkas. Sidik jarinya yang ditandatangani ada di berkas.",
+    "photosDiffer_other": "{{count}} foto di perangkat ini tidak cocok dengan sidik jarinya yang ditandatangani, jadi fotonya tidak ada di berkas. Sidik jarinya yang ditandatangani ada di berkas."
+  },
+  "prefs": {
+    "header": "Pengaturan",
+    "intro": "Hanya disimpan di browser ini, tidak di akunmu.",
+    "driverNameLabel": "Namamu di catatan yang kamu bagikan",
+    "driverNameHint": "Catatan parkir baru mencantumkan nama ini sebagai pengemudi. Kosongkan kalau tidak mau dicantumkan.",
+    "saveName": "Simpan nama",
+    "saved": "Tersimpan",
+    "saveFailed": "Gagal menyimpan. Coba lagi.",
+    "permitsHeader": "Izin saya",
+    "permitsIntro": "Izin yang tersimpan dikirim bersama setiap rambu yang kamu pindai atau cek ulang, supaya jawabannya bisa menyebut apa yang tertulis di rambu tentang izin itu. Hanya jenis izin yang dikirim, ditambah area atau zona untuk izin penghuni atau usaha.",
+    "permitsEmpty": "Belum ada izin yang disimpan.",
+    "addPermit": "Tambah izin",
+    "permitsLimit_one": "Kamu bisa menyimpan paling banyak {{count}} izin.",
+    "permitsLimit_other": "Kamu bisa menyimpan paling banyak {{count}} izin.",
+    "permitTypeLabel": "Jenis izin",
+    "permitType": {
+      "accessible": "Izin parkir aksesibel",
+      "resident": "Izin parkir penghuni",
+      "business": "Izin parkir usaha"
+    },
+    "issuingStateLabel": "Negara bagian atau wilayah penerbit",
+    "stateNotSet": "Belum dipilih",
+    "state": {
+      "VIC": "Victoria",
+      "NSW": "New South Wales",
+      "QLD": "Queensland",
+      "ACT": "Wilayah Ibu Kota Australia",
+      "SA": "Australia Selatan",
+      "WA": "Australia Barat",
+      "TAS": "Tasmania",
+      "NT": "Wilayah Utara"
+    },
+    "areaLabel": "Area atau zona di izin",
+    "areaPlaceholder": "Contoh: Area 25",
+    "expiryLabel": "Tanggal kedaluwarsa",
+    "savePermit": "Simpan izin",
+    "accessibleWarning": "Menyimpan izin ini berarti jenisnya dikirim bersama setiap foto rambu yang kamu pindai, supaya jawabannya bisa menyebut apa yang tertulis di rambu tentang izin. Detail izin parkir aksesibel adalah informasi kesehatan. Kamu bisa menghapusnya kapan saja.",
+    "accessibleConfirm": "Simpan izin ini",
+    "permitArea": "Area atau zona: {{area}}",
+    "permitExpires": "Berlaku sampai {{date}}",
+    "permitExpired": "Kedaluwarsa sejak {{date}}. Izin ini tidak dikirim saat kamu memindai.",
+    "deletePermitLabel": "Hapus {{permit}}",
+    "pushUnsupported": "Browser ini tidak bisa menampilkan pengingat saat ParkProof ditutup. Di iPhone, tambahkan ParkProof ke Layar Utama dulu. Pengingat kalender tetap berfungsi.",
+    "accountHeader": "Akun",
+    "accountCopy": "Sinkronisasi cloud, ekspor data, keluar, dan menghapus akun.",
+    "openAccount": "Buka akun",
+    "signInCopy": "Masuk untuk mencadangkan catatanmu dan melihatnya di perangkatmu yang lain. Semua yang ada di halaman ini bisa dipakai tanpa akun.",
+    "signIn": "Masuk",
+    "privacyCta": "Buka kebijakan privasi"
+  },
+  "share": {
+    "action": "Bagikan lokasi mobil",
+    "confirm": "Siapa pun yang punya tautan ini bisa melihat di mana mobil diparkir, siapa yang memarkirnya, dan sampai kapan. Tautan ini tetap bisa dibuka oleh siapa pun yang menerima terusannya, dan kamu tidak bisa mematikannya.",
+    "shareButton": "Bagikan tautan",
+    "shareText": "Lokasi parkir mobil, dari ParkProof.",
+    "notSigned": "Catatan ini belum ditandatangani. Kamu bisa membagikannya setelah ParkProof menandatanganinya.",
+    "tooLarge": "Catatan ini terlalu besar untuk dibagikan sebagai tautan.",
+    "copied": "Tautan disalin. Tempelkan ke pesan untuk membagikannya.",
+    "copyManually": "Salin tautan ini lalu kirimkan.",
+    "linkFieldLabel": "Tautan untuk dibagikan",
+    "permitSafeguard": "Parkir ini memakai izin parkir aksesibel. Jika pemegang izin tidak akan berada di mobil, ambil izin itu dari dasbor sebelum ada yang mengemudikan mobilnya.",
+    "receivedTitle": "Lokasi mobil",
+    "checking": "Memeriksa tautan…",
+    "banner": "Dibagikan oleh {{driver}} pada {{time}}. Ini gambaran pada saat dibagikan dan tidak diperbarui. Mobilnya mungkin sudah dipindahkan.",
+    "bannerNoDriver": "Dibagikan pada {{time}}. Ini gambaran pada saat dibagikan dan tidak diperbarui. Mobilnya mungkin sudah dipindahkan.",
+    "bannerNoTime": "Ini gambaran pada saat dibagikan dan tidak diperbarui. Mobilnya mungkin sudah dipindahkan.",
+    "tampered": "Tautan ini sudah diubah sejak dibagikan",
+    "newerVersion": "Tautan ini dibuat oleh versi ParkProof yang lebih baru",
+    "unreadable": "Tautan berbagi ini tidak bisa dibaca. Minta pengirimnya membagikannya lagi.",
+    "signedHeading": "Detail yang ditandatangani",
+    "signedNote": "ParkProof menandatangani detail ini pada {{time}}. Tanda tangan menunjukkan detail ini tidak berubah sejak itu. Tanda tangan tidak menunjukkan bahwa detail ini benar, siapa yang mengemudi, di mana mobil berada, atau kapan mobil tiba atau pergi.",
+    "signedNoteNoTime": "Tanda tangan menunjukkan detail ini tidak berubah sejak ParkProof menandatanganinya. Tanda tangan tidak menunjukkan bahwa detail ini benar, siapa yang mengemudi, di mana mobil berada, atau kapan mobil tiba atau pergi.",
+    "field": {
+      "place": "Lokasi saat dicatat",
+      "arrived": "Dicatat pada",
+      "limit": "Batas waktu dari rambu",
+      "limitRecorded": "Batas waktu pada catatan ini",
+      "driver": "Pengemudi",
+      "rules": "Bacaan rambu",
+      "standardLimit": "Batas standar pada rambu",
+      "ended": "Saat pergi"
+    },
+    "permitTimeNote": "Batas waktu ini termasuk waktu tambahan dari izin. Tanpa izin itu, yang berlaku adalah batas standar pada rambu. Menurut pengirim, batas standar itu berakhir pada {{time}}.",
+    "phoneClock": "{{time}} (jam ponsel)",
+    "noLimit": "Tidak ada batas waktu yang dicatat",
+    "noPlace": "Tidak ada lokasi yang dicatat",
+    "directions": "Petunjuk arah",
+    "unsignedHeading": "Dari pengirim, tidak ditandatangani",
+    "endedValue": "Pengirim mengetuk \"Sudah pergi\" pada {{time}} (jam ponsel).",
+    "saved": "Disimpan di catatan parkirmu sebagai \"Dibagikan kepadamu\". Membuka tautan lagi akan memperbaruinya.",
+    "keptNewer": "Kamu sudah punya salinan catatan ini yang lebih baru dari tautan yang lebih baru, jadi salinan itu yang disimpan.",
+    "ownRecord": "Tautan ini untuk catatan yang sudah tersimpan di ponsel ini, jadi tidak ditambahkan lagi.",
+    "saveFailed": "Salinan tidak bisa disimpan di ponsel ini.",
+    "badge": "Dibagikan kepadamu",
+    "check": "Cek tanda tangan",
+    "checkValid": "Tanda tangan valid. Detail yang ditandatangani tidak berubah sejak ParkProof menandatanganinya. Itu tidak menunjukkan bahwa detail ini benar, siapa yang mengemudi, di mana mobil berada, atau kapan mobil tiba atau pergi.",
+    "remove": "Hapus",
+    "removeConfirm": "Hapus catatan yang dibagikan ini dari ponsel ini? Kamu bisa membuka tautannya lagi untuk mendapatkannya kembali."
+  },
+  "handover": {
+    "action": "Serahkan mobil",
+    "intro": "Masukkan siapa yang akan mengemudikan mobil berikutnya. ParkProof menandatanganinya bersama catatan ini, sebagai pernyataanmu sendiri. ParkProof tidak memeriksanya, dan tanda tangan tidak menunjukkan siapa yang mengemudi. Catatan ini tetap aktif.",
+    "nameLabel": "Nama pengemudi berikutnya",
+    "nameRequired": "Masukkan nama pengemudi berikutnya.",
+    "submit": "Catat serah terima",
+    "failed": "Serah terima tidak bisa ditambahkan ke catatan ini.",
+    "done": "Catatanmu sekarang menyebut mobil diserahkan kepada {{to_driver}}. ParkProof menandatanganinya saat ponselmu online. Catatan ini tetap aktif.",
+    "doneFromTo": "Catatanmu sekarang menyebut {{from_driver}} menyerahkan mobil kepada {{to_driver}}. ParkProof menandatanganinya saat ponselmu online. Catatan ini tetap aktif.",
+    "fromDriver": "Diserahkan oleh {{from_driver}}, pengemudi yang sekarang tercatat di catatan ini.",
+    "offerShare": "Kamu bisa mengirim tautan lokasi mobil kepada orang itu.",
+    "line": "Catatanmu menyebut mobil diserahkan kepada {{to_driver}} pada {{time}} (jam ponsel).",
+    "lineFromTo": "Catatanmu menyebut {{from_driver}} menyerahkan mobil kepada {{to_driver}} pada {{time}} (jam ponsel)."
   }
 }

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { TFunction } from 'i18next'
-import { canEndRecord, endConfirmText, isLateEnd, recordStatus } from './record-status'
-import type { ParkingSession } from '../types'
+import { canEndRecord, endConfirmText, endedStatusTime, isLateEnd, recordStatus } from './record-status'
+import type { ParkingSession, SignedAddendum } from '../types'
 
 const NOW = new Date('2026-05-21T10:00:00+10:00').getTime()
 const TZ = 'Australia/Melbourne'
@@ -106,5 +106,62 @@ describe('isLateEnd / endConfirmText (the I have left confirm)', () => {
     // NOW is Thu 21 May, 10:00 am in Melbourne: the stored day, not the expiry day.
     expect(text).toContain('21 May')
     expect(text).toContain('10:00')
+  })
+})
+
+describe('endedStatusTime (the record screen status line, fix list item 6)', () => {
+  // Test D: 4e53e51d arrived 5:08 pm and ended 5:23 pm AEDT; e11bc03b
+  // arrived 5:02 pm and ended 5:03 pm. Their status lines must differ.
+  const testD = (overrides: Partial<ParkingSession> = {}) =>
+    makeSession({
+      arrived_at: '2026-11-08T06:08:11.000Z',
+      ended_at: '2026-11-08T06:23:23.000Z',
+      location: { lat: -37.8136, lng: 144.9631 },
+      ...overrides,
+    })
+
+  it('is the tap time without the day when the record ended on the day it arrived', () => {
+    expect(endedStatusTime(testD(), TZ)).toBe('5:23 pm AEDT')
+    const other = testD({ arrived_at: '2026-11-08T06:02:47.000Z', ended_at: '2026-11-08T06:03:02.000Z' })
+    expect(endedStatusTime(other, TZ)).toBe('5:03 pm AEDT')
+  })
+
+  it('is in the record zone, not the device zone', () => {
+    const perth = testD({ location: { lat: -31.9523, lng: 115.8613 } })
+    expect(endedStatusTime(perth, 'Australia/Perth')).toBe('2:23 pm AWST')
+  })
+
+  it('adds the day when the record ended on a later day than it arrived', () => {
+    const overnight = testD({ ended_at: '2026-11-08T22:05:00.000Z' })
+    expect(endedStatusTime(overnight, TZ)).toBe('Mon 9 Nov, 9:05 am AEDT')
+  })
+
+  it('uses the signed departure tap time, as the departure row does', () => {
+    const departure: SignedAddendum = {
+      id: 'dep-1',
+      seq: 1,
+      kind: 'departure',
+      captured_at: '2026-11-08T06:23:23.000Z',
+      data: {},
+      bundle: {
+        schema: 'parkproof-addendum-v1',
+        signed_at: '2026-11-08T06:23:24.000Z',
+        algorithm: 'ECDSA_SHA_256',
+        key_alias: 'alias/parkproof-evidence-signing',
+        canonical_payload: JSON.stringify({
+          signed_at: '2026-11-08T06:23:24.000Z',
+          data: { ended_at: '2026-11-08T06:23:20.000Z' },
+        }),
+        signature_base64: 'MEUCIQ==',
+      },
+    }
+    // The signed tap was 5:23:20 pm; the stored ended_at says 5:24 pm.
+    const s = testD({ ended_at: '2026-11-08T06:24:00.000Z', addenda: [departure] })
+    expect(endedStatusTime(s, TZ)).toBe('5:23 pm AEDT')
+  })
+
+  it('is null for a record that has not ended, or an unreadable end', () => {
+    expect(endedStatusTime(testD({ ended_at: undefined }), TZ)).toBeNull()
+    expect(endedStatusTime(testD({ ended_at: 'garbage' }), TZ)).toBeNull()
   })
 })

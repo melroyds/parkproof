@@ -10,6 +10,11 @@ export type IconName =
   | 'check'
   | 'warning'
   | 'chevron'
+  | 'repeat'
+  | 'settings'
+  | 'share'
+  | 'key'
+  | 'briefcase'
 
 interface Props {
   name: IconName
@@ -83,4 +88,45 @@ const PATHS: Record<IconName, ReactNode> = {
   ),
   // Points down; a disclosure rotates it when open.
   chevron: <path d="m6 9.5 6 6 6-6" />,
+  // Two arrows chasing round a loop: something that comes back every week.
+  repeat: (
+    <>
+      <path d="M17 3.5 20 6.5l-3 3" />
+      <path d="M4 12v-1.5a4 4 0 0 1 4-4h12" />
+      <path d="M7 20.5 4 17.5l3-3" />
+      <path d="M20 12v1.5a4 4 0 0 1-4 4H4" />
+    </>
+  ),
+  // Two sliders: the home screen's Settings row.
+  settings: (
+    <>
+      <path d="M4 7.5h9M17.5 7.5H20M4 16.5h2.5M11 16.5h9" />
+      <circle cx="15.2" cy="7.5" r="2.2" />
+      <circle cx="8.8" cy="16.5" r="2.2" />
+    </>
+  ),
+  // An arrow leaving a tray: send this somewhere else (T7 share links).
+  share: (
+    <>
+      <path d="M12 14.5V3.5" />
+      <path d="m8 7.5 4-4 4 4" />
+      <path d="M8.5 10.5H7A2.5 2.5 0 0 0 4.5 13v5A2.5 2.5 0 0 0 7 20.5h10a2.5 2.5 0 0 0 2.5-2.5v-5A2.5 2.5 0 0 0 17 10.5h-1.5" />
+    </>
+  ),
+  // A car key: the round bow and a toothed blade (T7, hand the car over).
+  key: (
+    <>
+      <circle cx="8" cy="15.5" r="4.5" />
+      <path d="m11.2 12.3 8.3-8.3" />
+      <path d="m16.5 7 2.5 2.5" />
+      <path d="m14 9.5 2 2" />
+    </>
+  ),
+  // Workday mode (T6b): a bag for a day at work.
+  briefcase: (
+    <>
+      <rect x="3.5" y="7.5" width="17" height="12" rx="2.5" />
+      <path d="M9 7.5V6a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v1.5M3.5 12.5h17" />
+    </>
+  ),
 }

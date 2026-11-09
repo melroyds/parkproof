@@ -255,7 +255,7 @@ describe('Check signatures', () => {
     check()
     expect(
       await screen.findByText(
-        "All 2 signatures are valid. Nothing has changed since ParkProof signed it. That doesn't show what the record says is true.",
+        "All 2 signatures are valid. The signed details haven't changed since ParkProof signed them. That doesn't show they're true.",
       ),
     ).toBeTruthy()
     expect(mocks.verifyRecord).toHaveBeenCalledWith(session)
@@ -270,12 +270,12 @@ describe('Check signatures', () => {
     check()
     expect(
       await screen.findByText(
-        "1 signature is valid. Nothing has changed since ParkProof signed it. That doesn't show what the record says is true.",
+        "1 signature is valid. The signed details haven't changed since ParkProof signed them. That doesn't show they're true.",
       ),
     ).toBeTruthy()
   })
 
-  it('a valid chain with a signed photo not on this device never says "Nothing has changed"', async () => {
+  it("a valid chain with a signed photo not on this device never says the signed details haven't changed", async () => {
     mocks.verifyRecord.mockResolvedValue(
       verification([link({})], [photo('condition-front', 'a'.repeat(64), 'not_on_device')]),
     )
@@ -287,7 +287,8 @@ describe('Check signatures', () => {
         "1 signature is valid. Some photos aren't on this device, so they couldn't be compared with their fingerprints. That doesn't show what the record says is true.",
       ),
     ).toBeTruthy()
-    expect(screen.queryByText(/Nothing has changed/)).toBeNull()
+    // The per-link "Signature valid" lines still say so; the summary doesn't.
+    expect(screen.queryByText(/signatures? (is|are) valid\. The signed details haven't changed/)).toBeNull()
   })
 
   it('a problem: no signing time for the invalid part, its reason, and the fork badge', async () => {
@@ -493,7 +494,8 @@ describe('the record screen', () => {
     expect(screen.getByText('· Sun 25 Oct, 11:00 am AEDT', { exact: false })).toBeTruthy()
     const caveat = screen.getByText(i18n.t('about.sealCaveat'))
     expect(caveat.textContent).not.toMatch(/prove|after you saved/i)
-    expect(caveat.textContent).toContain("haven't changed since ParkProof signed them")
+    expect(caveat.textContent).toContain('existed, unchanged, by the time ParkProof signed them')
+    expect(caveat.textContent).toContain('who was driving, where the car was, or when it arrived or left')
   })
 
   it('a shared copy gets no chain panel here (T7 has its own check)', () => {
@@ -557,7 +559,7 @@ describe('the record screen', () => {
     )
     expect(
       await screen.findByText(
-        "All 3 signatures are valid. Nothing has changed since ParkProof signed it. That doesn't show what the record says is true.",
+        "All 3 signatures are valid. The signed details haven't changed since ParkProof signed them. That doesn't show they're true.",
       ),
     ).toBeTruthy()
     expect(mocks.verifyRecord).toHaveBeenCalledTimes(2)
@@ -585,9 +587,9 @@ describe('the record screen', () => {
         ],
       }),
     )
-    // STATUS is a plain "Ended": the times are in the departure row.
-    expect(screen.getByText(i18n.t('session.ended'))).toBeTruthy()
-    expect(screen.queryByText(/^Ended /)).toBeNull()
+    // STATUS names the tap time, without the day (it ended on the day it
+    // arrived; fix list item 6). The departure row labels it as the phone's.
+    expect(document.getElementById('record-status')?.textContent).toBe('Ended 1:55 pm AEDT')
     expect(screen.getByText("You tapped I've left at Sun 25 Oct, 1:55 pm AEDT (phone clock).")).toBeTruthy()
     expand()
     // The departure row and the chain panel's departure part both carry ParkProof's time.

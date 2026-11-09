@@ -3,7 +3,7 @@
     "back": "← 返回",
     "backToHome": "← 主页",
     "backToHistory": "← 返回记录",
-    "backToSession": "← 返回会话",
+    "backToSession": "← 返回记录",
     "cancel": "取消",
     "save": "保存",
     "done": "完成",
@@ -20,7 +20,8 @@
     "no": "否",
     "close": "关闭",
     "sendFeedback": "发送反馈",
-    "about": "它能做什么"
+    "about": "它能做什么",
+    "signedSeal": "已签名、可核对是否被改动的记录"
   },
   "language": {
     "title": "语言",
@@ -31,7 +32,7 @@
     "refresh": "刷新"
   },
   "home": {
-    "tagline": "澳洲停车,一眼看懂,还顺手存好照片证据,以防被错误开罚单。",
+    "tagline": "澳洲停车,一眼看懂,还顺手存好照片证据,以防被错误罚款。",
     "scanCta": "扫描停车标志",
     "scanAnother": "扫描另一个标志",
     "scanHelp": "我们会读取标志,告诉你现在能不能停,并在时间到期前提醒你。",
@@ -47,7 +48,11 @@
       "remind": "停车到期前获得日历提醒"
     },
     "seeEverything": "查看 ParkProof 的所有功能 →",
-    "draftAppeal": "收到罚单?起草申诉信"
+    "draftAppeal": "收到罚款?起草申诉信",
+    "settings": "设置",
+    "settingsSignIn": "登录以同步",
+    "startWorkday": "要停一整天?开始工作日",
+    "fineStart": "收到罚款?从这里开始"
   },
   "active": {
     "currentlyParked": "正在停车",
@@ -67,7 +72,7 @@
     "iveLeftConfirm": "现在将这条记录标记为已结束?会保存你点击的时间(手机时钟)。如果你更早就已离开,那个更早的时间不会被记录。",
     "nextPing": "下次提醒:{{when}}",
     "recheckNow": "立即重新检查",
-    "recheckSub": "还合法吗?几秒内重新确认",
+    "recheckSub": "立即重新检查。几秒内看看你是否还能停在这里。",
     "cardAria": "{{address}} 的进行中停车记录,{{status}}。点击查看详情。",
     "listCardAria": "打开在 {{address}} 的进行中停车记录,{{status}}。",
     "morePillAria_one": "查看另外 {{count}} 条进行中的停车记录",
@@ -99,18 +104,19 @@
     "qualityTiny": "照片分辨率太低,AI 可能会漏掉细节。靠近标志重拍?",
     "noSignHere": "此处没有标志？仅记录我的停车 →",
     "noSignChooseHeader": "记录无标志的停车位",
-    "noSignChooseCopy": "可以顺手拍下周围环境,证明这里没有可见的标志。万一日后争议,这能加强你的证据。",
+    "noSignChooseCopy": "你可以拍下周围环境，记录当时看得到的景象。照片不能说明附近没有标志。",
     "noSignTakeAmbient": "拍摄周围环境照片",
-    "noSignTakeAmbientSub": "显示无标志可见",
+    "noSignTakeAmbientSub": "记录当时看得到的景象",
     "noSignFromLibrary": "从相册中选择",
     "noSignSkip": "跳过,仅保存 GPS 和时间",
-    "noSignAmbientAlt": "周围环境:无标志可见",
-    "noSignAmbientCaption": "拍下来证明这里没有张贴任何标志。",
+    "noSignAmbientAlt": "你拍的周围环境照片",
+    "noSignAmbientCaption": "拍下来展示周围环境。它不能说明附近没有标志。",
     "noSignContinue": "继续记录",
-    "privacyLine": "你的照片只在手机上读取。只有标志照片会被发送去翻译,从不存到我们的服务器上。无需账户。",
+    "privacyLine": "为了读取标志，我们会把标志照片发送给一项 AI 服务。如果你允许使用位置，我们的服务器会用它来确定当地时间。读取标志不会在我们的服务器上留下照片副本。无需账户。",
     "cameraDeniedTitle": "相机访问已关闭",
     "cameraDeniedCopy": "改从相册里选一张照片,或在浏览器设置里重新打开相机权限。",
-    "couldntReadPhoto": "读不了那张照片。请换一张,或从相册里选一张。"
+    "couldntReadPhoto": "读不了那张照片。请换一张,或从相册里选一张。",
+    "previewAlt": "你的停车标志照片"
   },
   "reuse": {
     "scannedHere": "你 {{age}} 在这里扫描过",
@@ -172,17 +178,38 @@
     "aiCaveat": "这是 AI 对标志的解读。离开车之前,记得看一眼实际的标志。",
     "cantParkOverride": "觉得这判断有误?你仍然可以把此处记录为证据。",
     "cantParkOverrideCta": "仍然记录",
-    "firstSaveValue": "保存会留下一份带时间戳、可验证是否被改动的记录。万一被错误开罚单,这就是你的证据。"
+    "firstSaveValue": "保存后，这次停车会留下一份可核对是否被改动过的记录，以备日后遇到罚款时使用。",
+    "weeklyRestrictionHint": "这个标志有每周重复的限制。保存后,你可以设置提醒。",
+    "permit": {
+      "standardKicker": "标准答复",
+      "kicker": "凭你的许可证",
+      "signPrints": "标志上印有针对这类许可证的例外:",
+      "checkConditions": "ParkProof 只读取标志上印的内容。也请查看你许可证上的使用条件。",
+      "areaMatch": "你保存的 {{area}} 许可证与这个区域相符。",
+      "areaMismatch": "你保存的许可证适用于 {{area}}。这个区域是许可证区域 {{zone}}。",
+      "mayAllowMore": "根据{{state}}的规定,你的许可证可能允许停更长时间。ParkProof 不会计算这一点。请查看许可证上的条件,或向你的市议会咨询。",
+      "mayAllowMoreNoState": "根据你停车所在地的规定,你的许可证可能允许停更长时间。ParkProof 不会计算这一点。请查看许可证上的条件,或向你的市议会咨询。",
+      "accessibleQuestion": "许可证持有人和我同在车上,会在这里下车,而且其许可证已展示。",
+      "accessibleNo": "那么这次停车不能使用该许可证。请不要停在无障碍车位。",
+      "forThisCarQuestion": "这张许可证是给这辆车的吗?它是否展示在车上,或登记在这辆车名下?",
+      "forThisCarNo": "那么这次停车不能使用该许可证。没有适用于这个许可证区域的有效许可证,请不要在这里停车。",
+      "noStandardApplies": "那么这次停车不能使用该许可证。只适用标准答复。",
+      "timeToggle": "标志是否给你的许可证更晚的时限?",
+      "timeLabel": "按这块标志,你的许可证时间截止于",
+      "timeHint": "请从标志上读取。ParkProof 不计算许可证时间。",
+      "timeSet": "你的提醒会以你输入的 {{time}} 为准,并在标准时限结束时再提醒一次。",
+      "timeNotLater": "这个时间不晚于标准时限,所以提醒仍按标准时限设置。"
+    }
   },
   "logger": {
     "header": "记录这次停车",
-    "intro": "我们会保存一份带时间戳的记录,包含照片和 GPS。万一日后要对错误罚单提出异议,这是有用的证据。",
+    "intro": "我们会保存一份记录，包含时间、你的照片和 GPS，以备日后需要对罚款提出异议。",
     "location": "位置",
     "acquiringGps": "正在获取 GPS…",
     "captured": "已捕获 ✓",
-    "gpsImprecise": "GPS 精度不够,无法确认你停在哪",
-    "gpsImpreciseCopy": "这次读数精度是 <strong>{{accuracy}}</strong>,找咖啡店够用,但不足以作为停车证据。请手动输入街道地址,让记录站得住脚。",
-    "gpsImpreciseDanger": "这次读数精度是 <strong>{{accuracy}}</strong>,可能整个城区都错了(用 Starlink、VPN 或在室内时常见)。请手动输入街道地址,让记录站得住脚。",
+    "gpsImprecise": "GPS 太粗略，无法确定你停在哪",
+    "gpsImpreciseCopy": "这次读数精度是 <strong>{{accuracy}}</strong>。找咖啡店够用，但太粗略，无法说明你停在哪条街。你可以改为手动输入街道地址。",
+    "gpsImpreciseDanger": "这次读数精度是 <strong>{{accuracy}}</strong>，甚至可能连城区都错了（用 Starlink、VPN 或在室内时常见）。你可以改为手动输入街道地址。",
     "enterAddress": "手动输入地址",
     "manuallyEntered": "手动输入",
     "accuracyLabel": "{{accuracy}} 精度",
@@ -200,22 +227,37 @@
     "resolvingAddress": "正在解析地址…",
     "carAtSpot": "停在车位里的车",
     "carRetake": "重拍",
-    "carOptionalHelp": "可选,但强烈建议作为证据",
+    "carOptionalHelp": "可选。它会和记录一起保存。",
     "saveSession": "保存记录",
     "noSignHeader": "记录无标志的停车",
     "noSignIntro": "我们会保存一份带时间戳的 GPS 记录。不需要 AI 翻译,因为这里没有标志可翻译。",
     "noSignKicker": "证据说明",
-    "noSignBanner": "你正在记录这里没有可见的标志。加密签名覆盖的是时间和地点,而不是标志到底有没有。请如实填写,这是你自己的证据。",
+    "noSignBanner": "你正在记录你在这里没有看到停车标志。这是你自己的陈述。签名表明这条记录在 ParkProof 签名时就已存在，此后没有改动。它不能说明记录属实，也不能说明是谁在开车、车停在哪里，或车辆何时到达、何时离开。",
     "ambientHeader": "周围环境",
-    "ambientCaption": "拍下来证明这里没有张贴标志。",
-    "locationContext": "我们用你的位置,只是为了标记你停车的时间和地点。除非你登录,否则它只留在你的设备上。",
+    "ambientCaption": "你拍的周围环境照片。它不能说明附近没有标志。",
+    "locationContext": "我们只把你的位置用于这条记录。它保存在这台设备上，只有你登录后才会备份到云端。",
     "photoSaveFailed": "这张照片没能保存在你的手机上。请重试,或者不带这张照片保存记录。",
-    "saving": "正在保存…"
+    "saving": "正在保存…",
+    "condition": {
+      "toggle": "记录车况（可选）",
+      "noteLabel": "你注意到的损伤",
+      "notePlaceholder": "例如：后保险杠上有一道划痕"
+    },
+    "proof": {
+      "heading": "付款或许可证凭证",
+      "toggle": "付款或许可证凭证（可选）",
+      "addMeterTicketOrPermit": "添加停车票或许可证的照片（可选）"
+    },
+    "driver": {
+      "label": "谁在开车？（可选）",
+      "placeholder": "姓名",
+      "help": "与这条记录一起保存。ParkProof 不会核实。"
+    }
   },
   "reminders": {
     "header": "设置提醒",
     "noExpiry": "此记录没有到期时间,因此不适用定时提醒。",
-    "expired": "停车已于 <strong>{{when}}</strong> 到期。提醒已经来不及了,但你的记录仍作为证据保存,需要对罚单提出异议时能用上。",
+    "expired": "停车已于 <strong>{{when}}</strong> 到期。提醒已经来不及了,但你的记录仍作为证据保存,需要对罚款提出异议时能用上。",
     "intro": "停车将于 <strong>{{when}}</strong> 到期。挑一下你想什么时候收到提醒,可以多选。",
     "chipAtExpiry": "到期时",
     "summaryWithSelections": "我们会在 <strong>{{times}}</strong> 提醒你。",
@@ -271,7 +313,58 @@
     },
     "pushScheduleFailed": "无法设置后台提醒。它可能只在此标签页打开时才会触发。点击重试。",
     "chipMin_one": "{{count}} 分钟",
-    "chipMin_other": "{{count}} 分钟"
+    "chipMin_other": "{{count}} 分钟",
+    "remindMe": {
+      "cta": "提醒我",
+      "busy": "正在设置…",
+      "setBackground_one": "已为 <strong>{{times}}</strong> 设置 {{count}} 个提醒。即使 ParkProof 已关闭,提醒也会发送到此设备。",
+      "setBackground_other": "已为 <strong>{{times}}</strong> 设置 {{count}} 个提醒。即使 ParkProof 已关闭,提醒也会发送到此设备。",
+      "setOpenOnly_one": "已为 <strong>{{times}}</strong> 设置 {{count}} 个提醒,但只有 ParkProof 开着时才有效。",
+      "setOpenOnly_other": "已为 <strong>{{times}}</strong> 设置 {{count}} 个提醒,但只有 ParkProof 开着时才有效。",
+      "notSet": "未设置任何提醒。",
+      "stepInstall": "在 iPhone 上,提醒需要把 ParkProof 添加到主屏幕。点击分享按钮,选择“添加到主屏幕”,然后从主屏幕打开 ParkProof,再点一次“提醒我”。",
+      "stepAllow": "ParkProof 的通知已关闭。请在浏览器询问时允许,或在浏览器的站点设置中允许,然后再点一次“提醒我”。",
+      "stepUnsupported": "这个浏览器无法在 ParkProof 关闭时发送提醒。请改用日历提醒。",
+      "stepRetry": "无法设置 ParkProof 关闭时的提醒。请检查网络连接,然后再点一次“提醒我”。",
+      "stepAllPast": "你选的时间已经过了。请选一个更晚的时间。"
+    },
+    "reliability": "提醒可能会延迟或被静音,例如受专注模式或省电模式影响。不要只依赖提醒。",
+    "androidTips": {
+      "summary": "安卓手机小贴士",
+      "spam": "如果 Chrome 把提醒标记为可能的垃圾信息,请点击“允许”。",
+      "battery": "在三星手机上,把 Chrome 的电池使用设为“无限制”。"
+    },
+    "chipFiresAt": "{{when}} 提醒",
+    "chipPast": "时间已过",
+    "reconnect": {
+      "cta": "收不到提醒?重新连接",
+      "busy": "正在重新连接…",
+      "done": "已重新连接。此设备上即将到来的提醒会使用新的连接。",
+      "failed": "无法重新连接。请检查网络连接后重试。",
+      "denied": "ParkProof 的通知已被阻止。请在浏览器的站点设置中允许通知,然后重试。"
+    },
+    "timesOnDay": "{{day}} {{times}}",
+    "permitIntro": "你的许可证时间到 <strong>{{when}}</strong>,这是你根据标志输入的时间。挑一下你想什么时候收到提醒,可以多选。",
+    "permitExtra": "在 {{time}},也就是这块标志的标准时限结束时,你还会收到一条提醒。",
+    "permitStandardEnds": "这块标志的标准时限现在结束。你的许可证时间到 {{time}}。",
+    "chipAtPermitTime": "许可证时间结束时",
+    "permitChipLimit_one": "这里最多可以选 {{count}} 个提醒,另外还有标准时限结束时的那一个。",
+    "permitChipLimit_other": "这里最多可以选 {{count}} 个提醒,另外还有标准时限结束时的那一个。",
+    "permitBodyAt": "你根据标志输入的许可证时间在 {{time}} 结束。该挪车了。",
+    "permitBodyBefore_one": "你根据标志输入的许可证时间将于 {{time}} 结束。这是提前 {{count}} 分钟的提醒。",
+    "permitBodyBefore_other": "你根据标志输入的许可证时间将于 {{time}} 结束。这是提前 {{count}} 分钟的提醒。",
+    "calendarPermitTitle": "ParkProof:你输入的许可证时间结束",
+    "calendarPermitSummary": "你根据标志输入的许可证时间在 {{time}} 结束。ParkProof 不计算许可证时间。",
+    "ics": {
+      "expiresTitle": "ParkProof：停车时间到期",
+      "expiresAt": "停车到期时间：{{time}}（{{place}}）。",
+      "remindersAt": "提醒时间：{{times}}。",
+      "recordId": "ParkProof 记录：{{id}}",
+      "checkOnTitle": "ParkProof：去看看你的车",
+      "checkOnAt": "去 {{address}}（{{place}}）看看你的车。",
+      "checkOnHere": "去你停车的地方看看你的车（{{place}}）。",
+      "buildFailed": "无法生成日历文件，请重试。"
+    }
   },
   "history": {
     "header": "停车记录",
@@ -284,7 +377,7 @@
   },
   "session": {
     "header": "停车记录",
-    "arrived": "到达时间 {{when}}",
+    "arrived": "记录时间 {{when}}（手机时钟）",
     "cryptoSigned": "已数字签名",
     "status": "状态",
     "active": "活跃至 {{when}}",
@@ -295,10 +388,8 @@
     "walkBackPill": "走回车辆",
     "aiConfidence": "AI 置信度",
     "noteLabel": "备注",
-    "noNote": "尚未添加备注。点击",
     "addNote": "添加备注",
-    "noteHelp": "记下你为什么停在这里。当背景重要时,这能让市议会审核时手下留情。",
-    "notePlaceholder": "你为什么停在这里,比如\"妈妈在皇家医院化疗\"、\"Lygon 街周六市集\"。需要对罚单提异议时,可以作为背景。",
+    "notePlaceholder": "你为什么停在这里,比如\"妈妈在皇家医院化疗\"、\"Lygon 街周六市集\"。它会写进这条记录的 PDF,以备日后需要对罚款提出申诉。",
     "saveNote": "保存备注",
     "signPhotoLabel": "标志照片",
     "carPhotoLabel": "车辆照片",
@@ -306,20 +397,20 @@
     "buildingPdf": "正在生成 PDF…",
     "pdfErrorHeader": "无法生成 PDF",
     "pdfErrorHelp": "错误已记录到浏览器控制台。如果一直出现,请把控制台的内容截图发给我们。",
-    "draftAppeal": "收到罚单?起草申诉信",
+    "draftAppeal": "收到罚款?起草申诉信",
     "deleteSession": "删除记录",
     "deleteConfirm": "删除此停车记录?此操作无法撤销。",
     "noSignLabel": "无已张贴的限制",
-    "noSignDescription": "此记录是在没有停车标志的地点登记的。未进行 AI 翻译。",
+    "noSignDescription": "你把这次停车记录为没有停车标志。这是你自己的陈述。没有读取任何标志。",
     "ambientPhotoLabel": "周围环境",
-    "ambientPhotoCaption": "在停车时拍摄以证明无标志存在。",
+    "ambientPhotoCaption": "在你记录这次停车时拍摄，用来展示周围环境。它不能说明附近没有标志。",
     "noAmbientCaptured": "未拍摄周围环境照片。",
-    "noSignBadgeLong": "未记录已张贴的限制。此处为无标志停车位。",
+    "noSignBadgeLong": "未记录任何张贴的限制。你把这次停车记录为没有标志。",
     "endSession": "我已离开",
     "endConfirm": "现在将这条记录标记为已结束?会保存你点击的时间(手机时钟)。如果你更早就已离开,那个更早的时间不会被记录。",
     "endedAt": "已结束 {{when}}",
     "noExpiryRecorded": "未记录到期时间",
-    "howToVerify": "市议会如何核验这份记录 →",
+    "howToVerify": "任何人如何核对这条记录的签名 →",
     "photoSyncFailed": "照片未备份到云端",
     "photoSyncRetry": "重试上传",
     "exportPhotoWarning": "这条较旧的记录有一张或多张照片无法从云端加载。你可以照常导出,或在当初创建它的那台设备上打开。",
@@ -330,24 +421,22 @@
     "photoNotOnDeviceUnsigned": "这台设备上没有这张照片。指纹 {{fingerprint}}。尚未签名。",
     "signPhotoAlt": "你扫描的停车标志的照片",
     "carPhotoAlt": "你的车停在车位上的照片",
-    "ended": "已结束"
+    "ended": "已结束",
+    "noteEmpty": "尚未添加备注。点击<add>添加备注</add>，用你自己的话记下你为什么停在这里。备注不会被签名。"
   },
   "appeal": {
     "captureHeader": "起草申诉信",
-    "captureIntro": "给你收到的违章通知拍一张照片。Claude 会读取通知,和这次停车里保存的证据交叉比对,再起草一封可以寄给开单市议会的正式信件。",
-    "captureTakePhotoSub": "用相机拍罚单",
+    "captureIntro": "给你收到的违章通知拍一张照片。Claude 会读取通知，与这条记录里保存的证据交叉比对，再起草一封可以寄给开单市议会的正式信件。",
+    "captureTakePhotoSub": "用相机拍下通知",
     "captureFromLibrarySub": "通知的照片或扫描件",
     "captureDisclaimer": "AI 草稿只是个起点,不是法律建议。最终寄出的信由你自己负责。",
-    "draftingHeader": "正在读取罚单…",
+    "draftingHeader": "正在读取通知…",
     "draftingSub": "Claude 正在拿它和你保存的证据交叉比对。",
     "reviewHeader": "申诉草稿",
-    "strongEvidence": "强证据",
-    "moderateEvidence": "中等证据",
-    "weakEvidence": "弱证据",
     "strategy": "策略",
     "subjectLine": "主题行",
     "letter": "信件(可编辑)",
-    "resetDraft": "重置为 AI 草稿",
+    "resetDraft": "重新使用 AI 草稿",
     "copyToClipboard": "复制信件到剪贴板",
     "copied": "已复制 ✓",
     "downloadPdf": "下载为 PDF",
@@ -361,7 +450,7 @@
     "signInHeader": "登录",
     "signInIntro": "欢迎回来,从中断处继续。",
     "signUpHeader": "创建账户",
-    "signUpIntro": "跨设备同步会话,如果丢失手机也能恢复,即使卸载应用也能保存证据。",
+    "signUpIntro": "跨设备同步记录，丢了手机也能找回，即使卸载应用也能保住证据。",
     "verifyHeader": "验证你的邮箱",
     "verifyIntro": "请输入我们发到 {{email}} 的 6 位验证码。",
     "forgotHeader": "忘记密码",
@@ -392,7 +481,7 @@
     "continueWithApple": "使用 Apple 继续",
     "continueWithGoogle": "使用 Google 继续",
     "orDivider": "或",
-    "footer": "云同步是可选的。ParkProof 无需账户也能完全离线使用,你的数据存在这台设备上。登录只是让你在别的设备上也能看到它。",
+    "footer": "云同步是可选的。ParkProof 无需账户也能使用，你的数据存在这台设备上。登录只是让你在别的设备上也能看到它。",
     "needVerifyFirst": "你还没验证邮箱,请在下方输入验证码。",
     "accountCreated": "账户已创建。我们已经把验证码发到你的邮箱。",
     "codeResent": "验证码已重新发送,请查看你的收件箱。",
@@ -412,7 +501,7 @@
     "intro": "管理云同步、导出数据或删除账户。",
     "signedInAs": "登录身份",
     "exportHeader": "导出你的数据",
-    "exportCopy": "下载一份 PDF,包含你存在云端的每一条停车记录:封面摘要,加上每条记录的详细信息块(含照片)。可分享、可打印、可提交市议会。",
+    "exportCopy": "下载一份 PDF，包含你存在云端的每一条停车记录：先是封面摘要，然后是每条记录的详情和照片。可以直接打印或分享。",
     "exportCta": "下载为 PDF",
     "exportBuilding": "正在生成 PDF…",
     "privacyHeader": "隐私",
@@ -430,7 +519,7 @@
     "deleteTypoError": "请用大写字母输入 DELETE 以确认。",
     "youSignedOut": "你已退出登录。",
     "pushHeader": "此设备上的推送通知",
-    "pushCopy": "只有启用推送后,提醒才会在应用关闭时触发。订阅是按浏览器+设备的,独立于你的账户。",
+    "pushCopy": "推送让提醒在 ParkProof 关闭时也能发送到此设备。开启推送本身不会设置任何提醒。要设置提醒,请在停车记录上点击“提醒我”。推送按浏览器和设备分别设置,与你的账户无关。",
     "pushSubscribed": "✓ 此设备已订阅",
     "pushEnable": "启用推送",
     "pushDisable": "在此设备上禁用推送",
@@ -444,11 +533,11 @@
     "header": "隐私",
     "lastUpdated": "最后更新:{{date}}",
     "anonymousHeader": "你在不使用账户时给我们的数据",
-    "anonymousIntro": "ParkProof 默认完全匿名工作。我们不要求登录,不记录账户,你记录的停车记录保存在你自己浏览器的 <code>localStorage</code> 中。它们从不离开你的设备。",
-    "anonymousThings": "即便在匿名模式下,以下三样东西确实会离开你的设备:",
-    "anonymousAnthropic": "<strong>标志照片 + GPS 坐标</strong>会发给 <strong>Anthropic</strong>(Claude 视觉)来翻译标志。我们不在服务器上存储它们;适用 Anthropic 的保留政策。",
+    "anonymousIntro": "ParkProof 不需要账户也能使用。你的记录保存在这个浏览器里。为了给记录签名,你的手机会把记录的详细信息(时间、位置、你填写的内容,以及照片指纹,但不包括照片本身)发送到 ParkProof 的服务器,服务器签名后不会保留副本。",
+    "anonymousThings": "即使没有账户,下面这些也会离开你的设备:",
+    "anonymousAnthropic": "<strong>你扫描的每张标志照片</strong>都会发送给 <strong>Anthropic</strong>(Claude)来读取标志,同时发送拍摄位置和你保存的每个许可证的类型(居民或商户许可证还会附上区域)。重新检查时发送的是之前的读取结果,而不是照片。我们不保留照片或位置。答案中可能提到你的许可证类型,它会在我们的服务器上短暂保留,好让你的手机取回。适用 Anthropic 的保留政策。",
     "anonymousNominatim": "<strong>GPS 坐标</strong>发送给 <strong>OpenStreetMap Nominatim</strong> 以解析街道地址。Nominatim 不需要密钥,适用其公开的保留政策。",
-    "anonymousCloudwatch": "当你点击验证卡片时,<strong>每个结果的随机 UUID</strong> 加上一个\"正确/重拍\"判定会记录到 <strong>AWS CloudWatch</strong>。不含个人身份信息;聚合后的信号用于调整提示词。",
+    "anonymousCloudwatch": "<strong>当你告诉我们标志读得对不对时</strong>，ParkProof 的服务器会把你的回答记录到 <strong>AWS CloudWatch</strong>，同时记录你回答的时间和这个回答的随机 ID。一起记录的还有这次读取的详情：它对标志规则的描述的前 120 个字符、它有多确定、时间限制、标志上的付款方式和许可证区域编号（如有）、它是否问过你停在哪个位置以及你选了哪个选项，以及它找到的规则组数、读取问题数和每周限制数。这些详情还会说明标志是否可读、这次读取是不是重新检查、是否发现适用于整片停车区域的标志、收费停车、许可证区域或无障碍车位，并给出标志所在地当时是几点。你当时对收费停车、许可证区域和无障碍停车许可证这几个问题已经作出的回答也会被记录，所以一条日志可能显示你表示已展示无障碍停车许可证。日志不包含照片、照片的 GPS 位置，也不包含识别你或这台设备的 ID。我们用这些日志找出标志读取在哪里出错。日志会在 90 天后删除。",
     "signedInHeader": "你登录后给我们的数据",
     "signedInIntro": "登录是可选的。它会开启云同步,让同一套记录在你所有设备上都能看到。",
     "signedInThings": "登录之后,以下额外数据会离开你的设备:",
@@ -472,21 +561,30 @@
     "rightsExport": "<strong>导出。</strong>在账户里点\"下载为 PDF\",拿到一份完整文档,包含你存储的所有记录:封面摘要,加上每条记录的详细信息块(含照片)。",
     "rightsDelete": "<strong>删除。</strong>在账户里点\"删除账户\"。几秒内删掉你的登录记录、每一个 DynamoDB 行和每一张 S3 照片。无法撤销。",
     "rightsCorrect": "<strong>更正。</strong>你在应用中编辑记录。登录时每次更改会立即同步到云端。",
-    "rightsAnonymous": "如果你不登录,所有数据都在你的设备上,清除浏览器存储即可删除。",
+    "rightsAnonymous": "如果你不登录，你的停车记录只保存在这台设备上。清除浏览器存储即可删除它们。但这不会删除已经在我们服务器上的数据。你为某条记录设置的推送提醒会保留到发出或你取消为止。每周推送提醒会在你最后一次打开 ParkProof 后的 90 天内删除。这台设备的推送注册（这台设备的随机 ID、你的浏览器提供给我们的推送地址和加密密钥，以及它们最后一次更新的时间）会在 ParkProof 最后一次更新它之后保留约 90 天。你在开启推送提醒的情况下打开 ParkProof，或设置提醒时，ParkProof 都会更新它。在 ParkProof 或浏览器中关闭推送提醒不会通知我们的服务器，所以推送注册仍按上述方式保留。如果推送服务告诉我们这个地址已经失效（你关闭推送提醒后，之前设置的提醒发出时就可能出现这种情况），我们会立即删除这个地址和密钥。我们只保留这台设备的 ID、这个地址的指纹和我们得知的时间，保留约 90 天，以免再次存储这个地址。这台设备注册推送、设置提醒或收到提醒时，我们服务器的日志还会记录这台设备的 ID，以及它使用的推送服务、相关记录或每周提醒的随机 ID，和每条提醒的设置、发送或跳过时间。这些日志会在 90 天后删除。你发送的反馈以及你填写的电子邮件（如有）最多保留两年。",
     "photosHeader": "在 ParkProof 内拍摄的照片",
     "photosCopy": "照片在离开浏览器之前,会先在你的设备上缩到 ≤1200px 并以 0.82 质量重新编码为 JPEG。原始的高分辨率相机照片从不离开你的手机。",
     "signingHeader": "数字签名",
-    "signingCopy": "无论你登录还是保持匿名(两种都行),每条记录都由 AWS KMS 托管的 ECDSA P-256 密钥签名。私钥从不离开 AWS。公钥公开发布在 <a>/parkproof-public-key.pem</a>,任何人(市议会、法院、保险公司)都可以用 <code>openssl dgst</code> 验证这条证据链。任何导出的 PDF 里都有一份分步说明的附录。",
-    "verifyLinkLabel": "查看如何验证记录 →",
+    "signingCopy": "无论是否登录，每条记录都用保存在 AWS KMS 中的 ECDSA P-256 密钥签名。为了给记录签名，ParkProof 的服务器会收到要签名的内容（例如时间、位置、标志读取结果、照片指纹和你输入的姓名，但绝不包括照片本身），然后返回签名。私钥从不离开 AWS。公钥公开发布在 <a>/parkproof-public-key.pem</a>，任何人（市议会、法院或保险公司）都可以用 <code>openssl dgst</code> 核对这些签名。签名表明已签名的内容自 ParkProof 签名以来没有改动。它不能说明这些内容属实，也不能说明是谁在开车、车停在哪里，或车辆何时到达、何时离开。任何导出的 PDF 的附录里都有具体步骤。",
+    "verifyLinkLabel": "查看如何核对记录的签名 →",
     "contactHeader": "联系 + 投诉",
     "contactCopy": "如果遇到应用内控制之外的问题,或要行使你的权利,请发邮件到 <a>hello@parkproof.com.au</a>。",
-    "complaintCopy": "对我们的回复不满意?你可以向 <a>澳大利亚信息专员办公室(OAIC)</a> 投诉。"
+    "complaintCopy": "对我们的回复不满意?你可以向 <a>澳大利亚信息专员办公室(OAIC)</a> 投诉。",
+    "anonymousFineNotice": "<strong>违章通知书的照片</strong>(停车罚款)会发送给 <strong>Anthropic</strong> 来读取通知书,例如在你起草申诉时。起草申诉还会发送你所选停车记录的详细信息。我们不保留照片。",
+    "anonymousPush": "<strong>推送提醒</strong>(如果你开启):记录的地址、每条提醒的时间和内容(内容可能提到你输入的许可证时间)会发送到 <strong>ParkProof 的服务器</strong>。服务器会保留每条提醒直到发出,然后删除。",
+    "anonymousPermits": "<strong>你在某次停车中使用的许可证</strong>:它的类型、区域以及你输入的许可证时间会和这条记录保存在一起。为记录签名时,发送的是这些信息的指纹,而不是信息本身,同时还会发送你对许可证问题的回答。在设置里删除许可证不会改变已保存的记录。删除这条记录才会删除这些信息。",
+    "signedInPermits": "记录里保存的<strong>许可证信息</strong>(你在某次停车中使用已保存许可证时的类型、区域以及你输入的许可证时间)会随这条记录存储在 AWS DynamoDB 中。设置里保存的许可证不会上传。删除这条记录就会删除这些信息。",
+    "anonymousWeeklyPush": "<strong>每周推送提醒</strong>（如果你开启）：每条提醒的名称、你输入的地址（如有）、星期、时间、重复方式和时区、何时提醒你，以及通知内容，会连同这台设备的随机 ID 一起发送到 <strong>ParkProof 的服务器</strong>。提醒开启期间，服务器会保留这些信息，以便每周发出提醒。你暂停或删除这条提醒，或关闭它的通知后，ParkProof 下次打开并联网时会删除这些信息。ParkProof 每次发送这些信息后，服务器最多保留 90 天。只要你继续打开 ParkProof，它就会不时重新发送；如果你不再打开，这些信息会在你最后一次打开 ParkProof 后的 90 天内删除。"
   },
   "loading": {
     "step1": "正在读取标志…",
     "step2": "正在识别停车规则…",
     "step3": "正在计算可停车时间…",
-    "step4": "正在生成答案…"
+    "step4": "正在生成答案…",
+    "stepOf": "第 {{current}} 步,共 {{total}} 步",
+    "usuallyTen": "通常约需 10 秒。",
+    "almostThere": "快好了。这个标志比较复杂…",
+    "stillWorking": "仍在处理,这次比平时久一些…"
   },
   "errors": {
     "somethingWrong": "出错了",
@@ -494,16 +592,16 @@
     "backHome": "返回主页",
     "complexSignTimeout": "这个停车标志处理太久了,通常说明它叠了很多条规则。试试拍一张更清晰的照片,或者只裁出你停车处适用的那部分规则。",
     "offlineTitle": "你当前处于离线状态",
-    "offlineBody": "读取标志需要网络连接。你保存的会话和提醒仍然可用,恢复联网后再试一次扫描。",
+    "offlineBody": "读取标志需要网络连接。你保存的记录和提醒仍然可用，恢复联网后再试一次扫描。",
     "boundaryTitle": "出了点问题",
-    "boundaryBody": "ParkProof 遇到了一个意外错误。重新加载通常就能解决,你保存的会话在此设备上是安全的。",
+    "boundaryBody": "ParkProof 遇到了一个意外错误。重新加载通常就能解决，你保存的记录在这台设备上是安全的。",
     "boundaryReload": "重新加载 ParkProof",
     "storageRecovered_one": "你的设备存储已满,因此为了腾出空间,移除了 1 条较旧停车记录中的照片。登录即可把证据安全保存在云端。",
     "storageRecovered_other": "你的设备存储已满,因此为了腾出空间,移除了 {{count}} 条较旧停车记录中的照片。登录即可把证据安全保存在云端。",
-    "photoSyncFailed": "有一张照片未备份到云端。它在此设备上是安全的,打开会话即可重试。",
+    "photoSyncFailed": "有一张照片未备份到云端。它在这台设备上是安全的。打开记录即可重试。",
     "heavyLoad": "ParkProof 目前繁忙,你的扫描未能及时完成。请稍等一分钟后再试。",
     "rateLimited": "来自你网络的请求过多。请稍等一分钟,然后再试。",
-    "syncFailed": "刚才无法加载你保存的会话。",
+    "syncFailed": "刚才无法加载你保存的记录。",
     "scanFailed": "我们没能读完那个标志。请稍后再试一次。",
     "signUnreadable": "我们无法清晰地读取那个标志。请拍一张更清晰、更近的照片。",
     "imageTooLarge": "这张照片太大了。请拍小一点,或靠近标志重拍。",
@@ -513,7 +611,11 @@
     "genericRetry": "出了点问题。请稍后再试一次。",
     "storageFull": "ParkProof 在此设备上的存储空间已满。进行中的停车记录和仍在等待签名的记录都会保留。请打开\"停车记录\",删除一条不再需要的旧记录,然后重试。",
     "storageEvicted_one": "你的设备存储已满,因此为了腾出空间,删除了 {{count}} 条较旧的停车记录。登录即可把记录安全保存在云端。",
-    "storageEvicted_other": "你的设备存储已满,因此为了腾出空间,删除了 {{count}} 条较旧的停车记录。登录即可把记录安全保存在云端。"
+    "storageEvicted_other": "你的设备存储已满,因此为了腾出空间,删除了 {{count}} 条较旧的停车记录。登录即可把记录安全保存在云端。",
+    "noticeUnreadable": "我们无法读取这张违章通知。请把整张通知放平,在光线好的地方拍一张更清晰的照片。",
+    "notANotice": "这张照片看起来不像停车罚款通知。请直接拍违章通知本身。",
+    "noticeHeavyLoad": "ParkProof 目前繁忙,未能及时读完这张通知。请稍等一分钟后再试。",
+    "noticeImageTooLarge": "这张照片太大了。请换一张通知的照片。"
   },
   "pdf": {
     "common": {
@@ -547,7 +649,14 @@
         "departureSigned": "离开部分由 ParkProof 签名的时间(服务器时钟)",
         "departureLocation": "点击\"我已离开\"时手机的位置(GPS)",
         "departureDistance": "与到达位置的大约距离(手机 GPS)",
-        "locationCoords": "位置(坐标)"
+        "locationCoords": "位置(坐标)",
+        "signCondition": "标志状况",
+        "proof": "付款或许可证凭证",
+        "conditionPhotos": "车况照片",
+        "damageNote": "驾驶员注明的损伤",
+        "driver": "驾驶员(在手机上填写,未经核实)",
+        "handover": "车辆交接(在手机上填写,未经核实)",
+        "handoverSigned": "交接部分由 ParkProof 签名的时间(服务器时钟)"
       },
       "locationSourceValue": {
         "manuallyEntered": "手动输入",
@@ -582,18 +691,37 @@
         "coordsWithAccuracy": "{{coords}},精度 {{accuracy}}",
         "distanceUnavailable": "无法计算。到达时的位置不是足够精确的手机 GPS 定位,无法比较。",
         "distanceRough": "{{distance}}。点击时手机位置的精度只有 {{accuracy}},所以这个距离不精确。",
-        "distanceRoughNoAccuracy": "{{distance}}。手机没有给出点击时位置的精度,所以这个距离不精确。"
+        "distanceRoughNoAccuracy": "{{distance}}。手机没有给出点击时位置的精度,所以这个距离不精确。",
+        "complianceDescribed": "{{type}}(按驾驶员的描述)",
+        "complianceNoType": "已添加一张照片。驾驶员没有说明照片的内容。",
+        "conditionCounts": "停车时:{{parking}} 张。返回时:{{returned}} 张。",
+        "noteWhenParked": "停车时，驾驶员的原话:{{note}}",
+        "noteOnReturn": "返回时，驾驶员的原话:{{note}}",
+        "notSignedYet": "(尚未签名)",
+        "partRejected": "(这部分无法签名)",
+        "notSigned": "(未签名)",
+        "handoverTo": "于 {{time}} 交给 {{to_driver}}(手机时钟)。",
+        "handoverFromTo": "{{from_driver}} 于 {{time}} 把车交给 {{to_driver}}(手机时钟)。"
       },
       "carPhotoCaptionTime": "记录时间 {{time}}(手机时钟)",
       "confidence": {
         "high": "高",
         "medium": "中",
         "low": "低"
-      }
+      },
+      "signCondition": {
+        "readable": "照片中可以读清",
+        "partiallyObscured": "照片中有一部分看不清",
+        "contradictory": "标志的各部分内容不一致",
+        "missing": "照片中没有找到停车标志",
+        "notAParkingSign": "照片拍到的不是停车标志",
+        "notes": "AI 备注:{{notes}}"
+      },
+      "noSignRead": "未读取标志。ParkProof 在照片里没有找到可读的停车标志,驾驶员在没有标志的情况下记录了这次停车。"
     },
     "signature": {
       "title": "数字签名",
-      "intro": "这份记录的每一部分都在 ParkProof 服务器收到时由服务器签名,签名时间为该部分所示的 signed_at 时间。有效的签名表明,已签名的内容和照片指纹自那时以来没有改动。它不能说明这些内容属实,也不能说明是谁在开车,或车辆何时到达、何时离开。",
+      "intro": "这份记录的每一部分都在 ParkProof 服务器收到时由服务器签名，签名时间为该部分所示的 signed_at 时间。有效的签名表明，已签名的内容和照片指纹自那时以来没有改动。它不能说明这些内容属实，也不能说明是谁在开车、车停在哪里，或车辆何时到达、何时离开。",
       "algorithm": "算法",
       "keyAlias": "密钥别名",
       "signedAt": "ParkProof 签名时间(服务器时钟)",
@@ -609,7 +737,7 @@
       "verifyStep4": "4. 解码签名:",
       "verifyStep5": "5. 验证:",
       "verifyStep6": "6. 预期输出:\"Verified OK\"。这表明已签名的字节自 ParkProof 签名以来没有改动。",
-      "verifyStep7": "7. 关于照片:本 PDF 中显示的图像是为文档重新编码的副本，其字节与原始文件不同，因此无法重现负载中的哈希值。这是正常的，并不表示被篡改。签名对应的是每张原始照片的 SHA-256（即签名负载中的 sign_photo_sha256、car_photo_sha256 和 ambient_photo_sha256 值），第 6 步已经表明这些值自签名以来没有改动。若要自行核对某张图像，请计算原始拍摄文件（来自 ParkProof 记录或你的账户导出）的哈希，而不是这里打印的副本的哈希，再与上方对应的值比较。",
+      "verifyStep7": "7. 关于照片:本 PDF 中打印的图像是为文档重新编码的副本，其字节与原始文件不同，因此与已签名的指纹不一致。这是正常的，并不表示被篡改。已签名的负载带有每张原始照片的 SHA-256:环节 0 中的 sign_photo_sha256、car_photo_sha256 和 ambient_photo_sha256，以及后续环节中 photos、photo 或 return_photos 下的每个 sha256。原始照片在这条记录的证据文件中，这是驾驶员可以在 ParkProof 的记录页面下载的 .json 文件。要核对一张照片，请把该文件中这张照片的 bytes_base64 值保存为 photo1.b64，然后解码并打印它的 SHA-256:",
       "devKey": "使用开发密钥签名。无法用 ParkProof 公布的公钥核验。",
       "linkHeading": "环节 {{link}}:{{kind}}",
       "forkNote": "在记录的这个位置,两台设备各添加了一个部分。两个部分都已签名,都列在这里。",
@@ -624,7 +752,9 @@
         "compliance": "付款或许可证凭证",
         "departure": "离开",
         "handover": "车辆交接"
-      }
+      },
+      "verifyPhotoMatch": "这个十六进制值必须等于上方某个已签名负载中这张照片的 sha256，而不只是证据文件中与照片一起列出的 sha256，后者没有签名。第 6 步已经表明已签名的值自 ParkProof 签名以来没有改动。对每张照片都这样做。",
+      "verifyWindows": "在 Windows 上，cmd 和 PowerShell 没有 base64 -d。请改用 certutil -decode，并用 certutil -hashfile 打印文件的 SHA-256，如下所示。在 PowerShell 中，请输入 curl.exe 而不是 curl。Git for Windows 自带 openssl，它的 Git Bash 也可以按原样运行上面的命令。"
     },
     "appeal": {
       "drafted": "起草于 {{when}}",
@@ -642,7 +772,7 @@
       "userId": "用户 ID:{{id}}",
       "exportedAt": "导出时间:{{when}}",
       "sessionCount": "本次导出的记录数:{{count}}",
-      "intro": "本文档收录了该 ParkProof 账户保存的所有停车记录,每条记录一节。如果某条记录有已签名的部分,它的签名页紧跟在该节之后,并附有核验每个签名的步骤。有效的签名表明已签名的内容自 ParkProof 签名以来没有改动,但不能说明这些内容属实。",
+      "intro": "本文档收录了该 ParkProof 账户保存的所有停车记录，每条记录一节。如果某条记录有已签名的部分，它的签名页紧跟在该节之后，并附有核验每个签名的步骤。有效的签名表明已签名的内容自 ParkProof 签名以来没有改动。它不能说明这些内容属实，也不能说明是谁在开车、车停在哪里，或车辆何时到达、何时离开。",
       "emptyState": "该账户尚未保存任何停车记录。",
       "summaryColIndex": "#",
       "summaryColArrived": "记录时间(手机时钟)",
@@ -658,6 +788,80 @@
       "hoursOnly_one": "1 小时",
       "hoursOnly_other": "{{count}} 小时",
       "hoursAndMins": "{{hours}} 小时 {{mins}} 分钟"
+    },
+    "complianceType": {
+      "meterTicket": "仪表台上的停车票",
+      "paymentConfirmation": "付款确认",
+      "permitDisplayed": "已展示的许可证",
+      "other": "其他"
+    },
+    "photos": {
+      "complianceHeader": "付款或许可证凭证",
+      "conditionHeader": "车况照片",
+      "whenParked": "停车时",
+      "onReturn": "返回时",
+      "role": {
+        "front": "车头",
+        "rear": "车尾",
+        "left": "左侧",
+        "right": "右侧",
+        "detail": "特写"
+      },
+      "added": "添加于 {{time}}(手机时钟)",
+      "library": "从相册添加。签名表明这张照片在 ParkProof 签名时已经存在，不能说明它是何时拍摄的。",
+      "signedAt": "ParkProof 于 {{time}} 签名了指纹(服务器时钟)",
+      "devKey": "指纹于 {{time}} 使用开发密钥签名。无法用 ParkProof 公布的公钥核验。",
+      "notSignedYet": "指纹尚未签名",
+      "notSigned": "指纹未签名",
+      "rejected": "这部分无法签名",
+      "signedNote": "已签名的照片表明，这张照片在签名时已经存在。它不能说明损伤是谁造成的。"
+    },
+    "shared": {
+      "field": "分享给你的",
+      "madeElsewhere": "这条记录是在他人的手机上创建的。"
+    },
+    "workday": {
+      "title": "停车事件记录。",
+      "footer": "本记录记下的是你做了什么以及你告诉我们的内容。它不是关于你遵守了规定的法律认定。这由你所在的市议会决定。",
+      "councilLine": "市议会对这条规定的解释可能更严格。请查看你所在市议会的停车页面。",
+      "started": "工作日开始于 {{time}}(手机时钟)",
+      "ended": "工作日结束于 {{time}}(手机时钟)",
+      "legCount": "本 PDF 包含的站:{{chosen}}(共 {{total}} 站)",
+      "partial": "本 PDF 没有包含此工作日的每一站。每个距离和驾驶员陈述都是相对于该工作日中紧挨在前的一站,即使那一站没有包含在内。",
+      "intro": "每一站都是一条单独的停车记录。此表之后是每一站的部分,签名页在最后。",
+      "col": {
+        "leg": "站",
+        "arrived": "到达(手机时钟)",
+        "left": "离开(手机时钟)",
+        "distance": "与上一站的大约距离(手机 GPS)",
+        "statement": "驾驶员陈述"
+      },
+      "cell": {
+        "notLeft": "未记录",
+        "signedArrival": "到达:{{value}}",
+        "signedDeparture": "离开:{{value}}",
+        "noDistance": "未测量。需要两站都有手机 GPS 定位。"
+      },
+      "statement": {
+        "firstLeg": "无。这是第一站。",
+        "notAsked": "未询问。ParkProof 没有就这次挪车提问。",
+        "oppositeDirectionSign": "驾驶员表示经过了一个表示该区段已结束的标志。",
+        "yellowEdgeLine": "驾驶员表示经过了一条黄色边线。",
+        "tIntersectionOrDeadEnd": "驾驶员表示经过了道路尽头(丁字路口或断头路)。",
+        "leftParkingArea": "驾驶员表示把车开出了停车区域,经过了表示区域结束的标志。",
+        "notSure": "被问到是否已离开标志适用的路段时,驾驶员回答:我不确定。",
+        "notSureArea": "被问到是否已离开停车区域时,驾驶员回答:我不确定。"
+      },
+      "legHeading": "第 {{number}} 站",
+      "tagged": "这一站是之前的一次停车,后来加入此工作日。它已签名的信息中没有提到这个工作日。",
+      "chain": {
+        "heading": "各站之间的链",
+        "intro": "每一站的停车时补充信息都带有 previous_departure_payload_sha256,即前一站已签名的离开负载的 SHA-256(前提是那次离开及时签了名)。把每一站签名页中的文件分别保存到各自的文件夹(leg1、leg2 等),并按该站的步骤解码。然后对每一对运行下面所示的命令。",
+        "equals": "这个十六进制值必须等于第 {{leg}} 站环节 {{link}} 中的 previous_departure_payload_sha256。",
+        "equalsOneOf": "这些十六进制值中必须有一个等于第 {{leg}} 站环节 {{link}} 中的 previous_departure_payload_sha256。",
+        "notLinked": "第 {{leg}} 站的环节 {{link}} 签名时没有包含前一站的离开信息,因为那次离开没有及时签名。这里没有可比较的内容。",
+        "notInPdf": "第 {{leg}} 站的环节 {{link}} 指向前一站一个已签名的离开信息,但它不在本 PDF 中。"
+      }
     }
   },
   "time": {
@@ -698,11 +902,11 @@
     }
   },
   "landing": {
-    "heroSubhead": "拍下任意澳大利亚停车标志,<accent>12 秒</accent>内得到清晰、通俗易懂的回答。",
+    "heroSubhead": "拍下任意澳大利亚停车标志，<accent>几秒钟内</accent>就能得到清晰、通俗易懂的回答。",
     "bullet": {
       "plainEnglish": "通俗易懂的解读",
       "photoEvidence": "自动保存照片证据",
-      "defensible": "被开罚单时可证明记录未被改动"
+      "defensible": "被罚款时，可核对记录是否被改动"
     },
     "cta": "扫描停车标志",
     "builtFor": "为澳大利亚司机打造",
@@ -716,31 +920,28 @@
       "answerDesc": "一个通俗易懂的结论,方便你对照标志核实。"
     },
     "evidenceCallout": {
-      "title": "需要时,提供可证明未被篡改的证据。",
-      "body": "每次检查都附带加密签名的时间戳、GPS 和照片记录。"
-    },
-    "feature": {
-      "translateTitle": "通俗的解读",
-      "translateDesc": "拍下任何澳洲停车标志,大约 12 秒内告诉你\"现在能不能停\"。",
-      "evidenceTitle": "可验证未被篡改的证据",
-      "evidenceDesc": "每次停车都有加密签名的时间戳、GPS 和照片记录。",
-      "appealTitle": "AI 申诉信",
-      "appealDesc": "收到不合理的罚单？拍下来，我们帮你起草正式申诉。"
+      "title": "需要时，可核对是否被篡改的证据。",
+      "body": "你保存的每一条停车记录都会被签名，任何人都可以核对它的内容自签名以来有没有改动。签名不能说明这些内容属实，也不能说明是谁在开车、车停在哪里，或车辆何时到达、何时离开。"
     },
     "accuracyNote": "ParkProof 可能会误读杂乱的标志。离开车辆前,请务必把我们的解读和实际标志核对一遍。",
     "trustFree": "免费",
     "trustNoAccount": "无需账户",
-    "trustOffline": "离线可用",
+    "trustOffline": "已保存的记录可离线使用",
     "locationOptional": "位置信息是可选的。即使拒绝,你仍然可以读取标志并自行输入地址。",
-    "heroTitle": "停车,<accent>就这么简单。</accent>"
+    "heroTitle": "停车,<accent>就这么简单。</accent>",
+    "hero": {
+      "aria": "一块停车标志变成一条已签名的停车记录：你可以停到 {{time}}。",
+      "kicker": "已签名记录",
+      "canPark": "可以停车"
+    }
   },
   "about": {
     "title": "ParkProof 的全部功能",
-    "lead": "你大概以为它只是一个停车标志翻译器。它确实是这个。但同时，我们还顺便帮你保存停车证据，以防遇到不公正的罚单。如果真的收到罚单，它还能帮你写申诉信，并在停车时间到期前提醒你挪车。下面是友好的功能介绍。",
+    "lead": "你大概以为它只是一个停车标志翻译器。它确实是这个。但同时，我们还顺便帮你保存停车证据，以防被不公正地罚款。如果真的被罚款，它还能帮你起草一封申诉信，由你检查和修改，并在停车时间到期前提醒你挪车。下面是友好的功能介绍。",
     "push": {
       "title": "在此设备上启用推送通知",
-      "body": "即使 ParkProof 没有打开,提醒也能免动手触发。现在授权意味着未来的停车提醒会在后台静默运行,不会在操作中途打断你。",
-      "subscribed": "✓ 此设备已订阅。未来停车记录的推送提醒会在此设备上触发。",
+      "body": "现在允许通知,之后就不会再弹出询问。在停车记录上点击“提醒我”之前,不会设置任何提醒。",
+      "subscribed": "✓ 此设备已开启通知。要设置提醒,请在停车记录上点击“提醒我”。",
       "denied": "你已阻止此网站的通知。要启用,请在浏览器的站点设置中更改权限。",
       "errorRetry": "出错了,请重试",
       "enable": "启用通知",
@@ -752,7 +953,7 @@
       "title": "拍下标志，得到答案",
       "lead": "用手机对准任何停车标志拍照,哪怕是那种堆满箭头和清空区标识的复杂牌子。",
       "items": [
-        "大约 12 秒内就能给你一个明确的\"能停\"或\"不能停\"。",
+        "通常大约 10 秒就能给你一个明确的\"能停\"或\"不能停\"。层层叠叠的复杂标志可能要更久。",
         "如果标志对马路两侧有不同规定，我们会直接问你停在哪一侧。",
         "在调用 AI 之前，我们会先检查照片是否模糊或太暗，帮你省一次试错。"
       ]
@@ -761,9 +962,9 @@
       "title": "你的停车凭证",
       "lead": "每次登记停车，我们都会保存时间、GPS、地址，以及（如果你愿意）一张你的车在停车位的照片。",
       "items": [
-        "可以下载为整齐的 PDF，万一需要申诉罚单时非常有用。",
-        "每条记录都经过签名，任何人都可以核验它自签名以来是否被改动过。",
-        "添加一段说明为什么停在那里（送妈妈看病、赶周六市集），这些细节会影响市议会的判断。"
+        "可以下载为整齐的 PDF，万一需要对罚款提出申诉时非常有用。",
+        "每条记录都经过签名，任何人都可以核对已签名的内容自 ParkProof 签名以来是否被改动过。",
+        "添加一条备注，写下你为什么停在那里（送妈妈看病、赶周六市集）。备注会按你的原话随记录一起保存。备注不会被签名。"
       ]
     },
     "reminders": {
@@ -777,19 +978,19 @@
     },
     "gates": {
       "title": "温柔地提醒你\"等一下\"",
-      "lead": "这些小检查能避免你拿到完全没预料到的罚单。",
+      "lead": "几个小检查，在你走开之前，帮你留意那些容易漏看的条件。",
       "items": [
         "如果这个车位需要付费(停车计时器、EasyPark、PayStay),我们会让你先勾选\"已付款\"再保存。",
         "如果这个车位是无障碍停车许可证专用车位,我们会显示一个明显的红色警告。",
-        "停在完全没有标志的地方？你还是可以登记，拍一张周围环境的照片作为证据。"
+        "停在完全没有标志的地方？你还是可以登记，并拍一张周围环境的照片。照片显示的是当时看得到的景象，不能说明附近没有标志。"
       ]
     },
     "appeal": {
-      "title": "万一还是收到罚单？",
-      "lead": "别自己写申诉信。我们来帮你写。",
+      "title": "万一还是被罚款了？",
+      "lead": "不用从零开始写申诉信。我们帮你起草，你来检查和修改。",
       "items": [
-        "拍下罚单。我们会用你停车时保存的记录核对一遍。",
-        "你会得到一份写给市议会的草稿信，外加一个对胜诉机会的诚实评估。",
+        "拍下违章通知。我们会用你停车时保存的记录核对一遍。",
+        "你会得到一份写给市议会的草稿信，寄出前可以先读一遍、改一改。ParkProof 不会评估你的申诉，也不会预测结果。",
         "想怎么改就怎么改，然后下载为附带停车记录的 PDF。打印邮寄或者发邮件都行。"
       ]
     },
@@ -797,7 +998,7 @@
       "title": "几个贴心的小细节",
       "lead": "那些本不该让你操心的事情，我们替你想到了。",
       "items": [
-        "免费。不用从应用商店下载。加到主屏，用起来就跟正常 App 一样，离线也能用。",
+        "免费。不用从应用商店下载。加到主屏，用起来就跟正常 App 一样。保存的记录没有网络也能打开，但检查标志需要联网。",
         "支持 9 种语言，包括 简体中文、Tiếng Việt、Bahasa Indonesia、한국어、Italiano、Ελληνικά、हिन्दी 和 ਪੰਜਾਬੀ。",
         "时间始终匹配停车地点，出差时在悉尼扫描标志，看到的就是悉尼时间，不是你手机的家乡时间。",
         "不用注册账号就能使用全部功能。匿名也完全没问题。"
@@ -814,14 +1015,14 @@
     },
     "support": {
       "title": "喜欢 ParkProof 吗?",
-      "body": "一个人花 10 天打造,永久免费。如果它帮你省下了一张罚单,可以请我喝杯咖啡。",
+      "body": "一个人花 10 天打造,永久免费。如果它帮你躲过了一笔罚款,可以请我喝杯咖啡。",
       "button": "☕ 请我喝杯咖啡"
     },
-    "sealCaveat": "数字签名表明,已签名的内容自 ParkProof 签名以来没有改动。它不能说明 AI 把标志读对了,也不能说明市议会会采信这份记录。"
+    "sealCaveat": "数字签名表明，已签名的内容在 ParkProof 签名时就已存在，此后没有改动。它不能说明这些内容属实，也不能说明 AI 把标志读对了、是谁在开车、车停在哪里，或车辆何时到达、何时离开。"
   },
   "scheduledReminders": {
     "header": "已安排的提醒",
-    "noneYet": "此会话尚未设置推送提醒。",
+    "noneYet": "这条记录尚未设置推送提醒。",
     "firesAtExpiry": "{{when}}:到期时",
     "firesBefore_one": "{{when}}:到期前 1 分钟",
     "firesBefore_other": "{{when}}:到期前 {{count}} 分钟",
@@ -830,22 +1031,27 @@
     "firesAbsolute": "{{when}}",
     "addAnother": "+ 添加提醒",
     "cancelAll": "取消全部提醒",
-    "cancelAllConfirm": "取消此会话的所有推送提醒?",
+    "cancelAllConfirm": "取消这条记录的所有推送提醒？",
     "cancelOne": "移除此提醒",
     "pickHeader": "什么时候提醒你?",
     "pickCancel": "取消",
-    "tooLateAll": "没有足够时间在未来安排任何提醒选项。如果你已离开,请点击「结束会话」。",
+    "tooLateAll": "没有足够靠后的提醒时间可以设置。如果你已经把车开走了，请点击“我已离开”。",
     "pushNotEnabled": "在此设备上启用推送通知以添加在应用关闭时也能触发的提醒。",
     "saving": "正在保存…",
     "errorRetry": "无法更新,请重试",
-    "otherDevice": "这些提醒是在另一台设备上设置的。请在那台设备上更改。"
+    "otherDevice": "这些提醒是在另一台设备上设置的。请在那台设备上更改。",
+    "chipAlreadySet": "已设置",
+    "firesAtStandardEnd": "{{when}}:标准时限结束",
+    "firesAtPermitTime": "{{when}}:你输入的许可证时间结束时",
+    "firesBeforePermitTime_one": "{{when}}:你输入的许可证时间结束前 {{count}} 分钟",
+    "firesBeforePermitTime_other": "{{when}}:你输入的许可证时间结束前 {{count}} 分钟"
   },
   "installPrompt": {
     "available": "安装 ParkProof",
     "install": "安装",
     "installing": "正在安装…",
     "iosTitle": "在 iPhone 上安装 ParkProof",
-    "iosBody": "点击分享按钮,然后选择\"添加到主屏幕\"。它会全屏打开,离线也能用。",
+    "iosBody": "点击分享按钮，然后选择\"添加到主屏幕\"。它会全屏打开，而且你在那里保存的记录即使没有网络也能打开。已经在 Safari 中保存的记录仍留在 Safari 中。",
     "iosDismiss": "知道了"
   },
   "verifier": {
@@ -872,7 +1078,10 @@
     "heading": "离开",
     "tapped": "你在 {{time}} 点击了\"我已离开\"(手机时钟)。",
     "far": "你点击\"我已离开\"时,手机距离你停车的地方 {{distance}}。记录显示的是你点击的时间,不是车辆开走的时间。",
-    "notSigned": "这次离开没有签名。"
+    "notSigned": "这次离开没有签名。",
+    "condition": {
+      "toggle": "现在记录车况（可选）"
+    }
   },
   "chain": {
     "heading": "这条记录的已签名部分",
@@ -898,8 +1107,8 @@
     "devKeySignedAt": "于 {{time}} 使用开发密钥签名,不是 ParkProof 公布的密钥。",
     "check": "核验签名",
     "checking": "正在核验…",
-    "checkValid_one": "{{count}} 个签名有效。自 ParkProof 签名以来没有任何改动。但这不能说明记录的内容属实。",
-    "checkValid_other": "{{count}} 个签名均有效。自 ParkProof 签名以来没有任何改动。但这不能说明记录的内容属实。",
+    "checkValid_one": "{{count}} 个签名有效。已签名的内容自 ParkProof 签名以来没有改动。但这不能说明这些内容属实。",
+    "checkValid_other": "{{count}} 个签名均有效。已签名的内容自 ParkProof 签名以来没有改动。但这不能说明这些内容属实。",
     "checkValidPhotosUnchecked_one": "{{count}} 个签名有效。有些照片不在这台设备上,无法与其指纹比对。但这不能说明记录的内容属实。",
     "checkValidPhotosUnchecked_other": "{{count}} 个签名均有效。有些照片不在这台设备上,无法与其指纹比对。但这不能说明记录的内容属实。",
     "checkProblem": "至少有一个部分或一张照片没有通过核验。每一项的结果都显示在这里。",
@@ -927,5 +1136,552 @@
       "returnDetail": "返回时车况:特写",
       "compliance": "付款或许可证凭证照片"
     }
+  },
+  "workday": {
+    "reminder": {
+      "headsUp": "你在此路段的停车时限于 {{time}} 结束。请把车开出该标志适用的路段,不要只是换到另一个车位。",
+      "goNow": "现在就出发,在 {{time}} 前把车移走。",
+      "ended": "你在此路段的停车时间已于 {{time}} 结束。",
+      "headsUpArea": "你在此停车区域的停车时限于 {{time}} 结束。请把车开出整个区域,不要只是换到区域内的另一条街。",
+      "endedArea": "你在此停车区域的停车时间已于 {{time}} 结束。"
+    },
+    "start": {
+      "title": "开始工作日",
+      "intro": "适用于需要在多个限时车位之间挪车的一天。每一站都有自己的记录,依据现场新拍的标志照片读取。",
+      "locating": "正在确认你所在的州…",
+      "unavailable": "工作日模式目前仅在维多利亚州和昆士兰州可用,我们正在核实其他州的规定。",
+      "unknown": "ParkProof 无法根据你手机的位置判断你所在的州。工作日模式仅在维多利亚州和昆士兰州可用,所以需要先确认。",
+      "button": "开始工作日",
+      "useCurrent": "把车现在的停车位置作为第一站",
+      "useCurrentHelp": "这次停车会保留你记录它的时间和它的时限。之后挪了几个车位也不会让这个时限重新计时,所以照样使用它。如果车已经开出该标志适用的路段,请先返回并在该记录上点击\"我已离开\"。",
+      "currentIneligible": "你当前的停车无法作为工作日的一站。每一站都需要在维多利亚州或昆士兰州有可读的标志。等车开出该标志适用的路段后,在该记录上点击\"我已离开\",然后再开始工作日。"
+    },
+    "explainer": {
+      "heading": "时限如何计算",
+      "full": "挪几个车位不会让时限重新计时。你需要离开该标志适用的路段,如果是区域标志,则需要离开整个区域。再次付费或续费也不会让时限重新计时。每次挪车都需要为新标志拍一张新照片。",
+      "short": "挪几个车位不会让时限重新计时。每次挪车都需要为新标志拍一张新照片。"
+    },
+    "ready": {
+      "heading": "提醒",
+      "on": "通知已开启,即使 ParkProof 已关闭,工作日提醒也能送达这部手机。",
+      "ask": "请开启通知,这样即使 ParkProof 已关闭,工作日提醒也能送达这部手机。",
+      "allow": "开启通知",
+      "cantDeliver": "工作日提醒需要通知功能。没有通知,你就需要自己留意时间。",
+      "iosInstall": "在 iPhone 上,通知需要先把 ParkProof 添加到主屏幕。点击\"分享\",再点击\"添加到主屏幕\",然后从那里开始工作日。",
+      "denied": "ParkProof 的通知已被阻止。你可以在浏览器的网站设置中允许通知。",
+      "turnedOff": "这部手机上 ParkProof 的通知已关闭。你可以在\"设置\"中重新开启。"
+    },
+    "ics": {
+      "button": "为这一站添加日历提醒",
+      "title": "在 {{time}} 前把车开出该标志适用的路段",
+      "titleArea": "在 {{time}} 前把车开出此停车区域"
+    },
+    "card": {
+      "kicker": "工作日",
+      "stop": "第 {{number}} 站",
+      "noStops": "还没有任何一站。每一站都从拍摄标志照片开始。",
+      "moved": "第 {{number}} 站于 {{time}} 结束(手机时钟)。",
+      "open": "打开这个工作日",
+      "openAria": "打开这个工作日。{{status}}",
+      "expiredHint": "还在这里?现在就挪车。已经挪了?点击\"我现在要挪车\"。",
+      "move": "我现在要挪车",
+      "moveHint": "开车离开前点击",
+      "scanFirst": "停好了?扫描你所在位置的标志",
+      "scanNext": "又停好了?扫描新的标志",
+      "end": "结束工作日"
+    },
+    "end": {
+      "title": "结束这个工作日?",
+      "body": "你的各站会保留在停车记录中。之后你记录的停车都是普通记录,ParkProof 不会再询问你是否已离开该标志适用的路段。"
+    },
+    "history": {
+      "row_one": "工作日,{{count}} 站",
+      "row_other": "工作日,{{count}} 站"
+    },
+    "status": {
+      "active": "进行中",
+      "ended": "已结束"
+    },
+    "view": {
+      "title": "工作日",
+      "started": "开始于 {{time}}(手机时钟)",
+      "ended": "结束于 {{time}}(手机时钟)",
+      "stopsHeading": "各站",
+      "noStops": "还没有任何一站。",
+      "tagged": "这一站是从之前的一次停车加入此工作日的。它已签名的信息中没有提到这个工作日。"
+    },
+    "noSign": {
+      "body": "工作日模式要求每个停车位置都有可读的标志。有些地区,例如布里斯班市中心,即使街道上没有标志也有时间限制。"
+    },
+    "stopped": {
+      "notAvailable": "工作日模式在这里暂不可用。这次停车已保存为普通记录,并有它自己的标志读取结果。",
+      "unknownState": "ParkProof 无法判断这次停车位于哪个州,因此工作日已结束。这次停车已保存为普通记录。如果你告诉我们你不确定,原来的时限仍然适用。"
+    },
+    "scan": {
+      "fresh": "工作日的一站:请为车现在所在位置的标志拍一张新照片。",
+      "cameraDenied": "请在浏览器设置中重新开启相机权限。工作日的每一站都需要现场拍摄的照片。",
+      "notFresh": "这张照片不是刚刚拍的。工作日的每一站都需要现场拍摄的标志照片。请用相机重新拍一张。"
+    },
+    "boundary": {
+      "title": "这可能是同一个标志适用的路段。",
+      "body": "换车位不会让时限重新计时。你来这里的路上有没有经过下面其中一项?",
+      "area": "这里是停车区域。换到区域内的另一条街不算。你需要离开整个区域。",
+      "option": {
+        "oppositeDirectionSign": "一个表示该区段已结束的标志(街区中间的双向箭头标志不算)",
+        "yellowEdgeLine": "一条黄色边线",
+        "tIntersectionOrDeadEnd": "道路尽头(丁字路口或断头路)",
+        "leftParkingArea": "我把车开出了停车区域,经过了表示区域结束的标志",
+        "notSure": "我不确定"
+      },
+      "footer": "如果你不确定,原来的时限仍在计算。",
+      "required": "请选择一个答案以保存这一站。",
+      "newLimit": "根据你告诉我们的情况得出的新时限:你经过了{{boundary}}。",
+      "passed": {
+        "oppositeDirectionSign": "一个表示该区段已结束的标志",
+        "yellowEdgeLine": "一条黄色边线",
+        "tIntersectionOrDeadEnd": "道路尽头(丁字路口或断头路)",
+        "leftParkingArea": "一个表示停车区域结束的标志"
+      },
+      "notSure": "你在此路段的时限仍从 {{start}} 起计算。请在 {{deadline}} 前把车开出该路段。",
+      "notSureArea": "你在此停车区域的时限仍从 {{start}} 起计算。请在 {{deadline}} 前把车开出整个区域。",
+      "notSureNoDeadline": "你在此路段的时限仍从 {{start}} 起计算。",
+      "notSureNoDeadlineArea": "你在此停车区域的时限仍从 {{start}} 起计算。",
+      "passedDeadline": "你在此路段的停车时间已于 {{time}} 结束。请现在就把车开出该路段。",
+      "passedDeadlineArea": "你在此停车区域的停车时间已于 {{time}} 结束。请现在就把车开出整个区域。",
+      "saveAnyway": "仍然保存",
+      "dontSave": "不保存这一站"
+    },
+    "reminders": {
+      "notSet": "这一站的提醒未能设置。请自己留意时间,或再试一次。"
+    },
+    "pdf": {
+      "open": "导出此工作日的 PDF",
+      "title": "工作日 PDF",
+      "warning": "这份 PDF 包含你选择的每一站,以及各站之间的距离和你在每次挪车时告诉我们的内容。市议会可以阅读它。",
+      "chooseLegs": "要包含的站",
+      "leg": "第 {{number}} 站",
+      "noneChosen": "请至少选择一站来导出。"
+    }
+  },
+  "notice": {
+    "title": "收到罚款?",
+    "captureIntro": "拍一张违章通知的照片。ParkProof 会读取上面的日期、时间和地点,并查找你在那段时间前后的停车记录。",
+    "reading": {
+      "step1": "正在读取通知…",
+      "step2": "正在查找日期、时间和地点…",
+      "step3": "正在查找你的记录…",
+      "slow": "仍在读取,可能还需要一点时间…",
+      "hint": "通常只需几秒钟。"
+    },
+    "errorHeader": "无法读取通知",
+    "fields": {
+      "heading": "通知上的内容",
+      "intro": "由 AI 从你的照片中读取。请逐项与通知核对。",
+      "noticeNumber": "通知编号",
+      "issuedBy": "签发机构",
+      "date": "通知上的日期",
+      "time": "通知上的时间",
+      "location": "地点",
+      "offence": "违规行为",
+      "partlyReadable": "通知的部分内容难以辨认。请对照通知本身核对这些信息。",
+      "checkDateTime": "请对照通知核对日期和时间,它们可能被读错了。",
+      "enterDateTime": "我们无法读取日期和时间。请按通知上的内容填写,以查找你的记录。"
+    },
+    "matches": {
+      "heading": "你在这段时间前后的记录",
+      "none": "你保存的停车记录中,没有在这个日期和时间前后的记录。如果上面的日期或时间读错了,请改正。"
+    },
+    "match": {
+      "compare": "与这条记录对比",
+      "far": "这条记录距离通知上的地点约 {{distance}} 公里。",
+      "repeatedHour": "这一天夏令时结束,所以通知上的时间出现了两次。这里用 {{time}} 与记录对比。",
+      "skippedHour": "这一天夏令时开始,所以通知上的时间在时钟上并不存在。这里用 {{time}} 与记录对比。"
+    },
+    "compare": {
+      "heading": "与通知对比",
+      "departureSignedBefore": "你在 {{time}} 点击了\"我已离开\",比通知上的时间早 {{duration}}。ParkProof 在 {{signedTime}} 为这条记录签名。记录显示的是你点击的时间,不是车辆开走的时间。",
+      "departureSignedBeforeClock": "按你手机的时钟,你在 {{time}} 点击了\"我已离开\"。ParkProof 在 {{signedTime}} 为这条记录签名,早于通知上的时间。记录显示的是你点击的时间,不是车辆开走的时间。",
+      "departureSignedAfter": "按你手机的时钟,你在 {{time}} 点击了\"我已离开\"。但 ParkProof 直到 {{signedTime}} 才签名,晚于通知上的时间,所以签名无法表明你在 {{noticeTime}} 之前已经离开。",
+      "departurePending": "你在 {{time}} 点击了\"我已离开\"。这还没有签名。",
+      "departureNotSigned": "你在 {{time}} 点击了\"我已离开\"。这没有签名。",
+      "noDeparture": "你还没有在这条记录上点击\"我已离开\"。",
+      "arrivalBefore": "你在 {{time}} 记录了这次停车,比通知上的时间早 {{duration}}。",
+      "arrivalAfter": "你在 {{time}} 记录了这次停车,比通知上的时间晚 {{duration}}。",
+      "arrivalSame": "你在 {{time}} 记录了这次停车,与通知上的时间在同一分钟。",
+      "driver": "你的记录写的是 {{driver}} 在开车。这是记录停车时输入的内容,ParkProof 没有核实。如果当时是别人在开车,通知上会说明如何提名对方。只能提名实际开车的人。",
+      "handover": "你的记录写的是,车辆在 {{time}} 交给了 {{to_driver}}。",
+      "checkRegistration": "请核对通知上的车牌号是否就是这条记录里的车。ParkProof 不记录车牌号。",
+      "checkDueDate": "请在通知本身上查看截止日期。",
+      "departureDevKey": "按你手机的时钟,你在 {{time}} 点击了\"我已离开\"。这部分使用开发密钥签名,不是 ParkProof 公布的密钥,所以签名无法表明你在 {{noticeTime}} 之前已经离开。",
+      "arrivalSignedBefore": "ParkProof 在 {{signedTime}} 为这条记录签名,早于通知上的时间。签名表明这条记录在那时已经存在,但不能说明车辆何时到达或停在哪里。",
+      "arrivalSignedAfter": "ParkProof 直到 {{signedTime}} 才为这条记录签名,晚于通知上的时间,所以签名无法表明这条记录在 {{noticeTime}} 之前已经存在。",
+      "arrivalDevKey": "这条记录使用开发密钥签名,不是 ParkProof 公布的密钥,所以签名无法表明它在 {{noticeTime}} 之前已经存在。",
+      "arrivalPending": "ParkProof 还没有为这条记录签名。",
+      "arrivalNotSigned": "这条记录没有签名。",
+      "driverPending": "驾驶员姓名还没有签名。",
+      "driverNotSigned": "驾驶员姓名没有签名。",
+      "handoverPending": "这次车辆交接还没有签名。"
+    },
+    "duration": {
+      "minutes_one": "{{count}} 分钟",
+      "minutes_other": "{{count}} 分钟",
+      "hours_one": "{{count}} 小时",
+      "hours_other": "{{count}} 小时",
+      "hoursMinutes": "{{hours}} {{minutes}}"
+    },
+    "actions": {
+      "draftAppeal": "用这条记录起草申诉信",
+      "exportPdf": "导出证据 PDF",
+      "draftAnyway": "仍然起草申诉信"
+    },
+    "disclaimer": "这里只是把你的记录与通知上的内容进行对比。这不是法律建议,也不表示这笔罚款是否成立。这由市议会或法院决定。"
+  },
+  "unclearSign": {
+    "obscuredTitle": "这个标志有一部分看不清",
+    "contradictoryTitle": "这个标志的各部分内容不一致",
+    "strictest": "上面的答案采用了最严格的解读。离开车之前,请你亲自看一下标志。",
+    "worthRecording": "看不清的标志,值得留下记录。",
+    "notesLabel": "AI 注意到的情况",
+    "noSignTitle": "没有可读的停车标志",
+    "noSignBody": "我们在这张照片里找不到可读的停车标志。这并不代表这里没有规定。一般道路规则仍然适用,例如在没有交通信号灯的路口 10 米以内不得停车。有些区域即使不是每条街都有标志,也有停车时限。",
+    "photoAlt": "你拍的照片",
+    "retake": "重拍照片",
+    "logWithoutSign": "不用标志直接记录",
+    "photoCaption": "在你停车的地方拍的照片。ParkProof 在照片里没有找到可读的停车标志。",
+    "loggerIntro": "我们会保存你停车的时间和地点,以及你拍的照片。",
+    "loggerBanner": "这条记录会写明:ParkProof 在你的照片里没有找到可读的停车标志,你在没有标志的情况下记录了这次停车。它不能说明这里没有标志。",
+    "recordNoSignRead": "未读取标志。ParkProof 在照片里没有找到可读的停车标志,你在没有标志的情况下记录了这次停车。",
+    "noSignReadLabel": "未读取标志",
+    "remindIntro": "这次停车没有读取到标志,所以没有到期时间可以提醒你。你仍然可以设一个查看提醒。挑一下从现在起多久后提醒,可以多选。"
+  },
+  "recurring": {
+    "title": "每周提醒",
+    "intro": "街道清扫、清道和其他在固定日子重复的限制。设置一次,每次开始前都会提醒你。",
+    "homeRow": "街道清扫和每周提醒",
+    "homeNext": "下一次:{{what}},{{time}}",
+    "homeOnNow": "{{what}}正在进行,到 {{time}} 结束",
+    "homeCount_one": "已设 {{count}} 个",
+    "homeCount_other": "已设 {{count}} 个",
+    "homeNone": "暂无",
+    "empty": "还没有每周提醒",
+    "emptyHelp": "为你常停车地方的街道清扫或清道时段添加一个提醒。",
+    "add": "添加每周提醒",
+    "editTitleNew": "新的每周提醒",
+    "editTitle": "编辑每周提醒",
+    "kind": {
+      "street_cleaning": "街道清扫",
+      "clearway": "清道",
+      "no_stopping": "禁止停车",
+      "other": "其他限制"
+    },
+    "field": {
+      "kind": "是什么?",
+      "label": "名称",
+      "days": "星期",
+      "start": "开始",
+      "end": "结束",
+      "frequency": "频率",
+      "anchor": "下一次的日期",
+      "nth": "每月哪几周",
+      "address": "地点",
+      "addressPlaceholder": "街道或地点(可选)",
+      "remind": "提醒我",
+      "push": "在这部手机上通知我"
+    },
+    "frequency": {
+      "weekly": "每周",
+      "fortnightly": "每两周",
+      "monthly_nth": "每月某几周"
+    },
+    "remind": {
+      "evening": "前一天晚上,时间",
+      "before": "开始前",
+      "minutes_one": "提前 {{count}} 分钟",
+      "minutes_other": "提前 {{count}} 分钟",
+      "hours_one": "提前 {{count}} 小时",
+      "hours_other": "提前 {{count}} 小时"
+    },
+    "pushHint": "想要最可靠的提醒,也请把它加到你的日历里。",
+    "zoneNote": "日期和时间均为{{place}}当地时间。",
+    "zone": {
+      "melbourne": "墨尔本",
+      "sydney": "悉尼",
+      "canberra": "堪培拉",
+      "brisbane": "布里斯班",
+      "lindeman": "林德曼岛",
+      "adelaide": "阿德莱德",
+      "brokenHill": "布罗肯希尔",
+      "darwin": "达尔文",
+      "perth": "珀斯",
+      "eucla": "尤克拉",
+      "hobart": "霍巴特",
+      "lordHowe": "豪勋爵岛"
+    },
+    "days": {
+      "MO": "星期一",
+      "TU": "星期二",
+      "WE": "星期三",
+      "TH": "星期四",
+      "FR": "星期五",
+      "SA": "星期六",
+      "SU": "星期日"
+    },
+    "daysShort": {
+      "MO": "周一",
+      "TU": "周二",
+      "WE": "周三",
+      "TH": "周四",
+      "FR": "周五",
+      "SA": "周六",
+      "SU": "周日"
+    },
+    "dayRange": "{{from}}至{{to}}",
+    "nth": {
+      "n1": "第一个",
+      "n2": "第二个",
+      "n3": "第三个",
+      "n4": "第四个",
+      "n5": "第五个"
+    },
+    "schedule": {
+      "weekly": "每周{{days}}",
+      "fortnightly": "每两周{{days}}",
+      "monthly_nth": "每月{{nths}}{{days}}"
+    },
+    "timeRange": "{{start}} 至 {{end}}",
+    "summary": "{{schedule}},{{range}}",
+    "next": "下一次:{{time}}",
+    "onNow": "正在进行,到 {{time}} 结束",
+    "paused": "已暂停",
+    "noNext": "没有即将到来的日期",
+    "pause": "暂停",
+    "resume": "恢复",
+    "pausedHint": "已暂停的提醒不会在这里提醒你。已加到日历里的那份会保留自己的闹钟。",
+    "delete": "删除提醒",
+    "deleteConfirm": "删除这个每周提醒?已加到日历里的那份会保留。",
+    "calendar": "添加到日历",
+    "calendarDone": "已下载。打开文件即可添加。",
+    "saved": "每周提醒已保存。",
+    "errors": {
+      "days": "请至少选一天。",
+      "times": "请选择不同的开始和结束时间。",
+      "nth": "请至少选每月的一周。",
+      "anchor": "请选择下一次的日期。",
+      "saveFailed": "无法保存这个提醒。请再试一次。"
+    },
+    "councilNote": "市议会会调整这些时间安排,公众假期也可能不同。请留意你停车处的标志。",
+    "notifyDenied": "ParkProof 的通知已被阻止,这些提醒无法在这部手机上通知你。请在浏览器的网站设置中允许通知,或把它们加到你的日历里。",
+    "pushStatus": {
+      "closed": "已设置为即使 ParkProof 关闭,也会在这部手机上提醒你。请至少每两个月打开一次 ParkProof,让它保持有效。",
+      "openOnly": "只有在 ParkProof 打开时才会在这部手机上提醒你。也请把它加到你的日历里。",
+      "none": "这部手机目前无法显示这个提醒。请把它加到你的日历里。"
+    },
+    "offer": {
+      "heading": "这个标志有每周重复的限制",
+      "body": "ParkProof 可以在每次开始前提醒你。",
+      "line": "{{what}}。{{summary}}。",
+      "cta": "每周提醒我",
+      "already": "你已经为此设置了每周提醒。"
+    },
+    "sheet": {
+      "title": "每周提醒我",
+      "check": "请对照标志核对这些日子和时间",
+      "signSays": "标志上还写着:{{text}}"
+    },
+    "notify": {
+      "moveTonight": "{{what}}:{{day}} {{range}}。今晚就把车挪走。",
+      "moveBefore": "{{what}}:{{day}} {{range}}。请在 {{start}} 前把车挪走。"
+    },
+    "ics": {
+      "alarmTonight": "{{what}}:明天 {{range}}。今晚就把车挪走。",
+      "alarmTomorrow": "{{what}}:明天 {{range}}。请在 {{start}} 前把车挪走。",
+      "alarmSoon": "{{what}}将于 {{start}} 开始。请在那之前把车挪走。",
+      "move": "请在开始前把车挪走。",
+      "footer": "在 ParkProof 中设置的提醒。",
+      "noDates": "这条每周提醒没有可添加的日期。"
+    }
+  },
+  "photoGrid": {
+    "front": "车头",
+    "rear": "车尾",
+    "left": "左侧",
+    "right": "右侧",
+    "detail": "特写（可选）",
+    "take": "拍照：{{angle}}",
+    "retake": "重拍：{{angle}}",
+    "saving": "正在保存照片…",
+    "saved": "已保存在你的手机上",
+    "failed": "这张照片没能保存在你的手机上。",
+    "hint": "绕车走一圈，给每一面各拍一张照片。如有损伤，再拍一张特写。",
+    "signedNote": "已签名的照片表明，这张照片在签名时已经存在。它不能说明损伤是谁造成的。",
+    "count_one": "{{count}} 张照片",
+    "count_other": "{{count}} 张照片"
+  },
+  "proof": {
+    "fromLibrary": "在应用里付的款？从相册添加付款确认",
+    "typeLegend": "照片的内容"
+  },
+  "complianceType": {
+    "meterTicket": "仪表台上的停车票",
+    "paymentConfirmation": "付款确认",
+    "permitDisplayed": "已展示的许可证",
+    "other": "其他"
+  },
+  "evidence": {
+    "group": {
+      "parking": "停车时车况",
+      "return": "返回时车况",
+      "compliance": "付款或许可证凭证"
+    },
+    "noteLabel": "你注意到的损伤（你自己的描述）",
+    "addedAt": "于 {{time}} 添加（手机时钟）。",
+    "fingerprint": "指纹 {{fingerprint}}",
+    "library": "从相册添加。签名表明这张照片在 ParkProof 签名时已经存在，不能说明它是何时拍摄的。",
+    "notSigned": "这张照片不在记录的任何已签名部分中。",
+    "photoNotOnDevice": "这台设备上没有这张照片。指纹 {{fingerprint}}。",
+    "addCondition": "添加车况照片",
+    "addMeterTicketOrPermit": "添加停车票或许可证的照片",
+    "addIntro": "ParkProof 会把每张照片的指纹作为这条记录的新部分进行签名。照片本身不会被发送去签名。",
+    "addToRecord": "添加到记录",
+    "adding": "正在添加…",
+    "needPhoto": "请先至少拍一张照片。",
+    "needType": "请选择照片的内容。",
+    "addFailed": "这些照片没能添加到记录中。请重试。",
+    "cantAddNow": "现在无法添加这些照片。这条记录可能已经结束，或者已经没有空间再添加新的部分。",
+    "complianceDescribed": "{{type}}（你自己的描述）",
+    "noteNotSigned": "这条备注不在记录的任何已签名部分中。"
+  },
+  "backupPrompt": {
+    "title": "备份你的照片",
+    "body": "你的记录和已签名的照片只保存在这个浏览器里。如果 7 天没有访问，Safari 可能会清除网站的数据。",
+    "homeScreenIos": "把 ParkProof 添加到主屏幕：点击分享按钮，然后选择“添加到主屏幕”。从主屏幕应用保存的记录会留在应用中。已经在 Safari 中保存的记录仍留在 Safari 中，不会转到应用里。",
+    "homeScreenOther": "从浏览器菜单把 ParkProof 添加到主屏幕（“安装应用”或“添加到主屏幕”）。",
+    "signIn": "登录以备份",
+    "dismiss": "以后再说"
+  },
+  "evidenceFile": {
+    "download": "下载证据文件",
+    "busy": "正在准备文件…",
+    "help": "一个 .json 文件，包含所有签名和原始照片，任何人都可以不用 ParkProof 核对这条记录。签名只表明这些详情自 ParkProof 签名以来没有改动。它不能说明这些内容属实，也不能说明是谁在开车、车停在哪里，或车辆何时到达、何时离开。文件包含这条记录中保存的位置和时间，所以只发给需要的人。",
+    "includePermit": "包含许可证详情",
+    "permitHelp": "只有勾选此项，文件中才会包含你的许可证详情，以及标为“已展示的许可证”的照片。已签名的记录只保存它们的指纹，可以用它们来核对。无障碍停车许可证的详情属于健康信息。",
+    "error": "无法生成证据文件。请重试。",
+    "photosMissing_one": "有 {{count}} 张已签名的照片不在这台设备上，所以文件中没有这张照片，只有它已签名的指纹。",
+    "photosMissing_other": "有 {{count}} 张已签名的照片不在这台设备上，所以文件中没有这些照片，只有它们已签名的指纹。",
+    "photosDiffer_one": "这台设备上有 {{count}} 张照片与它已签名的指纹不一致，所以文件中没有这张照片，只有它已签名的指纹。",
+    "photosDiffer_other": "这台设备上有 {{count}} 张照片与它们已签名的指纹不一致，所以文件中没有这些照片，只有它们已签名的指纹。"
+  },
+  "prefs": {
+    "header": "设置",
+    "intro": "只保存在这个浏览器里,不会存进你的账户。",
+    "driverNameLabel": "你分享的记录上显示的名字",
+    "driverNameHint": "新的停车记录会把这个名字填为驾驶员。留空就不会填写。",
+    "saveName": "保存名字",
+    "saved": "已保存",
+    "saveFailed": "无法保存。请再试一次。",
+    "permitsHeader": "我的许可证",
+    "permitsIntro": "已保存的许可证会随你扫描或重新检查的每个标志一起发送,这样答案就能包含标志上关于这些许可证的内容。只会发送许可证类型,居民或商户许可证还会附上区域。",
+    "permitsEmpty": "还没有保存许可证。",
+    "addPermit": "添加许可证",
+    "permitsLimit_one": "最多可以保存 {{count}} 个许可证。",
+    "permitsLimit_other": "最多可以保存 {{count}} 个许可证。",
+    "permitTypeLabel": "许可证类型",
+    "permitType": {
+      "accessible": "无障碍停车许可证",
+      "resident": "居民停车许可证",
+      "business": "商户停车许可证"
+    },
+    "issuingStateLabel": "签发的州或领地",
+    "stateNotSet": "未设置",
+    "state": {
+      "VIC": "维多利亚州",
+      "NSW": "新南威尔士州",
+      "QLD": "昆士兰州",
+      "ACT": "澳大利亚首都领地",
+      "SA": "南澳大利亚州",
+      "WA": "西澳大利亚州",
+      "TAS": "塔斯马尼亚州",
+      "NT": "北领地"
+    },
+    "areaLabel": "许可证上的区域",
+    "areaPlaceholder": "例如 Area 25",
+    "expiryLabel": "到期日期",
+    "savePermit": "保存许可证",
+    "accessibleWarning": "保存这个许可证后,你扫描的每张标志照片都会附带发送它的类型,这样答案就能包含标志上关于许可证的内容。无障碍停车许可证的信息属于健康信息。你可以随时删除这些信息。",
+    "accessibleConfirm": "保存这个许可证",
+    "permitArea": "区域:{{area}}",
+    "permitExpires": "{{date}} 到期",
+    "permitExpired": "已于 {{date}} 到期。扫描时不会再发送它。",
+    "deletePermitLabel": "删除{{permit}}",
+    "pushUnsupported": "这个浏览器无法在 ParkProof 关闭时显示提醒。在 iPhone 上,请先把 ParkProof 添加到主屏幕。日历提醒仍然可以使用。",
+    "accountHeader": "账户",
+    "accountCopy": "云同步、导出数据、退出登录和删除账户。",
+    "openAccount": "打开账户",
+    "signInCopy": "登录后可以备份你的记录,并在你的其他设备上查看。这个页面上的设置都不需要账户。",
+    "signIn": "登录",
+    "privacyCta": "打开隐私政策"
+  },
+  "share": {
+    "action": "分享车辆位置",
+    "confirm": "任何拿到这个链接的人都能看到车停在哪里、谁停的车以及可以停到几点。链接转发给谁,谁就能打开,而且你无法关闭它。",
+    "shareButton": "分享链接",
+    "shareText": "车停在哪里,来自 ParkProof。",
+    "notSigned": "这条记录还没有签名。ParkProof 签名后你就可以分享。",
+    "tooLarge": "这条记录太大,无法用链接分享。",
+    "copied": "链接已复制。粘贴到消息里即可分享。",
+    "copyManually": "复制这个链接并发送出去。",
+    "linkFieldLabel": "要分享的链接",
+    "permitSafeguard": "这次停车使用了无障碍停车许可证。如果持证人不会在车上,请在任何人开走这辆车之前,把许可证从仪表台上取下来。",
+    "receivedTitle": "车辆位置",
+    "checking": "正在检查链接…",
+    "banner": "由 {{driver}} 于 {{time}} 分享。这是一份快照,不会更新。车辆可能已经移动。",
+    "bannerNoDriver": "于 {{time}} 分享。这是一份快照,不会更新。车辆可能已经移动。",
+    "bannerNoTime": "这是一份快照,不会更新。车辆可能已经移动。",
+    "tampered": "这个链接在分享后被改动过",
+    "newerVersion": "这个链接是用更新版本的 ParkProof 生成的",
+    "unreadable": "无法读取这个分享链接。请让发送者重新分享。",
+    "signedHeading": "已签名的详情",
+    "signedNote": "ParkProof 于 {{time}} 对这些详情签名。签名说明它们从那以后没有改动,但不能说明它们属实,也不能说明是谁在开车、车停在哪里,或车辆何时到达、何时离开。",
+    "signedNoteNoTime": "签名说明这些详情自 ParkProof 签名以来没有改动,但不能说明它们属实,也不能说明是谁在开车、车停在哪里,或车辆何时到达、何时离开。",
+    "field": {
+      "place": "记录地点",
+      "arrived": "记录时间",
+      "limit": "从标志读取的时限",
+      "limitRecorded": "这条记录上的时限",
+      "driver": "驾驶员",
+      "rules": "标志解读",
+      "standardLimit": "标志上的标准时限",
+      "ended": "离开"
+    },
+    "permitTimeNote": "这个时限包含许可证带来的额外时间。没有许可证时,适用标志上的标准时限。发送者说标准时限在 {{time}} 结束。",
+    "phoneClock": "{{time}}(手机时钟)",
+    "noLimit": "没有记录时限",
+    "noPlace": "没有记录位置",
+    "directions": "路线",
+    "unsignedHeading": "来自发送者,未签名",
+    "endedValue": "发送者于 {{time}} 点击了\"我已离开\"(手机时钟)。",
+    "saved": "已保存到你的停车记录,标为\"分享给你的\"。再次打开链接会更新它。",
+    "keptNewer": "你已经有一份来自更新链接的这条记录的副本,所以保留了那一份。",
+    "ownRecord": "这个链接对应的记录已经保存在这部手机上,所以没有再添加一次。",
+    "saveFailed": "无法在这部手机上保存副本。",
+    "badge": "分享给你的",
+    "check": "核验签名",
+    "checkValid": "签名有效。已签名的内容自 ParkProof 签名以来没有改动。但这不能说明这些内容属实,也不能说明是谁在开车、车停在哪里,或车辆何时到达、何时离开。",
+    "remove": "移除",
+    "removeConfirm": "要从这部手机上移除这条分享的记录吗？再次打开链接即可找回。"
+  },
+  "handover": {
+    "action": "交接车辆",
+    "intro": "填写接下来开车的人。ParkProof 会把它作为你本人的陈述,随这条记录一起签名。ParkProof 不会核实,签名也不能说明是谁在开车。这条记录仍在进行中。",
+    "nameLabel": "下一位驾驶员的姓名",
+    "nameRequired": "请填写下一位驾驶员的姓名。",
+    "submit": "记录交接",
+    "failed": "无法把这次交接添加到这条记录。",
+    "done": "你的记录现在写的是,车辆已交给 {{to_driver}}。手机联网时,ParkProof 会为它签名。这条记录仍在进行中。",
+    "doneFromTo": "你的记录现在写的是,{{from_driver}} 把车交给了 {{to_driver}}。手机联网时,ParkProof 会为它签名。这条记录仍在进行中。",
+    "fromDriver": "交出车辆的人:{{from_driver}},即这条记录目前写明的驾驶员。",
+    "offerShare": "你可以把车辆位置的链接发给对方。",
+    "line": "你的记录写的是,车辆在 {{time}} 交给了 {{to_driver}}(手机时钟)。",
+    "lineFromTo": "你的记录写的是,{{from_driver}} 在 {{time}} 把车交给了 {{to_driver}}(手机时钟)。"
   }
 }

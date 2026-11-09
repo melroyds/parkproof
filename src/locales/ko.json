@@ -3,7 +3,7 @@
     "back": "← 뒤로",
     "backToHome": "← 홈",
     "backToHistory": "← 기록으로 돌아가기",
-    "backToSession": "← 세션으로 돌아가기",
+    "backToSession": "← 기록으로 돌아가기",
     "cancel": "취소",
     "save": "저장",
     "done": "완료",
@@ -20,7 +20,8 @@
     "mediumConfidence": "신뢰도 보통",
     "lowConfidence": "신뢰도 낮음",
     "yes": "예",
-    "no": "아니오"
+    "no": "아니오",
+    "signedSeal": "서명되어 변조 여부를 확인할 수 있는 기록"
   },
   "language": {
     "title": "언어",
@@ -32,12 +33,12 @@
   },
   "about": {
     "title": "ParkProof가 하는 모든 것",
-    "lead": "그냥 주차 표지판을 읽어주는 앱이겠거니 하고 오셨을 거예요. 맞습니다. 그런데 이왕 하는 김에, 잘못된 벌금을 받았을 때를 대비해 증거도 저장해두고, 정말 받으셨다면 이의신청서까지 대신 써드리고, 주차 시간이 끝나기 전에 차를 옮기시라고 알려드리기로 했어요. 어떤 앱인지 편하게 둘러보세요.",
+    "lead": "그냥 주차 표지판을 읽어주는 앱이겠거니 하고 오셨을 거예요. 맞습니다. 그런데 이왕 하는 김에, 잘못된 벌금을 받았을 때를 대비해 증거도 저장해두고, 정말 받으셨다면 직접 확인하고 고치실 수 있게 이의신청서 초안을 써 드리고, 주차 시간이 끝나기 전에 차를 옮기시라고 알려드리기로 했어요. 어떤 앱인지 편하게 둘러보세요.",
     "scan": {
       "title": "표지판을 찍으세요, 답을 받으세요",
       "lead": "어떤 주차 표지판이든 휴대폰을 대보세요. 화살표와 클리어웨이가 잔뜩 쌓인 복잡한 표지판도 괜찮습니다.",
       "items": [
-        "약 12초 안에 '예' 아니면 '아니오'로 분명하게 답해드립니다.",
+        "보통 10초 정도면 '예' 아니면 '아니오'로 분명하게 답해드립니다. 여러 장이 겹쳐 붙은 복잡한 표지판은 더 오래 걸릴 수 있습니다.",
         "도로 양쪽 규칙이 다르면 어느 쪽에 주차하시는지만 여쭤봅니다.",
         "AI에게 보내기 전에 사진이 너무 흐리거나 어둡지는 않은지 먼저 확인합니다. 괜히 헛수고하지 않도록요."
       ]
@@ -47,13 +48,13 @@
       "lead": "기록하는 모든 주차에 시간, GPS, 주소, 그리고 (원하시면) 차량 사진이 저장됩니다.",
       "items": [
         "전체를 깔끔한 PDF로 내려받으세요. 나중에 벌금에 이의를 제기할 일이 생기면 요긴합니다.",
-        "각 기록에 서명이 되어 있어, 누구나 서명된 뒤로 기록이 바뀌지 않았는지 확인할 수 있습니다.",
-        "왜 거기 주차했는지 메모를 남겨두세요 (어머니 병원 모시고, 토요일 시장 다녀오느라). 의회는 이런 맥락을 진지하게 봅니다."
+        "각 기록에 서명이 되어 있어, 누구나 서명된 내용이 ParkProof가 서명한 뒤로 바뀌지 않았는지 확인할 수 있습니다.",
+        "왜 거기 주차했는지 메모를 남겨두세요 (어머니 병원 모시고, 토요일 시장 다녀오느라). 메모는 직접 쓰신 그대로 기록과 함께 보관됩니다. 메모는 서명되지 않습니다."
       ]
     },
     "reminders": {
       "title": "시간이 끝나기 전 알림",
-      "lead": "언제 알림 받을지 선택 — 30분 전, 15분, 5분, 무엇이든.",
+      "lead": "언제 알림을 받을지 고르세요. 30분 전이든 15분 전이든 5분 전이든, 편한 대로요.",
       "items": [
         "휴대폰에 캘린더 일정이 추가되어, ParkProof를 켜놓지 않아도 알림이 울립니다.",
         "홈 화면에 카운트다운이 실시간으로 표시됩니다. 여유가 있으면 초록, 가까워지면 노랑, 정말 옮겨야 하면 빨강이에요.",
@@ -62,19 +63,19 @@
     },
     "gates": {
       "title": "잠깐, 하는 부드러운 확인들",
-      "lead": "예상치 못한 벌금을 막아주는 작은 확인들.",
+      "lead": "자리를 뜨기 전에, 놓치기 쉬운 조건들을 짚어 주는 작은 확인들.",
       "items": [
         "결제가 필요한 자리라면 (미터기, EasyPark, PayStay) 저장하기 전에 결제하셨는지 한 번 여쭤봅니다.",
         "장애인 주차 허가증 전용 자리라면 빨간 경고로 분명히 알려드립니다.",
-        "표지판이 아예 없는 곳에 주차하셨나요? 그래도 기록할 수 있어요. 주변 사진을 함께 찍어두면 정말 표지판이 없었다는 걸 보여줄 수 있습니다."
+        "표지판이 아예 없는 곳에 주차하셨나요? 그래도 주변 사진과 함께 기록할 수 있어요. 사진은 그때 보이던 것을 보여 줄 뿐, 근처에 표지판이 없었다는 것까지 보여 주지는 않습니다."
       ]
     },
     "appeal": {
       "title": "그래도 벌금을 받았나요?",
-      "lead": "이의신청서를 직접 쓰지 마세요. 저희가 해드립니다.",
+      "lead": "이의신청서를 처음부터 쓰실 필요는 없습니다. 저희가 초안을 써 드리면 확인하고 고쳐서 쓰시면 됩니다.",
       "items": [
         "벌금 통지서를 사진으로 찍으세요. 주차하실 때 저장해둔 내용과 대조해드립니다.",
-        "의회에 보낼 편지 초안과 함께, 이 건이 얼마나 승산이 있는지 솔직하게 평가해드립니다.",
+        "의회에 보낼 편지 초안을 받아, 보내기 전에 읽고 고치시면 됩니다. ParkProof는 이 건을 평가하거나 결과를 예측하지 않습니다.",
         "마음껏 고친 다음 주차 기록을 첨부한 PDF로 내려받으세요. 인쇄해서 우편으로 보내도 되고, 이메일로 보내도 됩니다."
       ]
     },
@@ -82,7 +83,7 @@
       "title": "몇 가지 작은 배려",
       "lead": "여러분이 생각하지 않아도 되도록 저희가 미리 생각해둔 것들.",
       "items": [
-        "무료입니다. 앱스토어도 필요 없어요. 홈 화면에 추가하면 일반 앱처럼 쓸 수 있고, 오프라인에서도 작동합니다.",
+        "무료입니다. 앱스토어도 필요 없어요. 홈 화면에 추가하면 일반 앱처럼 쓸 수 있습니다. 저장된 기록은 인터넷에 연결되지 않아도 열리지만, 표지판을 확인하려면 연결이 필요합니다.",
         "9개 언어로 제공됩니다. 中文, Tiếng Việt, Bahasa Indonesia, Italiano, Ελληνικά, हिन्दी, ਪੰਜਾਬੀ도 포함이에요.",
         "시간은 늘 주차한 곳을 기준으로 맞춰집니다. 여행 중 Sydney에서 스캔하면 Sydney 시간으로 보여드려요. 휴대폰에 설정된 집 시간대가 아닙니다.",
         "이 모든 걸 쓰려고 로그인하실 필요는 없습니다. 익명으로도 잘 작동해요."
@@ -99,28 +100,28 @@
     },
     "push": {
       "title": "이 기기에서 푸시 알림 활성화",
-      "body": "ParkProof를 켜두지 않아도 알림이 알아서 울립니다. 지금 권한을 허용해두면, 앞으로 주차 알림이 흐름을 끊지 않고 백그라운드에서 조용히 울려요.",
-      "subscribed": "✓ 이 기기가 구독되었습니다. 앞으로의 주차 기록에 대해 푸시 알림이 전송됩니다.",
+      "body": "지금 알림을 허용해 두면 나중에 권한 요청을 받지 않습니다. 주차 기록에서 '알림 받기'를 눌러야 알림이 설정됩니다.",
+      "subscribed": "✓ 이 기기에서 알림이 켜져 있습니다. 알림을 설정하려면 주차 기록에서 '알림 받기'를 누르세요.",
       "denied": "이 사이트에 대한 알림을 차단하셨습니다. 활성화하려면 브라우저의 사이트 설정에서 권한을 변경하세요.",
-      "errorRetry": "문제가 발생했습니다 — 다시 시도",
+      "errorRetry": "문제가 발생했습니다. 다시 시도하세요",
       "enable": "알림 활성화",
       "requesting": "브라우저에 요청 중…"
     },
     "footerNote": "Melbourne에서 만들어졌습니다.",
-    "cta": "사용해보기 — 표지판 스캔",
+    "cta": "표지판을 스캔해 보세요",
     "support": {
       "title": "ParkProof가 마음에 드시나요?",
-      "body": "혼자 10일 동안 만들었고, 앞으로도 쭉 무료입니다. 덕분에 주차 딱지를 면하셨다면 커피 한 잔 보태주세요.",
+      "body": "혼자 10일 동안 만들었고, 앞으로도 쭉 무료입니다. 덕분에 주차 벌금을 피하셨다면 커피 한 잔 보태주세요.",
       "button": "☕ 커피 사주기"
     },
-    "sealCaveat": "이 봉인은 서명된 내용이 ParkProof가 서명한 뒤로 바뀌지 않았음을 보여 줍니다. AI가 표지판을 제대로 읽었는지, 의회가 받아들일지는 보여 주지 않습니다."
+    "sealCaveat": "이 봉인은 서명된 내용이 ParkProof가 서명한 시점에 이미 있었고 그 뒤로 바뀌지 않았음을 보여 줍니다. 그 내용이 사실인지, AI가 표지판을 제대로 읽었는지, 누가 운전했는지, 차가 어디에 있었는지, 언제 도착하거나 떠났는지는 보여 주지 않습니다."
   },
   "landing": {
-    "heroSubhead": "호주 주차 표지판을 사진으로 찍으면 <accent>12초</accent> 안에 쉬운 한국어로 분명하게 답해드립니다.",
+    "heroSubhead": "호주 주차 표지판을 사진으로 찍으면 <accent>몇 초 만에</accent> 쉬운 한국어로 분명하게 답해드립니다.",
     "bullet": {
       "plainEnglish": "이해하기 쉬운 답변",
       "photoEvidence": "사진 증거 저장",
-      "defensible": "벌금을 받아도 변조 여부를 입증할 수 있는 기록"
+      "defensible": "벌금을 받아도 변조 여부를 확인할 수 있는 기록"
     },
     "cta": "주차 표지판 확인",
     "builtFor": "호주 운전자를 위해 만들어짐",
@@ -134,30 +135,27 @@
       "answerDesc": "표지판과 대조해 확인할 수 있는 이해하기 쉬운 판정."
     },
     "evidenceCallout": {
-      "title": "필요할 때, 변조 여부를 입증할 수 있는 증거.",
-      "body": "모든 확인은 암호학적으로 서명된 타임스탬프, GPS, 사진 기록을 받습니다."
-    },
-    "feature": {
-      "translateTitle": "이해하기 쉬운 답변",
-      "translateDesc": "호주 주차 표지판을 사진으로 찍으면 약 12초 안에 '지금 주차할 수 있나요?' 판정을 받습니다.",
-      "evidenceTitle": "변조 감지 가능 증거",
-      "evidenceDesc": "모든 주차에 암호학적으로 서명된 타임스탬프, GPS, 사진 기록.",
-      "appealTitle": "AI 이의신청서",
-      "appealDesc": "잘못된 벌금을 받았나요? 사진을 찍으시면 공식 이의신청서를 작성해드립니다."
+      "title": "필요할 때, 변조 여부를 확인할 수 있는 증거.",
+      "body": "저장하는 모든 주차 기록은 서명되므로, 누구나 그 뒤로 내용이 바뀌지 않았는지 확인할 수 있습니다. 서명은 그 내용이 사실인지, 누가 운전했는지, 차가 어디에 있었는지, 언제 도착하거나 떠났는지는 보여 주지 않습니다."
     },
     "accuracyNote": "ParkProof는 복잡한 표지판을 잘못 읽을 수 있습니다. 차를 떠나기 전에 항상 실제 표지판과 대조해 확인하세요.",
     "trustFree": "무료",
     "trustNoAccount": "계정 불필요",
-    "trustOffline": "오프라인 작동",
+    "trustOffline": "저장된 기록은 오프라인에서도 작동",
     "locationOptional": "위치는 선택 사항입니다. 거부해도 표지판을 읽고 주소를 직접 입력할 수 있습니다.",
-    "heroTitle": "주차가 <accent>간단해집니다.</accent>"
+    "heroTitle": "주차가 <accent>간단해집니다.</accent>",
+    "hero": {
+      "aria": "주차 표지판이 서명된 주차 기록으로 바뀌는 모습: {{time}}까지 주차할 수 있습니다.",
+      "kicker": "서명된 기록",
+      "canPark": "주차 가능합니다"
+    }
   },
   "home": {
-    "tagline": "호주 주차 규칙을 한국어로 — 잘못된 벌금에 대비한 사진 증거와 함께.",
+    "tagline": "호주 주차 규칙을 한국어로 풀어 드리고, 잘못된 벌금에 대비해 사진 증거도 남겨 둡니다.",
     "scanCta": "주차 표지판 스캔",
     "scanAnother": "다른 표지판 스캔",
     "scanHelp": "표지판을 읽고, 지금 주차 가능한지 알려드리고, 시간이 끝나기 전에 알림을 제공합니다.",
-    "history": "세션 기록",
+    "history": "주차 기록",
     "historyEmpty": "비어 있음",
     "historyCount_one": "{{count}}개 저장됨",
     "historyCount_other": "{{count}}개 저장됨",
@@ -169,7 +167,11 @@
       "log": "차량 사진 → 타임스탬프가 찍힌 증거 기록",
       "remind": "주차 만료 전 캘린더 알림 받기"
     },
-    "draftAppeal": "벌금을 받았나요? 이의신청서 작성"
+    "draftAppeal": "벌금을 받았나요? 이의신청서 작성",
+    "settings": "설정",
+    "settingsSignIn": "동기화하려면 로그인",
+    "startWorkday": "하루 종일 주차하나요? 근무일 시작하기",
+    "fineStart": "벌금을 받았나요? 여기서 시작하세요"
   },
   "active": {
     "currentlyParked": "현재 주차 중",
@@ -195,7 +197,7 @@
     "iveLeftConfirm": "지금 이 기록을 종료로 표시할까요? 누른 시각이 휴대폰 시계 기준으로 저장됩니다. 더 일찍 떠났다면 그 시각은 기록되지 않습니다.",
     "nextPing": "다음 알림: {{when}}",
     "recheckNow": "지금 다시 확인",
-    "recheckSub": "아직 합법인가요? 몇 초 안에 재확인",
+    "recheckSub": "지금 다시 확인. 여기에 계속 주차할 수 있는지 몇 초 만에 알아보세요.",
     "cardAria": "{{address}}의 활성 주차 기록, {{status}}. 자세히 보려면 탭하세요.",
     "listCardAria": "{{address}}의 주차 기록 열기, {{status}}.",
     "expiredAt": "{{time}}에 만료됨",
@@ -221,18 +223,19 @@
     "qualityTiny": "사진 해상도가 너무 낮아요. AI가 세부사항을 놓칠 수 있어요. 표지판에 더 가까이 다가가 다시 찍어볼까요?",
     "noSignHere": "여기 표지판이 없나요? 그냥 주차 기록하기 →",
     "noSignChooseHeader": "표지판이 없는 자리 기록",
-    "noSignChooseCopy": "선택적으로 주변을 촬영해 표지판이 보이지 않았음을 보여주세요. 분쟁 시 증거 기록을 강화합니다.",
+    "noSignChooseCopy": "주변을 촬영해 그때 보이던 것을 남길 수 있습니다. 사진으로 근처에 표지판이 없었다는 것을 보여 줄 수는 없습니다.",
     "noSignTakeAmbient": "주변 사진 촬영",
-    "noSignTakeAmbientSub": "표지판이 보이지 않았음을 표시",
+    "noSignTakeAmbientSub": "그때 보이던 것을 보여 주기",
     "noSignFromLibrary": "갤러리에서 선택",
-    "noSignSkip": "건너뛰기 — GPS + 시간만 저장",
-    "noSignAmbientAlt": "주변 — 표지판 보이지 않음",
-    "noSignAmbientCaption": "이 자리에 표지판이 게시되지 않았음을 보여주기 위해 촬영됨.",
+    "noSignSkip": "건너뛰고 GPS와 시간만 저장",
+    "noSignAmbientAlt": "직접 찍은 주변 사진",
+    "noSignAmbientCaption": "주변 모습을 보여 주려고 찍은 사진입니다. 근처에 표지판이 없었다는 것을 보여 주지는 않습니다.",
     "noSignContinue": "기록 계속",
-    "privacyLine": "사진은 휴대폰에서 읽힙니다. 번역을 위해 표지판 사진만 전송되며, 저희 서버에는 절대 저장되지 않습니다. 계정이 필요 없습니다.",
+    "privacyLine": "표지판을 읽기 위해 표지판 사진을 AI 서비스로 보냅니다. 위치 사용을 허용하시면 저희 서버가 그 위치로 현지 시간을 알아냅니다. 표지판을 읽는 과정에서 저희 서버에 사진 사본을 남기지 않습니다. 계정이 필요 없습니다.",
     "cameraDeniedTitle": "카메라 접근이 꺼져 있습니다",
     "cameraDeniedCopy": "대신 갤러리에서 사진을 선택하거나, 브라우저 설정에서 카메라 접근을 다시 허용하세요.",
-    "couldntReadPhoto": "그 사진을 읽을 수 없습니다. 다른 사진을 시도하거나 라이브러리에서 하나 선택하세요."
+    "couldntReadPhoto": "그 사진을 읽을 수 없습니다. 다른 사진을 시도하거나 라이브러리에서 하나 선택하세요.",
+    "previewAlt": "주차 표지판 사진"
   },
   "reuse": {
     "scannedHere": "여기서 {{age}}에 스캔하셨습니다",
@@ -273,7 +276,7 @@
       "openPaystay": "PayStay 열기",
       "openEasypark": "EasyPark 열기",
       "openApp": "{{app}} 열기",
-      "meterHint": "가장 가까운 미터기 또는 티켓 머신에서 티켓 구입 — 보통 표지판 30m 이내.",
+      "meterHint": "가장 가까운 미터기나 티켓 머신에서 티켓을 구입하세요. 보통 표지판에서 30m 이내에 있습니다.",
       "ack": "결제했습니다 (또는 떠나기 전에 결제할 예정)"
     },
     "permitRequired": {
@@ -287,24 +290,45 @@
       "header": "지금은 허가증 소지자 전용",
       "headerWithArea": "지금은 허가 구역 {{area}}만",
       "copy": "이곳은 주거 또는 사업용 허가 구역입니다. 이 구역의 유효한 허가증이 있어야만 주차할 수 있어요. 의회 단속원은 허가증 번호를 구역과 대조합니다. 옆 블록 허가증은 인정되지 않아요.",
-      "copyWithArea": "허가 구역 {{area}}의 유효한 허가증을 가진 경우에만 여기 주차할 수 있습니다. 허가증 스티커의 번호가 일치해야 합니다 — 단속원은 단순히 어떤 허가증이 있는지가 아니라 구역 코드를 확인합니다.",
+      "copyWithArea": "허가 구역 {{area}}의 유효한 허가증이 있어야만 여기에 주차할 수 있습니다. 허가증 스티커의 번호가 일치해야 합니다. 단속원은 허가증이 있는지만 보지 않고 구역 코드까지 확인합니다.",
       "ack": "예, 이 구역에 유효한 허가증이 있습니다",
       "ackWithArea": "예, 허가 구역 {{area}}에 유효한 허가증이 있습니다"
     },
     "aiCaveat": "이것은 AI가 읽은 표지판입니다. 차를 떠나기 전에 항상 실제 표지판을 한 번 확인하세요.",
     "cantParkOverride": "이게 틀렸다고 생각하시나요? 그래도 이 자리를 증거로 기록할 수 있습니다.",
     "cantParkOverrideCta": "그래도 기록하기",
-    "firstSaveValue": "저장해두면 타임스탬프가 찍힌, 변조 여부를 입증할 수 있는 기록이 남습니다. 부당하게 벌금을 받았을 때 당신의 증거가 됩니다."
+    "firstSaveValue": "저장해두면 이번 주차에 대해 변조 여부를 확인할 수 있는 기록이 남습니다. 혹시 벌금 때문에 필요해질 때를 대비해서요.",
+    "weeklyRestrictionHint": "이 표지판에는 매주 반복되는 제한이 있습니다. 저장한 뒤 알림을 설정할 수 있습니다.",
+    "permit": {
+      "standardKicker": "일반 기준 답변",
+      "kicker": "내 허가증으로",
+      "signPrints": "표지판에 이 허가증에 대한 예외가 적혀 있습니다:",
+      "checkConditions": "ParkProof는 표지판에 적힌 내용만 읽습니다. 허가증의 사용 조건도 확인하세요.",
+      "areaMatch": "저장한 {{area}} 허가증이 이 구역과 일치합니다.",
+      "areaMismatch": "저장한 허가증은 {{area}}용입니다. 이 구역은 허가 구역 {{zone}}입니다.",
+      "mayAllowMore": "{{state}} 규정에 따라 허가증으로 더 오래 주차할 수 있을지도 모릅니다. ParkProof는 이를 계산하지 않습니다. 허가증의 조건을 확인하거나 의회에 문의하세요.",
+      "mayAllowMoreNoState": "주차한 곳의 규정에 따라 허가증으로 더 오래 주차할 수 있을지도 모릅니다. ParkProof는 이를 계산하지 않습니다. 허가증의 조건을 확인하거나 의회에 문의하세요.",
+      "accessibleQuestion": "허가증 소지자가 저와 함께 차에 타고 있고 여기서 내리며, 그 허가증이 보이게 놓여 있습니다.",
+      "accessibleNo": "그렇다면 이번 주차에는 허가증을 사용할 수 없습니다. 장애인 주차 구역에 주차하지 마세요.",
+      "forThisCarQuestion": "이 허가증이 이 차량용이며, 차량에 보이게 놓여 있거나 이 차량으로 등록되어 있나요?",
+      "forThisCarNo": "그렇다면 이번 주차에는 허가증을 사용할 수 없습니다. 이 허가 구역에 유효한 허가증 없이 주차하지 마세요.",
+      "noStandardApplies": "그렇다면 이번 주차에는 허가증을 사용할 수 없습니다. 일반 기준 답변만 적용됩니다.",
+      "timeToggle": "표지판에 허가증 소지자를 위한 더 늦은 시간이 적혀 있나요?",
+      "timeLabel": "이 표지판에서 허가증 주차 시간이 끝나는 시각",
+      "timeHint": "표지판을 보고 입력하세요. ParkProof는 허가증 주차 시간을 계산하지 않습니다.",
+      "timeSet": "알림은 입력한 시각 {{time}}까지를 기준으로 하며, 일반 기준 시간이 끝날 때 한 번 더 알려 드립니다.",
+      "timeNotLater": "그 시각은 일반 기준 시간보다 늦지 않으므로 알림은 일반 기준 시간에 맞춰집니다."
+    }
   },
   "logger": {
     "header": "이 주차 기록 남기기",
-    "intro": "타임스탬프와 함께 사진과 GPS를 기록합니다 — 잘못된 벌금에 이의를 제기할 때 유용한 증거입니다.",
+    "intro": "시간, 사진, GPS가 담긴 기록을 저장합니다. 혹시 벌금에 이의를 제기해야 할 때를 대비해서요.",
     "location": "위치",
     "acquiringGps": "GPS 수신 중…",
     "captured": "캡처됨 ✓",
-    "gpsImprecise": "GPS가 자리를 확인하기에 너무 부정확합니다",
-    "gpsImpreciseCopy": "판독값이 <strong>{{accuracy}}</strong>입니다. 카페 찾기에는 충분하지만 주차 증거로는 부족해요. 기록을 믿을 수 있게 거리 주소를 직접 입력해주세요.",
-    "gpsImpreciseDanger": "판독값이 <strong>{{accuracy}}</strong>입니다. 완전히 엉뚱한 지역일 수도 있어요 (Starlink, VPN, 실내 GPS에서 흔합니다). 기록을 믿을 수 있게 거리 주소를 직접 입력해주세요.",
+    "gpsImprecise": "GPS가 너무 부정확해서 주차한 자리를 정확히 짚을 수 없습니다",
+    "gpsImpreciseCopy": "판독값이 <strong>{{accuracy}}</strong>입니다. 카페를 찾기에는 충분하지만, 어느 거리에 주차했는지 보여 주기에는 너무 부정확해요. 대신 거리 주소를 직접 입력하셔도 됩니다.",
+    "gpsImpreciseDanger": "판독값이 <strong>{{accuracy}}</strong>입니다. 아예 다른 동네로 잡혔을 수도 있어요 (Starlink, VPN, 실내에서 흔합니다). 대신 거리 주소를 직접 입력하셔도 됩니다.",
     "enterAddress": "주소 수동 입력",
     "manuallyEntered": "수동 입력",
     "accuracyLabel": "정확도 {{accuracy}}",
@@ -322,17 +346,32 @@
     "resolvingAddress": "주소 확인 중…",
     "carAtSpot": "주차 위치의 차량",
     "carRetake": "다시 찍기",
-    "carOptionalHelp": "선택 사항이지만 증거로 강력히 권장됨",
+    "carOptionalHelp": "선택 사항입니다. 기록과 함께 저장됩니다.",
     "saveSession": "기록 저장",
     "noSignHeader": "표지판 없는 주차 기록",
     "noSignIntro": "타임스탬프가 찍힌 GPS 기록을 저장합니다. 번역할 표지판이 없으니 AI 번역은 하지 않아요.",
     "noSignKicker": "증거 메모",
-    "noSignBanner": "이 자리에 표지판이 보이지 않았다고 기록하는 중입니다. 암호 서명은 '언제'와 '어디서'만 보증하고, 표지판이 정말 없었는지까지는 보증하지 못해요. 정직하게 남겨주세요. 당신의 증거니까요.",
+    "noSignBanner": "이 자리에서 주차 표지판을 보지 못했다고 기록하는 중입니다. 이는 본인의 진술입니다. 서명은 이 기록이 ParkProof가 서명한 시점에 이미 있었고 그 뒤로 바뀌지 않았음을 보여 줍니다. 그 내용이 사실인지, 누가 운전했는지, 차가 어디에 있었는지, 언제 도착하거나 떠났는지는 보여 주지 않습니다.",
     "ambientHeader": "주변",
-    "ambientCaption": "표지판이 게시되지 않았음을 보여주기 위해 촬영됨.",
-    "locationContext": "위치는 주차한 곳에 타임스탬프를 남기는 데에만 사용합니다. 로그인하지 않는 한 기기에 남아 있습니다.",
+    "ambientCaption": "직접 찍은 주변 사진입니다. 근처에 표지판이 없었다는 것을 보여 주지는 않습니다.",
+    "locationContext": "위치는 이 기록에만 사용합니다. 이 기기에 저장되며, 로그인하신 경우에만 클라우드에 백업됩니다.",
     "photoSaveFailed": "이 사진을 휴대폰에 저장하지 못했습니다. 다시 시도하거나, 이 사진 없이 기록을 저장하세요.",
-    "saving": "저장 중…"
+    "saving": "저장 중…",
+    "condition": {
+      "toggle": "차량 상태 기록 (선택 사항)",
+      "noteLabel": "발견한 손상",
+      "notePlaceholder": "예: 뒤 범퍼의 긁힘"
+    },
+    "proof": {
+      "heading": "결제 또는 허가증 증빙",
+      "toggle": "결제 또는 허가증 증빙 (선택 사항)",
+      "addMeterTicketOrPermit": "주차권 또는 허가증 사진 추가 (선택 사항)"
+    },
+    "driver": {
+      "label": "누가 운전하나요? (선택 사항)",
+      "placeholder": "이름",
+      "help": "이 기록과 함께 저장됩니다. ParkProof는 이를 확인하지 않습니다."
+    }
   },
   "reminders": {
     "header": "알림 설정",
@@ -383,7 +422,7 @@
       "enable": "푸시 활성화",
       "requesting": "브라우저에 요청 중…",
       "denied": "이 사이트의 알림을 차단했습니다. 활성화하려면 브라우저의 사이트 설정에서 권한을 변경하세요.",
-      "errorRetry": "활성화할 수 없음 — 다시 시도",
+      "errorRetry": "활성화하지 못했습니다. 다시 시도하세요",
       "unsupported": "이 브라우저는 푸시 알림을 지원하지 않습니다."
     },
     "pushScheduled": {
@@ -393,7 +432,58 @@
     },
     "pushScheduleFailed": "백그라운드 알림을 설정할 수 없었습니다. 이 탭이 열려 있을 때만 울릴 수 있습니다. 다시 시도하려면 누르세요.",
     "chipMin_one": "{{count}}분",
-    "chipMin_other": "{{count}}분"
+    "chipMin_other": "{{count}}분",
+    "remindMe": {
+      "cta": "알림 받기",
+      "busy": "설정하는 중…",
+      "setBackground_one": "<strong>{{times}}</strong>에 알림 {{count}}개를 설정했습니다. ParkProof를 닫아도 알림은 이 기기로 전송됩니다.",
+      "setBackground_other": "<strong>{{times}}</strong>에 알림 {{count}}개를 설정했습니다. ParkProof를 닫아도 알림은 이 기기로 전송됩니다.",
+      "setOpenOnly_one": "<strong>{{times}}</strong>에 알림 {{count}}개를 설정했지만, ParkProof가 열려 있을 때만 작동합니다.",
+      "setOpenOnly_other": "<strong>{{times}}</strong>에 알림 {{count}}개를 설정했지만, ParkProof가 열려 있을 때만 작동합니다.",
+      "notSet": "알림이 설정되지 않았습니다.",
+      "stepInstall": "iPhone에서는 ParkProof를 홈 화면에 추가해야 알림을 받을 수 있습니다. 공유 버튼을 누르고 '홈 화면에 추가'를 선택한 다음, 홈 화면에서 ParkProof를 열고 '알림 받기'를 다시 누르세요.",
+      "stepAllow": "ParkProof 알림이 꺼져 있습니다. 브라우저가 물어볼 때 허용하거나 브라우저의 사이트 설정에서 허용한 다음, '알림 받기'를 다시 누르세요.",
+      "stepUnsupported": "이 브라우저는 ParkProof가 닫혀 있을 때 알림을 보낼 수 없습니다. 대신 캘린더 알림을 이용하세요.",
+      "stepRetry": "ParkProof가 닫혀 있을 때의 알림을 설정하지 못했습니다. 연결 상태를 확인한 다음 '알림 받기'를 다시 누르세요.",
+      "stepAllPast": "선택한 시간이 이미 지났습니다. 더 늦은 시간을 선택하세요."
+    },
+    "reliability": "알림은 집중 모드나 절전 모드 등으로 늦어지거나 무음 처리될 수 있습니다. 알림에만 의존하지 마세요.",
+    "androidTips": {
+      "summary": "Android 휴대폰 팁",
+      "spam": "Chrome이 알림을 스팸일 수 있다고 표시하면 '허용'을 누르세요.",
+      "battery": "삼성 휴대폰에서는 Chrome의 배터리 사용을 '제한 없음'으로 설정하세요."
+    },
+    "chipFiresAt": "{{when}}에 알림",
+    "chipPast": "이미 지남",
+    "reconnect": {
+      "cta": "알림이 오지 않나요? 다시 연결",
+      "busy": "다시 연결하는 중…",
+      "done": "다시 연결했습니다. 이 기기의 예정된 알림은 새 연결을 사용합니다.",
+      "failed": "다시 연결하지 못했습니다. 연결 상태를 확인하고 다시 시도하세요.",
+      "denied": "ParkProof 알림이 차단되어 있습니다. 브라우저의 사이트 설정에서 허용한 다음 다시 시도하세요."
+    },
+    "timesOnDay": "{{day}} {{times}}",
+    "permitIntro": "허가증 주차 시간은 표지판을 보고 입력한 <strong>{{when}}</strong>까지입니다. 언제 알림을 받을지 고르세요. 원하는 만큼 여러 개 선택해도 됩니다.",
+    "permitExtra": "{{time}}, 이 표지판의 일반 기준 시간이 끝날 때도 알림을 받습니다.",
+    "permitStandardEnds": "이 표지판의 일반 기준 시간이 지금 끝납니다. 허가증 주차 시간은 {{time}}까지입니다.",
+    "chipAtPermitTime": "허가증 시간 종료 시점",
+    "permitChipLimit_one": "여기서는 알림을 최대 {{count}}개까지 고를 수 있으며, 일반 기준 시간이 끝날 때의 알림이 따로 하나 더 있습니다.",
+    "permitChipLimit_other": "여기서는 알림을 최대 {{count}}개까지 고를 수 있으며, 일반 기준 시간이 끝날 때의 알림이 따로 하나 더 있습니다.",
+    "permitBodyAt": "표지판을 보고 입력한 허가증 주차 시간이 {{time}}에 끝납니다. 이제 차를 옮길 시간입니다.",
+    "permitBodyBefore_one": "표지판을 보고 입력한 허가증 주차 시간이 {{time}}에 끝납니다. {{count}}분 전 알림입니다.",
+    "permitBodyBefore_other": "표지판을 보고 입력한 허가증 주차 시간이 {{time}}에 끝납니다. {{count}}분 전 알림입니다.",
+    "calendarPermitTitle": "ParkProof: 입력한 허가증 주차 시간 종료",
+    "calendarPermitSummary": "표지판을 보고 입력한 허가증 주차 시간이 {{time}}에 끝납니다. ParkProof는 허가증 주차 시간을 계산하지 않습니다.",
+    "ics": {
+      "expiresTitle": "ParkProof: 주차 만료",
+      "expiresAt": "주차 만료 시각: {{time}} ({{place}})",
+      "remindersAt": "알림 시각: {{times}}",
+      "recordId": "ParkProof 기록: {{id}}",
+      "checkOnTitle": "ParkProof: 차 확인하기",
+      "checkOnAt": "{{address}}({{place}})에 있는 차를 확인하세요.",
+      "checkOnHere": "주차한 곳에서 차를 확인하세요({{place}}).",
+      "buildFailed": "캘린더 파일을 만들지 못했습니다. 다시 시도하세요."
+    }
   },
   "history": {
     "header": "주차 기록",
@@ -406,7 +496,7 @@
   },
   "session": {
     "header": "주차 기록",
-    "arrived": "도착 {{when}}",
+    "arrived": "기록 시각 {{when}} (휴대폰 시계)",
     "cryptoSigned": "전자 서명됨",
     "status": "상태",
     "active": "{{when}}까지 활성",
@@ -417,19 +507,17 @@
     "walkBackPill": "차로 걸어 돌아가기",
     "aiConfidence": "AI 신뢰도",
     "noteLabel": "메모",
-    "noNote": "메모 없음. 누르세요",
     "addNote": "메모 추가",
-    "noteHelp": "왜 여기 계셨는지 적어두세요. 맥락이 중요할 때 의회 검토를 한결 부드럽게 만들어줍니다.",
-    "notePlaceholder": "여기 계셨던 이유 — 예: 'Royal 병원에서 어머니 항암치료', 'Lygon 토요일 시장'. 나중에 벌금에 이의를 제기할 때 맥락으로 쓰입니다.",
+    "notePlaceholder": "여기 계셨던 이유를 적어 주세요. 예: 'Royal 병원에서 어머니 항암치료', 'Lygon 토요일 시장'. 이 기록의 PDF에 함께 들어가므로, 나중에 벌금에 이의신청을 할 때 쓸 수 있습니다.",
     "saveNote": "메모 저장",
     "signPhotoLabel": "표지판 사진",
     "carPhotoLabel": "주차 위치의 차량",
     "noSignLabel": "표시된 제한 없음",
-    "noSignDescription": "이 기록은 주차 표지판이 없는 곳에서 남겨졌습니다. AI 번역은 수행되지 않았습니다.",
+    "noSignDescription": "이 주차를 주차 표지판이 없는 곳으로 기록하셨습니다. 이는 본인의 진술입니다. 표지판 판독은 하지 않았습니다.",
     "ambientPhotoLabel": "주변",
-    "ambientPhotoCaption": "표지판 부재를 증명하기 위해 주차 시점에 촬영됨.",
+    "ambientPhotoCaption": "이 주차를 기록할 때 주변 모습을 보여 주려고 찍은 사진입니다. 근처에 표지판이 없었다는 것을 보여 주지는 않습니다.",
     "noAmbientCaptured": "주변 사진이 촬영되지 않았습니다.",
-    "noSignBadgeLong": "표시된 제한 없음으로 기록됨. 표지판이 없는 자리로 남겼습니다.",
+    "noSignBadgeLong": "게시된 제한 사항은 기록되지 않았습니다. 이 주차를 표지판이 없는 곳으로 기록하셨습니다.",
     "exportAsPdf": "PDF로 내보내기",
     "buildingPdf": "PDF 생성 중…",
     "pdfErrorHeader": "PDF를 생성할 수 없습니다",
@@ -441,7 +529,7 @@
     "noExpiryRecorded": "만료 시간 기록되지 않음",
     "deleteSession": "기록 삭제",
     "deleteConfirm": "이 주차 기록을 삭제할까요? 되돌릴 수 없습니다.",
-    "howToVerify": "의회가 이 기록을 검증하는 방법 →",
+    "howToVerify": "누구나 이 기록의 서명을 확인하는 방법 →",
     "photoSyncFailed": "사진이 클라우드에 백업되지 않음",
     "photoSyncRetry": "업로드 다시 시도",
     "exportPhotoWarning": "이 오래된 기록의 사진 일부를 클라우드에서 불러오지 못했습니다. 그대로 내보내셔도 되고, 처음 만든 기기에서 열어보셔도 됩니다.",
@@ -452,24 +540,22 @@
     "photoNotOnDeviceUnsigned": "이 기기에 사진이 없습니다. 디지털 지문: {{fingerprint}}. 아직 서명되지 않았습니다.",
     "signPhotoAlt": "스캔한 주차 표지판 사진",
     "carPhotoAlt": "주차한 곳에 있는 차량 사진",
-    "ended": "종료됨"
+    "ended": "종료됨",
+    "noteEmpty": "아직 메모가 없습니다. 여기 계셨던 이유를 직접 적어 두시려면 <add>메모 추가</add>를 누르세요. 메모는 서명되지 않습니다."
   },
   "appeal": {
     "captureHeader": "이의신청서 작성",
-    "captureIntro": "받으신 벌금 통지서를 사진으로 찍으세요. Claude가 통지서를 읽고, 이 기록에 저장된 증거와 대조한 다음, 발급한 의회에 보낼 공식 편지를 작성해드립니다.",
-    "captureTakePhotoSub": "벌금 카메라",
+    "captureIntro": "받으신 위반 통지서를 사진으로 찍으세요. Claude가 통지서를 읽고, 이 기록에 저장된 증거와 대조한 다음, 발급한 의회에 보낼 공식 편지를 작성해드립니다.",
+    "captureTakePhotoSub": "카메라로 통지서 찍기",
     "captureFromLibrarySub": "통지서 사진 / 스캔",
     "captureDisclaimer": "AI 초안은 출발점이며 법률 자문이 아닙니다. 최종적으로 보내는 편지의 책임은 당신에게 있습니다.",
-    "draftingHeader": "벌금 읽는 중…",
+    "draftingHeader": "통지서 읽는 중…",
     "draftingSub": "Claude가 저장된 증거와 대조 확인합니다.",
     "reviewHeader": "이의신청서 초안",
-    "strongEvidence": "강력한 증거",
-    "moderateEvidence": "보통 증거",
-    "weakEvidence": "약한 증거",
     "strategy": "전략",
     "subjectLine": "제목 줄",
     "letter": "편지 (수정 가능)",
-    "resetDraft": "AI 초안으로 재설정",
+    "resetDraft": "AI 초안 다시 사용",
     "copyToClipboard": "편지 클립보드에 복사",
     "copied": "복사됨 ✓",
     "downloadPdf": "PDF로 내려받기",
@@ -481,13 +567,13 @@
   },
   "auth": {
     "signInHeader": "로그인",
-    "signInIntro": "다시 오신 것을 환영합니다 — 중단된 곳에서 계속하세요.",
+    "signInIntro": "다시 오신 것을 환영합니다. 하시던 곳에서 이어서 하세요.",
     "signUpHeader": "계정 만들기",
-    "signUpIntro": "기기 간에 세션을 동기화하고, 휴대폰을 잃어버려도 복구하고, 앱을 지운 뒤에도 증거를 안전하게 지킵니다.",
+    "signUpIntro": "기기 간에 기록을 동기화하고, 휴대폰을 잃어버려도 복구하고, 앱을 지운 뒤에도 증거를 안전하게 지킵니다.",
     "verifyHeader": "이메일 인증",
     "verifyIntro": "{{email}}로 보낸 6자리 코드를 입력하세요.",
     "forgotHeader": "비밀번호 찾기",
-    "forgotIntro": "이메일을 입력하세요 — 재설정 코드를 보내드립니다.",
+    "forgotIntro": "이메일을 입력하시면 재설정 코드를 보내드립니다.",
     "resetHeader": "비밀번호 재설정",
     "resetIntro": "이메일의 코드 + 새 비밀번호를 입력하세요.",
     "email": "이메일",
@@ -514,12 +600,12 @@
     "continueWithApple": "Apple로 계속",
     "continueWithGoogle": "Google로 계속",
     "orDivider": "또는",
-    "footer": "클라우드 동기화는 선택 사항입니다. ParkProof는 계정 없이도 완전히 오프라인으로 작동하고, 데이터는 이 기기에 머뭅니다. 로그인하면 다른 기기에서도 볼 수 있을 뿐이에요.",
-    "needVerifyFirst": "아직 이메일을 인증하지 않았습니다 — 아래에 코드를 입력하세요.",
+    "footer": "클라우드 동기화는 선택 사항입니다. ParkProof는 계정 없이도 작동하고, 데이터는 이 기기에 머뭅니다. 로그인하면 다른 기기에서도 볼 수 있을 뿐이에요.",
+    "needVerifyFirst": "아직 이메일을 인증하지 않으셨습니다. 아래에 코드를 입력하세요.",
     "accountCreated": "계정이 생성되었습니다. 인증 코드를 이메일로 보냈습니다.",
     "codeResent": "코드를 다시 보냈습니다. 받은편지함을 확인하세요.",
     "resetCodeSent": "재설정 코드를 이메일로 보냈습니다.",
-    "emailVerified": "이메일이 인증되었습니다 — 계속하려면 로그인하세요.",
+    "emailVerified": "이메일이 인증되었습니다. 계속하려면 로그인하세요.",
     "passwordReset": "비밀번호가 재설정되었습니다. 새 비밀번호로 로그인하세요.",
     "errWrongCredentials": "이메일 또는 비밀번호가 틀렸습니다.",
     "errAccountExists": "이미 계정이 있습니다. 대신 로그인해 보세요.",
@@ -534,7 +620,7 @@
     "intro": "클라우드 동기화 관리, 데이터 내보내기, 또는 계정 폐쇄.",
     "signedInAs": "로그인 계정",
     "exportHeader": "데이터 내보내기",
-    "exportCopy": "클라우드에 저장된 모든 주차 기록을 담은 PDF를 내려받습니다. 표지 요약 페이지와, 사진이 포함된 기록별 상세 블록으로 구성돼요. 공유, 인쇄, 의회 제출 모두 바로 가능합니다.",
+    "exportCopy": "클라우드에 저장된 모든 주차 기록을 담은 PDF를 내려받습니다. 표지 요약 페이지 다음에 기록마다 사진과 함께 상세 내용이 이어집니다. 바로 인쇄하거나 공유할 수 있어요.",
     "exportCta": "PDF로 내려받기",
     "exportBuilding": "PDF 생성 중…",
     "privacyHeader": "개인정보",
@@ -552,7 +638,7 @@
     "deleteTypoError": "확인하려면 DELETE를 대문자로 입력하세요.",
     "youSignedOut": "로그아웃되었습니다.",
     "pushHeader": "이 기기의 푸시 알림",
-    "pushCopy": "푸시가 활성화된 경우에만 앱이 닫혔을 때 알림이 작동합니다. 구독은 브라우저+기기별이며 계정과 별개입니다.",
+    "pushCopy": "푸시를 켜면 ParkProof가 닫혀 있어도 알림이 이 기기로 전달될 수 있습니다. 푸시를 켜는 것만으로는 알림이 설정되지 않습니다. 주차 기록에서 '알림 받기'를 눌러 알림을 설정하세요. 푸시는 기기마다 브라우저별로 설정되며 계정과는 별개입니다.",
     "pushSubscribed": "✓ 이 기기에서 구독 중",
     "pushEnable": "푸시 활성화",
     "pushDisable": "이 기기에서 푸시 비활성화",
@@ -560,21 +646,21 @@
     "pushDisableNote": "이 기기의 구독만 해지합니다. 브라우저 권한을 완전히 취소하려면 브라우저의 사이트 설정을 변경하세요.",
     "pushDenied": "이 사이트의 알림을 차단했습니다. 활성화하려면 브라우저의 사이트 설정에서 권한을 변경한 후 이 페이지를 다시 방문하세요.",
     "pushRequesting": "브라우저에 요청 중…",
-    "pushErrorRetry": "활성화할 수 없음 — 다시 시도"
+    "pushErrorRetry": "활성화하지 못했습니다. 다시 시도하세요"
   },
   "privacy": {
     "header": "개인정보",
     "lastUpdated": "마지막 업데이트: {{date}}",
     "anonymousHeader": "계정 없이 ParkProof를 사용할 때 제공하는 정보",
-    "anonymousIntro": "ParkProof는 기본적으로 완전히 익명으로 작동합니다. 로그인을 요구하지 않으며, 계정을 기록하지 않으며, 남기는 주차 기록은 자체 브라우저의 <code>localStorage</code>에 있습니다. 기기를 떠나지 않습니다.",
-    "anonymousThings": "세 가지가 익명 모드에서도 기기를 떠납니다:",
-    "anonymousAnthropic": "<strong>표지판 사진 + GPS 좌표</strong>는 <strong>Anthropic</strong> (Claude 비전)으로 보내져 표지판을 번역합니다. 서버 측에 저장하지 않습니다. Anthropic의 보관 정책이 적용됩니다.",
+    "anonymousIntro": "ParkProof는 계정 없이도 작동합니다. 기록은 이 브라우저에 저장됩니다. 기록에 서명하기 위해 휴대폰이 기록의 세부 정보(시간, 위치, 입력한 내용, 그리고 사진 자체가 아닌 사진 지문)를 ParkProof 서버로 보내며, 서버는 서명한 뒤 사본을 보관하지 않습니다.",
+    "anonymousThings": "계정이 없어도 다음 항목은 기기 밖으로 전송됩니다:",
+    "anonymousAnthropic": "<strong>스캔하는 표지판 사진</strong>은 표지판을 읽기 위해 <strong>Anthropic</strong>(Claude)으로 전송되며, 촬영 위치와 저장한 허가증의 종류(거주자 또는 사업자 허가증은 구역 포함)도 함께 전송됩니다. 다시 확인할 때는 사진 대신 이전 판독 결과가 전송됩니다. 사진과 위치는 보관하지 않습니다. 허가증 종류가 언급될 수 있는 답은 휴대폰이 가져갈 수 있도록 서버에 잠시 보관됩니다. Anthropic의 보관 정책이 적용됩니다.",
     "anonymousNominatim": "<strong>GPS 좌표</strong>는 <strong>OpenStreetMap Nominatim</strong>으로 보내져 거리 주소를 확인합니다. Nominatim은 키가 필요하지 않으며 공개 보관 정책을 적용합니다.",
-    "anonymousCloudwatch": "<strong>임의의 결과별 UUID</strong> + \"맞음 / 다시 찍기\" 판정이 확인 카드를 누를 때 <strong>AWS CloudWatch</strong>에 기록됩니다. PII 없음. 프롬프트 튜닝을 위한 집계 신호.",
+    "anonymousCloudwatch": "<strong>표지판을 제대로 읽었는지 알려 주시면</strong> ParkProof 서버가 그 답을 답한 시각, 그 답에 붙인 임의 ID와 함께 <strong>AWS CloudWatch</strong>에 기록합니다. 판독 내용도 함께 기록됩니다. 표지판 규칙 설명의 처음 120자, 판독의 확신 정도, 시간 제한, 결제 방법과 허가 구역 번호(있는 경우), 주차 위치를 물었는지와 고른 선택지, 찾아낸 규칙 묶음, 판독 문제, 매주 반복되는 제한의 개수입니다. 표지판을 읽을 수 있었는지, 다시 확인한 판독인지, 주차 구역 전체에 적용되는 표지판, 유료 주차, 허가 구역, 장애인 주차 구역을 찾았는지, 표지판이 있는 곳의 당시 시각(시 단위)도 기록됩니다. 유료 주차, 허가 구역, 장애인 주차 허가증 질문에 그때까지 한 답도 기록되므로, 로그 한 줄에서 장애인 주차 허가증을 표시해 두었다고 답한 사실이 드러날 수 있습니다. 로그에는 사진, 사진의 GPS 위치, 본인이나 이 기기를 식별하는 ID가 들어가지 않습니다. 이 로그는 표지판 판독이 어디서 틀리는지 찾는 데 씁니다. 로그는 90일 후 삭제됩니다.",
     "signedInHeader": "로그인할 때 제공하는 정보",
     "signedInIntro": "로그인은 선택 사항입니다. 로그인하면 클라우드 동기화가 활성화되어 동일한 기록을 모든 기기에서 볼 수 있습니다.",
     "signedInThings": "로그인하면 추가 데이터가 기기를 떠납니다:",
-    "signedInEmail": "<strong>이메일 주소</strong> — AWS Cognito에 저장; 계정 식별자 및 비밀번호 재설정에 사용.",
+    "signedInEmail": "<strong>이메일 주소</strong>: AWS Cognito에 저장되며, 계정 식별자와 비밀번호 재설정에 사용됩니다.",
     "signedInSessions": "저장하는 모든 <strong>주차 기록</strong>: AWS DynamoDB에 저장되며 Cognito 사용자 ID에 연결됩니다. 타임스탬프, GPS, 표지판 규칙, AI 번역, 메모, 암호화 서명이 포함됩니다.",
     "signedInPhotos": "기록에 첨부된 모든 <strong>사진</strong>: 사용자 ID가 포함된 경로 아래 AWS S3에 저장되며, 로그인한 상태에서 본인만 접근할 수 있습니다.",
     "federationHeader": "Apple 또는 Google로 로그인",
@@ -594,21 +680,30 @@
     "rightsExport": "<strong>내보내기.</strong> 계정에서 \"PDF로 내려받기\"를 눌러 저장된 모든 기록이 담긴 완전한 문서를 받으세요: 표지 요약 페이지와 사진이 포함된 기록별 상세 블록.",
     "rightsDelete": "<strong>삭제.</strong> 계정에서 \"계정 삭제\"를 누르세요. 로그인 기록, 모든 DynamoDB 행, 모든 S3 사진을 몇 초 안에 삭제. 되돌릴 수 없음.",
     "rightsCorrect": "<strong>수정.</strong> 앱 내에서 기록을 편집합니다. 로그인한 경우 모든 변경 사항이 즉시 클라우드에 동기화됩니다.",
-    "rightsAnonymous": "로그인하지 않으면 모든 데이터가 기기에 있습니다 — 브라우저 저장소를 지워 삭제하세요.",
+    "rightsAnonymous": "로그인하지 않으면 주차 기록은 이 기기에만 있습니다. 삭제하려면 브라우저 저장소를 지우세요. 다만 이미 저희 서버에 있는 데이터는 지워지지 않습니다. 기록에 설정한 푸시 알림은 발송되거나 취소할 때까지 보관됩니다. 매주 푸시 알림은 마지막으로 ParkProof를 연 날부터 90일 이내에 삭제됩니다. 이 기기의 푸시 등록 정보(이 기기의 임의 ID, 브라우저가 제공한 푸시 주소와 암호화 키, 마지막 갱신 시각)는 ParkProof가 마지막으로 갱신한 뒤 약 90일간 보관됩니다. 푸시 알림이 켜진 상태로 앱을 열거나 알림을 설정하면 ParkProof가 이를 갱신합니다. ParkProof나 브라우저에서 푸시 알림을 꺼도 저희 서버에는 알려지지 않으므로, 등록 정보는 위와 같이 보관됩니다. 푸시 서비스가 그 주소가 더 이상 작동하지 않는다고 알려 오면(푸시 알림을 끈 뒤에 전에 설정한 알림이 발송될 때 그럴 수 있습니다), 그 주소와 암호화 키를 즉시 삭제합니다. 그 주소가 다시 저장되지 않도록 이 기기의 ID, 주소의 디지털 지문, 이를 알게 된 시각만 약 90일간 보관합니다. 이 기기가 푸시에 등록하거나 알림을 설정하거나 알림을 받을 때, 저희 서버 로그에는 이 기기의 ID와 함께 사용하는 푸시 서비스, 해당 기록이나 매주 알림의 임의 ID, 각 알림이 설정, 발송 또는 건너뛰어진 시각도 기록됩니다. 이 로그는 90일 후 삭제됩니다. 보내 주신 피드백과 입력하신 이메일은 최대 2년간 보관됩니다.",
     "photosHeader": "ParkProof 내에서 찍은 사진",
     "photosCopy": "사진은 브라우저를 떠나기 전 기기에서 ≤1200px로 크기가 조정되고 JPEG 0.82 품질로 재인코딩됩니다. 원본 고해상도 카메라 캡처는 휴대폰을 떠나지 않습니다.",
     "signingHeader": "암호학적 서명",
-    "signingCopy": "로그인하시든 익명으로 남으시든 (둘 다 작동합니다) 각 기록은 AWS KMS가 관리하는 ECDSA P-256 키로 서명됩니다. 개인 키는 AWS를 벗어나지 않습니다. 공개 키는 <a>/parkproof-public-key.pem</a>에 게시되어 있어, 누구나 (의회, 법원, 보험사) <code>openssl dgst</code>로 증거 체인을 검증할 수 있습니다. 단계별 안내는 내보낸 PDF의 부록을 참고하세요.",
-    "verifyLinkLabel": "기록 검증 방법 보기 →",
+    "signingCopy": "로그인하든 안 하든, 각 기록은 AWS KMS에 보관된 ECDSA P-256 키로 서명됩니다. 기록에 서명하기 위해 ParkProof 서버는 서명할 내용(시간, 위치, 표지판 판독 결과, 사진의 디지털 지문, 입력한 이름 등이며, 사진 자체는 절대 받지 않습니다)을 받아 서명을 돌려보냅니다. 개인 키는 AWS를 벗어나지 않습니다. 공개 키는 <a>/parkproof-public-key.pem</a>에 게시되어 있어, 누구나(의회, 법원, 보험사) <code>openssl dgst</code>로 서명을 확인할 수 있습니다. 서명은 서명된 내용이 ParkProof가 서명한 뒤로 바뀌지 않았음을 보여 줍니다. 그 내용이 사실인지, 누가 운전했는지, 차가 어디에 있었는지, 차가 언제 도착하거나 떠났는지는 보여 주지 않습니다. 단계별 방법은 내보낸 PDF의 부록에 있습니다.",
+    "verifyLinkLabel": "기록의 서명을 확인하는 방법 보기 →",
     "contactHeader": "연락처 + 불만",
     "contactCopy": "질문이나 앱 내 컨트롤 외부에서 권리를 행사하려면 <a>hello@parkproof.com.au</a>로 이메일을 보내주세요.",
-    "complaintCopy": "응답에 불만족스러우신가요? <a>Office of the Australian Information Commissioner (OAIC)</a>에 불만을 제기할 수 있습니다."
+    "complaintCopy": "응답에 불만족스러우신가요? <a>Office of the Australian Information Commissioner (OAIC)</a>에 불만을 제기할 수 있습니다.",
+    "anonymousFineNotice": "<strong>위반 통지서 사진</strong>(주차 벌금)은 통지서를 읽기 위해 <strong>Anthropic</strong>으로 전송됩니다. 예를 들어 이의신청서를 작성할 때입니다. 이의신청서를 작성하면 선택한 주차 기록의 세부 정보도 함께 전송됩니다. 사진은 보관하지 않습니다.",
+    "anonymousPush": "<strong>푸시 알림</strong>을 켜면 기록의 주소, 각 알림의 시간과 내용(입력한 허가증 주차 시간이 언급될 수 있음)이 <strong>ParkProof 서버</strong>로 전송됩니다. 서버는 각 알림을 보낼 때까지 보관한 뒤 삭제합니다.",
+    "anonymousPermits": "<strong>주차에 사용한 허가증</strong>: 허가증 종류, 구역, 입력한 허가증 주차 시간이 그 기록과 함께 보관됩니다. 기록에 서명할 때는 이 세부 정보 자체가 아니라 그 지문이 전송되며, 허가증 질문에 대한 답도 함께 전송됩니다. 설정에서 허가증을 삭제해도 이미 저장된 기록은 바뀌지 않습니다. 기록을 삭제하면 이 정보도 삭제됩니다.",
+    "signedInPermits": "기록과 함께 보관되는 <strong>허가증 세부 정보</strong>(저장한 허가증을 사용한 주차의 허가증 종류, 구역, 입력한 허가증 주차 시간)는 그 기록과 함께 AWS DynamoDB에 저장됩니다. 설정에 저장한 허가증은 저장되지 않습니다. 기록을 삭제하면 이 정보도 삭제됩니다.",
+    "anonymousWeeklyPush": "<strong>매주 푸시 알림</strong>을 켜면 각 알림의 이름과 입력한 주소(있는 경우), 요일, 시간, 반복 방식, 시간대, 알림을 받을 시점, 알림 내용이 이 기기의 임의 ID와 함께 <strong>ParkProof 서버</strong>로 전송됩니다. 서버는 매주 알림을 보낼 수 있도록 알림이 켜져 있는 동안 이 정보를 보관합니다. 알림을 일시 중지하거나 삭제하거나 알림 받기를 끄면, 다음에 ParkProof가 열려 있고 인터넷에 연결되었을 때 이 정보가 삭제됩니다. ParkProof가 이 정보를 보낼 때마다 서버는 최대 90일 동안 보관합니다. ParkProof를 계속 열면 이 정보를 때때로 다시 보내므로, 더 이상 열지 않으면 마지막으로 ParkProof를 연 날부터 90일 이내에 삭제됩니다."
   },
   "loading": {
     "step1": "표지판 읽는 중…",
     "step2": "주차 규칙 파악 중…",
     "step3": "주차 가능 시간 계산 중…",
-    "step4": "답변 작성 중…"
+    "step4": "답변 작성 중…",
+    "stepOf": "{{total}}단계 중 {{current}}단계",
+    "usuallyTen": "보통 10초 정도 걸립니다.",
+    "almostThere": "거의 다 됐습니다. 복잡한 표지판입니다…",
+    "stillWorking": "아직 처리 중입니다. 평소보다 오래 걸리고 있습니다…"
   },
   "feedback": {
     "title": "피드백 보내기",
@@ -624,7 +719,7 @@
     "successTitle": "감사합니다!",
     "successBody": "피드백이 잘 도착했습니다. 자리로 돌아오는 대로 읽겠습니다.",
     "error": {
-      "generic": "보낼 수 없음 — 잠시 후 다시 시도하세요."
+      "generic": "보내지 못했습니다. 잠시 후 다시 시도하세요."
     }
   },
   "errors": {
@@ -633,16 +728,16 @@
     "backHome": "홈으로 돌아가기",
     "complexSignTimeout": "이 표지판은 처리하는 데 시간이 너무 오래 걸렸습니다. 보통 규칙이 여러 겹 쌓여 있다는 뜻이에요. 더 선명한 사진으로 다시 찍거나, 주차하시는 곳에 해당하는 규칙만 보이게 잘라서 찍어보세요.",
     "offlineTitle": "오프라인 상태입니다",
-    "offlineBody": "표지판을 읽으려면 인터넷 연결이 필요합니다. 저장된 세션과 알림은 그대로 작동해요. 다시 연결되면 스캔을 다시 시도해보세요.",
+    "offlineBody": "표지판을 읽으려면 인터넷 연결이 필요합니다. 저장된 기록과 알림은 그대로 작동해요. 다시 연결되면 스캔을 다시 시도해보세요.",
     "boundaryTitle": "문제가 발생했습니다",
-    "boundaryBody": "ParkProof에 예상치 못한 오류가 발생했습니다. 새로고침하면 보통 해결되며, 저장된 세션은 이 기기에 안전하게 보관됩니다.",
+    "boundaryBody": "ParkProof에 예상치 못한 오류가 발생했습니다. 새로고침하면 보통 해결되며, 저장된 기록은 이 기기에 안전하게 보관됩니다.",
     "boundaryReload": "ParkProof 새로고침",
     "storageRecovered_one": "기기 저장 공간이 가득 차서, 공간 확보를 위해 오래된 주차 기록 1개의 사진이 삭제되었습니다. 증거를 클라우드에 안전하게 보관하려면 로그인하세요.",
     "storageRecovered_other": "기기 저장 공간이 가득 차서, 공간 확보를 위해 오래된 주차 기록 {{count}}개의 사진이 삭제되었습니다. 증거를 클라우드에 안전하게 보관하려면 로그인하세요.",
-    "photoSyncFailed": "사진이 클라우드에 백업되지 않았습니다. 이 기기에는 안전하게 있습니다 — 세션을 열어 다시 시도하세요.",
+    "photoSyncFailed": "사진이 클라우드에 백업되지 않았습니다. 이 기기에는 안전하게 있습니다. 기록을 열어 다시 시도하세요.",
     "heavyLoad": "지금 ParkProof에 요청이 많아 스캔이 제때 끝나지 않았습니다. 1분 후 다시 시도해 주세요.",
     "rateLimited": "이 연결에서 요청이 너무 많습니다. 1분 기다린 후 다시 시도해 주세요.",
-    "syncFailed": "방금 저장된 세션을 불러올 수 없었습니다.",
+    "syncFailed": "저장된 기록을 지금 불러오지 못했습니다.",
     "scanFailed": "표지판을 끝까지 읽지 못했습니다. 잠시 후 다시 시도해 주세요.",
     "signUnreadable": "표지판을 선명하게 읽지 못했습니다. 더 가까이서 더 선명하게 다시 찍어 주세요.",
     "imageTooLarge": "사진이 너무 큽니다. 조금 작게, 또는 표지판에 더 가까이서 다시 찍어 주세요.",
@@ -652,7 +747,11 @@
     "genericRetry": "문제가 발생했습니다. 잠시 후 다시 시도해 주세요.",
     "storageFull": "이 기기의 ParkProof 저장 공간이 가득 찼습니다. 현재 주차 중인 기록과 서명을 기다리는 기록은 유지됩니다. 기록 목록을 열어 더 이상 필요 없는 오래된 기록을 삭제한 뒤 다시 시도하세요.",
     "storageEvicted_one": "기기 저장 공간이 가득 차서, 공간 확보를 위해 오래된 주차 기록 {{count}}개가 삭제되었습니다. 기록을 클라우드에 안전하게 보관하려면 로그인하세요.",
-    "storageEvicted_other": "기기 저장 공간이 가득 차서, 공간 확보를 위해 오래된 주차 기록 {{count}}개가 삭제되었습니다. 기록을 클라우드에 안전하게 보관하려면 로그인하세요."
+    "storageEvicted_other": "기기 저장 공간이 가득 차서, 공간 확보를 위해 오래된 주차 기록 {{count}}개가 삭제되었습니다. 기록을 클라우드에 안전하게 보관하려면 로그인하세요.",
+    "noticeUnreadable": "그 통지서를 읽지 못했습니다. 통지서 전체가 나오도록 평평하게 놓고 밝은 곳에서 더 선명하게 찍어 주세요.",
+    "notANotice": "그 사진은 주차 벌금 통지서로 보이지 않습니다. 위반 통지서 자체를 찍어 주세요.",
+    "noticeHeavyLoad": "지금 ParkProof에 요청이 많아 통지서를 제때 다 읽지 못했습니다. 1분 후 다시 시도해 주세요.",
+    "noticeImageTooLarge": "사진이 너무 큽니다. 통지서를 다른 사진으로 찍어 보세요."
   },
   "pdf": {
     "common": {
@@ -693,7 +792,14 @@
         "departureSigned": "ParkProof가 출차 부분에 서명한 시각 (서버 시계)",
         "departureLocation": "\"떠났습니다\"를 누른 시점의 휴대폰 위치 (GPS)",
         "departureDistance": "도착 위치와의 대략적 거리 (휴대폰 GPS)",
-        "locationCoords": "위치 (좌표)"
+        "locationCoords": "위치 (좌표)",
+        "signCondition": "표지판 상태",
+        "proof": "결제 또는 허가증 증빙",
+        "conditionPhotos": "차량 상태 사진",
+        "damageNote": "운전자가 적은 손상",
+        "driver": "운전자 (휴대폰에 입력, 확인되지 않음)",
+        "handover": "차량 인계 (휴대폰에 입력, 확인되지 않음)",
+        "handoverSigned": "ParkProof가 인계 부분에 서명한 시각 (서버 시계)"
       },
       "locationSourceValue": {
         "manuallyEntered": "수동 입력",
@@ -728,18 +834,37 @@
         "coordsWithAccuracy": "{{coords}}, 정확도 {{accuracy}}",
         "distanceUnavailable": "알 수 없음. 도착 위치가 비교할 만큼 정확한 휴대폰 GPS 위치가 아닙니다.",
         "distanceRough": "{{distance}}. 누른 시점의 휴대폰 위치 정확도가 {{accuracy}} 수준이어서, 이 거리는 대략적인 값입니다.",
-        "distanceRoughNoAccuracy": "{{distance}}. 누른 시점의 위치 정확도를 휴대폰이 알려 주지 않아, 이 거리는 대략적인 값입니다."
+        "distanceRoughNoAccuracy": "{{distance}}. 누른 시점의 위치 정확도를 휴대폰이 알려 주지 않아, 이 거리는 대략적인 값입니다.",
+        "complianceDescribed": "{{type}} (운전자가 밝힌 내용)",
+        "complianceNoType": "사진이 추가되었습니다. 운전자가 사진의 내용을 밝히지 않았습니다.",
+        "conditionCounts": "주차 시: {{parking}}장. 돌아왔을 때: {{returned}}장.",
+        "noteWhenParked": "주차 시, 운전자가 직접 적은 내용: {{note}}",
+        "noteOnReturn": "돌아왔을 때, 운전자가 직접 적은 내용: {{note}}",
+        "notSignedYet": "(아직 서명되지 않음)",
+        "partRejected": "(이 부분은 서명할 수 없었음)",
+        "notSigned": "(서명되지 않음)",
+        "handoverTo": "인계받은 사람: {{to_driver}}. 시각: {{time}} (휴대폰 시계).",
+        "handoverFromTo": "인계한 사람: {{from_driver}}. 인계받은 사람: {{to_driver}}. 시각: {{time}} (휴대폰 시계)."
       },
       "carPhotoCaptionTime": "{{time}} 기록 (휴대폰 시계)",
       "confidence": {
         "high": "높음",
         "medium": "보통",
         "low": "낮음"
-      }
+      },
+      "signCondition": {
+        "readable": "사진에서 읽을 수 있음",
+        "partiallyObscured": "사진에서 일부를 읽기 어려움",
+        "contradictory": "표지판 내용이 서로 맞지 않음",
+        "missing": "사진에서 주차 표지판을 찾지 못함",
+        "notAParkingSign": "사진에 주차 표지판 대신 다른 것이 있음",
+        "notes": "AI 메모: {{notes}}"
+      },
+      "noSignRead": "읽은 표지판 없음. ParkProof가 사진에서 읽을 수 있는 주차 표지판을 찾지 못했고, 운전자는 표지판 없이 이번 주차를 기록했습니다."
     },
     "signature": {
       "title": "암호학적 서명",
-      "intro": "이 기록의 각 부분은 ParkProof 서버가 받은 시점에 서명한 것이며, 서명 시각은 각 부분에 표시된 signed_at입니다. 유효한 서명은 서명된 내용과 사진의 디지털 지문이 그 뒤로 변경되지 않았음을 보여 줍니다. 그 내용이 사실인지, 누가 운전했는지, 차가 언제 도착하거나 떠났는지는 보여 주지 않습니다.",
+      "intro": "이 기록의 각 부분은 ParkProof 서버가 받은 시점에 서명한 것이며, 서명 시각은 각 부분에 표시된 signed_at입니다. 유효한 서명은 서명된 내용과 사진의 디지털 지문이 그 뒤로 변경되지 않았음을 보여 줍니다. 그 내용이 사실인지, 누가 운전했는지, 차가 어디에 있었는지, 차가 언제 도착하거나 떠났는지는 보여 주지 않습니다.",
       "algorithm": "알고리즘",
       "keyAlias": "키 별칭",
       "signedAt": "ParkProof 서명 시각 (서버 시계)",
@@ -755,7 +880,7 @@
       "verifyStep4": "4. 서명 디코딩:",
       "verifyStep5": "5. 검증:",
       "verifyStep6": "6. 예상 출력: \"Verified OK\". 이는 ParkProof가 서명한 뒤로 서명된 바이트가 변경되지 않았음을 보여 줍니다.",
-      "verifyStep7": "7. 사진에 관하여: 이 PDF에 표시된 이미지는 문서용으로 다시 인코딩된 시각적 사본이므로 바이트가 원본과 달라 페이로드의 해시를 재현하지 못합니다. 이는 정상이며 변조의 징후가 아닙니다. 서명은 각 원본 사진의 SHA-256(서명된 페이로드 안의 sign_photo_sha256, car_photo_sha256, ambient_photo_sha256 값)에 대한 것이며, 6단계에서 그 값들이 서명 이후 변경되지 않았음을 보여 주었습니다. 특정 이미지를 독립적으로 확인하려면 여기 인쇄된 사본이 아니라 원본 촬영 파일(ParkProof 기록 또는 계정 내보내기에서 가져온 것)의 해시를 계산하여 위의 해당 값과 비교하세요.",
+      "verifyStep7": "7. 사진에 관하여: 이 PDF에 인쇄된 이미지는 문서용으로 다시 인코딩된 사본이므로 바이트가 원본과 달라 서명된 디지털 지문과 일치하지 않습니다. 이는 정상이며 변조의 징후가 아닙니다. 서명된 페이로드에는 각 원본 사진의 SHA-256이 들어 있습니다. 링크 0의 sign_photo_sha256, car_photo_sha256, ambient_photo_sha256, 그리고 이후 링크의 photos, photo, return_photos 아래 각 sha256입니다. 원본 사진은 이 기록의 증거 파일에 있습니다. 운전자가 ParkProof의 기록 화면에서 다운로드할 수 있는 .json 파일입니다. 사진을 확인하려면 그 파일에서 해당 사진의 bytes_base64 값을 photo1.b64로 저장한 다음, 디코딩하고 SHA-256을 출력하세요:",
       "devKey": "개발용 키로 서명되었습니다. ParkProof가 공개한 키로는 확인할 수 없습니다.",
       "linkHeading": "링크 {{link}}: {{kind}}",
       "forkNote": "기록의 이 지점에 두 기기에서 각각 한 부분이 추가되었습니다. 두 부분 모두 서명되어 여기에 표시됩니다.",
@@ -770,7 +895,9 @@
         "compliance": "결제 또는 허가증 증빙",
         "departure": "출차",
         "handover": "차량 인계"
-      }
+      },
+      "verifyPhotoMatch": "이 16진수 값은 위의 서명된 페이로드에 있는 해당 사진의 sha256과 일치해야 합니다. 증거 파일에서 사진 옆에 있는 sha256은 서명되지 않았으므로 그것과만 비교해서는 안 됩니다. 6단계에서 서명된 값이 ParkProof의 서명 이후 변경되지 않았음을 보여 주었습니다. 각 사진을 이 방법으로 확인하세요.",
+      "verifyWindows": "Windows의 cmd와 PowerShell에는 base64 -d가 없습니다. 아래처럼 대신 certutil -decode를 사용하고, 파일의 SHA-256을 출력하려면 certutil -hashfile을 사용하세요. PowerShell에서는 curl 대신 curl.exe를 입력하세요. openssl은 Git for Windows에 포함되어 있으며, Git Bash에서는 위의 명령을 그대로 실행할 수 있습니다."
     },
     "appeal": {
       "drafted": "초안 {{when}}",
@@ -788,7 +915,7 @@
       "userId": "사용자 ID: {{id}}",
       "exportedAt": "내보낸 시점: {{when}}",
       "sessionCount": "이 내보내기의 기록 수: {{count}}",
-      "intro": "이 문서에는 이 ParkProof 계정에 저장된 모든 주차 기록이 기록마다 한 섹션씩 담겨 있습니다. 기록에 서명된 부분이 있으면, 그 섹션 바로 뒤에 서명 페이지와 각 서명을 확인하는 방법이 나옵니다. 유효한 서명은 서명된 내용이 ParkProof가 서명한 뒤로 변경되지 않았음을 보여 줍니다. 그 내용이 사실인지는 보여 주지 않습니다.",
+      "intro": "이 문서에는 이 ParkProof 계정에 저장된 모든 주차 기록이 기록마다 한 섹션씩 담겨 있습니다. 기록에 서명된 부분이 있으면, 그 섹션 바로 뒤에 서명 페이지와 각 서명을 확인하는 방법이 나옵니다. 유효한 서명은 서명된 내용이 ParkProof가 서명한 뒤로 변경되지 않았음을 보여 줍니다. 그 내용이 사실인지, 누가 운전했는지, 차가 어디에 있었는지, 차가 언제 도착하거나 떠났는지는 보여 주지 않습니다.",
       "emptyState": "이 계정에 아직 저장된 주차 기록이 없습니다.",
       "summaryColIndex": "#",
       "summaryColArrived": "기록 시각 (휴대폰 시계)",
@@ -797,6 +924,80 @@
       "sessionHeader": "{{total}}개 중 {{n}}번째 기록",
       "signedBadge": "{{when}}에 암호학적 서명됨",
       "driverNoteField": "운전자 메모"
+    },
+    "complianceType": {
+      "meterTicket": "대시보드 위 주차권",
+      "paymentConfirmation": "결제 확인",
+      "permitDisplayed": "차에 보이게 둔 허가증",
+      "other": "기타"
+    },
+    "photos": {
+      "complianceHeader": "결제 또는 허가증 증빙",
+      "conditionHeader": "차량 상태 사진",
+      "whenParked": "주차 시",
+      "onReturn": "돌아왔을 때",
+      "role": {
+        "front": "앞",
+        "rear": "뒤",
+        "left": "왼쪽",
+        "right": "오른쪽",
+        "detail": "근접 촬영"
+      },
+      "added": "{{time}}에 추가됨 (휴대폰 시계)",
+      "library": "사진 보관함에서 추가했습니다. 서명은 ParkProof가 서명한 시각에 이 사진이 이미 있었다는 것을 보여 줄 뿐, 촬영한 시점은 보여 주지 않습니다.",
+      "signedAt": "ParkProof가 {{time}}에 디지털 지문에 서명함 (서버 시계)",
+      "devKey": "{{time}}에 개발용 키로 디지털 지문에 서명함. ParkProof가 공개한 키로는 확인할 수 없습니다.",
+      "notSignedYet": "디지털 지문이 아직 서명되지 않음",
+      "notSigned": "디지털 지문이 서명되지 않음",
+      "rejected": "이 부분은 서명할 수 없었습니다",
+      "signedNote": "서명된 사진은 서명 시점에 그 사진이 이미 있었다는 것을 보여 줍니다. 누가 손상을 입혔는지는 보여 주지 않습니다."
+    },
+    "shared": {
+      "field": "공유받은 기록",
+      "madeElsewhere": "이 기록은 다른 사람의 휴대폰에서 만들어졌습니다."
+    },
+    "workday": {
+      "title": "주차 이벤트 기록.",
+      "footer": "이 기록에는 한 일과 저희에게 알려 준 내용이 담겨 있습니다. 규정을 지켰다는 법적 판단이 아닙니다. 그 판단은 관할 의회가 내립니다.",
+      "councilLine": "의회는 이 규칙을 더 엄격하게 해석할 수 있습니다. 관할 의회의 주차 안내 페이지를 확인하세요.",
+      "started": "근무일 시작 {{time}} (휴대폰 시계)",
+      "ended": "근무일 종료 {{time}} (휴대폰 시계)",
+      "legCount": "이 PDF의 정차 지점: {{total}}곳 중 {{chosen}}곳",
+      "partial": "이 PDF에는 이 근무일의 모든 정차 지점이 들어 있지는 않습니다. 각 거리와 운전자의 진술은 근무일에서 바로 앞 정차 지점에 대한 것이며, 그 정차 지점이 빠져 있어도 마찬가지입니다.",
+      "intro": "각 정차 지점은 별도의 주차 기록입니다. 이 표 다음에 정차 지점별 섹션이 이어지고, 서명 페이지는 맨 끝에 있습니다.",
+      "col": {
+        "leg": "정차 지점",
+        "arrived": "도착 (휴대폰 시계)",
+        "left": "출차 (휴대폰 시계)",
+        "distance": "이전 정차 지점과의 대략적 거리 (휴대폰 GPS)",
+        "statement": "운전자의 진술"
+      },
+      "cell": {
+        "notLeft": "기록 없음",
+        "signedArrival": "도착: {{value}}",
+        "signedDeparture": "출차: {{value}}",
+        "noDistance": "측정되지 않음. 두 정차 지점 모두 휴대폰 GPS 위치가 필요합니다."
+      },
+      "statement": {
+        "firstLeg": "없음. 첫 번째 정차 지점입니다.",
+        "notAsked": "묻지 않음. ParkProof가 이번 이동에 대해 묻지 않았습니다.",
+        "oppositeDirectionSign": "운전자는 이 구간이 끝났음을 보여 주는 표지판을 지나왔다고 했습니다.",
+        "yellowEdgeLine": "운전자는 노란색 가장자리 선을 지나왔다고 했습니다.",
+        "tIntersectionOrDeadEnd": "운전자는 도로가 끝나는 곳(T자형 교차로나 막다른 길)을 지나왔다고 했습니다.",
+        "leftParkingArea": "운전자는 구역이 끝난다는 표지판을 지나 주차 구역 밖으로 운전해 나왔다고 했습니다.",
+        "notSure": "표지판이 적용되는 구간을 벗어났는지 묻자 운전자는 \"잘 모르겠습니다\"라고 답했습니다.",
+        "notSureArea": "주차 구역을 벗어났는지 묻자 운전자는 \"잘 모르겠습니다\"라고 답했습니다."
+      },
+      "legHeading": "정차 지점 {{number}}",
+      "tagged": "이 정차 지점은 이전 주차를 근무일에 추가한 것입니다. 서명된 세부 정보에는 근무일이 언급되어 있지 않습니다.",
+      "chain": {
+        "heading": "정차 지점 사이의 연결",
+        "intro": "각 정차 지점의 주차할 때의 세부 정보에는 previous_departure_payload_sha256이 들어 있습니다. 이는 바로 앞 정차 지점의 서명된 출차 페이로드의 SHA-256이며, 그 출차가 제때 서명된 경우에만 들어갑니다. 각 정차 지점의 서명 페이지에 있는 파일을 정차 지점별 폴더(leg1, leg2 등)에 저장하고 그 단계대로 디코딩하세요. 그런 다음 각 쌍에 대해 표시된 명령을 실행하세요.",
+        "equals": "그 16진수 값이 정차 지점 {{leg}}, 링크 {{link}}의 previous_departure_payload_sha256과 일치해야 합니다.",
+        "equalsOneOf": "이 16진수 값 중 하나가 정차 지점 {{leg}}, 링크 {{link}}의 previous_departure_payload_sha256과 일치해야 합니다.",
+        "notLinked": "정차 지점 {{leg}}의 링크 {{link}}는 제때 서명된 출차가 없어서 바로 앞 정차 지점의 출차 없이 서명되었습니다. 여기에는 비교할 것이 없습니다.",
+        "notInPdf": "정차 지점 {{leg}}의 링크 {{link}}는 바로 앞 정차 지점의 서명된 출차를 가리키지만, 그 출차는 이 PDF에 없습니다."
+      }
     }
   },
   "time": {
@@ -821,31 +1022,36 @@
   },
   "scheduledReminders": {
     "header": "예약된 알림",
-    "noneYet": "이 세션에는 아직 푸시 알림이 설정되지 않았습니다.",
-    "firesAtExpiry": "{{when}} — 만료 시점",
-    "firesBefore_one": "{{when}} — 만료 1분 전",
-    "firesBefore_other": "{{when}} — 만료 {{count}}분 전",
-    "firesFromNow_one": "{{when}} — 도착 1분 후",
-    "firesFromNow_other": "{{when}} — 도착 {{count}}분 후",
+    "noneYet": "이 기록에는 아직 푸시 알림이 설정되지 않았습니다.",
+    "firesAtExpiry": "{{when}}: 만료 시점",
+    "firesBefore_one": "{{when}}: 만료 1분 전",
+    "firesBefore_other": "{{when}}: 만료 {{count}}분 전",
+    "firesFromNow_one": "{{when}}: 도착 1분 후",
+    "firesFromNow_other": "{{when}}: 도착 {{count}}분 후",
     "firesAbsolute": "{{when}}",
     "addAnother": "+ 알림 추가",
     "cancelAll": "모든 알림 취소",
-    "cancelAllConfirm": "이 세션의 모든 예약된 푸시 알림을 취소할까요?",
+    "cancelAllConfirm": "이 기록의 예약된 푸시 알림을 모두 취소할까요?",
     "cancelOne": "이 알림 제거",
     "pickHeader": "언제 알려드릴까요?",
     "pickCancel": "취소",
-    "tooLateAll": "예약할 만큼 충분히 뒤로 떨어진 알림 옵션이 없습니다. 이미 떠나셨다면 '세션 종료'를 누르세요.",
+    "tooLateAll": "설정할 수 있을 만큼 시간이 남은 알림 옵션이 없습니다. 이미 차를 옮기셨다면 '떠났습니다'를 누르세요.",
     "pushNotEnabled": "앱이 닫혀 있을 때도 작동하는 알림을 추가하려면 이 기기에서 푸시 알림을 활성화하세요.",
     "saving": "저장 중…",
-    "errorRetry": "업데이트할 수 없음 — 다시 시도",
-    "otherDevice": "이 알림은 다른 기기에서 설정되었습니다. 해당 기기에서 변경하세요."
+    "errorRetry": "업데이트하지 못했습니다. 다시 시도하세요",
+    "otherDevice": "이 알림은 다른 기기에서 설정되었습니다. 해당 기기에서 변경하세요.",
+    "chipAlreadySet": "이미 설정됨",
+    "firesAtStandardEnd": "{{when}}: 일반 기준 시간 종료",
+    "firesAtPermitTime": "{{when}}: 입력한 허가증 주차 시간 종료 시점",
+    "firesBeforePermitTime_one": "{{when}}: 입력한 허가증 주차 시간 종료 {{count}}분 전",
+    "firesBeforePermitTime_other": "{{when}}: 입력한 허가증 주차 시간 종료 {{count}}분 전"
   },
   "installPrompt": {
     "available": "ParkProof 설치",
     "install": "설치",
     "installing": "설치 중…",
     "iosTitle": "iPhone에 ParkProof 설치",
-    "iosBody": "공유 버튼을 누른 다음 '홈 화면에 추가'를 선택하세요. 전체 화면으로 열리고 오프라인에서도 작동합니다.",
+    "iosBody": "공유 버튼을 누른 다음 '홈 화면에 추가'를 선택하세요. 전체 화면으로 열리고, 홈 화면 앱에서 저장한 기록은 인터넷에 연결되지 않아도 열립니다. Safari에 이미 저장된 기록은 Safari에 남아 있습니다.",
     "iosDismiss": "알겠습니다"
   },
   "verifier": {
@@ -872,7 +1078,10 @@
     "heading": "출차",
     "tapped": "{{time}}에 \"떠났습니다\"를 눌렀습니다 (휴대폰 시계).",
     "far": "\"떠났습니다\"를 눌렀을 때 휴대폰은 주차한 곳에서 {{distance}} 떨어져 있었습니다. 이 기록은 누른 시각을 보여 줄 뿐, 차가 움직인 시각은 보여 주지 않습니다.",
-    "notSigned": "이 출차 기록은 서명되지 않았습니다."
+    "notSigned": "이 출차 기록은 서명되지 않았습니다.",
+    "condition": {
+      "toggle": "지금 차량 상태 기록 (선택 사항)"
+    }
   },
   "chain": {
     "heading": "이 기록의 서명된 부분",
@@ -898,8 +1107,8 @@
     "devKeySignedAt": "{{time}}에 개발용 키로 서명됨. ParkProof가 공개한 키가 아닙니다.",
     "check": "서명 확인",
     "checking": "확인 중…",
-    "checkValid_one": "서명이 모두 유효합니다({{count}}개). ParkProof가 서명한 뒤로 바뀐 것이 없습니다. 그렇다고 기록 내용이 사실임을 보여 주는 것은 아닙니다.",
-    "checkValid_other": "서명이 모두 유효합니다({{count}}개). ParkProof가 서명한 뒤로 바뀐 것이 없습니다. 그렇다고 기록 내용이 사실임을 보여 주는 것은 아닙니다.",
+    "checkValid_one": "서명이 모두 유효합니다({{count}}개). 서명된 내용은 ParkProof가 서명한 뒤로 바뀌지 않았습니다. 그렇다고 그 내용이 사실임을 보여 주는 것은 아닙니다.",
+    "checkValid_other": "서명이 모두 유효합니다({{count}}개). 서명된 내용은 ParkProof가 서명한 뒤로 바뀌지 않았습니다. 그렇다고 그 내용이 사실임을 보여 주는 것은 아닙니다.",
     "checkValidPhotosUnchecked_one": "서명이 모두 유효합니다({{count}}개). 일부 사진이 이 기기에 없어 디지털 지문과 비교하지 못했습니다. 그렇다고 기록 내용이 사실임을 보여 주는 것은 아닙니다.",
     "checkValidPhotosUnchecked_other": "서명이 모두 유효합니다({{count}}개). 일부 사진이 이 기기에 없어 디지털 지문과 비교하지 못했습니다. 그렇다고 기록 내용이 사실임을 보여 주는 것은 아닙니다.",
     "checkProblem": "확인을 통과하지 못한 부분이나 사진이 하나 이상 있습니다. 각 항목의 결과가 여기에 표시됩니다.",
@@ -927,5 +1136,552 @@
       "returnDetail": "돌아왔을 때 상태, 근접 촬영",
       "compliance": "결제 또는 허가증 증빙 사진"
     }
+  },
+  "workday": {
+    "reminder": {
+      "headsUp": "이 구간의 주차 시간 제한이 {{time}}에 끝납니다. 다른 주차 칸으로 옮기는 것만으로는 안 되며, 표지판이 적용되는 이 구간을 벗어나야 합니다.",
+      "goNow": "지금 출발해서 {{time}} 전에 차를 옮기세요.",
+      "ended": "이 구간에서의 주차 시간이 {{time}}에 끝났습니다.",
+      "headsUpArea": "이 주차 구역의 주차 시간 제한이 {{time}}에 끝납니다. 구역 안의 다른 거리로 옮기는 것만으로는 안 되며, 구역 전체를 벗어나야 합니다.",
+      "endedArea": "이 주차 구역에서의 주차 시간이 {{time}}에 끝났습니다."
+    },
+    "start": {
+      "title": "근무일 시작하기",
+      "intro": "시간 제한이 있는 주차 자리 사이로 차를 옮기며 보내는 날을 위한 기능입니다. 각 정차 지점마다 별도의 기록이 생기며, 그 자리에서 새로 찍은 표지판 사진으로 읽습니다.",
+      "locating": "현재 어느 주에 있는지 확인하는 중…",
+      "unavailable": "다른 주의 규칙을 확인하는 동안 근무일 모드는 빅토리아주와 퀸즐랜드주에서만 사용할 수 있습니다.",
+      "unknown": "ParkProof가 휴대폰 위치로 현재 어느 주에 있는지 알아내지 못했습니다. 근무일 모드는 빅토리아주와 퀸즐랜드주에서만 사용할 수 있어서 먼저 확인이 필요합니다.",
+      "button": "근무일 시작",
+      "useCurrent": "차의 현재 주차를 첫 번째 정차 지점으로 사용",
+      "useCurrentHelp": "그 주차는 기록한 시각과 시간 제한을 그대로 유지합니다. 그 뒤로 몇 칸 옮겼더라도 그 시간 제한은 다시 시작되지 않으니 그대로 사용하세요. 차가 표지판이 적용되는 구간을 벗어났다면 돌아가서 먼저 그 기록에서 \"떠났습니다\"를 누르세요.",
+      "currentIneligible": "현재 주차는 근무일의 정차 지점이 될 수 없습니다. 정차 지점에는 빅토리아주나 퀸즐랜드주에서 읽을 수 있는 표지판이 필요합니다. 차가 표지판이 적용되는 구간을 벗어난 뒤 그 기록에서 \"떠났습니다\"를 누르고 근무일을 시작하세요."
+    },
+    "explainer": {
+      "heading": "시간 제한이 적용되는 방식",
+      "full": "몇 칸 옮기는 것만으로는 시간 제한이 다시 시작되지 않습니다. 표지판이 적용되는 도로 구간을 벗어나거나, 구역 표지판이라면 구역 전체를 벗어나야 합니다. 요금을 다시 내거나 추가로 내도 시간 제한은 다시 시작되지 않습니다. 옮길 때마다 새 표지판의 사진을 새로 찍어야 합니다.",
+      "short": "몇 칸 옮기는 것만으로는 시간 제한이 다시 시작되지 않습니다. 옮길 때마다 새 표지판의 사진을 새로 찍어야 합니다."
+    },
+    "ready": {
+      "heading": "알림",
+      "on": "알림이 켜져 있어 ParkProof가 닫혀 있어도 근무일 알림이 이 휴대폰으로 올 수 있습니다.",
+      "ask": "ParkProof가 닫혀 있어도 근무일 알림이 이 휴대폰으로 올 수 있도록 알림을 켜세요.",
+      "allow": "알림 켜기",
+      "cantDeliver": "근무일 알림에는 알림 기능이 필요합니다. 알림이 없으면 시간을 직접 확인해야 합니다.",
+      "iosInstall": "iPhone에서는 ParkProof를 홈 화면에 추가해야 알림을 받을 수 있습니다. 공유를 누른 다음 홈 화면에 추가를 누르고, 그곳에서 근무일을 시작하세요.",
+      "denied": "ParkProof의 알림이 차단되어 있습니다. 브라우저의 사이트 설정에서 허용할 수 있습니다.",
+      "turnedOff": "이 휴대폰에서 ParkProof 알림이 꺼져 있습니다. 설정에서 다시 켤 수 있습니다."
+    },
+    "ics": {
+      "button": "이 정차 지점의 캘린더 알림 추가",
+      "title": "{{time}} 전에 표지판이 적용되는 이 구간을 벗어나세요",
+      "titleArea": "{{time}} 전에 차를 이 주차 구역 밖으로 옮기세요"
+    },
+    "card": {
+      "kicker": "근무일",
+      "stop": "정차 지점 {{number}}",
+      "noStops": "아직 정차 지점이 없습니다. 각 정차 지점은 표지판 사진으로 시작합니다.",
+      "moved": "정차 지점 {{number}}이(가) {{time}}에 끝났습니다 (휴대폰 시계).",
+      "open": "이 근무일 열기",
+      "openAria": "이 근무일 열기. {{status}}",
+      "expiredHint": "아직 여기 있나요? 지금 옮기세요. 이미 옮겼나요? \"지금 차를 옮깁니다\"를 누르세요.",
+      "move": "지금 차를 옮깁니다",
+      "moveHint": "출발하기 전에 누르세요",
+      "scanFirst": "주차했나요? 지금 있는 곳의 표지판을 스캔하세요",
+      "scanNext": "다시 주차했나요? 새 표지판을 스캔하세요",
+      "end": "근무일 끝내기"
+    },
+    "end": {
+      "title": "이 근무일을 끝낼까요?",
+      "body": "정차 지점은 주차 기록에 남습니다. 이후에 기록하는 주차는 일반 기록이 되며, ParkProof는 표지판이 적용되는 구간을 벗어났는지 묻지 않습니다."
+    },
+    "history": {
+      "row_one": "근무일, 정차 지점 {{count}}곳",
+      "row_other": "근무일, 정차 지점 {{count}}곳"
+    },
+    "status": {
+      "active": "진행 중",
+      "ended": "끝남"
+    },
+    "view": {
+      "title": "근무일",
+      "started": "시작 {{time}} (휴대폰 시계)",
+      "ended": "종료 {{time}} (휴대폰 시계)",
+      "stopsHeading": "정차 지점",
+      "noStops": "아직 정차 지점이 없습니다.",
+      "tagged": "이전 주차에서 이 근무일에 추가되었습니다. 서명된 세부 정보에는 근무일이 언급되어 있지 않습니다."
+    },
+    "noSign": {
+      "body": "근무일 모드에는 각 주차 자리마다 읽을 수 있는 표지판이 필요합니다. 브리즈번 도심처럼 일부 지역은 거리에 표지판이 없어도 시간 제한이 있습니다."
+    },
+    "stopped": {
+      "notAvailable": "이곳에서는 아직 근무일 모드를 사용할 수 없습니다. 이 주차는 자체 표지판 판독 결과와 함께 일반 기록으로 저장되었습니다.",
+      "unknownState": "ParkProof가 이 주차가 어느 주에 있는지 확인할 수 없어 근무일이 종료되었습니다. 이 주차는 일반 기록으로 저장되었습니다. 잘 모르겠다고 답했다면 처음의 시간 제한이 계속 적용됩니다."
+    },
+    "scan": {
+      "fresh": "근무일 정차 지점: 지금 차가 있는 곳의 표지판을 새로 찍으세요.",
+      "cameraDenied": "브라우저 설정에서 카메라 접근을 다시 켜세요. 근무일 정차 지점에는 지금 찍은 사진이 필요합니다.",
+      "notFresh": "그 사진은 방금 찍은 사진이 아닙니다. 근무일 정차 지점에는 지금 찍은 표지판 사진이 필요합니다. 카메라로 새로 찍으세요."
+    },
+    "boundary": {
+      "title": "표지판이 적용되는 같은 구간일 수 있습니다.",
+      "body": "다른 칸으로 옮기는 것만으로는 시간 제한이 다시 시작되지 않습니다. 여기로 오는 길에 다음 중 하나를 지나왔나요?",
+      "area": "이곳은 주차 구역입니다. 구역 안의 다른 거리로 옮기는 것은 해당되지 않습니다. 구역 전체를 벗어나야 합니다.",
+      "option": {
+        "oppositeDirectionSign": "이 구간이 끝났음을 보여 주는 표지판 (블록 중간에 있는 양방향 화살표 표지판은 해당되지 않음)",
+        "yellowEdgeLine": "노란색 가장자리 선",
+        "tIntersectionOrDeadEnd": "도로가 끝나는 곳(T자형 교차로나 막다른 길)",
+        "leftParkingArea": "구역이 끝난다는 표지판을 지나 주차 구역 밖으로 운전해 나왔습니다",
+        "notSure": "잘 모르겠습니다"
+      },
+      "footer": "잘 모르겠다면 처음의 시간 제한이 계속 적용되고 있습니다.",
+      "required": "이 정차 지점을 저장하려면 답을 하나 고르세요.",
+      "newLimit": "알려 주신 내용에 따른 새 제한입니다. 지나온 것: {{boundary}}.",
+      "passed": {
+        "oppositeDirectionSign": "이 구간이 끝났음을 보여 주는 표지판",
+        "yellowEdgeLine": "노란색 가장자리 선",
+        "tIntersectionOrDeadEnd": "도로가 끝나는 곳(T자형 교차로나 막다른 길)",
+        "leftParkingArea": "주차 구역이 끝난다는 표지판"
+      },
+      "notSure": "이 구간의 제한 시간은 여전히 {{start}}부터 계산됩니다. {{deadline}}까지 이 구간 밖으로 차를 옮기세요.",
+      "notSureArea": "이 주차 구역의 제한 시간은 여전히 {{start}}부터 계산됩니다. {{deadline}}까지 구역 전체 밖으로 차를 옮기세요.",
+      "notSureNoDeadline": "이 구간의 제한 시간은 여전히 {{start}}부터 계산됩니다.",
+      "notSureNoDeadlineArea": "이 주차 구역의 제한 시간은 여전히 {{start}}부터 계산됩니다.",
+      "passedDeadline": "이 구간에서의 주차 시간이 {{time}}에 끝났습니다. 지금 이 구간 밖으로 차를 옮기세요.",
+      "passedDeadlineArea": "이 주차 구역에서의 주차 시간이 {{time}}에 끝났습니다. 지금 구역 전체 밖으로 차를 옮기세요.",
+      "saveAnyway": "그래도 저장",
+      "dontSave": "이 정차 지점 저장하지 않기"
+    },
+    "reminders": {
+      "notSet": "이 정차 지점의 알림을 설정하지 못했습니다. 시간을 직접 확인하거나 다시 시도하세요."
+    },
+    "pdf": {
+      "open": "이 근무일의 PDF 내보내기",
+      "title": "근무일 PDF",
+      "warning": "이 PDF에는 선택한 모든 정차 지점과 그 사이의 거리, 그리고 차를 옮길 때마다 알려 주신 내용이 들어 있습니다. 의회가 이 PDF를 읽을 수 있습니다.",
+      "chooseLegs": "포함할 정차 지점",
+      "leg": "정차 지점 {{number}}",
+      "noneChosen": "내보낼 정차 지점을 하나 이상 선택하세요."
+    }
+  },
+  "notice": {
+    "title": "벌금을 받았나요?",
+    "captureIntro": "위반 통지서 사진을 찍으세요. ParkProof가 통지서의 날짜, 시간, 장소를 읽고 그 무렵의 주차 기록을 찾습니다.",
+    "reading": {
+      "step1": "통지서 읽는 중…",
+      "step2": "날짜, 시간, 장소 찾는 중…",
+      "step3": "기록 찾는 중…",
+      "slow": "아직 읽는 중입니다. 조금 더 걸릴 수 있습니다…",
+      "hint": "보통 몇 초면 됩니다."
+    },
+    "errorHeader": "통지서를 읽지 못했습니다",
+    "fields": {
+      "heading": "통지서 내용",
+      "intro": "AI가 사진에서 읽은 내용입니다. 각 항목을 통지서와 대조해 보세요.",
+      "noticeNumber": "통지서 번호",
+      "issuedBy": "발급 기관",
+      "date": "통지서의 날짜",
+      "time": "통지서의 시간",
+      "location": "장소",
+      "offence": "위반 내용",
+      "partlyReadable": "통지서 일부를 읽기 어려웠습니다. 이 내용을 통지서 원본과 대조해 보세요.",
+      "checkDateTime": "날짜와 시간을 통지서와 대조해 보세요. 잘못 읽었을 수 있습니다.",
+      "enterDateTime": "날짜와 시간을 읽지 못했습니다. 기록을 찾으려면 통지서에 적힌 대로 입력하세요."
+    },
+    "matches": {
+      "heading": "이 시간 무렵의 기록",
+      "none": "저장된 주차 기록 중 이 날짜와 시간 무렵의 기록이 없습니다. 위의 날짜나 시간이 잘못 읽혔다면 고쳐 주세요."
+    },
+    "match": {
+      "compare": "이 기록과 비교",
+      "far": "이 기록은 통지서에 적힌 장소에서 약 {{distance}}km 떨어져 있습니다.",
+      "repeatedHour": "이날 일광 절약 시간이 끝나서 통지서의 시간이 두 번 있었습니다. 기록을 {{time}}과(와) 비교합니다.",
+      "skippedHour": "이날 일광 절약 시간이 시작되어 통지서의 시간은 시계에 없었습니다. 기록을 {{time}}과(와) 비교합니다."
+    },
+    "compare": {
+      "heading": "통지서와 비교",
+      "departureSignedBefore": "{{time}}에 \"떠났습니다\"를 눌렀습니다. 통지서의 시간보다 {{duration}} 전입니다. ParkProof는 {{signedTime}}에 그 기록에 서명했습니다. 이 기록은 누른 시각을 보여 줄 뿐, 차가 움직인 시각은 보여 주지 않습니다.",
+      "departureSignedBeforeClock": "휴대폰 시계로 {{time}}에 \"떠났습니다\"를 눌렀습니다. ParkProof는 통지서의 시간 전인 {{signedTime}}에 그 기록에 서명했습니다. 이 기록은 누른 시각을 보여 줄 뿐, 차가 움직인 시각은 보여 주지 않습니다.",
+      "departureSignedAfter": "휴대폰 시계로 {{time}}에 \"떠났습니다\"를 눌렀습니다. ParkProof는 통지서의 시간 이후인 {{signedTime}}에야 서명했으므로, 이 서명으로는 {{noticeTime}}까지 떠났다는 것을 보여 줄 수 없습니다.",
+      "departurePending": "{{time}}에 \"떠났습니다\"를 눌렀습니다. 아직 서명되지 않았습니다.",
+      "departureNotSigned": "{{time}}에 \"떠났습니다\"를 눌렀습니다. 서명되지 않았습니다.",
+      "noDeparture": "이 기록에서 \"떠났습니다\"를 누르지 않았습니다.",
+      "arrivalBefore": "{{time}}에 이 주차를 기록했습니다. 통지서의 시간보다 {{duration}} 전입니다.",
+      "arrivalAfter": "{{time}}에 이 주차를 기록했습니다. 통지서의 시간보다 {{duration}} 후입니다.",
+      "arrivalSame": "{{time}}에 이 주차를 기록했습니다. 통지서의 시간과 같은 분입니다.",
+      "driver": "기록에는 운전자가 {{driver}}(으)로 되어 있습니다. 주차를 기록할 때 입력된 내용이며, ParkProof가 확인하지 않았습니다. 다른 사람이 운전했다면 통지서에 운전자 지정 방법이 나와 있습니다. 실제로 운전한 사람만 지정하세요.",
+      "handover": "기록에는 {{time}}에 차가 {{to_driver}}에게 인계되었다고 되어 있습니다.",
+      "checkRegistration": "통지서의 차량 등록 번호가 이 기록의 차가 맞는지 확인하세요. ParkProof는 차량 등록 번호를 기록하지 않습니다.",
+      "checkDueDate": "기한은 통지서에서 직접 확인하세요.",
+      "departureDevKey": "휴대폰 시계로 {{time}}에 \"떠났습니다\"를 눌렀습니다. 이 부분은 ParkProof가 공개한 키가 아닌 개발용 키로 서명되었으므로, 이 서명으로는 {{noticeTime}}까지 떠났다는 것을 보여 줄 수 없습니다.",
+      "arrivalSignedBefore": "ParkProof는 통지서의 시간 전인 {{signedTime}}에 이 기록에 서명했습니다. 이 서명은 그때 이 기록이 이미 있었다는 것을 보여 줄 뿐, 차가 언제 도착했는지나 어디에 있었는지는 보여 주지 않습니다.",
+      "arrivalSignedAfter": "ParkProof는 통지서의 시간 이후인 {{signedTime}}에야 이 기록에 서명했으므로, 이 서명으로는 이 기록이 {{noticeTime}}에 이미 있었다는 것을 보여 줄 수 없습니다.",
+      "arrivalDevKey": "이 기록은 ParkProof가 공개한 키가 아닌 개발용 키로 서명되었으므로, 이 서명으로는 이 기록이 {{noticeTime}}에 이미 있었다는 것을 보여 줄 수 없습니다.",
+      "arrivalPending": "ParkProof가 아직 이 기록에 서명하지 않았습니다.",
+      "arrivalNotSigned": "이 기록은 서명되지 않았습니다.",
+      "driverPending": "운전자 이름은 아직 서명되지 않았습니다.",
+      "driverNotSigned": "운전자 이름은 서명되지 않았습니다.",
+      "handoverPending": "이 차량 인계는 아직 서명되지 않았습니다."
+    },
+    "duration": {
+      "minutes_one": "{{count}}분",
+      "minutes_other": "{{count}}분",
+      "hours_one": "{{count}}시간",
+      "hours_other": "{{count}}시간",
+      "hoursMinutes": "{{hours}} {{minutes}}"
+    },
+    "actions": {
+      "draftAppeal": "이 기록으로 이의신청서 작성",
+      "exportPdf": "증거 PDF 내보내기",
+      "draftAnyway": "그래도 이의신청서 작성"
+    },
+    "disclaimer": "이 화면은 기록을 통지서 내용과 비교할 뿐입니다. 법률 조언이 아니며, 벌금이 타당한지 판단하지 않습니다. 그 판단은 의회나 법원이 합니다."
+  },
+  "unclearSign": {
+    "obscuredTitle": "이 표지판의 일부를 읽기 어렵습니다",
+    "contradictoryTitle": "이 표지판의 내용이 서로 맞지 않습니다",
+    "strictest": "위의 답은 가장 엄격한 해석을 따른 것입니다. 차를 떠나기 전에 표지판을 직접 확인하세요.",
+    "worthRecording": "또렷하게 읽을 수 없는 표지판은 기록해 둘 만합니다.",
+    "notesLabel": "AI가 발견한 점",
+    "noSignTitle": "읽을 수 있는 주차 표지판이 없습니다",
+    "noSignBody": "이 사진에서 읽을 수 있는 주차 표지판을 찾지 못했습니다. 그렇다고 이곳에 규칙이 없다는 뜻은 아닙니다. 일반 도로 규칙은 그대로 적용됩니다. 예를 들어 신호등이 없는 교차로에서 10미터 이내에는 주차할 수 없고, 어떤 지역은 거리마다 표지판이 없어도 주차 시간 제한이 있습니다.",
+    "photoAlt": "촬영한 사진",
+    "retake": "다시 찍기",
+    "logWithoutSign": "표지판 없이 기록하기",
+    "photoCaption": "주차한 곳에서 찍은 사진입니다. ParkProof는 이 사진에서 읽을 수 있는 주차 표지판을 찾지 못했습니다.",
+    "loggerIntro": "주차한 시간과 장소를 촬영한 사진과 함께 저장합니다.",
+    "loggerBanner": "이 기록에는 ParkProof가 사진에서 읽을 수 있는 주차 표지판을 찾지 못했다는 것과, 표지판 없이 이번 주차를 직접 기록했다는 것이 남습니다. 이곳에 표지판이 없었다는 것을 보여 주지는 않습니다.",
+    "recordNoSignRead": "읽은 표지판 없음. ParkProof가 사진에서 읽을 수 있는 주차 표지판을 찾지 못했습니다. 이번 주차는 표지판 없이 직접 기록했습니다.",
+    "noSignReadLabel": "읽은 표지판 없음",
+    "remindIntro": "이번 주차에서는 읽은 표지판이 없어서 알려 드릴 만료 시간이 없습니다. 그래도 확인 알림은 받을 수 있어요. 지금부터 얼마 뒤에 받을지 고르세요. 원하는 만큼 선택해도 됩니다."
+  },
+  "recurring": {
+    "title": "매주 알림",
+    "intro": "도로 청소, 클리어웨이 등 같은 요일마다 반복되는 제한입니다. 한 번 설정하면 매번 시작 전에 알려 드립니다.",
+    "homeRow": "도로 청소 및 매주 알림",
+    "homeNext": "다음: {{what}}, {{time}}",
+    "homeOnNow": "{{what}} 진행 중, {{time}}까지",
+    "homeCount_one": "{{count}}개 설정됨",
+    "homeCount_other": "{{count}}개 설정됨",
+    "homeNone": "아직 없음",
+    "empty": "아직 매주 알림이 없습니다",
+    "emptyHelp": "자주 주차하는 곳의 도로 청소나 클리어웨이 알림을 추가하세요.",
+    "add": "매주 알림 추가",
+    "editTitleNew": "새 매주 알림",
+    "editTitle": "매주 알림 수정",
+    "kind": {
+      "street_cleaning": "도로 청소",
+      "clearway": "클리어웨이",
+      "no_stopping": "정차 금지",
+      "other": "기타 제한"
+    },
+    "field": {
+      "kind": "어떤 제한인가요?",
+      "label": "이름",
+      "days": "요일",
+      "start": "시작",
+      "end": "종료",
+      "frequency": "반복",
+      "anchor": "다음 날짜",
+      "nth": "매월 몇째 주",
+      "address": "장소",
+      "addressPlaceholder": "도로 또는 장소 (선택)",
+      "remind": "알림 시간",
+      "push": "이 휴대폰에서 알림 받기"
+    },
+    "frequency": {
+      "weekly": "매주",
+      "fortnightly": "격주",
+      "monthly_nth": "매월 특정 주"
+    },
+    "remind": {
+      "evening": "전날 저녁, 시간",
+      "before": "시작 전",
+      "minutes_one": "{{count}}분 전",
+      "minutes_other": "{{count}}분 전",
+      "hours_one": "{{count}}시간 전",
+      "hours_other": "{{count}}시간 전"
+    },
+    "pushHint": "가장 확실하게 알림을 받으려면 캘린더에도 추가하세요.",
+    "zoneNote": "요일과 시간은 {{place}} 현지 시간 기준입니다.",
+    "zone": {
+      "melbourne": "멜버른",
+      "sydney": "시드니",
+      "canberra": "캔버라",
+      "brisbane": "브리즈번",
+      "lindeman": "린드먼섬",
+      "adelaide": "애들레이드",
+      "brokenHill": "브로큰힐",
+      "darwin": "다윈",
+      "perth": "퍼스",
+      "eucla": "유클라",
+      "hobart": "호바트",
+      "lordHowe": "로드하우섬"
+    },
+    "days": {
+      "MO": "월요일",
+      "TU": "화요일",
+      "WE": "수요일",
+      "TH": "목요일",
+      "FR": "금요일",
+      "SA": "토요일",
+      "SU": "일요일"
+    },
+    "daysShort": {
+      "MO": "월",
+      "TU": "화",
+      "WE": "수",
+      "TH": "목",
+      "FR": "금",
+      "SA": "토",
+      "SU": "일"
+    },
+    "dayRange": "{{from}}~{{to}}",
+    "nth": {
+      "n1": "첫째",
+      "n2": "둘째",
+      "n3": "셋째",
+      "n4": "넷째",
+      "n5": "다섯째"
+    },
+    "schedule": {
+      "weekly": "매주 {{days}}",
+      "fortnightly": "격주 {{days}}",
+      "monthly_nth": "매월 {{nths}} {{days}}"
+    },
+    "timeRange": "{{start}}~{{end}}",
+    "summary": "{{schedule}}, {{range}}",
+    "next": "다음: {{time}}",
+    "onNow": "진행 중, {{time}}까지",
+    "paused": "일시 중지됨",
+    "noNext": "예정된 날짜 없음",
+    "pause": "일시 중지",
+    "resume": "다시 시작",
+    "pausedHint": "일시 중지된 알림은 여기서 알려 주지 않습니다. 이미 추가한 캘린더에는 자체 알람이 남아 있습니다.",
+    "delete": "알림 삭제",
+    "deleteConfirm": "이 매주 알림을 삭제할까요? 이미 추가한 캘린더에는 사본이 남습니다.",
+    "calendar": "캘린더에 추가",
+    "calendarDone": "다운로드했습니다. 파일을 열어 추가하세요.",
+    "saved": "매주 알림을 저장했습니다.",
+    "errors": {
+      "days": "요일을 하나 이상 고르세요.",
+      "times": "서로 다른 시작 시간과 종료 시간을 고르세요.",
+      "nth": "매월 주를 하나 이상 고르세요.",
+      "anchor": "다음 날짜를 고르세요.",
+      "saveFailed": "이 알림을 저장하지 못했습니다. 다시 시도하세요."
+    },
+    "councilNote": "의회는 이 일정을 바꿀 수 있으며, 공휴일에는 다를 수 있습니다. 주차하는 곳의 표지판을 확인하세요.",
+    "notifyDenied": "ParkProof 알림이 차단되어 이 휴대폰에서 알려 드릴 수 없습니다. 브라우저의 사이트 설정에서 알림을 허용하거나 캘린더에 추가하세요.",
+    "pushStatus": {
+      "closed": "ParkProof가 닫혀 있어도 이 휴대폰에서 알림을 받도록 설정되었습니다. 계속 유지하려면 적어도 두 달에 한 번은 ParkProof를 여세요.",
+      "openOnly": "ParkProof가 열려 있을 때만 이 휴대폰에서 알림을 받습니다. 캘린더에도 추가하세요.",
+      "none": "지금은 이 휴대폰에서 이 알림을 표시할 수 없습니다. 캘린더에 추가하세요."
+    },
+    "offer": {
+      "heading": "이 표지판에 매주 반복되는 제한이 있습니다",
+      "body": "ParkProof가 매번 시작 전에 알려 드릴 수 있습니다.",
+      "line": "{{what}}. {{summary}}.",
+      "cta": "매주 알려 주세요",
+      "already": "이미 이 제한에 대한 매주 알림이 있습니다."
+    },
+    "sheet": {
+      "title": "매주 알려 주세요",
+      "check": "이 요일과 시간을 표지판과 대조해 확인하세요",
+      "signSays": "표지판에 이런 내용도 있습니다: {{text}}"
+    },
+    "notify": {
+      "moveTonight": "{{day}} {{range}} {{what}}. 오늘 밤에 차를 옮기세요.",
+      "moveBefore": "{{day}} {{range}} {{what}}. {{start}} 전에 차를 옮기세요."
+    },
+    "ics": {
+      "alarmTonight": "내일 {{range}} {{what}}. 오늘 밤에 차를 옮기세요.",
+      "alarmTomorrow": "내일 {{range}} {{what}}. {{start}} 전에 차를 옮기세요.",
+      "alarmSoon": "{{what}} 시작: {{start}}. 그 전에 차를 옮기세요.",
+      "move": "시작 전에 차를 옮기세요.",
+      "footer": "ParkProof에서 설정한 알림입니다.",
+      "noDates": "이 매주 알림에는 추가할 날짜가 없습니다."
+    }
+  },
+  "photoGrid": {
+    "front": "앞",
+    "rear": "뒤",
+    "left": "왼쪽",
+    "right": "오른쪽",
+    "detail": "근접 촬영 (선택 사항)",
+    "take": "사진 촬영: {{angle}}",
+    "retake": "다시 찍기: {{angle}}",
+    "saving": "사진 저장 중…",
+    "saved": "휴대폰에 저장됨",
+    "failed": "이 사진을 휴대폰에 저장하지 못했습니다.",
+    "hint": "차 주위를 돌며 각 면을 한 장씩 찍으세요. 손상이 있으면 근접 사진도 추가하세요.",
+    "signedNote": "서명된 사진은 서명 시점에 그 사진이 이미 있었다는 것을 보여 줍니다. 누가 손상을 입혔는지는 보여 주지 않습니다.",
+    "count_one": "사진 {{count}}장",
+    "count_other": "사진 {{count}}장"
+  },
+  "proof": {
+    "fromLibrary": "앱으로 결제했나요? 사진에서 결제 확인 화면을 추가하세요",
+    "typeLegend": "사진 내용"
+  },
+  "complianceType": {
+    "meterTicket": "대시보드 위 주차권",
+    "paymentConfirmation": "결제 확인",
+    "permitDisplayed": "차에 보이게 둔 허가증",
+    "other": "기타"
+  },
+  "evidence": {
+    "group": {
+      "parking": "주차 시 상태",
+      "return": "돌아왔을 때 상태",
+      "compliance": "결제 또는 허가증 증빙"
+    },
+    "noteLabel": "발견한 손상 (직접 작성한 내용)",
+    "addedAt": "{{time}}에 추가됨 (휴대폰 시계).",
+    "fingerprint": "디지털 지문: {{fingerprint}}",
+    "library": "사진 보관함에서 추가했습니다. 서명은 ParkProof가 서명한 시각에 이 사진이 이미 있었다는 것을 보여 줄 뿐, 촬영한 시점은 보여 주지 않습니다.",
+    "notSigned": "이 사진은 기록의 서명된 부분에 포함되어 있지 않습니다.",
+    "photoNotOnDevice": "이 기기에 사진이 없습니다. 디지털 지문: {{fingerprint}}.",
+    "addCondition": "차량 상태 사진 추가",
+    "addMeterTicketOrPermit": "주차권 또는 허가증 사진 추가",
+    "addIntro": "ParkProof는 각 사진의 디지털 지문을 이 기록의 새 부분으로 서명합니다. 사진 자체는 서명을 위해 전송되지 않습니다.",
+    "addToRecord": "기록에 추가",
+    "adding": "추가하는 중…",
+    "needPhoto": "먼저 사진을 한 장 이상 찍으세요.",
+    "needType": "사진 내용을 선택하세요.",
+    "addFailed": "이 사진들을 기록에 추가하지 못했습니다. 다시 시도하세요.",
+    "cantAddNow": "지금은 이 사진들을 추가할 수 없습니다. 기록이 이미 끝났거나 새 부분을 추가할 공간이 없을 수 있습니다.",
+    "complianceDescribed": "{{type}} (직접 밝힌 내용)",
+    "noteNotSigned": "이 메모는 기록의 서명된 부분에 포함되어 있지 않습니다."
+  },
+  "backupPrompt": {
+    "title": "사진 백업하기",
+    "body": "기록과 서명된 사진은 이 브라우저에만 저장됩니다. Safari는 7일 동안 방문하지 않은 사이트의 데이터를 지울 수 있습니다.",
+    "homeScreenIos": "ParkProof를 홈 화면에 추가하세요. 공유 버튼을 누른 다음 '홈 화면에 추가'를 선택하세요. 홈 화면 앱에서 저장한 기록은 앱에 보관됩니다. Safari에 이미 저장된 기록은 Safari에 남아 있으며 앱으로 옮겨지지 않습니다.",
+    "homeScreenOther": "브라우저 메뉴에서 ParkProof를 홈 화면에 추가하세요 ('앱 설치' 또는 '홈 화면에 추가').",
+    "signIn": "로그인하여 백업",
+    "dismiss": "나중에"
+  },
+  "evidenceFile": {
+    "download": "증거 파일 다운로드",
+    "busy": "파일 준비 중…",
+    "help": "모든 서명과 원본 사진이 담긴 .json 파일로, 누구나 ParkProof 없이 이 기록을 확인할 수 있습니다. 서명은 ParkProof가 서명한 이후 내용이 바뀌지 않았음을 보여 줍니다. 그 내용이 사실인지, 누가 운전했는지, 차가 어디에 있었는지, 언제 도착하거나 떠났는지는 보여 주지 않습니다. 이 기록에 저장된 위치와 시간이 들어 있으므로 꼭 필요한 사람에게만 공유하세요.",
+    "includePermit": "허가증 정보 포함",
+    "permitHelp": "이 항목을 선택해야만 허가증 정보와 '차에 보이게 둔 허가증'으로 표시한 사진이 파일에 들어갑니다. 서명된 기록에는 그 디지털 지문만 담겨 있으며, 이를 대조해 확인할 수 있습니다. 장애인 주차 허가증 정보는 건강 정보입니다.",
+    "error": "증거 파일을 만들 수 없었습니다. 다시 시도하세요.",
+    "photosMissing_one": "서명된 사진 {{count}}장이 이 기기에 없어 파일에 들어가지 않았습니다. 서명된 디지털 지문은 파일에 있습니다.",
+    "photosMissing_other": "서명된 사진 {{count}}장이 이 기기에 없어 파일에 들어가지 않았습니다. 서명된 디지털 지문은 파일에 있습니다.",
+    "photosDiffer_one": "이 기기의 사진 {{count}}장이 서명된 디지털 지문과 일치하지 않아 파일에 들어가지 않았습니다. 서명된 디지털 지문은 파일에 있습니다.",
+    "photosDiffer_other": "이 기기의 사진 {{count}}장이 서명된 디지털 지문과 일치하지 않아 파일에 들어가지 않았습니다. 서명된 디지털 지문은 파일에 있습니다."
+  },
+  "prefs": {
+    "header": "설정",
+    "intro": "이 브라우저에만 저장되며 계정에는 저장되지 않습니다.",
+    "driverNameLabel": "공유하는 기록에 표시될 이름",
+    "driverNameHint": "새 주차 기록에 이 이름이 운전자로 표시됩니다. 표시하지 않으려면 비워 두세요.",
+    "saveName": "이름 저장",
+    "saved": "저장됨",
+    "saveFailed": "저장하지 못했습니다. 다시 시도해 주세요.",
+    "permitsHeader": "내 허가증",
+    "permitsIntro": "저장한 허가증은 스캔하거나 다시 확인하는 표지판마다 함께 전송되어, 답에 표지판이 그 허가증에 대해 적은 내용이 포함될 수 있습니다. 허가증 종류만 전송되며, 거주자 또는 사업자 허가증은 구역도 함께 전송됩니다.",
+    "permitsEmpty": "저장된 허가증이 없습니다.",
+    "addPermit": "허가증 추가",
+    "permitsLimit_one": "허가증은 최대 {{count}}개까지 저장할 수 있습니다.",
+    "permitsLimit_other": "허가증은 최대 {{count}}개까지 저장할 수 있습니다.",
+    "permitTypeLabel": "허가증 종류",
+    "permitType": {
+      "accessible": "장애인 주차 허가증",
+      "resident": "거주자 주차 허가증",
+      "business": "사업자 주차 허가증"
+    },
+    "issuingStateLabel": "발급한 주 또는 준주",
+    "stateNotSet": "선택 안 함",
+    "state": {
+      "VIC": "빅토리아주",
+      "NSW": "뉴사우스웨일스주",
+      "QLD": "퀸즐랜드주",
+      "ACT": "오스트레일리아 수도 준주",
+      "SA": "사우스오스트레일리아주",
+      "WA": "웨스턴오스트레일리아주",
+      "TAS": "태즈메이니아주",
+      "NT": "노던 준주"
+    },
+    "areaLabel": "허가증에 적힌 구역",
+    "areaPlaceholder": "예: Area 25",
+    "expiryLabel": "만료일",
+    "savePermit": "허가증 저장",
+    "accessibleWarning": "이 허가증을 저장하면 스캔하는 표지판 사진마다 허가증 종류가 함께 전송되어, 답에 표지판이 허가증에 대해 적은 내용이 포함될 수 있습니다. 장애인 주차 허가증 정보는 건강 정보입니다. 언제든지 삭제할 수 있습니다.",
+    "accessibleConfirm": "이 허가증 저장",
+    "permitArea": "구역: {{area}}",
+    "permitExpires": "{{date}} 만료",
+    "permitExpired": "{{date}}에 만료되었습니다. 스캔할 때 전송되지 않습니다.",
+    "deletePermitLabel": "{{permit}} 삭제",
+    "pushUnsupported": "이 브라우저에서는 ParkProof가 닫혀 있을 때 알림을 표시할 수 없습니다. iPhone에서는 먼저 ParkProof를 홈 화면에 추가하세요. 캘린더 알림은 계속 사용할 수 있습니다.",
+    "accountHeader": "계정",
+    "accountCopy": "클라우드 동기화, 데이터 내보내기, 로그아웃, 계정 삭제.",
+    "openAccount": "계정 열기",
+    "signInCopy": "로그인하면 기록을 백업하고 다른 기기에서도 볼 수 있습니다. 이 페이지의 설정은 계정 없이도 사용할 수 있습니다.",
+    "signIn": "로그인",
+    "privacyCta": "개인정보 정책 열기"
+  },
+  "share": {
+    "action": "차 위치 공유",
+    "confirm": "이 링크가 있는 사람은 누구나 차가 어디에 주차되어 있는지, 누가 주차했는지, 언제까지인지 볼 수 있습니다. 전달받은 사람도 누구나 열 수 있으며, 링크를 끌 수 없습니다.",
+    "shareButton": "링크 공유",
+    "shareText": "ParkProof에서 보낸 차 주차 위치입니다.",
+    "notSigned": "이 기록은 아직 서명되지 않았습니다. ParkProof가 서명하면 공유할 수 있습니다.",
+    "tooLarge": "이 기록은 너무 커서 링크로 공유할 수 없습니다.",
+    "copied": "링크를 복사했습니다. 메시지에 붙여 넣어 공유하세요.",
+    "copyManually": "이 링크를 복사해서 보내세요.",
+    "linkFieldLabel": "공유할 링크",
+    "permitSafeguard": "이번 주차에는 장애인 주차 허가증을 사용했습니다. 허가증 소지자가 차에 타지 않는다면, 누가 운전하기 전에 대시보드에서 허가증을 치우세요.",
+    "receivedTitle": "차 위치",
+    "checking": "링크를 확인하는 중…",
+    "banner": "{{driver}}님이 {{time}}에 공유했습니다. 이 내용은 그 시점의 기록이며 업데이트되지 않습니다. 차가 이동했을 수 있습니다.",
+    "bannerNoDriver": "{{time}}에 공유되었습니다. 이 내용은 그 시점의 기록이며 업데이트되지 않습니다. 차가 이동했을 수 있습니다.",
+    "bannerNoTime": "이 내용은 그 시점의 기록이며 업데이트되지 않습니다. 차가 이동했을 수 있습니다.",
+    "tampered": "이 링크는 공유된 뒤 변경되었습니다",
+    "newerVersion": "이 링크는 더 새로운 버전의 ParkProof로 만들어졌습니다",
+    "unreadable": "이 공유 링크를 읽을 수 없습니다. 보낸 사람에게 다시 공유해 달라고 하세요.",
+    "signedHeading": "서명된 내용",
+    "signedNote": "ParkProof가 {{time}}에 이 내용에 서명했습니다. 서명은 그 뒤로 내용이 바뀌지 않았음을 보여 줍니다. 내용이 사실인지, 누가 운전했는지, 차가 어디에 있었는지, 언제 도착하거나 떠났는지는 보여 주지 않습니다.",
+    "signedNoteNoTime": "서명은 ParkProof가 서명한 뒤로 이 내용이 바뀌지 않았음을 보여 줍니다. 내용이 사실인지, 누가 운전했는지, 차가 어디에 있었는지, 언제 도착하거나 떠났는지는 보여 주지 않습니다.",
+    "field": {
+      "place": "기록한 위치",
+      "arrived": "기록 시각",
+      "limit": "표지판에서 읽은 제한 시각",
+      "limitRecorded": "이 기록의 제한 시각",
+      "driver": "운전자",
+      "rules": "표지판 내용",
+      "standardLimit": "표지판의 일반 기준 시간",
+      "ended": "출차"
+    },
+    "permitTimeNote": "이 제한 시각에는 허가증으로 받은 추가 시간이 포함되어 있습니다. 허가증이 없으면 표지판의 일반 기준 시간이 적용됩니다. 보낸 사람에 따르면 일반 기준 시간은 {{time}}에 끝납니다.",
+    "phoneClock": "{{time}} (휴대폰 시계)",
+    "noLimit": "기록된 제한 시각 없음",
+    "noPlace": "기록된 위치 없음",
+    "directions": "길찾기",
+    "unsignedHeading": "보낸 사람이 입력, 서명되지 않음",
+    "endedValue": "보낸 사람이 {{time}}에 \"떠났습니다\"를 눌렀습니다 (휴대폰 시계).",
+    "saved": "주차 기록에 \"공유받은 기록\"으로 저장했습니다. 링크를 다시 열면 업데이트됩니다.",
+    "keptNewer": "더 새로운 링크에서 받은 이 기록의 사본이 이미 있어서 그 사본을 유지했습니다.",
+    "ownRecord": "이 링크는 이 휴대폰에 저장된 기록의 링크라서 다시 추가하지 않았습니다.",
+    "saveFailed": "이 휴대폰에 사본을 저장하지 못했습니다.",
+    "badge": "공유받은 기록",
+    "check": "서명 확인",
+    "checkValid": "서명이 유효합니다. 서명된 내용은 ParkProof가 서명한 뒤로 바뀌지 않았습니다. 그렇다고 그 내용이 사실인지, 누가 운전했는지, 차가 어디에 있었는지, 언제 도착하거나 떠났는지를 보여 주는 것은 아닙니다.",
+    "remove": "삭제",
+    "removeConfirm": "공유받은 이 기록을 이 휴대폰에서 삭제할까요? 링크를 다시 열면 되돌릴 수 있습니다."
+  },
+  "handover": {
+    "action": "차량 인계하기",
+    "intro": "다음에 차를 운전할 사람을 입력하세요. ParkProof는 이를 본인의 진술로서 이 기록과 함께 서명합니다. ParkProof는 이를 확인하지 않으며, 서명은 누가 운전했는지 보여 주지 않습니다. 기록은 계속 활성 상태로 유지됩니다.",
+    "nameLabel": "다음 운전자 이름",
+    "nameRequired": "다음 운전자 이름을 입력하세요.",
+    "submit": "인계 기록하기",
+    "failed": "이 기록에 인계를 추가하지 못했습니다.",
+    "done": "이제 기록에는 차가 {{to_driver}}에게 인계되었다고 되어 있습니다. 휴대폰이 온라인일 때 ParkProof가 서명합니다. 기록은 계속 활성 상태로 유지됩니다.",
+    "doneFromTo": "이제 기록에는 {{from_driver}} 님이 차를 {{to_driver}} 님에게 인계했다고 되어 있습니다. 휴대폰이 온라인일 때 ParkProof가 서명합니다. 기록은 계속 활성 상태로 유지됩니다.",
+    "fromDriver": "인계하는 사람: {{from_driver}} (현재 이 기록에 적힌 운전자).",
+    "offerShare": "상대에게 차 위치 링크를 보낼 수 있습니다.",
+    "line": "기록에는 {{time}}에 차가 {{to_driver}}에게 인계되었다고 되어 있습니다 (휴대폰 시계).",
+    "lineFromTo": "기록에는 {{time}}에 {{from_driver}} 님이 차를 {{to_driver}} 님에게 인계했다고 되어 있습니다 (휴대폰 시계)."
   }
 }

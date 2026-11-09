@@ -14,6 +14,7 @@ import {
   checkArrivalBundle,
   compactPendingSeqs,
   departureCatchUpData,
+  draftWithGateAcks,
   emptyLogDraft,
   fitText,
   hasPendingAddenda,
@@ -76,6 +77,26 @@ describe('emptyLogDraft', () => {
       driver_name: null,
     })
     expect(emptyLogDraft()).not.toBe(d)
+  })
+})
+
+describe('draftWithGateAcks', () => {
+  it('puts the result screen acknowledgements on a new draft and keeps the other fields', () => {
+    const d: LogDraft = { ...emptyLogDraft(), driver_name: 'Sam' }
+    const acks = { meter_ticket: true, permit_zone: null, accessible_permit: null }
+    const next = draftWithGateAcks(d, acks)
+    expect(next).not.toBe(d)
+    expect(next).toEqual({ ...d, gate_acks: acks })
+    expect(next.gate_acks).not.toBe(acks)
+    // The draft it came from is left alone.
+    expect(d.gate_acks).toEqual(emptyLogDraft().gate_acks)
+  })
+
+  it('returns the same draft when nothing changed', () => {
+    const d = emptyLogDraft()
+    expect(draftWithGateAcks(d, { meter_ticket: null, permit_zone: null, accessible_permit: null })).toBe(d)
+    const ticked = draftWithGateAcks(d, { meter_ticket: true, permit_zone: true, accessible_permit: null })
+    expect(draftWithGateAcks(ticked, { meter_ticket: true, permit_zone: true, accessible_permit: null })).toBe(ticked)
   })
 })
 

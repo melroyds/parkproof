@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# ParkProof — deploy to AWS.
-# Idempotent — re-run after code changes to update Lambda + frontend.
+# ParkProof: deploy to AWS.
+# Idempotent: re-run after code changes to update Lambda + frontend.
 #
 # Provisions:
 #   - IAM role for Lambda execution
@@ -8,19 +8,215 @@
 #   - API Gateway HTTP API (POST /sign-translate)
 #   - S3 bucket with static website hosting + public read
 #   - CloudFront distribution (HTTPS + global CDN)
+#
+# Usage:
+#   bash scripts/deploy.sh                  the full deploy (.env and AWS credentials)
+#   bash scripts/deploy.sh --package-only   build the Lambda package in a temp
+#                                           folder, list what's in it and stop:
+#                                           no AWS call, no .env needed
+#   DEPLOY_ALLOW_WORKDAY=1 bash scripts/deploy.sh
+#                                           build the frontend with workday mode
+#                                           on. Only after a lawyer has read its
+#                                           copy (docs/legal-review-queue.md).
 
 set -euo pipefail
+
+# ───── Options ──────────────────────────────────────────────────────────────
+PACKAGE_ONLY=0
+for arg in "$@"; do
+  case "$arg" in
+    --package-only) PACKAGE_ONLY=1 ;;
+    -h|--help)
+      sed -n '2,20p' "$0" | sed 's/^# \{0,1\}//'
+      exit 0
+      ;;
+    *)
+      echo "✗ Unknown option: $arg (try --help)" >&2
+      exit 2
+      ;;
+  esac
+done
+
+# Workday mode ships off until a lawyer has read its copy
+# (docs/legal-review-queue.md). The build always gets an explicit VITE_FEATURE_WORKDAY,
+# which beats every .env file (vite.config.ts keeps VITE_* values already set).
+# The switch is read here, from the shell that ran this script, before .env and
+# scripts/.aws-resources are loaded below (set -a exports every line in
+# them), so a line in either file can't turn workday mode on.
+if [[ "${DEPLOY_ALLOW_WORKDAY:-}" == "1" ]]; then
+  WORKDAY_FLAG=true
+  WORKDAY_NOTE="ON (VITE_FEATURE_WORKDAY=true, because DEPLOY_ALLOW_WORKDAY=1)"
+else
+  WORKDAY_FLAG=false
+  WORKDAY_NOTE="off (VITE_FEATURE_WORKDAY=false; DEPLOY_ALLOW_WORKDAY=1 turns it on)"
+fi
+# Read-only, so a WORKDAY_FLAG line in a sourced file stops the deploy
+# rather than changing the build.
+readonly WORKDAY_FLAG WORKDAY_NOTE
 
 # ───── Config ───────────────────────────────────────────────────────────────
 PROJECT=parkproof
 REGION=ap-southeast-2
 LAMBDA_NAME=$PROJECT-sign-translator
+# The AWS SDK for JavaScript v3 needs Node 22 or newer from early January
+# 2027. CI tests on Node 22 too (.github/workflows/test.yml).
+LAMBDA_RUNTIME=nodejs22.x
 ROLE_NAME=$PROJECT-lambda-role
 API_NAME=$PROJECT-api
 DIST_COMMENT=$PROJECT-cdn
 
 # ───── Preflight ────────────────────────────────────────────────────────────
 cd "$(dirname "$0")/.."
+REPO_ROOT=$(pwd -P)
+
+# ───── Lambda package helpers ───────────────────────────────────────────────
+# The Lambda package is staged in a temp folder outside the repo: the lambda/
+# sources are copied there (not node_modules, not the tests), production
+# dependencies are installed there with npm ci, and the zip is made there.
+# lambda/node_modules in the working tree is never deleted or reinstalled, so
+# a Dropbox or OneDrive lock on it can't stop a deploy, and the Lambda tests
+# keep their dev dependencies afterwards.
+
+# A path the Windows aws.exe or PowerShell can read. They don't understand
+# Git Bash paths such as /tmp/... or /c/Users/... (CLAUDE.md gotcha). Where
+# there's no cygpath (Linux, macOS) the path is already native.
+win_path() {
+  if command -v cygpath >/dev/null 2>&1; then cygpath -w "$1"; else printf '%s\n' "$1"; fi
+}
+
+# A string inside single quotes in a PowerShell command.
+ps_quote() {
+  local q="'"
+  printf "'%s'" "${1//$q/$q$q}"
+}
+
+PKG_TMP=""
+KEEP_ZIP=0
+cleanup_package() {
+  [[ -n "$PKG_TMP" && -d "$PKG_TMP" ]] || return 0
+  if [[ "$KEEP_ZIP" == "1" ]]; then
+    rm -rf "$PKG_TMP/lambda"
+  else
+    rm -rf "$PKG_TMP"
+  fi
+}
+trap cleanup_package EXIT
+
+# Sets FUNCTION_ZIP to the built package.
+build_lambda_package() {
+  local tmp_root="${TMPDIR:-/tmp}"
+  if command -v cygpath >/dev/null 2>&1; then tmp_root=$(cygpath -u "$tmp_root"); fi
+  PKG_TMP=$(mktemp -d "$tmp_root/parkproof-lambda.XXXXXX")
+  local pkg_real
+  pkg_real=$(cd "$PKG_TMP" && pwd -P)
+  case "$pkg_real/" in
+    "$REPO_ROOT"/*)
+      echo "✗ The temp folder $pkg_real is inside the repo; set TMPDIR to a folder outside it" >&2
+      exit 1
+      ;;
+  esac
+  local stage="$PKG_TMP/lambda"
+  FUNCTION_ZIP="$PKG_TMP/function.zip"
+  mkdir -p "$stage"
+  echo "  • packaging in $(win_path "$PKG_TMP")"
+
+  local entry name
+  for entry in lambda/* lambda/.[!.]*; do
+    [[ -e "$entry" ]] || continue
+    name=$(basename "$entry")
+    case "$name" in
+      node_modules|*.test.js|.DS_Store|.git*) continue ;;
+    esac
+    cp -R "$entry" "$stage/"
+  done
+  [[ -f "$stage/package-lock.json" ]] || { echo "✗ lambda/package-lock.json is missing; npm ci needs it" >&2; exit 1; }
+
+  echo "  • installing production dependencies (npm ci --omit=dev)"
+  ( cd "$stage" && npm ci --omit=dev --no-audit --no-fund --loglevel=error >/dev/null )
+
+  if command -v zip >/dev/null 2>&1; then
+    ( cd "$stage" && zip -rq "$FUNCTION_ZIP" . -x "*.git*" "*.DS_Store" )
+  else
+    # Windows Git Bash has no zip. Compress-Archive ships with PowerShell.
+    # PowerShell 7 (pwsh) writes standard entry names (node_modules/x/y.js);
+    # Windows PowerShell 5.1 writes them with backslashes, which Lambda has
+    # accepted for every deploy so far, so it stays the fallback.
+    local ps=""
+    if command -v pwsh >/dev/null 2>&1; then
+      ps=pwsh
+    elif command -v powershell.exe >/dev/null 2>&1; then
+      ps=powershell.exe
+    else
+      echo "✗ Need either 'zip' or PowerShell on PATH to build the Lambda package" >&2
+      exit 1
+    fi
+    "$ps" -NoProfile -NonInteractive -Command \
+      "Compress-Archive -Path $(ps_quote "$(win_path "$stage")\\*") -DestinationPath $(ps_quote "$(win_path "$FUNCTION_ZIP")") -Force" \
+      >/dev/null
+  fi
+  [[ -s "$FUNCTION_ZIP" ]] || { echo "✗ The Lambda package wasn't written" >&2; exit 1; }
+}
+
+# Every entry name in a zip, one per line.
+zip_entries() {
+  if command -v unzip >/dev/null 2>&1; then
+    unzip -Z1 "$1"
+  elif command -v pwsh >/dev/null 2>&1 || command -v powershell.exe >/dev/null 2>&1; then
+    local ps=powershell.exe
+    command -v pwsh >/dev/null 2>&1 && ps=pwsh
+    "$ps" -NoProfile -NonInteractive -Command \
+      "Add-Type -AssemblyName System.IO.Compression.FileSystem; \$z = [IO.Compression.ZipFile]::OpenRead($(ps_quote "$(win_path "$1")")); try { \$z.Entries | ForEach-Object { \$_.FullName } } finally { \$z.Dispose() }" \
+      | tr -d '\r'
+  else
+    python3 -c 'import sys, zipfile; print("\n".join(zipfile.ZipFile(sys.argv[1]).namelist()))' "$1"
+  fi
+}
+
+# Lambda's limit for a package uploaded with --zip-file.
+LAMBDA_DIRECT_UPLOAD_MAX=52428800
+
+# Prints the package's size and top-level entries, and stops the deploy when
+# the package can't work: no index.js (the handler is index.handler), no
+# package.json (it marks the code as ES modules), no node_modules, or too big
+# to upload.
+describe_lambda_package() {
+  local bytes entries count top
+  bytes=$(wc -c < "$FUNCTION_ZIP" | tr -d ' ')
+  entries=$(zip_entries "$FUNCTION_ZIP")
+  # Here-strings, not pipes, into grep: with pipefail, grep -q stopping early
+  # on a long list can fail the pipe and hide a match.
+  count=$(grep -c . <<< "$entries" || true)
+  top=$(sed -E 's#[/\\].*##' <<< "$entries" | LC_ALL=C sort -u | grep . || true)
+  echo "  • package: $bytes bytes ($(awk -v b="$bytes" 'BEGIN { printf "%.1f", b / 1048576 }') MB), $count entries"
+  echo "  • top-level entries:"
+  sed 's/^/      /' <<< "$top"
+  if grep -q '\\' <<< "$entries"; then
+    echo "  ! entry names use backslashes (Windows PowerShell 5.1). Lambda has accepted these so far; install PowerShell 7 or zip for standard names."
+  fi
+  local required
+  for required in index.js package.json node_modules; do
+    if ! grep -qx "$required" <<< "$top"; then
+      echo "✗ $required isn't at the top of the Lambda package; not deploying" >&2
+      exit 1
+    fi
+  done
+  if (( bytes > LAMBDA_DIRECT_UPLOAD_MAX )); then
+    echo "✗ The package is over Lambda's 50 MB limit for a direct upload; not deploying" >&2
+    exit 1
+  fi
+}
+
+if [[ "$PACKAGE_ONLY" == "1" ]]; then
+  echo "▶ Lambda package only. No AWS call is made."
+  build_lambda_package
+  describe_lambda_package
+  KEEP_ZIP=1
+  echo "  • kept for inspection: $(win_path "$FUNCTION_ZIP") (delete it when you're done)"
+  echo "  • a full deploy would build the frontend with workday mode $WORKDAY_NOTE"
+  echo ""
+  echo "✓ Package built. Nothing was deployed."
+  exit 0
+fi
 
 # AWS CLI v2 on Windows installs to "C:\Program Files\Amazon\AWSCLIV2" which
 # isn't on Git Bash's default PATH. Add it before doing anything.
@@ -36,7 +232,7 @@ set -a; . ./.env; set +a
 [[ -n "${ANTHROPIC_API_KEY:-}" ]] || { echo "✗ ANTHROPIC_API_KEY missing from .env"; exit 1; }
 
 # scripts/.aws-resources is written by setup-auth.sh and carries the Cognito,
-# DynamoDB and S3 identifiers. Optional — deploy keeps working without auth
+# DynamoDB and S3 identifiers. Optional: deploy keeps working without auth
 # (the existing /sign-translate etc. routes don't need it). When present,
 # auth-enabled features get wired in too.
 if [[ -f scripts/.aws-resources ]]; then
@@ -55,6 +251,7 @@ echo "▶ Deploying ParkProof"
 echo "  Account: $ACCOUNT_ID"
 echo "  Region:  $REGION"
 echo "  Bucket:  $BUCKET"
+echo "  Workday: $WORKDAY_NOTE"
 echo ""
 
 # ───── [1/6] IAM role for Lambda ────────────────────────────────────────────
@@ -77,29 +274,37 @@ ROLE_ARN=$(aws iam get-role --role-name "$ROLE_NAME" --query Role.Arn --output t
 
 # ───── [2/6] Package and deploy Lambda ──────────────────────────────────────
 echo "▶ [2/6] Lambda: $LAMBDA_NAME"
-echo "  • packaging"
-pushd lambda >/dev/null
-rm -rf node_modules
-npm install --omit=dev --silent
-popd >/dev/null
-rm -f function.zip
-if command -v zip >/dev/null 2>&1; then
-  ( cd lambda && zip -rq ../function.zip . -x "*.git*" "*.DS_Store" )
-elif command -v powershell.exe >/dev/null 2>&1; then
-  # Windows Git Bash fallback — Compress-Archive ships with PowerShell
-  powershell.exe -NoProfile -Command \
-    "Compress-Archive -Path 'lambda/*' -DestinationPath 'function.zip' -Force" \
-    >/dev/null
-else
-  echo "✗ Need either 'zip' or PowerShell on PATH to build the Lambda package"
-  exit 1
-fi
+# Staged and zipped in a temp folder outside the repo (build_lambda_package
+# above). The Windows aws.exe gets the zip's Windows path.
+build_lambda_package
+describe_lambda_package
+FUNCTION_ZIP_ARG="fileb://$(win_path "$FUNCTION_ZIP")"
 
 if aws lambda get-function --function-name "$LAMBDA_NAME" --region "$REGION" >/dev/null 2>&1; then
+  # Move an existing function onto $LAMBDA_RUNTIME before the new code lands,
+  # and let that update settle first: Lambda refuses a code update while a
+  # configuration update is still in progress. A no-op once it is there.
+  # tr strips the CR that the Windows aws.exe can leave on text output.
+  CURRENT_RUNTIME=$(aws lambda get-function-configuration \
+    --function-name "$LAMBDA_NAME" \
+    --region "$REGION" \
+    --query Runtime \
+    --output text | tr -d '\r')
+  if [[ "$CURRENT_RUNTIME" != "$LAMBDA_RUNTIME" ]]; then
+    echo "  • moving runtime from $CURRENT_RUNTIME to $LAMBDA_RUNTIME"
+    aws lambda update-function-configuration \
+      --function-name "$LAMBDA_NAME" \
+      --runtime "$LAMBDA_RUNTIME" \
+      --region "$REGION" \
+      >/dev/null
+    aws lambda wait function-updated --function-name "$LAMBDA_NAME" --region "$REGION"
+  else
+    echo "  • runtime: $LAMBDA_RUNTIME"
+  fi
   echo "  • updating code"
   aws lambda update-function-code \
     --function-name "$LAMBDA_NAME" \
-    --zip-file fileb://function.zip \
+    --zip-file "$FUNCTION_ZIP_ARG" \
     --region "$REGION" \
     >/dev/null
   aws lambda wait function-updated --function-name "$LAMBDA_NAME" --region "$REGION"
@@ -107,10 +312,10 @@ else
   echo "  • creating function"
   aws lambda create-function \
     --function-name "$LAMBDA_NAME" \
-    --runtime nodejs20.x \
+    --runtime "$LAMBDA_RUNTIME" \
     --handler index.handler \
     --role "$ROLE_ARN" \
-    --zip-file fileb://function.zip \
+    --zip-file "$FUNCTION_ZIP_ARG" \
     --timeout 60 \
     --memory-size 512 \
     --region "$REGION" \
@@ -256,7 +461,7 @@ ensure_route() {
       --region "$REGION" \
       >/dev/null
   elif [[ "$with_auth" == "--auth" && -n "${COGNITO_AUTHORIZER_ID:-}" ]]; then
-    # Existing route — re-confirm the authorizer is attached. Cheap idempotent update.
+    # Existing route: re-confirm the authorizer is attached. Cheap idempotent update.
     aws apigatewayv2 update-route \
       --api-id "$API_ID" \
       --route-id "$route_id" \
@@ -275,10 +480,14 @@ ensure_route "user-feedback"
 ensure_route "push/subscribe"
 ensure_route "push/schedule"
 ensure_route "push/cancel"
+# Weekly reminders by push (T5b): book and cancel one rule's cron schedules.
+ensure_route "push/recurring"
+ensure_route "push/recurring/cancel"
 ensure_route "draft-appeal"
+ensure_route "read-notice"
 ensure_route "sign-session"
 
-# Auth-required routes — JWT authorizer is attached when COGNITO_AUTHORIZER_ID
+# Auth-required routes. The JWT authorizer is attached when COGNITO_AUTHORIZER_ID
 # is set (which it is whenever scripts/.aws-resources exists).
 ensure_route "sessions/upload" --auth
 ensure_route "sessions/list"   --auth
@@ -331,13 +540,13 @@ fi
 
 # Anonymous GET routes for the async-polling endpoints. The frontend POSTs
 # to /sign-translate, gets back a job_id, then polls these /status/{id}
-# endpoints until status != 'pending'. Polling needs no auth — job_id IS
+# endpoints until status != 'pending'. Polling needs no auth: job_id IS
 # the bearer token, and DDB TTL purges rows after 10 min.
 ensure_get_anon_route() {
   local route_key="GET $1"
   local source_arn_path="${1#/}"
   # Wildcard ANY {placeholder} segment for the Lambda source-arn pattern.
-  # `${x//\{/*}` only replaces the opening brace — we need the whole
+  # `${x//\{/*}` only replaces the opening brace; we need the whole
   # `{job_id}` chunk replaced with `*` or API Gateway's actual invocation
   # ARN won't match the permission and Lambda returns AccessDenied → 500.
   local source_arn_wild
@@ -375,6 +584,9 @@ ensure_get_anon_route() {
 
 ensure_get_anon_route "/sign-translate/status/{job_id}"
 ensure_get_anon_route "/draft-appeal/status/{job_id}"
+# /read-notice/status serves notice jobs only and deletes each row once it
+# hands back a finished result (lambda/index.js handleJobStatus).
+ensure_get_anon_route "/read-notice/status/{job_id}"
 
 API_URL="https://$API_ID.execute-api.$REGION.amazonaws.com/sign-translate"
 echo "  • endpoint: $API_URL"
@@ -401,7 +613,7 @@ echo "▶ [4/6] Building frontend"
 #
 # Skipped automatically if pyftsubset isn't installed (`python -m
 # fontTools.subset --help` is the canary). Falls through with a
-# warning rather than failing the deploy — fonts on disk are still
+# warning rather than failing the deploy. Fonts on disk are still
 # the previously-subsetted version, which is fine for a deploy where
 # no locale strings changed. To force a re-subset, install fonttools
 # (`pip install fonttools brotli`) and re-run this script.
@@ -410,7 +622,7 @@ if python -m fontTools.subset --help > /dev/null 2>&1; then
   PYTHONIOENCODING=utf-8 python scripts/_subset_pdf_fonts.py > /dev/null 2>&1 \
     || echo "    ! WARNING: subset failed; fonts on disk are previous version"
 else
-  echo "  • fontTools not installed — skipping font re-subset (run \`pip install fonttools brotli\` to enable)"
+  echo "  • fontTools not installed, skipping font re-subset (run \`pip install fonttools brotli\` to enable)"
 fi
 
 # Clean dist/ before each build. Especially important after the two-app
@@ -424,6 +636,10 @@ rm -rf dist
 # Bake the Cognito identifiers + API URL + VAPID public key into the
 # bundle. These are public values (anyone inspecting the JS bundle can see
 # them); not secrets. The VAPID PRIVATE key stays Lambda-side only.
+# VITE_FEATURE_WORKDAY is always set here, from DEPLOY_ALLOW_WORKDAY (see
+# the top of this script), so no .env file can decide it.
+echo "  • workday mode: $WORKDAY_NOTE"
+VITE_FEATURE_WORKDAY="$WORKDAY_FLAG" \
 VITE_API_URL="$API_URL" \
 VITE_COGNITO_USER_POOL_ID="${COGNITO_USER_POOL_ID:-}" \
 VITE_COGNITO_APP_CLIENT_ID="${COGNITO_APP_CLIENT_ID:-}" \
@@ -476,11 +692,31 @@ rm -f dist/DEPLOY.md dist/.gitkeep
 # its SW under dist/app/sw.js (because of base: '/app/'), so dist/sw.js
 # is otherwise empty after the build. The shim self-unregisters any
 # old root-scope service worker that browsers may have cached from
-# the pre-cutover build. Idempotent — safe to run on every deploy.
+# the pre-cutover build. Idempotent, safe to run on every deploy.
 cp "migrations/two-app-architecture/public-sw-shim.js" dist/sw.js
 
 echo "  • landing files: $(find "$LANDING_SRC" -type f -not -name .gitkeep -not -name DEPLOY.md | wc -l | tr -d ' ')"
 echo "  • sw shim:        dist/sw.js (evicts old root-scope SW)"
+
+# Public key line endings (field-test fix list, Tier 2). With
+# core.autocrlf=true, a checkout made before .gitattributes pinned *.pem to
+# LF still has CRLF PEMs on disk (merging the rule doesn't rewrite them),
+# and the live key then differs byte for byte from the repo's (182 bytes
+# against 178). Ship LF whatever the checkout holds: strip CR from every
+# PEM in dist/, and stop the deploy if any CR is left.
+PEM_COUNT=0
+while IFS= read -r -d '' pem; do
+  tr -d '\r' < "$pem" > "$pem.lf" && mv "$pem.lf" "$pem"
+  if LC_ALL=C grep -q $'\r' "$pem"; then
+    echo "✗ $pem still has CR line endings after normalising; not deploying" >&2
+    exit 1
+  fi
+  echo "  • pem (LF):       $pem ($(wc -c < "$pem" | tr -d ' ') bytes)"
+  PEM_COUNT=$((PEM_COUNT + 1))
+done < <(find dist -type f -name '*.pem' -print0)
+if [ "$PEM_COUNT" -eq 0 ]; then
+  echo "  ! no .pem in dist/: the public key is missing from this build" >&2
+fi
 
 # ───── [5/6] S3 bucket + upload ─────────────────────────────────────────────
 echo "▶ [5/6] S3 bucket: $BUCKET"
@@ -592,10 +828,10 @@ echo ""
 echo "✓ Deploy complete"
 echo ""
 echo "  App URL:     https://$DIST_DOMAIN"
-echo "  S3 fallback: $S3_WEBSITE_URL  (HTTP only — geolocation/notifications won't work)"
+echo "  S3 fallback: $S3_WEBSITE_URL  (HTTP only: geolocation/notifications won't work)"
 echo "  API URL:     $API_URL"
 echo ""
 if [[ "$DIST_STATUS" == "InProgress" ]]; then
   echo "  CloudFront is still propagating (first deploy takes 5–15 min)."
-  echo "  Re-runs of this script will be fast — only invalidating the CDN cache."
+  echo "  Re-runs of this script will be fast, only invalidating the CDN cache."
 fi

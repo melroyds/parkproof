@@ -39,6 +39,13 @@ interface Props {
     ambientMeta: PhotoCaptureMeta | null,
   ) => void
   onCancel: () => void
+  /**
+   * A workday stop's scan (build spec T6b items 5 and 6): a fresh photo of
+   * the new sign is mandatory. The re-check offers (ReuseCard and the
+   * recent-scans picker), the photo library and "No sign here" are hidden,
+   * so the stop can only be read from a photo taken now.
+   */
+  workdayLeg?: boolean
 }
 
 const PROXIMITY_METERS = 40
@@ -53,6 +60,16 @@ interface ProximityMatch {
   distanceMeters: number
 }
 
+/**
+ * A record a re-check may start from. Not a no-sign record (no rules to
+ * refresh), not a shared copy (T7: someone else's reading, with no sign
+ * photo on this device), and never a workday stop (T6b item 5): a re-check
+ * would give a car that hasn't moved a new arrival time.
+ */
+function canRecheck(s: ParkingSession): boolean {
+  return !s.no_sign && !s.shared_from && !(typeof s.workday_id === 'string' && s.workday_id !== '')
+}
+
 function findRecentMatch(
   coords: { lat: number; lng: number },
   now: number = Date.now(),
@@ -61,9 +78,9 @@ function findRecentMatch(
   let best: ProximityMatch | null = null
   for (const s of sessions) {
     if (!s.location) continue
-    // No-sign sessions have no rules to refresh — offering "reuse this read"
-    // for them would be a UX lie. Skip.
-    if (s.no_sign) continue
+    // Offering "reuse this read" for a record that can't be re-checked
+    // would be a UX lie (and for a workday stop, a hazard). Skip.
+    if (!canRecheck(s)) continue
     if (now - new Date(s.arrived_at).getTime() > FRESHNESS_MS) continue
     const distance = haversineMeters(coords, s.location)
     if (distance > PROXIMITY_METERS) continue
@@ -77,16 +94,16 @@ function findRecentMatch(
 function loadRecentSessions(): ParkingSession[] {
   const now = Date.now()
   return loadSessions()
-    // Same filter as the proximity match — picker offers "reuse a recent
+    // Same filter as the proximity match: the picker offers "reuse a recent
     // scan", and there's nothing to reuse from a no-sign session.
-    .filter((s) => !s.no_sign && now - new Date(s.arrived_at).getTime() <= FRESHNESS_MS)
+    .filter((s) => canRecheck(s) && now - new Date(s.arrived_at).getTime() <= FRESHNESS_MS)
     .sort(
       (a, b) => new Date(b.arrived_at).getTime() - new Date(a.arrived_at).getTime(),
     )
     .slice(0, PICKER_LIMIT)
 }
 
-export default function SignScanner({ onCapture, onReuseSession, onNoSignScan, onCancel }: Props) {
+export default function SignScanner({ onCapture, onReuseSession, onNoSignScan, onCancel, workdayLeg = false }: Props) {
   const { t } = useTranslation()
   const cameraInputRef = useRef<HTMLInputElement>(null)
   const libraryInputRef = useRef<HTMLInputElement>(null)
@@ -202,12 +219,13 @@ export default function SignScanner({ onCapture, onReuseSession, onNoSignScan, o
     return () => window.removeEventListener('focus', onFocus)
   }, [])
 
-  const showProximityCard = match && !matchDismissed && !preview
+  const showProximityCard = !workdayLeg && match && !matchDismissed && !preview
   // Show the picker whenever we don't have a stronger proximity match to
   // display. Covers: desktop (no real GPS), mobile away from saved spots,
   // and the "dismissed the proximity card but want another option" case.
   // Wait for the GPS check to settle first to avoid flicker.
   const showPicker =
+    !workdayLeg &&
     gpsState !== 'pending' &&
     !showProximityCard &&
     !preview &&
@@ -222,6 +240,13 @@ export default function SignScanner({ onCapture, onReuseSession, onNoSignScan, o
     setFileError(null)
     // Capture time and source (camera or library), taken as the file arrives.
     const meta = captureMetaFor(file, input)
+    // A workday stop needs a photo taken now (T6b item 6). A desktop browser
+    // ignores `capture` and opens a file chooser, and some Android choosers
+    // offer Files or Gallery: a file that wasn't just taken is refused.
+    if (workdayLeg && meta.source === 'library') {
+      setFileError(t('workday.scan.notFresh'))
+      return
+    }
     try {
       const [{ dataUrl, mediaType: mt }, qualityResult] = await Promise.all([
         resizeImageFile(file),
@@ -298,6 +323,11 @@ export default function SignScanner({ onCapture, onReuseSession, onNoSignScan, o
       <p className="text-xs mb-6 leading-relaxed" style={{ color: '#A9CFBE' }}>
         {t('scanner.privacyLine')}
       </p>
+      {workdayLeg && (
+        <p className="gf-card bg-white p-3 mb-4 text-sm font-semibold text-ink-900 leading-relaxed">
+          {t('workday.scan.fresh')}
+        </p>
+      )}
 
       {showProximityCard && match && (
         <ReuseCard
@@ -320,7 +350,7 @@ export default function SignScanner({ onCapture, onReuseSession, onNoSignScan, o
         <>
           <img
             src={preview}
-            alt="Captured parking sign"
+            alt={t('scanner.previewAlt')}
             className="w-full rounded-lg mb-4 border border-brand-900/10 object-contain max-h-[60vh] bg-white"
           />
           {/* Pre-flight quality warning — doesn't block, just informs.
@@ -379,14 +409,16 @@ export default function SignScanner({ onCapture, onReuseSession, onNoSignScan, o
               <span className="text-sm font-semibold text-ink-900">{t('scanner.takePhoto')}</span>
               <span className="text-xs text-ink-600 mt-1 text-center">{t('scanner.takePhotoSub')}</span>
             </button>
-            <button
-              onClick={() => libraryInputRef.current?.click()}
-              className="border-2 border-dashed border-brand-900/15 hover:border-brand-400 hover:bg-brand-50 bg-white rounded-xl py-8 px-4 flex flex-col items-center text-ink-600 transition-colors"
-            >
-              <Icon name="gallery" className="w-10 h-10 mb-2" />
-              <span className="text-sm font-semibold text-ink-900">{t('scanner.fromLibrary')}</span>
-              <span className="text-xs text-ink-600 mt-1 text-center">{t('scanner.fromLibrarySub')}</span>
-            </button>
+            {!workdayLeg && (
+              <button
+                onClick={() => libraryInputRef.current?.click()}
+                className="border-2 border-dashed border-brand-900/15 hover:border-brand-400 hover:bg-brand-50 bg-white rounded-xl py-8 px-4 flex flex-col items-center text-ink-600 transition-colors"
+              >
+                <Icon name="gallery" className="w-10 h-10 mb-2" />
+                <span className="text-sm font-semibold text-ink-900">{t('scanner.fromLibrary')}</span>
+                <span className="text-xs text-ink-600 mt-1 text-center">{t('scanner.fromLibrarySub')}</span>
+              </button>
+            )}
           </div>
           {/* Camera-denied fallback — non-blocking hint surfaced when the
               camera was opened but no photo came back (permission denied or
@@ -409,7 +441,8 @@ export default function SignScanner({ onCapture, onReuseSession, onNoSignScan, o
                     {t('scanner.cameraDeniedTitle')}
                   </p>
                   <p className="text-xs text-ink-700 mt-0.5 leading-relaxed">
-                    {t('scanner.cameraDeniedCopy')}
+                    {/* A workday stop has no library to fall back on. */}
+                    {workdayLeg ? t('workday.scan.cameraDenied') : t('scanner.cameraDeniedCopy')}
                   </p>
                 </div>
                 <button
@@ -426,13 +459,16 @@ export default function SignScanner({ onCapture, onReuseSession, onNoSignScan, o
               link, not a button) so it doesn't compete with the primary
               scan CTAs above. The user who lands here knows what they're
               looking for. */}
-          <button
-            onClick={handleNoSignStart}
-            className="mt-6 text-sm underline self-center transition-colors hover:opacity-80"
-            style={{ color: '#7BE3A4' }}
-          >
-            {t('scanner.noSignHere')}
-          </button>
+          {/* Workday stops need a readable sign (T6b item 7). */}
+          {!workdayLeg && (
+            <button
+              onClick={handleNoSignStart}
+              className="mt-6 text-sm underline self-center transition-colors hover:opacity-80"
+              style={{ color: '#7BE3A4' }}
+            >
+              {t('scanner.noSignHere')}
+            </button>
+          )}
         </>
       ) : noSignStage === 'choosing' ? (
         // Inline panel: ask the user whether to strengthen the evidence with

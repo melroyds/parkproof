@@ -1,7 +1,7 @@
 import { jsPDF } from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import type { TFunction } from 'i18next'
-import type { AppealDraft, ParkingSession, SignatureBundle } from '../types'
+import type { AppealDraft, ComplianceType, ParkingSession, PhotoRole, SignStatus } from '../types'
 import { ACCURACY_USABLE_M, formatAccuracy } from './accuracy'
 import { sessionTimezone } from './timezone'
 import { registerPdfFonts } from './pdf-fonts'
@@ -9,6 +9,7 @@ import { ACTIVE_AFTER_EXPIRY_MS, loadSessions } from './storage'
 import { DEV_KEY_ALIAS } from './evidence-chain'
 import { mergeEvidence } from './evidence-merge'
 import {
+  arrivalContextView,
   departureSummary,
   signedTimeOf,
   type ChainLinkKind,
@@ -24,14 +25,31 @@ import {
 } from './record-times'
 import { formatDistance } from './walk-back'
 import {
+  fetchRemotePhoto,
   legacyPhotoField,
   photoHashSigned,
   resolveSessionPhoto,
   type LegacyPhotoRole,
 } from './session-photos'
+import { getPhoto } from './photo-store'
+import {
+  ANGLES,
+  conditionNotes,
+  evidencePhotos,
+  type Angle,
+  type EvidencePhoto,
+  type PhotoSigning,
+} from './evidence-photos'
 import { createLimiter, type Limiter } from './concurrency'
+import { isNoSignReadRecord, signIssuesOf, signStatusOf } from './sign-result'
+import { plainNoteText } from '../../lambda/sign-reading.js'
+import { base64Utf8, isCompleteBundle, linkFileNames, signedLinks, type SignedLink } from './signed-links'
+import { recordDriver, type RecordDriver } from './notice-compare'
+import { handoverParts, type HandoverPart } from './handover'
 
 const MARGIN = 40
+/** The page margin every PDF uses (points), for the workday PDF (pdf-workday.ts). */
+export const PDF_MARGIN = MARGIN
 
 // ─── Time helpers ───────────────────────────────────────────────────────────
 // Every time in every PDF goes through evidenceTime (formatInZone with the
@@ -253,6 +271,54 @@ function confidenceText(session: ParkingSession, t: TFunction): string {
   return key ? t(key) : t('pdf.common.dash')
 }
 
+/** The sign condition cell: the reading's status through a key map, never printed raw (T3). */
+const SIGN_CONDITION_KEYS: Readonly<Record<SignStatus, string>> = {
+  readable: 'pdf.evidence.signCondition.readable',
+  partially_obscured: 'pdf.evidence.signCondition.partiallyObscured',
+  contradictory: 'pdf.evidence.signCondition.contradictory',
+  missing: 'pdf.evidence.signCondition.missing',
+  not_a_parking_sign: 'pdf.evidence.signCondition.notAParkingSign',
+}
+
+/** The line under a value of the arrival_context that isn't signed (yet). */
+const UNSIGNED_CONTEXT_KEYS: Readonly<Record<'pending' | 'rejected' | 'none', string>> = {
+  pending: 'pdf.evidence.signing.pending',
+  rejected: 'pdf.evidence.signing.rejected',
+  none: 'pdf.evidence.signing.none',
+}
+
+/**
+ * The "Sign condition" row (build spec T3 item 6): what the AI made of the
+ * sign in the photo when the record was logged, with its notes on what
+ * stopped the sign being read clearly. Only for records read since T3, so
+ * older records keep their table shape.
+ *
+ * The condition is a signed fact (arrival_context, link 1), so it is read
+ * from the signed payload once that is signed (N2). Until then it comes
+ * from the stored arrival_context (or the record) with "Not signed yet",
+ * or "This part couldn't be signed" when it was refused. The notes are
+ * the model's words in plain characters every PDF font can draw.
+ */
+function signConditionRows(session: ParkingSession, t: TFunction): [string, string][] {
+  const context = arrivalContextView(session)
+  const signed = context.signing === 'signed' || context.signing === 'dev_key'
+  const source = signed || context.data ? context.data : session
+  const status = signStatusOf(source)
+  if (status === null) return []
+  const lines = [t(SIGN_CONDITION_KEYS[status])]
+  const issues = signIssuesOf(source).map(plainNoteText).filter((s) => s.length > 0)
+  if (issues.length > 0) lines.push(t('pdf.evidence.signCondition.notes', { notes: issues.join('; ') }))
+  if (context.signing !== 'signed' && context.signing !== 'dev_key') lines.push(t(UNSIGNED_CONTEXT_KEYS[context.signing]))
+  return [[t('pdf.evidence.field.signCondition'), lines.join('\n')]]
+}
+
+/** The sign rules cell of a no-sign record: why no sign was read. */
+function noSignRulesText(session: ParkingSession, t: TFunction): string {
+  // Logged from the "no readable sign" screen: ParkProof looked and found
+  // none in the photo; the driver didn't say there was no sign (T3).
+  return isNoSignReadRecord(session) ? t('pdf.evidence.noSignRead') : t('pdf.evidence.noSignRules')
+}
+
 function buildGuidance(expiresAt: string | null, timezone: string, t: TFunction): string {
   if (!expiresAt) {
     return t('pdf.evidence.guidanceFreeNoExpiry')
@@ -299,6 +365,9 @@ export function sessionRows(
   const dash = t('pdf.common.dash')
   const location = session.location
   return [
+    // A read-only copy from a share link (T7 item 4) says so first: its
+    // details and signature are the sender's.
+    ...(session.shared_from ? [[t('pdf.shared.field'), t('pdf.shared.madeElsewhere')] as [string, string]] : []),
     [t('pdf.evidence.field.arrivedAt'), evidenceTime(times.arrived_at, timezone)],
     [t('pdf.evidence.field.arrivalSigned'), signingValue(times.arrival_signing, timezone, t)],
     [t('pdf.evidence.field.expiresAt'), times.expires_at ? evidenceTime(times.expires_at, timezone) : dash],
@@ -307,7 +376,15 @@ export function sessionRows(
     // left", so the shape matches records saved before the feature shipped.
     ...endedRows(session, timezone, t),
     ...departureRows(times, timezone, t),
-    [t('pdf.evidence.field.guidance'), buildGuidance(times.expires_at, timezone, t)],
+    // A no-sign record without an expiry has no reading to give guidance
+    // from: "Free to park. No expiry shown on the sign." would be a verdict
+    // about a sign nobody read (T3).
+    [
+      t('pdf.evidence.field.guidance'),
+      session.no_sign && !times.expires_at
+        ? t('pdf.evidence.noSignConfidence')
+        : buildGuidance(times.expires_at, timezone, t),
+    ],
     [t('pdf.evidence.field.address'), location?.address ?? dash],
     [
       // Only a phone GPS fix is labelled GPS; a typed address's map point isn't.
@@ -322,12 +399,214 @@ export function sessionRows(
     [t('pdf.evidence.field.sideVariant'), session.chosen_label || dash],
     [
       t('pdf.evidence.field.signRules'),
-      session.no_sign ? t('pdf.evidence.noSignRules') : splitRules(session.rules ?? ''),
+      session.no_sign ? noSignRulesText(session, t) : splitRules(session.rules ?? ''),
     ],
+    ...signConditionRows(session, t),
     // AI confidence is meaningless on no-sign records; surface that explicitly
     // instead of writing "low" (which is the data default but reads as wrong).
     [t('pdf.evidence.field.aiConfidence'), confidenceText(session, t)],
+    // The proof of payment or permit, the condition photos and the
+    // driver's damage notes (T2), when the record has them.
+    ...evidenceRows(session, t),
+    // Who was driving, as entered on the phone, and the handovers since
+    // (T7 item 7), when the record has them.
+    ...driverRows(session, t),
+    ...handoverRows(session, timezone, t),
   ]
+}
+
+// ─── The driver and handovers (T7) ──────────────────────────────────────────
+
+/**
+ * A name as the PDFs print it: what the driver typed, with arrows, symbols
+ * and emoji (which no PDF font draws) taken out, as sign notes are.
+ */
+function pdfName(name: string | null): string | null {
+  const plain = plainNoteText(name)
+  return plain.length > 0 ? plain : null
+}
+
+/** The mark after a driver's name that isn't signed by ParkProof (N2). */
+const DRIVER_MARK_KEYS: Readonly<Record<RecordDriver['signing'], string | null>> = {
+  signed: null,
+  dev_key: null,
+  pending: 'pdf.evidence.value.notSignedYet',
+  not_signed: 'pdf.evidence.value.notSigned',
+}
+
+/**
+ * The "Driver (entered on the phone, not checked)" row (build spec T7 item
+ * 7): who the record says was driving when the park was logged, read from
+ * the signed arrival details once signed (notice-compare's recordDriver,
+ * the same reading as the notice screen's driver line), with "(not signed
+ * yet)" or "(not signed)" after it otherwise. None when nobody was named,
+ * and none on a shared copy (someone else's record).
+ */
+export function driverRows(session: ParkingSession, t: TFunction): [string, string][] {
+  const driver = recordDriver(session)
+  const name = driver ? pdfName(driver.name) : null
+  if (!driver || !name) return []
+  const mark = DRIVER_MARK_KEYS[driver.signing]
+  return [[t('pdf.evidence.field.driver'), mark ? `${name} ${t(mark)}` : name]]
+}
+
+/** A handover's signing, in the shape the "signed by ParkProof (server clock)" rows take. */
+function handoverSigning(part: HandoverPart): ArrivalSigning {
+  switch (part.state) {
+    case 'signed':
+      return { state: 'signed', signed_at: part.signed_at }
+    case 'dev_key':
+      return { state: 'dev_key', signed_at: part.signed_at }
+    case 'rejected':
+      return { state: 'rejected' }
+    default:
+      return { state: 'pending' }
+  }
+}
+
+/**
+ * The handover section (build spec T7 item 7): for each handover, oldest
+ * first, who the driver said handed the car to whom and when they entered
+ * it (phone clock), then ParkProof's signing time for that part (server
+ * clock), "Not signed yet", or "This part couldn't be signed". Signed
+ * values are read from the signed payload (N2). Empty without handovers.
+ */
+export function handoverRows(session: ParkingSession, timezone: string, t: TFunction): [string, string][] {
+  const rows: [string, string][] = []
+  for (const part of handoverParts(session)) {
+    const to = pdfName(part.to_driver) ?? t('pdf.common.dash')
+    const from = pdfName(part.from_driver)
+    const time = evidenceTime(part.handed_over_at, timezone)
+    rows.push([
+      t('pdf.evidence.field.handover'),
+      from
+        ? t('pdf.evidence.value.handoverFromTo', { from_driver: from, to_driver: to, time })
+        : t('pdf.evidence.value.handoverTo', { to_driver: to, time }),
+    ])
+    rows.push([t('pdf.evidence.field.handoverSigned'), signingValue(handoverSigning(part), timezone, t)])
+  }
+  return rows
+}
+
+// ─── Condition and proof photos (T2) ────────────────────────────────────────
+
+/** The proof photo types as the PDF prints them: PDF-only twins of complianceType.*, never printed raw. */
+export const PDF_COMPLIANCE_KEYS: Readonly<Record<ComplianceType, string>> = {
+  meter_ticket: 'pdf.complianceType.meterTicket',
+  payment_confirmation: 'pdf.complianceType.paymentConfirmation',
+  permit_displayed: 'pdf.complianceType.permitDisplayed',
+  other: 'pdf.complianceType.other',
+}
+
+/** The grid's tile names as the PDF prints them (PDF-only twins of photoGrid.*). */
+export const PDF_ANGLE_KEYS: Readonly<Record<Angle, string>> = {
+  front: 'pdf.photos.role.front',
+  rear: 'pdf.photos.role.rear',
+  left: 'pdf.photos.role.left',
+  right: 'pdf.photos.role.right',
+  detail: 'pdf.photos.role.detail',
+}
+
+/** The angle of a condition or return role ('condition-front' is 'front'), or null. */
+export function angleOf(role: PhotoRole): Angle | null {
+  const angle = role.slice(role.indexOf('-') + 1) as Angle
+  return role.includes('-') && ANGLES.includes(angle) ? angle : null
+}
+
+/** What the driver said a proof photo shows, labelled as the driver's description. */
+function complianceText(photo: Pick<EvidencePhoto, 'compliance_type'>, t: TFunction): string {
+  return photo.compliance_type
+    ? t('pdf.evidence.value.complianceDescribed', { type: t(PDF_COMPLIANCE_KEYS[photo.compliance_type]) })
+    : t('pdf.evidence.value.complianceNoType')
+}
+
+/** A row value with "(not signed yet)" or "(this part couldn't be signed)" after it, unless signed. */
+function withSigningMark(text: string, state: PhotoSigning['state'], t: TFunction): string {
+  if (state === 'signed' || state === 'dev_key') return text
+  const mark =
+    state === 'rejected'
+      ? 'pdf.evidence.value.partRejected'
+      : state === 'pending'
+        ? 'pdf.evidence.value.notSignedYet'
+        : 'pdf.evidence.value.notSigned'
+  return `${text} ${t(mark)}`
+}
+
+/**
+ * The T2 rows of the evidence table: what the proof photo shows (the
+ * driver's description, from the signed part when signed), how many
+ * condition photos there are when parked and on return, and the driver's
+ * damage notes in their own words. Values not signed yet say so, as do
+ * values in a refused part or in no part at all. Empty when the record has
+ * none of these.
+ */
+export function evidenceRows(session: ParkingSession, t: TFunction): [string, string][] {
+  const photos = evidencePhotos(session)
+  const rows: [string, string][] = []
+  const proof = photos.filter((p) => p.group === 'compliance')
+  if (proof.length > 0) {
+    rows.push([
+      t('pdf.evidence.field.proof'),
+      proof.map((p) => withSigningMark(complianceText(p, t), p.signing.state, t)).join('\n'),
+    ])
+  }
+  const parking = photos.filter((p) => p.group === 'parking').length
+  const returned = photos.filter((p) => p.group === 'return').length
+  if (parking > 0 || returned > 0) {
+    rows.push([t('pdf.evidence.field.conditionPhotos'), t('pdf.evidence.value.conditionCounts', { parking, returned })])
+  }
+  const notes = conditionNotes(session)
+  if (notes.length > 0) {
+    rows.push([
+      t('pdf.evidence.field.damageNote'),
+      notes
+        .map((n) =>
+          withSigningMark(
+            t(n.when === 'return' ? 'pdf.evidence.value.noteOnReturn' : 'pdf.evidence.value.noteWhenParked', { note: n.note }),
+            n.state,
+            t,
+          ),
+        )
+        .join('\n'),
+    ])
+  }
+  return rows
+}
+
+/**
+ * The condition photos side by side (pure): one row per angle in grid
+ * order, the photo taken when parked on the left and the one taken on
+ * return on the right, so a reader compares like with like. A side with
+ * no photo of that angle is null. A second photo of one angle (added
+ * after saving) gets its own row.
+ */
+export function pairConditionPhotos<T extends { ref: { role: PhotoRole } }>(
+  parking: readonly T[],
+  returned: readonly T[],
+): Array<[T | null, T | null]> {
+  const rows: Array<[T | null, T | null]> = []
+  for (const angle of ANGLES) {
+    const left = parking.filter((p) => angleOf(p.ref.role) === angle)
+    const right = returned.filter((p) => angleOf(p.ref.role) === angle)
+    for (let i = 0; i < Math.max(left.length, right.length); i++) rows.push([left[i] ?? null, right[i] ?? null])
+  }
+  return rows
+}
+
+/** Where a photo's fingerprint stands, for the line under it. */
+function photoSigningText(signing: PhotoSigning, timezone: string, t: TFunction): string {
+  switch (signing.state) {
+    case 'signed':
+      return t('pdf.photos.signedAt', { time: signing.signed_at ? evidenceTime(signing.signed_at, timezone) : t('pdf.common.dash') })
+    case 'dev_key':
+      return t('pdf.photos.devKey', { time: signing.signed_at ? evidenceTime(signing.signed_at, timezone) : t('pdf.common.dash') })
+    case 'pending':
+      return t('pdf.photos.notSignedYet')
+    case 'rejected':
+      return t('pdf.photos.rejected')
+    default:
+      return t('pdf.photos.notSigned')
+  }
 }
 
 // ─── Cross-device photo materialization ────────────────────────────────────
@@ -393,6 +672,12 @@ export function missingPhotoText(marker: { sha256: string; signed: boolean }, t:
  *
  * Only the photos the PDF draws are materialised (`pdfPhotoRoles`); the
  * other photo fields of the copy are left as they are.
+ *
+ * The condition and proof photos (T2) have no legacy field: their bytes
+ * (or a `missingPhotoMarker`) are kept for the copy by fingerprint, where
+ * drawSessionBlock finds them (`pdfEvidencePhotoSrc`). Read from the photo
+ * store, else the signed-in driver's cloud copy (checked against the
+ * fingerprint), through the same limiter.
  */
 export async function materializeRemotePhotos(
   session: ParkingSession,
@@ -400,8 +685,23 @@ export async function materializeRemotePhotos(
   limit: Limiter = createLimiter(PDF_PHOTO_CONCURRENCY),
 ): Promise<ParkingSession> {
   const out: ParkingSession = { ...session }
-  await Promise.all(
-    pdfPhotoRoles(session, kind).map((role) =>
+  const evidenceBytes = new Map<string, string>()
+  evidencePhotoBytes.set(out, evidenceBytes)
+  await Promise.all([
+    ...pdfEvidencePhotos(session, kind).map((photo) =>
+      limit(async () => {
+        const sha256 = photo.ref.sha256
+        let src: string | null = null
+        try {
+          src = await getPhoto(session.id, sha256)
+        } catch (err) {
+          console.warn('[pdf] could not read a condition or proof photo:', err)
+        }
+        if (!src && !session.shared_from) src = await fetchRemotePhoto(session.id, sha256)
+        evidenceBytes.set(sha256, src ?? missingPhotoMarker(sha256, photoHashSigned(session, sha256)))
+      }),
+    ),
+    ...pdfPhotoRoles(session, kind).map((role) =>
       limit(async () => {
         const field = legacyPhotoField(role)
         const photo = await resolveSessionPhoto(session, role)
@@ -435,8 +735,33 @@ export async function materializeRemotePhotos(
         }
       }),
     ),
-  )
+  ])
   return out
+}
+
+/**
+ * The condition and proof photos' bytes for one PDF copy, by fingerprint
+ * (a data URL or a missingPhotoMarker). Set by materializeRemotePhotos on
+ * the copy it returns; never stored on a record.
+ */
+const evidencePhotoBytes = new WeakMap<ParkingSession, ReadonlyMap<string, string>>()
+
+/**
+ * What the PDF draws for a condition or proof photo: its bytes when
+ * materializeRemotePhotos found them for this copy, otherwise the "not on
+ * the device that made this PDF" line with its fingerprint.
+ */
+export function pdfEvidencePhotoSrc(session: ParkingSession, sha256: string): string {
+  return evidencePhotoBytes.get(session)?.get(sha256) ?? missingPhotoMarker(sha256, photoHashSigned(session, sha256))
+}
+
+/**
+ * The condition and proof photos a PDF draws for a record (T2): every one
+ * the record screen lists, the same for every kind of PDF.
+ */
+export function pdfEvidencePhotos(session: ParkingSession, kind: PdfKind): EvidencePhoto[] {
+  void kind
+  return evidencePhotos(session)
 }
 
 /** Which PDF a session's photos are being materialised for. */
@@ -472,7 +797,9 @@ export async function materializeRemotePhotosBatch(
 }
 
 // ─── PDF layout helpers ─────────────────────────────────────────────────────
-function ensureSpace(doc: jsPDF, y: number, needed: number): number {
+// Exported for the workday PDF (pdf-workday.ts), which lays its pages out
+// with the same helpers.
+export function ensureSpace(doc: jsPDF, y: number, needed: number): number {
   const pageHeight = doc.internal.pageSize.getHeight()
   if (y + needed > pageHeight - MARGIN) {
     doc.addPage()
@@ -481,12 +808,12 @@ function ensureSpace(doc: jsPDF, y: number, needed: number): number {
   return y
 }
 
-function contentWidth(doc: jsPDF): number {
+export function contentWidth(doc: jsPDF): number {
   return doc.internal.pageSize.getWidth() - 2 * MARGIN
 }
 
 /** Wrapped text, a line at a time so it can run onto the next page. Returns the y below it. */
-function drawWrapped(
+export function drawWrapped(
   doc: jsPDF,
   text: string,
   y: number,
@@ -504,8 +831,15 @@ function drawWrapped(
   return y
 }
 
-/** jsPDF's built-in fonts (courier, helvetica) draw WinAnsi (cp1252) characters only. */
-const WIN_ANSI_EXTRA = new Set(Array.from('€‚ƒ„…†‡ˆ‰Š‹ŒŽ‘’“”•–—˜™š›œžŸ', (c) => c.codePointAt(0)!))
+/**
+ * jsPDF's built-in fonts (courier, helvetica) draw WinAnsi (cp1252) characters only.
+ * The printable cp1252 characters in 0x80 to 0x9F, as code points (the
+ * table includes U+2014, which the copy lint bans from string literals).
+ */
+const WIN_ANSI_EXTRA = new Set([
+  0x20ac, 0x201a, 0x0192, 0x201e, 0x2026, 0x2020, 0x2021, 0x02c6, 0x2030, 0x0160, 0x2039, 0x0152, 0x017d, 0x2018,
+  0x2019, 0x201c, 0x201d, 0x2022, 0x2013, 0x2014, 0x02dc, 0x2122, 0x0161, 0x203a, 0x0153, 0x017e, 0x0178,
+])
 
 /** Can courier draw every character of `text`? (Printable ASCII, Latin-1 and the cp1252 extras.) */
 export function isWinAnsiText(text: string): boolean {
@@ -522,7 +856,7 @@ export function isWinAnsiText(text: string): boolean {
  * `font` replaces courier for text courier can't draw (a readable payload
  * with a non-Latin address, say); base64 and commands always use courier.
  */
-function drawMono(doc: jsPDF, text: string, y: number, size = 7, lineHeight = 9, font = 'courier'): number {
+export function drawMono(doc: jsPDF, text: string, y: number, size = 7, lineHeight = 9, font = 'courier'): number {
   doc.setFont(font, 'normal')
   doc.setFontSize(size)
   for (const line of doc.splitTextToSize(text, contentWidth(doc)) as string[]) {
@@ -533,7 +867,7 @@ function drawMono(doc: jsPDF, text: string, y: number, size = 7, lineHeight = 9,
   return y
 }
 
-function lastTableY(doc: jsPDF, fallback: number): number {
+export function lastTableY(doc: jsPDF, fallback: number): number {
   const lastTable = (doc as unknown as { lastAutoTable?: { finalY: number } }).lastAutoTable
   return lastTable?.finalY ?? fallback
 }
@@ -655,6 +989,202 @@ function addImageFitted(
   }
 }
 
+// ─── The photo grid (T2) ────────────────────────────────────────────────────
+
+/** One photo in a grid. */
+export interface GridCell {
+  /** A data URL, or a missingPhotoMarker (drawn as the "not on this device" line). */
+  src: string
+  /** Lines under the photo, in the locale's font. The first (the photo's name) is bold. */
+  caption: string[]
+  /** The photo's full SHA-256, drawn in courier under the caption. Left out under a missing photo, whose line has it. */
+  fingerprint?: string
+}
+
+export interface ImageGridOptions {
+  /** The grid's left edge and width: the cells share [x, x + width]. */
+  x: number
+  width: number
+  columns: number
+  /** Tallest a photo may be drawn, in points. */
+  cellMaxHeight: number
+  font: string
+  t: TFunction
+  /** Space between cells and rows. Default 12. */
+  gap?: number
+  /** A heading drawn above the grid, kept on the page of its first row. */
+  title?: string
+  /** One heading per column, above the first row and again at the top of each later page. */
+  headings?: readonly string[]
+}
+
+const GRID_CAPTION_SIZE = 7.5
+const GRID_CAPTION_LINE = 9.5
+// 5.5 pt courier fits "SHA-256 " and the 64 hex digits on one line of a half-page cell.
+const GRID_FINGERPRINT_SIZE = 5.5
+const GRID_FINGERPRINT_LINE = 7.5
+const GRID_MISSING_SIZE = 8
+const GRID_MISSING_LINE = 10
+const GRID_HEADING_LINE = 14
+const GRID_TITLE_LINE = 16
+
+interface PlannedCell {
+  cell: GridCell
+  kind: 'image' | 'missing' | 'failed'
+  w: number
+  h: number
+  missingLines: string[]
+  captionLines: string[][]
+  fingerprintLines: string[]
+  height: number
+}
+
+/** Measure a cell for a column `cellW` wide (sets the fonts it measures with). */
+function planCell(doc: jsPDF, cell: GridCell, cellW: number, maxH: number, font: string, t: TFunction): PlannedCell {
+  const missing = parseMissingPhotoMarker(cell.src)
+  let kind: PlannedCell['kind'] = 'image'
+  let w = 0
+  let h: number
+  let missingLines: string[] = []
+  if (missing) {
+    kind = 'missing'
+    doc.setFont(font, 'italic')
+    doc.setFontSize(GRID_MISSING_SIZE)
+    missingLines = doc.splitTextToSize(missingPhotoText(missing, t), cellW) as string[]
+    h = missingLines.length * GRID_MISSING_LINE + 4
+  } else {
+    try {
+      const props = doc.getImageProperties(cell.src)
+      const ratio = Math.min(cellW / props.width, maxH / props.height)
+      w = props.width * ratio
+      h = props.height * ratio
+    } catch {
+      kind = 'failed'
+      h = 14
+    }
+  }
+  const captionLines = cell.caption.map((line, i) => {
+    doc.setFont(font, i === 0 ? 'bold' : 'normal')
+    doc.setFontSize(GRID_CAPTION_SIZE)
+    return doc.splitTextToSize(line, cellW) as string[]
+  })
+  doc.setFont('courier', 'normal')
+  doc.setFontSize(GRID_FINGERPRINT_SIZE)
+  const fingerprintLines =
+    cell.fingerprint && !missing ? (doc.splitTextToSize(`SHA-256 ${cell.fingerprint}`, cellW) as string[]) : []
+  const captionCount = captionLines.reduce((n, lines) => n + lines.length, 0)
+  const height = h + 6 + captionCount * GRID_CAPTION_LINE + fingerprintLines.length * GRID_FINGERPRINT_LINE
+  return { cell, kind, w, h, missingLines, captionLines, fingerprintLines, height }
+}
+
+/** Draw a measured cell with its top-left at (x, y). */
+function drawCell(doc: jsPDF, plan: PlannedCell, x: number, y: number, font: string, t: TFunction): void {
+  if (plan.kind === 'image') {
+    try {
+      doc.addImage(plan.cell.src, 'JPEG', x, y, plan.w, plan.h)
+    } catch {
+      doc.setFont(font, 'italic')
+      doc.setFontSize(GRID_MISSING_SIZE)
+      doc.text(t('pdf.common.imageEmbedFailed'), x, y + 10)
+    }
+  } else if (plan.kind === 'missing') {
+    doc.setFont(font, 'italic')
+    doc.setFontSize(GRID_MISSING_SIZE)
+    doc.setTextColor(80)
+    plan.missingLines.forEach((line, i) => doc.text(line, x, y + 9 + i * GRID_MISSING_LINE))
+  } else {
+    doc.setFont(font, 'italic')
+    doc.setFontSize(GRID_MISSING_SIZE)
+    doc.setTextColor(80)
+    doc.text(t('pdf.common.imageEmbedFailed'), x, y + 10)
+  }
+  let ty = y + plan.h + 6 + GRID_CAPTION_SIZE
+  plan.captionLines.forEach((lines, i) => {
+    doc.setFont(font, i === 0 ? 'bold' : 'normal')
+    doc.setFontSize(GRID_CAPTION_SIZE)
+    doc.setTextColor(i === 0 ? 15 : 60, i === 0 ? 23 : 60, i === 0 ? 42 : 60)
+    for (const line of lines) {
+      doc.text(line, x, ty)
+      ty += GRID_CAPTION_LINE
+    }
+  })
+  doc.setFont('courier', 'normal')
+  doc.setFontSize(GRID_FINGERPRINT_SIZE)
+  doc.setTextColor(90)
+  for (const line of plan.fingerprintLines) {
+    doc.text(line, x, ty - 1)
+    ty += GRID_FINGERPRINT_LINE
+  }
+  doc.setTextColor(15, 23, 42)
+}
+
+/**
+ * Lay photos out in a grid inside [x, x + width] (T2): `columns` cells a
+ * row, each photo fitted to its cell with its caption and full SHA-256
+ * fingerprint under it. A null cell stays empty (side by side, a photo
+ * from parking with no return photo of that angle). A row never splits
+ * across pages; the title stays with the first row and the column
+ * headings repeat on each new page. Returns the y below the grid.
+ */
+export function addImageGrid(
+  doc: jsPDF,
+  cells: ReadonlyArray<GridCell | null>,
+  y: number,
+  options: ImageGridOptions,
+): number {
+  const { x, width, font, t } = options
+  const columns = Math.max(1, Math.floor(options.columns))
+  const gap = options.gap ?? 12
+  const cellW = (width - gap * (columns - 1)) / columns
+  const pageHeight = doc.internal.pageSize.getHeight()
+  const headings = options.headings ?? []
+  const headingHeight = headings.length > 0 ? GRID_HEADING_LINE : 0
+
+  const drawHeadings = () => {
+    if (headings.length === 0) return
+    doc.setFont(font, 'bold')
+    doc.setFontSize(9)
+    doc.setTextColor(45, 55, 79)
+    headings.forEach((heading, i) => {
+      if (i >= columns || !heading) return
+      const line = (doc.splitTextToSize(heading, cellW) as string[])[0] ?? ''
+      doc.text(line, x + i * (cellW + gap), y + 9)
+    })
+    doc.setTextColor(15, 23, 42)
+    y += headingHeight
+  }
+
+  let first = true
+  for (let start = 0; start < cells.length; start += columns) {
+    const row = cells.slice(start, start + columns).map((cell) =>
+      cell ? planCell(doc, cell, cellW, options.cellMaxHeight, font, t) : null,
+    )
+    if (row.every((c) => c === null)) continue
+    const rowHeight = Math.max(...row.map((c) => (c ? c.height : 0)))
+    const lead = first ? (options.title ? GRID_TITLE_LINE : 0) + headingHeight : 0
+    let newPage = false
+    if (y + lead + rowHeight > pageHeight - MARGIN) {
+      doc.addPage()
+      y = MARGIN
+      newPage = true
+    }
+    if (first && options.title) {
+      doc.setFont(font, 'bold')
+      doc.setFontSize(13)
+      doc.setTextColor(15, 23, 42)
+      doc.text(options.title, x, y + 10)
+      y += GRID_TITLE_LINE
+    }
+    if (first || newPage) drawHeadings()
+    row.forEach((plan, i) => {
+      if (plan) drawCell(doc, plan, x + i * (cellW + gap), y, font, t)
+    })
+    y += rowHeight + gap
+    first = false
+  }
+  return y
+}
+
 // ─── The record block (all three PDFs) ──────────────────────────────────────
 
 const GPS_NOTICE_TITLE_Y = 18
@@ -688,9 +1218,10 @@ export interface SessionBlockOptions {
 
 /**
  * One record as every PDF draws it (build spec T1b): the sessionRows table,
- * the sign photo (or the surroundings photo of a no-sign record), the car
- * photo with its caption, the low-accuracy GPS notice and the driver's
- * note. Returns the y below it. New record sections (later tasks) go here,
+ * the sign photo (or the surroundings photo of a no-sign record), the
+ * proof of payment or permit (T2), the car photo with its caption, the
+ * condition photos when parked and on return side by side (T2), the
+ * low-accuracy GPS notice and the driver's note. Returns the y below it. New record sections (later tasks) go here,
  * before the closing statement that each PDF draws after the block.
  */
 export function drawSessionBlock(
@@ -747,6 +1278,10 @@ export function drawSessionBlock(
         doc.setFontSize(9)
         doc.setFont(font, 'italic')
         doc.setTextColor(80)
+        // Also for a record logged from the "no readable sign" screen: the
+        // caption attributes the photo to the driver and says it doesn't
+        // show there was no sign nearby; the sign rules cell says no sign
+        // was read (T3).
         doc.text(t('pdf.evidence.ambientPhotoCaption'), MARGIN, y, { maxWidth: width })
         doc.setTextColor(20)
         y += 18
@@ -766,6 +1301,37 @@ export function drawSessionBlock(
     y = addImageFitted(doc, session.sign_photo, y, t, font, photoMaxHeight) + (compact ? 14 : 18)
   }
 
+  // T2: the photos of the car's condition and the proof of payment or
+  // permit, each with when it was added (phone clock), whether its
+  // fingerprint is signed, and its full SHA-256.
+  const evidence = pdfEvidencePhotos(session, 'evidence')
+  // Three rows of two fit on an A4 page with the title and headings.
+  const gridMaxHeight = compact ? 130 : 160
+  const cellFor = (photo: EvidencePhoto, label: string): GridCell => {
+    const caption = [label, t('pdf.photos.added', { time: evidenceTime(photo.ref.captured_at, timezone) })]
+    if (photo.ref.source === 'library') caption.push(t('pdf.photos.library'))
+    caption.push(photoSigningText(photo.signing, timezone, t))
+    return { src: pdfEvidencePhotoSrc(session, photo.ref.sha256), caption, fingerprint: photo.ref.sha256 }
+  }
+  const angleLabel = (photo: EvidencePhoto) => {
+    const angle = angleOf(photo.ref.role)
+    return angle ? t(PDF_ANGLE_KEYS[angle]) : ''
+  }
+
+  // The proof of payment or permit comes straight after the sign photo.
+  const proof = evidence.filter((p) => p.group === 'compliance')
+  if (proof.length > 0) {
+    y = addImageGrid(doc, proof.map((p) => cellFor(p, complianceText(p, t))), y, {
+      x: MARGIN,
+      width,
+      columns: 2,
+      cellMaxHeight: gridMaxHeight,
+      font,
+      t,
+      title: t('pdf.photos.complianceHeader'),
+    }) + (compact ? 4 : 8)
+  }
+
   // Car photo with caption overlay: the address (or the point) and the
   // record's logged time, by the phone's clock.
   if (session.car_photo) {
@@ -778,6 +1344,37 @@ export function drawSessionBlock(
     }
     caption.push(t('pdf.evidence.carPhotoCaptionTime', { time: evidenceTime(times.arrived_at, timezone) }))
     y = addImageWithOverlayCaption(doc, session.car_photo, y, caption, t, font, photoMaxHeight) + (compact ? 14 : 18)
+  }
+
+  // The car's condition: when parked on the left and on return on the
+  // right, one row per angle, so a reader compares like with like.
+  const parking = evidence.filter((p) => p.group === 'parking')
+  const returned = evidence.filter((p) => p.group === 'return')
+  if (parking.length > 0 || returned.length > 0) {
+    const both = parking.length > 0 && returned.length > 0
+    const cells: Array<GridCell | null> = both
+      ? pairConditionPhotos(parking, returned).flatMap(([left, right]) => [
+          left ? cellFor(left, angleLabel(left)) : null,
+          right ? cellFor(right, angleLabel(right)) : null,
+        ])
+      : (parking.length > 0 ? parking : returned).map((p) => cellFor(p, angleLabel(p)))
+    const headings = both
+      ? [t('pdf.photos.whenParked'), t('pdf.photos.onReturn')]
+      : [t(parking.length > 0 ? 'pdf.photos.whenParked' : 'pdf.photos.onReturn')]
+    y = addImageGrid(doc, cells, y, {
+      x: MARGIN,
+      width,
+      columns: 2,
+      cellMaxHeight: gridMaxHeight,
+      font,
+      t,
+      title: t('pdf.photos.conditionHeader'),
+      headings,
+    })
+    // What a signed photo does and doesn't show (T2 item 11).
+    doc.setTextColor(80)
+    y = drawWrapped(doc, t('pdf.photos.signedNote'), y, { font, style: 'italic', size: 8.5, lineHeight: 11 }) + (compact ? 10 : 14)
+    doc.setTextColor(15, 23, 42)
   }
 
   // Low-accuracy GPS notice (when relevant). The box grows with the body,
@@ -828,7 +1425,7 @@ export function drawSessionBlock(
  * old one it advances y, but new record sections still go before it, in
  * drawSessionBlock.
  */
-function drawStatement(doc: jsPDF, y: number, t: TFunction, font: string): number {
+export function drawStatement(doc: jsPDF, y: number, t: TFunction, font: string): number {
   y = ensureSpace(doc, y, 60)
   doc.setTextColor(80)
   y = drawWrapped(doc, t('pdf.evidence.statement'), y, { font, style: 'italic', size: 10, lineHeight: 12 })
@@ -876,39 +1473,10 @@ export function downloadPdf(
   doc.save(`parkproof-${session.id.slice(0, 8)}.pdf`)
 }
 
-/**
- * A signature bundle is "valid enough to render" if every field the appendix
- * actually reads is present and a string. We don't verify cryptographically
- * here — the PDF surfaces the raw bytes for an external `openssl dgst` check.
- */
-function isValidSignature(sig: unknown): sig is SignatureBundle {
-  if (!sig || typeof sig !== 'object') return false
-  const s = sig as Record<string, unknown>
-  const required = [
-    'schema',
-    'signed_at',
-    'algorithm',
-    'key_alias',
-    'canonical_payload',
-    'signature_base64',
-  ] as const
-  return required.every((k) => typeof s[k] === 'string' && (s[k] as string).length > 0)
-}
+/** A signature bundle is complete enough to render (signed-links.ts). */
+const isValidSignature = isCompleteBundle
 
-/**
- * Base64 of the UTF-8 bytes of a string. The verifier decodes this with
- * `base64 -d`, which ignores the line wrapping the PDF introduces, so they
- * reconstruct the EXACT signed bytes (no stray trailing newline, no re-wrapped
- * whitespace). These bytes match what the Lambda hashed: Node's
- * `createHash('sha256').update(canonical_payload)` encodes the string as UTF-8,
- * and TextEncoder here produces the same UTF-8 byte sequence.
- */
-export function base64Utf8(s: string): string {
-  const bytes = new TextEncoder().encode(s)
-  let bin = ''
-  for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i])
-  return btoa(bin)
-}
+export { base64Utf8 }
 
 /**
  * The line that opens the signature appendix when the bundle was signed by
@@ -940,93 +1508,24 @@ export const PDF_KIND_KEYS: Readonly<Record<ChainLinkKind, string>> = {
   handover: 'pdf.signature.kind.handover',
 }
 
-/** One signed link of a record, as the appendix prints it. */
-export interface AppendixLink {
-  /** "0", "1", "2a": the link's name in its heading, its file names and the chain step. */
-  name: string
-  /** 0 for link 0 (the arrival), the signed seq for an addendum. */
-  seq: number
-  kind: ChainLinkKind
-  bundle: SignatureBundle
-  /** Another signed link has the same seq: two devices each added a part there. */
-  forked: boolean
-  /** The names of the links at seq - 1, one of which is this link's parent. Empty for link 0. */
-  parents: string[]
-}
+/** One signed link of a record, as the appendix prints it (signed-links.ts). */
+export type AppendixLink = SignedLink
 
 /** The file names a link's blocks are saved as (spec T1b: link0-payload.b64, link1-payload.b64 ...). */
-export function appendixFileNames(name: string): { payloadB64: string; payloadTxt: string; sigB64: string; sigBin: string } {
-  return {
-    payloadB64: `link${name}-payload.b64`,
-    payloadTxt: `link${name}-payload.txt`,
-    sigB64: `link${name}-sig.b64`,
-    sigBin: `link${name}-sig.bin`,
-  }
-}
-
-function payloadSeq(bundle: SignatureBundle): number | null {
-  try {
-    const p = JSON.parse(bundle.canonical_payload) as { seq?: unknown }
-    return typeof p?.seq === 'number' && Number.isInteger(p.seq) ? p.seq : null
-  } catch {
-    return null
-  }
-}
+export const appendixFileNames = linkFileNames
 
 /**
- * The links the appendix prints (pure): link 0 when the record's own arrival
- * bundle is complete, then every signed addendum with a complete bundle, by
- * seq (the signed one), then signing time. A second stored copy of the same
- * signed link is printed once. Pending and refused parts have no signature
- * and aren't printed; a shared copy's sender bundle is left to the shared
- * view (T7). Two signed links at one seq are a fork: both are printed, as
- * "2a" and "2b".
+ * The links the appendix prints: link 0 when the record's own arrival
+ * bundle is complete, then every signed addendum by its signed seq. Two
+ * signed links at one seq are a fork, printed as "2a" and "2b". The same
+ * list the evidence file carries (`signedLinks`).
  */
 export function appendixLinks(session: ParkingSession): AppendixLink[] {
-  if (session.shared_from) return []
-  type Entry = { seq: number; kind: ChainLinkKind; bundle: SignatureBundle; at: string; id: string }
-  const entries: Entry[] = []
-  if (isValidSignature(session.signature)) {
-    entries.push({ seq: 0, kind: 'arrival', bundle: session.signature, at: '', id: '' })
-  }
-  const seen = new Set<string>()
-  for (const a of Array.isArray(session.addenda) ? session.addenda : []) {
-    if (!a || typeof a !== 'object' || typeof a.id !== 'string' || !isValidSignature(a.bundle)) continue
-    // A kind no screen knows (garbled data) has no heading to print.
-    if (!Object.prototype.hasOwnProperty.call(PDF_KIND_KEYS, a.kind) || (a.kind as string) === 'arrival') continue
-    const key = `${a.id}\u0000${a.bundle.signature_base64}`
-    if (seen.has(key)) continue
-    seen.add(key)
-    const seq = payloadSeq(a.bundle) ?? a.seq
-    if (!Number.isInteger(seq) || seq < 1) continue
-    entries.push({ seq, kind: a.kind, bundle: a.bundle, at: signedTimeOf(a.bundle) ?? '', id: a.id })
-  }
-  entries.sort((x, y) => x.seq - y.seq || x.at.localeCompare(y.at) || x.id.localeCompare(y.id))
-
-  const perSeq = new Map<number, number>()
-  for (const e of entries) perSeq.set(e.seq, (perSeq.get(e.seq) ?? 0) + 1)
-  const used = new Map<number, number>()
-  const links: AppendixLink[] = entries.map((e) => {
-    const count = perSeq.get(e.seq) ?? 1
-    const index = used.get(e.seq) ?? 0
-    used.set(e.seq, index + 1)
-    return {
-      name: count > 1 ? `${e.seq}${String.fromCharCode(97 + index)}` : String(e.seq),
-      seq: e.seq,
-      kind: e.kind,
-      bundle: e.bundle,
-      forked: count > 1,
-      parents: [],
-    }
-  })
-  for (const link of links) {
-    if (link.seq > 0) link.parents = links.filter((p) => p.seq === link.seq - 1).map((p) => p.name)
-  }
-  return links
+  return signedLinks(session)
 }
 
 /** The appendix, or nothing; a failure is logged and the rest of the PDF still saves. */
-function drawAppendixSafely(
+export function drawAppendixSafely(
   doc: jsPDF,
   session: ParkingSession,
   t: TFunction,
@@ -1054,7 +1553,8 @@ function drawAppendixSafely(
  * each with its heading, ParkProof's signing time, its payload (as text and
  * as base64, saved as linkN-payload.b64) and its signature (linkN-sig.b64),
  * then the openssl steps for link 0, the "repeat for each link" line, the
- * photo step and the chain step (`openssl dgst -sha256 link0-payload.txt`
+ * photo step (re-hash an original photo from the evidence file, T2), the
+ * chain step and the Windows alternative (certutil) (`openssl dgst -sha256 link0-payload.txt`
  * prints the hex that must equal `parent_payload_sha256` in link 1; the
  * spec's `sha256sum` prints the same value but isn't on Windows or macOS). Starts on a new page; draws nothing
  * when the record has no signed link.
@@ -1196,9 +1696,13 @@ export function drawSignatureAppendix(
   step(t('pdf.signature.verifyStep6'))
   if (links.length > 1) step(t('pdf.signature.verifyRepeat'))
   // Step 7, the photo re-hash check: the openssl check alone does NOT show
-  // the embedded images match their signed hashes.
+  // the embedded images match their signed hashes. The originals are in the
+  // record's evidence file (T2), one bytes_base64 value per photo.
   y += 2
   step(t('pdf.signature.verifyStep7'))
+  command(`   base64 -d ${PHOTO_FILES.b64} > ${PHOTO_FILES.jpg}`)
+  command(`   openssl dgst -sha256 ${PHOTO_FILES.jpg}`)
+  step(t('pdf.signature.verifyPhotoMatch'))
 
   // Step 8, the chain: each link names the payload of the one before it.
   const children = links.filter((l) => l.parents.length > 0)
@@ -1221,7 +1725,20 @@ export function drawSignatureAppendix(
         ) + 4
     }
   }
+
+  // Windows: cmd and PowerShell have no base64 -d (fix list, Tier 3).
+  // certutil, built into Windows, decodes base64 and hashes files.
+  y += 2
+  y = ensureSpace(doc, y, 60)
+  step(t('pdf.signature.verifyWindows'))
+  command(`   certutil -decode ${zero.payloadB64} ${zero.payloadTxt}`)
+  command(`   certutil -decode ${zero.sigB64} ${zero.sigBin}`)
+  command(`   certutil -decode ${PHOTO_FILES.b64} ${PHOTO_FILES.jpg}`)
+  command(`   certutil -hashfile ${PHOTO_FILES.jpg} SHA256`)
 }
+
+/** The file names the photo step uses for one photo from the evidence file. */
+export const PHOTO_FILES = { b64: 'photo1.b64', jpg: 'photo1.jpg' } as const
 
 // ─── Appeal letter PDF ──────────────────────────────────────────────────────
 export function downloadAppealPdf(params: {

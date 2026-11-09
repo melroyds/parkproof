@@ -1,7 +1,7 @@
 import type { ParkingSession, SignatureBundle } from '../types'
 import { EVIDENCE_V2_SCHEMA, HEX64_RE } from '../../lambda/addendum-schema.js'
 import { getIdToken } from './auth'
-import { getSession, loadSessions, mergeCloudEvidence, updateSession } from './storage'
+import { getSession, loadSessions, mergeCloudEvidence, scheduleRecordsChanged, updateSession } from './storage'
 import { getPhotoBytes, putPhoto } from './photo-store'
 import { hashDataUrlImage, sha256HexUtf8 } from './hash'
 import {
@@ -99,25 +99,112 @@ function tokenSubject(token: string | null): string | null {
 
 // ─── Delete tombstones ─────────────────────────────────────────────────────
 // A fire-and-forget photo/metadata upload that is already in flight can land
-// AFTER a /sessions/delete and resurrect the row the user just erased. We hold
-// a short-lived set of recently-deleted ids; uploadSession consults it both at
-// entry and right before the metadata write, so an upload that overlaps a
-// delete is dropped instead of re-creating the session in the cloud.
-const recentlyDeleted = new Map<string, number>()
-const DELETE_TOMBSTONE_MS = 30_000
+// AFTER a /sessions/delete and resurrect the row the user just erased, and a
+// /sessions/list that was answered before the delete reached the server
+// still lists the row. Both are decided by the order of events, not by how
+// long ago the delete was: a weak signal or a suspended app can hold a
+// listing or an upload for minutes, so any fixed age would let one through.
+//
+// Every listing and every upload takes a number from one counter when it
+// starts (`beginOperation`). A delete marks its tombstone when it starts,
+// and notes the counter again when its request settles (answered or
+// failed). An operation skips a deleted id when the delete hadn't settled
+// before the operation started (`deletedSince`): either it is still in
+// flight, or it settled later.
+//
+// An operation that starts just after the delete settled is still covered
+// for a short grace (DELETE_SETTLE_GRACE_MS, by the clock). The server's
+// answer to the delete doesn't mean every later read sees it: a request
+// that failed here may still reach the server, and a read can lag a write.
+// /sessions/list reads consistently now, but this side doesn't rely on it
+// alone: a pulled-back record is uploaded again by the next full sync,
+// which undoes the delete for good. After the grace, an operation sees the
+// server's state, so a row listed then was put back by another device and
+// is pulled as usual. A tombstone goes once its grace is over and no
+// running operation it covers is left.
 
-function markSessionDeleted(id: string): void {
-  recentlyDeleted.set(id, Date.now())
+/** How long after a delete settles a new listing or upload still skips its id. */
+export const DELETE_SETTLE_GRACE_MS = 10_000
+
+/** A listing or upload in progress: its place in the event order and its start time. */
+interface SyncOperation {
+  seq: number
+  startedAt: number
 }
 
-function isTombstoned(id: string): boolean {
-  const at = recentlyDeleted.get(id)
-  if (at == null) return false
-  if (Date.now() - at > DELETE_TOMBSTONE_MS) {
-    recentlyDeleted.delete(id)
-    return false
+/** The event counter: operation starts and delete settlements, in order. */
+let eventSeq = 0
+/** Per deleted id: when its delete settled, in event order and by the clock (null while in flight). */
+const tombstones = new Map<string, { settledAt: number | null; settledTime: number | null }>()
+/** The listings and uploads still running. */
+const runningOperations = new Set<SyncOperation>()
+
+function nextEvent(): number {
+  eventSeq += 1
+  return eventSeq
+}
+
+/** A listing or upload starts: its place, for `deletedSince`. Pair with `endOperation`. */
+function beginOperation(): SyncOperation {
+  const operation = { seq: nextEvent(), startedAt: Date.now() }
+  runningOperations.add(operation)
+  return operation
+}
+
+function endOperation(operation: SyncOperation): void {
+  runningOperations.delete(operation)
+  pruneTombstones()
+}
+
+/** True when a delete's tombstone still applies to an operation. */
+function covers(
+  t: { settledAt: number | null; settledTime: number | null },
+  operation: SyncOperation,
+): boolean {
+  if (t.settledAt === null || t.settledTime === null) return true
+  return t.settledAt > operation.seq || operation.startedAt < t.settledTime + DELETE_SETTLE_GRACE_MS
+}
+
+/** Forget the tombstones past their grace that no running operation needs. */
+function pruneTombstones(): void {
+  const now = Date.now()
+  for (const [id, t] of tombstones) {
+    if (t.settledTime === null || now < t.settledTime + DELETE_SETTLE_GRACE_MS) continue
+    let needed = false
+    for (const operation of runningOperations) {
+      if (covers(t, operation)) {
+        needed = true
+        break
+      }
+    }
+    if (!needed) tombstones.delete(id)
   }
-  return true
+}
+
+function markSessionDeleted(id: string): void {
+  // A newer delete of the same id (another tap, a retry) is in flight again.
+  tombstones.set(id, { settledAt: null, settledTime: null })
+  nextEvent()
+}
+
+function markDeleteSettled(id: string): void {
+  const t = tombstones.get(id)
+  if (t && t.settledAt === null) {
+    t.settledAt = nextEvent()
+    t.settledTime = Date.now()
+  }
+  pruneTombstones()
+}
+
+/**
+ * True when `id` was deleted on this device and `operation` may predate
+ * that delete: the delete hadn't settled before the operation began, or it
+ * settled less than DELETE_SETTLE_GRACE_MS before. What the operation read
+ * or is about to write must then skip the id.
+ */
+function deletedSince(id: string, operation: SyncOperation): boolean {
+  const t = tombstones.get(id)
+  return t !== undefined && covers(t, operation)
 }
 
 // ─── Upload markers ──────────────────────────────────────────────────────
@@ -329,6 +416,16 @@ const NO_FAILURE: UploadResult = { photoFailed: false }
  * photo loss leaves another device with a missing image and a blank PDF.
  */
 async function runUpload(id: string): Promise<UploadResult> {
+  const operation = beginOperation()
+  try {
+    return await uploadOnce(id, operation)
+  } finally {
+    endOperation(operation)
+  }
+}
+
+async function uploadOnce(id: string, operation: SyncOperation): Promise<UploadResult> {
+  const isTombstoned = (recordId: string) => deletedSince(recordId, operation)
   // Don't resurrect a session the user just deleted.
   if (isTombstoned(id)) return NO_FAILURE
   const start = getSession(id)
@@ -586,11 +683,17 @@ export async function deleteCloudSession(sessionId: string): Promise<void> {
   // before it can re-create the row.
   markSessionDeleted(sessionId)
   forgetRecordMarkers(sessionId)
-  const res = await authFetch('/sessions/delete', {
-    method: 'POST',
-    body: JSON.stringify({ session_id: sessionId }),
-  })
-  await expectJson<{ ok: true }>(res)
+  try {
+    const res = await authFetch('/sessions/delete', {
+      method: 'POST',
+      body: JSON.stringify({ session_id: sessionId }),
+    })
+    await expectJson<{ ok: true }>(res)
+  } finally {
+    // Answered or failed: once DELETE_SETTLE_GRACE_MS has passed, a listing
+    // or upload that starts reads the server as it is.
+    markDeleteSettled(sessionId)
+  }
 }
 
 /** Export everything the cloud holds about the signed-in user. */
@@ -647,13 +750,38 @@ async function chainKeyFits(link0: SignatureBundle | undefined, chainKey: string
   return (await sha256HexUtf8(chainKey)) === p.chain_key_sha256
 }
 
+/** A presigned legacy photo URL with more than this left is kept, not swapped for a fresh one. */
+const LEGACY_URL_REFRESH_MARGIN_MS = 10 * 60 * 1000
+
+/**
+ * True when `url` is a presigned URL (X-Amz-Date plus X-Amz-Expires) with
+ * more than the margin left before it expires. Anything else counts as
+ * stale. /sessions/list mints new URLs on every call, so without this every
+ * pull on return (up to once a minute) would rewrite each such record and
+ * re-render its screens for a URL that still works.
+ */
+function presignedUrlStillFresh(url: string, nowMs: number): boolean {
+  try {
+    const query = new URL(url).searchParams
+    const signed = /^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})Z$/.exec(query.get('X-Amz-Date') ?? '')
+    const expiresS = Number(query.get('X-Amz-Expires'))
+    if (!signed || !Number.isFinite(expiresS) || expiresS <= 0) return false
+    const [, y, mo, d, h, mi, se] = signed.map(Number)
+    const expiresAt = Date.UTC(y, mo - 1, d, h, mi, se) + expiresS * 1000
+    return expiresAt - nowMs > LEGACY_URL_REFRESH_MARGIN_MS
+  } catch {
+    return false
+  }
+}
+
 /**
  * The legacy photo fields to refresh on this device's copy. For a role
  * without a ref: a data URL here stays (self-contained, works offline);
- * otherwise the cloud's freshly minted URL replaces an older (likely
- * expired) one. For a role with a ref: a URL left in the legacy field by
- * an earlier sync is dropped, because a ref's photo is read from this
- * device or fetched by its sha256, never from a URL.
+ * otherwise the cloud's freshly minted URL replaces an older one that is
+ * expired or close to it (`presignedUrlStillFresh`). For a role with a ref:
+ * a URL left in the legacy field by an earlier sync is dropped, because a
+ * ref's photo is read from this device or fetched by its sha256, never
+ * from a URL.
  */
 function legacyPhotoPatch(local: ParkingSession, cloud: ParkingSession): Partial<ParkingSession> {
   const patch: Partial<ParkingSession> = {}
@@ -666,7 +794,9 @@ function legacyPhotoPatch(local: ParkingSession, cloud: ParkingSession): Partial
       continue
     }
     const cloudValue = cloud[field]
-    if (cloudValue && cloudValue !== localValue) patch[field] = cloudValue
+    if (!cloudValue || cloudValue === localValue) continue
+    if (typeof localValue === 'string' && presignedUrlStillFresh(localValue, Date.now())) continue
+    patch[field] = cloudValue
   }
   return patch
 }
@@ -704,18 +834,53 @@ async function syncBothSides(local: ParkingSession, cloud: ParkingSession): Prom
   return changed
 }
 
+/** Options for one `performInitialSync` run. */
+export interface SyncOptions {
+  /**
+   * Upload the records only this device holds (default true). False for a
+   * pull on return: a record missing from the listing then is most likely
+   * one deleted on another device, and uploading it again would undo that
+   * delete within a minute. New records reach the cloud when they are saved
+   * (`mirrorSessionToCloud`); one that didn't still goes up at the next app
+   * start or sign-in, as before the pull on return existed.
+   */
+  uploadLocalOnly?: boolean
+}
+
 /**
- * Called once after sign-in. Merges local + cloud:
- *   - local-only records → uploaded to the cloud
- *   - records on both sides → the cloud copy's evidence merged into the
- *     local copy (`mergeEvidence`), and uploaded again when the local copy
- *     has links (or an end, photos...) the cloud copy lacks
+ * Runs at app start, after sign-in, and when the app comes back to the
+ * screen (App runs it through `createSyncRunner`). Merges local + cloud:
  *   - cloud-only records → written into local storage, marked as pulled
  *     (they never get a link 0 on this device) and without any pending
  *     addenda
+ *   - records on both sides → the cloud copy's evidence merged into the
+ *     local copy (`mergeEvidence`), and uploaded again when the local copy
+ *     has links (or an end, photos...) the cloud copy lacks
+ *   - local-only records → uploaded to the cloud, except on a pull on
+ *     return (`SyncOptions.uploadLocalOnly`)
  * Read-only shared copies never sync.
+ *
+ * In that order, so what arrives from other devices lands first (field-test
+ * fix list, item 6): the pull is local writes only, and each merge lands
+ * before any local-only upload is waited on. The three sets don't overlap,
+ * so the order changes nothing else. Each record that lands tells open
+ * screens at once: pulled records through `scheduleRecordsChanged` (one
+ * notification per synchronous batch), merges through the storage write
+ * itself (`updateSession`, `mergeCloudEvidence`).
  */
-export async function performInitialSync(): Promise<InitialSyncResult> {
+export async function performInitialSync(options: SyncOptions = {}): Promise<InitialSyncResult> {
+  // The listing's place in the order of events: a record deleted here after
+  // it started is still in what it returns (however long it took).
+  const listing = beginOperation()
+  try {
+    return await syncOnce(options, listing)
+  } finally {
+    endOperation(listing)
+  }
+}
+
+async function syncOnce(options: SyncOptions, listing: SyncOperation): Promise<InitialSyncResult> {
+  const uploadLocalOnly = options.uploadLocalOnly ?? true
   let listFailed = false
   const cloudSessions = await listCloudSessions().catch((err) => {
     console.warn('[sync] list failed, treating cloud as empty:', err)
@@ -728,19 +893,23 @@ export async function performInitialSync(): Promise<InitialSyncResult> {
 
   const result: InitialSyncResult = { uploaded: 0, pulled: 0, alreadyInSync: 0, merged: 0, listFailed }
 
-  // Local-only → upload to cloud.
-  for (const session of localSessions) {
-    if (cloudById.has(session.id) || session.shared_from) continue
-    // The listing shows no row for it. If it had one before, it was deleted
-    // (from another device), and that delete swept its photos too, so this
-    // device's markers no longer hold. Forget them: a photo still stored
-    // costs one presign that answers `exists`, with no bytes sent.
-    if (!listFailed) forgetRecordMarkers(session.id)
-    try {
-      await uploadSession(session)
-      result.uploaded++
-    } catch (err) {
-      console.warn(`[sync] upload of ${session.id} failed:`, err)
+  // Cloud-only → into local storage. The pulled mark goes first: a pulled
+  // record must never be signed as if it were saved here. A record deleted
+  // here after the listing started, or just before it, may still be in that
+  // listing: skip it (its tombstone), or it comes back here and the next
+  // full sync uploads it again.
+  const toPull = cloudSessions.filter((s) => !localById.has(s.id) && !s.shared_from && !deletedSince(s.id, listing))
+  if (toPull.length > 0) {
+    if (!markPulledRecords(toPull.map((s) => s.id))) {
+      console.warn('[sync] could not mark records as pulled; they are pulled on the next sync')
+    } else {
+      for (const session of toPull) {
+        try {
+          if (writeNewLocalSession(pulledRecord(session), listing)) result.pulled++
+        } catch (err) {
+          console.warn(`[sync] pull of ${session.id} failed:`, err)
+        }
+      }
     }
   }
 
@@ -756,20 +925,19 @@ export async function performInitialSync(): Promise<InitialSyncResult> {
     }
   }
 
-  // Cloud-only → into local storage. The pulled mark goes first: a pulled
-  // record must never be signed as if it were saved here.
-  const toPull = cloudSessions.filter((s) => !localById.has(s.id) && !s.shared_from)
-  if (toPull.length > 0) {
-    if (!markPulledRecords(toPull.map((s) => s.id))) {
-      console.warn('[sync] could not mark records as pulled; they are pulled on the next sync')
-    } else {
-      for (const session of toPull) {
-        try {
-          if (writeNewLocalSession(pulledRecord(session))) result.pulled++
-        } catch (err) {
-          console.warn(`[sync] pull of ${session.id} failed:`, err)
-        }
-      }
+  // Local-only → upload to cloud (not on a pull on return: see SyncOptions).
+  for (const session of uploadLocalOnly ? localSessions : []) {
+    if (cloudById.has(session.id) || session.shared_from) continue
+    // The listing shows no row for it. If it had one before, it was deleted
+    // (from another device), and that delete swept its photos too, so this
+    // device's markers no longer hold. Forget them: a photo still stored
+    // costs one presign that answers `exists`, with no bytes sent.
+    if (!listFailed) forgetRecordMarkers(session.id)
+    try {
+      await uploadSession(session)
+      result.uploaded++
+    } catch (err) {
+      console.warn(`[sync] upload of ${session.id} failed:`, err)
     }
   }
 
@@ -787,20 +955,175 @@ export async function performInitialSync(): Promise<InitialSyncResult> {
  * Insert a session into localStorage at index 0 (newest-first ordering),
  * preserving the rest. Used by the cloud-pull path during initial sync.
  * Returns false (and writes nothing) when a record with the id is already
- * saved, or the write failed.
+ * saved, the record was deleted here after the listing it came from
+ * started or just before it (its tombstone), or the write failed. A write tells open screens
+ * through `scheduleRecordsChanged`, so the list shows a pulled record as
+ * soon as it lands, with one re-render for a whole pull.
+ *
+ * A read-only shared copy of this same record (T7: the driver opened their
+ * own share link on this device before the record itself arrived) gives
+ * way to the record: it is removed in the same write, so History never
+ * shows one park twice. upsertSharedCopy covers the other order.
  */
-function writeNewLocalSession(session: ParkingSession): boolean {
+function writeNewLocalSession(session: ParkingSession, listing: SyncOperation): boolean {
   const KEY = 'parkproof.sessions.v1'
+  if (deletedSince(session.id, listing)) return false
   try {
     const raw = localStorage.getItem(KEY)
     const all: ParkingSession[] = raw ? JSON.parse(raw) : []
     if (all.some((s) => s.id === session.id)) return false
-    all.unshift(session)
-    localStorage.setItem(KEY, JSON.stringify(all))
+    const shadowed = all.filter((s) => s.shared_from?.original_session_id === session.id)
+    const kept = shadowed.length > 0 ? all.filter((s) => !shadowed.includes(s)) : all
+    kept.unshift(session)
+    localStorage.setItem(KEY, JSON.stringify(kept))
+    scheduleRecordsChanged(session.id)
+    for (const copy of shadowed) scheduleRecordsChanged(copy.id)
     return true
   } catch (err) {
     console.warn('[sync] writeNewLocalSession failed:', err)
     return false
+  }
+}
+
+// ─── Running the sync ────────────────────────────────────────────────────
+// One sync at a time. App runs it at app start, at sign-in and from the
+// retry (`now`), and again when the app comes back to the screen or back
+// online (`onReturn` through `installSyncOnReturn`; field-test fix list
+// Tier 2: before, another device's changes only arrived on a reload).
+
+/** Coming back to the app pulls again at most this often (from the start of the last sync). */
+export const SYNC_ON_RETURN_INTERVAL_MS = 60_000
+
+export interface SyncRunner {
+  /**
+   * Sync now (app start, sign-in, the retry). Never two at once: while one
+   * runs, this returns one more run that starts when it settles, shared by
+   * every call made meanwhile. So a sign-in during a sync still syncs the
+   * account it signed into, and no record is merged by two runs at once.
+   */
+  now(): Promise<InitialSyncResult>
+  /**
+   * Pull on return: sync again so changes made on another device arrive
+   * without a reload. It pulls and merges but uploads no local-only record
+   * (`SyncOptions.uploadLocalOnly`). Returns the run, or null when skipped:
+   * a sync is running or queued, the browser is offline (the `online` event
+   * asks again), or the last run started under the interval ago. Only call
+   * it while signed in.
+   */
+  onReturn(now?: number): Promise<InitialSyncResult> | null
+  /**
+   * When the interval since the last start ends (the earliest an
+   * `onReturn` is not throttled), or null before any run.
+   */
+  nextReturnAt(): number | null
+}
+
+/**
+ * The one-at-a-time guard around the sync. `sync` is `performInitialSync`
+ * (App passes it in; tests pass a stand-in). Each runner has its own state,
+ * so App keeps one for its lifetime.
+ */
+export function createSyncRunner(
+  sync: (options?: SyncOptions) => Promise<InitialSyncResult> = performInitialSync,
+  intervalMs: number = SYNC_ON_RETURN_INTERVAL_MS,
+): SyncRunner {
+  let running: Promise<InitialSyncResult> | null = null
+  let followUp: Promise<InitialSyncResult> | null = null
+  let lastStartedAt: number | null = null
+
+  const start = (at: number, options: SyncOptions = {}): Promise<InitialSyncResult> => {
+    lastStartedAt = at
+    let run: Promise<InitialSyncResult>
+    try {
+      run = sync(options)
+    } catch (err) {
+      run = Promise.reject(err)
+    }
+    const tracked: Promise<InitialSyncResult> = run.finally(() => {
+      if (running === tracked) running = null
+    })
+    running = tracked
+    return tracked
+  }
+
+  return {
+    now() {
+      // Checked first: between a run settling and its follow-up starting,
+      // `running` is already null.
+      if (followUp) return followUp
+      const current = running
+      if (!current) return start(Date.now())
+      const queued: Promise<InitialSyncResult> = current
+        .catch(() => undefined)
+        .then(() => {
+          followUp = null
+          return start(Date.now())
+        })
+      followUp = queued
+      return queued
+    },
+    onReturn(now = Date.now()) {
+      if (running || followUp) return null
+      if (typeof navigator !== 'undefined' && navigator.onLine === false) return null
+      if (lastStartedAt !== null) {
+        const since = now - lastStartedAt
+        if (since >= 0 && since < intervalMs) return null
+      }
+      return start(now, { uploadLocalOnly: false })
+    },
+    nextReturnAt() {
+      return lastStartedAt === null ? null : lastStartedAt + intervalMs
+    },
+  }
+}
+
+/**
+ * Pull on return when the page becomes visible again (an installed app is
+ * usually resumed, not reloaded) and when the browser comes back online.
+ * A return inside the interval is not dropped: one pull follows when the
+ * interval ends, if the page is still on screen, so a device picked up
+ * seconds after the last sync doesn't stay stale while it is in use.
+ * App installs it only while someone is signed in. `onRun` gets each run
+ * that starts, to settle it as the app-start sync is settled. Returns the
+ * cleanup for a React effect.
+ */
+export function installSyncOnReturn(
+  runner: SyncRunner,
+  onRun: (run: Promise<InitialSyncResult>) => void,
+): () => void {
+  if (typeof window === 'undefined' || typeof document === 'undefined') return () => {}
+  let later: ReturnType<typeof setTimeout> | null = null
+  const pull = () => {
+    if (later !== null) {
+      clearTimeout(later)
+      later = null
+    }
+    const run = runner.onReturn()
+    if (run) {
+      onRun(run)
+      return
+    }
+    // Skipped. Try once more when the interval ends: by then a skip for
+    // any other reason (a sync still running) has usually cleared too.
+    const at = runner.nextReturnAt()
+    const wait = at === null ? 0 : at - Date.now()
+    if (wait > 0) {
+      later = setTimeout(() => {
+        later = null
+        if (document.visibilityState === 'visible') pull()
+      }, wait)
+    }
+  }
+  const onVisibility = () => {
+    if (document.visibilityState === 'visible') pull()
+  }
+  window.addEventListener('online', pull)
+  document.addEventListener('visibilitychange', onVisibility)
+  return () => {
+    if (later !== null) clearTimeout(later)
+    later = null
+    window.removeEventListener('online', pull)
+    document.removeEventListener('visibilitychange', onVisibility)
   }
 }
 
@@ -840,7 +1163,8 @@ export function mirrorSessionUpdateToCloud(sessionId: string): void {
 /** Test-only: forget uploads in flight, tombstones and the cloud-photo caches. */
 export function resetSyncForTests(): void {
   uploadSlots.clear()
-  recentlyDeleted.clear()
+  tombstones.clear()
+  runningOperations.clear()
   remoteInFlight.clear()
   remoteMisses.clear()
 }

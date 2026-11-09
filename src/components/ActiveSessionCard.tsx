@@ -7,6 +7,7 @@ import { formatExpiryAbsolute } from '../lib/time-format'
 import { sessionTimezone } from '../lib/timezone'
 import { estimateWalkBack, navigationUrl, type WalkBackEstimate } from '../lib/walk-back'
 import { useSessionPhoto } from '../lib/use-session-photo'
+import { isNoSignReadRecord } from '../lib/sign-result'
 import Icon from './Icon'
 
 interface Props {
@@ -33,6 +34,12 @@ interface Props {
    * card hides the button for no-sign / photo-less sessions.
    */
   onRecheck?: (session: ParkingSession) => void
+  /**
+   * "Share where the car is" (T7). The home card gains only this Share icon
+   * (T4 item 9). Tapping it makes App open the share sheet, which asks
+   * before any link is made. No icon without it.
+   */
+  onShare?: (session: ParkingSession) => void
 }
 
 /**
@@ -101,6 +108,7 @@ export default function ActiveSessionCard({
   onShowMore,
   onEndSession,
   onRecheck,
+  onShare,
 }: Props) {
   const { t } = useTranslation()
   // 30s tick is enough granularity for minute-level countdowns; the totalMinutes
@@ -185,7 +193,7 @@ export default function ActiveSessionCard({
           type="button"
           onClick={onShowMore}
           aria-label={t('active.morePillAria', { count: extraCount })}
-          className="absolute top-5 right-5 text-2xs font-semibold uppercase tracking-wider bg-white/20 hover:bg-white/30 active:bg-white/25 rounded-full px-2.5 min-h-[44px] min-w-[44px] inline-flex items-center justify-center transition-colors shrink-0"
+          className="text-2xs font-semibold uppercase tracking-wider bg-white/20 hover:bg-white/30 active:bg-white/25 rounded-full px-2.5 min-h-[44px] min-w-[44px] inline-flex items-center justify-center transition-colors shrink-0"
         >
           {t('active.morePill', { count: extraCount })}
         </button>
@@ -194,12 +202,35 @@ export default function ActiveSessionCard({
         // the count visible without pretending to be tappable.
         <span
           aria-hidden
-          className="absolute top-5 right-5 text-2xs font-semibold uppercase tracking-wider bg-white/20 rounded-full px-2.5 py-1 shrink-0"
+          className="text-2xs font-semibold uppercase tracking-wider bg-white/20 rounded-full px-2.5 py-1 shrink-0"
         >
           {t('active.morePill', { count: extraCount })}
         </span>
       )
     ) : null
+  // The Share icon (T7 wires it) sits beside the pill, top right, outside
+  // the card's "open" button for the same reason as the pill. Its name is
+  // the share sheet's title, so the icon and the sheet it opens agree.
+  const shareButton = onShare ? (
+    <button
+      type="button"
+      onClick={() => onShare(session)}
+      aria-label={t('share.action')}
+      aria-haspopup="dialog"
+      className="bg-white/10 hover:bg-white/20 active:bg-white/15 rounded-full min-h-[44px] min-w-[44px] inline-flex items-center justify-center transition-colors shrink-0"
+    >
+      <Icon name="share" className="w-5 h-5" strokeWidth={2.25} />
+    </button>
+  ) : null
+  const topRight =
+    morePill || shareButton ? (
+      <div className="absolute top-5 right-5 flex items-center gap-2">
+        {shareButton}
+        {morePill}
+      </div>
+    ) : null
+  // Room for what sits top right, so the heading doesn't run under it.
+  const headingPad = morePill && shareButton ? 'pr-28' : morePill ? 'pr-16' : shareButton ? 'pr-12' : ''
 
   return (
     <div
@@ -222,7 +253,7 @@ export default function ActiveSessionCard({
             : { borderColor: 'transparent' }
       }
     >
-      {morePill}
+      {topRight}
       {/* Top region — primary tap target = view session details. Right-pad
           the heading text when the pill is present so they don't collide. */}
       <button
@@ -240,7 +271,7 @@ export default function ActiveSessionCard({
           >
             <Icon name="pin" className="w-6 h-6" strokeWidth={2.25} />
           </div>
-          <div className={`flex-1 min-w-0 ${extraCount > 0 ? 'pr-16' : ''}`}>
+          <div className={`flex-1 min-w-0 ${headingPad}`}>
             <p className="text-xs font-semibold uppercase tracking-widest text-white inline-flex items-center gap-1.5">
               {/* Pulsing live-indicator dot, matched to the urgency colour
                   via white-on-gradient. The card is the most-glanced surface
@@ -276,7 +307,9 @@ export default function ActiveSessionCard({
               ? t('active.expiredHint')
               : hasExpiry
                 ? t('active.moveBy', { time: expiryLabel!.combined })
-                : t('active.noPostedRestrictions')}
+                : isNoSignReadRecord(session)
+                  ? t('unclearSign.noSignReadLabel')
+                  : t('active.noPostedRestrictions')}
           </p>
           {/* "🔔 Next ping: 4:25 PM" — closes the visibility gap the user
               flagged: previously, after setting reminders, the only way to

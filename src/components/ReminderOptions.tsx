@@ -1,41 +1,40 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Trans, useTranslation } from 'react-i18next'
 import type { ParkingSession } from '../types'
 import {
+  cancelInTabReminders,
   scheduleAbsoluteReminders,
   scheduleParkingReminders,
-  type ScheduleResult,
 } from '../lib/notifications'
-import {
-  getPushPermissionState,
-  hasActiveSubscription,
-  schedulePushReminders,
-  subscribeToPush,
-  type ScheduledReminder,
-} from '../lib/push'
+import type { ScheduledFire, ScheduledReminder } from '../lib/push'
+import { remindMe, summariseRemindMe, type RemindMeSummary } from '../lib/remind-me'
 import { useNow } from '../lib/use-now'
 import { updateSession } from '../lib/storage'
 import { useAuth } from '../lib/use-auth'
 import { mirrorSessionUpdateToCloud } from '../lib/sync'
 import { formatExpiryAbsolute, formatReminderTimesLine } from '../lib/time-format'
 import { reminderCopy } from '../lib/reminder-copy'
+import { MAX_PUSH_REMINDERS, permitAdjustedUntil, reminderFireTimes } from '../lib/permit-answer'
 import { sessionLink } from '../lib/deep-link'
 import { sessionTimezone } from '../lib/timezone'
+import { isNoSignReadRecord } from '../lib/sign-result'
 import Icon from './Icon'
+import RecurringOffer from './RecurringOffer'
 import Button from './ui/Button'
 import Card from './ui/Card'
+import { ReminderHelp, RemindMeOutcome } from './ReminderStatus'
 
 /**
  * Offsets the user can pick from, in minutes before expiry. Covers the realistic
  * range from a leisurely 30-min "head back to the car" prompt down to a frantic
- * "you're about to time out right now" ping. 0 = exactly at expiry — useful on
- * very short tickets where every other offset is already in the past.
+ * "you're about to time out right now" ping. 0 = exactly at expiry, useful on
+ * very short stays where every other offset is already in the past.
  */
 const REMINDER_OFFSETS = [30, 15, 10, 5, 2, 0] as const
 type Offset = (typeof REMINDER_OFFSETS)[number]
 
-// If a reminder would fire in under 30s, treat it as past — keeps the UX honest.
-// Mirrors SAFETY_MARGIN_MS in notifications.ts.
+// If a reminder would fire in under 30s, treat it as past, which keeps the UX
+// honest. Mirrors SAFETY_MARGIN_MS in notifications.ts.
 const SAFETY_MARGIN_MS = 30 * 1000
 
 interface Props {
@@ -55,7 +54,7 @@ interface OffsetInfo {
 function pickDefaults(fireable: OffsetInfo[]): Set<Offset> {
   if (fireable.length === 0) return new Set()
   // Longest available lead time + the 5-min ping (a useful "final warning") if
-  // it's separately fireable. This covers both long tickets (30 + 5) and short
+  // it's separately fireable. This covers both long stays (30 + 5) and short
   // ones (e.g., 10 + 5 or just 2 / 0 if that's all that's left).
   const result = new Set<Offset>([fireable[0].offset])
   const five = fireable.find((o) => o.offset === 5)
@@ -64,157 +63,99 @@ function pickDefaults(fireable: OffsetInfo[]): Set<Offset> {
 }
 
 /**
- * Push-subscription status pill that lives at the top of both ReminderOptions
- * picker variants. Subscribers see a green confirmation; non-subscribers get
- * an inline "Enable push" button — the same flow as the About page's
- * PushSubscribeBlock, but with copy contextualised to the reminders-setting
- * moment ("without push, reminders only fire while this tab is open").
- *
- * Surfaces gap #2 from the user's feedback ("I don't even know if the device
- * is subscribed for push notifications") right where the user is about to
- * commit to a set of reminders — the highest-stakes moment to know.
+ * Store the push reminders the server booked on the record, so the record
+ * screen can list them ("Scheduled reminders"), and mirror it when signed in.
  */
-type PushBannerStatus =
-  | 'idle'
-  | 'requesting'
-  | 'subscribed'
-  | 'denied'
-  | 'unsupported'
-  | 'error'
+function persistPushReminders(sessionId: string, created: ScheduledFire[], signedIn: boolean): void {
+  try {
+    updateSession(sessionId, { push_reminders: created.map((c) => ({ fire_at: c.fire_at })) })
+    if (signedIn) mirrorSessionUpdateToCloud(sessionId)
+  } catch (err) {
+    console.warn('[reminders] could not persist push_reminders:', err)
+  }
+}
 
-function PushSubscriptionBanner({
-  onStatusChange,
+/**
+ * The one primary "Remind me" button (field-test fix list, item 2). The
+ * caller's onClick must call remindMe() before any other await: it asks
+ * for notification permission, and iOS only shows that prompt from a tap.
+ */
+function RemindMeButton({
+  onClick,
+  busy,
+  disabled,
 }: {
-  /** Notified when subscription transitions to/from 'subscribed'. The parent
-   *  uses this to hide the push-reminders section entirely when not subscribed
-   *  (no point offering chips that can't ping anyone). */
-  onStatusChange?: (subscribed: boolean) => void
+  onClick: () => void
+  busy: boolean
+  disabled: boolean
 }) {
   const { t } = useTranslation()
-  const [status, setStatus] = useState<PushBannerStatus>(() => {
-    // Initial sync state — only the cheaply-knowable things, same approach
-    // as AboutFeatures. Async hasActiveSubscription() check upgrades to
-    // 'subscribed' below.
-    const permState = getPushPermissionState()
-    if (permState === 'unsupported') return 'unsupported'
-    if (permState === 'denied') return 'denied'
-    return 'idle'
-  })
-
-  useEffect(() => {
-    let cancelled = false
-    void hasActiveSubscription().then((has) => {
-      if (cancelled) return
-      if (has) {
-        setStatus('subscribed')
-        onStatusChange?.(true)
-      }
-    })
-    return () => {
-      cancelled = true
-    }
-  }, [onStatusChange])
-
-  const handleEnable = async () => {
-    setStatus('requesting')
-    const result = await subscribeToPush()
-    if (result.ok) {
-      setStatus('subscribed')
-      onStatusChange?.(true)
-    } else if (result.reason === 'denied') {
-      setStatus('denied')
-    } else if (result.reason === 'unsupported') {
-      setStatus('unsupported')
-    } else {
-      setStatus('error')
-    }
-  }
-
-  if (status === 'unsupported') return null // No banner = no false signal that push is possible.
-
-  if (status === 'subscribed') {
-    return (
-      <div className="mb-4 px-3 py-2 rounded-lg bg-brand-50 border border-brand-200 text-brand-800 text-xs font-medium flex items-center gap-2">
-        <Icon name="check" className="w-4 h-4 shrink-0" strokeWidth={2.5} />
-        <span className="leading-snug">{t('reminders.pushStatus.subscribed')}</span>
-      </div>
-    )
-  }
-
   return (
-    <div className="mb-4 p-3 rounded-lg bg-brand-50 border border-brand-100 flex items-start gap-3">
-      <Icon name="bell" className="w-5 h-5 text-brand-600 shrink-0 mt-0.5" />
-      <div className="flex-1 min-w-0">
-        <p className="text-xs text-ink-700 leading-relaxed mb-2">
-          {status === 'denied'
-            ? t('reminders.pushStatus.denied')
-            : t('reminders.pushStatus.notSubscribed')}
-        </p>
-        {status !== 'denied' && (
-          <button
-            type="button"
-            onClick={handleEnable}
-            disabled={status === 'requesting'}
-            className="text-xs bg-brand-500 hover:bg-brand-600 text-white px-3 py-1.5 rounded-xl disabled:opacity-50 font-semibold"
-          >
-            {status === 'requesting'
-              ? t('reminders.pushStatus.requesting')
-              : status === 'error'
-                ? t('reminders.pushStatus.errorRetry')
-                : t('reminders.pushStatus.enable')}
-          </button>
-        )}
-      </div>
-    </div>
+    <Button size="lg" className="w-full gap-2" onClick={onClick} disabled={busy || disabled}>
+      <Icon name="bell" className="w-5 h-5" />
+      {busy ? t('reminders.remindMe.busy') : t('reminders.remindMe.cta')}
+    </Button>
   )
 }
 
-function NotifStatusLine({ result }: { result: ScheduleResult }) {
+/** The calendar (.ics) option. Secondary to "Remind me", and survives anything. */
+function CalendarCard({
+  copy,
+  state,
+  count,
+  onDownload,
+}: {
+  copy: string
+  state: 'idle' | 'downloaded' | 'error' | 'empty'
+  count: number
+  onDownload: () => void
+}) {
   const { t } = useTranslation()
-  switch (result.status) {
-    case 'scheduled': {
-      const skipped = result.totalSelected - result.scheduledCount
-      return (
-        <span>
-          {skipped > 0
-            ? t('reminders.browserScheduledSkipped', {
-                count: result.scheduledCount,
-                skipped,
-              })
-            : t('reminders.browserScheduled', { count: result.scheduledCount })}
-        </span>
-      )
-    }
-    case 'denied':
-      return <span>{t('reminders.browserDenied')}</span>
-    case 'unsupported':
-      return <span>{t('reminders.browserUnsupported')}</span>
-    case 'no-expiry':
-      return <span>{t('reminders.browserNoExpiry')}</span>
-    case 'all-past':
-      return <span>{t('reminders.browserAllPast')}</span>
-    case 'all-too-far':
-      return <span>{t('reminders.browserTooFar')}</span>
-    case 'nothing-selected':
-      return <span>{t('reminders.browserNothingSelected')}</span>
-  }
+  return (
+    <Card className="mb-6">
+      <div className="flex items-start gap-3 mb-3">
+        <div className="w-12 h-12 rounded-xl bg-brand-50 text-brand-600 flex items-center justify-center shrink-0">
+          <Icon name="calendar" className="w-6 h-6" />
+        </div>
+        <div>
+          <h3 className="font-display font-bold text-ink-900">{t('reminders.calendarHeader')}</h3>
+          <p className="text-xs text-ink-600 mt-1 leading-relaxed">{copy}</p>
+        </div>
+      </div>
+      <Button
+        variant="secondary"
+        size="sm"
+        onClick={onDownload}
+        disabled={state === 'downloaded' || count === 0}
+        className="w-full min-h-[44px]"
+      >
+        {state === 'downloaded'
+          ? t('reminders.calendarDownloaded')
+          : state === 'error'
+            ? t('reminders.calendarError')
+            : state === 'empty'
+              ? t('reminders.calendarPickAtLeastOne')
+              : t('reminders.calendarCta', { count })}
+      </Button>
+    </Card>
+  )
+}
+
+function DoneButton({ onDone }: { onDone: () => void }) {
+  const { t } = useTranslation()
+  return (
+    <Button variant="outline" size="lg" onClick={onDone} className="mt-auto w-full">
+      {t('common.done')}
+    </Button>
+  )
 }
 
 export default function ReminderOptions({ session, onDone }: Props) {
   const { t } = useTranslation()
   const { user } = useAuth()
   const [icsState, setIcsState] = useState<'idle' | 'downloaded' | 'error' | 'empty'>('idle')
-  const [notifResult, setNotifResult] = useState<ScheduleResult | null>(null)
-  const [notifBusy, setNotifBusy] = useState(false)
-  // True only when the user IS push-subscribed but the server-side schedule
-  // POST returned null (a real network/server failure). The not-subscribed
-  // case also returns null, but that's a legitimate skip — not a warning.
-  const [pushScheduleFailed, setPushScheduleFailed] = useState(false)
-
-  const chipLabel = (offset: Offset): string =>
-    offset === 0
-      ? t('reminders.chipAtExpiry')
-      : t('reminders.chipMin', { count: offset })
+  const [busy, setBusy] = useState(false)
+  const [outcome, setOutcome] = useState<RemindMeSummary | null>(null)
 
   // Re-tick every 30s so chips that slide into the past auto-disable without
   // requiring the user to re-enter the screen. Matches SAFETY_MARGIN_MS exactly,
@@ -223,11 +164,25 @@ export default function ReminderOptions({ session, onDone }: Props) {
 
   const timeZone = useMemo(() => sessionTimezone(session.location), [session.location])
 
+  // T4 item 6: when the sign prints an exception for the permit the driver
+  // used, and they typed in a later permit time from the sign, the chips
+  // count down to that time, and one more reminder fires when the
+  // standard limit (expires_at) ends.
+  const permitUntil = permitAdjustedUntil(session)
+  const anchor = permitUntil ?? session.expires_at
+
+  // The chip at 0 fires at what the reminders count down to: the expiry,
+  // or the permit time the driver entered (never called an expiry).
+  const chipLabel = (offset: Offset): string =>
+    offset === 0
+      ? t(permitUntil ? 'reminders.chipAtPermitTime' : 'reminders.chipAtExpiry')
+      : t('reminders.chipMin', { count: offset })
+
   const { offsets, expiresLabel, anyFireable } = useMemo(() => {
-    if (!session.expires_at) {
+    if (!anchor) {
       return { offsets: [] as OffsetInfo[], expiresLabel: null as string | null, anyFireable: false }
     }
-    const expires = new Date(session.expires_at)
+    const expires = new Date(anchor)
     const nowDate = new Date(now)
     const offsets: OffsetInfo[] = REMINDER_OFFSETS.map((offset) => {
       const fireAt = new Date(expires.getTime() - offset * 60 * 1000)
@@ -245,7 +200,15 @@ export default function ReminderOptions({ session, onDone }: Props) {
       expiresLabel: formatExpiryAbsolute(expires, { now: nowDate, timeZone }).combined,
       anyFireable: offsets.some((o) => !o.isPast),
     }
-  }, [session.expires_at, now, timeZone])
+  }, [anchor, now, timeZone])
+
+  // The extra reminder at the standard limit, while it is still to come.
+  const standardEnd = useMemo(() => {
+    if (!permitUntil || !session.expires_at) return null
+    const at = new Date(session.expires_at)
+    if (at.getTime() - now < SAFETY_MARGIN_MS) return null
+    return { at, label: formatExpiryAbsolute(at, { now: new Date(now), timeZone }).combined }
+  }, [permitUntil, session.expires_at, now, timeZone])
 
   const [selected, setSelected] = useState<Set<Offset>>(() =>
     pickDefaults(offsets.filter((o) => !o.isPast)),
@@ -258,22 +221,16 @@ export default function ReminderOptions({ session, onDone }: Props) {
       else next.add(offset)
       return next
     })
-    // Any prior submission state is now stale — reset so buttons re-enable.
+    // Any earlier result is now stale.
     setIcsState('idle')
-    setNotifResult(null)
-    setPushScheduleFailed(false)
+    setOutcome(null)
   }
 
-  // Sorted highest → lowest so summaries and downstream lists read left-to-right
-  // in chronological order ("3:30 PM, 3:40 PM, 3:43 PM").
-  const selectedList = useMemo(
-    () => [...selected].sort((a, b) => b - a),
-    [selected],
-  )
+  // Sorted highest to lowest so summaries and downstream lists read
+  // left-to-right in chronological order ("3:30 PM, 3:40 PM, 3:43 PM").
+  const selectedList = useMemo(() => [...selected].sort((a, b) => b - a), [selected])
 
-  // Reminder summary that says e.g. "9:30 am, 9:45 am" (today) or
-  // "9:30 am, 9:45 am on Mon 18/05/2026" (future day). Computed off the
-  // selected offsets' fireAt times, in chronological order.
+  // The selected offsets' fire times, in chronological order.
   const selectedFireAtList = useMemo(
     () =>
       selectedList
@@ -286,9 +243,25 @@ export default function ReminderOptions({ session, onDone }: Props) {
     () =>
       selectedFireAtList.length === 0
         ? null
-        : formatReminderTimesLine(selectedFireAtList, { now: new Date(now), timeZone }),
-    [selectedFireAtList, now, timeZone],
+        : formatReminderTimesLine(selectedFireAtList, { now: new Date(now), timeZone, t }),
+    [selectedFireAtList, now, timeZone, t],
   )
+
+  // Every fire time this screen schedules: the picked ones, plus the
+  // standard-limit reminder on a record whose permit allows a later time,
+  // one reminder per moment (a chip at the standard limit adds nothing).
+  const allFireAtList = useMemo(
+    () => (permitUntil ? reminderFireTimes(session, selectedFireAtList, now) : selectedFireAtList),
+    [permitUntil, session, selectedFireAtList, now],
+  )
+  // Push takes at most MAX_PUSH_REMINDERS per record and refuses the whole
+  // set above that, so with the standard-limit reminder in the set an
+  // unpicked chip that would go over the limit can't be picked.
+  const overLimit = (fireAt: Date): boolean =>
+    !!permitUntil && reminderFireTimes(session, [...selectedFireAtList, fireAt], now).length > MAX_PUSH_REMINDERS
+  const atChipLimit = offsets.some(({ offset, isPast, fireAt }) => !isPast && !selected.has(offset) && overLimit(fireAt))
+  // What the calendar file and the notifications will hold.
+  const reminderCount = allFireAtList.length
 
   const handleIcs = async () => {
     if (selectedList.length === 0) {
@@ -297,73 +270,68 @@ export default function ReminderOptions({ session, onDone }: Props) {
     }
     try {
       const { downloadIcs } = await import('../lib/ics')
-      downloadIcs(session, selectedList)
+      if (permitUntil) {
+        // Every alarm at its own time with its own translated text, so the
+        // calendar never calls the permit time the driver entered an expiry.
+        downloadIcs(session, [], t, {
+          anchor: permitUntil,
+          extraAlarms: allFireAtList.map((at) => ({ at, description: reminderCopy(session, at, t).body })),
+          title: t('reminders.calendarPermitTitle'),
+          description: t('reminders.calendarPermitSummary', { time: expiresLabel }),
+        })
+      } else {
+        downloadIcs(session, selectedList, t)
+      }
       setIcsState('downloaded')
     } catch {
       setIcsState('error')
     }
   }
 
-  const handleNotify = async () => {
-    setNotifBusy(true)
-    setPushScheduleFailed(false)
+  const handleRemindMe = async () => {
+    if (busy || selectedList.length === 0) return
+    setBusy(true)
+    setOutcome(null)
     const copyFor = (fireAt: Date) => reminderCopy(session, fireAt, t)
-    const result = await scheduleParkingReminders(session, selectedList, copyFor)
-    setNotifResult(result)
-    setNotifBusy(false)
-
-    // Fire-and-forget: also schedule server-side Web Push reminders via the
-    // backend (EventBridge Scheduler → /push/dispatch). This is the only path
-    // that fires when the tab is closed or the browser isn't running. The
-    // in-tab scheduler above is a redundant best-effort for users who keep
-    // the tab open. If push isn't supported / subscribed, schedulePushReminders
-    // returns null silently — we don't pop a UI error because in-tab worked.
-    //
-    // Title = the address (most useful thing the OS surfaces on the lockscreen),
-    // body = the absolute expiry time. Same copy as the in-tab path above.
-    const reminders: ScheduledReminder[] = selectedFireAtList.map((fireAt) => ({
+    // Title = the address (most useful thing on the lock screen), body =
+    // the absolute expiry time. Same copy for push and in-tab. On a record
+    // whose permit allows a later time, the set includes the standard-limit
+    // reminder (T4), at most MAX_PUSH_REMINDERS in all.
+    const pushReminders: ScheduledReminder[] = allFireAtList.map((fireAt) => ({
       fire_at: fireAt.toISOString(),
       ...copyFor(fireAt),
       url: sessionLink(session.id),
     }))
-    if (reminders.length > 0) {
-      // Await so we can persist the actual fire times to session.push_reminders
-      // for later display in SessionDetail. Without persisting, the user has
-      // no way to see "when will my reminders fire?" after leaving this
-      // screen — gap #1 the user explicitly flagged.
-      //
-      // The user doesn't WAIT on this — the in-tab notification scheduler
-      // above already ran synchronously and the success state is rendered.
-      // We just take a beat longer to fetch the server-confirmed times.
-      const pushResult = await schedulePushReminders(
-        session.id,
-        reminders,
-        session.expires_at,
-      )
-      if (pushResult.ok && pushResult.created.length > 0) {
-        try {
-          updateSession(session.id, {
-            push_reminders: pushResult.created.map((c) => ({
-              fire_at: c.fire_at,
-            })),
-          })
-          if (user) mirrorSessionUpdateToCloud(session.id)
-        } catch (err) {
-          console.warn('[reminders] could not persist push_reminders:', err)
-        }
-      } else if (!pushResult.ok && pushResult.reason !== 'unsupported' && pushResult.reason !== 'not_subscribed') {
-        // Push not supported or not subscribed is a legitimate skip (the
-        // in-tab path above still runs). Anything else is a real failure that
-        // deserves a warning, otherwise the user trusts a background reminder
-        // that silently never got scheduled.
-        setPushScheduleFailed(true)
-      }
+    try {
+      // No await before this call: it opens with the permission prompt.
+      const result = await remindMe({
+        sessionId: session.id,
+        pushReminders,
+        // The server's delivery window follows what the reminders count
+        // down to (the permit time, when there is one).
+        expiresAt: anchor,
+        armInTab: () => {
+          // A second tap replaces the first tap's in-tab reminders instead
+          // of doubling them. The server side is replace-all too.
+          cancelInTabReminders(session.id)
+          return permitUntil
+            ? scheduleAbsoluteReminders(session, allFireAtList, copyFor)
+            : scheduleParkingReminders(session, selectedList, copyFor)
+        },
+      })
+      if (result.background.ok) persistPushReminders(session.id, result.background.created, Boolean(user))
+      setOutcome(summariseRemindMe(result))
+    } catch (err) {
+      console.error('[reminders] remind me failed:', err)
+      setOutcome({ kind: 'none', times: [], step: 'failed' })
+    } finally {
+      setBusy(false)
     }
   }
 
   // === Empty states ===
   if (!session.expires_at) {
-    // No expiry = no-sign / free-park session. Different picker shape:
+    // No expiry = no-sign / free-park record. Different picker shape:
     // "remind me in N hours from now" instead of "X min before expiry".
     return <NoSignReminderPicker session={session} onDone={onDone} />
   }
@@ -374,20 +342,16 @@ export default function ReminderOptions({ session, onDone }: Props) {
         <h2 className="font-display text-3xl font-extrabold text-paper-50 mb-2">{t('reminders.header')}</h2>
         <p className="text-sm mb-6 leading-relaxed" style={{ color: '#A9CFBE' }}>
           {/* <Trans> renders the <strong> placeholder inside the JSON as a
-              real React element, so the expiry-time stays visually anchored
-              the way it was before i18n flattened everything. */}
+              real React element, so the expiry time stays visually anchored. */}
           <Trans
             i18nKey="reminders.expired"
             values={{ when: expiresLabel }}
             components={{ strong: <span className="font-display font-bold text-paper-50" /> }}
           />
         </p>
-        <button
-          onClick={onDone}
-          className="mt-auto bg-brand-500 hover:bg-brand-600 active:bg-brand-700 text-white font-semibold py-4 rounded-xl transition-colors"
-        >
-          {t('common.done')}
-        </button>
+        {/* A weekly restriction on the sign still deserves its reminder after this park expired (T5a). */}
+        <RecurringOffer session={session} className="mb-6" />
+        <DoneButton onDone={onDone} />
       </div>
     )
   }
@@ -396,53 +360,52 @@ export default function ReminderOptions({ session, onDone }: Props) {
   return (
     <div className="min-h-screen flex flex-col p-6 max-w-md mx-auto w-full">
       <h2 className="font-display text-3xl font-extrabold text-paper-50 mb-1">{t('reminders.header')}</h2>
-      <p className="text-sm mb-6 leading-relaxed" style={{ color: '#A9CFBE' }}>
+      <p className={`text-sm ${standardEnd ? 'mb-2' : 'mb-6'} leading-relaxed`} style={{ color: '#A9CFBE' }}>
         <Trans
-          i18nKey="reminders.intro"
+          i18nKey={permitUntil ? 'reminders.permitIntro' : 'reminders.intro'}
           values={{ when: expiresLabel }}
           components={{ strong: <span className="font-display font-bold text-paper-50" /> }}
         />
       </p>
-
-      {/* Subscription status banner — at top of picker so user knows whether
-          push will actually fire BEFORE they commit to a set of reminders.
-          Visible upfront because otherwise users have no idea their device's
-          subscription state without navigating to About. */}
-      <PushSubscriptionBanner />
+      {standardEnd && (
+        <p className="text-sm mb-6 leading-relaxed" style={{ color: '#A9CFBE' }}>
+          {t('reminders.permitExtra', { time: standardEnd.label })}
+        </p>
+      )}
 
       {/* Chip selector */}
       <div className="flex flex-wrap gap-2 mb-3">
         {offsets.map(({ offset, isPast, fireAt }) => {
           const isSelected = selected.has(offset)
+          const capped = !isPast && !isSelected && overLimit(fireAt)
           const base =
             'px-4 py-2.5 min-h-[44px] rounded-full text-sm font-semibold border-2 transition-colors min-w-[88px] text-center'
           let cls: string
           if (isPast) {
             cls = `${base} bg-paper-100 border-paper-200 text-ink-400 line-through cursor-not-allowed`
+          } else if (capped) {
+            cls = `${base} bg-paper-100 border-paper-200 text-ink-400 cursor-not-allowed`
           } else if (isSelected) {
             cls = `${base} bg-brand-500 border-brand-500 text-white`
           } else {
             cls = `${base} bg-white border-paper-300 text-ink-700 hover:border-brand-300`
           }
-          // Date-aware tooltip so a chip for tomorrow says "would fire at
+          // Date-aware tooltip so a chip for tomorrow says "Fires at
           // 10:00 am, Mon 18/05/2026" rather than the ambiguous "10:00 am".
-          const fireDescription = formatExpiryAbsolute(fireAt, {
-            now: new Date(now),
-            timeZone,
-          }).combined
+          const tip = isPast
+            ? t('reminders.chipPast')
+            : t('reminders.chipFiresAt', {
+                when: formatExpiryAbsolute(fireAt, { now: new Date(now), timeZone }).combined,
+              })
           return (
             <button
               key={offset}
               type="button"
-              onClick={() => !isPast && toggle(offset)}
-              disabled={isPast}
+              onClick={() => !isPast && !capped && toggle(offset)}
+              disabled={isPast || capped}
               aria-pressed={isSelected}
-              aria-label={
-                isPast
-                  ? `${chipLabel(offset)} — already past`
-                  : `${chipLabel(offset)} — would fire at ${fireDescription}`
-              }
-              title={isPast ? 'Already in the past' : `Fires at ${fireDescription}`}
+              aria-label={`${chipLabel(offset)}, ${tip}`}
+              title={tip}
               className={cls}
             >
               {chipLabel(offset)}
@@ -450,6 +413,12 @@ export default function ReminderOptions({ session, onDone }: Props) {
           )
         })}
       </div>
+
+      {atChipLimit && (
+        <p className="text-xs mb-3 leading-relaxed" style={{ color: '#A9CFBE' }}>
+          {t('reminders.permitChipLimit', { count: MAX_PUSH_REMINDERS - 1 })}
+        </p>
+      )}
 
       {/* Live summary of selected fire-times */}
       <p className="text-xs mb-6 leading-relaxed min-h-[2.25rem]" style={{ color: '#A9CFBE' }}>
@@ -466,104 +435,35 @@ export default function ReminderOptions({ session, onDone }: Props) {
         )}
       </p>
 
-      {/* Calendar */}
-      <Card className="mb-3">
-        <div className="flex items-start gap-3 mb-3">
-          <div className="w-12 h-12 rounded-xl bg-brand-50 text-brand-600 flex items-center justify-center shrink-0">
-            <Icon name="calendar" className="w-6 h-6" />
-          </div>
-          <div>
-            <h3 className="font-display font-bold text-ink-900">{t('reminders.calendarHeader')}</h3>
-            <p className="text-xs text-ink-600 mt-1 leading-relaxed">
-              {t('reminders.calendarCopy')}
-            </p>
-          </div>
-        </div>
-        <Button
-          variant="secondary"
-          size="sm"
-          onClick={handleIcs}
-          disabled={icsState === 'downloaded' || selectedList.length === 0}
-          className="w-full"
-        >
-          {icsState === 'downloaded'
-            ? t('reminders.calendarDownloaded')
-            : icsState === 'error'
-              ? t('reminders.calendarError')
-              : icsState === 'empty'
-                ? t('reminders.calendarPickAtLeastOne')
-                : t('reminders.calendarCta', { count: selectedList.length })}
-        </Button>
-      </Card>
+      <RemindMeButton onClick={handleRemindMe} busy={busy} disabled={selectedList.length === 0} />
+      <RemindMeOutcome summary={outcome} timeZone={timeZone} className="mt-3" />
+      <ReminderHelp tone="vault" className="mt-3 mb-6" />
 
-      {/* Push */}
-      <Card className="mb-6">
-        <div className="flex items-start gap-3 mb-3">
-          <div className="w-12 h-12 rounded-xl bg-accent-50 text-accent-700 flex items-center justify-center shrink-0">
-            <Icon name="bell" className="w-6 h-6" />
-          </div>
-          <div>
-            <h3 className="font-display font-bold text-ink-900">{t('reminders.browserHeader')}</h3>
-            <p className="text-xs text-ink-600 mt-1 leading-relaxed">
-              {t('reminders.browserCopy')}
-            </p>
-          </div>
-        </div>
-        <button
-          onClick={handleNotify}
-          disabled={
-            notifBusy ||
-            notifResult?.status === 'scheduled' ||
-            selectedList.length === 0
-          }
-          className="w-full bg-accent-600 hover:bg-accent-700 disabled:opacity-60 text-white font-semibold py-3 rounded-xl transition-colors"
-        >
-          {notifBusy ? (
-            <span>{t('reminders.browserRequesting')}</span>
-          ) : notifResult ? (
-            <span role="status" aria-live="polite">
-              <NotifStatusLine result={notifResult} />
-            </span>
-          ) : selectedList.length === 0 ? (
-            <span>{t('reminders.browserNothingSelected')}</span>
-          ) : (
-            <span>{t('reminders.browserCta', { count: selectedList.length })}</span>
-          )}
-        </button>
-        {/* Subscribed-but-failed: the only rail that fires with the tab closed
-            silently didn't get scheduled. The in-tab button above may read
-            "scheduled", so this warning is essential to avoid false confidence. */}
-        {pushScheduleFailed && (
-          <p
-            role="alert"
-            className="mt-3 px-3 py-2 rounded-lg bg-amber-50 border border-amber-200 text-amber-700 text-xs font-medium leading-snug"
-          >
-            {t('reminders.pushScheduleFailed')}
-          </p>
-        )}
-      </Card>
+      <CalendarCard
+        copy={t('reminders.calendarCopy')}
+        state={icsState}
+        count={reminderCount}
+        onDownload={handleIcs}
+      />
 
-      <button
-        onClick={onDone}
-        className="mt-auto bg-brand-500 hover:bg-brand-600 active:bg-brand-700 text-white font-semibold py-4 rounded-xl transition-colors"
-      >
-        {t('common.done')}
-      </button>
+      {/* "Remind me every week" when the sign has a weekly restriction (T5a). */}
+      <RecurringOffer session={session} className="mb-6" />
+
+      <DoneButton onDone={onDone} />
     </div>
   )
 }
 
 /**
- * Picker for OPEN-ENDED sessions — the no-sign / free-park case where
+ * Picker for OPEN-ENDED records: the no-sign / free-park case where
  * there's no posted expiry. Different chips: instead of "X min before
- * expiry", offer absolute durations from now ("remind me in 1h / 2h /
- * 4h / 8h"). All three rails (.ics + in-tab + Web Push) fire just like
- * the expiry path, with absolute fire-at times instead of computed
- * offsets-before-expiry.
+ * expiry", offer durations from now ("remind me in 1h / 2h / 4h / 8h").
+ * "Remind me" books push and in-tab reminders just like the expiry path,
+ * with absolute fire times; the calendar option stays.
  *
- * The driver still has to hit "I've left" to actually end the session
- * (per the no-sign open-ended model) — the reminders are just "come
- * check on your car", not "you'll get a ticket". Copy reflects that.
+ * The driver still has to hit "I've left" to end the record (the no-sign
+ * open-ended model). These reminders are "come check on your car", not
+ * "your parking is about to expire". Copy reflects that.
  */
 const NOSIGN_DURATIONS_MIN = [30, 60, 120, 240, 480] as const
 type NoSignDurationMin = (typeof NOSIGN_DURATIONS_MIN)[number]
@@ -575,10 +475,8 @@ function NoSignReminderPicker({ session, onDone }: Props) {
     () => new Set<NoSignDurationMin>([60]),
   )
   const [icsState, setIcsState] = useState<'idle' | 'downloaded' | 'error' | 'empty'>('idle')
-  const [notifResult, setNotifResult] = useState<ScheduleResult | null>(null)
-  const [notifBusy, setNotifBusy] = useState(false)
-  // See the expiry-path picker above for the subscribed-but-null rationale.
-  const [pushScheduleFailed, setPushScheduleFailed] = useState(false)
+  const [busy, setBusy] = useState(false)
+  const [outcome, setOutcome] = useState<RemindMeSummary | null>(null)
   const now = useNow(30_000)
   const timeZone = useMemo(() => sessionTimezone(session.location), [session.location])
 
@@ -590,15 +488,11 @@ function NoSignReminderPicker({ session, onDone }: Props) {
       return next
     })
     setIcsState('idle')
-    setNotifResult(null)
-    setPushScheduleFailed(false)
+    setOutcome(null)
   }
 
-  // Sorted shortest → longest so the summary reads "1h, 2h, 4h" not "4h, 1h, 2h".
-  const selectedList = useMemo(
-    () => [...selected].sort((a, b) => a - b),
-    [selected],
-  )
+  // Sorted shortest to longest so the summary reads "1h, 2h, 4h" not "4h, 1h, 2h".
+  const selectedList = useMemo(() => [...selected].sort((a, b) => a - b), [selected])
 
   const selectedFireAtList = useMemo(
     () => selectedList.map((mins) => new Date(now + mins * 60 * 1000)),
@@ -609,8 +503,8 @@ function NoSignReminderPicker({ session, onDone }: Props) {
     () =>
       selectedFireAtList.length === 0
         ? null
-        : formatReminderTimesLine(selectedFireAtList, { now: new Date(now), timeZone }),
-    [selectedFireAtList, now, timeZone],
+        : formatReminderTimesLine(selectedFireAtList, { now: new Date(now), timeZone, t }),
+    [selectedFireAtList, now, timeZone, t],
   )
 
   const handleIcs = async () => {
@@ -620,49 +514,44 @@ function NoSignReminderPicker({ session, onDone }: Props) {
     }
     try {
       const { downloadIcsAbsolute } = await import('../lib/ics')
-      downloadIcsAbsolute(session, selectedFireAtList)
+      downloadIcsAbsolute(session, selectedFireAtList, t)
       setIcsState('downloaded')
     } catch {
       setIcsState('error')
     }
   }
 
-  const handleNotify = async () => {
-    setNotifBusy(true)
-    setPushScheduleFailed(false)
+  const handleRemindMe = async () => {
+    if (busy || selectedList.length === 0) return
+    setBusy(true)
+    setOutcome(null)
     const copyFor = (fireAt: Date) => reminderCopy(session, fireAt, t)
-    const result = await scheduleAbsoluteReminders(session, selectedFireAtList, copyFor)
-    setNotifResult(result)
-    setNotifBusy(false)
-
-    // Fire-and-forget: also schedule server-side Web Push at the same
-    // absolute times so the user gets the reminder even with the tab
-    // closed. Same pattern as the expiry-path handleNotify above.
-    const reminders: ScheduledReminder[] = selectedFireAtList.map((fireAt) => ({
+    // From the moment of the tap, not the last 30-second tick.
+    const tapped = Date.now()
+    const fireAts = selectedList.map((mins) => new Date(tapped + mins * 60 * 1000))
+    const pushReminders: ScheduledReminder[] = fireAts.map((fireAt) => ({
       fire_at: fireAt.toISOString(),
       ...copyFor(fireAt),
       url: sessionLink(session.id),
     }))
-    if (reminders.length > 0) {
-      // Same persistence as the expiry-path handleNotify above — see comment
-      // there for why we await rather than fire-and-forget.
-      const pushResult = await schedulePushReminders(session.id, reminders)
-      if (pushResult.ok && pushResult.created.length > 0) {
-        try {
-          updateSession(session.id, {
-            push_reminders: pushResult.created.map((c) => ({
-              fire_at: c.fire_at,
-            })),
-          })
-          if (user) mirrorSessionUpdateToCloud(session.id)
-        } catch (err) {
-          console.warn('[reminders] could not persist push_reminders:', err)
-        }
-      } else if (!pushResult.ok && pushResult.reason !== 'unsupported' && pushResult.reason !== 'not_subscribed') {
-        // Not supported / not subscribed is a skip; anything else is a real
-        // failure. Same rule as the expiry-path handleNotify above.
-        setPushScheduleFailed(true)
-      }
+    try {
+      // No await before this call: it opens with the permission prompt.
+      const result = await remindMe({
+        sessionId: session.id,
+        pushReminders,
+        expiresAt: null,
+        armInTab: () => {
+          cancelInTabReminders(session.id)
+          return scheduleAbsoluteReminders(session, fireAts, copyFor)
+        },
+      })
+      if (result.background.ok) persistPushReminders(session.id, result.background.created, Boolean(user))
+      setOutcome(summariseRemindMe(result))
+    } catch (err) {
+      console.error('[reminders] remind me failed:', err)
+      setOutcome({ kind: 'none', times: [], step: 'failed' })
+    } finally {
+      setBusy(false)
     }
   }
 
@@ -677,10 +566,8 @@ function NoSignReminderPicker({ session, onDone }: Props) {
         {t('reminders.header')}
       </h2>
       <p className="text-sm mb-6 leading-relaxed" style={{ color: '#A9CFBE' }}>
-        {t('reminders.noSign.intro')}
+        {isNoSignReadRecord(session) ? t('unclearSign.remindIntro') : t('reminders.noSign.intro')}
       </p>
-
-      <PushSubscriptionBanner />
 
       {/* Chip selector */}
       <div className="flex flex-wrap gap-2 mb-3">
@@ -718,89 +605,23 @@ function NoSignReminderPicker({ session, onDone }: Props) {
         )}
       </p>
 
-      {/* Calendar */}
-      <Card className="mb-3">
-        <div className="flex items-start gap-3 mb-3">
-          <div className="w-12 h-12 rounded-xl bg-brand-50 text-brand-600 flex items-center justify-center shrink-0">
-            <Icon name="calendar" className="w-6 h-6" />
-          </div>
-          <div>
-            <h3 className="font-display font-bold text-ink-900">
-              {t('reminders.calendarHeader')}
-            </h3>
-            <p className="text-xs text-ink-600 mt-1 leading-relaxed">
-              {t('reminders.noSign.calendarCopy')}
-            </p>
-          </div>
-        </div>
-        <button
-          onClick={handleIcs}
-          disabled={icsState === 'downloaded' || selectedList.length === 0}
-          className="w-full bg-brand-500 hover:bg-brand-600 active:bg-brand-700 disabled:bg-brand-300 text-white font-semibold py-3 rounded-xl transition-colors"
-        >
-          {icsState === 'downloaded'
-            ? t('reminders.calendarDownloaded')
-            : icsState === 'error'
-              ? t('reminders.calendarError')
-              : icsState === 'empty'
-                ? t('reminders.calendarPickAtLeastOne')
-                : t('reminders.calendarCta', { count: selectedList.length })}
-        </button>
-      </Card>
+      <RemindMeButton onClick={handleRemindMe} busy={busy} disabled={selectedList.length === 0} />
+      <RemindMeOutcome summary={outcome} timeZone={timeZone} className="mt-3" />
+      <ReminderHelp tone="vault" className="mt-3 mb-6" />
 
-      {/* Push */}
-      <Card className="mb-6">
-        <div className="flex items-start gap-3 mb-3">
-          <div className="w-12 h-12 rounded-xl bg-accent-50 text-accent-700 flex items-center justify-center shrink-0">
-            <Icon name="bell" className="w-6 h-6" />
-          </div>
-          <div>
-            <h3 className="font-display font-bold text-ink-900">
-              {t('reminders.browserHeader')}
-            </h3>
-            <p className="text-xs text-ink-600 mt-1 leading-relaxed">
-              {t('reminders.noSign.browserCopy')}
-            </p>
-          </div>
-        </div>
-        <button
-          onClick={handleNotify}
-          disabled={
-            notifBusy ||
-            notifResult?.status === 'scheduled' ||
-            selectedList.length === 0
-          }
-          className="w-full bg-accent-600 hover:bg-accent-700 disabled:opacity-60 text-white font-semibold py-3 rounded-xl transition-colors"
-        >
-          {notifBusy ? (
-            <span>{t('reminders.browserRequesting')}</span>
-          ) : notifResult ? (
-            <span role="status" aria-live="polite">
-              <NotifStatusLine result={notifResult} />
-            </span>
-          ) : selectedList.length === 0 ? (
-            <span>{t('reminders.browserNothingSelected')}</span>
-          ) : (
-            <span>{t('reminders.browserCta', { count: selectedList.length })}</span>
-          )}
-        </button>
-        {/* Subscribed-but-failed warning — see the expiry-path picker above. */}
-        {pushScheduleFailed && (
-          <p
-            role="alert"
-            className="mt-3 px-3 py-2 rounded-lg bg-amber-50 border border-amber-200 text-amber-700 text-xs font-medium leading-snug"
-          >
-            {t('reminders.pushScheduleFailed')}
-          </p>
-        )}
-      </Card>
+      <CalendarCard
+        copy={t('reminders.noSign.calendarCopy')}
+        state={icsState}
+        count={selectedList.length}
+        onDownload={handleIcs}
+      />
 
-      <button
-        onClick={onDone}
-        className="mt-auto bg-brand-500 hover:bg-brand-600 active:bg-brand-700 text-white font-semibold py-4 rounded-xl transition-colors"
-      >
-        {t('common.done')}
-      </button>
+      {/* A record with no expiry (a permit zone outside its hours, a sign
+          that says you can't park now) can still carry a weekly
+          restriction, such as street sweeping (T5a). */}
+      <RecurringOffer session={session} className="mb-6" />
+
+      <DoneButton onDone={onDone} />
     </div>
   )
 }

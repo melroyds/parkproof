@@ -332,3 +332,31 @@ describe('withLocalEvidence (the full export)', () => {
     ).toBe(row)
   })
 })
+
+// T7 item 4: a read-only copy from a share link says, first, that it isn't this phone's record.
+describe('sessionRows for a shared copy', () => {
+  const t = i18n.t.bind(i18n)
+  const shared = record({
+    id: 'copy-1',
+    shared_from: {
+      original_session_id: 'rec-rows',
+      received_at: '2026-10-25T00:10:00.000Z',
+      shared_at: '2026-10-25T00:05:00.000Z',
+      arrival_bundle: LINK0,
+      snapshot: { driver: 'Sam' },
+    },
+  })
+
+  it("opens with \"This record was made on someone else's phone.\"", () => {
+    const rows = sessionRows(shared, TZ, t, CTX)
+    expect(rows[0]).toEqual([i18n.t('pdf.shared.field'), "This record was made on someone else's phone."])
+    // The sender's signed arrival is read as the copy's link 0.
+    expect(rows[2]).toEqual([i18n.t('pdf.evidence.field.arrivalSigned'), 'Sun 25 Oct 2026, 10:55 am AEDT'])
+  })
+
+  it('an own record has no such row', () => {
+    const rows = sessionRows(record({ signature: LINK0 }), TZ, t, CTX)
+    expect(rows.some(([, v]) => v === i18n.t('pdf.shared.madeElsewhere'))).toBe(false)
+    expect(rows[0][0]).toBe(i18n.t('pdf.evidence.field.arrivedAt'))
+  })
+})

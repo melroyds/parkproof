@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Verifikasi catatan bukti ParkProof — ParkProof</title>
-<meta name="description" content="Panduan langkah demi langkah openssl untuk memverifikasi PDF bukti ParkProof tidak diubah sejak disimpan. Penandatanganan kriptografis melalui AWS KMS ECDSA P-256.">
+<title>Cek tanda tangan pada catatan ParkProof | ParkProof</title>
+<meta name="description" content="Panduan langkah demi langkah openssl untuk mengecek bahwa catatan bukti ParkProof tidak berubah sejak ditandatangani ParkProof. Penandatanganan kriptografis melalui AWS KMS ECDSA P-256.">
 <meta name="robots" content="index, follow">
 <link rel="icon" href="../../assets/parkproof-icon.svg" type="image/svg+xml">
 
@@ -128,6 +128,14 @@
     margin-bottom: 14px;
     letter-spacing: -0.01em;
   }
+  h3 {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 18px;
+    color: var(--ink-900);
+    margin-top: 28px;
+    margin-bottom: 10px;
+  }
   p { margin-bottom: 14px; color: var(--ink-700); }
   p.small { font-size: 14px; color: var(--ink-500); }
 
@@ -227,7 +235,7 @@
   footer a { color: var(--brand-700); text-decoration: none; }
   footer a:hover { text-decoration: underline; }
 
-  /* Auto-detect chip — mirrors the landing's pp-locale-chip pattern.
+  /* Auto-detect chip. Mirrors the landing's pp-locale-chip pattern.
      Shown only when the visitor's browser language is supported AND
      different from the current page's language. Dismissable per
      session via sessionStorage. */
@@ -276,98 +284,136 @@
 
   <nav class="locale-switcher" aria-label="Language"><span class="marker">🌏</span> <a href="/verify/" hreflang="en">English</a> <span class="sep">·</span> <a href="/verify/zh-CN/" hreflang="zh-CN">简体中文</a> <span class="sep">·</span> <a href="/verify/vi/" hreflang="vi">Tiếng Việt</a> <span class="sep">·</span> <span class="active">Bahasa Indonesia</span> <span class="sep">·</span> <a href="/verify/ko/" hreflang="ko">한국어</a> <span class="sep">·</span> <a href="/verify/it/" hreflang="it">Italiano</a> <span class="sep">·</span> <a href="/verify/el/" hreflang="el">Ελληνικά</a> <span class="sep">·</span> <a href="/verify/hi/" hreflang="hi">हिन्दी</a> <span class="sep">·</span> <a href="/verify/pa/" hreflang="pa">ਪੰਜਾਬੀ</a></nav>
 
-  <div class="eyebrow">Verifikasi</div>
-  <h1>Verifikasi sebuah <span class="accent">catatan bukti</span> ParkProof.</h1>
-  <p class="lede">Setiap PDF bukti ParkProof membawa lampiran tanda tangan kriptografis. Halaman ini adalah panduan publik, offline untuk siapa saja — petugas dewan, perusahaan asuransi, panitera pengadilan, atau pengemudi sendiri — untuk mengkonfirmasi bahwa catatan tidak diubah sejak saat itu disimpan.</p>
+  <div class="eyebrow">Cek tanda tangan</div>
+  <h1>Cek tanda tangan pada <span class="accent">catatan ParkProof</span>.</h1>
+  <p class="lede">Setiap PDF bukti ParkProof memuat lampiran tanda tangan kriptografis, dan setiap catatan bisa disimpan sebagai berkas bukti. Halaman ini menunjukkan kepada siapa pun, misalnya petugas dewan kota, perusahaan asuransi, panitera pengadilan, atau pengemudi sendiri, cara mengecek secara offline bahwa sebuah catatan tidak berubah sejak ParkProof menandatanganinya.</p>
 
   <div class="callout">
-    <strong>Bingkai jujur.</strong> Tanda tangan membuktikan <em>integritas</em>: byte di dalam catatan ini identik dengan byte yang ditandatangani pada saat pemindaian. Tanda tangan tidak membuktikan <em>kebenaran</em> catatan (AI bisa salah membaca rambu), juga tidak menentukan bobot hukum bukti. Itu adalah penilaian terpisah yang dibuat oleh siapa pun yang meninjaunya.
+    <strong>Terus terang.</strong> Tanda tangan yang valid menunjukkan <em>integritas</em>: detail dan sidik jari foto yang ditandatangani persis sama dengan yang ditandatangani ParkProof, pada waktu penandatanganan. Tanda tangan tidak menunjukkan bahwa catatan itu <em>benar</em> (AI bisa salah membaca rambu), siapa yang mengemudi, di mana mobil berada, atau kapan mobil tiba atau pergi, dan tidak menentukan seberapa besar bobot catatan itu. Itu keputusan orang yang meninjaunya.
   </div>
 
-  <h2>Apa yang kamu verifikasi</h2>
-  <p>Setiap sesi ParkProof memiliki <strong>payload</strong> (file teks kecil berisi metadata sesi kanonis plus hash SHA-256 dari foto rambu + mobil) dan <strong>tanda tangan</strong> (payload yang ditandatangani dengan kunci pribadi ECDSA P-256 yang dikelola AWS KMS dan tidak pernah meninggalkan AWS). Keduanya dicetak di lampiran tanda tangan setiap PDF bukti yang diekspor.</p>
-  <p><strong>Kunci publik</strong> yang diperlukan untuk memverifikasi tanda tangan diterbitkan di <a class="link" href="/parkproof-public-key.pem"><code>/parkproof-public-key.pem</code></a> — buka di browser untuk memastikan dimuat, lalu simpan secara lokal.</p>
+  <h2>Apa yang kamu cek</h2>
+  <p>Catatan ParkProof ditandatangani per bagian, yang disebut mata rantai. Mata rantai 0 ditandatangani saat ParkProof menerima catatan yang disimpan. Setiap mata rantai berikutnya, misalnya detail saat parkir, foto kondisi mobil, foto bukti pembayaran, atau saat pergi, ditandatangani saat diterima ParkProof dan memuat SHA-256 mata rantai sebelumnya, sehingga semua mata rantai membentuk rantai. Setiap mata rantai punya <strong>payload</strong> (teks persis yang ditandatangani, termasuk sidik jari SHA-256 foto-fotonya) dan <strong>tanda tangan</strong> yang dibuat dengan kunci privat ParkProof (ECDSA P-256), yang tidak pernah keluar dari AWS KMS. PDF bukti mencetak setiap mata rantai di lampiran tanda tangannya. <strong>Berkas bukti</strong> catatan (berkas .json yang bisa diunduh pengemudi dari catatan di aplikasi) berisi payload dan tanda tangan yang sama, ditambah foto aslinya.</p>
+  <p><strong>Kunci publik</strong> yang diperlukan untuk mengecek tanda tangan diterbitkan di <a class="link" href="/parkproof-public-key.pem"><code>/parkproof-public-key.pem</code></a>. Buka di browser untuk memastikan kunci itu dimuat, lalu simpan.</p>
 
   <h2>Yang kamu butuhkan</h2>
   <ul>
-    <li><strong>PDF bukti</strong> — disediakan oleh orang yang menyengketakan atau memproduksi catatan.</li>
-    <li><strong><code>openssl</code></strong> — disertakan dengan macOS dan kebanyakan distro Linux; di Windows, tersedia melalui Git Bash, WSL, atau build OpenSSL mandiri.</li>
-    <li><strong>Sekitar 60 detik.</strong></li>
+    <li><strong>PDF bukti atau berkas bukti</strong>, dari orang yang menyerahkan catatan. Untuk mengecek foto, kamu perlu berkas bukti.</li>
+    <li><strong><code>openssl</code></strong>. Tersedia di macOS dan kebanyakan sistem Linux. Di Windows, tersedia di Git for Windows (Git Bash) atau WSL.</li>
+    <li><strong>Beberapa menit.</strong></li>
   </ul>
 
   <h2>Langkah demi langkah</h2>
 
-  <p>Buka PDF bukti, gulir ke halaman <strong>"Lampiran tanda tangan"</strong> di belakang. Kamu akan melihat tiga blok teks: <code>payload</code>, <code>sig.base64</code>, dan referensi ke URL kunci publik. Simpan dua yang pertama ke file di mesinmu, lalu jalankan verifikasi:</p>
+  <p>Di PDF, buka lampiran tanda tangan di bagian belakang. Setiap mata rantai punya tiga blok: payload sebagai teks, payload dalam base64, dan tanda tangan dalam base64. Salin dua blok base64 dari mata rantai 0 ke berkas bernama <code>link0-payload.b64</code> dan <code>link0-sig.b64</code>, lalu jalankan:</p>
 
-  <pre><span class="comment"># 1. Simpan blok payload dari lampiran PDF ke payload.txt
-#    (copy-paste persis; pertahankan akhir baris).
-# 2. Simpan blok tanda tangan base64 ke sig.base64.
-# 3. Ambil kunci publik.</span>
+  <pre><span class="comment"># 1. Dekode payload. base64 -d mengabaikan pembungkusan baris di PDF.</span>
+base64 -d link0-payload.b64 > link0-payload.txt
+
+<span class="comment"># 2. Dekode tanda tangan.</span>
+base64 -d link0-sig.b64 > link0-sig.bin
+
+<span class="comment"># 3. Unduh kunci publik ParkProof.</span>
 curl -O https://www.parkproof.com.au/parkproof-public-key.pem
 
-<span class="comment"># 4. Dekode tanda tangan base64 ke byte mentah.</span>
-base64 -d sig.base64 > sig.bin
-
-<span class="comment"># 5. Jalankan verifikasi.</span>
+<span class="comment"># 4. Cek tanda tangan. Keluaran yang diharapkan: "Verified OK".</span>
 openssl dgst -sha256 -verify parkproof-public-key.pem \
-  -signature sig.bin payload.txt</pre>
+  -signature link0-sig.bin link0-payload.txt</pre>
 
-  <p><strong>Langkah 6 — verifikasi ulang foto-fotonya.</strong> Langkah <code>openssl</code> di atas hanya memverifikasi payload metadata. Payload memuat hash SHA-256 dari setiap foto, tetapi <code>Verified OK</code> saja <em>tidak</em> memverifikasi gambar itu sendiri — foto yang ditukar masih bisa lolos. Untuk setiap foto di PDF, ekspor atau simpan file gambarnya, lalu hitung ulang hash SHA-256 dan bandingkan dengan nilai hash yang sesuai di dalam <code>payload.txt</code>:</p>
+  <p>Lakukan langkah 1, 2, dan 4 untuk setiap mata rantai, dengan nama berkasnya sendiri (<code>link1-payload.b64</code>, <code>link1-sig.b64</code>, dan seterusnya). Jangan menyalin teks payload yang bisa dibaca sebagai ganti blok base64: PDF memotong baris yang panjang, sehingga byte-nya berubah dan pengecekan gagal.</p>
 
-  <pre><span class="comment"># 6. Untuk SETIAP foto di PDF, hitung ulang hash-nya
-#    dan bandingkan dengan nilai di payload.txt.
-#    Cocokkan setiap file ke field-nya:
-#      foto rambu   → sign_photo_sha256
-#      foto mobil   → car_photo_sha256
-#      foto sekitar → ambient_photo_sha256</span>
-sha256sum &lt;file&gt;
+  <h3>Di Windows</h3>
+  <p>Di cmd atau PowerShell, <code>base64 -d</code> tidak tersedia. Dekode dengan <code>certutil</code>, yang sudah ada di Windows, dan di PowerShell ketik <code>curl.exe</code> sebagai ganti <code>curl</code>. Kamu juga bisa menjalankan semua perintah di halaman ini persis seperti tertulis di Git Bash.</p>
 
-<span class="comment"># Atau, jika sha256sum tidak tersedia:</span>
-openssl dgst -sha256 &lt;file&gt;
+  <pre>certutil -decode link0-payload.b64 link0-payload.txt
+certutil -decode link0-sig.b64 link0-sig.bin
+curl.exe -O https://www.parkproof.com.au/parkproof-public-key.pem</pre>
 
-<span class="comment"># Bandingkan output dengan field sha256 yang cocok di payload.txt.
-# Hash sama  → foto itu tidak diubah sejak ditandatangani.
-# Hash beda  → foto itu DIUBAH setelah ditandatangani.</span></pre>
+  <h2>Cek bahwa mata rantai tersambung berurutan</h2>
+  <p>Setiap mata rantai setelah mata rantai 0 memuat <code>parent_payload_sha256</code>: SHA-256 dari payload mata rantai sebelumnya. Cetak SHA-256 setiap berkas payload dan bandingkan dengan nilai di mata rantai berikutnya.</p>
+
+  <pre><span class="comment"># 5. Cetak SHA-256 payload mata rantai 0.</span>
+openssl dgst -sha256 link0-payload.txt
+<span class="comment"># Nilai setelah "=" harus sama dengan parent_payload_sha256 di mata rantai 1.
+# Lakukan hal yang sama untuk setiap mata rantai berikutnya.</span></pre>
+
+  <p>Jika dua mata rantai punya nomor yang sama (2a dan 2b), dua perangkat masing-masing menambahkan bagian di titik itu. Keduanya menunjuk ke mata rantai sebelumnya yang sama.</p>
+
+  <h2>Cek foto</h2>
+  <p>Tanda tangan mencakup sidik jari SHA-256 setiap foto, bukan gambarnya sendiri. Foto yang dicetak di PDF adalah salinan yang dikodekan ulang, jadi byte-nya tidak akan pernah cocok. Untuk mengecek foto, gunakan berkas bukti catatan. Berkas itu mencantumkan setiap foto di bawah <code>photos</code>, dengan <code>sha256</code>-nya, mata rantai yang menandatanganinya (<code>signed_in</code>), dan byte aslinya dalam base64 (<code>bytes_base64</code>). Nama berkasnya diawali parkproof-evidence-, diikuti awal ID catatan. Perintah di bawah menyebutnya <code>evidence.json</code>.</p>
+
+  <pre><span class="comment"># 6. Ambil foto pertama dari berkas dengan jq, alat JSON gratis.</span>
+jq -r '.photos[0].bytes_base64' evidence.json | base64 -d > photo1.jpg
+
+<span class="comment"># 7. Cetak SHA-256-nya.</span>
+openssl dgst -sha256 photo1.jpg
+
+<span class="comment"># 8. Lihat mata rantai dan kolom mana yang menandatanganinya.</span>
+jq '.photos[0].signed_in' evidence.json</pre>
+
+  <p>Nilai hex itu harus sama dengan <code>sha256</code> foto tersebut di dalam payload yang ditandatangani dari setiap mata rantai di <code>signed_in</code>: <code>sign_photo_sha256</code>, <code>car_photo_sha256</code>, atau <code>ambient_photo_sha256</code> di mata rantai 0, atau sebuah <code>sha256</code> di bawah <code>photos</code>, <code>photo</code>, atau <code>return_photos</code> di mata rantai berikutnya. Cocokkan dengan payload yang tanda tangannya sudah kamu cek di langkah 4, bukan hanya dengan <code>sha256</code> di sebelah foto dalam berkas, yang tidak ditandatangani. Gunakan <code>.photos[1]</code> untuk foto kedua, dan seterusnya.</p>
+  <p>Tanpa jq, buka berkas di editor teks, salin nilai <code>bytes_base64</code> sebuah foto ke berkas bernama <code>photo1.b64</code>, lalu jalankan <code>base64 -d photo1.b64 &gt; photo1.jpg</code>.</p>
+
+  <h3>Di Windows</h3>
+  <p>Di Windows, PowerShell bisa membaca berkas itu sendiri:</p>
+
+  <pre>$e = Get-Content evidence.json -Raw | ConvertFrom-Json
+[IO.File]::WriteAllBytes((Join-Path $PWD 'photo1.jpg'), [Convert]::FromBase64String($e.photos[0].bytes_base64))
+certutil -hashfile photo1.jpg SHA256
+$e.photos[0].signed_in</pre>
 
   <div class="callout">
-    <strong>Penting.</strong> <code>Verified OK</code> dari langkah 5 hanya membuktikan bahwa metadata dan <em>nilai</em> hash di dalam payload utuh. Itu tidak membuktikan bahwa foto yang ditampilkan di PDF cocok dengan hash tersebut. Tanpa langkah 6, sebuah foto yang ditukar tetap lolos <code>Verified OK</code>. Hanya setelah hash setiap foto cocok kamu bisa memperlakukan gambar-gambar itu sebagai terverifikasi.
+    <strong>Pengecekan foto adalah langkah terpisah.</strong> <code>Verified OK</code> menunjukkan sidik jari di dalam payload tidak berubah. Hanya menghitung ulang hash foto asli yang bisa menunjukkan bahwa foto itu adalah foto yang ditandatangani. Jika hash-nya berbeda, foto itu bukan foto yang ditandatangani ParkProof, meskipun pengecekan tanda tangan lolos. Jika berkas tidak memuat byte sebuah foto (<code>bytes</code> bernilai <code>not_on_this_device</code>, atau <code>withheld_permit</code> untuk foto izin yang tidak disertakan pengemudi), berkas itu tidak bisa dipakai untuk mengecek foto tersebut.
   </div>
+
+  <h2>Memakai berkas bukti sebagai ganti PDF</h2>
+  <p>Berkas bukti juga memuat payload dan tanda tangan setiap mata rantai dalam base64, jadi kamu bisa melakukan langkah 1 sampai 5 tanpa PDF. Ambil mata rantai 0 dari berkas, lalu jalankan langkah 3 sampai 5 seperti di atas:</p>
+
+  <pre>jq -r '.links[0].canonical_payload_base64' evidence.json | base64 -d > link0-payload.txt
+jq -r '.links[0].signature_base64' evidence.json | base64 -d > link0-sig.bin</pre>
+
+  <p>Di PowerShell:</p>
+
+  <pre>$e = Get-Content evidence.json -Raw | ConvertFrom-Json
+[IO.File]::WriteAllBytes((Join-Path $PWD 'link0-payload.txt'), [Convert]::FromBase64String($e.links[0].canonical_payload_base64))
+[IO.File]::WriteAllBytes((Join-Path $PWD 'link0-sig.bin'), [Convert]::FromBase64String($e.links[0].signature_base64))</pre>
 
   <h2>Apa arti hasilnya</h2>
 
   <div class="grid-2">
     <div class="card ok">
-      <h3>Terverifikasi <span class="label">LOLOS</span></h3>
-      <p><code>Verified OK</code> — payload di PDF-mu identik secara byte dengan apa yang ParkProof tandatangani pada saat pemindaian. Aturan rambu, GPS, timestamp, alamat, dan <em>nilai</em> hash foto di dalam payload utuh. Untuk mengkonfirmasi foto itu sendiri belum ditukar, kamu masih harus menjalankan langkah verifikasi ulang foto (langkah 6) — <code>Verified OK</code> saja tidak memverifikasi gambar.</p>
+      <h3>Tanda tangan valid <span class="label">LOLOS</span></h3>
+      <p><code>Verified OK</code>: payload itu persis yang ditandatangani ParkProof. Detail dan sidik jari foto di dalamnya tidak berubah sejak ParkProof menandatanganinya, pada waktu <code>signed_at</code> di dalamnya. Foto-fotonya sendiri dicek di langkah 6 sampai 8.</p>
     </div>
     <div class="card fail">
       <h3>Gagal <span class="label">GAGAL</span></h3>
-      <p><code>Verification failure</code> — payload, tanda tangan, atau keduanya telah dimodifikasi sejak catatan disimpan. PDF mungkin diedit, lampiran dirusak, atau copy-paste menimbulkan perbedaan spasi. Ulangi penyalinan dengan hati-hati sebelum menarik kesimpulan.</p>
+      <p><code>Verification failure</code>: payload atau tanda tangan bukan yang ditandatangani ParkProof. Catatan itu mungkin telah diubah, atau sebuah blok tersalin dengan keliru. Salin ulang blok base64 secara lengkap dan coba lagi sebelum menarik kesimpulan.</p>
     </div>
   </div>
 
   <h2>Lebih dari "apakah byte berubah?"</h2>
-  <p>Verifikasi yang berhasil mengkonfirmasi <em>integritas</em>. Itu tidak mengkonfirmasi:</p>
+  <p>Tanda tangan yang valid menunjukkan <em>integritas</em>. Tanda tangan tidak menunjukkan:</p>
   <ul>
-    <li><strong>Bahwa AI membaca rambu dengan benar.</strong> Pemindaian ParkProof adalah pembacaan mesin dari rambu parkir, dan mesin bisa salah. Teks putusan dan aturan dalam catatan adalah pembacaan terbaik AI pada saat pemindaian, bukan kebenaran absolut.</li>
-    <li><strong>Bahwa foto menggambarkan apa yang orang itu katakan.</strong> Tanda tangan membuktikan foto belum diubah <em>sejak disimpan</em>, bukan bahwa foto itu sendiri ditangkap dengan jujur.</li>
+    <li><strong>Bahwa AI membaca rambu dengan benar.</strong> Pemindaian ParkProof adalah pembacaan mesin dari rambu parkir, dan mesin bisa salah. Teks jawaban dan aturan dalam catatan adalah pembacaan terbaik AI pada saat pemindaian, bukan kebenaran absolut.</li>
+    <li><strong>Bahwa foto menggambarkan apa yang orang itu katakan.</strong> Tanda tangan yang valid menunjukkan sidik jari foto tidak berubah sejak ditandatangani ParkProof, dan menghitung ulang hash menunjukkan apakah sebuah foto cocok dengan sidik jarinya. Keduanya tidak menunjukkan bahwa foto diambil dengan jujur.</li>
     <li><strong>Hasil hukum apa pun.</strong> Apakah bukti mendukung banding, pengembalian dana, atau perkara pengadilan adalah keputusan peninjau. ParkProof adalah alat, bukan pengacara.</li>
+    <li><strong>Di mana mobil berada, kapan mobil tiba atau pergi, atau siapa yang mengemudi.</strong> Lokasi dalam catatan berasal dari ponsel pengemudi, atau diketik sendiri oleh pengemudi. Waktu yang ditandai sebagai waktu ponsel berasal dari ponsel pengemudi, dan waktu penandatanganan ParkProof adalah saat ParkProof menerima setiap bagian.</li>
   </ul>
 
   <h2>Mengapa ini ada</h2>
-  <p>Sebagian besar aplikasi parkir yang menghasilkan "bukti" hanya menghasilkan tangkapan layar. Tangkapan layar tidak punya cerita integritas — bisa saja diedit kapan pun antara saat diambil dan saat dikirim. Tanda tangan kriptografis adalah perbedaan antara <em>"inilah yang aku lihat"</em> dan <em>"inilah yang aku lihat, dan ini bukti matematis bahwa aku belum mengubahnya sejak itu."</em></p>
-  <p>Kunci publik diterbitkan sehingga verifikasi sepenuhnya offline — kamu tidak perlu mempercayai ParkProof, menghubungi server kami, atau menjalankan aplikasi kami untuk mengkonfirmasi klaim integritas. Verifikasi dapat dilakukan bertahun-tahun dari sekarang bahkan jika ParkProof tidak lagi dipelihara, selama <code>openssl</code> masih ada.</p>
+  <p>Sebagian besar aplikasi parkir yang menghasilkan "bukti" hanya menghasilkan tangkapan layar. Tangkapan layar bisa saja diedit kapan pun antara saat diambil dan saat dikirim. Tanda tangan kriptografis adalah perbedaan antara <em>"inilah yang aku lihat"</em> dan <em>"inilah yang aku lihat, dan siapa pun bisa mengecek bahwa itu tidak berubah sejak ParkProof menandatanganinya."</em></p>
+  <p>Kunci publik diterbitkan, jadi setelah kamu menyimpannya, pengecekan bisa dilakukan offline, tanpa aplikasi kami. Waktu penandatanganan berasal dari jam server ParkProof, jadi untuk waktu itu kamu memercayai ParkProof. Pengecekan bisa dilakukan bertahun-tahun dari sekarang, bahkan jika ParkProof sudah tidak berjalan, selama kamu punya salinan kunci publik yang tersimpan dan <code>openssl</code>.</p>
 
   <h2>Pertanyaan?</h2>
   <p>Email <a class="link" href="mailto:hello@parkproof.com.au">hello@parkproof.com.au</a>. Kami menjawab.</p>
 
   <footer>
-    <span>parkproof.com.au · halaman verifikasi</span>
+    <span>parkproof.com.au · cek tanda tangan</span>
     <span><a href="/parkproof-public-key.pem">/parkproof-public-key.pem</a> <span class="sep">·</span> <a href="/">← Kembali ke ParkProof</a></span>
   </footer>
 </div>
 
-<!-- Auto-detect chip — nudges visitors whose browser language differs
+<!-- Auto-detect chip: nudges visitors whose browser language differs
      from the current page's language to their language's /verify/
      subdirectory. The locale switcher at top remains for explicit
      switching; this chip is the one-tap discoverability layer. -->

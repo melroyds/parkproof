@@ -1,8 +1,9 @@
 import type { TFunction } from 'i18next'
 import type { ParkingSession } from '../types'
+import { departureSummary } from './chain-view'
 import { formatCountdownLocalized, type Urgency } from './countdown'
 import { ACTIVE_AFTER_EXPIRY_MS } from './storage'
-import { formatInZone } from './time-format'
+import { formatInZone, isSameDayInZone } from './time-format'
 
 /**
  * "I've left" is offered on any record the driver hasn't ended yet,
@@ -54,6 +55,26 @@ export function endConfirmText(
     return t('session.endConfirmLate', { time: tapWhen(now, timeZone) })
   }
   return t(onTimeKey)
+}
+
+/**
+ * The time for an ended record's status line on its record screen ("Ended
+ * 5:23 pm AEDT"; field-test fix list, item 6), so two records from the same
+ * afternoon can't be mistaken for each other. It is the departure row's tap
+ * time (`departureSummary`: the signed departure's tap time once signed,
+ * else `ended_at`), so the two lines never disagree. In the record's own
+ * zone with the zone's name. The day is left out when the record ended on
+ * the day it arrived (the screen's header shows that day) and added when it
+ * didn't. Null when the record hasn't ended or the time can't be read.
+ *
+ * A phone time: the departure row right below labels it as the tap on the
+ * phone's clock, so this compact line doesn't repeat that.
+ */
+export function endedStatusTime(session: ParkingSession, timeZone: string): string | null {
+  const tapped = departureSummary(session)?.tapped_at
+  if (typeof tapped !== 'string' || !Number.isFinite(Date.parse(tapped))) return null
+  const sameDay = isSameDayInZone(tapped, session.arrived_at, timeZone)
+  return formatInZone(tapped, timeZone, { withDate: !sameDay })
 }
 
 export type RecordStatusKind = 'ended' | 'expired' | 'no_expiry' | 'counting'

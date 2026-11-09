@@ -288,6 +288,50 @@ export function departureSummary(session: ParkingSession, context: DepartureCont
   }
 }
 
+/**
+ * How the record's arrival_context (link 1) stands, for screens and PDFs
+ * that show a fact it signs (N2), such as the sign's condition (T3).
+ * 'none': there is no arrival_context and none will be added on this
+ * device (the chain's key isn't here).
+ */
+export type ArrivalContextSigning = 'signed' | 'dev_key' | 'pending' | 'rejected' | 'none'
+
+export interface ArrivalContextView {
+  signing: ArrivalContextSigning
+  /**
+   * Once signed, the signed data parsed from the payload (the earliest
+   * signed copy, should there be two). Otherwise the stored data of a
+   * pending or refused arrival_context, or null when there is none.
+   */
+  data: Record<string, unknown> | null
+}
+
+function objectOrNull(value: unknown): Record<string, unknown> | null {
+  return value && typeof value === 'object' && !Array.isArray(value) ? (value as Record<string, unknown>) : null
+}
+
+export function arrivalContextView(session: ParkingSession): ArrivalContextView {
+  const contexts = (Array.isArray(session.addenda) ? session.addenda : []).filter(
+    (a): a is SignedAddendum => !!a && a.kind === 'arrival_context',
+  )
+  const signed = contexts
+    .filter(hasBundle)
+    .map((a) => ({ a, at: signedTimeOf(a.bundle as SignatureBundle) ?? '' }))
+    .sort((x, y) => x.at.localeCompare(y.at))[0]?.a
+  if (signed) {
+    const bundle = signed.bundle as SignatureBundle
+    return { signing: signedState(bundle) === 'dev_key' ? 'dev_key' : 'signed', data: objectOrNull(parsePayload(bundle)?.data) }
+  }
+  if (contexts.length === 0) {
+    return { signing: chainKeyForAddenda(session) === undefined ? 'none' : 'pending', data: null }
+  }
+  const stored = contexts.find((a) => !a.rejected) ?? contexts[0]
+  return {
+    signing: contexts.every((a) => !!a.rejected) ? 'rejected' : 'pending',
+    data: objectOrNull(stored.data),
+  }
+}
+
 // ─── Copy keys ────────────────────────────────────────────────────────────
 // Code values are shown through these maps, never printed raw.
 
@@ -344,7 +388,7 @@ export const PHOTO_ROLE_KEYS: Readonly<Record<PhotoRole, string>> = {
  * The summary line after "Check signatures". `count` (the number of valid
  * signatures) is set for the all-valid lines, plurals. When a signed photo
  * isn't on this device its bytes were never compared, so the all-valid
- * line says so instead of "Nothing has changed" (N4).
+ * line says so instead of "The signed details haven't changed" (N4).
  */
 export function checkSummary(
   result: Pick<RecordVerification, 'overall' | 'counts'> & { photos?: RecordVerification['photos'] },

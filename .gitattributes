@@ -1,0 +1,10 @@
+# The public signing key is served byte for byte (public/ and the landing
+# copy both ship as /parkproof-public-key.pem). With core.autocrlf=true on
+# Windows a checkout rewrote it with CRLF, so the live file was 182 bytes
+# against 178 in the repo. Keep it LF in every working tree.
+*.pem text eol=lf
+# Shebang scripts and shell scripts must keep LF, or the first line ends in a
+# stray CR on Windows checkouts (core.autocrlf=true) and Node, Vitest and bash
+# fail to parse them.
+*.mjs text eol=lf
+*.sh text eol=lf

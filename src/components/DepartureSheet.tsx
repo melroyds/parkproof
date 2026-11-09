@@ -1,14 +1,28 @@
-import { useMemo, useRef, useSyncExternalStore } from 'react'
+import { useMemo, useRef, useState, useSyncExternalStore } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { ParkingSession } from '../types'
+import type { ParkingSession, PhotoRef } from '../types'
 import type { DepartureFixRequest } from '../lib/departure'
 import { formatAccuracy } from '../lib/accuracy'
+import { canTakeReturnPhotos, gridRoles } from '../lib/evidence-photos'
+import { discardUnreferencedPhotos } from '../lib/record-photos'
 import { endConfirmText } from '../lib/record-status'
 import { sessionTimezone } from '../lib/timezone'
 import { useModalFocus } from '../lib/use-modal-focus'
 import { useNow } from '../lib/use-now'
+import { usePhotoSlots } from '../lib/use-photo-slots'
+import CollapsibleSection from './CollapsibleSection'
 import Icon from './Icon'
+import PhotoAngleGrid from './PhotoAngleGrid'
 import Button from './ui/Button'
+
+/** What "Confirm I've left" hands App besides the tap itself. */
+export interface DepartureConfirmation {
+  /**
+   * The condition photos taken on the sheet (return-* roles): their refs
+   * once their writes have settled. They go into the departure addendum.
+   */
+  returnPhotos: Promise<PhotoRef[]>
+}
 
 interface Props {
   /** The record the driver is ending. */
@@ -19,9 +33,10 @@ interface Props {
   confirmKey: 'active.iveLeftConfirm' | 'session.endConfirm'
   /**
    * "Confirm I've left". App stamps ended_at with this tap's time and closes
-   * the sheet at once; it keeps waiting for the fix in the background.
+   * the sheet at once; it keeps waiting for the fix (and any condition
+   * photos still being stored) in the background.
    */
-  onConfirm: () => void
+  onConfirm: (confirmation: DepartureConfirmation) => void
   /** Cancel, Escape or a tap outside: nothing is recorded. */
   onCancel: () => void
   /**
@@ -49,13 +64,47 @@ export default function DepartureSheet({ session, fix, confirmKey, onConfirm, on
   const titleRef = useRef<HTMLHeadingElement>(null)
   // A second tap before the sheet goes away mustn't confirm twice.
   const confirmed = useRef(false)
+  // Photos taken on the sheet are kept (Confirm) or deleted (Cancel) once.
+  const photosSettled = useRef(false)
+  // "Record the car's condition now (optional)": collapsed until opened.
+  // Photos are stored under the record as they are taken.
+  const returnSlots = usePhotoSlots(session.id)
+  const [conditionOpen, setConditionOpen] = useState(false)
+  // Offered only when the photos can be signed into the record (its chain
+  // can be extended on this device and has room for them). Decided when
+  // the sheet opens, so the section doesn't vanish under the driver.
+  const [offerCondition] = useState(() => canTakeReturnPhotos(session))
+
+  // Cancel, Escape or a tap outside: nothing is recorded, and photos taken
+  // on the sheet are deleted once their writes have landed.
+  const cancel = () => {
+    if (!photosSettled.current) {
+      photosSettled.current = true
+      returnSlots.close()
+      void discardUnreferencedPhotos(session.id, returnSlots.captured())
+    }
+    onCancel()
+  }
   // Focus starts on the title, so neither action fires on a stray Enter.
-  useModalFocus(dialogRef, { initialFocus: titleRef, onEscape: onCancel, returnFocus })
+  useModalFocus(dialogRef, { initialFocus: titleRef, onEscape: cancel, returnFocus })
 
   const confirm = () => {
-    if (confirmed.current) return
+    if (confirmed.current || photosSettled.current) return
     confirmed.current = true
-    onConfirm()
+    photosSettled.current = true
+    returnSlots.close()
+    // ended_at is this tap (App stamps it now). The photos follow once stored.
+    const captured = returnSlots.captured()
+    const returnPhotos = returnSlots.settle(gridRoles('return'))
+    // Photos retaken on the sheet are dropped; the kept ones go into the record.
+    void returnPhotos.then((refs) =>
+      discardUnreferencedPhotos(
+        session.id,
+        captured,
+        refs.map((r) => r.sha256),
+      ),
+    )
+    onConfirm({ returnPhotos })
   }
 
   const status =
@@ -69,15 +118,15 @@ export default function DepartureSheet({ session, fix, confirmKey, onConfirm, on
     <div
       ref={dialogRef}
       onMouseDown={(e) => {
-        if (e.target === e.currentTarget) onCancel()
+        if (e.target === e.currentTarget) cancel()
       }}
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-ink-900/60 backdrop-blur-sm p-4"
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-ink-900/60 backdrop-blur-sm safe-p-4"
       role="dialog"
       aria-modal="true"
       aria-labelledby="departure-title"
       aria-describedby="departure-body"
     >
-      <div className="bg-white gf-card max-w-md w-full p-6 max-h-[90vh] overflow-y-auto">
+      <div className="bg-white gf-card max-w-md w-full p-6 max-h-[min(90vh,100%)] overflow-y-auto">
         <h2
           id="departure-title"
           ref={titleRef}
@@ -106,13 +155,25 @@ export default function DepartureSheet({ session, fix, confirmKey, onConfirm, on
           )}
           <span>{status.text}</span>
         </p>
+        {offerCondition && (
+          <CollapsibleSection
+            className="mt-4"
+            tone="paper"
+            title={t('departure.condition.toggle')}
+            open={conditionOpen}
+            onToggle={() => setConditionOpen((o) => !o)}
+            badge={returnSlots.savedCount > 0 ? t('photoGrid.count', { count: returnSlots.savedCount }) : null}
+          >
+            <PhotoAngleGrid phase="return" slots={returnSlots} />
+          </CollapsibleSection>
+        )}
         <div className="mt-6 flex flex-col gap-2">
           <Button type="button" onClick={confirm} className="w-full min-h-[44px]">
             {t('departure.confirm')}
           </Button>
           <button
             type="button"
-            onClick={onCancel}
+            onClick={cancel}
             className="w-full min-h-[44px] text-sm font-medium text-ink-700 hover:text-ink-900 rounded-xl"
           >
             {t('common.cancel')}

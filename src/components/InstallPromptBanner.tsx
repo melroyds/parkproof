@@ -147,7 +147,7 @@ export default function InstallPromptBanner() {
   if (!deferred || dismissed) return null
 
   return (
-    <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 max-w-[calc(100vw-1.5rem)]">
+    <div className="fixed safe-bottom-4 left-1/2 -translate-x-1/2 z-40 safe-max-w-pill">
       <div className="bg-ink-900 text-white rounded-full border border-brand-900/10 shadow-sm px-4 py-2.5 flex items-center gap-3 text-sm whitespace-nowrap">
         <Icon name="bell" className="w-4 h-4 text-brand-300 shrink-0" />
         <span className="font-semibold">{t('installPrompt.available')}</span>

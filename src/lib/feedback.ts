@@ -15,6 +15,7 @@
 // identifies a user. Fire-and-forget: never blocks UI, never surfaces errors.
 
 import { endpointUrl } from './api'
+import type { SignStatus } from '../types'
 
 export type FeedbackVerdict = 'correct' | 'retake'
 
@@ -43,6 +44,15 @@ export interface FeedbackContext {
    * working prompt from a regression.
    */
   payment_methods?: string[] | null
+  // ── T3 (build spec item 5). The server whitelists exactly these. ──
+  /** Whether the photo showed a readable parking sign (the model's sign_status). */
+  sign_status?: SignStatus
+  /** How many notes the model made on what stops the sign being read clearly. */
+  sign_issues_count?: number
+  /** The model judged the sign an area sign. */
+  is_area_sign?: boolean
+  /** How many weekly restrictions (street cleaning, clearways...) the model found. */
+  recurring_restrictions_count?: number
 }
 
 export function submitFeedback(payload: {

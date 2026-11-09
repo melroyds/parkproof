@@ -3,7 +3,7 @@
     "back": "← Back",
     "backToHome": "← Home",
     "backToHistory": "← Back to history",
-    "backToSession": "← Back to session",
+    "backToSession": "← Back to record",
     "cancel": "Cancel",
     "save": "Save",
     "done": "Done",
@@ -20,7 +20,8 @@
     "mediumConfidence": "Medium confidence",
     "lowConfidence": "Low confidence",
     "yes": "Yes",
-    "no": "No"
+    "no": "No",
+    "signedSeal": "Signed, tamper-evident record"
   },
   "language": {
     "title": "Language",
@@ -35,17 +36,17 @@
     "install": "Install",
     "installing": "Installing…",
     "iosTitle": "Install ParkProof on your iPhone",
-    "iosBody": "Tap the Share button, then choose 'Add to Home Screen'. It opens full-screen and works offline.",
+    "iosBody": "Tap the Share button, then choose 'Add to Home Screen'. It opens full screen, and records you save there open even without a connection. Records already saved in Safari stay in Safari.",
     "iosDismiss": "Got it"
   },
   "about": {
     "title": "Everything ParkProof does",
-    "lead": "You probably came here thinking oh, it reads parking signs. It does. But while it's at it, we figured we'd also save the evidence in case you get a wrongful ticket, write the dispute letter for you if you do, and remind you to move your car before time runs out. Here's the friendly tour.",
+    "lead": "You probably came here thinking oh, it reads parking signs. It does. But while it's at it, we figured we'd also save the evidence in case you get a wrongful fine, draft a dispute letter for you to check if you do, and remind you to move your car before time runs out. Here's the friendly tour.",
     "scan": {
       "title": "Snap a sign, get an answer",
       "lead": "Point your phone at any parking sign, even the messy stacked ones with arrows and clearways.",
       "items": [
-        "You get a clear yes or no in about 12 seconds.",
+        "You get a clear yes or no, usually in about 10 seconds. A complex stacked sign can take longer.",
         "If the sign has different rules for different sides of the road, we'll just ask which side you're on.",
         "We check if your photo is too blurry or dark before we even ask the AI. Saves you a wasted try."
       ]
@@ -54,12 +55,12 @@
       "title": "A receipt for your parking spot",
       "lead": "Every park you log saves the time, the GPS, the address, and (if you want) a photo of your car at the spot.",
       "items": [
-        "Download the whole thing as a tidy PDF. Handy if you ever need to dispute a ticket.",
-        "Each record is signed, so anyone can check it hasn't been changed since it was signed.",
-        "Add a note about why you parked there (mum's hospital visit, Saturday market). Councils take context seriously."
+        "Download the whole thing as a tidy PDF. Handy if you ever need to dispute a fine.",
+        "Each record is signed, so anyone can check its signed details haven't changed since ParkProof signed them.",
+        "Add a note about why you parked there (mum's hospital visit, Saturday market). It's kept with the record in your own words. Notes aren't signed."
       ]
     },
-    "sealCaveat": "The seal shows the signed details haven't changed since ParkProof signed them. It doesn't show the AI read the sign correctly, or that a council will accept it.",
+    "sealCaveat": "The seal shows the signed details existed, unchanged, by the time ParkProof signed them. It doesn't show they're true, that the AI read the sign correctly, who was driving, where the car was, or when it arrived or left.",
     "reminders": {
       "title": "A nudge before time runs out",
       "lead": "Pick when you want to be reminded: 30 minutes before, 15, 5, whatever feels right.",
@@ -71,19 +72,19 @@
     },
     "gates": {
       "title": "A gentle wait a second",
-      "lead": "The little checks that stop you from getting a ticket you didn't see coming.",
+      "lead": "Little checks for the conditions that are easy to miss, before you walk away.",
       "items": [
         "If the bay needs paying (a meter, EasyPark, PayStay), we'll ask you to tick that you've paid before saving.",
         "If the bay is reserved for accessible parking permits, we show a clear red warning.",
-        "Parked somewhere with no signs at all? You can still log it, with a photo of the surroundings to show there really weren't any."
+        "Parked somewhere with no signs at all? You can still log it, with a photo of the surroundings. The photo shows what was in view, not that there was no sign nearby."
       ]
     },
     "appeal": {
-      "title": "Got a ticket anyway?",
-      "lead": "Don't write the dispute letter yourself. We'll do it for you.",
+      "title": "Got a fine anyway?",
+      "lead": "No need to start the dispute letter from scratch. We'll draft it for you to check and change.",
       "items": [
-        "Photograph the ticket. We'll cross-check it against what we saved when you parked.",
-        "You get a draft letter to the council, plus an honest rating of how strong your case looks.",
+        "Photograph the infringement notice. We'll cross-check it against what we saved when you parked.",
+        "You get a draft letter to the council to read and change before you send it. ParkProof doesn't rate your case or predict the outcome.",
         "Edit anything you want, then download it as a PDF with the parking record attached. Print and post, or email."
       ]
     },
@@ -91,7 +92,7 @@
       "title": "A few small kindnesses",
       "lead": "The things you shouldn't have to think about, that we've thought about for you.",
       "items": [
-        "Free. No app store. Add it to your home screen and it works like a normal app, even when you're offline.",
+        "Free. No app store. Add it to your home screen and it works like a normal app. Your saved records open even without a connection, but checking a sign needs one.",
         "Available in 9 languages including 中文, Tiếng Việt, Bahasa Indonesia, 한국어, Italiano, Ελληνικά, हिन्दी, and ਪੰਜਾਬੀ.",
         "Times always match the parking spot. Scan in Sydney while travelling, you see Sydney times. Not your phone's home zone.",
         "You don't have to sign in to use any of this. Anonymous works fine."
@@ -108,8 +109,8 @@
     },
     "push": {
       "title": "Enable push notifications on this device",
-      "body": "Reminders work hands-free even when ParkProof isn't open. Granting permission now means future parking reminders fire silently in the background, with no permission prompt mid-flow.",
-      "subscribed": "✓ This device is subscribed. Push reminders will fire for your future parking records.",
+      "body": "Allowing notifications now saves you a prompt later. Nothing is set until you tap Remind me on a parking record.",
+      "subscribed": "✓ Notifications are on for this device. To set a reminder, tap Remind me on a parking record.",
       "denied": "You've blocked notifications for this site. To enable, change the permission in your browser's site settings.",
       "errorRetry": "Something went wrong. Try again",
       "enable": "Enable notifications",
@@ -119,24 +120,24 @@
     "cta": "Try it: scan a sign",
     "support": {
       "title": "Like ParkProof?",
-      "body": "Built solo in 10 days, free forever. If it saved you from a ticket, chip in for the AWS bill.",
+      "body": "Built solo in 10 days, free forever. If it saved you from a fine, chip in for the AWS bill.",
       "button": "☕ Buy me a coffee"
     }
   },
   "landing": {
     "heroTitle": "Parking made <accent>simple.</accent>",
-    "heroSubhead": "Take a photo of any Aussie parking sign and get a clear, plain-English answer in <accent>12 seconds</accent>.",
+    "heroSubhead": "Take a photo of any Aussie parking sign and get a clear, plain-English answer <accent>in seconds</accent>.",
     "bullet": {
       "plainEnglish": "Plain-English answers",
       "photoEvidence": "Photo evidence saved",
-      "defensible": "Tamper-evident if you're ticketed"
+      "defensible": "Tamper-evident if you're fined"
     },
     "cta": "Check a parking sign",
     "builtFor": "Built for Aussie drivers",
     "accuracyNote": "ParkProof can misread a messy sign. Always check our read against the actual sign before you leave the car.",
     "trustFree": "Free",
     "trustNoAccount": "No account",
-    "trustOffline": "Works offline",
+    "trustOffline": "Saved records work offline",
     "locationOptional": "Location is optional. Decline it and you can still read signs and type the address yourself.",
     "howItWorks": {
       "heading": "How it works",
@@ -149,24 +150,21 @@
     },
     "evidenceCallout": {
       "title": "Tamper-evident evidence, when it matters.",
-      "body": "Every check gets a cryptographically signed timestamp, GPS, and photo record."
+      "body": "Every parking record you save is signed, so anyone can check its details haven't changed since. A signature doesn't show they're true, who was driving, where the car was, or when it arrived or left."
     },
-    "feature": {
-      "translateTitle": "Plain-English answers",
-      "translateDesc": "Photograph any Aussie parking sign and get a 'can I park now?' verdict in about 12 seconds.",
-      "evidenceTitle": "Tamper-evident evidence",
-      "evidenceDesc": "Every park gets a cryptographically-signed timestamp, GPS, and photo record.",
-      "appealTitle": "AI appeal letters",
-      "appealDesc": "Got a wrongful ticket? Photograph it and we'll draft a formal dispute."
+    "hero": {
+      "aria": "A parking sign turning into a signed parking record: you can park until {{time}}.",
+      "kicker": "SIGNED RECORD",
+      "canPark": "You can park"
     }
   },
   "home": {
-    "tagline": "Aussie parking, decoded, with photo evidence in case of a wrongful ticket.",
+    "tagline": "Aussie parking, decoded, with photo evidence in case of a wrongful fine.",
     "scanCta": "Scan a parking sign",
     "scanAnother": "Scan another sign",
     "scanHelp": "We'll read the sign, tell you if you can park now, and offer a reminder before time runs out.",
-    "draftAppeal": "Got a ticket? Draft an appeal",
-    "history": "Session history",
+    "draftAppeal": "Got a fine? Draft an appeal",
+    "history": "History",
     "historyEmpty": "empty",
     "historyCount_one": "{{count}} saved",
     "historyCount_other": "{{count}} saved",
@@ -177,7 +175,11 @@
       "translate": "Photo the sign → AI translates the rules",
       "log": "Photo your car → timestamped evidence record",
       "remind": "Get a calendar reminder before parking expires"
-    }
+    },
+    "settings": "Settings",
+    "settingsSignIn": "Sign in to sync",
+    "startWorkday": "Parking all day? Start a workday",
+    "fineStart": "Got a fine? Start here"
   },
   "active": {
     "currentlyParked": "CURRENTLY PARKED",
@@ -186,7 +188,7 @@
     "moveBy": "Move by {{time}}",
     "tapForRecord": "Tap for evidence record",
     "recheckNow": "Re-check now",
-    "recheckSub": "Still legal? Re-verify in seconds",
+    "recheckSub": "Re-check now. See if you can still park here, in seconds.",
     "walkBack": "Walk back to your car",
     "walkBackButton": "Walk back",
     "walkBackOpens": "Opens in your maps app",
@@ -215,7 +217,7 @@
   "scanner": {
     "header": "Scan parking sign",
     "instructions": "Take a clear photo of the sign(s). If signs are stacked, include them all in one shot.",
-    "privacyLine": "Your photo is read on your phone. Only the sign photo is sent to translate it, and it's never stored on our servers. No account needed.",
+    "privacyLine": "To read the sign, we send the sign photo to an AI service. If you allow location, our server uses it to work out the local time. Reading the sign doesn't keep a copy of the photo on our servers. No account needed.",
     "cameraDeniedTitle": "Camera access is off",
     "cameraDeniedCopy": "Pick a photo from your library instead, or re-enable camera access in your browser settings.",
     "couldntReadPhoto": "Couldn't read that photo. Try another photo, or pick one from your library.",
@@ -233,14 +235,15 @@
     "qualityTiny": "Photo is very low resolution. The AI may miss details. Retake closer to the sign?",
     "noSignHere": "No sign here? Just log my park →",
     "noSignChooseHeader": "Logging a spot with no signs",
-    "noSignChooseCopy": "Optionally photograph the surroundings to demonstrate no signs were visible. This strengthens your evidence record in a dispute.",
+    "noSignChooseCopy": "You can photograph the surroundings to show what was in view. The photo won't show there was no sign nearby.",
     "noSignTakeAmbient": "Take photo of surroundings",
-    "noSignTakeAmbientSub": "Show no signs were visible",
+    "noSignTakeAmbientSub": "Show what was in view",
     "noSignFromLibrary": "Choose from library",
     "noSignSkip": "Skip: just save GPS + time",
-    "noSignAmbientAlt": "Surroundings: no signs visible",
-    "noSignAmbientCaption": "Captured to demonstrate no signs were posted at this spot.",
-    "noSignContinue": "Continue to log"
+    "noSignAmbientAlt": "Your photo of the surroundings",
+    "noSignAmbientCaption": "Taken to show the surroundings. It doesn't show there was no sign nearby.",
+    "noSignContinue": "Continue to log",
+    "previewAlt": "Your photo of the parking sign"
   },
   "reuse": {
     "scannedHere": "You scanned here {{age}}",
@@ -276,7 +279,7 @@
     "aiCaveat": "This is an AI read of the sign. Always glance at the actual sign before you leave the car.",
     "cantParkOverride": "Think this is wrong? You can still log this spot as evidence.",
     "cantParkOverrideCta": "Log it anyway",
-    "firstSaveValue": "Saving keeps a timestamped, tamper-evident record. Your proof if you're ever wrongly ticketed.",
+    "firstSaveValue": "Saving keeps a tamper-evident record of this park, in case you ever need it for a fine.",
     "transitionHeadsUp": "Heads up: at {{when}}",
     "payRequired": {
       "kicker": "PAY REQUIRED",
@@ -302,18 +305,39 @@
       "copyWithArea": "You can park here only if you hold a valid permit for Permit Area {{area}}. The permit number on your sticker must match. Inspectors check the area code, not just that you have any permit.",
       "ack": "Yes, I hold a valid permit for this area",
       "ackWithArea": "Yes, I hold a valid permit for Permit Area {{area}}"
+    },
+    "weeklyRestrictionHint": "This sign has a weekly restriction. You can set a reminder after you save.",
+    "permit": {
+      "standardKicker": "Standard answer",
+      "kicker": "With your permit",
+      "signPrints": "The sign prints an exception for this permit:",
+      "checkConditions": "ParkProof only reads what the sign prints. Check the conditions on your permit too.",
+      "areaMatch": "Your saved permit for {{area}} matches this zone.",
+      "areaMismatch": "Your saved permit is for {{area}}. This zone is Permit Area {{zone}}.",
+      "mayAllowMore": "Your permit may allow more time under {{state}} rules. ParkProof doesn't calculate that. Check the conditions on your permit or with your council.",
+      "mayAllowMoreNoState": "Your permit may allow more time under the rules where you've parked. ParkProof doesn't calculate that. Check the conditions on your permit or with your council.",
+      "accessibleQuestion": "The permit holder is in the car with me and getting out here, and their permit is displayed.",
+      "accessibleNo": "Then the permit can't be used for this park. Don't park in the accessible bay.",
+      "forThisCarQuestion": "Is this permit for this car, and displayed or registered to it?",
+      "forThisCarNo": "Then the permit can't be used for this park. Don't park in this permit zone without a valid permit for it.",
+      "noStandardApplies": "Then the permit can't be used for this park. Only the standard answer applies.",
+      "timeToggle": "Does the sign give your permit a later time?",
+      "timeLabel": "Your permit time on this sign ends at",
+      "timeHint": "Read it from the sign. ParkProof doesn't work out permit times.",
+      "timeSet": "Your reminders will count down to {{time}}, the time you entered, with one more when the standard limit ends.",
+      "timeNotLater": "That time isn't later than the standard limit, so your reminders stay with the standard limit."
     }
   },
   "logger": {
     "header": "Log this parking record",
-    "intro": "We'll save a timestamped record with your photo and GPS. Useful evidence if you ever contest a wrongful ticket.",
-    "locationContext": "We use your location only to timestamp where you parked. It stays on your device unless you sign in.",
+    "intro": "We'll save a record with the time, your photo and GPS, in case you ever need to dispute a fine.",
+    "locationContext": "We use your location only for this record. It's saved on this device, and backed up to the cloud only if you sign in.",
     "location": "Location",
     "acquiringGps": "Acquiring GPS…",
     "captured": "Captured ✓",
-    "gpsImprecise": "GPS is too imprecise to verify your spot",
-    "gpsImpreciseCopy": "Reading is <strong>{{accuracy}}</strong>, fine for finding a coffee shop, not for parking evidence. Enter the street address manually to keep this record reliable.",
-    "gpsImpreciseDanger": "Reading is <strong>{{accuracy}}</strong>, could be the wrong suburb entirely (common on Starlink, VPN, or indoor GPS). Enter the street address manually to keep this record reliable.",
+    "gpsImprecise": "GPS is too rough to pin down your spot",
+    "gpsImpreciseCopy": "Reading is <strong>{{accuracy}}</strong>. That's fine for finding a coffee shop, but too rough to show which street you parked on. You can type the street address instead.",
+    "gpsImpreciseDanger": "Reading is <strong>{{accuracy}}</strong>, so it could even be the wrong suburb (common on Starlink, a VPN or indoors). You can type the street address instead.",
     "enterAddress": "Enter the address manually",
     "manuallyEntered": "Manually entered",
     "accuracyLabel": "{{accuracy}} accuracy",
@@ -331,21 +355,36 @@
     "resolvingAddress": "resolving address…",
     "carAtSpot": "Car at the spot",
     "carRetake": "Retake",
-    "carOptionalHelp": "Optional but strongly recommended for evidence",
+    "carOptionalHelp": "Optional. It's saved with the record.",
     "saveSession": "Save record",
-    "noSignHeader": "Log an unsigned park",
+    "noSignHeader": "Log a park with no sign",
     "noSignIntro": "We'll save a timestamped GPS record. No AI translation, there's no sign to translate.",
     "noSignKicker": "EVIDENCE NOTE",
-    "noSignBanner": "You're recording that no signs were visible at this spot. The cryptographic signature covers when and where, not whether signs were truly absent. Be honest, this is your evidence.",
+    "noSignBanner": "You're recording that you saw no parking signs at this spot. That's your own statement. A signature shows the record existed, unchanged, by the time ParkProof signed it. It doesn't show it's true, who was driving, where the car was, or when it arrived or left.",
     "ambientHeader": "Surroundings",
-    "ambientCaption": "Captured to demonstrate no signs were posted.",
+    "ambientCaption": "Your photo of the surroundings. It doesn't show there was no sign nearby.",
     "photoSaveFailed": "This photo couldn't be saved on your phone. Try again, or save the record without it.",
-    "saving": "Saving…"
+    "saving": "Saving…",
+    "condition": {
+      "toggle": "Record the car's condition (optional)",
+      "noteLabel": "Damage you noticed",
+      "notePlaceholder": "For example, a scratch on the rear bumper"
+    },
+    "proof": {
+      "heading": "Proof of payment or permit",
+      "toggle": "Proof of payment or permit (optional)",
+      "addMeterTicketOrPermit": "Add a photo of your ticket or permit (optional)"
+    },
+    "driver": {
+      "label": "Who's driving? (optional)",
+      "placeholder": "Name",
+      "help": "Saved with this record. ParkProof doesn't check it."
+    }
   },
   "reminders": {
     "header": "Set reminders",
     "noExpiry": "This record has no expiry time, so a timed reminder doesn't apply.",
-    "expired": "Parking expired at <strong>{{when}}</strong>. Too late for a reminder, but your record is still saved as evidence if you need to dispute a ticket.",
+    "expired": "Parking expired at <strong>{{when}}</strong>. Too late for a reminder, but your record is still saved as evidence if you need to dispute a fine.",
     "intro": "Parking expires at <strong>{{when}}</strong>. Pick when you want to be reminded, choose as many as you like.",
     "chipAtExpiry": "At expiry",
     "summaryWithSelections": "You'll be reminded at <strong>{{times}}</strong>.",
@@ -401,11 +440,62 @@
       "multiple": "You'll be pushed at {{times}}."
     },
     "chipMin_one": "{{count}} min",
-    "chipMin_other": "{{count}} min"
+    "chipMin_other": "{{count}} min",
+    "remindMe": {
+      "cta": "Remind me",
+      "busy": "Setting up…",
+      "setBackground_one": "{{count}} reminder set for <strong>{{times}}</strong>. It's sent to this device even when ParkProof is closed.",
+      "setBackground_other": "{{count}} reminders set for <strong>{{times}}</strong>. They're sent to this device even when ParkProof is closed.",
+      "setOpenOnly_one": "{{count}} reminder set for <strong>{{times}}</strong>, but it only works while ParkProof is open.",
+      "setOpenOnly_other": "{{count}} reminders set for <strong>{{times}}</strong>, but they only work while ParkProof is open.",
+      "notSet": "No reminder was set.",
+      "stepInstall": "On iPhone, reminders need ParkProof on your Home Screen. Tap Share, then Add to Home Screen, then open ParkProof from there and tap Remind me again.",
+      "stepAllow": "Notifications are off for ParkProof. Allow them when your browser asks, or in your browser's site settings, then tap Remind me again.",
+      "stepUnsupported": "This browser can't send reminders when ParkProof is closed. Use a calendar reminder instead.",
+      "stepRetry": "Reminders for when ParkProof is closed couldn't be set up. Check your connection, then tap Remind me again.",
+      "stepAllPast": "The times you picked have passed. Pick a later one."
+    },
+    "reliability": "Reminders can be delayed or silenced, for example by Focus or battery saving. Don't rely on them alone.",
+    "androidTips": {
+      "summary": "Tips for Android phones",
+      "spam": "If Chrome marks a reminder as possible spam, tap Allow.",
+      "battery": "On Samsung, set Chrome's battery use to Unrestricted."
+    },
+    "chipFiresAt": "Fires at {{when}}",
+    "chipPast": "Already passed",
+    "reconnect": {
+      "cta": "Reminders not arriving? Reconnect",
+      "busy": "Reconnecting…",
+      "done": "Reconnected. Your upcoming reminders on this device will use the new connection.",
+      "failed": "Couldn't reconnect. Check your connection and try again.",
+      "denied": "Notifications are blocked for ParkProof. Allow them in your browser's site settings, then try again."
+    },
+    "timesOnDay": "{{times}} on {{day}}",
+    "permitIntro": "Your permit time runs to <strong>{{when}}</strong>, the time you entered from the sign. Pick when you want to be reminded, choose as many as you like.",
+    "permitExtra": "You'll also get a reminder at {{time}}, when the standard limit on this sign ends.",
+    "permitStandardEnds": "The standard limit on this sign ends now. Your permit time runs to {{time}}.",
+    "chipAtPermitTime": "At permit time",
+    "permitChipLimit_one": "You can pick up to {{count}} reminder here, plus the one when the standard limit ends.",
+    "permitChipLimit_other": "You can pick up to {{count}} reminders here, plus the one when the standard limit ends.",
+    "permitBodyAt": "The permit time you entered from the sign ends at {{time}}. Time to move the car.",
+    "permitBodyBefore_one": "The permit time you entered from the sign ends at {{time}}. This is your {{count}}-minute reminder.",
+    "permitBodyBefore_other": "The permit time you entered from the sign ends at {{time}}. This is your {{count}}-minute reminder.",
+    "calendarPermitTitle": "ParkProof: the permit time you entered ends",
+    "calendarPermitSummary": "The permit time you entered from the sign ends at {{time}}. ParkProof doesn't work out permit times.",
+    "ics": {
+      "expiresTitle": "ParkProof: parking expires",
+      "expiresAt": "Your parking expires at {{time}} ({{place}}).",
+      "remindersAt": "Reminders: {{times}}.",
+      "recordId": "ParkProof record: {{id}}",
+      "checkOnTitle": "ParkProof: check on your car",
+      "checkOnAt": "Check on your car at {{address}} ({{place}}).",
+      "checkOnHere": "Check on your car where you parked it ({{place}}).",
+      "buildFailed": "Couldn't make the calendar file. Try again."
+    }
   },
   "scheduledReminders": {
     "header": "Scheduled reminders",
-    "noneYet": "No push reminders set for this session.",
+    "noneYet": "No push reminders set for this record.",
     "firesAtExpiry": "{{when}}: at expiry",
     "firesBefore_one": "{{when}}: 1 min before expiry",
     "firesBefore_other": "{{when}}: {{count}} min before expiry",
@@ -414,15 +504,20 @@
     "firesAbsolute": "{{when}}",
     "addAnother": "+ Add reminder",
     "cancelAll": "Cancel all reminders",
-    "cancelAllConfirm": "Cancel every scheduled push reminder for this session?",
+    "cancelAllConfirm": "Cancel every scheduled push reminder for this record?",
     "cancelOne": "Remove this reminder",
     "pickHeader": "When should we remind you?",
     "pickCancel": "Cancel",
-    "tooLateAll": "No reminder option is far enough in the future to schedule. Tap End session if you've already left.",
+    "tooLateAll": "No reminder option is far enough ahead to set. If you've already moved the car, tap I've left.",
     "pushNotEnabled": "Enable push notifications on this device to add reminders that fire when the app is closed.",
     "saving": "Saving…",
     "errorRetry": "Couldn't update. Try again",
-    "otherDevice": "These reminders were set on another device. Change them on that device."
+    "otherDevice": "These reminders were set on another device. Change them on that device.",
+    "chipAlreadySet": "Already set",
+    "firesAtStandardEnd": "{{when}}: the standard limit ends",
+    "firesAtPermitTime": "{{when}}: when the permit time you entered ends",
+    "firesBeforePermitTime_one": "{{when}}: {{count}} min before the permit time you entered",
+    "firesBeforePermitTime_other": "{{when}}: {{count}} min before the permit time you entered"
   },
   "history": {
     "header": "Parking records",
@@ -435,7 +530,7 @@
   },
   "session": {
     "header": "Parking record",
-    "arrived": "Arrived {{when}}",
+    "arrived": "Logged {{when}} (phone clock)",
     "cryptoSigned": "Cryptographically signed",
     "status": "STATUS",
     "active": "Active until {{when}}",
@@ -446,29 +541,27 @@
     "walkBackPill": "Walk back to the car",
     "aiConfidence": "AI CONFIDENCE",
     "noteLabel": "NOTE",
-    "noNote": "No note added. Tap",
     "addNote": "Add note",
-    "noteHelp": "to record why you were here. It softens a council review when the context matters.",
-    "notePlaceholder": "Why you were here, e.g. 'Mum's chemo at the Royal', 'Saturday market on Lygon'. Used as context if you ever need to appeal a ticket.",
+    "notePlaceholder": "Why you were here, e.g. 'Mum's chemo at the Royal', 'Saturday market on Lygon'. It goes in this record's PDF, in case you ever need to appeal a fine.",
     "saveNote": "Save note",
     "signPhotoLabel": "SIGN PHOTO",
     "carPhotoLabel": "CAR AT THE SPOT",
     "noSignLabel": "NO POSTED RESTRICTIONS",
-    "noSignDescription": "This record was logged at a spot with no parking signs. No AI translation was performed.",
+    "noSignDescription": "You logged this park as having no parking signs. That's your own statement. No sign was read.",
     "ambientPhotoLabel": "Surroundings",
-    "ambientPhotoCaption": "Captured at the time of parking to evidence absence of signs.",
+    "ambientPhotoCaption": "Taken when you logged this park, to show the surroundings. It doesn't show there was no sign nearby.",
     "noAmbientCaptured": "No surroundings photo was captured.",
-    "noSignBadgeLong": "No posted restrictions captured. This was logged as an unsigned spot.",
+    "noSignBadgeLong": "No posted restrictions captured. You logged this park as having no sign.",
     "exportAsPdf": "Export as PDF",
     "buildingPdf": "Building PDF…",
     "pdfErrorHeader": "Couldn't build the PDF",
     "pdfErrorHelp": "The error has been logged to the browser console. If this keeps happening, take a screenshot of the console output and share it.",
-    "draftAppeal": "Got a ticket? Draft an appeal letter",
-    "howToVerify": "How a council can verify this record →",
+    "draftAppeal": "Got a fine? Draft an appeal letter",
+    "howToVerify": "How anyone can check this record's signatures →",
     "photoSyncFailed": "Photo not backed up to the cloud",
     "photoSyncRetry": "Retry upload",
     "photoHashMismatch": "This photo doesn't match the signed evidence and may have been altered since saving.",
-    "exportPhotoWarning": "One or more photos couldn't be loaded from the cloud for this older session. You can export anyway, or open it on the device where it was created.",
+    "exportPhotoWarning": "One or more photos couldn't be loaded from the cloud for this older record. You can export anyway, or open it on the device where it was created.",
     "endSession": "I've left",
     "endConfirm": "Mark this record as ended now? It saves the time you tap, from your phone's clock. If you left earlier, that earlier time isn't recorded.",
     "endedAt": "Ended {{when}}",
@@ -481,25 +574,23 @@
     "photoNotOnDeviceUnsigned": "Photo not on this device. Fingerprint {{fingerprint}}. Not signed yet.",
     "signPhotoAlt": "Photo of the parking sign you scanned",
     "carPhotoAlt": "Photo of your car where you parked",
-    "ended": "Ended"
+    "ended": "Ended",
+    "noteEmpty": "No note added. Tap <add>Add note</add> to record why you were here, in your own words. Notes aren't signed."
   },
   "appeal": {
     "captureHeader": "Draft an appeal letter",
-    "captureIntro": "Take a photo of the infringement notice you received. Claude will read it, cross-reference with the evidence saved in this session, and draft a formal letter you can send to the issuing council.",
+    "captureIntro": "Take a photo of the infringement notice you received. Claude will read it, cross-reference it with the evidence saved in this record, and draft a formal letter you can send to the issuing council.",
     "captureIntroStandalone": "Take a photo of the infringement notice you received. Claude will read it and draft a formal letter you can send to the issuing council. If you logged this park in ParkProof, open it from history instead so your saved evidence is attached to the letter.",
-    "captureTakePhotoSub": "Camera of the ticket",
+    "captureTakePhotoSub": "Photograph the notice",
     "captureFromLibrarySub": "Photo / scan of the notice",
     "captureDisclaimer": "The AI draft is a starting point, not legal advice. You're responsible for the final letter you send.",
-    "draftingHeader": "Reading the ticket…",
+    "draftingHeader": "Reading the notice…",
     "draftingSub": "Claude is cross-referencing it with your saved evidence.",
     "reviewHeader": "Draft appeal",
-    "strongEvidence": "Strong evidence",
-    "moderateEvidence": "Moderate evidence",
-    "weakEvidence": "Weak evidence",
     "strategy": "STRATEGY",
     "subjectLine": "SUBJECT LINE",
     "letter": "LETTER (EDITABLE)",
-    "resetDraft": "Reset to AI draft",
+    "resetDraft": "Use the AI draft again",
     "copyToClipboard": "Copy letter to clipboard",
     "copied": "Copied ✓",
     "downloadPdf": "Download as PDF",
@@ -512,7 +603,7 @@
     "signInHeader": "Sign in",
     "signInIntro": "Welcome back. Pick up where you left off.",
     "signUpHeader": "Create account",
-    "signUpIntro": "Sync sessions across devices, recover them if you lose your phone, and keep evidence safe even after you uninstall.",
+    "signUpIntro": "Sync records across devices, recover them if you lose your phone, and keep evidence safe even after you uninstall.",
     "verifyHeader": "Verify your email",
     "verifyIntro": "Enter the 6-digit code we emailed to {{email}}.",
     "forgotHeader": "Forgot password",
@@ -543,7 +634,7 @@
     "continueWithApple": "Continue with Apple",
     "continueWithGoogle": "Continue with Google",
     "orDivider": "OR",
-    "footer": "Cloud sync is optional. ParkProof works fully offline without an account. Your data lives on this device. Signing in just lets you see it on others.",
+    "footer": "Cloud sync is optional. ParkProof works without an account, and your data lives on this device. Signing in just lets you see it on others.",
     "needVerifyFirst": "You haven't verified your email yet. Enter the code below.",
     "accountCreated": "Account created. We've emailed you a verification code.",
     "codeResent": "Code re-sent. Check your inbox.",
@@ -563,7 +654,7 @@
     "intro": "Manage cloud sync, export your data, or close your account.",
     "signedInAs": "SIGNED IN AS",
     "exportHeader": "Export your data",
-    "exportCopy": "Downloads a PDF with every parking record you've stored in the cloud: cover page summary plus a per-record detail block with photos. Share-ready, print-ready, council-ready.",
+    "exportCopy": "Downloads a PDF with every parking record you've stored in the cloud: a cover page summary, then each record's details with photos. Ready to print or share.",
     "exportCta": "Download as PDF",
     "exportBuilding": "Building PDF…",
     "privacyHeader": "Privacy",
@@ -581,7 +672,7 @@
     "deleteTypoError": "Please type DELETE in capitals to confirm.",
     "youSignedOut": "You're signed out.",
     "pushHeader": "Push notifications on this device",
-    "pushCopy": "Reminders only fire when the app is closed if push is enabled. Subscription is per-browser-per-device, separate from your account.",
+    "pushCopy": "Push lets reminders reach this device when ParkProof is closed. Turning it on sets no reminder by itself. Tap Remind me on a parking record to set one. It's set up per browser on each device, separate from your account.",
     "pushSubscribed": "✓ Subscribed on this device",
     "pushEnable": "Enable push",
     "pushDisable": "Disable push on this device",
@@ -595,11 +686,11 @@
     "header": "Privacy",
     "lastUpdated": "Last updated: {{date}}",
     "anonymousHeader": "What you give us when you use ParkProof without an account",
-    "anonymousIntro": "ParkProof works fully anonymously by default. We do not require sign-in, we do not record an account, and the parking records you log live in your own browser's <code>localStorage</code>. They never leave your device.",
-    "anonymousThings": "Three things do leave your device, even in anonymous mode:",
-    "anonymousAnthropic": "<strong>Sign photos + GPS coordinates</strong> are sent to <strong>Anthropic</strong> (Claude vision) to translate the sign. We don't store them server-side; Anthropic's retention policy applies.",
+    "anonymousIntro": "ParkProof works without an account. Your records are stored in this browser. To sign a record, your phone sends its details (times, location, what you entered, and photo fingerprints, not the photos) to ParkProof's server, which signs them and doesn't keep a copy.",
+    "anonymousThings": "These also leave your device, even without an account:",
+    "anonymousAnthropic": "<strong>Each sign photo you scan</strong> is sent to <strong>Anthropic</strong> (Claude) to read the sign, with its location and the type of each permit you've saved (plus the area or zone of a resident or business permit). A re-check sends the earlier reading instead of the photo. We don't keep the photo or the location. The answer, which can mention your permit types, stays on our server briefly so your phone can collect it. Anthropic's retention policy applies.",
     "anonymousNominatim": "<strong>GPS coordinates</strong> are sent to <strong>OpenStreetMap Nominatim</strong> to resolve the street address. Nominatim does not require a key and applies their public retention policy.",
-    "anonymousCloudwatch": "<strong>A random per-result UUID</strong> + a \"correct / retake\" verdict are logged to <strong>AWS CloudWatch</strong> when you tap the verification card. No PII; aggregate signal for prompt tuning.",
+    "anonymousCloudwatch": "<strong>When you tell us whether we read a sign right</strong>, ParkProof's server logs your answer in <strong>AWS CloudWatch</strong>, with when you gave it and a random ID for that answer. With it go details of the reading: the first 120 characters of its description of the sign's rules, how sure it was, the time limit, any payment methods and permit area, whether it asked where you parked and the option you picked, and how many groups of rules, reading problems and weekly restrictions it found. They also say whether the sign was readable, whether the reading was a re-check, and whether it found an area sign, paid parking, a permit zone or an accessible parking bay, and give the hour of day where the sign is. Your answers so far to the paid parking, permit zone and accessible parking permit questions are logged too, so a log line can show that you said an accessible parking permit was displayed. The log doesn't include the photo, its GPS location, or an ID for you or this device. We use it to find where sign readings go wrong. It's deleted after 90 days.",
     "signedInHeader": "What you give us when you sign in",
     "signedInIntro": "Signing in is optional. It enables cloud sync, the same records visible across all your devices.",
     "signedInThings": "When you sign in, additional data leaves your device:",
@@ -623,21 +714,30 @@
     "rightsExport": "<strong>Export.</strong> Tap \"Download as PDF\" in Account to get a complete document with every record you've stored: cover page summary plus a per-record detail block with photos.",
     "rightsDelete": "<strong>Delete.</strong> Tap \"Delete account\" in Account. Removes your sign-in record, every DynamoDB row, and every S3 photo within seconds. Irreversible.",
     "rightsCorrect": "<strong>Correct.</strong> You edit your records in-app. Every change syncs to the cloud immediately if signed in.",
-    "rightsAnonymous": "If you don't sign in, all your data is on your device. Clear your browser storage to delete it.",
+    "rightsAnonymous": "If you don't sign in, your parking records are only on this device. Clear your browser storage to delete them. That doesn't delete what's already on our servers. A push reminder you set for a record is kept until it's sent or you cancel it. A weekly reminder by push is deleted within 90 days of the last time you opened ParkProof. This device's push registration (a random ID for this device, the push address and encryption keys your browser gave us, and when they were last renewed) is kept for about 90 days after ParkProof last renewed it. ParkProof renews it when you open the app with push reminders on and when you set a reminder. Switching push reminders off, in ParkProof or in your browser, doesn't tell our server, so the registration is kept as above. If the push service tells us the address no longer works (this can happen when a reminder you set earlier is sent after you switched them off), we delete the address and keys at once. We keep only this device's ID, a fingerprint of the address and when we found out, for about 90 days, so the address isn't stored again. Our server's logs also record this device's ID when it registers for push, sets a reminder or is sent one, with the push service it uses, the random ID of the record or weekly reminder, and when each reminder was set, sent or skipped. The logs are deleted after 90 days. Feedback you send, with your email if you add one, is kept for up to two years.",
     "photosHeader": "Photos taken inside ParkProof",
     "photosCopy": "Photos are resized to ≤1200px and re-encoded as JPEG at 0.82 quality on your device before they leave the browser. The original high-resolution camera capture never leaves your phone.",
     "signingHeader": "Cryptographic signing",
-    "signingCopy": "When you sign in (or stay anonymous, both work), each record is signed by an AWS KMS-managed ECDSA P-256 key. The private key never leaves AWS. The public key is published at <a>/parkproof-public-key.pem</a> for anyone (a council, court, insurer) to verify the evidence chain using <code>openssl dgst</code>. See the appendix in any exported PDF for the step-by-step.",
-    "verifyLinkLabel": "See how to verify a record →",
+    "signingCopy": "Signed in or not, each record is signed with an ECDSA P-256 key held in AWS KMS. To sign a record, ParkProof's server receives the details being signed (such as times, location, the sign reading, photo fingerprints and any names you enter, never the photos themselves) and sends back the signature. The private key never leaves AWS. The public key is published at <a>/parkproof-public-key.pem</a> so anyone (a council, court or insurer) can check the signatures with <code>openssl dgst</code>. A signature shows the signed details haven't changed since ParkProof signed them. It doesn't show they're true, who was driving, where the car was, or when the car arrived or left. The appendix in any exported PDF has the steps.",
+    "verifyLinkLabel": "See how to check a record's signatures →",
     "contactHeader": "Contact + complaints",
     "contactCopy": "For questions or to exercise your rights outside of the in-app controls, email <a>hello@parkproof.com.au</a>.",
-    "complaintCopy": "Unhappy with our response? You can complain to the <a>Office of the Australian Information Commissioner (OAIC)</a>."
+    "complaintCopy": "Unhappy with our response? You can complain to the <a>Office of the Australian Information Commissioner (OAIC)</a>.",
+    "anonymousFineNotice": "<strong>Photos of an infringement notice</strong> (a parking fine) are sent to <strong>Anthropic</strong> to read the notice, for example when you draft an appeal. Drafting an appeal also sends the details of the parking record you chose. We don't keep the photo.",
+    "anonymousPush": "<strong>Push reminders</strong>, if you turn them on: the record's address, each reminder's time and its text (which can mention a permit time you entered) go to <strong>ParkProof's server</strong>, which keeps each one until it is sent, then deletes it.",
+    "anonymousPermits": "<strong>A permit you use for a park</strong>: its type, its area or zone and any permit time you entered are kept with that record. Signing the record sends a fingerprint of these details, not the details, along with your answers to the permit questions. Deleting a permit in Settings doesn't change records already saved. Deleting the record removes them.",
+    "signedInPermits": "<strong>Permit details</strong> kept with a record (the type, area or zone and any permit time you entered, for a park where you used a saved permit) are stored with that record in AWS DynamoDB. Your saved permits in Settings aren't. Deleting the record removes them.",
+    "anonymousWeeklyPush": "<strong>Weekly reminders by push</strong>, if you turn them on: each reminder's name and any address you entered, its days, times, repeat pattern and time zone, when it should remind you, and its notification text go to <strong>ParkProof's server</strong>, with a random ID for this device. The server keeps them while the reminder is on, so it can go out every week. They're deleted when you pause or delete the reminder or switch off its notifications, the next time ParkProof is open and online. Each time ParkProof sends them, the server keeps them for 90 days at most. ParkProof sends them again from time to time while you keep opening it, so if you stop, they're deleted within 90 days of the last time you opened ParkProof."
   },
   "loading": {
     "step1": "Reading the sign…",
     "step2": "Identifying parking rules…",
     "step3": "Computing when you can park…",
-    "step4": "Composing the answer…"
+    "step4": "Composing the answer…",
+    "stepOf": "Step {{current}} of {{total}}",
+    "usuallyTen": "Usually takes about 10 seconds.",
+    "almostThere": "Almost there. This sign is complex…",
+    "stillWorking": "Still working. This is taking longer than usual…"
   },
   "feedback": {
     "title": "Send feedback",
@@ -662,16 +762,16 @@
     "backHome": "Back to home",
     "complexSignTimeout": "This sign took too long to process. Usually means it has lots of stacked rules. Try a clearer photo, or crop in to just the rules that apply where you're parked.",
     "offlineTitle": "You're offline",
-    "offlineBody": "Reading a sign needs a connection. Your saved sessions and reminders still work. Try the scan again once you're back online.",
+    "offlineBody": "Reading a sign needs a connection. Your saved records and reminders still work. Try the scan again once you're back online.",
     "boundaryTitle": "Something broke",
-    "boundaryBody": "ParkProof hit an unexpected error. Reloading usually fixes it, and your saved sessions are safe on this device.",
+    "boundaryBody": "ParkProof hit an unexpected error. Reloading usually fixes it, and your saved records are safe on this device.",
     "boundaryReload": "Reload ParkProof",
     "storageRecovered_one": "Your device storage was full, so the photo from 1 older parking record was removed to make space. Sign in to keep evidence safe in the cloud.",
     "storageRecovered_other": "Your device storage was full, so photos from {{count}} older parking records were removed to make space. Sign in to keep evidence safe in the cloud.",
-    "photoSyncFailed": "A photo didn't back up to the cloud. It's safe on this device. Open the session to retry.",
+    "photoSyncFailed": "A photo didn't back up to the cloud. It's safe on this device. Open the record to retry.",
     "heavyLoad": "ParkProof is busy right now and your scan didn't finish in time. Please wait a minute and try again.",
     "rateLimited": "Too many requests from your connection. Please wait a minute, then try again.",
-    "syncFailed": "Couldn't load your saved sessions just now.",
+    "syncFailed": "Couldn't load your saved records just now.",
     "scanFailed": "We couldn't finish reading that sign. Please try again in a moment.",
     "signUnreadable": "We couldn't read that sign clearly. Try a clearer, closer photo.",
     "imageTooLarge": "That photo is too large. Retake it a little smaller, or closer to the sign.",
@@ -681,7 +781,11 @@
     "genericRetry": "Something went wrong. Please try again in a moment.",
     "storageFull": "ParkProof's storage on this device is full. Current records and records still waiting for a signature are kept. Open History, delete an old record you no longer need, then try again.",
     "storageEvicted_one": "Your device storage was full, so {{count}} older parking record was deleted to make space. Sign in to keep records safe in the cloud.",
-    "storageEvicted_other": "Your device storage was full, so {{count}} older parking records were deleted to make space. Sign in to keep records safe in the cloud."
+    "storageEvicted_other": "Your device storage was full, so {{count}} older parking records were deleted to make space. Sign in to keep records safe in the cloud.",
+    "noticeUnreadable": "We couldn't read that notice. Try a clearer photo of the whole notice, flat and in good light.",
+    "notANotice": "That photo doesn't look like a parking fine notice. Take a photo of the infringement notice itself.",
+    "noticeHeavyLoad": "ParkProof is busy right now and couldn't finish reading the notice in time. Wait a minute and try again.",
+    "noticeImageTooLarge": "That photo is too large. Try another photo of the notice."
   },
   "pdf": {
     "common": {
@@ -722,7 +826,14 @@
         "departureSigned": "Departure signed by ParkProof (server clock)",
         "departureLocation": "Phone location at the I've left tap (GPS)",
         "departureDistance": "Approx. distance from arrival (phone GPS)",
-        "locationCoords": "Location (coordinates)"
+        "locationCoords": "Location (coordinates)",
+        "signCondition": "Sign condition",
+        "proof": "Proof of payment or permit",
+        "conditionPhotos": "Car condition photos",
+        "damageNote": "Damage the driver noted",
+        "driver": "Driver (entered on the phone, not checked)",
+        "handover": "Handover (entered on the phone, not checked)",
+        "handoverSigned": "Handover signed by ParkProof (server clock)"
       },
       "locationSourceValue": {
         "manuallyEntered": "Manually entered",
@@ -757,18 +868,37 @@
         "coordsWithAccuracy": "{{coords}}, accuracy {{accuracy}}",
         "distanceUnavailable": "Not available. The arrival location isn't a phone GPS fix accurate enough to compare.",
         "distanceRough": "{{distance}}. The phone's location at the tap was only accurate to {{accuracy}}, so this distance is rough.",
-        "distanceRoughNoAccuracy": "{{distance}}. The phone didn't report how accurate its location at the tap was, so this distance is rough."
+        "distanceRoughNoAccuracy": "{{distance}}. The phone didn't report how accurate its location at the tap was, so this distance is rough.",
+        "complianceDescribed": "{{type}} (as the driver described it)",
+        "complianceNoType": "A photo was added. The driver didn't say what it shows.",
+        "conditionCounts": "When parked: {{parking}}. On return: {{returned}}.",
+        "noteWhenParked": "When parked, in the driver's own words: {{note}}",
+        "noteOnReturn": "On return, in the driver's own words: {{note}}",
+        "notSignedYet": "(not signed yet)",
+        "partRejected": "(this part couldn't be signed)",
+        "notSigned": "(not signed)",
+        "handoverTo": "Handed to {{to_driver}} at {{time}} (phone clock).",
+        "handoverFromTo": "{{from_driver}} handed the car to {{to_driver}} at {{time}} (phone clock)."
       },
       "carPhotoCaptionTime": "Logged {{time}} (phone clock)",
       "confidence": {
         "high": "High",
         "medium": "Medium",
         "low": "Low"
-      }
+      },
+      "signCondition": {
+        "readable": "Readable in the photo",
+        "partiallyObscured": "Partly hard to read in the photo",
+        "contradictory": "Parts of the sign disagree",
+        "missing": "No parking sign found in the photo",
+        "notAParkingSign": "The photo shows something other than a parking sign",
+        "notes": "AI notes: {{notes}}"
+      },
+      "noSignRead": "No sign read. ParkProof found no readable parking sign in the photo, and the driver logged this park without one."
     },
     "signature": {
       "title": "Cryptographic signature",
-      "intro": "Each part of this record was signed by ParkProof's server when the server received it, at the signed_at time shown for that part. A valid signature shows the signed details and photo fingerprints have not changed since then. It does not show that they are true, who was driving, or when the car arrived or left.",
+      "intro": "Each part of this record was signed by ParkProof's server when the server received it, at the signed_at time shown for that part. A valid signature shows the signed details and photo fingerprints have not changed since then. It does not show that they are true, who was driving, where the car was, or when the car arrived or left.",
       "algorithm": "Algorithm",
       "keyAlias": "Key alias",
       "signedAt": "Signed by ParkProof (server clock)",
@@ -784,7 +914,7 @@
       "verifyStep4": "4. Decode the signature:",
       "verifyStep5": "5. Verify:",
       "verifyStep6": "6. Expect \"Verified OK\". This shows the signed bytes have not changed since ParkProof signed them.",
-      "verifyStep7": "7. About the photos: the images shown in this PDF are a visual copy, re-encoded for the document, so their bytes differ from the originals and will not reproduce the hashes in the payload. That is expected and is not a sign of tampering. The signature commits to the SHA-256 of each original photo (the sign_photo_sha256, car_photo_sha256 and ambient_photo_sha256 values inside the signed payload), and step 6 showed those values have not changed since signing. To independently confirm a specific image, hash the original captured file (from the ParkProof record or your account export), not the copy printed here, and compare it to the matching value above.",
+      "verifyStep7": "7. About the photos: the images printed in this PDF are copies, re-encoded for the document, so their bytes differ from the originals and won't match the signed fingerprints. That is expected and isn't a sign of tampering. The signed payloads carry the SHA-256 of each original photo: sign_photo_sha256, car_photo_sha256 and ambient_photo_sha256 in link 0, and each sha256 under photos, photo or return_photos in later links. The originals are in the record's evidence file, a .json file the driver can download from the record in ParkProof. To check a photo, save its bytes_base64 value from that file as photo1.b64, then decode it and print its SHA-256:",
       "devKey": "Signed with a development key. It can't be checked with ParkProof's published key.",
       "linkHeading": "Link {{link}}: {{kind}}",
       "forkNote": "Two parts were added at this point in the record, from two devices. Both are signed and shown here.",
@@ -799,7 +929,9 @@
         "compliance": "Proof of payment or permit",
         "departure": "Departure",
         "handover": "Handover"
-      }
+      },
+      "verifyPhotoMatch": "The hex value must equal that photo's sha256 inside a signed payload above, not just the sha256 next to it in the evidence file, which isn't signed. Step 6 showed the signed values have not changed since ParkProof signed them. Do the same for each photo.",
+      "verifyWindows": "On Windows, cmd and PowerShell have no base64 -d. Use certutil -decode in its place, and certutil -hashfile to print a file's SHA-256, as below. In PowerShell, type curl.exe in place of curl. openssl comes with Git for Windows, and its Git Bash runs the commands above as written."
     },
     "appeal": {
       "drafted": "Drafted {{when}}",
@@ -817,7 +949,7 @@
       "userId": "User ID: {{id}}",
       "exportedAt": "Exported: {{when}}",
       "sessionCount": "Records in this export: {{count}}",
-      "intro": "This document gathers every parking record saved to this ParkProof account, one section per record. Where a record has signed parts, its signature pages follow its section, with the steps to check each signature. A valid signature shows the signed details haven't changed since ParkProof signed them. It doesn't show that they are true.",
+      "intro": "This document gathers every parking record saved to this ParkProof account, one section per record. Where a record has signed parts, its signature pages follow its section, with the steps to check each signature. A valid signature shows the signed details haven't changed since ParkProof signed them. It doesn't show that they are true, who was driving, where the car was, or when the car arrived or left.",
       "emptyState": "No parking records have been saved to this account yet.",
       "summaryColIndex": "#",
       "summaryColArrived": "Logged (phone clock)",
@@ -826,6 +958,80 @@
       "sessionHeader": "Record {{n}} of {{total}}",
       "signedBadge": "Cryptographically signed at {{when}}",
       "driverNoteField": "Driver's note"
+    },
+    "complianceType": {
+      "meterTicket": "Meter ticket on the dash",
+      "paymentConfirmation": "Payment confirmation",
+      "permitDisplayed": "Permit displayed",
+      "other": "Other"
+    },
+    "photos": {
+      "complianceHeader": "Proof of payment or permit",
+      "conditionHeader": "Car condition photos",
+      "whenParked": "When parked",
+      "onReturn": "On return",
+      "role": {
+        "front": "Front",
+        "rear": "Rear",
+        "left": "Left side",
+        "right": "Right side",
+        "detail": "Close-up"
+      },
+      "added": "Added {{time}} (phone clock)",
+      "library": "Added from the photo library. The signature shows the photo existed by ParkProof's signing time, not when it was taken.",
+      "signedAt": "Fingerprint signed by ParkProof at {{time}} (server clock)",
+      "devKey": "Fingerprint signed with a development key at {{time}}. It can't be checked with ParkProof's published key.",
+      "notSignedYet": "Fingerprint not signed yet",
+      "notSigned": "Fingerprint not signed",
+      "rejected": "This part couldn't be signed",
+      "signedNote": "A signed photo shows the photo existed by the time it was signed. It doesn't show who caused any damage."
+    },
+    "shared": {
+      "field": "Shared with you",
+      "madeElsewhere": "This record was made on someone else's phone."
+    },
+    "workday": {
+      "title": "Record of parking events.",
+      "footer": "This records what you did and what you told us. It is not a legal finding that you complied. Your council decides that.",
+      "councilLine": "Councils may interpret this rule more strictly. Check your council's parking page.",
+      "started": "Workday started {{time}} (phone clock)",
+      "ended": "Workday ended {{time}} (phone clock)",
+      "legCount": "Legs in this PDF: {{chosen}} of {{total}}",
+      "partial": "Not every leg of this workday is in this PDF. Each distance and driver's statement is about the leg just before it on the workday, even when that leg is left out.",
+      "intro": "Each leg is its own parking record. A section for each leg follows this table, and the signature pages come last.",
+      "col": {
+        "leg": "Leg",
+        "arrived": "Arrived (phone clock)",
+        "left": "Left (phone clock)",
+        "distance": "Approx. distance from previous leg (phone GPS)",
+        "statement": "Driver's statement"
+      },
+      "cell": {
+        "notLeft": "Not recorded",
+        "signedArrival": "Arrival: {{value}}",
+        "signedDeparture": "Departure: {{value}}",
+        "noDistance": "Not measured. It needs a phone GPS fix at both legs."
+      },
+      "statement": {
+        "firstLeg": "None. This is the first leg.",
+        "notAsked": "Not asked. ParkProof didn't ask about this move.",
+        "oppositeDirectionSign": "The driver said they passed a sign showing this zone had ended.",
+        "yellowEdgeLine": "The driver said they passed a yellow edge line.",
+        "tIntersectionOrDeadEnd": "The driver said they passed the end of the road at a T-intersection or dead end.",
+        "leftParkingArea": "The driver said they drove out of the parking area, past a sign saying it ends.",
+        "notSure": "Asked whether they had left the signed stretch, the driver answered: I'm not sure.",
+        "notSureArea": "Asked whether they had left the parking area, the driver answered: I'm not sure."
+      },
+      "legHeading": "Leg {{number}}",
+      "tagged": "This leg was an earlier park added to the workday. Its signed details don't mention the workday.",
+      "chain": {
+        "heading": "The chain between legs",
+        "intro": "Each leg's details at parking carry previous_departure_payload_sha256, the SHA-256 of the signed departure payload of the leg before it, when that departure was signed in time. Save each leg's files from its signature pages in a folder of its own (leg1, leg2 and so on) and decode them as in its steps. Then run the command shown for each pair.",
+        "equals": "That hex value must equal previous_departure_payload_sha256 in leg {{leg}}, link {{link}}.",
+        "equalsOneOf": "One of these hex values must equal previous_departure_payload_sha256 in leg {{leg}}, link {{link}}.",
+        "notLinked": "Leg {{leg}}, link {{link}} was signed without a departure of the leg before it, because none was signed in time. There is nothing to compare here.",
+        "notInPdf": "Leg {{leg}}, link {{link}} names a signed departure of the leg before it that isn't in this PDF."
+      }
     }
   },
   "time": {
@@ -872,7 +1078,10 @@
     "heading": "DEPARTURE",
     "tapped": "You tapped I've left at {{time}} (phone clock).",
     "far": "Your phone was {{distance}} from where you parked when you tapped I've left. The record shows when you tapped, not when the car moved.",
-    "notSigned": "This departure isn't signed."
+    "notSigned": "This departure isn't signed.",
+    "condition": {
+      "toggle": "Record the car's condition now (optional)"
+    }
   },
   "chain": {
     "heading": "SIGNED PARTS OF THIS RECORD",
@@ -898,8 +1107,8 @@
     "devKeySignedAt": "Signed at {{time}} with a development key, not ParkProof's published key.",
     "check": "Check signatures",
     "checking": "Checking…",
-    "checkValid_one": "{{count}} signature is valid. Nothing has changed since ParkProof signed it. That doesn't show what the record says is true.",
-    "checkValid_other": "All {{count}} signatures are valid. Nothing has changed since ParkProof signed it. That doesn't show what the record says is true.",
+    "checkValid_one": "{{count}} signature is valid. The signed details haven't changed since ParkProof signed them. That doesn't show they're true.",
+    "checkValid_other": "All {{count}} signatures are valid. The signed details haven't changed since ParkProof signed them. That doesn't show they're true.",
     "checkValidPhotosUnchecked_one": "{{count}} signature is valid. Some photos aren't on this device, so they couldn't be compared with their fingerprints. That doesn't show what the record says is true.",
     "checkValidPhotosUnchecked_other": "All {{count}} signatures are valid. Some photos aren't on this device, so they couldn't be compared with their fingerprints. That doesn't show what the record says is true.",
     "checkProblem": "At least one part or photo didn't pass the check. The result for each one is shown here.",
@@ -927,5 +1136,552 @@
       "returnDetail": "Condition on return, close-up",
       "compliance": "Proof of payment or permit photo"
     }
+  },
+  "workday": {
+    "reminder": {
+      "headsUp": "Your time limit on this stretch ends at {{time}}. Move off this signed stretch, not just to another bay.",
+      "goNow": "Leave now to move the car before {{time}}.",
+      "ended": "Your time on this stretch ended at {{time}}.",
+      "headsUpArea": "Your time limit in this parking area ends at {{time}}. Move the car out of the whole area, not just to another street inside it.",
+      "endedArea": "Your time in this parking area ended at {{time}}."
+    },
+    "start": {
+      "title": "Start a workday",
+      "intro": "For a day of moving the car between time-limited spots. Each stop gets its own record, read from a fresh photo of its sign.",
+      "locating": "Checking which state you're in…",
+      "unavailable": "Workday mode is available in Victoria and Queensland while we check other states' rules.",
+      "unknown": "ParkProof couldn't work out which state you're in from your phone's location. Workday mode is only available in Victoria and Queensland, so it needs to check first.",
+      "button": "Start workday",
+      "useCurrent": "Use the car's current park as the first stop",
+      "useCurrentHelp": "That park keeps the time you logged it and its time limit. Moving a few bays since then doesn't restart that limit, so use it anyway. If the car has left the signed stretch, go back and tap I've left on it first.",
+      "currentIneligible": "Your current park can't be a workday stop. Stops need a readable sign in Victoria or Queensland. Tap I've left on it once the car has left the signed stretch, then start the workday."
+    },
+    "explainer": {
+      "heading": "How time limits work",
+      "full": "Moving a few bays doesn't restart the time limit. You need to leave the signed length of road, or the whole area under an area sign. Paying again or topping up doesn't restart the limit either. Each move needs a fresh photo of the new sign.",
+      "short": "Moving a few bays doesn't restart the time limit. Each move needs a fresh photo of the new sign."
+    },
+    "ready": {
+      "heading": "Reminders",
+      "on": "Notifications are on, so workday reminders can reach this phone while ParkProof is closed.",
+      "ask": "Turn on notifications so workday reminders can reach this phone while ParkProof is closed.",
+      "allow": "Turn on notifications",
+      "cantDeliver": "Workday reminders need notifications. Without them you'll need to watch the time yourself.",
+      "iosInstall": "On iPhone, notifications need ParkProof on your Home Screen. Tap Share, then Add to Home Screen, and start the workday from there.",
+      "denied": "Notifications are blocked for ParkProof. You can allow them in your browser's site settings.",
+      "turnedOff": "Notifications are turned off for ParkProof on this phone. You can turn them on again in Settings."
+    },
+    "ics": {
+      "button": "Add calendar reminders for this stop",
+      "title": "Move off this signed stretch by {{time}}",
+      "titleArea": "Move the car out of this parking area by {{time}}"
+    },
+    "card": {
+      "kicker": "Workday",
+      "stop": "Stop {{number}}",
+      "noStops": "No stops yet. Each stop starts with a photo of its sign.",
+      "moved": "Stop {{number}} ended at {{time}} (phone clock).",
+      "open": "Open this workday",
+      "openAria": "Open this workday. {{status}}",
+      "expiredHint": "Still here? Move now. Already moved? Tap I'm moving the car now.",
+      "move": "I'm moving the car now",
+      "moveHint": "Tap before you drive off",
+      "scanFirst": "Parked? Scan the sign where you are",
+      "scanNext": "Parked again? Scan the new sign",
+      "end": "End workday"
+    },
+    "end": {
+      "title": "End this workday?",
+      "body": "Your stops stay in History. After this, a park you log is a normal record, and ParkProof won't ask whether you left the signed stretch."
+    },
+    "history": {
+      "row_one": "Workday, {{count}} stop",
+      "row_other": "Workday, {{count}} stops"
+    },
+    "status": {
+      "active": "In progress",
+      "ended": "Ended"
+    },
+    "view": {
+      "title": "Workday",
+      "started": "Started {{time}} (phone clock)",
+      "ended": "Ended {{time}} (phone clock)",
+      "stopsHeading": "Stops",
+      "noStops": "No stops yet.",
+      "tagged": "Added to this workday from an earlier park. Its signed details don't mention the workday."
+    },
+    "noSign": {
+      "body": "Workday mode needs a readable sign at each spot. Some areas, like central Brisbane, have time limits even where a street has no sign."
+    },
+    "stopped": {
+      "notAvailable": "Workday mode isn't available here yet. This park is saved as a normal record with its own sign reading.",
+      "unknownState": "ParkProof couldn't tell which state this park is in, so the workday has ended. This park is saved as a normal record. If you told us you weren't sure, your original time limit still applies."
+    },
+    "scan": {
+      "fresh": "Workday stop: take a fresh photo of the sign where the car is now.",
+      "cameraDenied": "Turn camera access back on in your browser settings. Workday stops need a photo taken now.",
+      "notFresh": "That photo wasn't taken just now. Workday stops need a photo of the sign taken now. Take a new one with the camera."
+    },
+    "boundary": {
+      "title": "This may be the same signed stretch.",
+      "body": "Moving bays doesn't restart the time limit. Did you pass one of these on the way here?",
+      "area": "This is a parking area. Moving to another street inside it doesn't count. You need to leave the whole area.",
+      "option": {
+        "oppositeDirectionSign": "A sign showing this zone had ended (a two-way arrow sign in the middle of the block doesn't count)",
+        "yellowEdgeLine": "A yellow edge line",
+        "tIntersectionOrDeadEnd": "The end of the road at a T-intersection or dead end",
+        "leftParkingArea": "I drove out of the parking area, past a sign saying it ends",
+        "notSure": "I'm not sure"
+      },
+      "footer": "If you're not sure, your original time limit is still running.",
+      "required": "Choose an answer to save this stop.",
+      "newLimit": "New limit based on what you told us: you passed {{boundary}}.",
+      "passed": {
+        "oppositeDirectionSign": "a sign showing this zone had ended",
+        "yellowEdgeLine": "a yellow edge line",
+        "tIntersectionOrDeadEnd": "the end of the road at a T-intersection or dead end",
+        "leftParkingArea": "a sign saying the parking area ends"
+      },
+      "notSure": "Your limit on this stretch still runs from {{start}}. Move the car off this stretch by {{deadline}}.",
+      "notSureArea": "Your limit in this parking area still runs from {{start}}. Move the car out of the whole area by {{deadline}}.",
+      "notSureNoDeadline": "Your limit on this stretch still runs from {{start}}.",
+      "notSureNoDeadlineArea": "Your limit in this parking area still runs from {{start}}.",
+      "passedDeadline": "Your time on this stretch ended at {{time}}. Move the car off this stretch now.",
+      "passedDeadlineArea": "Your time in this parking area ended at {{time}}. Move the car out of the whole area now.",
+      "saveAnyway": "Save anyway",
+      "dontSave": "Don't save this stop"
+    },
+    "reminders": {
+      "notSet": "Reminders for this stop couldn't be set up. Watch the time yourself, or try again."
+    },
+    "pdf": {
+      "open": "Export a PDF of this workday",
+      "title": "Workday PDF",
+      "warning": "This PDF includes every leg you choose, with distances between them and what you told us at each move. Councils can read it.",
+      "chooseLegs": "Legs to include",
+      "leg": "Leg {{number}}",
+      "noneChosen": "Choose at least one leg to export."
+    }
+  },
+  "notice": {
+    "title": "Got a fine?",
+    "captureIntro": "Take a photo of the infringement notice. ParkProof reads the date, time and place on it and looks for your parking records from around then.",
+    "reading": {
+      "step1": "Reading the notice…",
+      "step2": "Finding the date, time and place…",
+      "step3": "Looking for your records…",
+      "slow": "Still reading. This can take a little longer…",
+      "hint": "Usually takes a few seconds."
+    },
+    "errorHeader": "Couldn't read the notice",
+    "fields": {
+      "heading": "What the notice says",
+      "intro": "Read by AI from your photo. Check each detail against the notice.",
+      "noticeNumber": "Notice number",
+      "issuedBy": "Issued by",
+      "date": "Date on the notice",
+      "time": "Time on the notice",
+      "location": "Place",
+      "offence": "Offence",
+      "partlyReadable": "Some of the notice was hard to read. Check these details against the notice itself.",
+      "checkDateTime": "Check the date and time against the notice. They may have been misread.",
+      "enterDateTime": "We couldn't read the date and time. Enter them from the notice to find your records."
+    },
+    "matches": {
+      "heading": "Your records from around this time",
+      "none": "None of your saved parking records are from around this date and time. If the date or time above was misread, correct it."
+    },
+    "match": {
+      "compare": "Compare with this record",
+      "far": "This record is about {{distance}} km from the place on the notice.",
+      "repeatedHour": "Daylight saving ended on this date, so the time on the notice happened twice. This compares the record with {{time}}.",
+      "skippedHour": "Daylight saving started on this date, so the time on the notice didn't exist on the clock. This compares the record with {{time}}."
+    },
+    "compare": {
+      "heading": "Compared with the notice",
+      "departureSignedBefore": "You tapped I've left at {{time}}, {{duration}} before the time on the notice. ParkProof signed that record at {{signedTime}}. The record shows when you tapped, not when the car moved.",
+      "departureSignedBeforeClock": "You tapped I've left at {{time}} by your phone's clock. ParkProof signed that record at {{signedTime}}, before the time on the notice. The record shows when you tapped, not when the car moved.",
+      "departureSignedAfter": "You tapped I've left at {{time}} by your phone's clock. ParkProof only signed it at {{signedTime}}, after the time on the notice, so the signature can't show you'd left by {{noticeTime}}.",
+      "departurePending": "You tapped I've left at {{time}}. This hasn't been signed yet.",
+      "departureNotSigned": "You tapped I've left at {{time}}. This wasn't signed.",
+      "noDeparture": "You haven't tapped I've left on this record.",
+      "arrivalBefore": "You logged this park at {{time}}, {{duration}} before the time on the notice.",
+      "arrivalAfter": "You logged this park at {{time}}, {{duration}} after the time on the notice.",
+      "arrivalSame": "You logged this park at {{time}}, the same minute as the time on the notice.",
+      "driver": "Your record says {{driver}} was driving. That's what was entered when the park was logged. ParkProof didn't check it. If someone else was driving, the notice explains how to nominate them. Only nominate the person who was actually driving.",
+      "handover": "Your record says the car was handed to {{to_driver}} at {{time}}.",
+      "checkRegistration": "Check the registration on the notice is the car in this record. ParkProof doesn't record registrations.",
+      "checkDueDate": "Check the due date on the notice itself.",
+      "departureDevKey": "You tapped I've left at {{time}} by your phone's clock. It was signed with a development key, not ParkProof's published key, so the signature can't show you'd left by {{noticeTime}}.",
+      "arrivalSignedBefore": "ParkProof signed this record at {{signedTime}}, before the time on the notice. The signature shows the record existed by then, not when the car arrived or where it was.",
+      "arrivalSignedAfter": "ParkProof only signed this record at {{signedTime}}, after the time on the notice, so the signature can't show it existed by {{noticeTime}}.",
+      "arrivalDevKey": "This record was signed with a development key, not ParkProof's published key, so the signature can't show it existed by {{noticeTime}}.",
+      "arrivalPending": "ParkProof hasn't signed this record yet.",
+      "arrivalNotSigned": "This record wasn't signed.",
+      "driverPending": "The driver's name hasn't been signed yet.",
+      "driverNotSigned": "The driver's name wasn't signed.",
+      "handoverPending": "This handover hasn't been signed yet."
+    },
+    "duration": {
+      "minutes_one": "{{count}} minute",
+      "minutes_other": "{{count}} minutes",
+      "hours_one": "{{count}} hour",
+      "hours_other": "{{count}} hours",
+      "hoursMinutes": "{{hours}} {{minutes}}"
+    },
+    "actions": {
+      "draftAppeal": "Draft an appeal with this record",
+      "exportPdf": "Export evidence PDF",
+      "draftAnyway": "Draft an appeal anyway"
+    },
+    "disclaimer": "This compares your record with what the notice says. It isn't legal advice, and it doesn't say whether the fine should stand. The council or court decides that."
+  },
+  "unclearSign": {
+    "obscuredTitle": "Part of this sign is hard to read",
+    "contradictoryTitle": "Parts of this sign disagree",
+    "strictest": "The answer above uses the most restrictive reading. Check the sign yourself before you leave the car.",
+    "worthRecording": "A sign that can't be read clearly is worth keeping a record of.",
+    "notesLabel": "What the AI noticed",
+    "noSignTitle": "No readable parking sign",
+    "noSignBody": "We couldn't find a readable parking sign in this photo. That doesn't mean there are no rules here. General road rules still apply, such as no parking within 10 metres of an intersection without traffic lights, and some areas have time limits without a sign on every street.",
+    "photoAlt": "The photo you took",
+    "retake": "Retake photo",
+    "logWithoutSign": "Log without a sign",
+    "photoCaption": "Photo taken where you parked. ParkProof found no readable parking sign in it.",
+    "loggerIntro": "We'll save when and where you parked, with the photo you took.",
+    "loggerBanner": "The record will say ParkProof found no readable parking sign in your photo and you logged this park without one. It doesn't show there was no sign here.",
+    "recordNoSignRead": "No sign read. ParkProof found no readable parking sign in the photo, and you logged this park without one.",
+    "noSignReadLabel": "No sign read",
+    "remindIntro": "No sign was read for this park, so there's no expiry to remind you of. You can still ask for a check-in reminder. Pick how long from now, choose as many as you like."
+  },
+  "recurring": {
+    "title": "Weekly reminders",
+    "intro": "Street sweeping, clearways and other restrictions that come back on the same days. Set them once and get a reminder before each one.",
+    "homeRow": "Street sweeping and weekly reminders",
+    "homeNext": "Next: {{what}}, {{time}}",
+    "homeOnNow": "{{what}} is on now, until {{time}}",
+    "homeCount_one": "{{count}} set",
+    "homeCount_other": "{{count}} set",
+    "homeNone": "None yet",
+    "empty": "No weekly reminders yet",
+    "emptyHelp": "Add one for the street sweeping or clearway where you usually park.",
+    "add": "Add a weekly reminder",
+    "editTitleNew": "New weekly reminder",
+    "editTitle": "Edit weekly reminder",
+    "kind": {
+      "street_cleaning": "Street sweeping",
+      "clearway": "Clearway",
+      "no_stopping": "No stopping",
+      "other": "Other restriction"
+    },
+    "field": {
+      "kind": "What is it?",
+      "label": "Name",
+      "days": "Days",
+      "start": "Starts",
+      "end": "Ends",
+      "frequency": "How often",
+      "anchor": "Date of the next one",
+      "nth": "Which weeks of the month",
+      "address": "Where",
+      "addressPlaceholder": "Street or place (optional)",
+      "remind": "Remind me",
+      "push": "Notify me on this phone"
+    },
+    "frequency": {
+      "weekly": "Every week",
+      "fortnightly": "Every second week",
+      "monthly_nth": "Some weeks of the month"
+    },
+    "remind": {
+      "evening": "The evening before, at",
+      "before": "Before it starts",
+      "minutes_one": "{{count}} minute before",
+      "minutes_other": "{{count}} minutes before",
+      "hours_one": "{{count}} hour before",
+      "hours_other": "{{count}} hours before"
+    },
+    "pushHint": "For the most reliable reminder, add it to your calendar too.",
+    "zoneNote": "Days and times are local time in {{place}}.",
+    "zone": {
+      "melbourne": "Melbourne",
+      "sydney": "Sydney",
+      "canberra": "Canberra",
+      "brisbane": "Brisbane",
+      "lindeman": "Lindeman Island",
+      "adelaide": "Adelaide",
+      "brokenHill": "Broken Hill",
+      "darwin": "Darwin",
+      "perth": "Perth",
+      "eucla": "Eucla",
+      "hobart": "Hobart",
+      "lordHowe": "Lord Howe Island"
+    },
+    "days": {
+      "MO": "Monday",
+      "TU": "Tuesday",
+      "WE": "Wednesday",
+      "TH": "Thursday",
+      "FR": "Friday",
+      "SA": "Saturday",
+      "SU": "Sunday"
+    },
+    "daysShort": {
+      "MO": "Mon",
+      "TU": "Tue",
+      "WE": "Wed",
+      "TH": "Thu",
+      "FR": "Fri",
+      "SA": "Sat",
+      "SU": "Sun"
+    },
+    "dayRange": "{{from}} to {{to}}",
+    "nth": {
+      "n1": "1st",
+      "n2": "2nd",
+      "n3": "3rd",
+      "n4": "4th",
+      "n5": "5th"
+    },
+    "schedule": {
+      "weekly": "Every week on {{days}}",
+      "fortnightly": "Every second week on {{days}}",
+      "monthly_nth": "The {{nths}} {{days}} of each month"
+    },
+    "timeRange": "{{start}} to {{end}}",
+    "summary": "{{schedule}}, {{range}}",
+    "next": "Next: {{time}}",
+    "onNow": "On now, until {{time}}",
+    "paused": "Paused",
+    "noNext": "No upcoming dates",
+    "pause": "Pause",
+    "resume": "Resume",
+    "pausedHint": "Paused reminders don't alert you here. A calendar you added it to keeps its own alarms.",
+    "delete": "Delete reminder",
+    "deleteConfirm": "Delete this weekly reminder? A calendar you added it to keeps its copy.",
+    "calendar": "Add to calendar",
+    "calendarDone": "Downloaded. Open the file to add it.",
+    "saved": "Weekly reminder saved.",
+    "errors": {
+      "days": "Pick at least one day.",
+      "times": "Pick a start and an end time that differ.",
+      "nth": "Pick at least one week of the month.",
+      "anchor": "Pick the date of the next one.",
+      "saveFailed": "Couldn't save this reminder. Try again."
+    },
+    "councilNote": "Councils change these schedules, and public holidays may be different. Check the signs where you park.",
+    "notifyDenied": "Notifications are blocked for ParkProof, so these reminders can't alert you on this phone. Allow notifications in your browser's site settings, or add them to your calendar.",
+    "pushStatus": {
+      "closed": "Set to alert this phone even when ParkProof is closed. Open ParkProof at least once every two months to keep it set.",
+      "openOnly": "Alerts this phone only while ParkProof is open. Add it to your calendar too.",
+      "none": "This phone can't show this reminder right now. Add it to your calendar."
+    },
+    "offer": {
+      "heading": "Weekly restriction on this sign",
+      "body": "ParkProof can remind you before it starts each time.",
+      "line": "{{what}}. {{summary}}.",
+      "cta": "Remind me every week",
+      "already": "You already have a weekly reminder for this."
+    },
+    "sheet": {
+      "title": "Remind me every week",
+      "check": "Check these days and times against the sign",
+      "signSays": "The sign also says: {{text}}"
+    },
+    "notify": {
+      "moveTonight": "{{what}} on {{day}} {{range}}. Move the car tonight.",
+      "moveBefore": "{{what}} on {{day}} {{range}}. Move the car before {{start}}."
+    },
+    "ics": {
+      "alarmTonight": "{{what}} tomorrow, {{range}}. Move the car tonight.",
+      "alarmTomorrow": "{{what}} tomorrow, {{range}}. Move the car before {{start}}.",
+      "alarmSoon": "{{what}} starts at {{start}}. Move the car before then.",
+      "move": "Move the car before it starts.",
+      "footer": "Reminder set in ParkProof.",
+      "noDates": "This weekly reminder has no dates to add."
+    }
+  },
+  "photoGrid": {
+    "front": "Front",
+    "rear": "Rear",
+    "left": "Left side",
+    "right": "Right side",
+    "detail": "Close-up (optional)",
+    "take": "Take a photo: {{angle}}",
+    "retake": "Retake: {{angle}}",
+    "saving": "Saving photo…",
+    "saved": "Saved on your phone",
+    "failed": "This photo couldn't be saved on your phone.",
+    "hint": "Walk around the car and take a photo of each side. Add a close-up of any damage.",
+    "signedNote": "A signed photo shows the photo existed by the time it was signed. It doesn't show who caused any damage.",
+    "count_one": "{{count}} photo",
+    "count_other": "{{count}} photos"
+  },
+  "proof": {
+    "fromLibrary": "Paid in an app? Add the payment confirmation from your photos",
+    "typeLegend": "What the photo shows"
+  },
+  "complianceType": {
+    "meterTicket": "Meter ticket on the dash",
+    "paymentConfirmation": "Payment confirmation",
+    "permitDisplayed": "Permit displayed",
+    "other": "Other"
+  },
+  "evidence": {
+    "group": {
+      "parking": "Condition when parked",
+      "return": "Condition on return",
+      "compliance": "Proof of payment or permit"
+    },
+    "noteLabel": "Damage you noticed, in your own words",
+    "addedAt": "Added at {{time}} (phone clock).",
+    "fingerprint": "Fingerprint {{fingerprint}}",
+    "library": "Added from the photo library. The signature shows the photo existed by ParkProof's signing time, not when it was taken.",
+    "notSigned": "This photo isn't in a signed part of the record.",
+    "photoNotOnDevice": "Photo not on this device. Fingerprint {{fingerprint}}.",
+    "addCondition": "Add condition photos",
+    "addMeterTicketOrPermit": "Add a photo of your ticket or permit",
+    "addIntro": "ParkProof signs each photo's fingerprint as a new part of this record. The photos themselves aren't sent for signing.",
+    "addToRecord": "Add to record",
+    "adding": "Adding…",
+    "needPhoto": "Take at least one photo first.",
+    "needType": "Choose what the photo shows.",
+    "addFailed": "These photos couldn't be added to the record. Try again.",
+    "cantAddNow": "These photos can't be added now. The record may have ended, or it has no room for another part.",
+    "complianceDescribed": "{{type}} (as you described it)",
+    "noteNotSigned": "This note isn't in a signed part of the record."
+  },
+  "backupPrompt": {
+    "title": "Back up your photos",
+    "body": "Your records and their signed photos are kept only in this browser. Safari can clear a site's data after 7 days without a visit.",
+    "homeScreenIos": "Add ParkProof to your Home Screen: tap Share, then Add to Home Screen. Records you save from the Home Screen app stay with the app. Records already saved in Safari stay in Safari and don't move to the app.",
+    "homeScreenOther": "Add ParkProof to your Home Screen from your browser's menu (Install app, or Add to Home screen).",
+    "signIn": "Sign in to back up",
+    "dismiss": "Not now"
+  },
+  "evidenceFile": {
+    "download": "Download evidence file",
+    "busy": "Preparing the file…",
+    "help": "A .json file with every signature and the original photos, so anyone can check this record without ParkProof. A signature shows the details haven't changed since ParkProof signed them. It doesn't show they're true, who was driving, where the car was, or when it arrived or left. The file contains the location and times saved in this record, so share it only with people who need it.",
+    "includePermit": "Include permit details",
+    "permitHelp": "Your permit details, and any photo marked \"Permit displayed\", are only in the file if you tick this. The signed record holds only their fingerprints, which they can be checked against. Accessible permit details are health information.",
+    "error": "The evidence file couldn't be made. Try again.",
+    "photosMissing_one": "{{count}} signed photo isn't on this device, so it isn't in the file. Its signed fingerprint is.",
+    "photosMissing_other": "{{count}} signed photos aren't on this device, so they aren't in the file. Their signed fingerprints are.",
+    "photosDiffer_one": "{{count}} photo on this device doesn't match its signed fingerprint, so it isn't in the file. Its signed fingerprint is.",
+    "photosDiffer_other": "{{count}} photos on this device don't match their signed fingerprints, so they aren't in the file. Their signed fingerprints are."
+  },
+  "prefs": {
+    "header": "Settings",
+    "intro": "Saved in this browser only, not in your account.",
+    "driverNameLabel": "Your name on records you share",
+    "driverNameHint": "New parking records list this as the driver. Leave it blank to leave it off.",
+    "saveName": "Save name",
+    "saved": "Saved",
+    "saveFailed": "Couldn't save. Try again.",
+    "permitsHeader": "My permits",
+    "permitsIntro": "Saved permits are sent with each sign you scan or re-check, so the answer can include what the sign says about them. Only the permit type is sent, plus the area or zone of a resident or business permit.",
+    "permitsEmpty": "No permits saved.",
+    "addPermit": "Add a permit",
+    "permitsLimit_one": "You can save up to {{count}} permit.",
+    "permitsLimit_other": "You can save up to {{count}} permits.",
+    "permitTypeLabel": "Permit type",
+    "permitType": {
+      "accessible": "Accessible parking permit",
+      "resident": "Resident parking permit",
+      "business": "Business parking permit"
+    },
+    "issuingStateLabel": "State or territory that issued it",
+    "stateNotSet": "Not set",
+    "state": {
+      "VIC": "Victoria",
+      "NSW": "New South Wales",
+      "QLD": "Queensland",
+      "ACT": "Australian Capital Territory",
+      "SA": "South Australia",
+      "WA": "Western Australia",
+      "TAS": "Tasmania",
+      "NT": "Northern Territory"
+    },
+    "areaLabel": "Area or zone on the permit",
+    "areaPlaceholder": "For example, Area 25",
+    "expiryLabel": "Expiry date",
+    "savePermit": "Save permit",
+    "accessibleWarning": "Saving this permit means its type is sent with each sign photo you scan, so the answer can include what the sign says about permits. Accessible permit details are health information. You can delete them any time.",
+    "accessibleConfirm": "Save this permit",
+    "permitArea": "Area or zone: {{area}}",
+    "permitExpires": "Expires {{date}}",
+    "permitExpired": "Expired {{date}}. It isn't sent with your scans.",
+    "deletePermitLabel": "Delete {{permit}}",
+    "pushUnsupported": "This browser can't show reminders while ParkProof is closed. On an iPhone, add ParkProof to your Home Screen first. Calendar reminders still work.",
+    "accountHeader": "Account",
+    "accountCopy": "Cloud sync, data export, signing out and deleting your account.",
+    "openAccount": "Open account",
+    "signInCopy": "Sign in to back up your records and see them on your other devices. Nothing on this page needs an account.",
+    "signIn": "Sign in",
+    "privacyCta": "Open privacy policy"
+  },
+  "share": {
+    "action": "Share where the car is",
+    "confirm": "Anyone with this link can see where the car is parked, who parked it and until when. It works for anyone it's forwarded to, and you can't switch it off.",
+    "shareButton": "Share link",
+    "shareText": "Where the car is parked, from ParkProof.",
+    "notSigned": "This record isn't signed yet. You can share it once ParkProof has signed it.",
+    "tooLarge": "This record is too big to share as a link.",
+    "copied": "Link copied. Paste it into a message to share it.",
+    "copyManually": "Copy this link and send it.",
+    "linkFieldLabel": "Link to share",
+    "permitSafeguard": "This park used an accessible parking permit. If the permit holder won't be in the car, take the permit off the dash before anyone drives it.",
+    "receivedTitle": "Where the car is",
+    "checking": "Checking the link…",
+    "banner": "Shared by {{driver}} at {{time}}. This is a snapshot and doesn't update. The car may have moved.",
+    "bannerNoDriver": "Shared at {{time}}. This is a snapshot and doesn't update. The car may have moved.",
+    "bannerNoTime": "This is a snapshot and doesn't update. The car may have moved.",
+    "tampered": "This link has been changed since it was shared",
+    "newerVersion": "This link was made by a newer version of ParkProof",
+    "unreadable": "This share link can't be read. Ask the sender to share it again.",
+    "signedHeading": "Signed details",
+    "signedNote": "ParkProof signed these details at {{time}}. The signature shows they haven't changed since then. It doesn't show they are true, who was driving, where the car was, or when it arrived or left.",
+    "signedNoteNoTime": "The signature shows these details haven't changed since ParkProof signed them. It doesn't show they are true, who was driving, where the car was, or when it arrived or left.",
+    "field": {
+      "place": "Where it was logged",
+      "arrived": "Logged at",
+      "limit": "Limit read from the sign",
+      "limitRecorded": "Limit on this record",
+      "driver": "Driver",
+      "rules": "Sign reading",
+      "standardLimit": "Standard limit on the sign",
+      "ended": "Departure"
+    },
+    "permitTimeNote": "This limit includes extra time from a permit. Without the permit, the sign's standard limit applies. The sender says it ends at {{time}}.",
+    "phoneClock": "{{time}} (phone clock)",
+    "noLimit": "No limit recorded",
+    "noPlace": "No location recorded",
+    "directions": "Directions",
+    "unsignedHeading": "From the sender, not signed",
+    "endedValue": "The sender tapped I've left at {{time}} (phone clock).",
+    "saved": "Saved in your parking records as \"Shared with you\". Opening the link again updates it.",
+    "keptNewer": "You already have a later copy of this record from a newer link, so that one was kept.",
+    "ownRecord": "This link is for a record saved on this phone, so it wasn't added again.",
+    "saveFailed": "A copy couldn't be saved on this phone.",
+    "badge": "Shared with you",
+    "check": "Check the signature",
+    "checkValid": "The signature is valid. The signed details haven't changed since ParkProof signed them. That doesn't show they're true, who was driving, where the car was, or when it arrived or left.",
+    "remove": "Remove",
+    "removeConfirm": "Remove this shared record from this phone? You can open the link again to get it back."
+  },
+  "handover": {
+    "action": "Hand the car over",
+    "intro": "Enter who's taking the car next. ParkProof signs it with this record, as your own statement. ParkProof doesn't check it, and the signature doesn't show who was driving. The record stays active.",
+    "nameLabel": "Next driver's name",
+    "nameRequired": "Enter the next driver's name.",
+    "submit": "Record the handover",
+    "failed": "The handover couldn't be added to this record.",
+    "done": "Your record now says the car was handed to {{to_driver}}. ParkProof signs it when your phone is online. The record stays active.",
+    "doneFromTo": "Your record now says {{from_driver}} handed the car to {{to_driver}}. ParkProof signs it when your phone is online. The record stays active.",
+    "fromDriver": "Handed over by {{from_driver}}, the driver this record names now.",
+    "offerShare": "You can send them a link to where the car is.",
+    "line": "Your record says the car was handed to {{to_driver}} at {{time}} (phone clock).",
+    "lineFromTo": "Your record says {{from_driver}} handed the car to {{to_driver}} at {{time}} (phone clock)."
   }
 }

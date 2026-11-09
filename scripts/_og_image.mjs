@@ -128,7 +128,7 @@ const html = `<!doctype html>
 
   <div class="card">
     <div class="seal">&#10003;</div>
-    <div class="vlabel">Verified record</div>
+    <div class="vlabel">Signed record</div>
     <div class="vhead">You can park</div>
     <div><span class="pill">until 4:00 PM</span></div>
     <div class="obs">

@@ -5,10 +5,14 @@ import { useNow } from '../lib/use-now'
 import { useLiveRecords } from '../lib/use-records-version'
 import { recordStatus } from '../lib/record-status'
 import { sessionTimezone } from '../lib/timezone'
+import { isNoSignReadRecord } from '../lib/sign-result'
+import { getWorkday, isActiveRecord } from '../lib/storage'
+import { historyEntries } from '../lib/workday-flow'
 import Icon from './Icon'
 import VerifiedSeal from './VerifiedSeal'
 import BackButton from './ui/BackButton'
 import { RecordThumbnail } from './RecordPhoto'
+import { DEV_KEY_ALIAS } from '../lib/evidence-chain'
 
 /** Thumbnail priority for a row: the sign photo, then the surroundings photo, then the car photo. */
 const THUMB_ROLES = ['sign', 'ambient', 'car'] as const
@@ -16,6 +20,12 @@ const THUMB_ROLES = ['sign', 'ambient', 'car'] as const
 interface Props {
   onBack: () => void
   onOpen: (session: ParkingSession) => void
+  /**
+   * Workday mode (T6b item 5, behind VITE_FEATURE_WORKDAY): with this
+   * passed, a workday's stops fold into one row ("Workday, 3 stops") that
+   * opens the workday view. Without it every record is its own row.
+   */
+  onOpenWorkday?: (workdayId: string) => void
 }
 
 function statusFor(
@@ -36,7 +46,51 @@ function statusFor(
   return { label: status.label, color }
 }
 
-export default function SessionHistory({ onBack, onOpen }: Props) {
+/** One History row for a whole workday: its first stop's date, the stop count, the newest stop's address. */
+function WorkdayRow({
+  legs,
+  workdayId,
+  now,
+  onOpen,
+}: {
+  legs: ParkingSession[]
+  workdayId: string
+  now: number
+  onOpen: () => void
+}) {
+  const { t } = useTranslation()
+  const first = legs[0]
+  const last = legs[legs.length - 1]
+  const timeZone = sessionTimezone(first?.location ?? null)
+  const stored = getWorkday(workdayId)
+  // The workday's own state when it's on this device; otherwise (its stops
+  // came from the cloud) in progress while any stop is.
+  const active = stored ? stored.status !== 'ended' : legs.some((l) => isActiveRecord(l, now))
+  const arrival = first ? new Date(first.arrived_at) : null
+  return (
+    <button onClick={onOpen} className="gf-card text-left bg-white hover:bg-paper-50 p-4 transition-colors">
+      <div className="flex items-start gap-3">
+        <div className="w-16 h-16 rounded-lg border border-paper-300 bg-brand-50 flex items-center justify-center flex-none">
+          <Icon name="briefcase" className="w-7 h-7 text-brand-700" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="font-medium text-ink-900 truncate">{t('workday.history.row', { count: legs.length })}</p>
+          {arrival && (
+            <p className="text-xs text-ink-700 mt-0.5">
+              {arrival.toLocaleDateString('en-AU', { timeZone, weekday: 'short', day: 'numeric', month: 'short' })}
+            </p>
+          )}
+          {last?.location?.address && <p className="text-xs text-ink-700 mt-0.5 truncate">{last.location.address}</p>}
+          <p className={`text-xs font-semibold mt-1 ${active ? 'text-brand-700' : 'text-ink-600'}`}>
+            {active ? t('workday.status.active') : t('workday.status.ended')}
+          </p>
+        </div>
+      </div>
+    </button>
+  )
+}
+
+export default function SessionHistory({ onBack, onOpen, onOpenWorkday }: Props) {
   const { t } = useTranslation()
   // Re-read on every records change, so a signature or a cloud pull that
   // lands while History is open shows up without leaving the screen.
@@ -45,7 +99,7 @@ export default function SessionHistory({ onBack, onOpen }: Props) {
 
   return (
     <div className="min-h-screen flex flex-col p-6 max-w-md mx-auto w-full">
-      <BackButton onClick={onBack} className="text-[#7BE3A4] hover:text-paper-50">{t('common.backToHome')}</BackButton>
+      <BackButton onClick={onBack}>{t('common.backToHome')}</BackButton>
 
       <h2 className="font-display text-3xl font-extrabold text-paper-50 mb-1">
         {t('history.header')}
@@ -67,7 +121,19 @@ export default function SessionHistory({ onBack, onOpen }: Props) {
         </div>
       ) : (
         <div className="flex flex-col gap-3">
-          {sessions.map((s) => {
+          {historyEntries(sessions, !!onOpenWorkday).map((entry) => {
+            if (entry.kind === 'workday') {
+              return (
+                <WorkdayRow
+                  key={`workday-${entry.workday_id}`}
+                  legs={entry.legs}
+                  workdayId={entry.workday_id}
+                  now={now}
+                  onOpen={() => onOpenWorkday?.(entry.workday_id)}
+                />
+              )
+            }
+            const s = entry.session
             // One zone for the whole row (the record's own, as on the record
             // screen), so arrival and "Ended ..." can't disagree.
             const timeZone = sessionTimezone(s.location)
@@ -96,9 +162,25 @@ export default function SessionHistory({ onBack, onOpen }: Props) {
                     }
                   />
                   <div className="flex-1 min-w-0">
+                    {/* A read-only copy from someone's share link (T7). */}
+                    {s.shared_from && (
+                      <span className="inline-flex items-center gap-1 mb-1 text-2xs font-semibold uppercase tracking-wider text-brand-800 bg-brand-50 border border-brand-200 rounded-full px-2 py-0.5">
+                        <Icon name="share" className="w-3 h-3" strokeWidth={2.25} />
+                        {t('share.badge')}
+                      </span>
+                    )}
                     <div className="flex items-center gap-1.5 min-w-0">
                       {s.signature && (
-                        <VerifiedSeal size={16} glow={false} className="flex-none" />
+                        <VerifiedSeal
+                          size={16}
+                          glow={false}
+                          className="flex-none"
+                          label={
+                            s.signature.key_alias === DEV_KEY_ALIAS
+                              ? t('session.devKeySigned')
+                              : t('common.signedSeal')
+                          }
+                        />
                       )}
                       <p className="font-medium text-ink-900 truncate">
                         {arrival.toLocaleDateString('en-AU', {
@@ -119,7 +201,7 @@ export default function SessionHistory({ onBack, onOpen }: Props) {
                       <p className="text-xs text-ink-700 mt-0.5 truncate">{s.location.address}</p>
                     )}
                     <p className="text-xs text-ink-600 mt-0.5 line-clamp-2">
-                      {s.no_sign ? t('history.noSignBadge') : s.rules}
+                      {s.no_sign ? t(isNoSignReadRecord(s) ? 'unclearSign.noSignReadLabel' : 'history.noSignBadge') : s.rules}
                     </p>
                     <p className={`text-xs font-semibold mt-1 ${status.color}`}>{status.label}</p>
                   </div>

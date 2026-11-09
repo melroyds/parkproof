@@ -1,24 +1,55 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { ParkingRules } from '../types'
+import type { Jurisdiction, ParkingRules, SavedPermit } from '../types'
 import Icon from './Icon'
 import Button from './ui/Button'
+import BackButton from './ui/BackButton'
 import Card from './ui/Card'
+import Input from './ui/Input'
 import VerifiedSeal from './VerifiedSeal'
+import {
+  buildPermitContext,
+  laterPermitTime,
+  permitAnswerFor,
+  printedExceptions,
+  showsMayAllowMore,
+  zoneAreaCheck,
+  type AreaMatch,
+  type PermitAnswer,
+  type PermitCheck,
+  type ResultAnswers,
+} from '../lib/permit-answer'
+import { PERMIT_TYPE_KEYS, STATE_NAME_KEYS } from '../lib/profile'
 import { submitFeedback } from '../lib/feedback'
 import { PARKING_APPS, launchUrlFor, type ParkingApp } from '../lib/parking-apps'
 import { useNow } from '../lib/use-now'
 import { formatCountdownLocalized } from '../lib/countdown'
-import { formatExpiryAbsolute } from '../lib/time-format'
+import { formatExpiryAbsolute, hourInZone } from '../lib/time-format'
 import { timezoneForCoords } from '../lib/timezone'
+import { hasWeeklyRestriction, isUnclearSign, signIssuesOf, signReadingTelemetry, signStatusOf } from '../lib/sign-result'
 
 interface Props {
   result: ParkingRules
   signPhoto: string
   /** Coords from the scan that produced this result — used to pin the displayed timezone. */
   coords: { lat: number; lng: number } | null
-  onScanAnother: () => void
-  onLogSession: () => void
+  /**
+   * "Scan another sign". Not passed for a workday stop (T6b item 5): that
+   * scan is the stop, and its way out is Back.
+   */
+  onScanAnother?: () => void
+  /**
+   * A "← Back" link above the answer, for a workday stop (T6b item 6):
+   * backing out of the stop's scan returns home with the workday as it was.
+   */
+  onBack?: () => void
+  /**
+   * Go on to log the park, with what the driver answered here (T4): the
+   * gate answers and the permit they confirmed, for the logging draft. The
+   * gate answers are saved and signed as the record's `gate_acks`: true for
+   * a gate the driver ticked, null for a gate this screen didn't ask.
+   */
+  onLogSession: (answers: ResultAnswers) => void
   onRetake: () => void
   /**
    * True on the user's first-ever scan (no saved sessions yet). Surfaces the
@@ -26,6 +57,94 @@ interface Props {
    * a free, anonymous user would bother saving.
    */
   isFirstSave?: boolean
+  /** The driver's usable saved permits (Settings, not expired), in saved order. */
+  permits?: readonly SavedPermit[]
+  /** The state or territory the car is parked in, when the scan's place shows it for sure. */
+  parkingState?: Jurisdiction | null
+}
+
+const NO_PERMITS: readonly SavedPermit[] = []
+
+const FIELD_LABEL = 'text-xs uppercase tracking-widest font-semibold text-ink-600'
+
+/**
+ * A permit question with "Yes" and "No" (T4 item 5), asked in the gate it
+ * belongs to or, with no gate showing, in the permit card. Nothing ever
+ * answers it for the driver. "No" says why the permit can't be used.
+ */
+function PermitQuestion({
+  question,
+  check,
+  onCheck,
+  noText,
+  children,
+}: {
+  question: string
+  check: PermitCheck
+  onCheck: (check: 'yes' | 'no') => void
+  noText: string
+  /** Shown under the answers, e.g. the later permit time once the answer is yes. */
+  children?: ReactNode
+}) {
+  const { t } = useTranslation()
+  const name = useId()
+  const option = (value: 'yes' | 'no') => (
+    <label
+      className={`flex-1 min-h-[44px] inline-flex items-center justify-center rounded-xl border-2 text-sm font-semibold cursor-pointer select-none transition-colors has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-brand-500/40 ${
+        check === value ? 'bg-ink-900 border-ink-900 text-white' : 'bg-white border-paper-300 text-ink-900 hover:border-ink-600'
+      }`}
+    >
+      <input
+        type="radio"
+        name={name}
+        value={value}
+        checked={check === value}
+        onChange={() => onCheck(value)}
+        className="sr-only"
+      />
+      {value === 'yes' ? t('common.yes') : t('common.no')}
+    </label>
+  )
+  return (
+    <fieldset className="mt-4">
+      <legend className="text-sm font-medium text-ink-900 leading-snug">{question}</legend>
+      <div className="mt-2 flex gap-2">
+        {option('yes')}
+        {option('no')}
+      </div>
+      {check === 'no' && (
+        <p role="alert" className="mt-3 text-sm font-semibold text-red-700 leading-relaxed">
+          {noText}
+        </p>
+      )}
+      {children}
+    </fieldset>
+  )
+}
+
+/** "Your saved permit for Area 25 matches this zone." (or that it doesn't): a plain label comparison. */
+function PermitAreaLine({
+  area,
+  match,
+  zone,
+}: {
+  area: string | null
+  match: AreaMatch | null
+  zone: string | null | undefined
+}) {
+  const { t } = useTranslation()
+  if (!match || !area) return null
+  return match === 'match' ? (
+    <p className="mt-3 text-sm font-semibold text-brand-700 inline-flex items-start gap-1.5">
+      <Icon name="check" className="w-4 h-4 shrink-0 mt-0.5" strokeWidth={2.5} />
+      <span>{t('result.permit.areaMatch', { area })}</span>
+    </p>
+  ) : (
+    <p className="mt-3 text-sm font-semibold text-amber-800 inline-flex items-start gap-1.5">
+      <Icon name="warning" className="w-4 h-4 shrink-0 mt-0.5" strokeWidth={2.25} />
+      <span>{t('result.permit.areaMismatch', { area, zone: zone ?? '' })}</span>
+    </p>
+  )
 }
 
 function formatUntil(iso: string | null, timeZone: string): string | null {
@@ -62,6 +181,7 @@ function buildFeedbackContext(
   ticketAcknowledged: boolean,
   disabledAcknowledged: boolean,
   permitZoneAcknowledged: boolean,
+  scan: { at: number; timeZone: string },
 ) {
   return {
     confidence: result.confidence,
@@ -75,10 +195,12 @@ function buildFeedbackContext(
     // First 120 chars only — enough to group similar sign-patterns in Logs
     // Insights queries without bloating CloudWatch storage.
     rules_excerpt: (result.rules ?? '').slice(0, 120),
-    scanned_hour_local: new Date().getHours(),
-    // Refresh-mode results have a marker rule prefix; cheaper than threading
-    // the mode down from App.tsx and good enough for telemetry purposes.
-    is_refresh: false,
+    // The hour at the parking spot, in the zone the answer was read for
+    // (the record's zone), not the phone's: lighting failures are about
+    // the time where the sign is.
+    scanned_hour_local: hourInZone(scan.at, scan.timeZone) ?? undefined,
+    // refreshInterpretation marks re-check answers; fresh photo reads have no mark.
+    is_refresh: result.is_refresh === true,
     // Paid-parking signals — lets us slice retake rate by paid vs free signs
     // and see whether the acknowledgement gate is real friction or just noise.
     requires_ticket: !!result.requires_ticket,
@@ -103,6 +225,8 @@ function buildFeedbackContext(
     permit_area: result.permit_area ?? null,
     permit_zone_acknowledged:
       !!result.is_permit_zone && permitZoneAcknowledged,
+    // T3: the sign's condition, the area flag and the weekly restrictions.
+    ...signReadingTelemetry(result),
   }
 }
 
@@ -154,12 +278,28 @@ export default function ParkingResult({
   signPhoto,
   coords,
   onScanAnother,
+  onBack,
   onLogSession,
   onRetake,
   isFirstSave,
+  permits = NO_PERMITS,
+  parkingState = null,
 }: Props) {
   const { t } = useTranslation()
   const [verified, setVerified] = useState(false)
+  // T4 items 4 and 5: the one saved permit this park may use (or none), the
+  // driver's answer to its question, and the later permit time they may
+  // type in from the sign. Nothing here is ever answered for the driver.
+  const permitAnswer = useMemo(() => permitAnswerFor(result, permits), [result, permits])
+  // Every exception the sign prints for one of the driver's permit types,
+  // quoted whichever permit the park goes on to use, and the area line for
+  // the permit-zone gate, whichever permit the accessible gate uses.
+  const exceptions = useMemo(() => printedExceptions(result, permits), [result, permits])
+  const zoneArea = useMemo(() => zoneAreaCheck(result, permits), [result, permits])
+  const [permitCheck, setPermitCheck] = useState<PermitCheck>(null)
+  const [permitTime, setPermitTime] = useState('')
+  const permitTimeId = useId()
+  const permitCardId = useId()
   // Paid-parking acknowledgement — gates the "Save session" button when the
   // sign requires payment. Defaults false so the user has to deliberately
   // confirm; "yes I paid (or will pay before walking away)".
@@ -178,9 +318,17 @@ export default function ParkingResult({
   // $400+ for misusing an accessibility bay). The amber matches the
   // pay-gate, signalling "are you sure?" rather than "this is forbidden".
   const [permitZoneAcknowledged, setPermitZoneAcknowledged] = useState(false)
+  // The zone's tick box again, below the "No" answer to the saved permit's
+  // question: the driver may still hold another valid permit for the zone
+  // (a visitor permit, say). Its own state, so a tick given before "No"
+  // never carries over and passes the gate on its own.
+  const [otherZonePermitAcknowledged, setOtherZonePermitAcknowledged] = useState(false)
   // One id per rendering of the result — used to dedupe feedback events server-side
   // without storing anything identifiable.
   const [feedbackId] = useState(() => crypto.randomUUID())
+  // When the answer was shown: the scan time for the telemetry, rather
+  // than whenever the driver gets round to tapping a verify button.
+  const [shownAt] = useState(() => Date.now())
   // Synchronous double-submit guard — a fast double-tap on the verify buttons
   // would otherwise fire submitFeedback twice with the same feedback_id and
   // over-count the accuracy telemetry. A ref, not state, so the second tap in
@@ -213,13 +361,120 @@ export default function ParkingResult({
   const mustPay = !!requires_ticket && can_park_now
   const mustHavePermit = !!requires_disabled_permit && can_park_now
   const isPermitZone = !!is_permit_zone && can_park_now
+  // A gate whose saved permit has its own question (T4 item 5) passes only
+  // on "Yes"; otherwise the gate's tick box, as before. In a permit zone the
+  // question says only that the permit is for this car, so the zone's own
+  // tick box ("I hold a valid permit for Permit Area 25") stays as well,
+  // unless the code matched the saved permit's area to the sign's. After
+  // "No" the saved permit is out, and the zone's tick box shows below the
+  // answer (and only there) for another valid permit; no permit is recorded.
+  const zoneQuestion = permitAnswer?.gate === 'permit_zone'
+  const zoneNo = zoneQuestion && permitCheck === 'no'
+  const zoneTickShows = (!zoneQuestion || permitAnswer?.areaMatch !== 'match') && !zoneNo
+  const accessibleAck = permitAnswer?.gate === 'accessible' ? permitCheck === 'yes' : disabledAcknowledged
+  const permitZoneAck = !zoneQuestion
+    ? permitZoneAcknowledged
+    : zoneNo
+      ? otherZonePermitAcknowledged
+      : permitCheck === 'yes' && (permitAnswer?.areaMatch === 'match' || permitZoneAcknowledged)
   const blockedByPayGate = mustPay && !ticketAcknowledged
-  const blockedByPermitGate = mustHavePermit && !disabledAcknowledged
-  const blockedByPermitZoneGate = isPermitZone && !permitZoneAcknowledged
+  const blockedByPermitGate = mustHavePermit && !accessibleAck
+  const blockedByPermitZoneGate = isPermitZone && !permitZoneAck
   const saveBlocked = blockedByPayGate || blockedByPermitGate || blockedByPermitZoneGate
   const paymentActions = resolvePaymentActions(payment_methods, mustPay)
   const timeZone = timezoneForCoords(coords?.lat, coords?.lng)
   const untilLabel = formatUntil(until, timeZone)
+  // The sign prints an exception for the permit: its answer shows apart
+  // from the standard answer, which never changes for permits.
+  const permitException = permitAnswer?.exception ?? null
+  // A later permit time can be typed in only against a standard time limit.
+  const permitTimeEligible = !!permitException && can_park_now && typeof until === 'string'
+  const permitUntilPreview =
+    permitTimeEligible && permitTime ? laterPermitTime(permitTime, until, timeZone, new Date(now)) : null
+  const mayAllowMore = showsMayAllowMore(result, permits)
+
+  /**
+   * Log the park, handing the logging draft what was answered here: the gate
+   * acknowledgements (true for a gate the driver ticked or answered yes, null
+   * for a gate this screen didn't ask; a gate is asked only when parking is
+   * allowed now, so the can't-park override logs with every gate null) and
+   * the permit they confirmed.
+   */
+  const logSession = () => {
+    const permitUntil =
+      permitTimeEligible && permitCheck === 'yes' && permitTime
+        ? laterPermitTime(permitTime, until, timeZone, new Date())
+        : null
+    onLogSession({
+      gate_acks: {
+        meter_ticket: mustPay ? ticketAcknowledged : null,
+        permit_zone: isPermitZone ? permitZoneAck : null,
+        accessible_permit: mustHavePermit ? accessibleAck : null,
+      },
+      permit_context: permitAnswer ? buildPermitContext(permitAnswer, result, permitCheck, permitUntil) : null,
+    })
+  }
+
+  /** The permit zone's own tick box: "Yes, I hold a valid permit for Permit Area 25". */
+  const zoneTick = (checked: boolean, onChange: (checked: boolean) => void) => (
+    <label className="mt-4 flex items-start gap-2.5 cursor-pointer select-none">
+      <input
+        type="checkbox"
+        checked={checked}
+        onChange={(e) => onChange(e.target.checked)}
+        className="mt-0.5 w-5 h-5 rounded border-2 border-amber-500 accent-amber-600 cursor-pointer shrink-0"
+      />
+      <span className="text-sm font-medium text-ink-900 leading-tight">
+        {permit_area ? t('result.permitZone.ackWithArea', { area: permit_area }) : t('result.permitZone.ack')}
+      </span>
+    </label>
+  )
+
+  /** The permit question, its "No" text and, once the answer is yes, the later permit time. */
+  const permitQuestion = (answer: PermitAnswer, noText: string) => (
+    <PermitQuestion
+      question={
+        answer.permit.type === 'accessible'
+          ? t('result.permit.accessibleQuestion')
+          : t('result.permit.forThisCarQuestion')
+      }
+      check={permitCheck}
+      onCheck={setPermitCheck}
+      noText={noText}
+    >
+      {permitTimeEligible && permitCheck === 'yes' && (
+        <details className="mt-4 group">
+          <summary className="min-h-[44px] inline-flex items-center gap-1.5 text-sm font-semibold text-brand-700 cursor-pointer select-none list-none [&::-webkit-details-marker]:hidden">
+            <Icon name="chevron" className="w-4 h-4 transition-transform group-open:rotate-180" />
+            {t('result.permit.timeToggle')}
+          </summary>
+          <div className="mt-2">
+            <label htmlFor={permitTimeId} className={FIELD_LABEL}>
+              {t('result.permit.timeLabel')}
+            </label>
+            <Input
+              id={permitTimeId}
+              type="time"
+              value={permitTime}
+              onChange={(e) => setPermitTime(e.target.value)}
+              aria-describedby={`${permitTimeId}-hint`}
+              className="mt-1 min-h-[44px]"
+            />
+            <p id={`${permitTimeId}-hint`} className="text-xs text-ink-600 mt-1 leading-relaxed">
+              {t('result.permit.timeHint')}
+            </p>
+            {permitTime && (
+              <p role="status" className="text-sm text-ink-900 mt-2 leading-relaxed">
+                {permitUntilPreview
+                  ? t('result.permit.timeSet', { time: formatUntil(permitUntilPreview.toISOString(), timeZone) })
+                  : t('result.permit.timeNotLater')}
+              </p>
+            )}
+          </div>
+        </details>
+      )}
+    </PermitQuestion>
+  )
   // Localized countdown so the "X min left" / "Xh Ym left" label translates
   // along with the rest of the result card. Was previously the English-only
   // formatCountdown which left the word "left" untranslated for every
@@ -227,6 +482,11 @@ export default function ParkingResult({
   const countdown =
     can_park_now && until ? formatCountdownLocalized(new Date(until).getTime() - now, t) : null
   const confidenceDot = CONFIDENCE_DOT[confidence] ?? CONFIDENCE_DOT.low
+  // T3: part of the sign couldn't be read, or two parts disagree. The
+  // answer above is the most restrictive reading; a banner says why.
+  const unclear = isUnclearSign(result)
+  const signIssues = unclear ? signIssuesOf(result) : []
+  const weeklyRestriction = hasWeeklyRestriction(result)
   const confidenceText = t(CONFIDENCE_KEY[confidence] ?? CONFIDENCE_KEY.low)
 
   // Surface the transition banner only when the AI returned one AND it's
@@ -243,9 +503,17 @@ export default function ParkingResult({
 
   return (
     <div className="min-h-screen flex flex-col p-6 max-w-md mx-auto w-full">
+      {onBack && <BackButton onClick={onBack}>{t('common.back')}</BackButton>}
       {/* Answer card — the one emphatic object that FLOATS off the page with a
           soft pine-tinted shadow. GO is pine, STOP keeps the quarantined red. */}
       <div className="gf-card-lg p-8 text-center bg-white">
+        {/* With a permit answer below, this card is the standard answer:
+            what the sign says for everyone, which permits never change. */}
+        {exceptions.length > 0 && (
+          <p className="text-xs font-semibold uppercase tracking-widest text-ink-600 mb-3">
+            {t('result.permit.standardKicker')}
+          </p>
+        )}
         <div className="flex justify-center mb-3">
           <div
             className={`w-20 h-20 rounded-full flex items-center justify-center ${
@@ -287,6 +555,77 @@ export default function ParkingResult({
         {t('result.aiCaveat')}
       </p>
 
+      {/* The permit answer (T4 item 4), apart from the standard answer: the
+          sign prints an exception for one of the driver's saved permit
+          types. One card per type, so a printed exception is never hidden
+          because the park uses another permit. Only the sign's own words;
+          ParkProof works nothing out. */}
+      {exceptions.map(({ type, exception }) => {
+        const asks = permitAnswer !== null && permitAnswer.gate === null && permitAnswer.permit.type === type
+        return (
+          <section key={type} className="gf-card mt-4 bg-white p-5" aria-labelledby={`${permitCardId}-${type}`}>
+            <p className="text-xs font-semibold uppercase tracking-widest text-brand-700">{t('result.permit.kicker')}</p>
+            <h3 id={`${permitCardId}-${type}`} className="font-display font-bold text-ink-900 mt-1">
+              {t(PERMIT_TYPE_KEYS[type])}
+            </h3>
+            <p className="text-sm text-ink-700 mt-2 leading-relaxed">{t('result.permit.signPrints')}</p>
+            {exception.text && (
+              <blockquote className="mt-2 border-l-4 border-brand-500 bg-brand-50 rounded-r px-3 py-2 text-sm font-semibold text-ink-900 break-words">
+                {exception.text}
+              </blockquote>
+            )}
+            {/* With no gate showing, the card of the permit this park may use asks its question. */}
+            {asks && permitAnswer && (
+              <>
+                <PermitAreaLine area={permitAnswer.permit.area} match={permitAnswer.areaMatch} zone={permit_area} />
+                {permitQuestion(permitAnswer, t('result.permit.noStandardApplies'))}
+              </>
+            )}
+            <p className="text-xs text-ink-600 mt-4 leading-relaxed">{t('result.permit.checkConditions')}</p>
+          </section>
+        )
+      })}
+
+      {/* A saved permit, and the sign prints nothing for it (T4 item 4).
+          ParkProof never says how much more time, if any. */}
+      {mayAllowMore && (
+        <p className="gf-card mt-4 bg-white p-4 text-sm text-ink-700 leading-relaxed">
+          {parkingState
+            ? t('result.permit.mayAllowMore', { state: t(STATE_NAME_KEYS[parkingState]) })
+            : t('result.permit.mayAllowMoreNoState')}
+        </p>
+      )}
+
+      {/* Unclear sign (T3): the answer card shows the most restrictive
+          reading; this says why, with the AI's own notes on the sign. */}
+      {unclear && (
+        <section className="gf-card mt-4 bg-amber-50 p-5" aria-labelledby="unclear-sign-title">
+          <div className="flex items-start gap-3">
+            <div className="w-8 h-8 rounded-full bg-amber-500 text-white flex items-center justify-center shrink-0 mt-0.5">
+              <Icon name="warning" className="w-4 h-4" strokeWidth={2.5} />
+            </div>
+            <div className="flex-1 min-w-0">
+              <h3 id="unclear-sign-title" className="font-display font-bold text-ink-900">
+                {signStatusOf(result) === 'contradictory'
+                  ? t('unclearSign.contradictoryTitle')
+                  : t('unclearSign.obscuredTitle')}
+              </h3>
+              <p className="text-sm text-ink-700 mt-1 leading-relaxed">{t('unclearSign.strictest')}</p>
+              {signIssues.length > 0 && (
+                <ul className="mt-2 list-disc pl-5 space-y-0.5 text-sm text-ink-900">
+                  {signIssues.map((issue, i) => (
+                    <li key={i}>{issue}</li>
+                  ))}
+                </ul>
+              )}
+              <p className="text-sm text-ink-900 font-medium mt-2 leading-relaxed">
+                {t('unclearSign.worthRecording')}
+              </p>
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* Transition-awareness banner — surfaces approaching rule changes so
           the user can make a smarter decision than "should I start parking
           now or wait 5 minutes for the restriction to lift". */}
@@ -303,6 +642,20 @@ export default function ParkingResult({
               {next_transition.change}
             </p>
           </div>
+        </div>
+      )}
+
+      {/* Weekly restriction hint (T3 item 7): street cleaning, a clearway
+          and the like come back each week. The reminder for it is set on
+          the reminder screen after saving (T5a). */}
+      {weeklyRestriction && (
+        <div className="mt-4 bg-brand-50 border border-brand-200 rounded-lg p-4 flex items-start gap-3">
+          <div className="w-8 h-8 rounded-full bg-brand-500 text-white flex items-center justify-center shrink-0 mt-0.5">
+            <Icon name="calendar" className="w-4 h-4" strokeWidth={2.5} />
+          </div>
+          <p className="flex-1 min-w-0 text-sm text-ink-900 leading-relaxed pt-1">
+            {t('result.weeklyRestrictionHint')}
+          </p>
         </div>
       )}
 
@@ -361,6 +714,8 @@ export default function ParkingResult({
               'repeating-linear-gradient(115deg, rgba(123,227,164,0.055) 0 1px, transparent 1px 8px)',
           }}
         >
+          {/* Decorative: nothing is signed yet at this point, the driver
+              only confirmed the reading, as the text beside it says. */}
           <VerifiedSeal glow size={38} className="shrink-0" />
           <div className="flex-1 min-w-0">
             <p className="text-sm font-display font-semibold text-paper-50 inline-flex items-center gap-1.5">
@@ -390,7 +745,10 @@ export default function ParkingResult({
                 submitFeedback({
                   verdict: 'correct',
                   feedback_id: feedbackId,
-                  context: buildFeedbackContext(result, ticketAcknowledged, disabledAcknowledged, permitZoneAcknowledged),
+                  context: buildFeedbackContext(result, ticketAcknowledged, accessibleAck, permitZoneAck, {
+                    at: shownAt,
+                    timeZone,
+                  }),
                 })
                 setVerified(true)
               }}
@@ -405,7 +763,10 @@ export default function ParkingResult({
                 submitFeedback({
                   verdict: 'retake',
                   feedback_id: feedbackId,
-                  context: buildFeedbackContext(result, ticketAcknowledged, disabledAcknowledged, permitZoneAcknowledged),
+                  context: buildFeedbackContext(result, ticketAcknowledged, accessibleAck, permitZoneAck, {
+                    at: shownAt,
+                    timeZone,
+                  }),
                 })
                 onRetake()
               }}
@@ -459,17 +820,23 @@ export default function ParkingResult({
             </div>
           </div>
 
-          <label className="mt-4 flex items-start gap-2.5 cursor-pointer select-none">
-            <input
-              type="checkbox"
-              checked={disabledAcknowledged}
-              onChange={(e) => setDisabledAcknowledged(e.target.checked)}
-              className="mt-0.5 w-5 h-5 rounded border-2 border-red-500 accent-red-600 cursor-pointer shrink-0"
-            />
-            <span className="text-sm font-medium text-ink-900 leading-tight">
-              {t('result.permitRequired.ack')}
-            </span>
-          </label>
+          {/* With a saved accessible permit, the safeguard question (T4
+              item 5): the holder must be in the car and getting out here. */}
+          {permitAnswer?.gate === 'accessible' ? (
+            permitQuestion(permitAnswer, t('result.permit.accessibleNo'))
+          ) : (
+            <label className="mt-4 flex items-start gap-2.5 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={disabledAcknowledged}
+                onChange={(e) => setDisabledAcknowledged(e.target.checked)}
+                className="mt-0.5 w-5 h-5 rounded border-2 border-red-500 accent-red-600 cursor-pointer shrink-0"
+              />
+              <span className="text-sm font-medium text-ink-900 leading-tight">
+                {t('result.permitRequired.ack')}
+              </span>
+            </label>
+          )}
         </section>
       )}
 
@@ -503,19 +870,17 @@ export default function ParkingResult({
             </div>
           </div>
 
-          <label className="mt-4 flex items-start gap-2.5 cursor-pointer select-none">
-            <input
-              type="checkbox"
-              checked={permitZoneAcknowledged}
-              onChange={(e) => setPermitZoneAcknowledged(e.target.checked)}
-              className="mt-0.5 w-5 h-5 rounded border-2 border-amber-500 accent-amber-600 cursor-pointer shrink-0"
-            />
-            <span className="text-sm font-medium text-ink-900 leading-tight">
-              {permit_area
-                ? t('result.permitZone.ackWithArea', { area: permit_area })
-                : t('result.permitZone.ack')}
-            </span>
-          </label>
+          {/* With a saved resident or business permit: the area match
+              (compared here, never ticking anything), the zone's own tick
+              box unless the areas match, and the question whether the
+              permit is for this car (T4 items 4 and 5). A permit for
+              another area is never offered: the line says so and the tick
+              box stays. After "No" the tick box shows below the answer,
+              unticked, for another valid permit the driver may hold. */}
+          {zoneArea && <PermitAreaLine area={zoneArea.permit.area} match={zoneArea.match} zone={permit_area} />}
+          {zoneTickShows && zoneTick(permitZoneAcknowledged, setPermitZoneAcknowledged)}
+          {zoneQuestion && permitAnswer && permitQuestion(permitAnswer, t('result.permit.forThisCarNo'))}
+          {zoneNo && zoneTick(otherZonePermitAcknowledged, setOtherZonePermitAcknowledged)}
         </section>
       )}
 
@@ -610,7 +975,7 @@ export default function ParkingResult({
               </p>
             )}
             <Button
-              onClick={onLogSession}
+              onClick={logSession}
               disabled={saveBlocked}
               className="disabled:cursor-not-allowed disabled:shadow-none"
             >
@@ -633,19 +998,21 @@ export default function ParkingResult({
               {t('result.cantParkOverride')}
             </p>
             <button
-              onClick={onLogSession}
+              onClick={logSession}
               className="w-full bg-paper-200 hover:bg-paper-300 text-ink-900 font-medium py-2.5 rounded-xl transition-colors"
             >
               {t('result.cantParkOverrideCta')}
             </button>
           </Card>
         )}
-        <button
-          onClick={onScanAnother}
-          className="bg-paper-200 hover:bg-paper-300 text-ink-900 font-medium py-3 rounded-xl transition-colors"
-        >
-          {t('result.scanAnother')}
-        </button>
+        {onScanAnother && (
+          <button
+            onClick={onScanAnother}
+            className="bg-paper-200 hover:bg-paper-300 text-ink-900 font-medium py-3 rounded-xl transition-colors"
+          >
+            {t('result.scanAnother')}
+          </button>
+        )}
       </div>
     </div>
   )

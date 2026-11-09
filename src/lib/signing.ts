@@ -27,6 +27,7 @@ import type {
 import { ADDENDUM_SCHEMA, CAPS, EVIDENCE_V2_SCHEMA, canonicalize } from '../../lambda/addendum-schema.js'
 import {
   appendAddendum,
+  fillPreviousDepartureHash,
   getSession,
   loadSessions,
   notifyRecordsChanged,
@@ -34,9 +35,12 @@ import {
   setAddendumBundle,
   setArrivalSignature,
 } from './storage'
+import { isWorkdayEnabled } from './features'
+import { legsWaitingOnDeparture, previousDepartureStep } from './workday-chain'
 import { endpointUrl } from './api'
 import { hashDataUrlImage, sha256HexUtf8 } from './hash'
 import { LEGACY_PHOTO_ROLES, legacyPhotoField, photoRefFor } from './session-photos'
+import { isPermitSalt } from './permit-answer'
 import {
   DEPARTURE_CATCH_UP_GRACE_MS,
   MAX_ADDENDA,
@@ -168,11 +172,26 @@ export function isPulledRecord(sessionId: string): boolean {
 // use them without importing this module. Re-exported here as before.
 export { hashDataUrlImage, sha256HexUtf8 }
 
-/** A new record's chain key: 32 random bytes as 64 lowercase hex characters. */
-export function generateChainKey(): string {
+/** 32 random bytes as 64 lowercase hex characters. */
+function randomHex32(): string {
   const bytes = new Uint8Array(32)
   crypto.getRandomValues(bytes)
   return Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('')
+}
+
+/** A new record's chain key: 32 random bytes as 64 lowercase hex characters. */
+export function generateChainKey(): string {
+  return randomHex32()
+}
+
+/**
+ * A record's permit salt (N3): 32 random bytes as 64 lowercase hex
+ * characters, made when a record with a permit context is saved and kept
+ * with the record (this device and the driver's own cloud copy), never sent
+ * for signing. It lets the driver reveal the permit details later.
+ */
+export function generatePermitSalt(): string {
+  return randomHex32()
 }
 
 /**
@@ -190,6 +209,23 @@ export function chainKeyHash(chainKey: string): Promise<string> {
  */
 export function permitCommitment(permitSalt: string, context: PermitContext): Promise<string> {
   return sha256HexUtf8(permitSalt + canonicalize(context))
+}
+
+/**
+ * The `permit_commitment` link 1 signs for a prepared record: the
+ * commitment to its stored `permit_context` with its stored `permit_salt`,
+ * or null when the record used no permit (or has no usable salt). Never
+ * throws: when hashing fails, link 1 signs null rather than failing.
+ */
+export async function permitCommitmentFor(session: ParkingSession): Promise<string | null> {
+  const context = session.permit_context
+  if (!context || typeof context !== 'object' || !isPermitSalt(session.permit_salt)) return null
+  try {
+    return await permitCommitment(session.permit_salt, context)
+  } catch (err) {
+    console.warn('[signing] could not commit to the permit details:', err)
+    return null
+  }
 }
 
 export interface V1Hashes {
@@ -234,6 +270,9 @@ export async function computeV1Hashes(session: ParkingSession): Promise<V1Hashes
  * the way link 1 signs it (`fitText`: forbidden characters such as
  * newlines become spaces, ends trimmed, cut at the cap), so the stored
  * record and the signed arrival_context say the same thing.
+ *
+ * A record with a permit context (T4) gets its permit salt here (N3), so
+ * the commitment link 1 signs (`permitCommitmentFor`) can be opened later.
  */
 export async function prepareNewRecord(session: ParkingSession): Promise<ParkingSession> {
   const chain_key = session.chain_key ?? generateChainKey()
@@ -249,6 +288,12 @@ export async function prepareNewRecord(session: ParkingSession): Promise<Parking
   if (v1_hashes) prepared.v1_hashes = v1_hashes
   if (session.driver_name !== undefined) prepared.driver_name = fitText(session.driver_name, CAPS.driverName)
   if (session.condition_note !== undefined) prepared.condition_note = fitText(session.condition_note, CAPS.note)
+  if (session.permit_context && typeof session.permit_context === 'object') {
+    if (!isPermitSalt(session.permit_salt)) prepared.permit_salt = generatePermitSalt()
+  } else if (session.permit_salt !== undefined) {
+    // A salt with nothing to open is noise: no permit, no salt.
+    delete prepared.permit_salt
+  }
   return prepared
 }
 
@@ -575,6 +620,26 @@ async function drainRecord(sessionId: string): Promise<void> {
     const next = nextPendingAddendum(session)
     if (!next) break
     if (awaitingArrivalContext(session)) break
+    // A workday stop's arrival_context links to the previous stop's signed
+    // departure (T6b item 11). The link is filled here, at sign time, once
+    // that departure is signed; until then the arrival_context waits, for
+    // at most 24 hours, and is then signed with null.
+    if (next.kind === 'arrival_context' && isWorkdayEnabled()) {
+      const step = previousDepartureStep(sessionId, next, loadSessions(), Date.now())
+      if (step.kind === 'wait') break
+      if (step.kind === 'fill') {
+        const hash = await sha256HexUtf8(step.payload)
+        let filled: SignedAddendum | null = null
+        try {
+          filled = fillPreviousDepartureHash(sessionId, next.id, hash)
+        } catch (err) {
+          console.warn('[signing] could not link the workday stop to the previous one:', err)
+        }
+        if (!filled) break
+        // Read again from storage on the next pass, so what is sent is what is stored.
+        continue
+      }
+    }
     const parent = parentBundleFor(session, next.seq)
     if (!parent) break // parent not signed yet: wait for it
     const chainKey = chainKeyForAddenda(session)
@@ -587,18 +652,44 @@ async function drainRecord(sessionId: string): Promise<void> {
       const check = checkAddendumBundle(next, session.id, parent, parentHash, outcome.ok)
       if (!check.ok) {
         rejectAddendum(sessionId, next.id, check.code)
+        // A refused departure means the next stop signs with a null link now.
+        if (next.kind === 'departure') wakeLegsWaitingOn(sessionId)
         continue
       }
-      if (setAddendumBundle(sessionId, next.id, outcome.ok)) signedAny = true
+      if (setAddendumBundle(sessionId, next.id, outcome.ok)) {
+        signedAny = true
+        // The next workday stop's arrival_context may be waiting for this departure.
+        if (next.kind === 'departure') wakeLegsWaitingOn(sessionId)
+      }
       continue
     }
     if ('rejected' in outcome) {
       rejectAddendum(sessionId, next.id, outcome.rejected)
+      // The next workday stop's arrival_context was waiting for this
+      // departure: refused, it signs with a null link, now rather than at
+      // the next sweep.
+      if (next.kind === 'departure') wakeLegsWaitingOn(sessionId)
       continue
     }
     break // transient: try again on the next trigger
   }
   if (signedAny) notifySigned(sessionId)
+}
+
+/**
+ * After a workday stop's departure is signed, or refused: try signing the
+ * next stop's arrival_context now, which was waiting for it (T6b item 11),
+ * rather than leave it for the next sweep. Never throws.
+ */
+function wakeLegsWaitingOn(sessionId: string): void {
+  if (!isWorkdayEnabled()) return
+  try {
+    const session = getSession(sessionId)
+    if (!session) return
+    for (const id of legsWaitingOnDeparture(session, loadSessions())) void enqueueSigning(id)
+  } catch (err) {
+    console.warn('[signing] could not wake the next workday stop:', err)
+  }
 }
 
 function recordArrivalRejection(sessionId: string, code: string): void {

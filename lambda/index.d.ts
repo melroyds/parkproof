@@ -1,15 +1,80 @@
 // Types for the plain-JS Lambda handler so the Vite config can import it
 // during dev without TS complaining about implicit `any`.
 
+import type {
+  CheckedUserPermit,
+  JurisdictionCode,
+  ModelParkingRules,
+  NormalizeContext,
+  SignStatusName,
+  UserPermitInput,
+} from './sign-reading.js'
+
+export type {
+  CheckedUserPermit,
+  JurisdictionCode,
+  ModelParkingRules,
+  ModelRuleVariant,
+  PermitExceptionShape,
+  RecurringRestrictionShape,
+  SignStatusName,
+  UserPermitInput,
+  UserPermitType,
+} from './sign-reading.js'
+
+/**
+ * A /sign-translate body. Fresh mode sends `image_base64`; refresh mode
+ * sends `prior_rules` (and the other `prior_*` fields) instead.
+ */
 export interface TranslateSignInput {
-  image_base64: string
+  image_base64?: string
   media_type?: string
   lat?: number
   lng?: number
   current_datetime?: string
+  prior_rules?: string
+  prior_observations?: Array<{ scope: string; items: string[] }>
+  prior_chosen_label?: string
+  /** Refresh mode echoes these three from the record (build spec T3). */
+  prior_sign_status?: SignStatusName | null
+  prior_sign_issues?: string[] | null
+  prior_is_area_sign?: boolean | null
+  /**
+   * The user's saved permits, at most 3, each exactly `{ type, area? }`.
+   * `area` at most 60 characters after trimming, with no control or bidi
+   * characters. Anything else is a 400. Both modes.
+   */
+  user_permits?: UserPermitInput[] | null
+  /** The state or territory the car is parked in. Both modes. */
+  parking_state?: JurisdictionCode | null
 }
 
-export function translateSign(input: TranslateSignInput): Promise<unknown>
+/** Throws Error('ERR_...') codes, or SignInputError (status 400) for bad permits or state. */
+export function translateSign(input: TranslateSignInput): Promise<ModelParkingRules>
+
+/** The sign reader's system prompt (exported for prompt guard tests and the accuracy harness). */
+export const SYSTEM_PROMPT: string
+/**
+ * The structured-output JSON schema sent with every sign reading: the
+ * model's raw shape, kept small enough for the API to compile (flat
+ * permit_exception_type and permit_exception_text, days and week_of_month
+ * as strings). normalizeModelOutput maps it to ModelParkingRules.
+ */
+export const RESPONSE_SCHEMA: Record<string, unknown>
+/** The structured-output JSON schema sent with every appeal draft. */
+export const APPEAL_RESPONSE_SCHEMA: Record<string, unknown>
+export function normalizeModelOutput(raw: unknown, context?: NormalizeContext): ModelParkingRules
+export function validateTranslateExtras(body: unknown): {
+  user_permits: CheckedUserPermit[]
+  parking_state: JurisdictionCode | null
+}
+
+/**
+ * For the accuracy harness only: wraps the model client translateSign
+ * creates, to record requests and usage or to answer offline. Pass null to
+ * restore the real client.
+ */
+export function setSignClientWrapper(wrap: ((client: unknown) => unknown) | null): void
 
 interface LambdaEvent {
   body?: string | Record<string, unknown>
@@ -97,6 +162,12 @@ export interface AppealSessionInput {
   observations?: Array<{ scope: string; items: string[] }>
   chosen_label?: string
   confidence?: string
+  /** A record logged without a sign reading (T3: sent by appealSessionBody). */
+  no_sign?: boolean
+  /** What the reading made of the sign in the photo (T3); null when not recorded. */
+  sign_status?: SignStatusName | null
+  /** The reading's notes on the sign (T3); [] when none. */
+  sign_issues?: string[]
   evidence?: AppealEvidenceInput | null
 }
 
@@ -111,3 +182,74 @@ export function buildAppealEvidenceText(session: AppealSessionInput): string
 
 /** Draft an appeal letter (the async /draft-appeal worker). */
 export function handleDraftAppeal(event: LambdaEvent): Promise<unknown>
+
+// ── Notice reader (build spec T8) ──
+
+/** The async job kind for POST /read-notice and its status route. */
+export const READ_NOTICE_KIND: 'read-notice'
+/** The notice reader's output cap (no thinking). */
+export const NOTICE_MAX_TOKENS: number
+
+export type NoticeLegibility = 'clear' | 'partly_readable' | 'unreadable' | 'not_a_notice'
+export const NOTICE_LEGIBILITY: readonly NoticeLegibility[]
+
+/**
+ * What /read-notice returns: what is printed on a parking infringement
+ * notice, each text field a single line or null. There is no registration
+ * field. `offence_datetime_local` is the model's 'YYYY-MM-DDTHH:MM' reading
+ * (local wall-clock time, no offset), or null; the app re-reads the date
+ * from `offence_date_raw` day first (src/lib/notice-match.ts).
+ */
+export interface NoticeFields {
+  legibility: NoticeLegibility
+  notice_number: string | null
+  issuing_authority: string | null
+  offence_date_raw: string | null
+  offence_time_raw: string | null
+  offence_datetime_local: string | null
+  location_text: string | null
+  offence_code: string | null
+  offence_description: string | null
+  amount: string | null
+  due_date: string | null
+}
+
+/** The JSON schema the model's answer is held to. */
+export const NOTICE_SCHEMA: {
+  type: 'object'
+  properties: Record<keyof NoticeFields, Record<string, unknown>>
+  required: Array<keyof NoticeFields>
+  additionalProperties: false
+}
+export const NOTICE_SYSTEM_PROMPT: string
+/** Per-field caps for the text fields. A value over its cap is dropped, never cut short. */
+export const NOTICE_TEXT_CAPS: Readonly<Record<Exclude<keyof NoticeFields, 'legibility' | 'offence_datetime_local'>, number>>
+
+export interface ReadNoticeInput {
+  image_base64: string
+  media_type?: string
+}
+
+/** A /read-notice request refused before any work: HTTP 400 with the code as `message`. */
+export class NoticeRequestError extends Error {
+  statusCode: 400
+  constructor(code: string)
+}
+
+/** The image of a /read-notice body. Throws NoticeRequestError (ERR_BAD_REQUEST, ERR_IMAGE_TOO_LARGE, ERR_IMAGE_TYPE). */
+export function validateNoticeBody(body: unknown): { image_base64: string; media_type: string }
+
+/** The model's answer reduced to exactly NoticeFields. */
+export function normalizeNoticeOutput(raw: unknown): NoticeFields
+
+/** Read one notice photo. Throws an Error whose message is an ERR code (ERR_NOT_A_NOTICE, ERR_NOTICE_UNREADABLE, ...). */
+export function readNotice(body: ReadNoticeInput): Promise<NoticeFields>
+
+/**
+ * Run an async job kind synchronously for the local dev server: 200 with the
+ * result, 400 `{ error: ERR_CODE }`, 404 for an unknown kind, or 500.
+ */
+export function runJobNow(
+  kind: 'sign-translate' | 'draft-appeal' | 'read-notice' | string,
+  rawBody: string | Record<string, unknown> | null | undefined,
+): Promise<LambdaResponse>

@@ -1,6 +1,37 @@
-import type { AppealDraft, ObservationGroup, ParkingRules, ParkingSession } from '../types'
-import { postJsonAndPoll } from './api'
+import type {
+  AppealDraft,
+  Jurisdiction,
+  NoticeFields,
+  ObservationGroup,
+  ParkingRules,
+  ParkingSession,
+  SignStatus,
+  UserPermitType,
+} from '../types'
+import { postJsonAndPoll, type ErrorCopy } from './api'
 import { appealEvidence, deviceRecordContext } from './record-times'
+import { signIssuesOf, signStatusOf } from './sign-result'
+
+/**
+ * What the sign reader may be told besides the photo (build spec T3 item 3;
+ * T4 sends the driver's saved permits and the parking state). The server
+ * rejects anything outside its contract with HTTP 400 (validateUserPermits
+ * in lambda/sign-reading.js): at most 3 permits, each exactly
+ * `{ type, area? }`, `area` at most 60 characters with no control
+ * characters. Left out of the request when not given.
+ */
+export interface SignReaderExtras {
+  user_permits?: Array<{ type: UserPermitType; area?: string | null }> | null
+  parking_state?: Jurisdiction | null
+}
+
+function addExtras(body: Record<string, unknown>, extras: SignReaderExtras | undefined): void {
+  if (!extras) return
+  if (extras.user_permits && extras.user_permits.length > 0) {
+    body.user_permits = extras.user_permits.map((p) => (p.area ? { type: p.type, area: p.area } : { type: p.type }))
+  }
+  if (extras.parking_state) body.parking_state = extras.parking_state
+}
 
 /**
  * Read a `dev_time` URL parameter and return it as an ISO 8601 string the
@@ -53,6 +84,7 @@ export async function translateSign(
   imageBase64: string,
   mediaType = 'image/jpeg',
   coords?: { lat: number; lng: number } | null,
+  extras?: SignReaderExtras,
 ): Promise<ParkingRules> {
   const body: Record<string, unknown> = {
     image_base64: imageBase64,
@@ -62,6 +94,7 @@ export async function translateSign(
     body.lat = coords.lat
     body.lng = coords.lng
   }
+  addExtras(body, extras)
   const devTime = readDevTimeFromUrl()
   if (devTime) body.current_datetime = devTime
   return postJsonAndPoll<ParkingRules>('/sign-translate', body)
@@ -83,21 +116,38 @@ export async function refreshInterpretation(
     rules: string
     observations: ObservationGroup[]
     chosen_label?: string
+    /**
+     * What the first reading saw (T3), echoed back by the server: a
+     * re-check reads no photo, so it can't change them. Null or absent for
+     * a record saved before T3 (not sent).
+     */
+    sign_status?: SignStatus | null
+    sign_issues?: string[] | null
+    is_area_sign?: boolean | null
   },
   coords?: { lat: number; lng: number } | null,
+  extras?: SignReaderExtras,
 ): Promise<ParkingRules> {
   const body: Record<string, unknown> = {
     prior_rules: prior.rules,
     prior_observations: prior.observations,
   }
   if (prior.chosen_label) body.prior_chosen_label = prior.chosen_label
+  if (prior.sign_status) {
+    body.prior_sign_status = prior.sign_status
+    body.prior_sign_issues = prior.sign_issues ?? []
+  }
+  if (typeof prior.is_area_sign === 'boolean') body.prior_is_area_sign = prior.is_area_sign
   if (coords) {
     body.lat = coords.lat
     body.lng = coords.lng
   }
+  addExtras(body, extras)
   const devTime = readDevTimeFromUrl()
   if (devTime) body.current_datetime = devTime
-  return postJsonAndPoll<ParkingRules>('/sign-translate', body)
+  const fresh = await postJsonAndPoll<ParkingRules>('/sign-translate', body)
+  // Marks the answer as a re-check for the feedback telemetry.
+  return { ...fresh, is_refresh: true }
 }
 
 /**
@@ -117,6 +167,12 @@ export function appealSessionBody(session: ParkingSession, now: number = Date.no
     observations: session.observations,
     chosen_label: session.chosen_label,
     confidence: session.confidence,
+    // T3: whether the sign could be read, and the record's no-sign state, so
+    // the letter never quotes rules that weren't read or calls a sign clear
+    // when the reading said part of it wasn't. Null and [] when not recorded.
+    no_sign: session.no_sign === true,
+    sign_status: signStatusOf(session),
+    sign_issues: signIssuesOf(session),
     evidence: appealEvidence(session, deviceRecordContext(session.id, now)),
   }
 }
@@ -135,4 +191,37 @@ export async function draftAppeal(
     session: session ? appealSessionBody(session) : null,
   }
   return postJsonAndPoll<AppealDraft>('/draft-appeal', body)
+}
+
+/**
+ * Failures of /read-notice in the notice's own words: the shared defaults
+ * talk about "this sign" and "your scan". The English fallbacks match
+ * en.json.
+ */
+export const NOTICE_ERROR_COPY: ErrorCopy = {
+  timeout: ['errors.genericRetry', 'Something went wrong. Please try again in a moment.'],
+  heavyLoad: [
+    'errors.noticeHeavyLoad',
+    "ParkProof is busy right now and couldn't finish reading the notice in time. Wait a minute and try again.",
+  ],
+  codes: {
+    ERR_IMAGE_TOO_LARGE: ['errors.noticeImageTooLarge', 'That photo is too large. Try another photo of the notice.'],
+  },
+}
+
+/**
+ * Read a parking fine notice from a photo (build spec T8). Server-side this
+ * is the /draft-appeal job pattern: 202 + job id, then polling
+ * /read-notice/status/{job_id}, whose row is deleted once the result is
+ * handed back. In dev the Vite proxy answers synchronously. Errors arrive
+ * as ApiError with localised copy (ERR_NOT_A_NOTICE, ERR_NOTICE_UNREADABLE,
+ * ERR_IMAGE_TOO_LARGE, ERR_IMAGE_TYPE map to their own messages; a timeout
+ * or server error uses NOTICE_ERROR_COPY, never the sign scan's copy).
+ */
+export async function readNotice(imageBase64: string, mediaType = 'image/jpeg'): Promise<NoticeFields> {
+  return postJsonAndPoll<NoticeFields>(
+    '/read-notice',
+    { image_base64: imageBase64, media_type: mediaType },
+    { copy: NOTICE_ERROR_COPY },
+  )
 }

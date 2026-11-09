@@ -37,6 +37,28 @@ export interface RuleVariant {
   permit_area?: string | null
   /** Optional heads-up — set when a meaningful rule change is approaching. */
   next_transition?: NextTransition | null
+  /**
+   * This position's rules come from an area sign (T3). Absent on answers
+   * from a server older than T3.
+   */
+  is_area_sign?: boolean
+  /** What this position's sign prints for each of the user's permit types (T3). */
+  permit_exception?: PermitException[]
+}
+
+/** A permit type the user can save (T3 request input, T4 settings). */
+export type UserPermitType = 'accessible' | 'resident' | 'business'
+
+/**
+ * Whether the sign ITSELF prints an exception or allowance for one of the
+ * user's permit types (T3). Answers carry one per listed permit type, in
+ * list order ([] when none are listed). `text` quotes the sign, '' when
+ * none. The model never derives a concession from state law.
+ */
+export interface PermitException {
+  applies: boolean
+  permit_type: UserPermitType | null
+  text: string
 }
 
 export interface Clarification {
@@ -83,10 +105,38 @@ export interface ParkingRules {
   is_permit_zone?: boolean
   /** Permit area identifier from the yellow plate (e.g. "25"), if visible. */
   permit_area?: string | null
+  // ── T3 fields. Every T3 server answer has them (normalizeModelOutput in
+  // lambda/sign-reading.js); they are optional only for answers from an
+  // older server, which src/lib/sign-result.ts reads as "not known". ──
+  /**
+   * Whether the photo shows a readable parking sign. 'partially_obscured'
+   * and 'contradictory' still carry the most restrictive answer;
+   * 'missing' and 'not_a_parking_sign' carry no answer at all (the app shows
+   * its own screen for them).
+   */
+  sign_status?: SignStatus
+  /** What stops the sign being read clearly (the model's words); [] when readable. */
+  sign_issues?: string[]
+  /** The sign governs an area rather than a length of road. True when any part does. */
+  is_area_sign?: boolean
+  /**
+   * What the sign prints for each of the user's permit types, one entry per
+   * type (top level: an entry applies only when it covers every position).
+   */
+  permit_exception?: PermitException[]
+  /** Restrictions that come back on set days, e.g. street cleaning; [] when none. */
+  recurring_restrictions?: RecurringRestriction[]
   /** Frontend-only — set when the user picked a variant from a clarification step. */
   chosen_label?: string
   /** Frontend-only — variants the user did NOT pick. Carried through for PDF context. */
   alternate_variants?: RuleVariant[]
+  /**
+   * Frontend-only: true when this answer came from a re-check (the
+   * text-only refresh of a saved record's rules), not a fresh photo read.
+   * Set by refreshInterpretation; reported in the feedback telemetry and
+   * never saved on a record.
+   */
+  is_refresh?: boolean
 }
 
 export interface SignatureBundle {
@@ -227,6 +277,47 @@ export interface RecurringRestriction {
   label: string
 }
 
+export type RecurringFrequency = 'weekly' | 'fortnightly' | 'monthly_nth'
+
+/**
+ * A street sweeping or other weekly reminder (T5a), stored on this device
+ * under `parkproof.recurring.v1` (helpers in storage.ts, maths in
+ * recurring.ts). Not part of any record and never signed.
+ */
+export interface RecurringRule {
+  /** uuid. Also the calendar UID and, from T5b, part of the push schedule names. */
+  id: string
+  /** The driver's name for it ("Street sweeping"); '' shows the kind's name. */
+  label: string
+  kind: RecurringRestriction['kind']
+  /** At least one, in MO..SU order. */
+  days: Weekday[]
+  /** 'HH:MM' local time in `timezone`. */
+  start: string
+  /** 'HH:MM' local time in `timezone`. At or before `start` means it ends the next day. */
+  end: string
+  frequency: RecurringFrequency
+  /** monthly_nth only: which of the month's weekdays (1 = first ... 5 = fifth). [] otherwise. */
+  nth: number[]
+  /**
+   * 'YYYY-MM-DD' in `timezone`. No occurrence falls before it. For
+   * fortnightly rules its week (Monday to Sunday) is an "on" week.
+   */
+  anchor_date: string
+  /** IANA zone the days and times are read in. */
+  timezone: string
+  address: string | null
+  /** 'HH:MM' on the day before each occurrence, or null for none. */
+  remind_evening_before: string | null
+  /** Minutes before each start, or null for none. */
+  remind_minutes_before: number | null
+  /** Notify on this phone (in-tab while open; T5b adds Web Push). */
+  push: boolean
+  paused: boolean
+  /** The calendar SEQUENCE: bumped on every edit that changes the calendar event. */
+  sequence: number
+}
+
 /** The workday link inside arrival_context data. */
 export interface ArrivalWorkday {
   workday_id: string
@@ -295,6 +386,95 @@ export interface LogDraft {
   permit_context: PermitContext | null
   workday: { workday_id: string; leg_index: number; previous_session_id: string | null } | null
   driver_name: string | null
+}
+
+/**
+ * Raw reverse-geocode parts saved on a record as `place` (T6a). Unsigned and
+ * never edited. `state_code` is Nominatim's raw `ISO3166-2-lvl4` value (for
+ * example "AU-VIC"); a record's jurisdiction is read from it and nothing else.
+ */
+export type PlaceParts = NonNullable<ParkingSession['place']>
+
+/**
+ * Workday mode (T6a, behind VITE_FEATURE_WORKDAY). Stored on this device
+ * only under `parkproof.workday.v1` (helpers in storage.ts). At most one
+ * workday is active (status other than 'ended') at a time.
+ *   - 'parked': the car is at `current_session_id`, the leg in progress.
+ *   - 'between_moves': the driver tapped "I'm moving the car now" (that leg
+ *     has ended), or the workday has no leg yet; the next scan makes a leg.
+ *   - 'ended': the driver ended the workday at `ended_at`.
+ * The legs themselves are ordinary records carrying `workday_id` and
+ * `leg_index`, so they sync and sign like any other record.
+ */
+export type WorkdayStatus = 'parked' | 'between_moves' | 'ended'
+
+export interface WorkdayState {
+  /** uuid (lower case), the `workday_id` every leg carries. */
+  id: string
+  /** Phone time the driver started the workday (ISO, UTC). */
+  started_at: string
+  /** Where the workday was started. Only 'VIC' and 'QLD' can start one. */
+  jurisdiction: Jurisdiction
+  status: WorkdayStatus
+  /** The leg the car is at ('parked'), or the leg just left ('between_moves'). */
+  current_session_id: string | null
+  /** The leg before `current_session_id`. */
+  previous_session_id: string | null
+  /** Phone time the workday ended (ISO, UTC); null while active. */
+  ended_at: string | null
+}
+
+/** How readable the model found a fine notice photo (/read-notice, build spec T8). */
+export type NoticeLegibility = 'clear' | 'partly_readable' | 'unreadable' | 'not_a_notice'
+
+/**
+ * What /read-notice read off a parking infringement notice. Text is as
+ * printed (single line) or null. There is no registration field: ParkProof
+ * never records one. `offence_datetime_local` is the model's local reading
+ * ('YYYY-MM-DDTHH:MM', no offset) or null; src/lib/notice-match.ts re-reads
+ * the printed date day first and flags any disagreement.
+ */
+export interface NoticeFields {
+  legibility: NoticeLegibility
+  notice_number: string | null
+  issuing_authority: string | null
+  offence_date_raw: string | null
+  offence_time_raw: string | null
+  offence_datetime_local: string | null
+  location_text: string | null
+  offence_code: string | null
+  offence_description: string | null
+  amount: string | null
+  due_date: string | null
+}
+
+/**
+ * A permit the driver saved in Settings (T4). Kept in this browser only
+ * (`parkproof.profile.v1`), never synced. Only `type`, and `area` for a
+ * resident or business permit, is sent to the sign reader, and only while
+ * the permit hasn't expired (see src/lib/profile.ts).
+ */
+export interface SavedPermit {
+  /** Local id (uuid), for editing and deleting. */
+  id: string
+  type: UserPermitType
+  /** The state or territory that issued it; null when not given. */
+  state: Jurisdiction | null
+  /**
+   * The area or zone label as printed on the permit, e.g. "Area 25". Always
+   * null for an accessible permit, which isn't tied to an area.
+   */
+  area: string | null
+  /** The expiry date printed on the permit, 'YYYY-MM-DD'; null when not given. */
+  expires_on: string | null
+}
+
+/** What Settings keeps about the driver (T4). Stored in this browser only. */
+export interface DriverProfile {
+  /** "Your name on records you share": new records start with it as the driver. At most 60 characters. */
+  driver_name: string | null
+  /** At most 3 (the sign reader's limit). */
+  permits: SavedPermit[]
 }
 
 export interface AppealDraft {

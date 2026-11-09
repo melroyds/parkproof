@@ -14,6 +14,7 @@ import i18n from '../lib/i18n'
 import { AuthContext, type AuthContextValue } from '../lib/auth-context-shape'
 import { getSession, saveSession, updateSession } from '../lib/storage'
 import { createMemoryPhotoBackend, putPhoto, setPhotoBackendForTests } from '../lib/photo-store'
+import { endedStatusTime } from '../lib/record-status'
 import type { ParkingSession, SignatureBundle } from '../types'
 import ActiveSessionCard from './ActiveSessionCard'
 import SessionDetail from './SessionDetail'
@@ -297,8 +298,12 @@ describe('SessionDetail', () => {
     })
 
     expect(screen.queryByRole('button', { name: i18n.t('session.endSession') })).toBeNull()
-    // STATUS says "Ended"; the tap time (phone clock) is in the departure row below it.
-    expect(screen.getByText(i18n.t('session.ended'))).toBeTruthy()
+    // STATUS says "Ended" with the tap time (fix list item 6); the departure
+    // row below labels that time as the phone's.
+    const stored = getSession(session.id)!
+    expect(document.getElementById('record-status')?.textContent).toBe(
+      i18n.t('session.endedAt', { when: endedStatusTime(stored, 'Australia/Melbourne') }),
+    )
     expect(screen.getByText(/^You tapped I've left at .+ \(phone clock\)\.$/)).toBeTruthy()
   })
 

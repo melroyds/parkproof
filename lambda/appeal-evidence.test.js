@@ -162,6 +162,16 @@ describe('APPEAL_SYSTEM_PROMPT', () => {
     expect(APPEAL_SYSTEM_PROMPT).toContain('When a signed time is more than 5 minutes after its phone-clock time, give both.')
   })
 
+  it('keeps a verdict out of the notes the appeal screen shows as is (copy rules: no verdicts)', () => {
+    const notes = APPEAL_SYSTEM_PROMPT.split('\n').find((line) => line.startsWith('- notes:'))
+    expect(notes).toBeDefined()
+    expect(notes).toContain('never rate the evidence or the case')
+    expect(notes).toContain('never predict the outcome')
+    // The old wording invited "your evidence is weak" style text.
+    expect(notes).not.toMatch(/if evidence is weak|strengthen the case/i)
+    expect(APPEAL_SYSTEM_PROMPT).toContain('it is never shown to the user, and its rating never appears in notes')
+  })
+
   it('has no em-dash, and tells the model not to use them in the letter', () => {
     expect(APPEAL_SYSTEM_PROMPT).not.toContain('—')
     expect(APPEAL_SYSTEM_PROMPT).toContain("Don't use em-dashes. Use commas or full stops.")

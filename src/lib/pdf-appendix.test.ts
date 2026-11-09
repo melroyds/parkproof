@@ -212,7 +212,8 @@ describe('the appendix in the evidence PDF', () => {
     expect(all).toContain('Do steps 1, 2, 4, 5 and 6 for each link')
     // The new copy, not the old.
     expect(all).toContain('This shows the signed bytes have not changed since ParkProof signed them.')
-    expect(all).toContain('step 6 showed those values have not changed since signing')
+    // T2 rewrote the photo step (pdf.signature.verifyStep7 and verifyPhotoMatch); the T1b wording stays out.
+    expect(all).toContain('Step 6 showed the signed values have not changed since ParkProof signed them.')
     expect(all).not.toMatch(/authentic|proved/)
   })
 

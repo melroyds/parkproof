@@ -177,7 +177,7 @@ function claimsToUser(session: CognitoUserSession): AuthUser {
   const userId = payload.sub
   const email = payload.email ?? ''
   if (typeof userId !== 'string') {
-    throw new Error("Cognito session is missing a 'sub' claim")
+    throw new Error("Sign-in returned an ID token without a 'sub' claim")
   }
   return { userId, email }
 }

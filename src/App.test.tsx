@@ -10,15 +10,19 @@
 // Also the save path (T0b1): the LogDraft made for a scan travels through
 // clarify, result and logging (and a logging cancel) to the save, the
 // record is prepared (chain key, v1_hashes) before it is stored, and the
-// same draft reaches signNewRecord after the save.
+// same draft reaches signNewRecord after the save. The result screen's gate
+// acknowledgements ride on that draft to the record (T2).
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import i18n from './lib/i18n'
 import { AuthContext, type AuthContextValue } from './lib/auth-context-shape'
-import { appendAddendum, getSession, saveSession } from './lib/storage'
+import { appendAddendum, getSession, saveSession, setArrivalSignature } from './lib/storage'
 import { ORPHAN_PHOTO_AGE_MS, createMemoryPhotoBackend, putPhoto, setPhotoBackendForTests } from './lib/photo-store'
+import { endedStatusTime } from './lib/record-status'
+import { SYNC_ON_RETURN_INTERVAL_MS } from './lib/sync'
 import type { PushCancelResult } from './lib/push'
-import type { AddendumKind, LogDraft, ParkingRules, ParkingSession, SignatureBundle, SignedAddendum } from './types'
+import { buildArrivalContext } from './lib/evidence-chain'
+import type { AddendumKind, GateAcks, LogDraft, ParkingRules, ParkingSession, SignatureBundle, SignedAddendum } from './types'
 import App from './App'
 
 const mocks = vi.hoisted(() => ({
@@ -59,6 +63,10 @@ const mocks = vi.hoisted(() => ({
 const { SIGN_BYTES } = vi.hoisted(() => ({ SIGN_BYTES: 'fake-sign-photo-bytes' }))
 /** The props each render of the fake logger received (latest last). */
 const { loggerProps } = vi.hoisted(() => ({ loggerProps: [] as Array<Record<string, unknown>> }))
+/** The answer each render of the fake result screen received (latest last). */
+const { resultProps } = vi.hoisted(() => ({ resultProps: [] as Array<{ result: unknown }> }))
+/** The gate acknowledgements the fake result screen hands over on "Fake log" (null: none asked). */
+const { resultAcks } = vi.hoisted(() => ({ resultAcks: { next: null as GateAcks | null } }))
 
 vi.mock('./lib/push', async (importOriginal) => ({
   ...(await importOriginal<typeof import('./lib/push')>()),
@@ -139,8 +147,22 @@ vi.mock('./components/Clarify', () => ({
     <button onClick={() => p.onPick(p.clarification.options[0])}>Fake pick</button>
   ),
 }))
+// Save hands App the result screen's answers (T4's ResultAnswers): the gate
+// acknowledgements, and no permit (none is saved in these tests).
 vi.mock('./components/ParkingResult', () => ({
-  default: (p: { onLogSession: () => void }) => <button onClick={p.onLogSession}>Fake log</button>,
+  default: (p: { onLogSession: (answers: { gate_acks: GateAcks; permit_context: null }) => void; result: unknown }) => (
+    <button
+      ref={() => void resultProps.push({ result: p.result })}
+      onClick={() =>
+        p.onLogSession({
+          gate_acks: resultAcks.next ?? { meter_ticket: null, permit_zone: null, accessible_permit: null },
+          permit_context: null,
+        })
+      }
+    >
+      Fake log
+    </button>
+  ),
 }))
 vi.mock('./components/SessionLogger', () => ({
   default: (p: {
@@ -148,6 +170,7 @@ vi.mock('./components/SessionLogger', () => ({
     mode?: 'sign' | 'no-sign'
     rules: ParkingRules | null
     signPhoto: string | null
+    draft?: LogDraft | null
     onComplete: (s: ParkingSession) => void
     onCancel: () => void
   }) => (
@@ -165,6 +188,8 @@ vi.mock('./components/SessionLogger', () => ({
             expires_at: null,
             confidence: p.rules?.confidence ?? 'low',
             ...(p.mode === 'no-sign' ? { no_sign: true } : {}),
+            // As the real logger does: the draft's gate acknowledgements are saved on the record.
+            ...(p.draft ? { gate_acks: { ...p.draft.gate_acks } } : {}),
           })
         }
       >
@@ -246,6 +271,8 @@ beforeEach(() => {
   Object.defineProperty(window, 'confirm', { value: vi.fn(() => true), configurable: true, writable: true })
   for (const m of Object.values(mocks)) m.mockClear()
   loggerProps.length = 0
+  resultProps.length = 0
+  resultAcks.next = null
   mocks.installSigningTriggers.mockImplementation(() => mocks.uninstallSigningTriggers)
   mocks.scheduleDepartureCatchUp.mockImplementation(() => () => {})
   mocks.queueAddendum.mockImplementation((id, kind, data, options = {}) => appendAddendum(id, { kind, data, ...options }))
@@ -362,7 +389,10 @@ describe('App.handleEndSession — one end path', () => {
     fireEvent.click(leave)
     confirmLeft()
     expect(document.activeElement?.id).toBe('record-status')
-    expect(document.activeElement?.textContent).toBe(i18n.t('session.ended'))
+    // "Ended" with the tap time (fix list item 6).
+    expect(document.activeElement?.textContent).toBe(
+      i18n.t('session.endedAt', { when: endedStatusTime(getSession('rec-1')!, 'Australia/Melbourne') }),
+    )
   })
 
   it('Cancel, Escape or a tap outside the sheet records nothing', () => {
@@ -400,7 +430,11 @@ describe('App.handleEndSession — one end path', () => {
     expect(getSession('rec-1')?.ended_at).toEqual(expect.any(String))
     expect(mocks.cancelPushReminders).toHaveBeenCalledTimes(1)
     expect(mocks.cancelInTabReminders).toHaveBeenCalledTimes(1)
-    expect(screen.getByText(i18n.t('session.ended'))).toBeTruthy()
+    expect(
+      screen.getByText(
+        i18n.t('session.endedAt', { when: endedStatusTime(getSession('rec-1')!, 'Australia/Melbourne') }),
+      ),
+    ).toBeTruthy()
     expect(screen.queryByRole('button', { name: i18n.t('session.endSession') })).toBeNull()
   })
 
@@ -667,6 +701,52 @@ describe('App save path: the draft and the prepared record', () => {
     await screen.findByText('Fake reminders')
   })
 
+  it('a ticked pay gate on the result screen is saved on the record and queued in its arrival_context', async () => {
+    mocks.translateSign.mockResolvedValueOnce({ ...RESULT, clarification: null, requires_ticket: true })
+    resultAcks.next = { meter_ticket: true, permit_zone: null, accessible_permit: null }
+    // What signNewRecord does, without the signing: queue link 1 from the
+    // saved record and the draft.
+    mocks.signNewRecord.mockImplementation((id: string, draft: LogDraft) => {
+      const saved = getSession(id)
+      if (saved) appendAddendum(id, { kind: 'arrival_context', data: buildArrivalContext(saved, draft) })
+    })
+    renderApp(false)
+    click('Fake start scan')
+    click('Fake capture')
+    fireEvent.click(await screen.findByRole('button', { name: 'Fake log' }))
+
+    const ACKS = { meter_ticket: true, permit_zone: null, accessible_permit: null }
+    // The logger got them in its draft (it opens the proof section from them).
+    expect((loggerProps.at(-1)?.draft as LogDraft).gate_acks).toEqual(ACKS)
+    click('Fake save')
+
+    await waitFor(() => expect(mocks.signNewRecord).toHaveBeenCalledTimes(1))
+    const [id, draft] = mocks.signNewRecord.mock.calls[0]
+    expect(draft.gate_acks).toEqual(ACKS)
+    // The rest of the scan's draft is unchanged.
+    expect({ ...draft, gate_acks: null }).toEqual({ ...realEmptyLogDraft(), gate_acks: null })
+    const saved = getSession(id)
+    expect(saved?.gate_acks).toEqual(ACKS)
+    const link1 = saved?.addenda?.find((a) => a.kind === 'arrival_context')
+    expect(link1?.data.gate_acks).toEqual(ACKS)
+  })
+
+  it('a sign with no gate keeps every gate as not asked', async () => {
+    mocks.translateSign.mockResolvedValueOnce({ ...RESULT, clarification: null })
+    renderApp(false)
+    click('Fake start scan')
+    click('Fake capture')
+    fireEvent.click(await screen.findByRole('button', { name: 'Fake log' }))
+    click('Fake save')
+
+    await waitFor(() => expect(mocks.signNewRecord).toHaveBeenCalledTimes(1))
+    const [id, draft] = mocks.signNewRecord.mock.calls[0]
+    // Still the scan's own draft: nothing was acknowledged.
+    expect(draft).toBe(mocks.emptyLogDraft.mock.results[0].value)
+    expect(getSession(id)?.gate_acks).toEqual({ meter_ticket: null, permit_zone: null, accessible_permit: null })
+    expect(buildArrivalContext(getSession(id)!, draft).gate_acks).toBeNull()
+  })
+
   it('the no-sign path saves a prepared record with an empty draft', async () => {
     renderApp(false)
     click('Fake start scan')
@@ -794,6 +874,40 @@ describe('App and the photo store (T0b2)', () => {
     expect(loggerProps.at(-1)?.signPhotoMeta).toEqual({ captured_at: '2026-10-20T00:58:00.000Z', source: 'camera_input' })
   })
 
+  it("the scan's draft reaches the logger (for its gates), and the same draft is signed after the save", async () => {
+    mocks.translateSign.mockResolvedValueOnce(RESULT)
+    renderApp(false)
+    click('Fake start scan')
+    click('Fake capture with meta')
+    fireEvent.click(await screen.findByRole('button', { name: 'Fake log' }))
+    await screen.findByRole('button', { name: 'Fake save' })
+    const draft = loggerProps.at(-1)?.draft as LogDraft
+    expect(draft).toEqual(realEmptyLogDraft())
+    click('Fake save')
+    await waitFor(() => expect(mocks.signNewRecord).toHaveBeenCalledTimes(1))
+    expect(mocks.signNewRecord.mock.calls[0][1]).toBe(draft)
+  })
+
+  it('return photos taken on the departure sheet go into the departure part and the record (T2)', async () => {
+    saveSession(makeSession())
+    const { container } = renderApp(false)
+    fireEvent.click(screen.getByRole('button', { name: i18n.t('active.iveLeftAria') }))
+    const toggleName = i18n.t('departure.condition.toggle').replace(/[()]/g, '\\$&')
+    fireEvent.click(screen.getByRole('button', { name: new RegExp('^' + toggleName) }))
+    const input = container.querySelector<HTMLInputElement>('input[data-role="return-front"]')!
+    fireEvent.change(input, { target: { files: [new File(['after'], 'after.jpg', { type: 'image/jpeg', lastModified: Date.now() })] } })
+    await screen.findByText(i18n.t('photoGrid.saved'))
+    confirmLeft()
+    expect(getSession('rec-1')!.ended_at).toBeDefined()
+    await waitFor(() => expect(getSession('rec-1')!.addenda?.some((a) => a.kind === 'departure')).toBe(true))
+    const s = getSession('rec-1')!
+    const dep = s.addenda!.find((a) => a.kind === 'departure')!
+    const returnPhotos = (dep.data as { return_photos: Array<{ role: string; sha256: string }> }).return_photos
+    expect(returnPhotos.map((p) => p.role)).toEqual(['return-front'])
+    expect(s.photos).toEqual(returnPhotos)
+    expect(photoKeys('rec-1')).toEqual([`rec-1/${returnPhotos[0].sha256}`])
+  })
+
   it('without capture metadata only "library" is claimed for the sign photo', async () => {
     mocks.translateSign.mockResolvedValueOnce(RESULT)
     renderApp(false)
@@ -902,6 +1016,28 @@ describe('App and the photo store (T0b2)', () => {
     expect(mocks.refreshInterpretation).toHaveBeenCalledTimes(1)
   })
 
+  it('a re-check answer reaches the result screen marked as a re-check, a fresh scan does not (T9 telemetry)', async () => {
+    // The flag is what the result screen reports as is_refresh. App marks
+    // it itself, so it doesn't depend on refreshInterpretation's copy
+    // surviving however the result object is built.
+    saveSession(makeSession())
+    mocks.refreshInterpretation.mockResolvedValueOnce({ ...RESULT, rules: 'x' })
+    renderApp(false)
+    fireEvent.click(screen.getByRole('button', { name: i18n.t('active.recheckSub') }))
+    await screen.findByRole('button', { name: 'Fake log' })
+    expect(resultProps.at(-1)?.result).toMatchObject({ is_refresh: true, rules: makeSession().rules })
+    cleanup()
+
+    resultProps.length = 0
+    localStorage.clear()
+    mocks.translateSign.mockResolvedValueOnce(RESULT)
+    renderApp(false)
+    click('Fake start scan')
+    click('Fake capture')
+    await screen.findByRole('button', { name: 'Fake log' })
+    expect((resultProps.at(-1)?.result as ParkingRules).is_refresh).toBeUndefined()
+  })
+
   it('a second save of the same record id moves on like a save: no error screen, the first save stands', async () => {
     saveSession(makeSession({ id: 'new-no-sign', rules: 'first' }))
     const sha = await putPhoto('new-no-sign', jpeg('kept'))
@@ -916,5 +1052,103 @@ describe('App and the photo store (T0b2)', () => {
     expect(mocks.signNewRecord).not.toHaveBeenCalled()
     await new Promise((resolve) => setTimeout(resolve, 20))
     expect(photos.records.has(`new-no-sign/${sha}`)).toBe(true)
+  })
+})
+
+// Review of the field-test build: before the pull on return there was no
+// automatic re-sync, so the banner was always accurate until Retry. Now a
+// later pull can reach the cloud by itself, and the banner must go then.
+describe("The 'couldn't load your records' banner", () => {
+  it('clears once a later pull on return reaches the cloud', async () => {
+    const result = { uploaded: 0, pulled: 0, alreadyInSync: 0, merged: 0 }
+    mocks.performInitialSync
+      .mockResolvedValueOnce({ ...result, listFailed: true })
+      .mockResolvedValueOnce({ ...result, listFailed: false })
+    renderApp(true)
+    expect(await screen.findByText(i18n.t('errors.syncFailed'))).toBeTruthy()
+
+    // The driver comes back to the app more than a minute later.
+    const realNow = Date.now.bind(Date)
+    const now = vi.spyOn(Date, 'now').mockImplementation(() => realNow() + SYNC_ON_RETURN_INTERVAL_MS + 1_000)
+    try {
+      Object.defineProperty(document, 'visibilityState', { value: 'visible', configurable: true })
+      act(() => {
+        document.dispatchEvent(new Event('visibilitychange'))
+      })
+      await waitFor(() => expect(screen.queryByText(i18n.t('errors.syncFailed'))).toBeNull())
+      expect(mocks.performInitialSync).toHaveBeenCalledTimes(2)
+    } finally {
+      now.mockRestore()
+    }
+  })
+})
+
+describe('Street sweeping and weekly reminders (T5a)', () => {
+  // Every day, so its next occurrence is always within 24 hours.
+  const DAILY = {
+    id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+    label: '',
+    kind: 'street_cleaning',
+    days: ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'],
+    start: '07:00',
+    end: '09:00',
+    frequency: 'weekly',
+    nth: [],
+    anchor_date: '2026-01-01',
+    timezone: 'Australia/Melbourne',
+    address: null,
+    remind_evening_before: null,
+    remind_minutes_before: 60,
+    push: false,
+    paused: false,
+    sequence: 0,
+  }
+
+  it('home has a row that opens the recurring view, and shows the next occurrence inline', () => {
+    saveSession(makeSession({ ended_at: new Date().toISOString() }))
+    localStorage.setItem('parkproof.recurring.v1', JSON.stringify([DAILY]))
+    renderApp(false)
+    const row = screen.getByRole('button', { name: /Street sweeping and weekly reminders/ })
+    expect(row.textContent).toMatch(/Next: Street sweeping|Street sweeping is on now/)
+    fireEvent.click(row)
+    expect(screen.getByRole('heading', { name: 'Weekly reminders' })).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: i18n.t('common.backToHome') }))
+    expect(screen.getByRole('button', { name: /Street sweeping and weekly reminders/ })).toBeTruthy()
+  })
+
+  it('keeps the row off a first visit with nothing saved, like History', () => {
+    renderApp(false)
+    expect(screen.queryByRole('button', { name: /Street sweeping and weekly reminders/ })).toBeNull()
+  })
+
+  it('opens the recurring view from its notification link', () => {
+    window.history.replaceState({}, '', '/app/?recurring=open')
+    renderApp(false)
+    expect(screen.getByRole('heading', { name: 'Weekly reminders' })).toBeTruthy()
+    expect(window.location.search).toBe('')
+  })
+})
+
+describe('The one-time backup prompt (T2)', () => {
+  it("waits while the record screen's add-photo sheet is open, so one Escape can't also cancel the sheet", async () => {
+    saveSession(makeSession({ signature: undefined }))
+    window.history.replaceState({}, '', '/app/?session=rec-1')
+    renderApp(false)
+    fireEvent.click(screen.getByRole('button', { name: i18n.t('evidence.addCondition') }))
+    expect(screen.getAllByRole('dialog')).toHaveLength(1)
+    // Link 0 is signed in the background while the sheet is open (signal came back).
+    act(() => {
+      setArrivalSignature('rec-1', {
+        ...SIGNATURE,
+        schema: 'parkproof-evidence-v1',
+        canonical_payload: JSON.stringify({ schema: 'parkproof-evidence-v1', sign_photo_sha256: 'a'.repeat(64) }),
+      })
+    })
+    expect(screen.getAllByRole('dialog')).toHaveLength(1)
+    expect(screen.queryByText(i18n.t('backupPrompt.title'))).toBeNull()
+    // Closing the sheet lets the prompt show.
+    fireEvent.keyDown(window, { key: 'Escape' })
+    expect(await screen.findByText(i18n.t('backupPrompt.title'))).toBeTruthy()
+    expect(screen.getAllByRole('dialog')).toHaveLength(1)
   })
 })

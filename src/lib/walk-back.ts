@@ -54,7 +54,12 @@ export function estimateWalkBack(
  */
 export function navigationUrl(session: ParkingSession): string | null {
   if (!session.location) return null
-  const { lat, lng } = session.location
+  return navigationUrlForPoint(session.location)
+}
+
+/** `navigationUrl` for a bare point (a shared record's signed coordinates, T7). */
+export function navigationUrlForPoint(point: { lat: number; lng: number }): string {
+  const { lat, lng } = point
   if (typeof navigator !== 'undefined') {
     // Apple platforms — use the maps:// scheme which respects the user's
     // default mapping app (Apple Maps installed by default; some users swap

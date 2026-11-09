@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
 import { Trans, useTranslation } from 'react-i18next'
-import type { ParkingRules, ParkingSession, PhotoRef } from '../types'
-import { forwardGeocode, reverseGeocode } from '../lib/geocode'
+import type { BoundaryAnswer, ComplianceType, LogDraft, ParkingRules, ParkingSession, PhotoRef, PlaceParts } from '../types'
+import { forwardGeocode, reverseGeocodeDetails } from '../lib/geocode'
+import { jurisdictionOfPlace } from '../lib/jurisdiction'
 import { resizeImageFile } from '../lib/image'
-import { deleteSessionPhotos, deleteSessionPhotosExcept, isPhotoStoreAvailable } from '../lib/photo-store'
+import { deleteSessionPhotos, isPhotoStoreAvailable } from '../lib/photo-store'
 import {
   captureMetaFor,
   storeSessionPhoto,
@@ -15,10 +16,42 @@ import {
   ACCURACY_USABLE_M,
   formatAccuracy,
 } from '../lib/accuracy'
+import { noSignReadingFields, signReadingFields, type NoSignReading } from '../lib/sign-result'
+import { fitText } from '../lib/evidence-chain'
+import {
+  CONDITION_NOTE_MAX,
+  allowedComplianceType,
+  gridRoles,
+  preselectedComplianceType,
+  proofGates,
+  withPermitGate,
+} from '../lib/evidence-photos'
+import { discardUnreferencedPhotos } from '../lib/record-photos'
+import { DRIVER_NAME_MAX, defaultDriverName, driverBadgeText, savedDriverName } from '../lib/driver-name'
+import { usePhotoSlots } from '../lib/use-photo-slots'
+import { useNow } from '../lib/use-now'
+import { loadSessions } from '../lib/storage'
+import { isWorkdayEnabled } from '../lib/features'
+import { timezoneForCoords } from '../lib/timezone'
+import {
+  answerStartsNewLimit,
+  offeredAnswer,
+  stopBoundaryCheck,
+  stopBoundaryStatement,
+  stopContext,
+  stopDeadlinePassed,
+  stopOutcome,
+  type StopContext,
+} from '../lib/workday-boundary'
+import BoundaryQuestion from './BoundaryQuestion'
+import CollapsibleSection from './CollapsibleSection'
+import PhotoAngleGrid from './PhotoAngleGrid'
+import ProofPhotoSection from './ProofPhotoSection'
 import Icon from './Icon'
 import Button from './ui/Button'
 import BackButton from './ui/BackButton'
 import Card from './ui/Card'
+import Input from './ui/Input'
 
 interface Props {
   /**
@@ -44,6 +77,13 @@ interface Props {
   /** Capture metadata for the surroundings photo, as for `signPhotoMeta`. */
   ambientPhotoMeta?: PhotoCaptureMeta | null
   /**
+   * No-sign mode from the "no readable sign" screen (T3): the sign reader
+   * found no readable parking sign in the scan photo, which is now the
+   * surroundings photo. The record keeps that status, and the photo gets
+   * its own caption.
+   */
+  noSignReading?: NoSignReading | null
+  /**
    * Pre-seeded coords from a prior screen. When null, SessionLogger fetches
    * GPS itself. Currently unused — geolocation requests cache anyway, so
    * re-fetching is fast — but kept here for the future no-sign deeplink case.
@@ -55,6 +95,13 @@ interface Props {
    *  - 'no-sign' → simplified flow (no rules, ambient-photo evidence, save → home)
    */
   mode?: 'sign' | 'no-sign'
+  /**
+   * What the scan views carried for this record (the result screen's gate
+   * acknowledgements, later the permit and the driver). The gates decide
+   * whether the proof-of-payment section opens with a preselected type;
+   * `gate_acks` is saved on the record. Missing: an empty draft.
+   */
+  draft?: LogDraft | null
   onComplete: (session: ParkingSession) => void
   onCancel: () => void
 }
@@ -79,6 +126,26 @@ type CarPhoto =
  */
 type CarWriteResult = PhotoRef | 'inRecord' | null
 
+/**
+ * How long Save waits for the reverse lookup of the GPS fix still in flight,
+ * on a workday stop only (T6b item 7): the stop's state comes from that
+ * lookup alone, and without it the park can't be a stop. It is then saved as
+ * a normal record that keeps the running limit the driver was shown, and
+ * the workday stops. Other records save at once, as before.
+ */
+export const WORKDAY_PLACE_WAIT_MS = 5_000
+
+/** Input types that take typing: focus is never pulled away from one. */
+const NON_TYPING_INPUTS = new Set(['radio', 'checkbox', 'button', 'submit', 'reset', 'file', 'image', 'range', 'color'])
+
+/** Whether the driver is typing in this element (a text field, a text area, an editable region). */
+function isTypingTarget(el: Element | null): boolean {
+  if (!el) return false
+  if (el instanceof HTMLTextAreaElement || el instanceof HTMLSelectElement) return true
+  if (el instanceof HTMLInputElement) return !NON_TYPING_INPUTS.has(el.type)
+  return el instanceof HTMLElement && el.isContentEditable
+}
+
 type GpsState =
   | { status: 'idle' }
   | { status: 'pending' }
@@ -87,6 +154,13 @@ type GpsState =
       coords: { lat: number; lng: number }
       accuracy: number
       address: string | null
+      /**
+       * Raw reverse-geocode parts for the record's `place` (T6a), from the
+       * reverse lookup of this GPS fix only. Null until it arrives, for a
+       * fix too inaccurate to look up, and always for a typed address (a
+       * typed address never supplies a place or a jurisdiction).
+       */
+      place: PlaceParts | null
       addressLoading: boolean
       source: 'gps' | 'manual'
     }
@@ -98,7 +172,9 @@ export default function SessionLogger({
   signPhotoMeta = null,
   ambientPhoto = null,
   ambientPhotoMeta = null,
+  noSignReading = null,
   mode = 'sign',
+  draft = null,
   onComplete,
   onCancel,
 }: Props) {
@@ -115,6 +191,11 @@ export default function SessionLogger({
   const photoWrites = useRef<Promise<unknown>[]>([])
   // The scan screen's photos, written once when the logger opens.
   const scanPhotoWrites = useRef<{ sign?: Promise<PhotoRef | null>; ambient?: Promise<PhotoRef | null> }>({})
+  // The data URL of every sign, surroundings and car photo this logger
+  // wrote. After Save, only these (minus the ones the record keeps) are
+  // tidied away: once saved, the record can gain photos from other screens
+  // (the add-photo sheets, the departure sheet), and those must stay.
+  const writtenUrls = useRef<string[]>([])
   // The current car photo's write. Null when there is no car photo; a
   // newer photo (or Retake) replaces it, so a late result for an older
   // photo is ignored.
@@ -139,12 +220,70 @@ export default function SessionLogger({
     }
     return { status: 'error', message: t('logger.gpsErrorUnsupported') }
   })
+  // The reverse lookup in flight for the latest GPS fix, so a workday
+  // stop's Save can wait for its place (see WORKDAY_PLACE_WAIT_MS).
+  const placeLookup = useRef<{ coords: { lat: number; lng: number }; place: Promise<PlaceParts | null> } | null>(null)
   const [editMode, setEditMode] = useState(false)
   const [editValue, setEditValue] = useState('')
   const [editStatus, setEditStatus] = useState<'idle' | 'pending'>('idle')
   const [editError, setEditError] = useState<string | null>(null)
   const cameraInputRef = useRef<HTMLInputElement>(null)
   const libraryInputRef = useRef<HTMLInputElement>(null)
+  // "Record the car's condition (optional)": collapsed until the driver
+  // opens it. Its photos and the damage note go into the arrival_context.
+  const trackWrite = (write: Promise<unknown>) => {
+    photoWrites.current.push(write)
+  }
+  const conditionSlots = usePhotoSlots(recordId, trackWrite)
+  const [conditionOpen, setConditionOpen] = useState(false)
+  const [conditionNote, setConditionNote] = useState('')
+  // Proof of payment or permit. When the result screen asked a gate (or the
+  // sign reading calls for one, or the driver confirmed a saved permit
+  // there), the section is open with one button and the type preselected
+  // from the gate; otherwise it is collapsed. The record screen reads its
+  // gates the same way (recordProofGates), so both preselect the same type.
+  const gates = withPermitGate(proofGates(rules, draft?.gate_acks), draft?.permit_context)
+  const proofGated = gates.length > 0
+  const proofSlots = usePhotoSlots(recordId, trackWrite)
+  const [proofOpen, setProofOpen] = useState(false)
+  const [proofType, setProofType] = useState<ComplianceType | null>(() => preselectedComplianceType(gates))
+  // "Who's driving?" (T7): optional, prefilled from the draft, else the
+  // name saved in Settings (T4; see defaultDriverName). Saved on the record
+  // and signed in the arrival_context.
+  const [driverName, setDriverName] = useState(() => defaultDriverName(draft))
+  // Collapsed by default (an optional step); the closed toggle shows the
+  // name that will be saved, so a prefilled name is never hidden.
+  const [driverOpen, setDriverOpen] = useState(false)
+  const driverBadge = driverBadgeText(driverName)
+  // The boundary question (T6b item 8), on a workday stop only (never with
+  // VITE_FEATURE_WORKDAY off). The workday's saved legs are read once, when
+  // the logger opens; the first stop has no question.
+  const [stop] = useState<StopContext | null>(() =>
+    draft?.workday && !isNoSign && rules && isWorkdayEnabled()
+      ? stopContext(loadSessions(), draft.workday.workday_id)
+      : null,
+  )
+  const [boundaryAnswer, setBoundaryAnswer] = useState<BoundaryAnswer | null>(null)
+  // Save was tapped while the question needed an answer: show it even if
+  // the location is still coming in, and say an answer is needed.
+  const [boundaryBlocked, setBoundaryBlocked] = useState(false)
+  const [boundaryRequired, setBoundaryRequired] = useState(false)
+  const [focusNotSure, setFocusNotSure] = useState(0)
+  const notSureRef = useRef<HTMLInputElement>(null)
+  useEffect(() => {
+    if (focusNotSure > 0) notSureRef.current?.focus()
+  }, [focusNotSure])
+  // A workday stop's Save can wait a few seconds for the place lookup
+  // (WORKDAY_PLACE_WAIT_MS); Save, Back and Cancel are disabled meanwhile.
+  const checkingRef = useRef(false)
+  const [checking, setChecking] = useState(false)
+  const busy = submitting || checking
+  // Ticks the "still runs" and deadline-passed lines while the logger is
+  // open. A Save that found the time already ended moves it on at once, so
+  // the screen agrees with what Save found.
+  const ticked = useNow(30_000)
+  const [blockedAt, setBlockedAt] = useState(0)
+  const now = Math.max(ticked, blockedAt)
 
   const startEdit = () => {
     if (gps.status !== 'ok' && gps.status !== 'error') return
@@ -180,6 +319,10 @@ export default function SessionLogger({
       coords: { lat: result.lat, lng: result.lng },
       accuracy: 0,
       address: result.address,
+      // The record's place and jurisdiction come only from the reverse
+      // lookup of a GPS fix (T6a item 2), so a typed address leaves both
+      // unknown, and drops any place the earlier fix had.
+      place: null,
       addressLoading: false,
       source: 'manual',
     })
@@ -205,15 +348,35 @@ export default function SessionLogger({
           coords,
           accuracy,
           address: null,
+          place: null,
           addressLoading: trustworthy,
           source: 'gps',
         })
         // Don't reverse-geocode an unreliable coord — Nominatim would return
         // whatever happens to be at the (wrong) point and mislead the user.
         if (trustworthy) {
-          reverseGeocode(coords.lat, coords.lng).then((address) => {
+          const lookup = reverseGeocodeDetails(coords.lat, coords.lng)
+          placeLookup.current = {
+            coords,
+            place: lookup.then(
+              (d) => (d ? { road: d.road, suburb: d.suburb, state_code: d.state_code } : null),
+              () => null,
+            ),
+          }
+          void lookup.then((details) => {
+            // Only onto this fix: a typed address or a newer fix entered
+            // meanwhile keeps its own address and place.
             setGps((curr) =>
-              curr.status === 'ok' ? { ...curr, address, addressLoading: false } : curr,
+              curr.status === 'ok' && curr.coords === coords
+                ? {
+                    ...curr,
+                    address: details?.address ?? null,
+                    place: details
+                      ? { road: details.road, suburb: details.suburb, state_code: details.state_code }
+                      : null,
+                    addressLoading: false,
+                  }
+                : curr,
             )
           })
         }
@@ -253,10 +416,12 @@ export default function SessionLogger({
     if (!isNoSign && signPhoto && !writes.sign) {
       writes.sign = storeSessionPhoto(recordId, 'sign', signPhoto, signPhotoMeta ?? fallback)
       photoWrites.current.push(writes.sign)
+      writtenUrls.current.push(signPhoto)
     }
     if (isNoSign && ambientPhoto && !writes.ambient) {
       writes.ambient = storeSessionPhoto(recordId, 'ambient', ambientPhoto, ambientPhotoMeta ?? fallback)
       photoWrites.current.push(writes.ambient)
+      writtenUrls.current.push(ambientPhoto)
     }
     // Mount-only: the scan photos can't change while the logger is open.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -274,6 +439,7 @@ export default function SessionLogger({
     const entry = { result, dataUrl }
     carWrite.current = entry
     photoWrites.current.push(result)
+    writtenUrls.current.push(dataUrl)
     void result.then((r) => {
       if (carWrite.current !== entry) return // replaced or removed meanwhile
       setCarPhoto(
@@ -328,17 +494,60 @@ export default function SessionLogger({
    * started the record is being kept, so this does nothing.
    */
   const cancel = () => {
-    if (submittedRef.current || closed.current) return
+    if (submittedRef.current || closed.current || checkingRef.current) return
     closed.current = true
+    conditionSlots.close()
+    proofSlots.close()
     tidyPhotos([...photoWrites.current], () => deleteSessionPhotos(recordId), 'delete the photos of a cancelled record')
     onCancel()
   }
 
-  const saveSession = async () => {
-    if (submittedRef.current || closed.current) return
-    submittedRef.current = true
-    closed.current = true
-    setSubmitting(true)
+  // The boundary question as it stands (T6b item 8). It shows when the
+  // same-stretch check asks, once the location has settled (the GPS fix and
+  // its place lookup), so it doesn't flash up and vanish as the fix comes
+  // in; or at once when Save was tapped. An answer is kept only while the
+  // question offers it (the area question has other answers).
+  const liveLocation =
+    gps.status === 'ok'
+      ? {
+          lat: gps.coords.lat,
+          lng: gps.coords.lng,
+          source: gps.source,
+          accuracy_meters: gps.source === 'gps' ? gps.accuracy : null,
+        }
+      : null
+  const livePlace = gps.status === 'ok' && gps.source === 'gps' ? gps.place : null
+  const liveCheck = stop && rules ? stopBoundaryCheck(stop, rules, liveLocation, livePlace) : null
+  const locationSettling = gps.status === 'pending' || (gps.status === 'ok' && gps.addressLoading)
+  const boundaryShown = !!liveCheck?.ask && (!locationSettling || boundaryBlocked)
+  const liveAnswer = boundaryShown && liveCheck ? offeredAnswer(liveCheck, boundaryAnswer) : null
+  const liveStatement = stop && liveAnswer ? stopBoundaryStatement(stop, liveCheck, liveAnswer) : null
+  const liveBoundary = liveStatement && liveStatement !== 'unanswered' ? liveStatement : null
+  const liveOutcome = stop && rules && liveBoundary ? stopOutcome(stop, liveBoundary, rules.until, now) : null
+  const liveStartsNew = answerStartsNewLimit(liveBoundary)
+  // The time on this stretch has already ended: "Save anyway" and "Don't
+  // save this stop" take the place of Save and Cancel.
+  const boundaryDeadlinePassed = boundaryShown && stopDeadlinePassed(liveAnswer, liveStartsNew, liveOutcome)
+  // "I'm not sure" is focused by default (T6b item 8): once, when the
+  // question first shows. Focus only, never checked, because the answer is
+  // signed as the driver's own statement. Not while the driver is typing in
+  // a field (an address, their name), and without scrolling the page under
+  // them. A blocked Save focuses it again (above), scrolling it into view.
+  const boundaryFocused = useRef(false)
+  useEffect(() => {
+    if (!boundaryShown || boundaryFocused.current) return
+    boundaryFocused.current = true
+    if (isTypingTarget(document.activeElement)) return
+    notSureRef.current?.focus({ preventScroll: true })
+  }, [boundaryShown])
+  const stopTimeZone = liveLocation
+    ? timezoneForCoords(liveLocation.lat, liveLocation.lng)
+    : timezoneForCoords(stop?.previous?.location?.lat, stop?.previous?.location?.lng)
+
+  const saveSession = async (options: { acceptPassedDeadline?: boolean } = {}) => {
+    if (submittedRef.current || closed.current || checkingRef.current) return
+    // The answer counts only if the question was on screen when Save was tapped.
+    const answerAtTap = boundaryShown ? boundaryAnswer : null
     // Arrival time is the tap, as before; the photo writes (milliseconds)
     // are awaited after it.
     const arrived_at = new Date().toISOString()
@@ -352,6 +561,62 @@ export default function SessionLogger({
             accuracy_meters: gps.source === 'gps' ? gps.accuracy : undefined,
           }
         : null
+    // The raw reverse-geocode parts of the GPS fix, and the jurisdiction read
+    // from their state code alone (T6a). Left off when the lookup hadn't
+    // answered, and for a typed address.
+    let place = gps.status === 'ok' && gps.source === 'gps' ? gps.place : null
+    // A workday stop's state comes only from this lookup (T6b item 7): when
+    // it hasn't answered yet, wait a little for it rather than end the
+    // workday because the state couldn't be told.
+    const pending = placeLookup.current
+    if (draft?.workday && !place && gps.status === 'ok' && gps.source === 'gps' && pending?.coords === gps.coords) {
+      checkingRef.current = true
+      setChecking(true)
+      try {
+        place = await Promise.race([
+          pending.place,
+          new Promise<null>((resolve) => setTimeout(() => resolve(null), WORKDAY_PLACE_WAIT_MS)),
+        ])
+      } finally {
+        checkingRef.current = false
+        setChecking(false)
+      }
+      if (closed.current) return
+    }
+    // The boundary question (T6b item 8), the only step that may block
+    // Save. Asked from where the phone is at the tap: a GPS fix that isn't
+    // in yet is an unreliable location, so the check asks. A required
+    // answer that hasn't been given blocks Save and moves focus to "I'm not
+    // sure"; an answer that keeps the running limit after it has ended
+    // offers only "Save anyway" and "Don't save this stop".
+    let boundaryFields: Pick<ParkingSession, 'boundary'> = {}
+    if (stop && rules) {
+      const check = stopBoundaryCheck(stop, rules, location, place)
+      const statement = stopBoundaryStatement(stop, check, answerAtTap)
+      if (statement === 'unanswered') {
+        setBoundaryBlocked(true)
+        setBoundaryRequired(true)
+        setFocusNotSure((n) => n + 1)
+        return
+      }
+      if (statement && !options.acceptPassedDeadline) {
+        const outcome = stopOutcome(stop, statement, rules.until, Date.now())
+        if (stopDeadlinePassed(statement.answer, answerStartsNewLimit(statement), outcome)) {
+          setBoundaryBlocked(true)
+          setBlockedAt(Date.now())
+          return
+        }
+      }
+      boundaryFields = { boundary: statement }
+    }
+    submittedRef.current = true
+    closed.current = true
+    conditionSlots.close()
+    proofSlots.close()
+    setSubmitting(true)
+    const placeFields: Pick<ParkingSession, 'place' | 'jurisdiction'> = place
+      ? { place, jurisdiction: jurisdictionOfPlace(place) }
+      : {}
     // Wait for every photo write to land, so each ref has its bytes stored.
     // Each write settles within PHOTO_WRITE_TIMEOUT_MS (a stuck IndexedDB
     // write counts as failed), so Save never hangs.
@@ -365,7 +630,26 @@ export default function SessionLogger({
     // record itself instead, like the scan photos below.
     const carRef = carResult && carResult !== 'inRecord' ? carResult : null
     const carInRecord = carResult === 'inRecord' && currentCar ? currentCar.dataUrl : null
-    const photos = [signRef, carRef, ambientRef].filter((r): r is PhotoRef => r !== null)
+    // Condition and proof photos are part of the record only when stored
+    // (a failed one showed its error on the tile).
+    const conditionRefs = await conditionSlots.settle(gridRoles('condition'))
+    const proofRefs = await proofSlots.settle(['compliance'])
+    const photos = [signRef, carRef, ambientRef, ...conditionRefs, ...proofRefs].filter(
+      (r): r is PhotoRef => r !== null,
+    )
+    // Facts captured at parking, signed in the arrival_context (link 1).
+    const conditionNoteText = fitText(conditionNote, CONDITION_NOTE_MAX)
+    const extras: Partial<ParkingSession> = {}
+    if (conditionNoteText) extras.condition_note = conditionNoteText
+    // A library photo can only be a payment confirmation, whatever was picked.
+    if (proofRefs.length > 0) extras.compliance_type = allowedComplianceType(proofRefs[0].source, proofType)
+    if (draft) extras.gate_acks = { ...draft.gate_acks }
+    // Always set, null when empty: a cleared field signs "nobody named",
+    // never the draft's default (buildArrivalContext reads the record first).
+    extras.driver_name = savedDriverName(driverName)
+    // A workday stop's boundary statement (null for the first stop). App
+    // works out its limit from it when it saves the stop (stopLimitFields).
+    Object.assign(extras, boundaryFields)
     // The legacy fields stay null for photo-store photos. Only when the
     // store couldn't take a scan photo (no IndexedDB, a failed or timed-out
     // write) is it kept in the legacy field instead, so the record still has
@@ -387,6 +671,11 @@ export default function SessionLogger({
           no_sign: true,
           ambient_photo: ambientRef ? null : ambientPhoto,
           photos,
+          ...placeFields,
+          // T3: the status ParkProof found in the scan photo, when the
+          // driver came from the "no readable sign" screen.
+          ...noSignReadingFields(noSignReading),
+          ...extras,
         }
       : {
           id: recordId,
@@ -401,21 +690,29 @@ export default function SessionLogger({
           chosen_label: rules!.chosen_label,
           alternate_variants: rules!.alternate_variants,
           photos,
+          ...placeFields,
+          // T3: the sign's condition, the rule flags and the weekly
+          // restrictions from the answer (nothing from a pre-T3 answer).
+          ...signReadingFields(rules!),
+          ...extras,
         }
     onComplete(session)
     // Photos taken and then replaced or removed don't stay on the device,
-    // nor do the bytes of a write that timed out and landed later.
+    // nor do the bytes of a write that timed out and landed later. Only
+    // this logger's own photos are looked at, once every write for the
+    // record has settled: a photo another screen adds to the saved record
+    // meanwhile is never touched.
     const keep = photos.map((p) => p.sha256)
-    tidyPhotos([], () => deleteSessionPhotosExcept(recordId, keep), 'tidy replaced photos')
+    void discardUnreferencedPhotos(
+      recordId,
+      [...writtenUrls.current, ...conditionSlots.captured(), ...proofSlots.captured()],
+      keep,
+    )
   }
 
   return (
     <div className="min-h-screen flex flex-col p-6 max-w-md mx-auto w-full">
-      <BackButton
-        onClick={cancel}
-        disabled={submitting}
-        className="text-paper-50 hover:text-[#7BE3A4] disabled:opacity-50 disabled:cursor-not-allowed"
-      >
+      <BackButton onClick={cancel} disabled={busy}>
         {t('common.back')}
       </BackButton>
 
@@ -423,7 +720,7 @@ export default function SessionLogger({
         {isNoSign ? t('logger.noSignHeader') : t('logger.header')}
       </h2>
       <p className="text-sm mb-6 leading-relaxed" style={{ color: '#A9CFBE' }}>
-        {isNoSign ? t('logger.noSignIntro') : t('logger.intro')}
+        {noSignReading ? t('unclearSign.loggerIntro') : isNoSign ? t('logger.noSignIntro') : t('logger.intro')}
       </p>
 
       {/* No-sign banner — makes the evidentiary framing explicit. The user
@@ -442,7 +739,9 @@ export default function SessionLogger({
                 {t('logger.noSignKicker')}
               </p>
               <p className="text-sm text-ink-900 mt-1 leading-relaxed">
-                {t('logger.noSignBanner')}
+                {/* From the "no readable sign" screen the driver isn't saying
+                    there was no sign here, only logging without one (T3). */}
+                {noSignReading ? t('unclearSign.loggerBanner') : t('logger.noSignBanner')}
               </p>
             </div>
           </div>
@@ -464,7 +763,7 @@ export default function SessionLogger({
             className="w-full rounded-xl border border-paper-300 object-contain max-h-[40vh] bg-paper-50"
           />
           <p className="text-xs text-ink-600 mt-2">
-            {t('logger.ambientCaption')}
+            {noSignReading ? t('unclearSign.photoCaption') : t('logger.ambientCaption')}
           </p>
         </Card>
       )}
@@ -710,22 +1009,150 @@ export default function SessionLogger({
         />
       </section>
 
-      <div className="mt-auto flex flex-col gap-2">
-        <Button
-          onClick={() => void saveSession()}
-          disabled={submitting}
-          className="disabled:cursor-not-allowed"
+      {/* Section order (build spec T2 item 2, fixed for every later task):
+          location, car photo, driver line, condition, proof of payment or
+          permit, boundary question, Save. Only the boundary question may
+          block Save; every other section is optional. */}
+
+      {/* Driver line (T7, "Who's driving?"): between the car photo and the
+          condition section. An optional step, so collapsed by default; the
+          closed toggle shows the name that will be saved. The driver's own
+          statement: ParkProof doesn't check it. */}
+      <CollapsibleSection
+        className="mb-3"
+        title={t('logger.driver.label')}
+        open={driverOpen}
+        onToggle={() => setDriverOpen((o) => !o)}
+        badge={driverBadge}
+        disabled={submitting}
+      >
+        <Card pad="sm">
+          <label htmlFor={`${recordId}-driver`} className="block text-xs uppercase tracking-widest font-semibold text-ink-600 mb-1">
+            {t('logger.driver.label')}
+          </label>
+          <Input
+            id={`${recordId}-driver`}
+            type="text"
+            value={driverName}
+            onChange={(e) => setDriverName(e.target.value.slice(0, DRIVER_NAME_MAX))}
+            maxLength={DRIVER_NAME_MAX}
+            disabled={submitting}
+            autoComplete="name"
+            placeholder={t('logger.driver.placeholder')}
+            aria-describedby={`${recordId}-driver-help`}
+          />
+          <p id={`${recordId}-driver-help`} className="text-xs text-ink-600 mt-1.5 leading-relaxed">
+            {t('logger.driver.help')}
+          </p>
+        </Card>
+      </CollapsibleSection>
+
+      {/* Record the car's condition (optional): collapsed by default. The
+          grid's photos and the damage note go into the arrival_context. */}
+      <CollapsibleSection
+        className="mb-3"
+        title={t('logger.condition.toggle')}
+        open={conditionOpen}
+        onToggle={() => setConditionOpen((o) => !o)}
+        badge={conditionSlots.savedCount > 0 ? t('photoGrid.count', { count: conditionSlots.savedCount }) : null}
+      >
+        <Card pad="sm">
+          <PhotoAngleGrid phase="condition" slots={conditionSlots} disabled={submitting} />
+          <label htmlFor={`${recordId}-damage`} className="block text-xs uppercase tracking-widest font-semibold text-ink-600 mt-4 mb-1">
+            {t('logger.condition.noteLabel')}
+          </label>
+          <textarea
+            id={`${recordId}-damage`}
+            value={conditionNote}
+            onChange={(e) => setConditionNote(e.target.value.slice(0, CONDITION_NOTE_MAX))}
+            maxLength={CONDITION_NOTE_MAX}
+            rows={2}
+            disabled={submitting}
+            placeholder={t('logger.condition.notePlaceholder')}
+            aria-describedby={`${recordId}-damage-count`}
+            className="w-full text-sm text-ink-900 bg-paper-50 border border-paper-300 rounded-xl p-3 leading-relaxed focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 resize-y"
+          />
+          <p id={`${recordId}-damage-count`} className="text-2xs text-ink-600 font-mono text-right">
+            {conditionNote.length}/{CONDITION_NOTE_MAX}
+          </p>
+        </Card>
+      </CollapsibleSection>
+
+      {/* Proof of payment or permit. Open with one button when a gate
+          applies (its type preselected); collapsed otherwise. */}
+      {proofGated ? (
+        <section className="mb-3">
+          <h3 className="font-semibold text-sm text-paper-50 mb-2">{t('logger.proof.heading')}</h3>
+          <Card pad="sm">
+            <ProofPhotoSection
+              slots={proofSlots}
+              type={proofType}
+              onTypeChange={setProofType}
+              addLabel={t('logger.proof.addMeterTicketOrPermit')}
+              disabled={submitting}
+            />
+          </Card>
+        </section>
+      ) : (
+        <CollapsibleSection
+          className="mb-3"
+          title={t('logger.proof.toggle')}
+          open={proofOpen}
+          onToggle={() => setProofOpen((o) => !o)}
+          badge={proofSlots.savedCount > 0 ? t('photoGrid.count', { count: proofSlots.savedCount }) : null}
         >
-          {submitting ? t('logger.saving') : t('logger.saveSession')}
-        </Button>
-        <button
-          onClick={cancel}
-          disabled={submitting}
-          className="text-paper-50 hover:text-[#7BE3A4] font-medium py-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {t('common.cancel')}
-        </button>
-      </div>
+          <Card pad="sm">
+            <ProofPhotoSection
+              slots={proofSlots}
+              type={proofType}
+              onTypeChange={setProofType}
+              addLabel={t('logger.proof.addMeterTicketOrPermit')}
+              disabled={submitting}
+            />
+          </Card>
+        </CollapsibleSection>
+      )}
+
+      {/* Boundary question (T6b item 8, workday stops only), right above
+          Save: the only section that may block it. */}
+      {boundaryShown && liveCheck && (
+        <BoundaryQuestion
+          check={liveCheck}
+          answer={liveAnswer}
+          onAnswer={(answer) => {
+            setBoundaryAnswer(answer)
+            setBoundaryRequired(false)
+          }}
+          outcome={liveOutcome}
+          startsNewLimit={liveStartsNew}
+          required={boundaryRequired}
+          notSureRef={notSureRef}
+          timeZone={stopTimeZone}
+          now={now}
+          disabled={busy}
+          onSaveAnyway={() => void saveSession({ acceptPassedDeadline: true })}
+          onDontSave={cancel}
+        />
+      )}
+
+      {!boundaryDeadlinePassed && (
+        <div className="mt-auto pt-3 flex flex-col gap-2">
+          <Button
+            onClick={() => void saveSession()}
+            disabled={busy}
+            className="disabled:cursor-not-allowed"
+          >
+            {busy ? t('logger.saving') : t('logger.saveSession')}
+          </Button>
+          <button
+            onClick={cancel}
+            disabled={busy}
+            className="text-paper-50 hover:text-[#7BE3A4] font-medium py-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {t('common.cancel')}
+          </button>
+        </div>
+      )}
     </div>
   )
 }

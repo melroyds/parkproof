@@ -1,7 +1,18 @@
-import type { AddendumKind, ParkingSession, SignatureBundle, SignedAddendum } from '../types'
+import type {
+  AddendumKind,
+  DriverProfile,
+  Jurisdiction,
+  ParkingSession,
+  RecurringRule,
+  SignatureBundle,
+  SignedAddendum,
+  WorkdayState,
+  WorkdayStatus,
+} from '../types'
 import {
   AddendumValidationError,
   ERR,
+  HEX64_RE,
   UUID_RE,
   isIsoTime,
   normalizeAddendumData,
@@ -15,14 +26,21 @@ import {
 } from './evidence-chain'
 import { mergeEvidence, sameEvidence } from './evidence-merge'
 import { deleteSessionPhotos } from './photo-store'
+import { isWorkdayJurisdiction } from './jurisdiction'
+import { changesCalendar, normalizeRecurringRule } from './recurring'
+import { PROFILE_KEY, emptyProfile, normalizeProfile } from './profile'
 
 const KEY = 'parkproof.sessions.v1'
+
+/** Workday mode's state (T6a). See the workday section at the end of this file. */
+export const WORKDAY_KEY = 'parkproof.workday.v1'
 
 /**
  * Fired on `window` after any write to the saved records (save, update,
  * delete, end, and the evidence-chain writes: appendAddendum,
  * setAddendumBundle, rejectAddendum, setArrivalSignature, and the cloud merge
- * mergeCloudEvidence). `useRecordsVersion()`
+ * mergeCloudEvidence), and after any write to the workday state
+ * (startWorkday, setWorkdayLeg, markWorkdayMoving, endWorkday). `useRecordsVersion()`
  * re-renders on it, so screens that show a record pick up background
  * changes such as a signature landing, without navigating away.
  */
@@ -58,6 +76,33 @@ export function notifyRecordsChanged(id: string | null = null): void {
   }
 }
 
+/** The records named by `scheduleRecordsChanged` calls not yet notified, or null when none is queued. */
+let queuedChanges: Set<string | null> | null = null
+
+/**
+ * `notifyRecordsChanged` for bulk writes, such as records landing from a
+ * cloud pull (field-test fix list, item 6): every call made in one
+ * synchronous run becomes ONE notification on the next microtask, so a pull
+ * of 50 records re-renders the screens once, not 50 times. The notification
+ * names the record when only one changed, else null. Never throws.
+ */
+export function scheduleRecordsChanged(id: string | null = null): void {
+  if (queuedChanges) {
+    queuedChanges.add(id)
+    return
+  }
+  queuedChanges = new Set([id])
+  queueMicrotask(flushQueuedRecordsChanged)
+}
+
+function flushQueuedRecordsChanged(): void {
+  const ids = queuedChanges
+  queuedChanges = null
+  if (!ids) return
+  const [only] = ids
+  notifyRecordsChanged(ids.size === 1 ? only : null)
+}
+
 /**
  * Subscribe to records-changed notifications. Also forwards writes made by
  * another tab of the app (the browser's `storage` event), so two open tabs
@@ -70,7 +115,7 @@ export function subscribeRecordsChanged(listener: () => void): () => void {
   if (!crossTabListenerInstalled) {
     crossTabListenerInstalled = true
     window.addEventListener('storage', (e: StorageEvent) => {
-      if (e.key === KEY || e.key === null) notifyRecordsChanged()
+      if (e.key === KEY || e.key === WORKDAY_KEY || e.key === null) notifyRecordsChanged()
     })
   }
   window.addEventListener(RECORDS_CHANGED_EVENT, listener)
@@ -238,6 +283,9 @@ export function subscribeStorageRecovered(listener: (report: QuotaRecoveryReport
  * because the photo bytes are what the pending signature commits to.
  */
 export function hasUnsignedEvidence(session: ParkingSession): boolean {
+  // A read-only shared copy (T7) is never signed here: it holds the
+  // sender's bundle, has no photos, and can be fetched again from its link.
+  if (session.shared_from) return false
   if (!session.signature) return true
   const addenda = session.addenda
   if (!Array.isArray(addenda)) return false
@@ -261,6 +309,13 @@ export function hasUnsignedEvidence(session: ParkingSession): boolean {
  *     fine arrives), or open-ended with no expiry
  *   - any record whose evidence isn't fully signed (`hasUnsignedEvidence`)
  *
+ * Read-only shared copies (T7) are never on home, hold no photos and can
+ * be opened again from their link, so a phase 0 evicts them first, oldest
+ * received first, before any photo of the driver's own is stripped. A
+ * write that only stores a shared copy (`sharedOnly`) runs phase 0 alone:
+ * someone else's record must never cost the driver their own evidence.
+ * `keepId` is the record being written, never a victim.
+ *
  * Victims are tracked by id, never by array index, so evicting one record
  * can't shift the next victim onto a different (possibly active) record.
  * An evicted record's photo-store photos are deleted too, once the write
@@ -274,6 +329,7 @@ export function hasUnsignedEvidence(session: ParkingSession): boolean {
 function persistWithQuotaRecovery(
   input: ParkingSession[],
   now: number = Date.now(),
+  options: { sharedOnly?: boolean; keepId?: string } = {},
 ): QuotaRecoveryReport {
   let sessions = input
   const trimmed = new Set<string>()
@@ -316,15 +372,45 @@ function persistWithQuotaRecovery(
     const ms = new Date(s.expires_at).getTime()
     return Number.isFinite(ms) && ms + ACTIVE_AFTER_EXPIRY_MS <= now
   }
-  const victimIds = sessions
-    .filter((s) => isOffHome(s) && !hasUnsignedEvidence(s))
-    .sort((a, b) => tombstoneTime(a) - tombstoneTime(b))
+  const receivedTime = (s: ParkingSession): number => {
+    const ms = new Date(s.shared_from?.received_at ?? '').getTime()
+    return Number.isFinite(ms) ? ms : 0
+  }
+  // Shared copies (never on home, never signed here, opened again from
+  // their link), oldest received first.
+  const copyIds = sessions
+    .filter((s) => !!s.shared_from && s.id !== options.keepId)
+    .sort((a, b) => receivedTime(a) - receivedTime(b))
     .map((s) => s.id)
+  // The driver's own records off home with fully signed evidence, oldest
+  // first. None when only a shared copy is being written.
+  const victimIds = options.sharedOnly
+    ? []
+    : sessions
+        .filter((s) => !s.shared_from && s.id !== options.keepId && isOffHome(s) && !hasUnsignedEvidence(s))
+        .sort((a, b) => tombstoneTime(a) - tombstoneTime(b))
+        .map((s) => s.id)
 
   const patchById = (id: string, patch: Partial<ParkingSession>) => {
     sessions = sessions.map((s) => (s.id === id ? { ...s, ...patch } : s))
   }
   const byId = (id: string) => sessions.find((s) => s.id === id)
+  const evictedIds: string[] = []
+  const evict = (id: string): boolean => {
+    sessions = sessions.filter((s) => s.id !== id)
+    // An evicted record is counted once, as evicted, not also as trimmed.
+    trimmed.delete(id)
+    evicted++
+    evictedIds.push(id)
+    if (!tryWrite()) return false
+    for (const gone of evictedIds) releaseRecordPhotos(gone)
+    return true
+  }
+
+  // Phase 0: evict shared copies, before anything of the driver's own.
+  for (const id of copyIds) {
+    if (evict(id)) return recovered()
+  }
 
   // Phase 1: strip car_photo (the user-supplied second photo).
   for (const id of victimIds) {
@@ -348,17 +434,8 @@ function persistWithQuotaRecovery(
   }
 
   // Phase 3: evict whole records, oldest first.
-  const evictedIds: string[] = []
   for (const id of victimIds) {
-    sessions = sessions.filter((s) => s.id !== id)
-    // An evicted record is counted once, as evicted, not also as trimmed.
-    trimmed.delete(id)
-    evicted++
-    evictedIds.push(id)
-    if (tryWrite()) {
-      for (const gone of evictedIds) releaseRecordPhotos(gone)
-      return recovered()
-    }
+    if (evict(id)) return recovered()
   }
 
   // Genuinely full: even with every eligible record gone we can't fit.
@@ -519,6 +596,47 @@ export function rejectAddendum(
 }
 
 /**
+ * Fill a workday stop's link to the stop before it (build spec T6b item
+ * 11): set `workday.previous_departure_payload_sha256` in a pending
+ * arrival_context, once the previous stop's departure is signed. The only
+ * change ever made to a queued addendum's data, and only before it is
+ * signed: the result is normalised again, so what is stored is still what
+ * will be signed. Returns the updated addendum, the same one when it already
+ * carries this hash, or null (nothing written) when the addendum is missing,
+ * signed, rejected, not an arrival_context with a workday link, already
+ * linked to another hash, or `hash` isn't 64 lower-case hex characters.
+ */
+export function fillPreviousDepartureHash(
+  sessionId: string,
+  addendumId: string,
+  hash: string,
+): SignedAddendum | null {
+  if (!HEX64_RE.test(hash)) return null
+  const sessions = loadSessions()
+  const idx = sessions.findIndex((s) => s.id === sessionId)
+  if (idx === -1) return null
+  const addenda = sessions[idx].addenda ?? []
+  const target = addenda.find((a) => a.id === addendumId)
+  if (!target || target.bundle || target.rejected || target.kind !== 'arrival_context') return null
+  const data = target.data as Record<string, unknown>
+  const workday = data.workday as Record<string, unknown> | null | undefined
+  if (!workday || typeof workday !== 'object') return null
+  if (workday.previous_departure_payload_sha256 === hash) return target
+  if (workday.previous_departure_payload_sha256 !== null) return null
+  const filled: SignedAddendum = {
+    ...target,
+    data: normalizeAddendumData('arrival_context', {
+      ...data,
+      workday: { ...workday, previous_departure_payload_sha256: hash },
+    }),
+  }
+  sessions[idx] = { ...sessions[idx], addenda: addenda.map((a) => (a.id === addendumId ? filled : a)) }
+  persistWithQuotaRecovery(sessions)
+  notifyRecordsChanged(sessionId)
+  return filled
+}
+
+/**
  * Merge the cloud copy's evidence into a saved record (`mergeEvidence`,
  * T0b4): links signed on another device, a link 0 or an end this device
  * didn't have, more photo refs. Reads the record fresh and writes in the
@@ -557,6 +675,95 @@ export function setArrivalSignature(sessionId: string, bundle: SignatureBundle):
   return true
 }
 
+// ─── Shared copies (build spec T7 item 4) ─────────────────────────────────
+
+export type SharedCopyResult =
+  /** No copy of that record was stored: this one was added (newest first). */
+  | { status: 'created'; record: ParkingSession }
+  /** A copy was stored: it now holds this link's data, under its own local id. */
+  | { status: 'updated'; record: ParkingSession }
+  /** The stored copy came from a later link: it was kept as it was. */
+  | { status: 'kept_newer'; record: ParkingSession }
+  /** The record is saved on this device as the driver's own: nothing was stored. */
+  | { status: 'own_record'; record: ParkingSession }
+
+/**
+ * Store a read-only copy of someone else's record, opened from a share
+ * link. Copies are deduplicated on `shared_from.original_session_id`:
+ * opening the link again updates the stored copy, keeping its local id,
+ * unless the stored copy came from a later link (its `shared_at` is
+ * later), which is kept. A record saved here as the driver's own (its id
+ * is the original id) is never shadowed by a copy of itself.
+ *
+ * `shared_at` is the sender's phone time and isn't signed, so a forwarded
+ * link can carry any value. One later than its own receive time (plus
+ * SHARED_AT_SKEW_MS for clock drift) can't be a real share time and never
+ * decides which copy is newer: such a link never keeps a later genuine
+ * link out.
+ *
+ * A copy never costs the driver their own records: when storage is full,
+ * only other shared copies may be evicted to fit it, and otherwise this
+ * throws StorageFullError with nothing written.
+ *
+ * The copy must carry `shared_from` (throws otherwise). Its fields are the
+ * caller's (shared-record.ts builds them from the verified payload).
+ */
+export function upsertSharedCopy(copy: ParkingSession): SharedCopyResult {
+  const from = copy.shared_from
+  if (!from) throw new Error('upsertSharedCopy needs a record with shared_from')
+  const sessions = loadSessions()
+  const own = sessions.find((s) => s.id === from.original_session_id && !s.shared_from)
+  if (own) return { status: 'own_record', record: own }
+  const idx = sessions.findIndex((s) => s.shared_from?.original_session_id === from.original_session_id)
+  if (idx === -1) {
+    if (sessions.some((s) => s.id === copy.id)) throw new DuplicateRecordError(copy.id)
+    sessions.unshift(copy)
+    persistWithQuotaRecovery(sessions, Date.now(), { sharedOnly: true, keepId: copy.id })
+    notifyRecordsChanged(copy.id)
+    return { status: 'created', record: copy }
+  }
+  const stored = sessions[idx]
+  const storedAt = plausibleSharedAt(stored.shared_from)
+  const incomingAt = plausibleSharedAt(from)
+  if (storedAt !== null && incomingAt !== null && incomingAt < storedAt) {
+    return { status: 'kept_newer', record: stored }
+  }
+  const next: ParkingSession = { ...copy, id: stored.id }
+  sessions[idx] = next
+  persistWithQuotaRecovery(sessions, Date.now(), { sharedOnly: true, keepId: stored.id })
+  notifyRecordsChanged(stored.id)
+  return { status: 'updated', record: next }
+}
+
+/** How far a share time may run ahead of its receive time (phone clocks drift). */
+export const SHARED_AT_SKEW_MS = 5 * 60 * 1000
+
+/**
+ * A copy's share time (ms) when it can be used to order copies: a time no
+ * later than when this device received the link, plus SHARED_AT_SKEW_MS.
+ * Null otherwise (missing, unreadable, or in the future).
+ */
+function plausibleSharedAt(from: ParkingSession['shared_from']): number | null {
+  const at = Date.parse(from?.shared_at ?? '')
+  const received = Date.parse(from?.received_at ?? '')
+  if (!Number.isFinite(at) || !Number.isFinite(received)) return null
+  return at <= received + SHARED_AT_SKEW_MS ? at : null
+}
+
+/**
+ * Is this record active, as the home screen decides it (loadActiveSessions
+ * lists exactly these)? The driver's own record, not ended, and either
+ * expiring in the future, expired less than ACTIVE_AFTER_EXPIRY_MS ago, or
+ * a no-sign record with no expiry. A read-only shared copy never is.
+ * "Hand the car over" (T7 item 5) uses the same rule.
+ */
+export function isActiveRecord(session: ParkingSession, now: number = Date.now()): boolean {
+  if (session.ended_at || session.shared_from) return false
+  if (!session.expires_at) return !!session.no_sign
+  const ms = new Date(session.expires_at).getTime()
+  return Number.isFinite(ms) && ms + ACTIVE_AFTER_EXPIRY_MS > now
+}
+
 /**
  * Records that are currently in progress, i.e. shown on the home screen.
  * Three groups, in this order (App shows the first as the main card):
@@ -570,10 +777,11 @@ export function setArrivalSignature(sessionId: string, bundle: SignatureBundle):
  *      then its card asks "I've left".
  *
  * In every group an explicit `ended_at` excludes the record: the driver has
- * signalled they've left.
+ * signalled they've left. A read-only shared copy (T7) is never active
+ * here: it is someone else's park, shown in History only.
  */
 export function loadActiveSessions(now: number = Date.now()): ParkingSession[] {
-  const all = loadSessions().filter((s) => !s.ended_at)
+  const all = loadSessions().filter((s) => isActiveRecord(s, now))
   const expiryMs = (s: ParkingSession): number =>
     s.expires_at ? new Date(s.expires_at).getTime() : NaN
   const live = all
@@ -608,4 +816,395 @@ export function loadActiveSessions(now: number = Date.now()): ParkingSession[] {
  */
 export function endSession(id: string, when: Date = new Date()): QuotaRecoveryReport {
   return updateSession(id, { ended_at: when.toISOString() })
+}
+
+// ─── Workday mode (build spec T6a) ────────────────────────────────────────
+// The workday state lives under WORKDAY_KEY, on this device only (it is
+// never synced; the legs are ordinary records carrying workday_id and
+// leg_index, and those sync). The key holds a list, newest first: every
+// workday that hasn't ended plus up to MAX_ENDED_WORKDAYS ended ones. At most
+// one workday is active (status other than 'ended'): startWorkday refuses
+// while one is. Every write re-reads the list first and dispatches
+// records-changed, so the home screen follows a workday changed in the
+// background or in another tab.
+
+/** Ended workdays kept on the device, newest first. Active ones are never dropped. */
+export const MAX_ENDED_WORKDAYS = 30
+
+/** startWorkday: a workday is already active. */
+export const ERR_WORKDAY_ACTIVE = 'ERR_WORKDAY_ACTIVE'
+/** startWorkday: workday mode isn't available in that jurisdiction (only VIC and QLD). */
+export const ERR_WORKDAY_JURISDICTION = 'ERR_WORKDAY_JURISDICTION'
+
+export type WorkdayErrorCode = typeof ERR_WORKDAY_ACTIVE | typeof ERR_WORKDAY_JURISDICTION
+
+/** Thrown by startWorkday. Nothing is written. The message is English for logs only. */
+export class WorkdayError extends Error {
+  readonly code: WorkdayErrorCode
+  constructor(code: WorkdayErrorCode, message: string) {
+    super(message)
+    this.name = 'WorkdayError'
+    this.code = code
+  }
+}
+
+const WORKDAY_STATUSES: readonly WorkdayStatus[] = ['parked', 'between_moves', 'ended']
+
+const isTime = (v: unknown): v is string => typeof v === 'string' && Number.isFinite(Date.parse(v))
+const isIdOrNull = (v: unknown): v is string | null => v === null || (typeof v === 'string' && v.length > 0)
+
+/**
+ * A stored workday that can be trusted. Anything else is dropped on read,
+ * including a workday in a jurisdiction where workday mode isn't available.
+ */
+function isWorkdayState(v: unknown): v is WorkdayState {
+  if (!v || typeof v !== 'object') return false
+  const w = v as Record<string, unknown>
+  if (typeof w.id !== 'string' || !UUID_RE.test(w.id)) return false
+  if (!isTime(w.started_at)) return false
+  if (!isWorkdayJurisdiction(w.jurisdiction as Jurisdiction)) return false
+  if (!WORKDAY_STATUSES.includes(w.status as WorkdayStatus)) return false
+  if (!isIdOrNull(w.current_session_id) || !isIdOrNull(w.previous_session_id)) return false
+  if (w.status === 'ended') return isTime(w.ended_at)
+  return w.ended_at === null
+}
+
+const byStartedDesc = (a: WorkdayState, b: WorkdayState): number =>
+  Date.parse(b.started_at) - Date.parse(a.started_at)
+
+/** Every stored workday that reads cleanly, newest first. [] when none or unreadable. */
+export function loadWorkdays(): WorkdayState[] {
+  try {
+    const raw = localStorage.getItem(WORKDAY_KEY)
+    if (!raw) return []
+    const parsed: unknown = JSON.parse(raw)
+    if (!Array.isArray(parsed)) return []
+    return parsed.filter(isWorkdayState).sort(byStartedDesc)
+  } catch {
+    return []
+  }
+}
+
+/**
+ * The active workday (status 'parked' or 'between_moves'), or null. Should
+ * two ever be stored (two tabs starting one at the same moment), the most
+ * recently started one is the active one.
+ */
+export function getActiveWorkday(): WorkdayState | null {
+  return loadWorkdays().find((w) => w.status !== 'ended') ?? null
+}
+
+export function getWorkday(id: string): WorkdayState | null {
+  return loadWorkdays().find((w) => w.id === id) ?? null
+}
+
+function persistWorkdays(list: WorkdayState[]): void {
+  const sorted = [...list].sort(byStartedDesc)
+  const active = sorted.filter((w) => w.status !== 'ended')
+  const ended = sorted.filter((w) => w.status === 'ended').slice(0, MAX_ENDED_WORKDAYS)
+  const kept = [...active, ...ended].sort(byStartedDesc)
+  try {
+    localStorage.setItem(WORKDAY_KEY, JSON.stringify(kept))
+  } catch (err) {
+    if (isQuotaError(err)) throw new StorageFullError()
+    throw err
+  }
+  notifyRecordsChanged(null)
+}
+
+/**
+ * Apply `change` to one stored workday and save it. Returns the workday as
+ * stored afterwards (unchanged when `change` returned it as it was, and
+ * then nothing is written), or null when it isn't stored.
+ */
+function writeWorkday(id: string, change: (w: WorkdayState) => WorkdayState): WorkdayState | null {
+  const list = loadWorkdays()
+  const idx = list.findIndex((w) => w.id === id)
+  if (idx === -1) return null
+  const next = change(list[idx])
+  if (next === list[idx]) return next
+  list[idx] = next
+  persistWorkdays(list)
+  return next
+}
+
+export interface StartWorkdayInput {
+  /** From the start fix's `place.state_code` (jurisdiction.ts). Only VIC and QLD can start one. */
+  jurisdiction: Jurisdiction | null
+  /**
+   * The record that becomes leg 0 when the car is already parked ("Use the
+   * car's current park as the first stop"). The workday starts 'parked' on
+   * it. Without one it starts 'between_moves': the next scan makes leg 0.
+   */
+  current_session_id?: string | null
+  /** Phone time of the Start tap; defaults to now. */
+  now?: Date
+  /** Lower-case uuid; defaults to a fresh one. */
+  id?: string
+}
+
+/**
+ * Start a workday. Throws WorkdayError (and writes nothing) when a workday
+ * is already active (ERR_WORKDAY_ACTIVE) or the jurisdiction isn't one
+ * where workday mode is available (ERR_WORKDAY_JURISDICTION; the start
+ * screen gates on it first, this is the backstop). Can throw
+ * StorageFullError.
+ */
+export function startWorkday(input: StartWorkdayInput): WorkdayState {
+  const jurisdiction = input.jurisdiction
+  if (!isWorkdayJurisdiction(jurisdiction)) {
+    throw new WorkdayError(ERR_WORKDAY_JURISDICTION, `Workday mode isn't available in ${String(jurisdiction)}.`)
+  }
+  const list = loadWorkdays()
+  const active = list.find((w) => w.status !== 'ended')
+  if (active) throw new WorkdayError(ERR_WORKDAY_ACTIVE, `Workday ${active.id} is already active.`)
+  const id = input.id ?? crypto.randomUUID()
+  if (!UUID_RE.test(id)) throw new Error(`Workday id ${id} is not a lower-case uuid.`)
+  const current = input.current_session_id ?? null
+  const workday: WorkdayState = {
+    id,
+    started_at: (input.now ?? new Date()).toISOString(),
+    jurisdiction,
+    status: current ? 'parked' : 'between_moves',
+    current_session_id: current,
+    previous_session_id: null,
+    ended_at: null,
+  }
+  persistWorkdays([workday, ...list])
+  return workday
+}
+
+/**
+ * A new leg was saved: it becomes the current leg, the leg it replaced
+ * becomes the previous one, and the workday is 'parked'. Passing the
+ * current leg again changes nothing and writes nothing, whatever the
+ * status: while 'between_moves' the current leg is the one the car just
+ * left, so a repeated save of it must not mark the car parked there again.
+ * Null when the workday isn't stored or has ended (an ended workday never
+ * gains legs).
+ */
+export function setWorkdayLeg(workdayId: string, sessionId: string): WorkdayState | null {
+  const stored = getWorkday(workdayId)
+  if (!stored || stored.status === 'ended') return null
+  return writeWorkday(workdayId, (w) => {
+    if (w.current_session_id === sessionId) return w
+    return {
+      ...w,
+      status: 'parked',
+      previous_session_id: w.current_session_id ?? w.previous_session_id,
+      current_session_id: sessionId,
+    }
+  })
+}
+
+/**
+ * The driver tapped "I'm moving the car now" and the current leg's
+ * departure has been recorded: the workday is 'between_moves' until the
+ * next leg is saved. `current_session_id` stays on the leg just left (it
+ * is the next leg's previous leg). Null when the workday isn't stored, has
+ * ended, or has no current leg.
+ */
+export function markWorkdayMoving(workdayId: string): WorkdayState | null {
+  const stored = getWorkday(workdayId)
+  if (!stored || stored.status === 'ended' || !stored.current_session_id) return null
+  return writeWorkday(workdayId, (w) => (w.status === 'between_moves' ? w : { ...w, status: 'between_moves' }))
+}
+
+/**
+ * End a workday at `when` (phone time). Ending an ended workday keeps its
+ * first ended_at. Null when the workday isn't stored. The caller runs the
+ * departure flow for a current leg that hasn't ended first.
+ */
+export function endWorkday(workdayId: string, when: Date = new Date()): WorkdayState | null {
+  return writeWorkday(workdayId, (w) =>
+    w.status === 'ended' ? w : { ...w, status: 'ended', ended_at: when.toISOString() },
+  )
+}
+
+// ─── Street sweeping and weekly reminders (T5a) ──────────────────────────
+// Stored apart from the records under their own key, on this device only.
+// Every write re-reads the list, keeps it valid (normalizeRecurringRule)
+// and fires RECURRING_CHANGED_EVENT, so the home row, the recurring view
+// and the in-tab reminders all follow it.
+
+const RECURRING_KEY = 'parkproof.recurring.v1'
+
+/** Fired on `window` after any write to the recurring rules (detail: { id }). */
+export const RECURRING_CHANGED_EVENT = 'parkproof:recurring-changed'
+
+let recurringRevision = 0
+let recurringCrossTabInstalled = false
+
+/** Monotonic counter, bumped on every recurring-changed notification. */
+export function getRecurringRevision(): number {
+  return recurringRevision
+}
+
+function notifyRecurringChanged(id: string | null): void {
+  recurringRevision++
+  if (typeof window === 'undefined' || typeof window.dispatchEvent !== 'function') return
+  try {
+    window.dispatchEvent(new CustomEvent(RECURRING_CHANGED_EVENT, { detail: { id } }))
+  } catch {
+    /* a listener threw: the write itself stands */
+  }
+}
+
+/**
+ * Subscribe to recurring-changed notifications, including writes made in
+ * another tab. Returns the unsubscribe function.
+ */
+export function subscribeRecurringChanged(listener: () => void): () => void {
+  if (typeof window === 'undefined' || typeof window.addEventListener !== 'function') {
+    return () => {}
+  }
+  if (!recurringCrossTabInstalled) {
+    recurringCrossTabInstalled = true
+    window.addEventListener('storage', (e: StorageEvent) => {
+      if (e.key === RECURRING_KEY || e.key === null) notifyRecurringChanged(null)
+    })
+  }
+  window.addEventListener(RECURRING_CHANGED_EVENT, listener)
+  return () => window.removeEventListener(RECURRING_CHANGED_EVENT, listener)
+}
+
+/**
+ * Every saved recurring rule, oldest first. Entries that don't fit the
+ * store's shape are skipped rather than failing the whole list; nothing
+ * readable gives [].
+ */
+export function loadRecurringRules(): RecurringRule[] {
+  try {
+    const raw = localStorage.getItem(RECURRING_KEY)
+    const parsed: unknown = raw ? JSON.parse(raw) : []
+    if (!Array.isArray(parsed)) return []
+    const out: RecurringRule[] = []
+    for (const item of parsed) {
+      const rule = normalizeRecurringRule(item)
+      if (rule && !out.some((r) => r.id === rule.id)) out.push(rule)
+    }
+    return out
+  } catch {
+    return []
+  }
+}
+
+export function getRecurringRule(id: string): RecurringRule | undefined {
+  return loadRecurringRules().find((r) => r.id === id)
+}
+
+/**
+ * The stored list exactly as written, entries this version can't read
+ * included. Writes start from it, so a rule saved by a newer build (a kind
+ * or a field this one doesn't know, say from a tab still on an older cached
+ * app) survives an edit made here. [] when nothing readable is stored.
+ */
+function readRawRecurring(): unknown[] {
+  try {
+    const raw = localStorage.getItem(RECURRING_KEY)
+    const parsed: unknown = raw ? JSON.parse(raw) : []
+    return Array.isArray(parsed) ? parsed : []
+  } catch {
+    return []
+  }
+}
+
+const rawRuleId = (item: unknown): unknown =>
+  item && typeof item === 'object' ? (item as { id?: unknown }).id : undefined
+
+function writeRecurringRaw(items: unknown[]): void {
+  try {
+    localStorage.setItem(RECURRING_KEY, JSON.stringify(items))
+  } catch (err) {
+    if (isQuotaError(err)) throw new StorageFullError()
+    throw err
+  }
+}
+
+/** Thrown when a rule doesn't fit the store's shape (normalizeRecurringRule says no). */
+export class InvalidRecurringRuleError extends Error {
+  constructor() {
+    super('This weekly reminder is missing a day, a time or a date.')
+    this.name = 'InvalidRecurringRuleError'
+  }
+}
+
+/**
+ * Create a rule, or replace the saved rule with the same id. Returns what
+ * was stored. On a replace, `sequence` comes from the stored copy (never
+ * the caller's) and goes up by one when anything the calendar file carries
+ * changed, so a re-downloaded calendar file updates the event instead of
+ * adding a second one. Pausing, resuming or switching notifications leave
+ * it alone. Throws InvalidRecurringRuleError or StorageFullError.
+ */
+export function saveRecurringRule(input: RecurringRule): RecurringRule {
+  const cleaned = normalizeRecurringRule(input)
+  if (!cleaned) throw new InvalidRecurringRuleError()
+  const prev = loadRecurringRules().find((r) => r.id === cleaned.id)
+  const stored: RecurringRule = prev
+    ? { ...cleaned, sequence: prev.sequence + (changesCalendar(prev, cleaned) ? 1 : 0) }
+    : { ...cleaned, sequence: 0 }
+  // Write over the raw list: the rule's own entry keeps any field this
+  // version doesn't know, and every other entry is left exactly as it was.
+  const raw = readRawRecurring()
+  const idx = prev ? raw.findIndex((item) => rawRuleId(item) === stored.id && normalizeRecurringRule(item) !== null) : -1
+  if (idx === -1) raw.push(stored)
+  else raw[idx] = { ...(raw[idx] as Record<string, unknown>), ...stored }
+  writeRecurringRaw(raw)
+  notifyRecurringChanged(stored.id)
+  return stored
+}
+
+/** Pause or resume a rule. Returns the stored rule, or null when it isn't saved. */
+export function setRecurringRulePaused(id: string, paused: boolean): RecurringRule | null {
+  const current = getRecurringRule(id)
+  if (!current) return null
+  if (current.paused === paused) return current
+  return saveRecurringRule({ ...current, paused })
+}
+
+/** Delete a rule. Returns false when it wasn't saved. */
+export function deleteRecurringRule(id: string): boolean {
+  if (!getRecurringRule(id)) return false
+  // Every stored copy of that id goes; entries this version can't read stay.
+  writeRecurringRaw(readRawRecurring().filter((item) => rawRuleId(item) !== id))
+  notifyRecurringChanged(id)
+  return true
+}
+
+// ─── Settings: the driver's name and saved permits (T4) ─────────────────
+
+/**
+ * The profile saved in Settings: the driver's name and saved permits
+ * (src/lib/profile.ts has the shape rules). Stored in this browser only,
+ * under `parkproof.profile.v1`, and never synced. Anything unreadable
+ * (nothing saved, storage blocked, a damaged value) reads as the empty
+ * profile, and a stored value is re-checked on every read, so callers
+ * always get a valid profile. Never throws.
+ */
+export function loadProfile(): DriverProfile {
+  try {
+    const raw = localStorage.getItem(PROFILE_KEY)
+    return raw ? normalizeProfile(JSON.parse(raw)) : emptyProfile()
+  } catch {
+    return emptyProfile()
+  }
+}
+
+/**
+ * Save the Settings profile, shaped by `normalizeProfile` first (name cut to
+ * 60, at most 3 valid permits, no area on an accessible permit). Returns
+ * what was stored. Throws StorageFullError when the browser's storage is
+ * full (records are never cleared to make room for settings), and passes
+ * any other storage error on.
+ */
+export function saveProfile(profile: DriverProfile): DriverProfile {
+  const stored = normalizeProfile(profile)
+  try {
+    localStorage.setItem(PROFILE_KEY, JSON.stringify(stored))
+  } catch (err) {
+    if (isQuotaError(err)) throw new StorageFullError()
+    throw err
+  }
+  return stored
 }

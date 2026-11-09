@@ -1,26 +1,41 @@
+import { useTranslation } from 'react-i18next'
+import { HERO_TEXT, HERO_TIME, heroHeadlineSize, heroKickerSize, heroLetterSpacing, heroPill } from '../lib/hero-layout'
+
 interface Props {
   className?: string
 }
 
 /**
- * The landing hero — "the sign resolves into a verified record". An illustrated
+ * The landing hero: the sign resolves into a signed record. An illustrated
  * Aussie parking sign (pine on paper, the real signage colour) feeds a stamped,
- * tamper-evident verdict card: VERIFIED RECORD, a plain-English answer, the
- * leave-by time, the KMS hash, and the Datum-notch seal pressing on. It says
- * what ParkProof actually is (a verified answer, not just an answer) in one
- * fully-designed image, replacing the old stock photo.
+ * tamper-evident card: SIGNED RECORD, a plain-English answer, the leave-by
+ * time, the KMS hash, and the Datum-notch seal pressing on. It says what
+ * ParkProof actually is (a signed record, not just an answer) in one fully
+ * designed image, replacing the old stock photo.
  *
- * Animates once on mount (scan → record rises → seal stamps + mint pulse); the
- * `gf-hero-*` classes degrade to the clean static frame under reduced-motion.
+ * The card's words and the description are in the reader's language
+ * (landing.hero.*; the pill reuses the answer card's result.until), each
+ * line sized to stay inside the card (src/lib/hero-layout.ts). The sign's
+ * "2P" is the sign's own text and the hash is a hash, so neither is
+ * translated.
+ *
+ * Animates once on mount (scan, then the record rises, then the seal stamps
+ * with a mint pulse); the `gf-hero-*` classes degrade to the clean static
+ * frame under reduced-motion.
  */
 export default function HeroAnswer({ className = '' }: Props) {
+  const { t } = useTranslation()
+  const kicker = t('landing.hero.kicker')
+  const headline = t('landing.hero.canPark')
+  const until = t('result.until', { when: HERO_TIME })
+  const pill = heroPill(until)
   return (
     <svg
       viewBox="0 0 480 300"
       xmlns="http://www.w3.org/2000/svg"
       className={className}
       role="img"
-      aria-label="A parking sign resolving into a verified parking record: you can park until 4:00 PM."
+      aria-label={t('landing.hero.aria', { time: HERO_TIME })}
     >
       <defs>
         <filter id="hero-ds" x="-30%" y="-30%" width="160%" height="160%">
@@ -53,13 +68,45 @@ export default function HeroAnswer({ className = '' }: Props) {
         </g>
       </g>
 
-      {/* the verified record card */}
+      {/* the signed record card */}
       <g className="gf-hero-card">
         <path d="M196 84 H432 L456 108 V232 H196 Z" fill="url(#hero-gl)" filter="url(#hero-ds)" />
-        <text x="218" y="116" fontFamily="'IBM Plex Mono', monospace" fontWeight="500" fontSize="11" fill="#0E5C3A" letterSpacing="1.5">VERIFIED RECORD</text>
-        <text x="218" y="152" fontFamily="'Space Grotesk', sans-serif" fontWeight="700" fontSize="26" fill="#0B1A14" letterSpacing="-0.5">You can park</text>
-        <rect x="218" y="166" width="150" height="32" rx="8" fill="#0E5C3A" />
-        <text x="234" y="188" fontFamily="'Inter', sans-serif" fontWeight="600" fontSize="15" fill="#EAF7EF">until 4:00 PM</text>
+        <text
+          data-hero="kicker"
+          x={HERO_TEXT.kicker.x}
+          y="116"
+          fontFamily="'IBM Plex Mono', monospace"
+          fontWeight="500"
+          fontSize={heroKickerSize(kicker)}
+          fill="#0E5C3A"
+          letterSpacing={heroLetterSpacing('kicker', kicker)}
+        >
+          {kicker}
+        </text>
+        <text
+          data-hero="headline"
+          x={HERO_TEXT.headline.x}
+          y="152"
+          fontFamily="'Space Grotesk', sans-serif"
+          fontWeight="700"
+          fontSize={heroHeadlineSize(headline)}
+          fill="#0B1A14"
+          letterSpacing={heroLetterSpacing('headline', headline)}
+        >
+          {headline}
+        </text>
+        <rect data-hero="pill-box" x={HERO_TEXT.pill.x} y="166" width={pill.width} height="32" rx="8" fill="#0E5C3A" />
+        <text
+          data-hero="pill"
+          x={HERO_TEXT.pill.x + HERO_TEXT.pill.padding}
+          y="188"
+          fontFamily="'Inter', sans-serif"
+          fontWeight="600"
+          fontSize={pill.fontSize}
+          fill="#EAF7EF"
+        >
+          {until}
+        </text>
         <text x="218" y="222" fontFamily="'IBM Plex Mono', monospace" fontWeight="500" fontSize="11" fill="#0E5C3A" opacity="0.7">KMS · f3a9c4…b21</text>
       </g>
 

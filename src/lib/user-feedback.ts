@@ -75,7 +75,7 @@ export async function submitUserFeedback(payload: UserFeedbackPayload): Promise<
     })
   } catch (err) {
     throw new UserFeedbackError(
-      err instanceof Error ? err.message : 'Network error — check your connection',
+      err instanceof Error ? err.message : 'Network error. Check your connection',
       0,
     )
   }

@@ -36,6 +36,9 @@ import {
   ERR_DUPLICATE_RECORD,
   isDuplicateRecordError,
   loadSessionIdsForGc,
+  isActiveRecord,
+  upsertSharedCopy,
+  SHARED_AT_SKEW_MS,
 } from './storage'
 import { createMemoryPhotoBackend, putPhoto, setPhotoBackendForTests } from './photo-store'
 import { AddendumValidationError } from '../../lambda/addendum-schema.js'
@@ -1132,5 +1135,112 @@ describe('loadSessionIdsForGc (the startup photo sweep reads records strictly)',
   it('skips entries without a string id', () => {
     localStorage.setItem(KEY, JSON.stringify([{ id: 'a' }, null, 7, { id: 3 }, { id: 'b' }]))
     expect(loadSessionIdsForGc()).toEqual(['a', 'b'])
+  })
+})
+
+// ─── Shared copies (T7) under quota, and which copy is newer ─────────────
+
+describe('shared copies and the storage quota (T7)', () => {
+  const sharedFrom = (original: string, receivedAt: string, sharedAt: string | null = receivedAt) => ({
+    original_session_id: original,
+    received_at: receivedAt,
+    shared_at: sharedAt,
+    arrival_bundle: SIGNED,
+    snapshot: {},
+  })
+  const copyOf = (id: string, original: string, receivedAt: string, sharedAt?: string | null) =>
+    makeSession({
+      id,
+      sign_photo: null,
+      car_photo: null,
+      expires_at: '2099-01-01T00:00:00.000Z', // a live countdown: never "off home" by its own times
+      shared_from: sharedFrom(original, receivedAt, sharedAt === undefined ? receivedAt : sharedAt),
+    })
+  // The driver's own old record, signed and off home: normal recovery would strip and evict it.
+  const ownOld = () =>
+    makeSession({
+      id: 'own-old',
+      arrived_at: '2026-05-19T08:00:00+10:00',
+      expires_at: '2026-05-19T18:00:00+10:00',
+      signature: SIGNED,
+    })
+
+  it("never strips or evicts the driver's own records to fit someone else's copy", () => {
+    localStorage.setItem(KEY, JSON.stringify([ownOld()]))
+    // One failed write: normal recovery would strip the own record's car
+    // photo and then fit. A copy must not get that far.
+    quotaThrowsNTimes(1)
+    expect(() => upsertSharedCopy(copyOf('copy-1', 'theirs-1', '2026-05-21T09:00:00.000Z'))).toThrow(StorageFullError)
+    const after = loadSessions()
+    expect(after.map((s) => s.id)).toEqual(['own-old'])
+    expect(after[0].car_photo).toBe('data:image/jpeg;base64,CAR')
+    expect(after[0].sign_photo).toBe('data:image/jpeg;base64,SIGN')
+  })
+
+  it('fits a copy by evicting older shared copies only', () => {
+    const older = copyOf('copy-old', 'theirs-old', '2026-05-20T09:00:00.000Z')
+    localStorage.setItem(KEY, JSON.stringify([older, ownOld()]))
+    quotaThrowsNTimes(1) // the first write fails; dropping the older copy fits
+    const result = upsertSharedCopy(copyOf('copy-new', 'theirs-new', '2026-05-21T09:00:00.000Z'))
+    expect(result.status).toBe('created')
+    const after = loadSessions()
+    expect(after.map((s) => s.id).sort()).toEqual(['copy-new', 'own-old'])
+    expect(after.find((s) => s.id === 'own-old')!.car_photo).toBe('data:image/jpeg;base64,CAR')
+  })
+
+  it("any other write takes shared copies first, before a photo of the driver's own", () => {
+    localStorage.setItem(KEY, JSON.stringify([copyOf('copy-1', 'theirs-1', '2026-05-21T09:00:00.000Z'), ownOld()]))
+    quotaThrowsNTimes(1) // the first write fails; evicting the copy fits
+    const report = saveSession(makeSession({ id: 'fresh' }))
+    expect(report).toEqual({ trimmedPhotosFrom: 0, evicted: 1 })
+    const after = loadSessions()
+    expect(after.find((s) => s.id === 'copy-1')).toBeUndefined()
+    expect(after.find((s) => s.id === 'own-old')!.car_photo).toBe('data:image/jpeg;base64,CAR')
+  })
+
+  it("a forwarded link's future share time never keeps a later genuine link out", () => {
+    const received = '2026-05-21T09:00:00.000Z'
+    // Unsigned shared_at edited to 2099 in a forwarded link.
+    expect(upsertSharedCopy(copyOf('copy-1', 'theirs', received, '2099-01-01T00:00:00.000Z')).status).toBe('created')
+    // The sender's genuine link, opened later: it updates the copy.
+    const genuine = copyOf('copy-2', 'theirs', '2026-05-21T10:00:00.000Z', '2026-05-21T09:55:00.000Z')
+    const result = upsertSharedCopy(genuine)
+    expect(result.status).toBe('updated')
+    expect(result.record.id).toBe('copy-1')
+    expect(result.record.shared_from!.shared_at).toBe('2026-05-21T09:55:00.000Z')
+  })
+
+  it('still keeps the copy from a later link when an earlier link is opened again', () => {
+    expect(upsertSharedCopy(copyOf('copy-1', 'theirs', '2026-05-21T10:00:00.000Z', '2026-05-21T09:55:00.000Z')).status).toBe('created')
+    // A share time a little ahead of its receive time (phone clock drift) still counts.
+    const drift = new Date(Date.parse('2026-05-21T10:30:00.000Z') + SHARED_AT_SKEW_MS).toISOString()
+    expect(upsertSharedCopy(copyOf('copy-2', 'theirs', '2026-05-21T10:30:00.000Z', drift)).status).toBe('updated')
+    const earlier = copyOf('copy-3', 'theirs', '2026-05-21T11:00:00.000Z', '2026-05-21T09:00:00.000Z')
+    expect(upsertSharedCopy(earlier).status).toBe('kept_newer')
+    expect(loadSessions()[0].shared_from!.shared_at).toBe(drift)
+  })
+})
+
+describe('isActiveRecord', () => {
+  it('is true for exactly the records loadActiveSessions lists', () => {
+    const hour = 60 * 60 * 1000
+    const at = (ms: number) => new Date(FIXED_NOW + ms).toISOString()
+    const records = [
+      makeSession({ id: 'live', expires_at: at(hour) }),
+      makeSession({ id: 'lapsed', expires_at: at(-11 * hour) }),
+      makeSession({ id: 'gone', expires_at: at(-12 * hour) }),
+      makeSession({ id: 'ended', expires_at: at(hour), ended_at: at(-60_000) }),
+      makeSession({ id: 'noSign', expires_at: null, no_sign: true }),
+      makeSession({ id: 'noLimit', expires_at: null }),
+      makeSession({
+        id: 'copy',
+        expires_at: at(hour),
+        shared_from: { original_session_id: 'x', received_at: at(0), shared_at: null, arrival_bundle: null, snapshot: {} },
+      }),
+    ]
+    localStorage.setItem(KEY, JSON.stringify(records))
+    const active = new Set(loadActiveSessions(FIXED_NOW).map((s) => s.id))
+    expect([...active].sort()).toEqual(['lapsed', 'live', 'noSign'])
+    for (const r of records) expect(isActiveRecord(r, FIXED_NOW)).toBe(active.has(r.id))
   })
 })

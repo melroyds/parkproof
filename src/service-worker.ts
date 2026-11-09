@@ -82,9 +82,9 @@ self.addEventListener('push', (event: PushEvent) => {
     icon: 'pwa-192x192.png',
     badge: 'pwa-64x64.png',
     tag,
-    // Alert even if a notification with this tag is already showing (the
-    // in-tab copy of the same reminder, or a push from an older server that
-    // still reused the session tag).
+    // Alert even if a notification with this tag is already showing (a push
+    // from an older server that still reused the session tag). Turned off
+    // below when the one showing is the in-tab copy of this same reminder.
     renotify: true,
     // The final reminder stays on screen until dismissed on desktop.
     requireInteraction: isExpiry,
@@ -100,8 +100,12 @@ self.addEventListener('push', (event: PushEvent) => {
         // Close this session's earlier reminders so only the newest shows.
         const open = await self.registration.getNotifications()
         for (const n of open) {
-          const data = n.data as { session_id?: string } | undefined
+          const data = n.data as { session_id?: string; in_tab?: boolean } | undefined
           if (data?.session_id === sessionId && n.tag !== tag) n.close()
+          // The in-tab copy of this same reminder already alerted (an open
+          // page shows it through this registration on Android): replace it
+          // quietly instead of buzzing a second time.
+          if (n.tag === tag && data?.in_tab === true) options.renotify = false
         }
       }
       await self.registration.showNotification(title, options)

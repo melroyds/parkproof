@@ -1,14 +1,27 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { useTranslation } from 'react-i18next'
+import { Trans, useTranslation } from 'react-i18next'
 import type { ParkingSession } from '../types'
 import { isStorageFullError, updateSession } from '../lib/storage'
 import { useLiveRecord } from '../lib/use-records-version'
-import { canEndRecord } from '../lib/record-status'
+import { canEndRecord, endedStatusTime } from '../lib/record-status'
 import { DEV_KEY_ALIAS } from '../lib/evidence-chain'
 import { LEGACY_PHOTO_ROLES, hasSessionPhoto, legacyPhotoValue, photoRefFor } from '../lib/session-photos'
 import { useSessionPhoto } from '../lib/use-session-photo'
+import { canAddEvidence, signedPhotoRef } from '../lib/evidence-photos'
+import {
+  collectEvidenceFile,
+  hasEvidenceFile,
+  hasPermitDetails,
+  hasPermitPhoto,
+  saveEvidenceFile,
+} from '../lib/evidence-bundle'
+import { arrivalSigningRejection } from '../lib/signing'
 import ScheduledRemindersSection from './ScheduledRemindersSection'
 import RecordPhoto from './RecordPhoto'
+import EvidencePhotos, { PhotoRefMeta } from './EvidencePhotos'
+import AddEvidenceSheet, { type AddEvidenceKind } from './AddEvidenceSheet'
+import ShareSheet from './ShareSheet'
+import HandoverSheet from './HandoverSheet'
 import VerifiedSeal from './VerifiedSeal'
 import ChainPanel from './ChainPanel'
 import DepartureRow from './DepartureRow'
@@ -26,6 +39,28 @@ import { verifyUrlForLocale } from '../lib/verify-url'
 import { signedTimeOf } from '../lib/chain-view'
 import { formatInZone } from '../lib/time-format'
 import { RECORD_STATUS_ID } from '../lib/focus-targets'
+import { isNoSignReadRecord } from '../lib/sign-result'
+import { canHandOver, handoverParts, type HandoverPart } from '../lib/handover'
+import { recordDriver, type RecordDriver } from '../lib/notice-compare'
+
+/** The "Hand the car over" button's id: focus goes back to it when the share sheet it led to closes. */
+const HANDOVER_BUTTON_ID = 'record-handover'
+
+/** The line under the driver's name when it isn't signed by ParkProof (N2). */
+const DRIVER_SIGNING_KEYS: Readonly<Record<RecordDriver['signing'], string | null>> = {
+  signed: null,
+  dev_key: 'verifier.link.devKey',
+  pending: 'notice.compare.driverPending',
+  not_signed: 'notice.compare.driverNotSigned',
+}
+
+/** The line under a handover that isn't signed by ParkProof (N2). */
+const HANDOVER_SIGNING_KEYS: Readonly<Record<HandoverPart['state'], string | null>> = {
+  signed: null,
+  dev_key: 'verifier.link.devKey',
+  pending: 'notice.compare.handoverPending',
+  rejected: 'verifier.link.rejected',
+}
 
 const NOTE_MAX_LENGTH = 280
 
@@ -50,15 +85,19 @@ interface Props {
    * screen only asks. The record stays in history with ended_at set.
    */
   onEndSession: (session: ParkingSession) => void
+  /**
+   * Told when one of this screen's own sheets (the add-photo sheets) opens
+   * or closes, and that none is open when the screen goes. App holds the
+   * one-time backup prompt back meanwhile: one dialog at a time.
+   */
+  onSheetOpenChange?: (open: boolean) => void
 }
 
-function fmtLocal(iso: string, timeZone: string, full = false): string {
+function fmtLocal(iso: string, timeZone: string): string {
   return new Date(iso).toLocaleString('en-AU', {
     timeZone,
-    weekday: full ? 'short' : undefined,
     day: 'numeric',
     month: 'short',
-    year: full ? 'numeric' : undefined,
     hour: 'numeric',
     minute: '2-digit',
   })
@@ -70,6 +109,7 @@ export default function SessionDetail({
   onDelete,
   onDraftAppeal,
   onEndSession,
+  onSheetOpenChange,
 }: Props) {
   const { t, i18n } = useTranslation()
   const { user } = useAuth()
@@ -80,6 +120,9 @@ export default function SessionDetail({
   // The surroundings photo's caption describes the photo, so it shows only
   // when the photo itself does (not under the "not on this device" line).
   const ambientPhoto = useSessionPhoto(session, 'ambient')
+  // T3: logged from the "no readable sign" screen, so the surroundings
+  // photo is the scan photo in which ParkProof found no readable sign.
+  const noSignRead = isNoSignReadRecord(session)
   const expiresMs = session.expires_at ? new Date(session.expires_at).getTime() : null
   const isExpired = expiresMs !== null && expiresMs < now
   const isEnded = !!session.ended_at
@@ -93,7 +136,32 @@ export default function SessionDetail({
   // "I've left" is offered on any record that hasn't been ended, including
   // one past its expiry (the driver may come back late).
   const canEnd = canEndRecord(session)
+  // After saving, on a record that hasn't ended: "Add condition photos" and
+  // "Add a photo of your ticket or permit", each its own signed part.
+  const canAdd = canAddEvidence(session)
+  const [addSheet, setAddSheet] = useState<AddEvidenceKind | null>(null)
+  // "Share where the car is" (T7): its sheet asks before any link is made.
+  const [shareOpen, setShareOpen] = useState(false)
+  // "Hand the car over" (T7 item 5): on an active record of the driver's
+  // own, as the home screen decides it (so not on a park that finished
+  // long ago without an I've left tap).
+  const canHand = canHandOver(session, now)
+  const [handoverOpen, setHandoverOpen] = useState(false)
+  // Who the record says was driving, and the handovers since (T7). Signed
+  // values come from the signed parts; each says when it isn't signed.
+  const driver = recordDriver(session)
+  const handovers = handoverParts(session)
+  const sheetOpenChange = useRef(onSheetOpenChange)
+  useEffect(() => {
+    sheetOpenChange.current = onSheetOpenChange
+  })
+  useEffect(() => {
+    sheetOpenChange.current?.(addSheet !== null || shareOpen || handoverOpen)
+  }, [addSheet, shareOpen, handoverOpen])
+  useEffect(() => () => sheetOpenChange.current?.(false), [])
   const timeZone = useMemo(() => sessionTimezone(session.location), [session.location])
+  // "Ended 5:23 pm AEDT" on the status line (the I've left tap time).
+  const endedTime = isEnded ? endedStatusTime(session, timeZone) : null
   // Locale-aware link to the plain-English /verify walkthrough — surfaced at
   // the point the user exports evidence, the moment they most want to know how
   // a council actually verifies the tamper-proof claim.
@@ -189,6 +257,43 @@ export default function SessionDetail({
     }
   }
 
+  // The evidence file (T2 item 9): every signed payload and signature and
+  // the original photos, for a third party to check. Permit details go in
+  // only when the driver ticks "Include permit details" (N3); the tick
+  // starts off on every visit.
+  const canDownloadFile = hasEvidenceFile(session)
+  // The tick shows when there is something it would add: permit details, or
+  // a proof photo marked as a displayed permit.
+  const permitDetails = hasPermitDetails(session) || hasPermitPhoto(session)
+  const [includePermit, setIncludePermit] = useState(false)
+  const [fileBusy, setFileBusy] = useState(false)
+  const [fileError, setFileError] = useState(false)
+  // After a download: signed photos whose bytes aren't on this device, and
+  // ones whose bytes here don't hash to the signed fingerprint.
+  const [fileMissingPhotos, setFileMissingPhotos] = useState(0)
+  const [fileDifferingPhotos, setFileDifferingPhotos] = useState(0)
+
+  const handleEvidenceFile = async () => {
+    setFileError(false)
+    setFileMissingPhotos(0)
+    setFileDifferingPhotos(0)
+    setFileBusy(true)
+    try {
+      const file = await collectEvidenceFile(session, {
+        includePermit: includePermit && permitDetails,
+        arrivalRejection: arrivalSigningRejection(session.id),
+      })
+      saveEvidenceFile(file)
+      setFileMissingPhotos(file.photos.filter((p) => p.bytes === 'not_on_this_device').length)
+      setFileDifferingPhotos(file.photos.filter((p) => p.bytes === 'differ_from_fingerprint').length)
+    } catch (err) {
+      console.error('[evidence-file] could not make the file:', err)
+      setFileError(true)
+    } finally {
+      setFileBusy(false)
+    }
+  }
+
   const retryPhotoSync = async () => {
     setRetryingPhoto(true)
     try {
@@ -261,15 +366,18 @@ export default function SessionDetail({
 
   return (
     <div className="min-h-screen flex flex-col p-6 max-w-md mx-auto w-full">
-      <BackButton onClick={onBack} className="text-[#7BE3A4] hover:text-paper-50">
+      <BackButton onClick={onBack}>
         {t('common.backToHistory')}
       </BackButton>
 
       <h2 className="font-display text-3xl font-extrabold tracking-tight text-paper-50 mb-1">
         {t('session.header')}
       </h2>
-      <p className="text-sm mb-3 leading-relaxed" style={{ color: '#A9CFBE' }}>
-        {t('session.arrived', { when: fmtLocal(session.arrived_at, timeZone, true) })}
+      {/* Which record this is: the arrival day and time, in the record's own
+          zone with its name (field-test fix list, item 6). Prominent, so two
+          records from the same afternoon can't be mixed up. */}
+      <p className="text-base font-semibold text-paper-50 mb-3 leading-snug tnum">
+        {t('session.arrived', { when: formatInZone(session.arrived_at, timeZone, { withYear: true }) })}
       </p>
 
       {/* Register A — the signed-record vault panel. The cryptographic proof
@@ -288,7 +396,8 @@ export default function SessionDetail({
           <div className="flex items-center gap-3.5">
             {/* A local `npm run dev` signature (key_alias 'dev-ephemeral')
                 can't be checked with the published key, so it never gets
-                the mint glow or the plain "signed" claim. */}
+                the mint glow or the plain "signed" claim. The seal is
+                decorative here: the line beside it says which key signed. */}
             <VerifiedSeal size={48} glow={session.signature.key_alias !== DEV_KEY_ALIAS} />
             <div className="min-w-0">
               <p className="text-sm font-display font-bold text-paper-50">
@@ -355,10 +464,13 @@ export default function SessionDetail({
                 isEnded || isExpired ? 'text-ink-600' : 'text-brand-700'
               }`}
             >
-              {/* An ended record's times are in the departure row below:
-                  the phone-clock tap time and ParkProof's signing time. */}
+              {/* An ended record names its I've left tap time, so the line
+                  says which record this is. The departure row below labels
+                  that time as the phone's and adds ParkProof's signing time. */}
               {isEnded
-                ? t('session.ended')
+                ? endedTime
+                  ? t('session.endedAt', { when: endedTime })
+                  : t('session.ended')
                 : session.expires_at
                   ? isExpired
                     ? t('history.expired')
@@ -384,6 +496,42 @@ export default function SessionDetail({
           {/* The I've left tap (phone clock) and, separately, when ParkProof
               signed the departure. Shown once the record has ended. */}
           <DepartureRow session={session} timeZone={timeZone} now={now} />
+          {/* Who was driving, as entered on the phone, and any handovers
+              (T7). The driver's own statements: never worded as checked. */}
+          {driver && (
+            <div>
+              <dt className="text-xs uppercase tracking-widest font-semibold text-ink-600">
+                {t('share.field.driver')}
+              </dt>
+              <dd className="mt-1 text-ink-900 break-words">{driver.name}</dd>
+              <dd className="text-xs text-ink-600 mt-0.5 leading-relaxed">
+                {t('logger.driver.help')}
+                {DRIVER_SIGNING_KEYS[driver.signing] && ` ${t(DRIVER_SIGNING_KEYS[driver.signing] as string)}`}
+              </dd>
+            </div>
+          )}
+          {handovers.length > 0 && (
+            <div>
+              <dt className="text-xs uppercase tracking-widest font-semibold text-ink-600">
+                {t('chain.kind.handover')}
+              </dt>
+              {handovers.map((h) => {
+                const unsigned = HANDOVER_SIGNING_KEYS[h.state]
+                const time = formatInZone(h.handed_over_at, timeZone)
+                return (
+                  <dd key={h.addendum_id} className="mt-1 text-ink-900 break-words">
+                    {/* What the record says, worded as the driver's own statement. */}
+                    {h.from_driver
+                      ? t('handover.lineFromTo', { from_driver: h.from_driver, to_driver: h.to_driver, time })
+                      : t('handover.line', { to_driver: h.to_driver, time })}
+                    {unsigned && <span className="block text-xs text-ink-600 mt-0.5">{t(unsigned)}</span>}
+                  </dd>
+                )
+              })}
+              {/* Entered on the phone: ParkProof doesn't check it, signed or not. */}
+              <dd className="text-xs text-ink-600 mt-1 leading-relaxed">{t('logger.driver.help')}</dd>
+            </div>
+          )}
           <div>
             <dt className="text-xs uppercase tracking-widest font-semibold text-ink-600">
               {t('session.signRules')}
@@ -391,7 +539,7 @@ export default function SessionDetail({
             <dd className="mt-1 text-ink-900">
               {session.no_sign ? (
                 <span className="italic text-ink-600">
-                  {t('session.noSignBadgeLong')}
+                  {noSignRead ? t('unclearSign.recordNoSignRead') : t('session.noSignBadgeLong')}
                 </span>
               ) : (
                 session.rules
@@ -459,6 +607,59 @@ export default function SessionDetail({
           )}
         </dl>
       </Card>
+
+      {/* Share where the car is (T7 item 2): a link anyone can open, made
+          only after the sheet's confirm. This screen is only ever the
+          driver's own record (a shared copy has its own screen). */}
+      <button
+        type="button"
+        onClick={() => setShareOpen(true)}
+        aria-haspopup="dialog"
+        className="gf-card mb-3 w-full min-h-[48px] text-paper-50 font-medium py-3 px-5 flex items-center gap-2 transition-colors hover:brightness-110"
+        style={{ background: 'rgba(255,255,255,0.055)' }}
+      >
+        <Icon name="share" className="w-5 h-5 shrink-0 text-[#A9CFBE]" />
+        <span className="text-left leading-snug">{t('share.action')}</span>
+      </button>
+      {shareOpen && (
+        <ShareSheet
+          session={session}
+          onClose={() => setShareOpen(false)}
+          returnFocus={() => document.getElementById(HANDOVER_BUTTON_ID)}
+        />
+      )}
+
+      {/* Hand the car over (T7 item 5): only on an active record. Records
+          the next driver as a signed part, then offers the share link. The
+          record stays active. */}
+      {canHand && (
+        <button
+          id={HANDOVER_BUTTON_ID}
+          type="button"
+          onClick={() => setHandoverOpen(true)}
+          aria-haspopup="dialog"
+          className="gf-card mb-3 w-full min-h-[48px] text-paper-50 font-medium py-3 px-5 flex items-center gap-2 transition-colors hover:brightness-110"
+          style={{ background: 'rgba(255,255,255,0.055)' }}
+        >
+          <Icon name="key" className="w-5 h-5 shrink-0 text-[#A9CFBE]" />
+          <span className="text-left leading-snug">{t('handover.action')}</span>
+        </button>
+      )}
+      {handoverOpen && (
+        <HandoverSheet
+          session={session}
+          onAdded={(id) => {
+            if (user) mirrorSessionUpdateToCloud(id)
+          }}
+          onShare={() => {
+            // One dialog at a time: the share sheet replaces this one.
+            setHandoverOpen(false)
+            setShareOpen(true)
+          }}
+          onClose={() => setHandoverOpen(false)}
+          returnFocus={() => document.getElementById(HANDOVER_BUTTON_ID)}
+        />
+      )}
 
       {/* Note — user-supplied context. Soft-asks for it on empty so people
           remember to add the WHY rather than just the WHEN-and-WHERE. */}
@@ -529,14 +730,26 @@ export default function SessionDetail({
           </p>
         ) : (
           <p className="text-xs text-ink-600 italic leading-relaxed">
-            {t('session.noNote')}{' '}
-            <button
-              onClick={startNoteEdit}
-              className="underline font-medium text-brand-700 min-h-[44px] inline-flex items-center py-2.5 -my-2 -mx-1 align-middle"
-            >
-              {t('session.addNote')}
-            </button>{' '}
-            {t('session.noteHelp')}
+            {/* One translated sentence with the button inside it, so each
+                language puts the verb and the button where its word order
+                wants them (ko, hi and pa put the verb last). The button's
+                text is the locale's session.addNote (the inject script
+                checks), so its accessible name is the heading button's. The
+                spaces either side come from the sentence itself, and there's
+                no horizontal negative margin on the button: one used to
+                swallow them ("TapAdd noteto"). */}
+            <Trans
+              i18nKey="session.noteEmpty"
+              components={{
+                add: (
+                  <button
+                    type="button"
+                    onClick={startNoteEdit}
+                    className="underline font-medium text-brand-700 min-h-[44px] inline-flex items-center py-2.5 -my-2 align-middle"
+                  />
+                ),
+              }}
+            />
           </p>
         )}
       </Card>
@@ -564,6 +777,7 @@ export default function SessionDetail({
             className="w-full rounded-xl border border-paper-300"
             onRemoteLoadError={(url) => noteFailedPhotoUrls([url])}
           />
+          <RefMetaFor session={session} role="sign" timeZone={timeZone} />
         </Card>
       )}
 
@@ -573,10 +787,10 @@ export default function SessionDetail({
       {session.no_sign && (
         <Card className="mb-3 rounded-2xl border-transparent shadow-[0_14px_40px_rgba(7,59,37,0.16),0_2px_6px_rgba(7,59,37,0.08)]">
           <h3 className="text-xs uppercase tracking-widest font-semibold text-ink-600 mb-2">
-            {t('session.noSignLabel')}
+            {noSignRead ? t('unclearSign.noSignReadLabel') : t('session.noSignLabel')}
           </h3>
           <p className="text-sm text-ink-700 leading-relaxed mb-3">
-            {t('session.noSignDescription')}
+            {noSignRead ? t('unclearSign.recordNoSignRead') : t('session.noSignDescription')}
           </p>
           {hasSessionPhoto(session, 'ambient') ? (
             <>
@@ -589,9 +803,10 @@ export default function SessionDetail({
               />
               {ambientPhoto.status === 'available' && (
                 <p className="text-xs text-ink-600 mt-2">
-                  {t('session.ambientPhotoCaption')}
+                  {noSignRead ? t('unclearSign.photoCaption') : t('session.ambientPhotoCaption')}
                 </p>
               )}
+              <RefMetaFor session={session} role="ambient" timeZone={timeZone} />
             </>
           ) : (
             <p className="text-xs text-ink-600 italic">
@@ -613,7 +828,47 @@ export default function SessionDetail({
             className="w-full rounded-xl border border-paper-300"
             onRemoteLoadError={(url) => noteFailedPhotoUrls([url])}
           />
+          <RefMetaFor session={session} role="car" timeZone={timeZone} />
         </Card>
+      )}
+
+      {/* Condition photos (when parked, on return) and the proof of payment
+          or permit, each with its time, fingerprint and signing state. */}
+      <EvidencePhotos session={session} timeZone={timeZone} />
+
+      {canAdd && (
+        <div className="mb-3 flex flex-col gap-2">
+          <button
+            type="button"
+            onClick={() => setAddSheet('condition')}
+            aria-haspopup="dialog"
+            className="gf-card w-full min-h-[48px] text-paper-50 font-medium py-3 px-5 flex items-center gap-2 transition-colors hover:brightness-110"
+            style={{ background: 'rgba(255,255,255,0.055)' }}
+          >
+            <Icon name="camera" className="w-5 h-5 shrink-0 text-[#A9CFBE]" />
+            <span className="text-left leading-snug">{t('evidence.addCondition')}</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setAddSheet('compliance')}
+            aria-haspopup="dialog"
+            className="gf-card w-full min-h-[48px] text-paper-50 font-medium py-3 px-5 flex items-center gap-2 transition-colors hover:brightness-110"
+            style={{ background: 'rgba(255,255,255,0.055)' }}
+          >
+            <Icon name="camera" className="w-5 h-5 shrink-0 text-[#A9CFBE]" />
+            <span className="text-left leading-snug">{t('evidence.addMeterTicketOrPermit')}</span>
+          </button>
+        </div>
+      )}
+      {addSheet && (
+        <AddEvidenceSheet
+          session={session}
+          kind={addSheet}
+          onAdded={(id) => {
+            if (user) mirrorSessionUpdateToCloud(id)
+          }}
+          onClose={() => setAddSheet(null)}
+        />
       )}
 
       <div className="mt-6 flex flex-col gap-2">
@@ -636,6 +891,48 @@ export default function SessionDetail({
           <p className="text-xs leading-relaxed text-center px-2" style={{ color: '#A9CFBE' }}>
             {t('session.exportPhotoWarning')}
           </p>
+        )}
+        {canDownloadFile && (
+          <div className="flex flex-col gap-2 mt-3">
+            {permitDetails && (
+              <label className="flex items-start gap-3 min-h-[44px] py-2 cursor-pointer text-paper-50">
+                <input
+                  type="checkbox"
+                  checked={includePermit}
+                  onChange={(e) => setIncludePermit(e.target.checked)}
+                  className="mt-0.5 w-5 h-5 shrink-0 accent-[#7BE3A4]"
+                  aria-describedby="evidence-file-permit-help"
+                />
+                <span className="text-sm leading-snug">
+                  <span className="font-semibold">{t('evidenceFile.includePermit')}</span>
+                  <span id="evidence-file-permit-help" className="block text-xs mt-1 leading-relaxed" style={{ color: '#A9CFBE' }}>
+                    {t('evidenceFile.permitHelp')}
+                  </span>
+                </span>
+              </label>
+            )}
+            <Button variant="outline" onClick={handleEvidenceFile} disabled={fileBusy} aria-describedby="evidence-file-help">
+              {fileBusy ? t('evidenceFile.busy') : t('evidenceFile.download')}
+            </Button>
+            <p id="evidence-file-help" className="text-xs leading-relaxed px-1" style={{ color: '#A9CFBE' }}>
+              {t('evidenceFile.help')}
+            </p>
+            {fileMissingPhotos > 0 && (
+              <p className="text-xs leading-relaxed px-1" style={{ color: '#A9CFBE' }} role="status">
+                {t('evidenceFile.photosMissing', { count: fileMissingPhotos })}
+              </p>
+            )}
+            {fileDifferingPhotos > 0 && (
+              <p className="text-xs leading-relaxed px-1" style={{ color: '#A9CFBE' }} role="status">
+                {t('evidenceFile.photosDiffer', { count: fileDifferingPhotos })}
+              </p>
+            )}
+            {fileError && (
+              <p className="bg-accent-50 border-2 border-accent-400 rounded-xl p-3 text-sm text-ink-900" role="alert">
+                {t('evidenceFile.error')}
+              </p>
+            )}
+          </div>
         )}
         {/* #18 — the plain-English "how a council verifies this" walkthrough,
             surfaced at the moment the user is producing evidence. */}
@@ -665,13 +962,32 @@ export default function SessionDetail({
             {t('session.endSession')}
           </button>
         )}
-        <button
-          onClick={handleDelete}
-          className="text-accent-600 hover:text-accent-700 font-medium py-3 transition-colors"
-        >
+        {/* Destructive, so the danger style: coral on the vault, quieter
+            than every action above it (WCAG AA, Button's danger variant). */}
+        <Button variant="danger" size="sm" type="button" onClick={handleDelete}>
           {t('session.deleteSession')}
-        </button>
+        </Button>
       </div>
     </div>
+  )
+}
+
+/**
+ * Time, signing state and the library label under a sign, car or
+ * surroundings photo that has a PhotoRef (records from the photo store).
+ * Its fingerprint is in the chain panel and in the not-on-this-device line.
+ */
+function RefMetaFor({ session, role, timeZone }: { session: ParkingSession; role: 'sign' | 'car' | 'ambient'; timeZone: string }) {
+  const ref = photoRefFor(session, role)
+  if (!ref) return null
+  // Time and source as a signed part carries them, when one does (N2).
+  return (
+    <PhotoRefMeta
+      photoRef={signedPhotoRef(session, ref)}
+      session={session}
+      timeZone={timeZone}
+      showFingerprint={false}
+      showSigning={false}
+    />
   )
 }

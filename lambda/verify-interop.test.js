@@ -52,7 +52,7 @@ describe('1,000 OpenSSL signatures through the browser verifier', () => {
     // 2,000 integers (the hand-made vectors cover them for certain).
     expect(lengths.has(33)).toBe(true)
     expect(lengths.has(32)).toBe(true)
-  })
+  }, 60_000) // heavy: 1,000 signatures; slow CI runners need more than the 5 s default
 })
 
 describe('a chain signed by the real handler', () => {
