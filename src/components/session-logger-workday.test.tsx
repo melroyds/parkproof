@@ -67,25 +67,36 @@ function renderLogger(d: LogDraft) {
 
 describe('a workday stop waits for its place before it saves', () => {
   it('saves the place that answers after the tap, with the tap as the arrival time', async () => {
-    let answer: (d: ReverseGeocodeDetails) => void = () => {}
-    geo.reverse.mockReturnValue(new Promise((resolve) => (answer = resolve)))
-    const onComplete = renderLogger(draft(STOP))
-    await waitFor(() => expect(geo.reverse).toHaveBeenCalled())
+    // Freeze only the clock. Timers and promises still run for real, so waitFor works,
+    // and the arrival time can be checked exactly instead of against a wall-clock margin
+    // (a 50 ms margin flaked on a slow CI runner).
+    vi.useFakeTimers({ toFake: ['Date'] })
+    try {
+      let answer: (d: ReverseGeocodeDetails) => void = () => {}
+      geo.reverse.mockReturnValue(new Promise((resolve) => (answer = resolve)))
+      const onComplete = renderLogger(draft(STOP))
+      await waitFor(() => expect(geo.reverse).toHaveBeenCalled())
 
-    const tapped = Date.now()
-    await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: i18n.t('logger.saveSession') }))
-    })
-    // Still waiting for the lookup.
-    expect(onComplete).not.toHaveBeenCalled()
-    await act(async () => {
-      answer(CARLTON)
-    })
-    await waitFor(() => expect(onComplete).toHaveBeenCalledTimes(1))
-    const saved = onComplete.mock.calls[0][0]
-    expect(saved.place).toEqual({ road: 'Lygon Street', suburb: 'Carlton', state_code: 'AU-VIC' })
-    expect(saved.jurisdiction).toBe('VIC')
-    expect(Date.parse(saved.arrived_at)).toBeLessThanOrEqual(tapped + 50)
+      const tapped = Date.now() + 1_000
+      vi.setSystemTime(tapped)
+      await act(async () => {
+        fireEvent.click(screen.getByRole('button', { name: i18n.t('logger.saveSession') }))
+      })
+      // Still waiting for the lookup.
+      expect(onComplete).not.toHaveBeenCalled()
+      // The lookup answers 3 seconds after the tap. The record must keep the tap time.
+      vi.setSystemTime(tapped + 3_000)
+      await act(async () => {
+        answer(CARLTON)
+      })
+      await waitFor(() => expect(onComplete).toHaveBeenCalledTimes(1))
+      const saved = onComplete.mock.calls[0][0]
+      expect(saved.place).toEqual({ road: 'Lygon Street', suburb: 'Carlton', state_code: 'AU-VIC' })
+      expect(saved.jurisdiction).toBe('VIC')
+      expect(Date.parse(saved.arrived_at)).toBe(tapped)
+    } finally {
+      vi.useRealTimers()
+    }
   })
 
   it(`gives up after ${WORKDAY_PLACE_WAIT_MS} ms and saves with no place (the workday then stops)`, async () => {

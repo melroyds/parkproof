@@ -388,6 +388,8 @@ describe('POST /read-notice', () => {
   it('writes a pending job row with a TTL, self-invokes with the body, and answers 202 with the job id', async () => {
     const before = Math.floor(Date.now() / 1000)
     const res = await post('/read-notice', { image_base64: IMAGE, media_type: 'image/jpeg' })
+    // Bracket the request instead of allowing a fixed margin, so a slow runner can't flake it.
+    const after = Math.floor(Date.now() / 1000)
     expect(res.statusCode).toBe(202)
     const { job_id, status } = parse(res)
     expect(status).toBe('pending')
@@ -396,7 +398,7 @@ describe('POST /read-notice', () => {
     const row = fake.rows.get(job_id)
     expect(row).toMatchObject({ job_id, status: 'pending', kind: READ_NOTICE_KIND })
     expect(row.ttl).toBeGreaterThanOrEqual(before + 600)
-    expect(row.ttl).toBeLessThanOrEqual(before + 601)
+    expect(row.ttl).toBeLessThanOrEqual(after + 600)
     expect(row.deadline).toBeGreaterThan(Date.now())
     expect(JSON.stringify(row)).not.toContain(IMAGE)
 
