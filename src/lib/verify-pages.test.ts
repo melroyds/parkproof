@@ -153,5 +153,5 @@ describe('the generated /verify pages', () => {
     const run = cp.spawnSync(python, ['scripts/_build_verify_pages.py', '--check'], { cwd: cwd(), encoding: 'utf8' })
     expect(run.stdout + run.stderr).toContain('all 9 verify pages match')
     expect(run.status).toBe(0)
-  })
+  }, 60_000) // spawns python; slow CI runners need more than the 5 s default
 })

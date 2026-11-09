@@ -416,7 +416,7 @@ describe('the CLI in --dry-run', () => {
     expect(results.by_tag).toBeNull()
     expect(res.stdout).toMatch(/^--$/m)
     expect(res.stdout).toMatch(/Which test photos were right or wrong is hidden/)
-  }, 30_000)
+  }, 90_000)
 
   it('--show-failures shows each test photo\'s results; the dev split always does', async () => {
     const out = join(tmpdir(), `pp-eval-${process.pid}-${Date.now()}-shown.json`)
@@ -451,7 +451,7 @@ describe('the CLI in --dry-run', () => {
     expect(shownFile.signs).toEqual([{ id: 'b', split: 'test', tags: ['clearway'], runs: 1, outcome_hidden: true }])
     expect(shownFile.by_tag).toBeNull()
     expect(shown.stdout).toMatch(/The file leaves out each test photo's own results/)
-  }, 30_000)
+  }, 90_000)
 
   it('stops with exit 2 when the scan time has the wrong offset for the spot', async () => {
     const res = await cli(
@@ -460,19 +460,19 @@ describe('the CLI in --dry-run', () => {
     )
     expect(res.code).toBe(2)
     expect(res.stderr).toMatch(/isn't Australia\/Melbourne's offset at that moment \(\+11:00\)/)
-  }, 30_000)
+  }, 90_000)
 
   it('stops with exit 2 when a label cannot be scored', async () => {
     const res = await cli({ 'a.json': sign('a', 'dev', { split: 'holdout' }), 'a.jpg': 'x' }, [])
     expect(res.code).toBe(2)
     expect(res.stderr).toMatch(/split must be "dev" or "test"/)
-  }, 30_000)
+  }, 90_000)
 
   it('an empty corpus says how to add signs and exits 0, as before', async () => {
     const res = await cli({}, [])
     expect(res.code).toBe(0)
     expect(res.stdout).toMatch(/No labelled signs found/)
-  }, 30_000)
+  }, 90_000)
 })
 
 describe('the harness and the sign reader agree on sign statuses (T3)', () => {

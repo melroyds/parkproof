@@ -674,12 +674,18 @@ describe('holding addenda until the first sync (T0b4)', () => {
 
   it('a hold ends on its own if the first sync never settles', async () => {
     vi.spyOn(console, 'warn').mockImplementation(() => {})
+    // Drive the hold's timer by hand. A real 5 ms timer raced the signing work below and
+    // lost on a slow CI runner, so the addendum was signed before the first check.
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
     holdAddendumSigning(5)
     const prepared = await prepareNewRecord(record())
     saveSession(prepared)
     signNewRecord(prepared.id, emptyLogDraft())
     await whenSigningIdle()
     expect(kinds()).toEqual(['parkproof-evidence-v2'])
+    expect(addendumSigningHeld()).toBe(true)
+    await vi.advanceTimersByTimeAsync(5)
+    vi.useRealTimers()
     await vi.waitFor(() => expect(kinds()).toEqual(['parkproof-evidence-v2', 'arrival_context#1']))
     expect(addendumSigningHeld()).toBe(false)
   })
