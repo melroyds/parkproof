@@ -2,7 +2,7 @@
 
 What this deploys: `integration/roadmap-2`. That's main plus the field-test fixes, T2, T3, T4, T5a and T5b, T6a, T8, T9, the copy pass and the integration fixes, T7 (merged as `2edc532`), the sign schema fix (`863a230`), the overnight fix list (`6d46dfc`) and T6b and T6c (merged as `09d5c24`). Workday mode (T6a to T6c) is in the code but stays off in this deploy: see 1.4.
 
-Evidence comes from commit `cfdecc7` in `C:\Users\molte\Downloads\pp-wt\readonly`, compared with `git diff main...HEAD`. Its line numbers were at that commit; the note before "There's no staging backend" says which are current now. T7 has since merged as `2edc532` ("Merge feat/t7-share into integration/roadmap-2"). From `cfdecc7` to `2edc532`, the only change in `lambda/`, `scripts/`, `migrations/`, `public/` or the build config is the new `scripts/_i18n_inject_t7.mjs`. T7 calls no new API route. A share link is `/app/#share=…`, and the fragment never reaches CloudFront or the API (`src/lib/deep-link.ts`). Its handover addendum kind already exists on the server (`lambda/addendum-schema.js:66`, `:309`). Re-check all of this against the final tip in stage 1. The T10 docs pass re-checked the deploy scripts, the setup scripts and the route list at `09d5c24` (second revision note below).
+Evidence comes from commit `cfdecc7` in `%USERPROFILE%\Downloads\pp-wt\readonly`, compared with `git diff main...HEAD`. Its line numbers were at that commit; the note before "There's no staging backend" says which are current now. T7 has since merged as `2edc532` ("Merge feat/t7-share into integration/roadmap-2"). From `cfdecc7` to `2edc532`, the only change in `lambda/`, `scripts/`, `migrations/`, `public/` or the build config is the new `scripts/_i18n_inject_t7.mjs`. T7 calls no new API route. A share link is `/app/#share=…`, and the fragment never reaches CloudFront or the API (`src/lib/deep-link.ts`). Its handover addendum kind already exists on the server (`lambda/addendum-schema.js:66`, `:309`). Re-check all of this against the final tip in stage 1. The T10 docs pass re-checked the deploy scripts, the setup scripts and the route list at `09d5c24` (second revision note below).
 
 **Revised 9 Nov 2026 on `fix/final-list`.** What changed in this revision:
 - `scripts/deploy.sh` packages the Lambda in a temp folder outside the repo and never deletes or reinstalls `lambda/node_modules`. `bash scripts/deploy.sh --package-only` builds and lists the package with no AWS call (stage 3.5, rehearsed on 9 Nov 2026).
@@ -242,13 +242,13 @@ Why: `deploy.sh` used to run `rm -rf node_modules` and `npm install` inside `lam
 - `core.autocrlf=false` in the clone keeps `deploy.sh` runnable after a rollback checkout of `main` (below).
 - The clone is the rollback tool for the 24-hour watch.
 
-Don't deploy from `C:\Users\molte\Downloads\pp-wt\readonly` (read-only, detached) or `pp-wt\t9` (the integration merges and the T10 review happen there). Don't use OneDrive either: same locks.
+Don't deploy from `%USERPROFILE%\Downloads\pp-wt\readonly` (read-only, detached) or `pp-wt\t9` (the integration merges and the T10 review happen there). Don't use OneDrive either: same locks.
 
 In Git Bash:
 
 ```bash
-SRC="/c/Users/molte/Dropbox/Claude Output/Product Manager Portfolio/ParkProof"
-cd /c/Users/molte
+SRC="$HOME/Dropbox/Claude Output/Product Manager Portfolio/ParkProof"
+cd $HOME
 git clone --no-hardlinks -c core.autocrlf=false "$SRC" pp-deploy
 cd pp-deploy
 git checkout --detach "$DEPLOY_SHA"
@@ -298,7 +298,7 @@ npm ci
 3.5 Rehearse the Lambda package, still no AWS:
 - [ ] `bash scripts/deploy.sh --package-only`. It needs no `.env` and makes no AWS call: it exits before the AWS CLI check. It takes about 40 seconds, most of it `npm ci`.
 - [ ] The output starts `▶ Lambda package only. No AWS call is made.` and ends `✓ Package built. Nothing was deployed.`
-- [ ] `• packaging in C:\Users\molte\AppData\Local\Temp\parkproof-lambda.…`, a folder outside the clone.
+- [ ] `• packaging in %USERPROFILE%\AppData\Local\Temp\parkproof-lambda.…`, a folder outside the clone.
 - [ ] `• package: … bytes (… MB), … entries`. The rehearsal on 9 Nov 2026 from `fix/final-list` gave 7,768,042 bytes (7.4 MB) and 7,159 entries. Anything near 50 MB stops the real deploy.
 - [ ] `• top-level entries:` lists exactly these 14: `addendum-schema.d.ts`, `addendum-schema.js`, `cloud-sync.d.ts`, `cloud-sync.js`, `index.d.ts`, `index.js`, `node_modules`, `package-lock.json`, `package.json`, `push-tombstone.js`, `recurring-schedule.d.ts`, `recurring-schedule.js`, `sign-reading.d.ts`, `sign-reading.js`. No `*.test.js`. A new file in `lambda/` since then is fine if you expect it.
 - [ ] No `! entry names use backslashes` line. That line means the zip came from Windows PowerShell 5.1 rather than PowerShell 7 (`pwsh`, installed on this machine). Lambda has accepted such packages so far, so it's a warning, not a stop.
@@ -382,7 +382,7 @@ curl -s -w ' %{http_code}\n' -X POST "$API/read-notice" -d '{}'   # {"message":"
 6.1 The jobs-table grant. Not optional: 4.4 showed `dynamodb:DeleteItem` on the jobs table is denied (confirmed on 9 Nov 2026), and the new code deletes notice rows from its first request. Run the setup script's grant, only after you say go. It adds one inline policy, `parkproof-jobs-delete`, to `parkproof-lambda-role` (the statement in 1.2) and changes nothing else. IAM additions are safe with the old code still running.
 
 ```bash
-cd /c/Users/molte/pp-deploy
+cd $HOME/pp-deploy
 bash scripts/setup-jobs-table.sh
 # If 4.3 showed JOBS_TABLE set on the Lambda, run it as: JOBS_TABLE=<that value> bash scripts/setup-jobs-table.sh
 ```
@@ -398,7 +398,7 @@ bash scripts/setup-jobs-table.sh
 Setting it deletes, within a few days, every log event older than 90 days, including the May launch logs and the AI feedback events that only live there. That can't be undone. First decide what to keep. To export, run each Logs Insights query you care about (the CLAUDE.md list) over the full range and download the results, or ask Claude to set up `aws logs create-export-task` to an S3 bucket (one more go-ahead).
 
 ```bash
-cd /c/Users/molte/pp-deploy
+cd $HOME/pp-deploy
 bash scripts/setup-log-retention.sh
 ```
 
@@ -409,7 +409,7 @@ bash scripts/setup-log-retention.sh
 6.3 Will Scheduler accept a weekly schedule's settings? This is the part of 8.5 B that doesn't need the new code. One throwaway schedule, created DISABLED (it never fires), read back and deleted at once. Its name sits outside the Lambda's `parkproof-push-*` scope, and it uses the existing scheduler role.
 
 ```bash
-cd /c/Users/molte/pp-deploy
+cd $HOME/pp-deploy
 export PUSH_DISPATCH_LAMBDA_ARN=$(grep '^PUSH_DISPATCH_LAMBDA_ARN=' scripts/.aws-resources | cut -d= -f2- | tr -d '\r')
 export PUSH_SCHEDULER_ROLE_ARN=$(grep '^PUSH_SCHEDULER_ROLE_ARN=' scripts/.aws-resources | cut -d= -f2- | tr -d '\r')
 PRE="pp-awscheck-pre-$(date +%Y%m%d-%H%M)"
@@ -439,7 +439,7 @@ rm -f scheduler-precheck.tmp.json
 6.4 The usage alarm counts notice reads. `scripts/anthropic-usage-alarm.sh` now counts `notice_call=` lines as well as `anthropic_call=` and `appeal_call=`, but the live metric filter only changes when the script runs, so until then a run of `/read-notice` calls never moves `parkproof-anthropic-usage`. Re-running it changes AWS, so only after you say go. It replaces the `parkproof-anthropic-calls` filter and re-puts the alarm with the threshold and email you pass, so pass the live ones:
 
 ```bash
-cd /c/Users/molte/pp-deploy
+cd $HOME/pp-deploy
 MSYS_NO_PATHCONV=1 aws logs describe-metric-filters --log-group-name /aws/lambda/parkproof-sign-translator \
   --filter-name-prefix parkproof-anthropic-calls --query 'metricFilters[0].filterPattern' --output text
 aws cloudwatch describe-alarms --alarm-names parkproof-anthropic-usage \
@@ -457,7 +457,7 @@ MSYS_NO_PATHCONV=1 aws logs describe-metric-filters --log-group-name /aws/lambda
 ### Stage 7. Deploy [Claude, go-ahead]
 
 ```bash
-cd /c/Users/molte/pp-deploy
+cd $HOME/pp-deploy
 head -1 scripts/deploy.sh | od -c | grep -c '\\r'          # 0
 env | grep -c '^DEPLOY_ALLOW_WORKDAY='                       # 0: workday mode stays off
 bash scripts/deploy.sh 2>&1 | tee "deploy-$(date +%Y%m%d-%H%M).log"
@@ -468,7 +468,7 @@ echo "deploy exit: ${PIPESTATUS[0]}"
 
 Watch the log for:
 - [ ] `Workday: off (VITE_FEATURE_WORKDAY=false; DEPLOY_ALLOW_WORKDAY=1 turns it on)` in the opening banner. `ON` means stop: Ctrl+C before the build step, and check the shell for `DEPLOY_ALLOW_WORKDAY`.
-- [ ] `• packaging in C:\Users\molte\AppData\Local\Temp\parkproof-lambda.…`, then `• top-level entries:` with the 14 entries from 3.5, and no `✗` line
+- [ ] `• packaging in %USERPROFILE%\AppData\Local\Temp\parkproof-lambda.…`, then `• top-level entries:` with the 14 entries from 3.5, and no `✗` line
 - [ ] `moving runtime from nodejs20.x to nodejs22.x`, or `runtime: nodejs22.x` on a re-run (`:294`, `:302`)
 - [ ] `adding /push/recurring route`, `adding /push/recurring/cancel route`, `adding /read-notice route`, `adding GET /read-notice/status/{job_id}`
 - [ ] `re-subsetting PDF fonts…` with no `WARNING` line
@@ -612,7 +612,7 @@ One throwaway schedule checks A, B and the time-zone half of C today. The daylig
 **Step 1. Create the probe.** In the deploy clone, in the shell from stage 4:
 
 ```bash
-cd /c/Users/molte/pp-deploy
+cd $HOME/pp-deploy
 export PUSH_DISPATCH_LAMBDA_ARN=$(grep '^PUSH_DISPATCH_LAMBDA_ARN=' scripts/.aws-resources | cut -d= -f2- | tr -d '\r')
 export PUSH_SCHEDULER_ROLE_ARN=$(grep '^PUSH_SCHEDULER_ROLE_ARN=' scripts/.aws-resources | cut -d= -f2- | tr -d '\r')
 PROBE="pp-awscheck-$(date +%Y%m%d-%H%M)"
@@ -659,7 +659,7 @@ node -e "const [a, b] = process.argv.slice(1).map(Date.parse); console.log(Numbe
 **Step 3. An hour after `$END`, check the self-delete, then clean up.**
 
 ```bash
-cd /c/Users/molte/pp-deploy
+cd $HOME/pp-deploy
 PROBE=$(cat scheduler-probe-name.tmp.txt)
 aws scheduler get-schedule --name "$PROBE" 2>&1 | grep -c ResourceNotFoundException   # 1: it deleted itself
 aws scheduler delete-schedule --name "$PROBE" 2>/dev/null || true                      # only does anything if B failed
@@ -744,7 +744,7 @@ The phones keep their rules. Rolling forward again re-books them the next time e
 **Step 3. Redeploy main.**
 
 ```bash
-cd /c/Users/molte/pp-deploy
+cd $HOME/pp-deploy
 git checkout --detach "$MAIN_SHA"
 head -1 scripts/deploy.sh | od -c | grep -c '\\r'      # 0, thanks to core.autocrlf=false
 bash scripts/deploy.sh 2>&1 | tee rollback.log

@@ -202,10 +202,13 @@ Everything above is fixed on `integration/roadmap-2`. None of it is deployed yet
 
 ## Still open
 
+### The redesign: decided 9 Nov 2026, Direction A (Plain Sign, no bottom tab bar)
+
+- **The redesign.** Build Direction A, with the changes and build order in `docs/design/redesign-2026-11/README.md`. That means the logic layer first, then the look on its own branch, shipped once every screen is done. Regenerate the README screenshots (`docs/screenshots/`, 25 May 2026) with `npm run screenshots` when it ships.
+- **The About page and the landing (T10 items 3 and 4).** Written as part of the redesign. `AboutFeatures.tsx` has no sections yet for the evidence chain, sharing, the notice lookup or workday mode, and the landing's evidence and reminders lists predate this build.
+
 ### Waiting on a decision
 
-- **The About page and the landing (T10 items 3 and 4).** Waiting for the design choice. `AboutFeatures.tsx` has no sections yet for the evidence chain, sharing, the notice lookup or workday mode, and the landing's evidence and reminders lists predate this build.
-- **The redesign.** Three directions are in the artifact "ParkProof Redesign Directions". The README screenshots (`docs/screenshots/`, 25 May 2026) predate the green identity, so regenerate them (`npm run screenshots`) once a direction is chosen.
 - **The accessible permit answer in the feedback log.** Keep `disabled_permit_acknowledged` (the privacy text now says it's logged) or drop it and its sentence. `docs/legal-review-queue.md`, privacy section.
 - **Weekly push across daylight saving.** Decide by early December 2026 whether to cap each weekly schedule's `EndDate` at the next clock change (deploy checklist 8.5, C).
 - **A legal read.** No lawyer is engaged. Every key in `docs/legal-review-queue.md` is Not reviewed, and workday mode stays off until its keys are approved.
