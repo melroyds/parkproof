@@ -139,18 +139,44 @@ describe('Delete forever', () => {
     await waitFor(() => expect(onDeleted).toHaveBeenCalled())
   })
 
-  it('a failed delete clears nothing, keeps the user signed in and says why', async () => {
+  it('a failed delete clears nothing, keeps the user signed in and says so in their language', async () => {
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {})
+    // What expectJson throws for a failed /me/delete: the status and the
+    // server's own English text.
+    const raw = new Error('API 500: Could not delete all rows, please try again.')
     mocks.deleteAccount.mockImplementation(async () => {
-      throw new Error('Delete failed (500)')
+      throw raw
     })
     const { deleteForever, signOut, onDeleted } = renderAccount()
     fireEvent.click(deleteForever)
-    expect(await screen.findByText('Delete failed (500)')).toBeTruthy()
+    expect(await screen.findByText(en('errors.deleteAccountFailed'))).toBeTruthy()
+    // The raw API text never reaches the screen, only the console.
+    expect(document.body.textContent).not.toContain('API 500')
+    expect(document.body.textContent).not.toContain('Could not delete all rows')
+    expect(consoleError).toHaveBeenCalledWith(expect.stringMatching(/^\[account\] /), raw)
     expect(signOut).not.toHaveBeenCalled()
     expect(mocks.clearLocalRecords).not.toHaveBeenCalled()
     expect(onDeleted).not.toHaveBeenCalled()
     // The driver can leave again, having seen it fail.
     expect(button('common.back').disabled).toBe(false)
+  })
+
+  it('the failed delete line is translated, and says the records here are still here', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {})
+    mocks.deleteAccount.mockImplementation(async () => {
+      throw new Error('API 500: ERR_INTERNAL')
+    })
+    await i18n.changeLanguage('it')
+    try {
+      const { deleteForever } = renderAccount()
+      fireEvent.click(deleteForever)
+      expect(await screen.findByText(i18n.t('errors.deleteAccountFailed'))).toBeTruthy()
+      expect(i18n.t('errors.deleteAccountFailed')).not.toBe(i18n.t('errors.deleteAccountFailed', { lng: 'en' }))
+      expect(document.body.textContent).not.toContain('ERR_INTERNAL')
+    } finally {
+      await i18n.changeLanguage('en')
+    }
+    expect(en('errors.deleteAccountFailed')).toContain('Your records on this device are still here')
   })
 
   it('if clearing this device fails, the deleted account still signs out and leaves', async () => {
@@ -170,5 +196,53 @@ describe('Delete forever', () => {
 
   it('the delete text still promises that this device is cleared', () => {
     expect(en('settings.deleteCopy')).toContain('Local records on this device are also cleared')
+  })
+})
+
+describe('Account, signed out while it is open', () => {
+  const props = { onBack: vi.fn(), onOpenPrivacy: vi.fn(), onDeleted: vi.fn() }
+  const authValue = (overrides: Partial<AuthContextValue> = {}): AuthContextValue => ({
+    user: null,
+    loading: false,
+    configured: true,
+    refresh: async () => {},
+    signOut: vi.fn(),
+    ...overrides,
+  })
+
+  it('says the account was deleted when that is why, and that the records here stay, never which device deleted it', () => {
+    render(
+      <AuthContext.Provider value={authValue({ accountDeletedNotice: true })}>
+        <AuthSettings {...props} />
+      </AuthContext.Provider>,
+    )
+    expect(screen.getByText(en('settings.accountDeletedNotice'))).toBeTruthy()
+    expect(screen.queryByText(en('settings.youSignedOut'))).toBeNull()
+    // The same notice follows this device's own Delete forever whose answer
+    // was lost, so it can't say "on another device".
+    expect(en('settings.accountDeletedNotice')).toBe(
+      "Your account was deleted, so you're signed out on this device. Your records on this device are still here.",
+    )
+  })
+
+  it('otherwise says only that you are signed out', () => {
+    render(
+      <AuthContext.Provider value={authValue()}>
+        <AuthSettings {...props} />
+      </AuthContext.Provider>,
+    )
+    expect(screen.getByText(en('settings.youSignedOut'))).toBeTruthy()
+    expect(screen.queryByText(en('settings.accountDeletedNotice'))).toBeNull()
+  })
+
+  it('never leaves Account on its own, nor clears this device, nor deletes anything', () => {
+    render(
+      <AuthContext.Provider value={authValue({ accountDeletedNotice: true })}>
+        <AuthSettings {...props} />
+      </AuthContext.Provider>,
+    )
+    expect(props.onDeleted).not.toHaveBeenCalled()
+    expect(mocks.clearLocalRecords).not.toHaveBeenCalled()
+    expect(mocks.deleteAccount).not.toHaveBeenCalled()
   })
 })

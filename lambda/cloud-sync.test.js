@@ -101,6 +101,13 @@ const fake = vi.hoisted(() => {
         })(),
       }
     }
+    if (cmd.op === 'listVersions') {
+      // One version per object: this fake keeps no old versions
+      // (lambda/evidence-versions.test.js has a bucket that does).
+      const keys = [...objects.keys()].filter((k) => k.startsWith(input.Prefix)).sort()
+      const size = Math.min(input.MaxKeys ?? 1000, 1000)
+      return { Versions: keys.slice(0, size).map((Key) => ({ Key, VersionId: 'v1' })), IsTruncated: keys.length > size }
+    }
     if (cmd.op === 'deleteObjects') {
       for (const { Key } of input.Delete.Objects) objects.delete(Key)
       return {}
@@ -149,6 +156,7 @@ vi.mock('@aws-sdk/client-s3', () => {
     DeleteObjectsCommand: command('deleteObjects'),
     GetObjectCommand: command('get'),
     HeadObjectCommand: command('head'),
+    ListObjectVersionsCommand: command('listVersions'),
     ListObjectsV2Command: command('list'),
     PutObjectCommand: command('put'),
   }

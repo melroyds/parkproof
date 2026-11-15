@@ -3136,8 +3136,12 @@ async function handleJobStatus(event, { kind = null } = {}) {
     headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
     body: JSON.stringify({ error: 'job not found or expired' }),
   })
+  // Every job id is a crypto.randomUUID(). The jobs table also holds the
+  // rate limiter's RL# counters and the deletion markers (DEL#, see
+  // cloud-sync.js), so on every status route an id that isn't a UUID is
+  // not found before the table is read.
+  if (!UUID_RE.test(job_id)) return notFound()
   const noticeRoute = kind === READ_NOTICE_KIND
-  if (noticeRoute && !UUID_RE.test(job_id)) return notFound()
   const job = await getJob(job_id)
   // Either invalid id or the TTL purged it (or, for a notice, the result
   // was already handed back). A notice job is only served by its own
@@ -3501,7 +3505,9 @@ export async function handler(event) {
         }
       } catch (err) {
         const status = err?.statusCode || 500
-        console.error(`${path} handler error (${status}):`, err)
+        // 410 is a deleted account's other device being refused: expected,
+        // and cloud-sync.js has logged it as [parkproof.account] refused.
+        if (status !== 410) console.error(`${path} handler error (${status}):`, err)
         return {
           statusCode: status,
           headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },

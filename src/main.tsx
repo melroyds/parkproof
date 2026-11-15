@@ -3,14 +3,18 @@ import { createRoot } from 'react-dom/client'
 import './index.css'
 import './lib/i18n'
 import App from './App.tsx'
-import SwUpdateBanner from './components/SwUpdateBanner'
 import ErrorBoundary from './components/ErrorBoundary'
 import { AuthProvider } from './lib/auth-context'
 import { listenForInstallOffer } from './lib/install-offer'
+import { listenForSwUpdate } from './lib/sw-update'
 
 // The browser's install prompt can come before Home is on screen; catch it
 // from the start. Home offers it (InstallPromptBanner).
 listenForInstallOffer()
+// A new version can install while a scan or a record is on screen, so watch
+// for it from the start too. Home offers the reload (SwUpdateBanner), the one
+// screen where a reload loses nothing.
+listenForSwUpdate()
 
 /**
  * Self-heal on stale-chunk errors after a deploy.
@@ -37,20 +41,17 @@ window.addEventListener('vite:preloadError', () => {
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <AuthProvider>
-      {/* Top-level boundary — turns a full-tree render crash into a friendly,
+      {/* Top-level boundary: turns a full-tree render crash into a friendly,
           reloadable fallback instead of a blank white screen. */}
       <ErrorBoundary>
         <App />
       </ErrorBoundary>
-      {/* "New version — refresh" pill that appears at the bottom when
-          a new service worker installs over an existing controller. Lives
-          at root so it floats over any view. Self-hides when refreshed
-          or dismissed; reappears on the NEXT update so users stay current
-          across deploys without manual hard-refresh. */}
-      <SwUpdateBanner />
-      {/* The install offers (InstallPromptBanner, IosInstallHint) are on
-          Home, in its own flow: fixed here, they covered every screen's
-          bottom buttons until closed. */}
+      {/* Nothing floats over the screens from here. The update card
+          (SwUpdateBanner) and the install offers (InstallPromptBanner,
+          IosInstallHint) are on Home, in its own flow. Fixed here, they
+          covered every screen's bottom buttons until closed, and the update
+          pill's Refresh reloaded the page mid-flow, which lost the work on
+          screen (a scan result, a record being logged, an appeal draft). */}
     </AuthProvider>
   </StrictMode>,
 )

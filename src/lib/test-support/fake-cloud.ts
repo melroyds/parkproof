@@ -17,9 +17,13 @@ type Row = Record<string, unknown>
 
 const b64url = (text: string) => btoa(text).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
 
-/** An id token whose payload carries `sub` (the client only reads the sub). */
-export function fakeIdToken(sub: string): string {
-  return `${b64url('{"alg":"none"}')}.${b64url(JSON.stringify({ sub }))}.sig`
+/**
+ * An id token whose payload carries `sub` (the client only reads the sub).
+ * `claims` adds others, for a second token of the same account (one
+ * Cognito refreshed).
+ */
+export function fakeIdToken(sub: string, claims: Record<string, unknown> = {}): string {
+  return `${b64url('{"alg":"none"}')}.${b64url(JSON.stringify({ sub, ...claims }))}.sig`
 }
 
 export interface FakeCloud {

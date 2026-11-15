@@ -43,6 +43,7 @@ import {
   DeleteObjectsCommand,
   GetObjectCommand,
   HeadObjectCommand,
+  ListObjectVersionsCommand,
   ListObjectsV2Command,
   PutObjectCommand,
 } from '@aws-sdk/client-s3'
@@ -57,6 +58,9 @@ const REGION = process.env.AWS_REGION || 'ap-southeast-2'
 const TABLE_NAME = process.env.DYNAMODB_TABLE_SESSIONS || 'parkproof-sessions'
 const EVIDENCE_BUCKET = process.env.S3_BUCKET_EVIDENCE
 const USER_POOL_ID = process.env.COGNITO_USER_POOL_ID
+// The table index.js keeps its async jobs and rate-limit counters in. It
+// also holds the deletion markers (see "Deleted accounts" below).
+const JOBS_TABLE = process.env.JOBS_TABLE || 'parkproof-jobs'
 
 // Whitelist of session fields persisted to DynamoDB. The raw session object is
 // NEVER spread into the item — a body field named pk/sk would otherwise
@@ -430,6 +434,212 @@ function revCondition(stored) {
   }
 }
 
+// ─── Deleted accounts ─────────────────────────────────────────────────────
+// /me/delete deletes the Cognito user last, but an id token issued before
+// that stays valid until it expires (an hour by default, a day at most).
+// Another device still signed in would find /sessions/list empty on its next
+// full sync and upload every record and photo again, under a sub nobody can
+// ever sign in as: data no one can reach or delete.
+//
+// So /me/delete first writes a marker to the jobs table (and stops, deleting
+// nothing, when it can't), and the routes that read or add an account's data
+// refuse a deleted account with 410 and {"error":"ERR_ACCOUNT_DELETED"} (the
+// app signs that device out and keeps its records; the device running the
+// delete ignores its own refusals while it runs). When a step after the
+// marker fails, /me/delete removes the marker again (removeDeletionMarker):
+// the account isn't deleted, so it works from every device, and the retry
+// starts clean. /sessions/upload checks again after its write: the marker
+// goes in before the sweep and both reads are strongly consistent, so either
+// the upload sees the marker, or the sweep sees the row. /me/delete is never
+// refused (a retry must always run), and /sessions/delete is left alone.
+//
+// A refused upload or presign sweeps the account's photos again, for a photo
+// presigned before the marker that lands after the photo sweep. That waits
+// until the marker says every row is gone (MARKER_ROWS_DELETED): if the
+// delete fails in its record sweep, the account stays, and the photos of the
+// rows it didn't reach must stay with them.
+
+export const ERR_ACCOUNT_DELETED = 'ERR_ACCOUNT_DELETED'
+export const ACCOUNT_DELETED_KIND = 'account-deleted'
+/** The marker's state while /me/delete removes the rows: a refusal deletes no photo. */
+export const MARKER_DELETING = 'deleting'
+/**
+ * The marker's state once every row is gone (an upload's row written later
+ * is deleted by its own check): a refusal may sweep the photos again.
+ */
+export const MARKER_ROWS_DELETED = 'rows_deleted'
+/**
+ * How long a marker lives: two days, longer than any id token (a day at
+ * most), and a deleted user's refresh token can't mint a new one.
+ */
+export const DELETION_MARKER_TTL_SECONDS = 2 * 24 * 60 * 60
+
+/**
+ * The marker's key in the jobs table. Job ids there are UUIDs and the rate
+ * limiter's are RL#, so the DEL# prefix can't meet either. The status routes
+ * in index.js serve UUIDs only, so a marker is never readable through them.
+ */
+export function deletionMarkerKey(userId) {
+  return `DEL#${userId}`
+}
+
+/**
+ * Mark the account deleted: the key, the kind, when, the TTL and its state
+ * (MARKER_DELETING), nothing else. Resolves the marker. Throws when it can't
+ * be written. It is /me/delete's first step, so nothing has been deleted yet
+ * and the driver's retry runs the whole delete again, while carrying on
+ * without it would answer ok and leave another device still signed in free
+ * to upload everything again. The SDK has already retried throttling and
+ * other transient errors by then. The error the phone gets names no role or
+ * account (index.js sends its message): the detail is in the log.
+ */
+async function writeDeletionMarker(userId) {
+  const now = Date.now()
+  const marker = {
+    job_id: deletionMarkerKey(userId),
+    kind: ACCOUNT_DELETED_KIND,
+    deleted_at: new Date(now).toISOString(),
+    ttl: Math.floor(now / 1000) + DELETION_MARKER_TTL_SECONDS,
+    state: MARKER_DELETING,
+  }
+  try {
+    await ddb().send(new PutCommand({ TableName: JOBS_TABLE, Item: marker }))
+  } catch (err) {
+    console.error(
+      `[parkproof.me.delete] user=${userId} marker write failed, nothing deleted: ${err?.name || 'error'}: ${err?.message || err}`,
+    )
+    throw new Error('Could not start deleting the account. Please try again.')
+  }
+  return marker
+}
+
+/**
+ * Mark every row of the account gone (MARKER_ROWS_DELETED), the same marker
+ * otherwise. Throws when it can't be written: the delete stops there and
+ * removes its marker, as for any later step.
+ */
+async function markRowsDeleted(userId, marker) {
+  try {
+    await ddb().send(new PutCommand({ TableName: JOBS_TABLE, Item: { ...marker, state: MARKER_ROWS_DELETED } }))
+  } catch (err) {
+    console.error(`[parkproof.me.delete] user=${userId} marker update failed: ${err?.name || 'error'}: ${err?.message || err}`)
+    throw new Error('Could not finish deleting the account. Please try again.')
+  }
+}
+
+/** How many times a failed /me/delete tries to remove its marker. */
+export const MARKER_REMOVAL_TRIES = 3
+/** The wait before the second try, in ms, doubled before each try after it. */
+export const MARKER_REMOVAL_BACKOFF_MS = 100
+
+/**
+ * Remove the marker after a later step of /me/delete failed (`cause`): the
+ * account isn't deleted, so every device can use it again, and the driver's
+ * retry writes a new one. Best effort, and it never throws: the phone gets
+ * `cause` either way. A failed removal is tried again, up to
+ * MARKER_REMOVAL_TRIES times in all, after a short wait (100 ms, then
+ * 200 ms): a throttled or dropped DeleteItem would otherwise leave every
+ * device of an account that isn't deleted refused for two days. When the
+ * last try fails too it is logged, and the account's devices stay refused
+ * (and signed out) until the marker lapses.
+ *
+ * Accepted edge cases: there is one marker per account, so of two deletes of
+ * one account at once, one that fails can remove the marker the other wrote.
+ * And a retry that fails after an earlier call deleted everything (its answer
+ * lost) removes the marker of an account that is gone, until a later retry
+ * writes it again.
+ */
+async function removeDeletionMarker(userId, cause) {
+  const failed = `[parkproof.me.delete] user=${userId} delete failed (${cause?.name || 'error'})`
+  let lastError
+  for (let attempt = 1; attempt <= MARKER_REMOVAL_TRIES; attempt++) {
+    if (attempt > 1) await new Promise((r) => setTimeout(r, MARKER_REMOVAL_BACKOFF_MS * 2 ** (attempt - 2)))
+    try {
+      await ddb().send(new DeleteCommand({ TableName: JOBS_TABLE, Key: { job_id: deletionMarkerKey(userId) } }))
+      console.warn(`${failed}, marker removed`)
+      return
+    } catch (err) {
+      lastError = err
+    }
+  }
+  console.error(
+    `${failed}, marker removal failed after ${MARKER_REMOVAL_TRIES} tries: ${lastError?.name || 'error'}: ${lastError?.message || lastError}`,
+  )
+}
+
+/**
+ * The account's deletion marker when /me/delete has marked it deleted, or
+ * null. A strongly consistent read, so a marker written a moment before is
+ * seen. Fails open: when the read itself fails (a missing IAM grant,
+ * throttling) the account counts as live, because a broken check must never
+ * stop every user's sync. A marker past its TTL counts as gone (DynamoDB's
+ * TTL sweep is lazy, and GetItem still returns such a row): by then no token
+ * for the account is still valid.
+ */
+async function deletionMarker(userId) {
+  let marker
+  try {
+    const got = await ddb().send(
+      new GetCommand({ TableName: JOBS_TABLE, Key: { job_id: deletionMarkerKey(userId) }, ConsistentRead: true }),
+    )
+    marker = got?.Item
+  } catch (err) {
+    console.warn(`[parkproof.account] marker check failed, allowing: ${err?.name || 'error'}: ${err?.message || err}`)
+    return null
+  }
+  if (!marker || marker.kind !== ACCOUNT_DELETED_KIND) return null
+  return typeof marker.ttl === 'number' && marker.ttl * 1000 <= Date.now() ? null : marker
+}
+
+/** True when a refusal may sweep the account's photos again: the delete has removed every row. */
+function rowsGone(marker) {
+  return marker.state !== MARKER_DELETING
+}
+
+/** The error a deleted account gets. index.js answers it as 410 {"error":"ERR_ACCOUNT_DELETED"}. */
+function accountDeletedError() {
+  const err = new Error(ERR_ACCOUNT_DELETED)
+  err.statusCode = 410
+  return err
+}
+
+/**
+ * Sweep the account's photos again, best effort. Resolves how many objects
+ * went, or 'failed'.
+ */
+async function resweepPhotos(route, userId) {
+  if (!EVIDENCE_BUCKET) return 0
+  try {
+    return await deleteObjectsUnder(`${userId}/`)
+  } catch (err) {
+    console.error(`[parkproof.account] resweep failed route=${route} user=${userId}: ${err?.name || 'error'}`)
+    return 'failed'
+  }
+}
+
+/**
+ * Refuse a request from a deleted account (throws the 410). With `resweep`
+ * (/sessions/upload and /photos/presign, once every row is gone: rowsGone),
+ * the account's photos are swept again first: a photo PUT through a URL
+ * presigned just before the delete can land after its sweep, and the app
+ * uploads a record's photos before its row, so the row's refusal comes
+ * after them.
+ */
+async function refuseDeletedAccount(route, userId, { resweep = false } = {}) {
+  const swept = resweep ? ` resweep_objects=${await resweepPhotos(route, userId)}` : ''
+  console.log(`[parkproof.account] refused route=${route} user=${userId}${swept}`)
+  throw accountDeletedError()
+}
+
+/**
+ * Throws the 410 when the account has been deleted. `resweep` sweeps the
+ * photos again only once the delete has removed every row (rowsGone).
+ */
+async function refuseIfDeleted(route, userId, { resweep = false } = {}) {
+  const marker = await deletionMarker(userId)
+  if (marker) await refuseDeletedAccount(route, userId, { resweep: resweep && rowsGone(marker) })
+}
+
 // ─── /sessions/upload ─────────────────────────────────────────────────────
 /**
  * Merge one record into the signed-in user's row. Reads the stored row,
@@ -438,9 +648,14 @@ function revCondition(stored) {
  * is never overwritten: the merge is redone from the new row, up to
  * MAX_UPLOAD_ATTEMPTS times, then 409 ERR_CONFLICT (the client retries
  * later; its local copy is untouched).
+ *
+ * A deleted account is refused before the write and checked again after
+ * it (see "Deleted accounts"): a row written after the marker is deleted
+ * again, and the upload answers 410.
  */
 export async function handleSessionsUpload(event) {
   const userId = requireUserId(event)
+  await refuseIfDeleted('sessions/upload', userId, { resweep: true })
   const body = parseBody(event)
   const session = body?.session
   const incoming = readIncomingSession(session)
@@ -470,7 +685,6 @@ export async function handleSessionsUpload(event) {
     }
     try {
       await ddb().send(new PutCommand({ TableName: TABLE_NAME, Item: item, ...revCondition(stored) }))
-      return { ok: true, session_id: incoming.id, photos_missing: photosMissing, rev: rev + 1 }
     } catch (err) {
       if (err?.name !== 'ConditionalCheckFailedException') throw err
       if (attempt >= MAX_UPLOAD_ATTEMPTS) {
@@ -478,7 +692,29 @@ export async function handleSessionsUpload(event) {
         conflict.statusCode = 409
         throw conflict
       }
+      continue
     }
+    // Checked again now the row is written. /me/delete writes its marker
+    // before it sweeps: a marker written after this write means the sweep
+    // finds the row, and one written before it is found here, so a row the
+    // sweep may have missed is deleted now.
+    const marker = await deletionMarker(userId)
+    if (marker) {
+      await deleteRowBestEffort(key, userId, incoming.id)
+      await refuseDeletedAccount('sessions/upload', userId, { resweep: rowsGone(marker) })
+    }
+    return { ok: true, session_id: incoming.id, photos_missing: photosMissing, rev: rev + 1 }
+  }
+}
+
+/** Delete a row an upload wrote under a deleted account. A failure is logged and left for the owner to clear. */
+async function deleteRowBestEffort(key, userId, sessionId) {
+  try {
+    await ddb().send(new DeleteCommand({ TableName: TABLE_NAME, Key: key }))
+  } catch (err) {
+    console.error(
+      `[parkproof.account] row delete after refusal failed user=${userId} record=${sessionId}: ${err?.name || 'error'}`,
+    )
   }
 }
 
@@ -599,6 +835,9 @@ async function hydrateBestEffort(rows, userId) {
 // ─── /sessions/list ───────────────────────────────────────────────────────
 export async function handleSessionsList(event) {
   const userId = requireUserId(event)
+  // A deleted account's list would be empty, and a device that reads it so
+  // would upload all its records again.
+  await refuseIfDeleted('sessions/list', userId)
   // Newest first by descending SK.
   const sessions = (await queryAllRows(userId, false)).map(stripInternalKeys)
   await hydrateBestEffort(sessions, userId)
@@ -685,6 +924,7 @@ function readContentType(value) {
  */
 export async function handlePhotosPresign(event) {
   const userId = requireUserId(event)
+  await refuseIfDeleted('photos/presign', userId, { resweep: true })
   if (!EVIDENCE_BUCKET) {
     throw new Error('S3_BUCKET_EVIDENCE not configured')
   }
@@ -713,7 +953,7 @@ export async function handlePhotosPresign(event) {
       Key: target.key,
       ContentType: contentType,
     }),
-    { expiresIn: 300 }, // 5 min upload window — plenty even on slow 3G
+    { expiresIn: 300 }, // 5 min upload window, plenty even on slow 3G
   )
   return { url, key: target.key, bucket: EVIDENCE_BUCKET }
 }
@@ -742,6 +982,7 @@ export async function handlePhotosPresign(event) {
  */
 export async function handlePhotosMaterialize(event) {
   const userId = requireUserId(event)
+  await refuseIfDeleted('photos/materialize', userId)
   if (!EVIDENCE_BUCKET) {
     throw new Error('S3_BUCKET_EVIDENCE not configured')
   }
@@ -783,6 +1024,7 @@ export async function handlePhotosMaterialize(event) {
  */
 export async function handleMeExport(event) {
   const userId = requireUserId(event)
+  await refuseIfDeleted('me/export', userId)
   const claims = event.requestContext.authorizer.jwt.claims
   const sessions = (await queryAllRows(userId)).map((row) => {
     const out = stripInternalKeys(row)
@@ -810,8 +1052,11 @@ export async function handleMeExport(event) {
 
 // ─── /me/delete ───────────────────────────────────────────────────────────
 /**
- * Nukes the account end-to-end: every DynamoDB row, every S3 object, and the
- * Cognito user record itself. Irreversible: the app confirms before calling.
+ * Nukes the account end-to-end: every record row, every S3 object (old
+ * versions included, see deleteObjectsUnder), and the Cognito user record
+ * itself. Irreversible: the app confirms before calling. What stays after a
+ * delete that worked is the deletion marker, for two days (see "Deleted
+ * accounts").
  *
  * Safe to call again. A call can delete everything and still lose its answer
  * on the way back to the phone. The phone's retry then finds the Cognito user
@@ -819,11 +1064,46 @@ export async function handleMeExport(event) {
  * answers ok and the phone can sign out and clear itself. The Cognito user
  * goes last, so every call, a retry included, sweeps the rows and photos
  * first, and a retry's sweeps also remove anything uploaded since.
+ *
+ * Before any of that, the account is marked deleted (see "Deleted
+ * accounts"), so another device still signed in can't upload it all again,
+ * and the marker says so again once every row is gone. When a later step
+ * fails, the marker is removed before the error is answered, so a failed
+ * delete leaves the account usable from every device. This route never
+ * checks the marker: a retry must always run.
  */
 export async function handleMeDelete(event) {
   const userId = requireUserId(event)
 
-  // 1. Sweep DynamoDB rows in batches of 25 (BatchWriteItem max).
+  // 1. The deletion marker, first, so an upload that arrives during the
+  // sweep is refused. A failed write stops the delete here, before anything
+  // is deleted, and the driver tries again.
+  const marker = await writeDeletionMarker(userId)
+
+  // 2 to 4. The rows, the photos and the Cognito user. When any of them
+  // fails, the account isn't deleted: the marker goes again, and the phone
+  // gets the step's own error.
+  let deleted
+  try {
+    deleted = await deleteAccountData(userId, tokenUsername(event), marker)
+  } catch (err) {
+    await removeDeletionMarker(userId, err)
+    throw err
+  }
+
+  console.log(
+    `[parkproof.me.delete] user=${userId} marker=written deleted_rows=${deleted.rows} deleted_objects=${deleted.objects} cognito=${deleted.cognitoUser}`,
+  )
+  return { ok: true, deleted_rows: deleted.rows, deleted_objects: deleted.objects }
+}
+
+/**
+ * /me/delete's steps after the marker, in order: every row, the marker's
+ * MARKER_ROWS_DELETED, every photo, then the Cognito user. Resolves what
+ * went, and throws at the first step that fails, with the later ones not run.
+ */
+async function deleteAccountData(userId, username, marker) {
+  // 2. Sweep DynamoDB rows in batches of 25 (BatchWriteItem max).
   let deletedRows = 0
   let lastKey
   do {
@@ -864,31 +1144,33 @@ export async function handleMeDelete(event) {
       if (Object.keys(unprocessed).length > 0) {
         // Stop BEFORE the Cognito delete so the user can re-invoke and finish
         // the erasure rather than being locked out with rows still present.
-        throw new Error('Could not delete all session records — please try again.')
+        throw new Error('Could not delete every record. Please try again.')
       }
       deletedRows += batch.length
     }
     lastKey = page.LastEvaluatedKey
   } while (lastKey)
 
-  // 2. Sweep S3 objects under <userId>/ — paginated for large accounts.
+  // Every row is gone (an upload's row written from now on is deleted by its
+  // own check), so a refusal may sweep the photos again from here.
+  await markRowsDeleted(userId, marker)
+
+  // 3. Sweep S3 objects under <userId>/, paginated for large accounts.
   let deletedObjects = 0
   if (EVIDENCE_BUCKET) {
     deletedObjects = await deleteObjectsUnder(`${userId}/`)
   }
 
-  // 3. Delete the Cognito user record itself, last, so that a retry always
+  // 4. Delete the Cognito user record itself, last, so that a retry always
   // runs both sweeps first. After this returns, the JWT remains valid until
-  // it expires (~1h default) but no further sign-in is possible.
+  // it expires (~1h default) but no further sign-in is possible, and the
+  // marker refuses what another device sends with it.
   let cognitoUser = 'skipped'
   if (USER_POOL_ID) {
-    cognitoUser = await deleteCognitoUser(userId, tokenUsername(event))
+    cognitoUser = await deleteCognitoUser(userId, username)
   }
 
-  console.log(
-    `[parkproof.me.delete] user=${userId} deleted_rows=${deletedRows} deleted_objects=${deletedObjects} cognito=${cognitoUser}`,
-  )
-  return { ok: true, deleted_rows: deletedRows, deleted_objects: deletedObjects }
+  return { rows: deletedRows, objects: deletedObjects, cognitoUser }
 }
 
 /**
@@ -952,8 +1234,71 @@ function stripInternalKeys(row) {
   return out
 }
 
-/** Delete every object under a prefix, page by page. Resolves with how many. */
+/**
+ * Delete everything under a prefix, old versions included. Resolves with how
+ * many photo versions went (delete markers aren't counted).
+ *
+ * The evidence bucket is versioned (setup-auth.sh), and deleting a key
+ * without its VersionId only adds a delete marker: the photo's bytes stay
+ * as an old version. So every version and delete marker under the prefix is
+ * listed (ListObjectVersions) and deleted by its VersionId, which needs
+ * s3:ListBucketVersions and s3:DeleteObjectVersion
+ * (scripts/setup-evidence-versions.sh). Without them S3 answers
+ * AccessDenied: the current photos are then deleted by key, as before, so
+ * none can be read, and an error is logged. Their old versions stay until
+ * the bucket's lifecycle rule (the same script) removes them.
+ */
 async function deleteObjectsUnder(prefix) {
+  try {
+    return await deleteEveryVersionUnder(prefix)
+  } catch (err) {
+    if (err?.name !== 'AccessDenied') throw err
+    console.error(
+      '[parkproof.s3] AccessDenied deleting old photo versions: deleted the current photos only. Run scripts/setup-evidence-versions.sh.',
+    )
+    return deleteCurrentObjectsUnder(prefix)
+  }
+}
+
+/**
+ * Every version and delete marker under a prefix, deleted by VersionId.
+ * Each pass lists from the start (the pass before deleted all it listed), so
+ * no listing ever starts from a version that is gone. A failed delete throws,
+ * named AccessDenied when that was every failure, so it can't loop.
+ */
+async function deleteEveryVersionUnder(prefix) {
+  let deleted = 0
+  let lastFirst = null
+  for (;;) {
+    const page = await s3().send(
+      new ListObjectVersionsCommand({ Bucket: EVIDENCE_BUCKET, Prefix: prefix, MaxKeys: S3_LIST_PAGE }),
+    )
+    const versions = (page.Versions ?? []).filter((v) => typeof v?.Key === 'string')
+    const markers = (page.DeleteMarkers ?? []).filter((m) => typeof m?.Key === 'string')
+    const entries = [...versions, ...markers].map((v) => ({ Key: v.Key, VersionId: v.VersionId }))
+    if (entries.length === 0) return deleted
+    // The same first entry again means the last pass deleted nothing.
+    const first = `${entries[0].Key}\n${entries[0].VersionId}`
+    if (first === lastFirst) throw new Error('Could not delete every photo. Please try again.')
+    lastFirst = first
+    const res = await s3().send(
+      new DeleteObjectsCommand({ Bucket: EVIDENCE_BUCKET, Delete: { Objects: entries, Quiet: true } }),
+    )
+    // Quiet: the answer lists only the deletes that failed, each with a code.
+    const failed = res?.Errors ?? []
+    if (failed.length > 0) {
+      const codes = [...new Set(failed.map((e) => e?.Code || 'unknown'))]
+      console.error(`[parkproof.s3] ${failed.length} of ${entries.length} versions not deleted: ${codes.join(', ')}`)
+      const err = new Error('Could not delete every photo. Please try again.')
+      if (codes.every((c) => c === 'AccessDenied')) err.name = 'AccessDenied'
+      throw err
+    }
+    deleted += versions.length
+  }
+}
+
+/** Every current object under a prefix, deleted by key (a delete marker each). Resolves with how many. */
+async function deleteCurrentObjectsUnder(prefix) {
   let deleted = 0
   let token
   do {

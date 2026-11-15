@@ -30,6 +30,7 @@ import RecurringReminders from './components/RecurringReminders'
 import HomeMenu from './components/HomeMenu'
 import InstallPromptBanner from './components/InstallPromptBanner'
 import IosInstallHint from './components/IosInstallHint'
+import SwUpdateBanner from './components/SwUpdateBanner'
 import ShareSheet from './components/ShareSheet'
 import SharedLinkView from './components/SharedLinkView'
 import SharedRecordScreen from './components/SharedRecordScreen'
@@ -291,7 +292,8 @@ function isOffline(): boolean {
  * (sync.ts); this adds the end-of-run notification and the signing release.
  * `setUnreachable` drives the "couldn't reach your records" banner: set
  * when a run fails with nothing local to show, cleared when a later run
- * (a pull on return, say) reaches the cloud.
+ * (a pull on return, say) reaches the cloud, or finds the account deleted
+ * (nothing there to load, and the AuthProvider says why).
  */
 function settleSyncRun(run: Promise<InitialSyncResult>, setUnreachable: (unreachable: boolean) => void): void {
   void run
@@ -299,7 +301,8 @@ function settleSyncRun(run: Promise<InitialSyncResult>, setUnreachable: (unreach
       // Couldn't reach the cloud AND nothing local to fall back on → a
       // returning user on a fresh device would otherwise see the first-time
       // landing with no clue their data is fine in the cloud. Offer a retry.
-      if (res.listFailed && loadSessions().length === 0) setUnreachable(true)
+      if (res.accountDeleted) setUnreachable(false)
+      else if (res.listFailed && loadSessions().length === 0) setUnreachable(true)
       else if (!res.listFailed) setUnreachable(false)
     })
     .catch((err) => {
@@ -622,6 +625,15 @@ function App() {
   // as they land (sync.ts), so open screens update mid-sync, but this
   // end-of-run notification stays: it is the one the gotcha depends on.
   const userId = auth.user?.userId
+  // The "couldn't load" banner belongs to the account it failed for: when
+  // the driver signs out (or is signed out because the account was deleted)
+  // or signs in as someone else, it goes. Adjusted during render, not in an
+  // effect.
+  const [syncErrorFor, setSyncErrorFor] = useState(userId)
+  if (syncErrorFor !== userId) {
+    setSyncErrorFor(userId)
+    setSyncError(false)
+  }
   // One sync at a time for the app's lifetime: the start/sign-in sync, the
   // retry and the pull on return all go through it (sync.ts createSyncRunner).
   const [cloudSync] = useState(() => createSyncRunner(performInitialSync))
@@ -1834,7 +1846,26 @@ function App() {
       </header>
 
       <section className="flex-1 px-6 pb-8 flex flex-col items-center justify-center max-w-md mx-auto w-full">
-        {syncError && (
+        {/* Signed out because the account was deleted (AuthProvider),
+            whichever device deleted it, this one included when the answer to
+            its Delete forever was lost: say so, and that this device's
+            records stay, until the driver closes it or signs in again. */}
+        {auth.accountDeletedNotice && !auth.user && (
+          <div
+            role="status"
+            className="w-full mb-4 bg-amber-50 border border-amber-300 rounded-2xl px-4 py-3 flex items-center justify-between gap-3"
+          >
+            <span className="text-sm text-amber-900 leading-snug">{t('settings.accountDeletedNotice')}</span>
+            <button
+              onClick={() => auth.dismissAccountDeletedNotice?.()}
+              className="text-sm font-semibold text-brand-700 hover:text-brand-800 underline shrink-0 min-h-[44px]"
+            >
+              {t('common.close')}
+            </button>
+          </div>
+        )}
+        {/* Only while signed in: signed out, no sync runs, and Retry would do nothing. */}
+        {syncError && userId && (
           <div className="w-full mb-4 bg-amber-50 border border-amber-300 rounded-2xl px-4 py-3 flex items-center justify-between gap-3">
             <span className="text-sm text-amber-900 leading-snug">{t('errors.syncFailed')}</span>
             <button
@@ -1987,11 +2018,14 @@ function App() {
           onDraftAppeal={() => setView({ name: 'appeal', session: null })}
         />
 
-        {/* The install offers live here, in Home's flow, and on no other
-            screen: fixed to the bottom of every screen, they covered its
-            bottom buttons (Translate, Done) until closed. Each renders
-            nothing when it doesn't apply (installed, dismissed, or the
-            wrong browser). */}
+        {/* The update card and the install offers live here, in Home's
+            flow, and on no other screen: fixed to the bottom of every screen,
+            they covered its bottom buttons (Translate, Done) until closed.
+            The update card's Refresh reloads the page, which loses nothing
+            on Home and would lose the work on screen anywhere else. Each
+            renders nothing when it doesn't apply (no new version, installed,
+            dismissed, or the wrong browser). */}
+        <SwUpdateBanner />
         <InstallPromptBanner />
         <IosInstallHint />
 

@@ -6,7 +6,7 @@
 // that call finds the Cognito user already gone. It must still sweep the rows
 // and photos (a sync still running on the phone may have put some back) and
 // answer ok, so the phone signs out and clears itself. Every other Cognito
-// error is still a failure.
+// error is still a failure, which removes the deletion marker again.
 //
 // DynamoDB, S3 and the Cognito client are in-memory fakes, as in
 // cloud-sync.test.js. The Cognito fake finds a user the way the SDK documents
@@ -20,6 +20,7 @@ const fake = vi.hoisted(() => {
   process.env.S3_BUCKET_EVIDENCE = 'test-evidence'
   process.env.COGNITO_USER_POOL_ID = 'ap-southeast-2_testpool'
   const rows = new Map() // `${pk}|${sk}` -> item
+  const jobs = new Map() // the jobs table, where the deletion marker goes: job_id -> item
   const objects = new Set() // S3 keys
   const users = [] // the user pool: { username, sub, local }
   const calls = []
@@ -31,6 +32,13 @@ const fake = vi.hoisted(() => {
   async function ddbSend(cmd) {
     const input = cmd.input
     calls.push({ service: 'ddb', op: cmd.op, input })
+    if (input.TableName === 'parkproof-jobs') {
+      // The marker goes in first, and comes out again when a later step fails.
+      if (cmd.op === 'put') jobs.set(input.Item.job_id, structuredClone(input.Item))
+      else if (cmd.op === 'delete') jobs.delete(input.Key.job_id)
+      else throw new Error(`unexpected jobs table op ${cmd.op}`)
+      return {}
+    }
     if (cmd.op === 'query') {
       // Like DynamoDB, ExclusiveStartKey marks a position in key order, so
       // deleting a page before reading the next doesn't skip rows.
@@ -68,6 +76,13 @@ const fake = vi.hoisted(() => {
         NextContinuationToken: truncated ? page.at(-1) : undefined,
       }
     }
+    if (cmd.op === 'listVersions') {
+      // One version per object: this fake keeps no old versions
+      // (lambda/evidence-versions.test.js has a bucket that does).
+      const keys = [...objects].filter((k) => k.startsWith(input.Prefix)).sort(byKey)
+      const size = Math.min(input.MaxKeys ?? 1000, 1000)
+      return { Versions: keys.slice(0, size).map((Key) => ({ Key, VersionId: 'v1' })), IsTruncated: keys.length > size }
+    }
     if (cmd.op === 'deleteObjects') {
       for (const { Key } of input.Delete.Objects) objects.delete(Key)
       return {}
@@ -76,7 +91,7 @@ const fake = vi.hoisted(() => {
   }
 
   // cognitoSend is set below the imports, where the SDK's classes are in scope.
-  return { rows, objects, users, calls, state, ddbSend, s3Send, cognitoSend: null }
+  return { rows, jobs, objects, users, calls, state, ddbSend, s3Send, cognitoSend: null }
 })
 
 vi.mock('@aws-sdk/client-dynamodb', () => ({
@@ -117,6 +132,7 @@ vi.mock('@aws-sdk/client-s3', () => {
     DeleteObjectsCommand: command('deleteObjects'),
     GetObjectCommand: command('get'),
     HeadObjectCommand: command('head'),
+    ListObjectVersionsCommand: command('listVersions'),
     ListObjectsV2Command: command('list'),
     PutObjectCommand: command('put'),
   }
@@ -208,12 +224,15 @@ const cognitoCalls = (op) => fake.calls.filter((c) => c.service === 'cognito' &&
 
 beforeEach(() => {
   fake.rows.clear()
+  fake.jobs.clear()
   fake.objects.clear()
   fake.users.length = 0
   fake.calls.length = 0
   fake.state.queryPage = 2
   fake.state.failNext = null
   vi.spyOn(console, 'log').mockImplementation(() => {})
+  // A failed call logs that it removed its marker.
+  vi.spyOn(console, 'warn').mockImplementation(() => {})
 })
 
 describe('POST /me/delete, tried again', () => {
@@ -226,6 +245,9 @@ describe('POST /me/delete, tried again', () => {
     await expect(handleMeDelete(deleteEvent(SUB))).resolves.toMatchObject({ ok: true, deleted_rows: 3, deleted_objects: 6 })
     expect(hasUser(SUB)).toBe(false)
     expect(console.log).toHaveBeenLastCalledWith(expect.stringContaining('cognito=deleted'))
+    // The account is marked deleted (lambda/account-deleted.test.js covers the marker).
+    expect([...fake.jobs.keys()]).toEqual([`DEL#${SUB}`])
+    expect(console.log).toHaveBeenLastCalledWith(expect.stringContaining('marker=written'))
 
     // A sync still running on the phone puts a record and its photos back.
     seedRecord(SUB, 'late')
@@ -281,9 +303,13 @@ describe('POST /me/delete, tried again', () => {
     // The sweeps ran first, as on every call.
     expect(rowsOf(SUB)).toEqual([])
     expect(objectsOf(SUB)).toEqual([])
+    // The account isn't deleted, so its deletion marker is gone again
+    // (lambda/account-deleted.test.js covers the marker).
+    expect(fake.jobs.size).toBe(0)
 
     await expect(handleMeDelete(deleteEvent(SUB, username))).resolves.toMatchObject({ ok: true })
     expect(hasUser(username)).toBe(false)
+    expect([...fake.jobs.keys()]).toEqual([`DEL#${SUB}`])
   })
 
   it('names an Apple or Google user by their username, since their sub finds no one', async () => {
@@ -291,9 +317,11 @@ describe('POST /me/delete, tried again', () => {
     seedRecord(SUB, 'r1')
 
     // A token without a username leaves only the sub, which can't find this
-    // user. Not finding them there is no sign they are gone, so it fails.
+    // user. Not finding them there is no sign they are gone, so it fails,
+    // and the account's deletion marker is removed again.
     await expect(handleMeDelete(deleteEvent(SUB, null))).rejects.toBeInstanceOf(UserNotFoundException)
     expect(hasUser(GOOGLE)).toBe(true)
+    expect(fake.jobs.size).toBe(0)
 
     await expect(handleMeDelete(deleteEvent(SUB, GOOGLE))).resolves.toMatchObject({ ok: true })
     expect(hasUser(GOOGLE)).toBe(false)

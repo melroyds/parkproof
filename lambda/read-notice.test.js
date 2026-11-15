@@ -551,10 +551,11 @@ describe('GET /read-notice/status/{job_id}', () => {
   })
 
   it('leaves the shared status route serving its own rows past their TTL, as before', async () => {
-    fake.rows.set('old-translate', { job_id: 'old-translate', ttl: 1, status: 'done', kind: 'sign-translate', result: { rules: 'x' } })
-    const res = await get('/sign-translate/status/old-translate')
+    const id = '1d6e2f3a-4b5c-4d7e-8f90-a1b2c3d4e5f6'
+    fake.rows.set(id, { job_id: id, ttl: 1, status: 'done', kind: 'sign-translate', result: { rules: 'x' } })
+    const res = await get(`/sign-translate/status/${id}`)
     expect(parse(res).result).toEqual({ rules: 'x' })
-    expect(fake.rows.has('old-translate')).toBe(true)
+    expect(fake.rows.has(id)).toBe(true)
   })
 
   it('still answers when the delete fails (the TTL removes the row)', async () => {
@@ -574,14 +575,65 @@ describe('GET /read-notice/status/{job_id}', () => {
     }
     expect(fake.rows.has(JOB)).toBe(true)
 
-    fake.rows.set('translate-job', { job_id: 'translate-job', status: 'done', kind: 'sign-translate', result: { rules: 'x' } })
-    const other = await get('/read-notice/status/translate-job')
+    const translateJob = '2e7f3a4b-5c6d-4e8f-9a01-b2c3d4e5f6a7'
+    fake.rows.set(translateJob, { job_id: translateJob, status: 'done', kind: 'sign-translate', result: { rules: 'x' } })
+    const other = await get(`/read-notice/status/${translateJob}`)
     expect(other.statusCode).toBe(404)
-    expect(fake.rows.has('translate-job')).toBe(true)
+    expect(fake.rows.has(translateJob)).toBe(true)
     // The shared route keeps serving its own kinds, and keeps their rows.
-    const shared = await get('/sign-translate/status/translate-job')
+    const shared = await get(`/sign-translate/status/${translateJob}`)
     expect(parse(shared).result).toEqual({ rules: 'x' })
-    expect(fake.rows.has('translate-job')).toBe(true)
+    expect(fake.rows.has(translateJob)).toBe(true)
+  })
+
+  it('every status route answers 404 for an id that is not a UUID, before reading the table', async () => {
+    // Rows a status route must never serve: an old non-UUID job, a rate-limit
+    // counter, and a deletion marker (cloud-sync.js), each with a kind or
+    // fields a status payload would show.
+    const notJobs = {
+      'translate-job': { status: 'done', kind: 'sign-translate', result: { rules: 'x' } },
+      'RL#translate#203.0.113.9#29000000': { count: 3 },
+      'DEL#5b1c8e4a-7f2d-4c3b-9a6e-0d1f2e3c4b5a': { kind: 'account-deleted', deleted_at: '2026-11-15T01:00:00.000Z' },
+    }
+    for (const [id, fields] of Object.entries(notJobs)) fake.rows.set(id, { job_id: id, ttl: 4_000_000_000, ...fields })
+    const ids = [...Object.keys(notJobs), 'RL%23translate%23203.0.113.9%2329000000', 'DEL%235b1c8e4a-7f2d-4c3b-9a6e-0d1f2e3c4b5a']
+    for (const route of ['sign-translate', 'draft-appeal', 'read-notice']) {
+      for (const id of ids) {
+        const res = await get(`/${route}/status/${id}`)
+        expect(res.statusCode).toBe(404)
+        expect(parse(res)).toEqual({ error: 'job not found or expired' })
+      }
+      // The same through API Gateway's path parameter, already decoded.
+      for (const id of Object.keys(notJobs)) {
+        const res = await handler({
+          requestContext: { http: { method: 'GET', path: `/${route}/status/x`, sourceIp: '203.0.113.9' } },
+          pathParameters: { job_id: id },
+        })
+        expect(res.statusCode).toBe(404)
+      }
+    }
+    expect(fake.calls.filter((c) => c.op === 'get')).toEqual([])
+    expect(fake.calls.filter((c) => c.op === 'delete')).toEqual([])
+  })
+
+  it('the job ids /sign-translate and /draft-appeal mint are UUIDs their status routes serve', async () => {
+    // A frozen clock, so the pending rows can't pass their deadline mid-test.
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(new Date('2026-11-15T03:00:00.000Z'))
+    try {
+      const translate = await post('/sign-translate', { image_base64: IMAGE, media_type: 'image/jpeg', lat: -37.8, lng: 144.96 })
+      const appeal = await post('/draft-appeal', { ticket_image_base64: IMAGE, session: null })
+      for (const [res, route] of [[translate, 'sign-translate'], [appeal, 'draft-appeal']]) {
+        expect(res.statusCode).toBe(202)
+        const { job_id } = parse(res)
+        expect(job_id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/)
+        const status = await get(`/${route}/status/${job_id}`)
+        expect(status.statusCode).toBe(200)
+        expect(parse(status)).toEqual({ job_id, status: 'pending', result: null, error: null })
+      }
+    } finally {
+      vi.useRealTimers()
+    }
   })
 
   it('never deletes a row that is not a notice job, such as a rate-limit counter', async () => {

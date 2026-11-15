@@ -1,7 +1,8 @@
 // @vitest-environment node
 //
-// scripts/deploy.sh, scripts/setup-jobs-table.sh and
-// scripts/setup-log-retention.sh, run for real in bash
+// scripts/deploy.sh, scripts/setup-jobs-table.sh,
+// scripts/setup-log-retention.sh and scripts/setup-evidence-versions.sh, run
+// for real in bash
 // against a throwaway copy of the repo, with fake `aws`, `npm` and `python`
 // first on the PATH (fix list, 9 Nov 2026). Nothing here can reach AWS: the
 // fake aws answers from a script and logs every call, and the real CLI
@@ -21,6 +22,10 @@
 //   table for parkproof-lambda-role.
 // - setup-log-retention.sh makes one change: a 90-day retention on the
 //   Lambda's log group (the privacy policy's number), and checks it took.
+// - setup-evidence-versions.sh grants the Lambda role s3:ListBucketVersions
+//   and s3:DeleteObjectVersion on the evidence bucket, and sets the bucket's
+//   one lifecycle rule (old versions deleted a day after they stop being
+//   current), unless the bucket already has another rule.
 //
 // Needs bash (Git Bash on Windows) and zip or PowerShell. Skipped with a
 // warning without them.
@@ -77,6 +82,15 @@ case "$1 $2" in
   "iam get-role") if [[ "$args" == *--query* ]]; then echo "arn:aws:iam::123456789012:role/parkproof-lambda-role"; fi ;;
   "iam put-role-policy") ;;
   "logs put-retention-policy") ;;
+  "s3api get-bucket-lifecycle-configuration")
+    if [[ -n "${'$'}{FAKE_LIFECYCLE_DENIED-}" ]]; then
+      echo "An error occurred (AccessDenied) when calling the GetBucketLifecycleConfiguration operation: Access Denied" >&2; exit 254
+    elif [[ "$args" == *NoncurrentDays* ]]; then echo "${'$'}{FAKE_NONCURRENT_DAYS-1}"
+    elif [[ -n "${'$'}{FAKE_LIFECYCLE_IDS-}" ]]; then printf '%s\n' "$FAKE_LIFECYCLE_IDS"
+    else
+      echo "An error occurred (NoSuchLifecycleConfiguration) when calling the GetBucketLifecycleConfiguration operation: The lifecycle configuration does not exist" >&2; exit 254
+    fi ;;
+  "s3api put-bucket-lifecycle-configuration") ;;
   "logs describe-log-groups") echo "${'$'}{FAKE_RETENTION-90}" ;;
   "lambda get-function") if [[ "$args" == *--query* ]]; then echo "arn:aws:lambda:ap-southeast-2:123456789012:function:parkproof-sign-translator"; fi ;;
   "lambda get-function-configuration") if [[ "$args" == *Runtime* ]]; then echo nodejs22.x; else echo '{}'; fi ;;
@@ -131,7 +145,7 @@ function makeWorld({ env = true, indexJs = true } = {}) {
   const log = join(base, 'log')
   for (const dir of [repo, bin, tmp, log]) mkdirSync(dir, { recursive: true })
 
-  for (const name of ['deploy.sh', 'setup-jobs-table.sh', 'setup-log-retention.sh']) {
+  for (const name of ['deploy.sh', 'setup-jobs-table.sh', 'setup-log-retention.sh', 'setup-evidence-versions.sh']) {
     script(join(repo, 'scripts', name), readFileSync(join(ROOT, 'scripts', name), 'utf8'))
   }
   const lambda = join(repo, 'lambda')
@@ -163,7 +177,7 @@ function makeWorld({ env = true, indexJs = true } = {}) {
 function run(world, scriptName, args = [], extraEnv = {}) {
   const env = { ...process.env }
   for (const key of Object.keys(env)) {
-    if (/^(AWS_|DEPLOY_ALLOW_WORKDAY$|VITE_FEATURE_WORKDAY$|JOBS_TABLE$|LAMBDA_ROLE_NAME$|LAMBDA_NAME$|MSYS_NO_PATHCONV$)/i.test(key)) delete env[key]
+    if (/^(AWS_|DEPLOY_ALLOW_WORKDAY$|VITE_FEATURE_WORKDAY$|JOBS_TABLE$|EVIDENCE_BUCKET$|LAMBDA_ROLE_NAME$|LAMBDA_NAME$|MSYS_NO_PATHCONV$)/i.test(key)) delete env[key]
   }
   Object.assign(env, {
     FAKE_BIN: world.bin,
@@ -416,6 +430,100 @@ describe.skipIf(!BASH)('setup-log-retention.sh', () => {
     expect(text).toMatch(/^RETENTION_DAYS=90$/m)
     const en = JSON.parse(readFileSync(join(ROOT, 'src', 'locales', 'en.json'), 'utf8'))
     expect(en.privacy.rightsAnonymous).toMatch(/The logs are deleted after 90 days\./)
+    // The delete statement names the logs that keep a deleted account's ID.
+    expect(en.privacy.rightsDeleteOtherDevices).toMatch(/The logs are deleted after 90 days\./)
+  })
+})
+
+describe.skipIf(!BASH)('setup-evidence-versions.sh', () => {
+  const argOf = (call, flag) => call[call.indexOf(flag) + 1]
+  const ops = (world) => awsCalls(world).map((c) => `${c[0]} ${c[1]}`)
+  const RULE = {
+    ID: 'delete-old-photo-versions',
+    Status: 'Enabled',
+    Filter: { Prefix: '' },
+    NoncurrentVersionExpiration: { NoncurrentDays: 1 },
+    Expiration: { ExpiredObjectDeleteMarker: true },
+  }
+
+  it('lets the Lambda role list and delete versions, sets the one lifecycle rule and reads it back', { timeout: TIMEOUT }, () => {
+    const world = makeWorld({ env: false })
+    const res = run(world, 'setup-evidence-versions.sh')
+    expect(res.status, res.out).toBe(0)
+    expect(ops(world)).toEqual([
+      'sts get-caller-identity',
+      's3api get-bucket-lifecycle-configuration',
+      'iam put-role-policy',
+      's3api put-bucket-lifecycle-configuration',
+      's3api get-bucket-lifecycle-configuration',
+    ])
+    const [, , policy, lifecycle] = awsCalls(world)
+    expect(argOf(policy, '--role-name')).toBe('parkproof-lambda-role')
+    expect(argOf(policy, '--policy-name')).toBe('parkproof-evidence-versions')
+    expect(JSON.parse(argOf(policy, '--policy-document'))).toEqual({
+      Version: '2012-10-17',
+      Statement: [
+        {
+          Sid: 'ListEvidenceVersions',
+          Effect: 'Allow',
+          Action: 's3:ListBucketVersions',
+          Resource: 'arn:aws:s3:::parkproof-evidence-123456789012',
+        },
+        {
+          Sid: 'DeleteEvidenceVersions',
+          Effect: 'Allow',
+          Action: 's3:DeleteObjectVersion',
+          Resource: 'arn:aws:s3:::parkproof-evidence-123456789012/*',
+        },
+      ],
+    })
+    expect(argOf(lifecycle, '--bucket')).toBe('parkproof-evidence-123456789012')
+    expect(JSON.parse(argOf(lifecycle, '--lifecycle-configuration'))).toEqual({ Rules: [RULE] })
+    expect(res.stdout).toContain('deletes old versions 1 day after they stop being current')
+    // It writes nothing locally (setup-auth.sh, by contrast, rewrites this file).
+    expect(existsSync(join(world.repo, 'scripts', '.aws-resources'))).toBe(false)
+  })
+
+  it("runs again over its own rule, and uses the Lambda's EVIDENCE_BUCKET when it is set", { timeout: TIMEOUT }, () => {
+    const world = makeWorld({ env: false })
+    const env = { FAKE_LIFECYCLE_IDS: 'delete-old-photo-versions', EVIDENCE_BUCKET: 'parkproof-evidence-b' }
+    const res = run(world, 'setup-evidence-versions.sh', [], env)
+    expect(res.status, res.out).toBe(0)
+    const calls = awsCalls(world)
+    expect(calls.filter((c) => c[1] === 'put-bucket-lifecycle-configuration').map((c) => argOf(c, '--bucket'))).toEqual([
+      'parkproof-evidence-b',
+    ])
+    const policy = JSON.parse(argOf(calls.find((c) => c[1] === 'put-role-policy'), '--policy-document'))
+    expect(policy.Statement.map((s) => s.Resource)).toEqual(['arn:aws:s3:::parkproof-evidence-b', 'arn:aws:s3:::parkproof-evidence-b/*'])
+  })
+
+  it('changes nothing when the bucket already has another lifecycle rule', { timeout: TIMEOUT }, () => {
+    const world = makeWorld({ env: false })
+    const res = run(world, 'setup-evidence-versions.sh', [], { FAKE_LIFECYCLE_IDS: 'delete-old-photo-versions\tkeep-forever' })
+    expect(res.status).toBe(1)
+    expect(res.out).toContain("already has a lifecycle rule 'keep-forever'")
+    expect(ops(world)).toEqual(['sts get-caller-identity', 's3api get-bucket-lifecycle-configuration'])
+  })
+
+  it("changes nothing when it can't read the lifecycle rules, or the account id", { timeout: TIMEOUT }, () => {
+    const denied = makeWorld({ env: false })
+    const res = run(denied, 'setup-evidence-versions.sh', [], { FAKE_LIFECYCLE_DENIED: '1' })
+    expect(res.status).toBe(1)
+    expect(res.out).toContain("Couldn't read the lifecycle rules")
+    expect(ops(denied)).toEqual(['sts get-caller-identity', 's3api get-bucket-lifecycle-configuration'])
+
+    const noAccount = makeWorld({ env: false })
+    const again = run(noAccount, 'setup-evidence-versions.sh', [], { FAKE_ACCOUNT: 'None' })
+    expect(again.status).toBe(1)
+    expect(again.out).toContain("Couldn't read the AWS account id")
+    expect(ops(noAccount)).toEqual(['sts get-caller-identity'])
+  })
+
+  it('fails when the bucket reports another period afterwards', { timeout: TIMEOUT }, () => {
+    const world = makeWorld({ env: false })
+    const res = run(world, 'setup-evidence-versions.sh', [], { FAKE_NONCURRENT_DAYS: 'None' })
+    expect(res.status).toBe(1)
+    expect(res.out).toContain("reports 'None' days for delete-old-photo-versions, not 1")
   })
 })
 
@@ -427,6 +535,7 @@ describe('the deploy scripts as committed', () => {
     expect(deploy).not.toContain('\r')
     expect(readFileSync(join(ROOT, 'scripts', 'setup-jobs-table.sh'), 'utf8')).not.toContain('\r')
     expect(readFileSync(join(ROOT, 'scripts', 'setup-log-retention.sh'), 'utf8')).not.toContain('\r')
+    expect(readFileSync(join(ROOT, 'scripts', 'setup-evidence-versions.sh'), 'utf8')).not.toContain('\r')
   })
   it('never delete or install lambda/node_modules in the working tree', () => {
     expect(deploy).not.toMatch(/rm -rf node_modules/)

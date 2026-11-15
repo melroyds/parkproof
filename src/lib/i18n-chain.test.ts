@@ -1,16 +1,21 @@
 // @vitest-environment node
 //
-// The inject chain's last three steps, held in place. The chain is fix_push,
-// t6a, t8, t3, t5, t2, t4, t7, t6bc, fixlist_final, copy_pass, t10_review,
-// last_lows (scripts/_i18n_inject_*.mjs). The copy pass and the T10 review
-// keep their text in data files (scripts/copy-pass/<locale>.json and
-// scripts/t10-review/<locale>.json) and overwrite whole strings from them.
+// The inject chain's late steps, held in place. The chain is fix_push, t6a,
+// t8, t3, t5, t2, t4, t7, t6bc, fixlist_final, copy_pass, t10_review,
+// last_lows, delete_hardening (scripts/_i18n_inject_*.mjs). The copy pass and
+// the T10 review keep their text in data files (scripts/copy-pass/<locale>.json
+// and scripts/t10-review/<locale>.json) and overwrite whole strings from them.
 //   - Every entry in those files is the string the locale has now, so running
 //     either again changes nothing, and neither can undo a later script
-//     (scripts/_i18n_inject_last_lows.mjs runs after both).
+//     (scripts/_i18n_inject_last_lows.mjs and
+//     scripts/_i18n_inject_delete_hardening.mjs run after both, and the
+//     second refuses to run if either file carries one of its keys).
 //   - The empty-note line's old split keys (session.noNote,
 //     session.noteHelp) stay deleted: no inject script or data file writes
 //     one, and no app code reads one.
+//   - So do the keys scripts/_i18n_inject_delete_hardening.mjs removes (its
+//     REMOVED list): the account-deleted notice's first key, which said
+//     "deleted on another device", gave way to settings.accountDeletedNotice.
 import { describe, expect, it } from 'vitest'
 import en from '../locales/en.json'
 import zhCN from '../locales/zh-CN.json'
@@ -102,6 +107,43 @@ describe('the empty-note line', () => {
       }
     }
     for (const [path, src] of sources) for (const key of OLD) if (src.includes(key)) hits.push(`${key} in ${path}`)
+    expect(hits).toEqual([])
+  })
+})
+
+describe('the keys the delete-hardening script removes', () => {
+  const SCRIPT = 'scripts/_i18n_inject_delete_hardening.mjs'
+  /** The script's REMOVED list, read from its source (the keys are named nowhere else). */
+  const removed = (() => {
+    const src = fs.readFileSync(new URL(SCRIPT, REPO), 'utf8')
+    const list = src.match(/export const REMOVED = \[([^\]]*)\]/)?.[1] ?? ''
+    return [...list.matchAll(/'([^']+)'/g)].map((m) => m[1])
+  })()
+
+  it('lists the old notice, and the new one is in every locale', () => {
+    expect(removed).toHaveLength(1)
+    expect(removed[0]).toMatch(/^settings\./)
+    for (const locale of Object.keys(LOCALES)) expect(typeof at(LOCALES[locale], 'settings.accountDeletedNotice'), locale).toBe('string')
+  })
+
+  it.each(Object.keys(LOCALES))('none is left in %s', (locale) => {
+    for (const key of removed) expect(at(LOCALES[locale], key), key).toBeUndefined()
+  })
+
+  it('no app code reads one, and no other inject script or data file writes one', () => {
+    const scripts = filesUnder(new URL('scripts/', REPO), (n) => /^_i18n_inject_.*\.(mjs|py)$/.test(n) || /\.json$/.test(n))
+    expect(scripts.some(([p]) => p === SCRIPT)).toBe(true)
+    const sources = filesUnder(new URL('src/', REPO), (n) => /\.tsx?$/.test(n) && !n.includes('.test.') && !n.endsWith('.d.ts'))
+    const hits: string[] = []
+    for (const [path, src] of scripts) {
+      // The script lists them to delete them.
+      if (path === SCRIPT) continue
+      for (const key of removed) {
+        const leaf = key.split('.').pop() as string
+        if (new RegExp(`['"\`]${key.replace(/\./g, '\\.')}['"\`]\\s*:|['"\`]?\\b${leaf}['"\`]?\\s*:`).test(src)) hits.push(`${key} in ${path}`)
+      }
+    }
+    for (const [path, src] of sources) for (const key of removed) if (src.includes(key.split('.').pop() as string)) hits.push(`${key} in ${path}`)
     expect(hits).toEqual([])
   })
 })

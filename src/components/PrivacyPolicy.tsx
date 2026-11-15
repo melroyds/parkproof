@@ -143,6 +143,7 @@ export default function PrivacyPolicy({ onBack }: Props) {
             <li>
               <Trans i18nKey="privacy.rightsDelete" components={{ strong: <strong /> }} />
             </li>
+            <li>{t('privacy.rightsDeleteOtherDevices')}</li>
             <li>
               <Trans i18nKey="privacy.rightsCorrect" components={{ strong: <strong /> }} />
             </li>
