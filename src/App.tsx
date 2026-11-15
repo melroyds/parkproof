@@ -28,6 +28,8 @@ import LoadingProgress from './components/LoadingProgress'
 import NoReadableSign from './components/NoReadableSign'
 import RecurringReminders from './components/RecurringReminders'
 import HomeMenu from './components/HomeMenu'
+import InstallPromptBanner from './components/InstallPromptBanner'
+import IosInstallHint from './components/IosInstallHint'
 import ShareSheet from './components/ShareSheet'
 import SharedLinkView from './components/SharedLinkView'
 import SharedRecordScreen from './components/SharedRecordScreen'
@@ -1984,6 +1986,14 @@ function App() {
           onOpenNoticeLookup={() => setView({ name: 'notice', snapshot: null })}
           onDraftAppeal={() => setView({ name: 'appeal', session: null })}
         />
+
+        {/* The install offers live here, in Home's flow, and on no other
+            screen: fixed to the bottom of every screen, they covered its
+            bottom buttons (Translate, Done) until closed. Each renders
+            nothing when it doesn't apply (installed, dismissed, or the
+            wrong browser). */}
+        <InstallPromptBanner />
+        <IosInstallHint />
 
         <div className="mt-6 flex items-center justify-center gap-6 self-center flex-wrap">
           <button

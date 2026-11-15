@@ -12,6 +12,9 @@
 // element, Tailwind's stylesheet order picks the winner, not the className
 // order, which is how a grey default beat every caller's override and left
 // the back buttons at about 1.4:1 on the vault.
+//
+// Also the Android install offer: main.tsx must catch the browser's install
+// prompt from startup, before the first render.
 import { describe, it, expect } from 'vitest'
 
 interface Fs {
@@ -86,6 +89,18 @@ function contrast(a: string, b: string): number {
   return (hi + 0.05) / (lo + 0.05)
 }
 
+/**
+ * `src` with comments and string literals blanked out (same length, newlines
+ * kept), so a commented-out call doesn't count and brackets in text don't
+ * skew the bracket counts.
+ */
+function codeOnly(src: string): string {
+  return src.replace(
+    /\/\*[\s\S]*?\*\/|\/\/[^\n]*|'(?:\\.|[^'\\\n])*'|"(?:\\.|[^"\\\n])*"|`(?:\\.|[^`\\])*`/g,
+    (m) => m.replace(/[^\n]/g, ' '),
+  )
+}
+
 describe('safe areas (installed iPhone app)', () => {
   const css = read('index.css')
   const html = fs.readFileSync(new URL('../index.html', SRC), 'utf8')
@@ -124,8 +139,10 @@ describe('safe areas (installed iPhone app)', () => {
       }
     }
     expect(offenders).toEqual([])
-    // Toast, iOS install hint, update banner, install banner, feedback modal,
-    // departure sheet. A drop means the scan stopped finding them.
+    // The toast, the update banner, the feedback modal, the backup prompt and
+    // the departure, share, handover and add-evidence sheets, among others
+    // (the install offers sit in Home's flow now, not fixed). A drop below 6
+    // means the scan stopped finding them.
     expect(layers).toBeGreaterThanOrEqual(6)
   })
 
@@ -177,5 +194,23 @@ describe('BackButton colour', () => {
     }
     expect(offenders).toEqual([])
     expect(sites).toBeGreaterThan(10)
+  })
+})
+
+describe('install offer at startup', () => {
+  // The browser can fire beforeinstallprompt before Home is on screen (a
+  // reminder tap opens a record first, a scan is in progress), and an event
+  // nobody is listening for is lost. So main.tsx listens as the module loads,
+  // before the first render. Dropped, or moved into an effect that runs after
+  // the event, the offer never reaches Android drivers, and the install tests
+  // can't tell: they start the listener themselves.
+  it('main.tsx calls listenForInstallOffer at module level, before createRoot', () => {
+    const code = codeOnly(read('main.tsx'))
+    const call = code.search(/^listenForInstallOffer\(/m)
+    expect(call, 'a call at the start of a line').toBeGreaterThanOrEqual(0)
+    const before = code.slice(0, call)
+    const open = (o: string, c: string) => before.split(o).length - before.split(c).length
+    expect([open('{', '}'), open('(', ')')], 'no function body or call still open around it').toEqual([0, 0])
+    expect(code.search(/\bcreateRoot\(/), 'createRoot comes after it').toBeGreaterThan(call)
   })
 })

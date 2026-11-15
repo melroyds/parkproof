@@ -4,10 +4,13 @@ import './index.css'
 import './lib/i18n'
 import App from './App.tsx'
 import SwUpdateBanner from './components/SwUpdateBanner'
-import InstallPromptBanner from './components/InstallPromptBanner'
-import IosInstallHint from './components/IosInstallHint'
 import ErrorBoundary from './components/ErrorBoundary'
 import { AuthProvider } from './lib/auth-context'
+import { listenForInstallOffer } from './lib/install-offer'
+
+// The browser's install prompt can come before Home is on screen; catch it
+// from the start. Home offers it (InstallPromptBanner).
+listenForInstallOffer()
 
 /**
  * Self-heal on stale-chunk errors after a deploy.
@@ -45,14 +48,9 @@ createRoot(document.getElementById('root')!).render(
           or dismissed; reappears on the NEXT update so users stay current
           across deploys without manual hard-refresh. */}
       <SwUpdateBanner />
-      {/* Chrome / Android install prompt — captures the browser's native
-          `beforeinstallprompt` event and surfaces a clearly-branded
-          "Install ParkProof" CTA. */}
-      <InstallPromptBanner />
-      {/* iOS Safari doesn't fire `beforeinstallprompt`, so the largest mobile
-          cohort never learned how to install. This shows them the manual
-          Share → Add to Home Screen path, once and dismissible. */}
-      <IosInstallHint />
+      {/* The install offers (InstallPromptBanner, IosInstallHint) are on
+          Home, in its own flow: fixed here, they covered every screen's
+          bottom buttons until closed. */}
     </AuthProvider>
   </StrictMode>,
 )
