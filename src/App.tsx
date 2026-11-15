@@ -30,6 +30,7 @@ import RecurringReminders from './components/RecurringReminders'
 import HomeMenu from './components/HomeMenu'
 import InstallPromptBanner from './components/InstallPromptBanner'
 import IosInstallHint from './components/IosInstallHint'
+import SwUpdateBanner from './components/SwUpdateBanner'
 import ShareSheet from './components/ShareSheet'
 import SharedLinkView from './components/SharedLinkView'
 import SharedRecordScreen from './components/SharedRecordScreen'
@@ -1987,11 +1988,14 @@ function App() {
           onDraftAppeal={() => setView({ name: 'appeal', session: null })}
         />
 
-        {/* The install offers live here, in Home's flow, and on no other
-            screen: fixed to the bottom of every screen, they covered its
-            bottom buttons (Translate, Done) until closed. Each renders
-            nothing when it doesn't apply (installed, dismissed, or the
-            wrong browser). */}
+        {/* The update card and the install offers live here, in Home's
+            flow, and on no other screen: fixed to the bottom of every screen,
+            they covered its bottom buttons (Translate, Done) until closed.
+            The update card's Refresh reloads the page, which loses nothing
+            on Home and would lose the work on screen anywhere else. Each
+            renders nothing when it doesn't apply (no new version, installed,
+            dismissed, or the wrong browser). */}
+        <SwUpdateBanner />
         <InstallPromptBanner />
         <IosInstallHint />
 

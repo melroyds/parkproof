@@ -14,7 +14,9 @@
 // the back buttons at about 1.4:1 on the vault.
 //
 // Also the Android install offer: main.tsx must catch the browser's install
-// prompt from startup, before the first render.
+// prompt from startup, before the first render. And the new version card:
+// main.tsx watches for an update from startup, and no update pill floats
+// over the screens from the root any more (Home shows the card).
 import { describe, it, expect } from 'vitest'
 
 interface Fs {
@@ -139,10 +141,10 @@ describe('safe areas (installed iPhone app)', () => {
       }
     }
     expect(offenders).toEqual([])
-    // The toast, the update banner, the feedback modal, the backup prompt and
-    // the departure, share, handover and add-evidence sheets, among others
-    // (the install offers sit in Home's flow now, not fixed). A drop below 6
-    // means the scan stopped finding them.
+    // The toast, the feedback modal, the backup prompt and the departure,
+    // share, handover and add-evidence sheets, among others (the install
+    // offers and the new version card sit in Home's flow now, not fixed). A
+    // drop below 6 means the scan stopped finding them.
     expect(layers).toBeGreaterThanOrEqual(6)
   })
 
@@ -197,6 +199,21 @@ describe('BackButton colour', () => {
   })
 })
 
+/**
+ * Where `name(` is called at the start of a line in main.tsx's code, outside
+ * any function body or call, and before createRoot: at module level, as the
+ * module loads, before the first render.
+ */
+function expectModuleLevelCall(name: string): void {
+  const code = codeOnly(read('main.tsx'))
+  const call = code.search(new RegExp(`^${name}\\(`, 'm'))
+  expect(call, 'a call at the start of a line').toBeGreaterThanOrEqual(0)
+  const before = code.slice(0, call)
+  const open = (o: string, c: string) => before.split(o).length - before.split(c).length
+  expect([open('{', '}'), open('(', ')')], 'no function body or call still open around it').toEqual([0, 0])
+  expect(code.search(/\bcreateRoot\(/), 'createRoot comes after it').toBeGreaterThan(call)
+}
+
 describe('install offer at startup', () => {
   // The browser can fire beforeinstallprompt before Home is on screen (a
   // reminder tap opens a record first, a scan is in progress), and an event
@@ -205,12 +222,28 @@ describe('install offer at startup', () => {
   // the event, the offer never reaches Android drivers, and the install tests
   // can't tell: they start the listener themselves.
   it('main.tsx calls listenForInstallOffer at module level, before createRoot', () => {
-    const code = codeOnly(read('main.tsx'))
-    const call = code.search(/^listenForInstallOffer\(/m)
-    expect(call, 'a call at the start of a line').toBeGreaterThanOrEqual(0)
-    const before = code.slice(0, call)
-    const open = (o: string, c: string) => before.split(o).length - before.split(c).length
-    expect([open('{', '}'), open('(', ')')], 'no function body or call still open around it').toEqual([0, 0])
-    expect(code.search(/\bcreateRoot\(/), 'createRoot comes after it').toBeGreaterThan(call)
+    expectModuleLevelCall('listenForInstallOffer')
+  })
+})
+
+describe('new version card', () => {
+  // A new version can install while a scan or a record is on screen, and the
+  // browser tells the page once (updatefound, then the worker's statechange).
+  // So main.tsx watches as the module loads, and Home offers the reload when
+  // the driver gets there. Dropped, the card never shows, and the card's
+  // tests can't tell: they start the listener themselves.
+  it('main.tsx calls listenForSwUpdate at module level, before createRoot', () => {
+    expectModuleLevelCall('listenForSwUpdate')
+  })
+
+  // Rendered at the root, the old pill floated over every screen, covered
+  // its bottom buttons, and its Refresh reloaded mid-flow, losing the work on
+  // screen. The card is Home's (App.tsx) and sits in the page flow.
+  it('no update pill is rendered at the root, and the card is never a fixed layer', () => {
+    expect(codeOnly(read('main.tsx')), 'main.tsx neither imports nor renders it').not.toMatch(/\bSwUpdateBanner\b/)
+    const src = read('components/SwUpdateBanner.tsx')
+    const classes = classNameLiterals(src).flatMap((l) => l.classes)
+    expect(classes.length, 'the scan found its classes').toBeGreaterThan(0)
+    expect(classes.filter((c) => /^(?:[a-z0-9-]+:)*(?:fixed|absolute|sticky)$/.test(c))).toEqual([])
   })
 })
