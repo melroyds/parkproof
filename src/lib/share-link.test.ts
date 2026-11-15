@@ -101,9 +101,22 @@ describe('making a share link', () => {
     }
   })
 
-  it('names the handover driver instead of the record driver when asked', () => {
-    const payload = buildSharePayload(record(), { now: NOW, driver: 'Alex' })
-    expect(payload?.driver).toBe('Alex')
+  it('names the person who parked, even after a handover', () => {
+    // The receiver reads "Shared by {{driver}}", and the sender is still the
+    // record's driver: the next driver must not show as the one who shared.
+    const handedOver = record({
+      addenda: [
+        {
+          id: '99999999-2222-4333-8444-555555555555',
+          seq: 1,
+          kind: 'handover',
+          captured_at: '2026-10-25T02:50:00.000Z',
+          data: { from_driver: 'Sam', to_driver: 'Alex', handed_over_at: '2026-10-25T02:50:00.000Z', location: null },
+          bundle: { ...BUNDLE, schema: 'parkproof-addendum-v1', signed_at: '2026-10-25T02:50:04.000Z' },
+        },
+      ],
+    })
+    expect(buildSharePayload(handedOver, { now: NOW })?.driver).toBe('Sam')
     expect(buildSharePayload(record({ driver_name: null }), { now: NOW })?.driver).toBeNull()
   })
 

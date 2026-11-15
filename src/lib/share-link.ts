@@ -174,16 +174,18 @@ export function permitAdjustedStandardUntil(session: ParkingSession): string | n
 export interface BuildShareOptions {
   /** When the link is made; defaults to now. */
   now?: Date
-  /**
-   * The driver to name instead of the record's `driver_name` (the handover
-   * flow can name the person the car was handed to). Omit to use the record's.
-   */
-  driver?: string | null
 }
 
 /**
  * The JSON a share link carries for a record, or null when its arrival
  * (link 0) isn't signed yet: a link needs the signed bundle.
+ *
+ * `driver` is always the record's own `driver_name`, the person who parked
+ * the car, even after a handover. The receiver shows it as "Shared by
+ * {{driver}}" (build spec T7 item 3), and the person sharing is still the one
+ * whose record it is, so naming the handover's next driver would say they
+ * sent the link. The share confirm promises the link shows "who parked it"
+ * (item 2), and nothing more. Decided 11 Nov 2026.
  */
 export function buildSharePayload(session: ParkingSession, options: BuildShareOptions = {}): SharePayload | null {
   if (!isCompleteBundle(session.signature)) return null
@@ -198,7 +200,7 @@ export function buildSharePayload(session: ParkingSession, options: BuildShareOp
       key_alias: sig.key_alias,
     },
     shared_at: now.toISOString(),
-    driver: fitText(options.driver !== undefined ? options.driver : session.driver_name, CAPS.driverName),
+    driver: fitText(session.driver_name, CAPS.driverName),
     time_zone: shareTimeZone(zone),
     ended_at: shareTime(session.ended_at),
     rules: session.no_sign ? null : fitText(session.rules, SHARE_RULES_MAX),

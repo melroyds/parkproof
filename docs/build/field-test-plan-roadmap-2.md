@@ -332,7 +332,7 @@ Needs T7 merged. Uses Record A.
 12. Share the new link to Android 2.
 
 **Updated copy (Android 2, 1 min)**
-13. Open the new link. Expected: the banner names the driver the record names now. History still has **one** "Shared with you" copy, now updated, not two.
+13. Open the new link. Expected: the banner still says "Shared by [your name]", now with the later time. A link names who parked the car, not who's driving now: the sender is still you (decided 11 Nov 2026, see `buildSharePayload` in `src/lib/share-link.ts`). History still has **one** "Shared with you" copy, now updated, not two.
 
 **Optional (1 min):** open the first link on the Samsung, which has Record A through sync. Expected: "This link is for a record saved on this phone, so it wasn't added again." Don't do this if it means unlocking the Samsung before about 1:06.
 

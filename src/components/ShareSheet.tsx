@@ -16,12 +16,6 @@ interface Props {
   onClose: () => void
   /** Where focus goes on close when the button that opened the sheet has gone. */
   returnFocus?: () => HTMLElement | null
-  /**
-   * The driver the link names instead of the record's `driver_name` (the
-   * handover flow, item 5, can name the person the car was handed to).
-   * Omit to use the record's.
-   */
-  driver?: string | null
   /** Test hook: the navigator the share goes through. */
   shareNavigator?: ShareNavigator
 }
@@ -43,7 +37,7 @@ type Step =
  * once that is signed; the sheet follows the stored record, so it enables
  * itself when the signature lands.
  */
-export default function ShareSheet({ session: initial, onClose, returnFocus, driver, shareNavigator }: Props) {
+export default function ShareSheet({ session: initial, onClose, returnFocus, shareNavigator }: Props) {
   const { t } = useTranslation()
   const session = useLiveRecord(initial)
   const dialogRef = useRef<HTMLDivElement>(null)
@@ -55,7 +49,7 @@ export default function ShareSheet({ session: initial, onClose, returnFocus, dri
 
   const share = () => {
     if (step.kind === 'busy') return
-    const built = makeShareToken(session, driver !== undefined ? { driver } : {})
+    const built = makeShareToken(session)
     if (!built.ok) {
       setStep({ kind: 'error', key: built.error === 'unsigned' ? 'share.notSigned' : 'share.tooLarge' })
       return
