@@ -126,7 +126,10 @@ function tokenSubject(token: string | null): string | null {
 /** How long after a delete settles a new listing or upload still skips its id. */
 export const DELETE_SETTLE_GRACE_MS = 10_000
 
-/** A listing or upload in progress: its place in the event order and its start time. */
+/**
+ * A listing or upload in progress (or a cloud photo fetch, which isn't
+ * tracked as one): its place in the event order and its start time.
+ */
 interface SyncOperation {
   seq: number
   startedAt: number
@@ -144,9 +147,14 @@ function nextEvent(): number {
   return eventSeq
 }
 
+/** A place in the event order, and the time, for something that starts now. */
+function eventMark(): SyncOperation {
+  return { seq: nextEvent(), startedAt: Date.now() }
+}
+
 /** A listing or upload starts: its place, for `deletedSince`. Pair with `endOperation`. */
 function beginOperation(): SyncOperation {
-  const operation = { seq: nextEvent(), startedAt: Date.now() }
+  const operation = eventMark()
   runningOperations.add(operation)
   return operation
 }
@@ -205,6 +213,62 @@ function markDeleteSettled(id: string): void {
 function deletedSince(id: string, operation: SyncOperation): boolean {
   const t = tombstones.get(id)
   return t !== undefined && covers(t, operation)
+}
+
+/**
+ * The last time this device's records were cleared (the account was
+ * deleted: clearLocalRecords in local-wipe.ts), in this tab's event order.
+ * A listing that started before it may still return the deleted account's
+ * rows. Other open tabs of the app share the records but not this memory,
+ * so the time of the wipe is also stored (WIPED_AT_KEY) for them.
+ */
+let wipedAt = 0
+
+/** When this device's records were last cleared, by the clock (ms), for every open tab. */
+const WIPED_AT_KEY = 'parkproof.sync.wiped_at.v1'
+
+/**
+ * The stored wipe time, or 0 when there is none or it can't be read. A time
+ * still ahead of the clock means the clock went back since the wipe (a phone
+ * that was fast, then corrected): it can't order anything any more, so it
+ * counts as none, or every sync would stall until the clock caught up.
+ */
+function storedWipeTime(): number {
+  try {
+    const time = Number(localStorage.getItem(WIPED_AT_KEY))
+    return Number.isFinite(time) && time <= Date.now() ? time : 0
+  } catch {
+    return 0
+  }
+}
+
+/**
+ * True when `operation` started before this device's records were last
+ * cleared, here (by the event order) or in another open tab (by the
+ * stored time): it writes nothing.
+ */
+function wipedSince(operation: SyncOperation): boolean {
+  return operation.seq < wipedAt || operation.startedAt < storedWipeTime()
+}
+
+/**
+ * This device's records were just cleared because the account was deleted.
+ * No listing already running, in this tab or another, may write one back,
+ * and the upload markers (kept per account, for records that are gone) are
+ * forgotten.
+ */
+export function noteLocalRecordsWiped(): void {
+  wipedAt = nextEvent()
+  try {
+    localStorage.setItem(WIPED_AT_KEY, String(Date.now()))
+  } catch {
+    /* best-effort: this tab's own barrier above still holds */
+  }
+  try {
+    localStorage.removeItem(UPLOAD_MARKERS_KEY)
+  } catch {
+    /* best-effort: markers of records that no longer exist are never read */
+  }
 }
 
 // ─── Upload markers ──────────────────────────────────────────────────────
@@ -436,6 +500,9 @@ async function uploadOnce(id: string, operation: SyncOperation): Promise<UploadR
   const scope = tokenSubject(token)
   const done = scope ? uploadedPhotoMarkers(scope) : new Set<string>()
 
+  // Each job checks the tombstone when its turn comes: a photo still waiting
+  // behind others when the record (or the whole account) is deleted is never
+  // sent, so it can't land in S3 after the delete swept the record's photos.
   const jobs: Array<() => Promise<void>> = []
   for (const target of photoUploadTargets(start)) {
     const { marker } = target
@@ -443,6 +510,7 @@ async function uploadOnce(id: string, operation: SyncOperation): Promise<UploadR
     if (target.kind === 'legacy') {
       const { role, value } = target
       jobs.push(async () => {
+        if (isTombstoned(id)) return
         await uploadLegacyPhoto(id, role, value)
         // A delete meanwhile removes the record's photos: don't claim this one is there.
         if (!isTombstoned(id)) markUploaded(scope, marker)
@@ -451,6 +519,7 @@ async function uploadOnce(id: string, operation: SyncOperation): Promise<UploadR
     }
     const { sha256 } = target
     jobs.push(async () => {
+      if (isTombstoned(id)) return
       if ((await uploadRefPhoto(id, sha256)) === 'uploaded' && !isTombstoned(id)) markUploaded(scope, marker)
     })
   }
@@ -540,13 +609,22 @@ function deferred<T>(): Deferred<T> {
   return { promise, resolve, reject }
 }
 
+interface UploadSlot {
+  /** The upload in flight. */
+  run: Promise<UploadResult>
+  /** Another upload asked for meanwhile: one more starts when this one ends. */
+  again: Deferred<UploadResult> | null
+}
+
 /** Per record: the upload in flight, and whether another was asked for meanwhile. */
-const uploadSlots = new Map<string, { again: Deferred<UploadResult> | null }>()
+const uploadSlots = new Map<string, UploadSlot>()
 
 function startUpload(id: string): Promise<UploadResult> {
-  const slot: { again: Deferred<UploadResult> | null } = { again: null }
-  uploadSlots.set(id, slot)
+  // The slot is set just after the run starts: nothing in runUpload's
+  // synchronous start asks for this record again.
   const run = runUpload(id)
+  const slot: UploadSlot = { run, again: null }
+  uploadSlots.set(id, slot)
   const settle = () => {
     uploadSlots.delete(id)
     const again = slot.again
@@ -554,6 +632,27 @@ function startUpload(id: string): Promise<UploadResult> {
   }
   run.then(settle, settle)
   return run
+}
+
+/**
+ * Resolves once every upload running now has ended (answered or failed),
+ * or after `capMs`, whichever comes first. Never rejects. The follow-up a
+ * record may start when its current upload ends is not waited for.
+ */
+async function runningUploadsSettled(capMs: number): Promise<void> {
+  const running = [...uploadSlots.values()].map((slot) => slot.run)
+  if (running.length === 0) return
+  let timer: ReturnType<typeof setTimeout> | undefined
+  try {
+    await Promise.race([
+      Promise.allSettled(running),
+      new Promise<void>((resolve) => {
+        timer = setTimeout(resolve, capMs)
+      }),
+    ])
+  } finally {
+    clearTimeout(timer)
+  }
 }
 
 /**
@@ -612,6 +711,10 @@ const remoteMisses = new Map<string, number>()
 const SIGNED_OUT = Symbol('signed out')
 
 async function fetchAndCacheRef(sessionId: string, sha256: string): Promise<string | null | typeof SIGNED_OUT> {
+  // Where the fetch starts: whether the bytes are kept (below) depends on
+  // what happened here while they were on their way.
+  const started = eventMark()
+  const savedHere = getSession(sessionId) !== undefined
   const token = await getIdToken()
   if (!token) return SIGNED_OUT
   const res = await authFetch('/photos/materialize', {
@@ -624,6 +727,13 @@ async function fetchAndCacheRef(sessionId: string, sha256: string): Promise<stri
     console.warn(`[sync] the cloud copy of a photo of ${sessionId} does not match its fingerprint; not used`)
     return null
   }
+  // Keep nothing for a record that was saved here and is gone now (deleted,
+  // or cleared because the account was deleted), and nothing at all once
+  // this device was cleared after the fetch started (in this tab or
+  // another). The bytes of a record that wasn't saved here (a PDF of a
+  // record only in the cloud) are kept as before. Either way the caller
+  // gets the bytes it asked for.
+  if (wipedSince(started) || (savedHere && getSession(sessionId) === undefined)) return data_url
   let kept = false
   try {
     // Content-addressed: putPhoto hashes the bytes again and stores them under the same key.
@@ -642,7 +752,9 @@ async function fetchAndCacheRef(sessionId: string, sha256: string): Promise<stri
 /**
  * A photo ref's bytes from the signed-in user's cloud copy, for a ref whose
  * bytes aren't on this device: fetched through /photos/materialize by
- * sha256, re-hashed, and cached in the photo store only when they match.
+ * sha256, re-hashed, and cached in the photo store only when they match
+ * (and not when the record was deleted, or this device cleared, while they
+ * were on their way: see fetchAndCacheRef).
  * Resolves the data URL, or null: signed out (no request is made), not in
  * the cloud, a mismatch, or an error. Never throws. Concurrent asks for the
  * same photo share one request; at most PHOTO_TRANSFER_CONCURRENCY run at
@@ -702,11 +814,34 @@ export async function exportCloudData(): Promise<unknown> {
   return expectJson<unknown>(res)
 }
 
-/** Permanently delete the user's account + every byte of their data. */
+/** How long deleteAccount waits for the uploads already running before it deletes the account. */
+export const ACCOUNT_DELETE_UPLOAD_WAIT_MS = 15_000
+
+/**
+ * Permanently delete the user's account + every byte of their data on the
+ * server. The records on this device are the caller's to clear afterwards
+ * (clearLocalRecords in local-wipe.ts), once the user is signed out.
+ */
 export async function deleteAccount(): Promise<void> {
   const scope = tokenSubject(await getIdToken())
-  const res = await authFetch('/me/delete', { method: 'POST' })
-  await expectJson<{ ok: true }>(res)
+  // Tombstone every record first (synchronously), as deleteCloudSession
+  // does for one: an upload already running must not put a row back under
+  // the account being deleted, nor send the photos it still has waiting.
+  const ids = loadSessions()
+    .filter((s) => !s.shared_from)
+    .map((s) => s.id)
+  for (const id of ids) markSessionDeleted(id)
+  try {
+    // Then let the uploads already running end, for at most
+    // ACCOUNT_DELETE_UPLOAD_WAIT_MS: a photo already on its way to S3
+    // lands before /me/delete sweeps the account's photos, not after it,
+    // where nothing could delete it any more.
+    await runningUploadsSettled(ACCOUNT_DELETE_UPLOAD_WAIT_MS)
+    const res = await authFetch('/me/delete', { method: 'POST' })
+    await expectJson<{ ok: true }>(res)
+  } finally {
+    for (const id of ids) markDeleteSettled(id)
+  }
   if (scope) {
     const markers = loadUploadMarkers()
     delete markers[scope]
@@ -898,7 +1033,11 @@ async function syncOnce(options: SyncOptions, listing: SyncOperation): Promise<I
   // here after the listing started, or just before it, may still be in that
   // listing: skip it (its tombstone), or it comes back here and the next
   // full sync uploads it again.
-  const toPull = cloudSessions.filter((s) => !localById.has(s.id) && !s.shared_from && !deletedSince(s.id, listing))
+  // A listing that started before the records here were cleared (the
+  // account was deleted) pulls nothing.
+  const toPull = wipedSince(listing)
+    ? []
+    : cloudSessions.filter((s) => !localById.has(s.id) && !s.shared_from && !deletedSince(s.id, listing))
   if (toPull.length > 0) {
     if (!markPulledRecords(toPull.map((s) => s.id))) {
       console.warn('[sync] could not mark records as pulled; they are pulled on the next sync')
@@ -915,6 +1054,7 @@ async function syncOnce(options: SyncOptions, listing: SyncOperation): Promise<I
 
   // On both sides → merge, and push back what the cloud lacks.
   for (const cloudSession of cloudSessions) {
+    if (wipedSince(listing)) break
     const local = localById.get(cloudSession.id)
     if (!local || local.shared_from) continue
     result.alreadyInSync++
@@ -927,6 +1067,7 @@ async function syncOnce(options: SyncOptions, listing: SyncOperation): Promise<I
 
   // Local-only → upload to cloud (not on a pull on return: see SyncOptions).
   for (const session of uploadLocalOnly ? localSessions : []) {
+    if (wipedSince(listing)) break
     if (cloudById.has(session.id) || session.shared_from) continue
     // The listing shows no row for it. If it had one before, it was deleted
     // (from another device), and that delete swept its photos too, so this
@@ -956,9 +1097,11 @@ async function syncOnce(options: SyncOptions, listing: SyncOperation): Promise<I
  * preserving the rest. Used by the cloud-pull path during initial sync.
  * Returns false (and writes nothing) when a record with the id is already
  * saved, the record was deleted here after the listing it came from
- * started or just before it (its tombstone), or the write failed. A write tells open screens
- * through `scheduleRecordsChanged`, so the list shows a pulled record as
- * soon as it lands, with one re-render for a whole pull.
+ * started or just before it (its tombstone), this device's records were
+ * cleared after the listing started (`wipedSince`), or the write failed. A
+ * write tells open screens through `scheduleRecordsChanged`, so the list
+ * shows a pulled record as soon as it lands, with one re-render for a
+ * whole pull.
  *
  * A read-only shared copy of this same record (T7: the driver opened their
  * own share link on this device before the record itself arrived) gives
@@ -967,7 +1110,7 @@ async function syncOnce(options: SyncOptions, listing: SyncOperation): Promise<I
  */
 function writeNewLocalSession(session: ParkingSession, listing: SyncOperation): boolean {
   const KEY = 'parkproof.sessions.v1'
-  if (deletedSince(session.id, listing)) return false
+  if (wipedSince(listing) || deletedSince(session.id, listing)) return false
   try {
     const raw = localStorage.getItem(KEY)
     const all: ParkingSession[] = raw ? JSON.parse(raw) : []
@@ -1160,13 +1303,18 @@ export function mirrorSessionUpdateToCloud(sessionId: string): void {
   })
 }
 
-/** Test-only: forget uploads in flight, tombstones and the cloud-photo caches. */
+/**
+ * Test-only: forget uploads in flight, tombstones, the cloud-photo caches
+ * and this tab's wipe barrier. The stored wipe time is in localStorage,
+ * which tests clear themselves.
+ */
 export function resetSyncForTests(): void {
   uploadSlots.clear()
   tombstones.clear()
   runningOperations.clear()
   remoteInFlight.clear()
   remoteMisses.clear()
+  wipedAt = 0
 }
 
 // Re-export updateSession so callers can do `updateSession + mirror` in one

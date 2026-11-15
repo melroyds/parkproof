@@ -58,7 +58,7 @@ There is **one** Lambda function (`parkproof-sign-translator`) with path dispatc
 | `POST /photos/presign` | `handlePhotosPresign` | Short-lived presigned `PUT` for one photo: `{ session_id, sha256 }` for photo refs, the legacy role form for old records |
 | `POST /photos/materialize` | `handlePhotosMaterialize` | Returns a photo's bytes as base64 through the API (the browser never fetches private S3 directly) |
 | `GET\|POST /me/export` | `handleMeExport` | Every record of the caller as JSON |
-| `POST /me/delete` | `handleMeDelete` | Deletes the caller's rows, S3 photos and Cognito user |
+| `POST /me/delete` | `handleMeDelete` | Deletes the caller's rows, S3 photos and Cognito user, the user last. Safe to retry: a user already gone counts as deleted. Finds the user by the id token's `cognito:username` (an Apple or Google user's `sub` finds no one), after `AdminGetUser` checks it still has the token's `sub`, so the role needs `cognito-idp:AdminGetUser` and `AdminDeleteUser`. The app then clears the device (`clearLocalRecords`, `src/lib/local-wipe.ts`) |
 
 **Not HTTP:** `{"warmer": true}` returns at once (a hand-made `parkproof-warmer` schedule, if it exists; no script makes it). `_async_kind: 'sign-translate' | 'draft-appeal' | 'read-notice'` is the self-invoked worker (`handleAsyncWork`). `_async_kind: 'push-dispatch'` is a one-shot reminder firing (`handlePushDispatch`), `'push-recurring'` a weekly cron firing (`handleRecurringPushDispatch`, which decides fortnightly and nth-weekday rules from the occurrence date in the rule's zone).
 
@@ -168,7 +168,7 @@ Every field added by the roadmap is optional on `ParkingSession` (`src/types.ts`
 | `parkproof.profile.v1` | Settings (`src/lib/profile.ts`): `driver_name` (at most 60 characters) and up to 3 `permits` (`{ id, type, state, area, expires_on }`). This browser only, never synced |
 | `parkproof.recurring.v1` | Weekly reminders (`RecurringRule[]`: label, kind, days, start, end, frequency `weekly`, `fortnightly` or `monthly_nth`, nth, anchor date, IANA zone, address, reminder offsets, push, paused, calendar sequence). Never signed. `parkproof.recurring.push.v1` holds a fingerprint of what was last booked by push (`src/lib/recurring-push.ts`) |
 | `parkproof.workday.v1` | Workday state (T6a): `{ id, started_at, jurisdiction, status: 'parked' \| 'between_moves' \| 'ended', current_session_id, previous_session_id, ended_at }`, at most one active. The stops are ordinary records with `workday_id` and `leg_index` |
-| Device-local | `parkproof.device_id.v1` (push ownership), `parkproof.push.registration_sent.v1`, `parkproof.push.turned_off.v1`, `parkproof.signing.state.v2` (sweep timestamps, link-0 rejections, pulled marks), `parkproof.sync.uploaded.v1` (photo upload markers), `parkproof.backupPrompt.v1`, `parkproof.install-dismissed.v1`, `parkproof.language` |
+| Device-local | `parkproof.device_id.v1` (push ownership), `parkproof.push.registration_sent.v1`, `parkproof.push.turned_off.v1`, `parkproof.signing.state.v2` (sweep timestamps, link-0 rejections, pulled marks), `parkproof.sync.uploaded.v1` (photo upload markers), `parkproof.sync.wiped_at.v1` (when Delete forever last cleared this device; a sync listing or cloud photo fetch that started earlier, in any tab, writes nothing), `parkproof.backupPrompt.v1`, `parkproof.install-dismissed.v1`, `parkproof.language` |
 
 ## Conventions
 

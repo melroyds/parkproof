@@ -391,6 +391,18 @@ export async function deleteSessionPhotos(sessionId: string): Promise<number> {
 }
 
 /**
+ * Delete every photo in the store, whatever record it belongs to (orphans
+ * too). Only for clearing the device after the account is deleted
+ * (clearLocalRecords in local-wipe.ts). Resolves with how many were deleted.
+ */
+export async function deleteAllPhotos(): Promise<number> {
+  const metas = await activeBackend().listMeta()
+  const doomed = metas.map((m) => m.key)
+  if (doomed.length > 0) await activeBackend().delete(doomed)
+  return doomed.length
+}
+
+/**
  * Delete a record's photos except the ones in `keep` (hashes). The logger
  * runs this right after a save, so photos taken and then replaced or
  * removed don't stay on the device. Resolves with how many were deleted.

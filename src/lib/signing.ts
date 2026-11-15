@@ -107,6 +107,20 @@ function updateSigningState(id: string, patch: (entry: SigningStateEntry) => Sig
   saveSigningState(state)
 }
 
+/**
+ * Forget the signing state of every record. Only once the records
+ * themselves are gone (clearLocalRecords in local-wipe.ts): the state is
+ * per record and means nothing without them.
+ */
+export function forgetSigningState(): void {
+  try {
+    localStorage.removeItem(SIGNING_STATE_KEY)
+    localStorage.removeItem(LEGACY_RETRY_LOG_KEY)
+  } catch {
+    /* best-effort: entries for records that no longer exist are never read */
+  }
+}
+
 /** The code the server gave when it refused this record's link 0, or null. */
 export function arrivalSigningRejection(sessionId: string): string | null {
   return loadSigningState()[sessionId]?.link0_rejected?.code ?? null

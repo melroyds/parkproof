@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../lib/use-auth'
 import { deleteAccount, exportCloudData } from '../lib/sync'
+import { clearLocalRecords } from '../lib/local-wipe'
 import Icon from './Icon'
 import Button from './ui/Button'
 import BackButton from './ui/BackButton'
@@ -92,18 +93,36 @@ export default function AuthSettings({ onBack, onOpenPrivacy, onDeleted }: Props
     setDeleteError(null)
     try {
       await deleteAccount()
-      // Sign out locally — the Cognito user is already gone server-side.
-      signOut()
-      onDeleted()
     } catch (err) {
       setDeleteStage('error')
       setDeleteError(err instanceof Error ? err.message : String(err))
+      return
+    }
+    // Sign out locally (the Cognito user is already gone server-side), and
+    // only then clear this device, as settings.deleteCopy promises: signed
+    // out, no sync can upload or pull a record back.
+    signOut()
+    // The records are gone before clearLocalRecords first waits (only the
+    // photo store is left to clear), so leave now rather than wait for
+    // IndexedDB, which can be slow or hang.
+    const wipe = clearLocalRecords()
+    onDeleted()
+    try {
+      await wipe
+    } catch (err) {
+      // The account is gone either way; what's left here can still be deleted
+      // record by record.
+      console.warn('[account] clearing this device failed:', err)
     }
   }
 
+  // While the account is being deleted, nothing here leaves the screen: a
+  // failure would be shown to no one, and the driver would think it worked.
+  const deleting = deleteStage === 'busy'
+
   return (
     <div className="min-h-screen flex flex-col p-6 max-w-md mx-auto w-full">
-      <BackButton onClick={onBack}>
+      <BackButton onClick={onBack} disabled={deleting}>
         {t('common.back')}
       </BackButton>
 
@@ -146,7 +165,8 @@ export default function AuthSettings({ onBack, onOpenPrivacy, onDeleted }: Props
         </p>
         <button
           onClick={onOpenPrivacy}
-          className="w-full bg-white border border-ink-700 hover:bg-ink-900 hover:text-white text-ink-900 font-semibold py-3 rounded-xl transition-colors"
+          disabled={deleting}
+          className="w-full bg-white border border-ink-700 hover:bg-ink-900 hover:text-white disabled:opacity-60 disabled:cursor-not-allowed text-ink-900 font-semibold py-3 rounded-xl transition-colors"
         >
           {t('settings.privacyCta')}
         </button>
@@ -162,7 +182,8 @@ export default function AuthSettings({ onBack, onOpenPrivacy, onDeleted }: Props
             signOut()
             onBack()
           }}
-          className="w-full bg-paper-200 hover:bg-paper-300 text-ink-900 font-semibold py-3 rounded-xl transition-colors"
+          disabled={deleting}
+          className="w-full bg-paper-200 hover:bg-paper-300 disabled:opacity-60 disabled:cursor-not-allowed text-ink-900 font-semibold py-3 rounded-xl transition-colors"
         >
           {t('settings.signOutCta')}
         </button>

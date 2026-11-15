@@ -456,6 +456,21 @@ export function saveSession(session: ParkingSession): QuotaRecoveryReport {
   return report
 }
 
+/**
+ * Remove every saved record (the driver's own and shared copies) and the
+ * workday state, which only points at records, then tell open screens.
+ * Nothing else is cleared here: clearLocalRecords (local-wipe.ts) clears
+ * what hangs off the records (photos, reminders, signing and sync state)
+ * around this call. Returns how many records were removed.
+ */
+export function clearAllRecords(): number {
+  const count = loadSessions().length
+  localStorage.removeItem(KEY)
+  localStorage.removeItem(WORKDAY_KEY)
+  notifyRecordsChanged(null)
+  return count
+}
+
 /** Delete a record, and its photo-store photos in the background. */
 export function deleteSession(id: string): void {
   const sessions = loadSessions().filter((s) => s.id !== id)
