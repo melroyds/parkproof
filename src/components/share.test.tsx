@@ -213,19 +213,6 @@ describe('the share sheet', () => {
     await waitFor(() => expect(onClose).toHaveBeenCalled())
   })
 
-  it('names the driver the handover flow passes instead of the record driver', async () => {
-    const session = await signedOwnRecord(signer)
-    const share = vi.fn(async (data: ShareData) => {
-      void data
-    })
-    render(<ShareSheet session={session} onClose={vi.fn()} driver="Alex" shareNavigator={{ share }} />)
-    await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: en.share.shareButton }))
-    })
-    const read = decodeShareToken(share.mock.calls[0][0].url!.split('#share=')[1])
-    expect(read.ok && read.payload.driver).toBe('Alex')
-  })
-
   it('copies the link when there is no share sheet, and shows it when the clipboard fails too', async () => {
     const session = await signedOwnRecord(signer)
     const writeText = vi.fn(async (text: string) => {

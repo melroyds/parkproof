@@ -50,6 +50,7 @@ import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 import {
   CognitoIdentityProviderClient,
   AdminDeleteUserCommand,
+  AdminGetUserCommand,
 } from '@aws-sdk/client-cognito-identity-provider'
 
 const REGION = process.env.AWS_REGION || 'ap-southeast-2'
@@ -159,22 +160,37 @@ function cognito() {
 
 // ─── JWT identity extraction ──────────────────────────────────────────────
 /**
- * Pull the Cognito user `sub` from the event. API Gateway's JWT authorizer
- * puts the validated claims at `event.requestContext.authorizer.jwt.claims`.
+ * The token's claims. API Gateway's JWT authorizer puts the validated claims
+ * at `event.requestContext.authorizer.jwt.claims`. Null when there are none.
+ */
+function jwtClaims(event) {
+  return event?.requestContext?.authorizer?.jwt?.claims ?? event?.requestContext?.authorizer?.claims ?? null
+}
+
+/**
+ * Pull the Cognito user `sub` from the event.
  * Throws a 401-shaped error if missing — caller maps to an HTTP response.
  */
 function requireUserId(event) {
-  const claims =
-    event?.requestContext?.authorizer?.jwt?.claims ??
-    event?.requestContext?.authorizer?.claims ??
-    null
-  const sub = claims?.sub
+  const sub = jwtClaims(event)?.sub
   if (!sub || typeof sub !== 'string') {
     const err = new Error('Not signed in')
     err.statusCode = 401
     throw err
   }
   return sub
+}
+
+/**
+ * The token's Cognito username: `cognito:username` in an id token (what the
+ * app sends), `username` in an access token. Null when it has neither.
+ */
+function tokenUsername(event) {
+  const claims = jwtClaims(event)
+  for (const name of [claims?.['cognito:username'], claims?.username]) {
+    if (typeof name === 'string' && name.length > 0) return name
+  }
+  return null
 }
 
 function pk(userId) {
@@ -795,7 +811,14 @@ export async function handleMeExport(event) {
 // ─── /me/delete ───────────────────────────────────────────────────────────
 /**
  * Nukes the account end-to-end: every DynamoDB row, every S3 object, and the
- * Cognito user record itself. Irreversible — frontend confirms before calling.
+ * Cognito user record itself. Irreversible: the app confirms before calling.
+ *
+ * Safe to call again. A call can delete everything and still lose its answer
+ * on the way back to the phone. The phone's retry then finds the Cognito user
+ * already gone, which counts as deleted (deleteCognitoUser), so the retry
+ * answers ok and the phone can sign out and clear itself. The Cognito user
+ * goes last, so every call, a retry included, sweeps the rows and photos
+ * first, and a retry's sweeps also remove anything uploaded since.
  */
 export async function handleMeDelete(event) {
   const userId = requireUserId(event)
@@ -809,6 +832,9 @@ export async function handleMeDelete(event) {
         TableName: TABLE_NAME,
         KeyConditionExpression: 'pk = :pk',
         ExpressionAttributeValues: { ':pk': pk(userId) },
+        // Strongly consistent, as in queryAllRows: an eventually consistent
+        // read can miss a row uploaded a moment before, and leave it behind.
+        ConsistentRead: true,
         ExclusiveStartKey: lastKey,
         ProjectionExpression: 'pk, sk',
       }),
@@ -851,22 +877,53 @@ export async function handleMeDelete(event) {
     deletedObjects = await deleteObjectsUnder(`${userId}/`)
   }
 
-  // 3. Delete the Cognito user record itself. After this returns, the JWT
-  // remains valid until it expires (~1h default) but no further sign-in is
-  // possible.
+  // 3. Delete the Cognito user record itself, last, so that a retry always
+  // runs both sweeps first. After this returns, the JWT remains valid until
+  // it expires (~1h default) but no further sign-in is possible.
+  let cognitoUser = 'skipped'
   if (USER_POOL_ID) {
-    await cognito().send(
-      new AdminDeleteUserCommand({
-        UserPoolId: USER_POOL_ID,
-        Username: userId,
-      }),
-    )
+    cognitoUser = await deleteCognitoUser(userId, tokenUsername(event))
   }
 
   console.log(
-    `[parkproof.me.delete] user=${userId} deleted_rows=${deletedRows} deleted_objects=${deletedObjects}`,
+    `[parkproof.me.delete] user=${userId} deleted_rows=${deletedRows} deleted_objects=${deletedObjects} cognito=${cognitoUser}`,
   )
   return { ok: true, deleted_rows: deletedRows, deleted_objects: deletedObjects }
+}
+
+/**
+ * Delete the token's Cognito user. Resolves 'deleted', or 'already_deleted'
+ * when the user is gone, which is what a retry finds after a call that
+ * deleted the user but whose answer was lost. Every other error is thrown,
+ * so the route fails and the driver can try again.
+ *
+ * AdminDeleteUser finds a user by username, or by the sub of a local user
+ * only: an Apple or Google user's sub finds no one. So the user is named by
+ * the token's username (a local user's username is their sub in this pool,
+ * which signs in with email), and a user that name can't find is gone. A
+ * token without a username leaves only the sub, and then not finding the
+ * user is an error: it can't tell a deleted user from an Apple or Google one.
+ *
+ * An Apple or Google username can be taken again: the same Apple or Google
+ * account signing in after a delete makes a new user, with a new sub, under
+ * the same username. So before deleting by a username that isn't the token's
+ * sub, Cognito is asked whose it is, and a user with another sub is left alone.
+ */
+async function deleteCognitoUser(sub, username) {
+  const name = username ?? sub
+  try {
+    if (name !== sub) {
+      const user = await cognito().send(new AdminGetUserCommand({ UserPoolId: USER_POOL_ID, Username: name }))
+      const userSub = user?.UserAttributes?.find((a) => a?.Name === 'sub')?.Value
+      // A newer user has the username, so the token's own user is gone.
+      if (typeof userSub === 'string' && userSub !== sub) return 'already_deleted'
+    }
+    await cognito().send(new AdminDeleteUserCommand({ UserPoolId: USER_POOL_ID, Username: name }))
+    return 'deleted'
+  } catch (err) {
+    if (err?.name === 'UserNotFoundException' && username !== null) return 'already_deleted'
+    throw err
+  }
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────
