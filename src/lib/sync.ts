@@ -54,18 +54,127 @@ function apiBase(): string {
   return url.replace(/\/[^/]*$/, '')
 }
 
-async function authFetch(
-  path: string,
-  init: RequestInit = {},
-): Promise<Response> {
-  const token = await getIdToken()
-  if (!token) throw new Error('Not signed in')
+/**
+ * Fired on `window` when a signed-in call finds the account deleted: the
+ * signed-in routes refuse it with HTTP 410 and
+ * `{"error":"ERR_ACCOUNT_DELETED"}`. Its detail (AccountDeletedDetail) says
+ * which call and which account. The AuthProvider (auth-context.tsx) signs
+ * this device out, so it stops syncing, and says the account was deleted.
+ * It does the same whichever device ran the delete, this one included when
+ * the answer to its Delete forever was lost, and it never clears the
+ * records on this device. Never fired for a refusal from this tab's own
+ * Delete forever while it runs (see "This tab's own Delete forever"), nor
+ * while another account is signed in here (a late refusal for an account
+ * this device has switched away from). With no one signed in it still
+ * fires, so the notice can say why the device was signed out.
+ */
+export const ACCOUNT_DELETED_EVENT = 'parkproof:account-deleted'
+
+/** What ACCOUNT_DELETED_EVENT carries. */
+export interface AccountDeletedDetail {
+  /** The refused call's route. */
+  path: string
+  /** The refused account (its Cognito sub), or null for a token without one. */
+  account: string | null
+}
+
+// ─── This tab's own Delete forever ───────────────────────────────────────
+// /me/delete writes its deletion marker before it deletes anything, so while
+// it runs, this tab's own signed-in calls (a pull on return, a photo fetch)
+// are refused with 410 too. Those refusals come from this tab's own delete,
+// so they tell the app nothing: a refusal is the delete's own when its call
+// went out before the delete ended and was answered after it started. The
+// delete starts when deleteAccount does, before it waits for the uploads
+// already running, since a call sent then, or just before, can still reach
+// the server after the marker. If the delete fails, the server removes its
+// marker before it answers: nothing is refused afterwards, and the device
+// stays signed in for the retry. This window is kept in this tab's memory
+// only, so another tab, or this one after a reload, takes a refusal like any
+// other.
+//
+// The answer can be lost: the connection drops, the app is suspended, or
+// API Gateway gives up after 30 s while the Lambda carries on. The server
+// may then have deleted everything and kept its marker, while Account says
+// the delete failed and that the records on this device are still here.
+// The device stays signed in, and its next refused call signs it out like
+// any other: its records stay, and the notice says only that the account was
+// deleted. Nothing here sends /me/delete again or clears the device on its
+// own: the driver may have saved records since that message, and only a
+// Delete forever that answered, in Account, clears a device.
+
+/** Signed-in calls going out and this tab's deletes ending, in the order they happen. */
+let callSeq = 0
+
+/** The last Delete forever this tab ran: the account, and where it ended in callSeq (null while it runs). */
+let deleteWindow: { account: string | null; endedAt: number | null } | null = null
+
+/** The Delete forever running now, which a second caller shares. */
+let accountDeleteRun: Promise<void> | null = null
+
+/**
+ * True when a call for `account`, sent at `sentAt` and answered now, falls in
+ * this tab's last Delete forever of that account: the delete is still
+ * running, or it ended after the call went out.
+ */
+function inDeleteWindow(account: string | null, sentAt: number): boolean {
+  const last = deleteWindow
+  if (account === null || last === null || last.account !== account) return false
+  return last.endedAt === null || sentAt < last.endedAt
+}
+
+/** The `error` of a JSON answer (read from a clone), or undefined. */
+async function errorOf(res: Response): Promise<unknown> {
+  try {
+    return ((await res.clone().json()) as { error?: unknown } | null)?.error
+  } catch {
+    return undefined // not JSON
+  }
+}
+
+/**
+ * A signed-in call, with `token` (an upload's: see uploadOnce), or else the
+ * current id token.
+ */
+async function authFetch(path: string, init: RequestInit = {}, token?: string): Promise<Response> {
+  const sent = token ?? (await getIdToken())
+  if (!sent) throw new Error('Not signed in')
+  const account = tokenSubject(sent)
+  // Where the call goes out in the order of events: a refusal of it is this
+  // tab's own delete's when it went out before that delete ended.
+  const sentAt = ++callSeq
   const headers = new Headers(init.headers)
-  headers.set('Authorization', `Bearer ${token}`)
+  headers.set('Authorization', `Bearer ${sent}`)
   if (init.body && !headers.has('Content-Type')) {
     headers.set('Content-Type', 'application/json')
   }
-  return fetch(apiBase() + path, { ...init, headers })
+  const res = await fetch(apiBase() + path, { ...init, headers })
+  // Every signed-in call comes through here, so this one check covers them
+  // all. The answer is read from a clone: the caller still reads it, and
+  // fails on it, as before.
+  if (res.status === 410 && (await errorOf(res)) === 'ERR_ACCOUNT_DELETED') {
+    await tellAccountDeleted(path, account, sentAt)
+  }
+  return res
+}
+
+/**
+ * A call for `account`, sent at `sentAt`, was refused because the account is
+ * deleted: tell the app (ACCOUNT_DELETED_EVENT). Unless the refusal came from
+ * this tab's own delete while it ran, or this device is signed in to another
+ * account now: a refusal of one it has left (an upload's row, sent with the
+ * token the upload started with) says nothing about the one signed in now,
+ * and signing out would sign that one out.
+ */
+async function tellAccountDeleted(path: string, account: string | null, sentAt: number): Promise<void> {
+  const current = tokenSubject(await getIdToken().catch(() => null))
+  if (current !== null && current !== account) return
+  if (inDeleteWindow(account, sentAt)) return
+  if (typeof window === 'undefined' || typeof window.dispatchEvent !== 'function') return
+  try {
+    window.dispatchEvent(new CustomEvent<AccountDeletedDetail>(ACCOUNT_DELETED_EVENT, { detail: { path, account } }))
+  } catch {
+    /* a listener threw: the caller still gets its answer */
+  }
 }
 
 async function expectJson<T>(res: Response): Promise<T> {
@@ -81,6 +190,11 @@ async function expectJson<T>(res: Response): Promise<T> {
     throw new Error(`API ${res.status}: ${detail}`)
   }
   return (await res.json()) as T
+}
+
+/** True for what expectJson throws when a call was refused because the account was deleted (410 ERR_ACCOUNT_DELETED). */
+function isAccountDeletedError(err: unknown): boolean {
+  return err instanceof Error && err.message === 'API 410: ERR_ACCOUNT_DELETED'
 }
 
 /** The Cognito `sub` in an id token (no signature check: only to scope device-local state). */
@@ -224,8 +338,13 @@ function deletedSince(id: string, operation: SyncOperation): boolean {
  */
 let wipedAt = 0
 
-/** When this device's records were last cleared, by the clock (ms), for every open tab. */
-const WIPED_AT_KEY = 'parkproof.sync.wiped_at.v1'
+/**
+ * When this device's records were last cleared, by the clock (ms), for every
+ * open tab. The AuthProvider (auth-context.tsx) watches it too: once another
+ * tab has cleared the device, it closes the account-deleted notice, which
+ * says the records on this device are still here.
+ */
+export const WIPED_AT_KEY = 'parkproof.sync.wiped_at.v1'
 
 /**
  * The stored wipe time, or 0 when there is none or it can't be read. A time
@@ -388,9 +507,14 @@ async function putToS3(url: string, blob: Blob, contentType: string): Promise<vo
  * Upload one legacy photo under its per-role key: mint a presigned PUT URL,
  * then send the bytes directly to S3 from the browser. Lambda never sees
  * the photo — keeps the request small and sidesteps API Gateway's 6MB
- * payload limit.
+ * payload limit. `token` gives the upload's id token for the presign.
  */
-async function uploadLegacyPhoto(sessionId: string, role: LegacyPhotoRole, dataUrl: string): Promise<void> {
+async function uploadLegacyPhoto(
+  sessionId: string,
+  role: LegacyPhotoRole,
+  dataUrl: string,
+  token: () => Promise<string>,
+): Promise<void> {
   // Decode the data URL → Blob. Splits 'data:image/jpeg;base64,XYZ' into the
   // media type and the base64 payload, then atob → Uint8Array → Blob.
   const match = dataUrl.match(/^data:([^;]+);base64,(.+)$/)
@@ -401,10 +525,14 @@ async function uploadLegacyPhoto(sessionId: string, role: LegacyPhotoRole, dataU
   const binary = atob(b64)
   const bytes = new Uint8Array(binary.length)
   for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i)
-  const presignRes = await authFetch('/photos/presign', {
-    method: 'POST',
-    body: JSON.stringify({ session_id: sessionId, role, content_type: contentType }),
-  })
+  const presignRes = await authFetch(
+    '/photos/presign',
+    {
+      method: 'POST',
+      body: JSON.stringify({ session_id: sessionId, role, content_type: contentType }),
+    },
+    await token(),
+  )
   const { url } = await expectJson<PresignResponse>(presignRes)
   if (!url) throw new Error('presign returned no upload URL')
   await putToS3(url, new Blob([bytes], { type: contentType }), contentType)
@@ -414,9 +542,13 @@ async function uploadLegacyPhoto(sessionId: string, role: LegacyPhotoRole, dataU
  * Upload one photo ref's bytes (from the photo store) under its
  * content-addressed key. 'absent' when the bytes aren't on this device
  * (another device has them, or they're gone): nothing to send, and not a
- * failure.
+ * failure. `token` gives the upload's id token for the presign.
  */
-async function uploadRefPhoto(sessionId: string, sha256: string): Promise<'uploaded' | 'absent'> {
+async function uploadRefPhoto(
+  sessionId: string,
+  sha256: string,
+  token: () => Promise<string>,
+): Promise<'uploaded' | 'absent'> {
   let stored: { type: string; bytes: Uint8Array } | null
   try {
     stored = await getPhotoBytes(sessionId, sha256)
@@ -424,10 +556,14 @@ async function uploadRefPhoto(sessionId: string, sha256: string): Promise<'uploa
     stored = null
   }
   if (!stored) return 'absent'
-  const presignRes = await authFetch('/photos/presign', {
-    method: 'POST',
-    body: JSON.stringify({ session_id: sessionId, sha256, content_type: stored.type }),
-  })
+  const presignRes = await authFetch(
+    '/photos/presign',
+    {
+      method: 'POST',
+      body: JSON.stringify({ session_id: sessionId, sha256, content_type: stored.type }),
+    },
+    await token(),
+  )
   const presigned = await expectJson<PresignResponse>(presignRes)
   if (presigned.exists) return 'uploaded'
   if (!presigned.url) throw new Error('presign returned no upload URL')
@@ -495,10 +631,19 @@ async function uploadOnce(id: string, operation: SyncOperation): Promise<UploadR
   const start = getSession(id)
   // Gone from this device, or a read-only copy of someone else's record.
   if (!start || start.shared_from) return NO_FAILURE
-  const token = await getIdToken()
-  if (!token) throw new Error('Not signed in')
-  const scope = tokenSubject(token)
+  const startToken = await getIdToken()
+  if (!startToken) throw new Error('Not signed in')
+  const scope = tokenSubject(startToken)
   const done = scope ? uploadedPhotoMarkers(scope) : new Set<string>()
+  // The id token for each of this upload's calls: the current one while it
+  // is still this account's (Cognito refreshes it once it runs out), else
+  // the one the upload started with. So one upload never spans two
+  // accounts, and its row still goes out when this device was signed out
+  // meanwhile (below).
+  const uploadToken = async (): Promise<string> => {
+    const current = await getIdToken().catch(() => null)
+    return current !== null && tokenSubject(current) === scope ? current : startToken
+  }
 
   // Each job checks the tombstone when its turn comes: a photo still waiting
   // behind others when the record (or the whole account) is deleted is never
@@ -511,7 +656,7 @@ async function uploadOnce(id: string, operation: SyncOperation): Promise<UploadR
       const { role, value } = target
       jobs.push(async () => {
         if (isTombstoned(id)) return
-        await uploadLegacyPhoto(id, role, value)
+        await uploadLegacyPhoto(id, role, value, uploadToken)
         // A delete meanwhile removes the record's photos: don't claim this one is there.
         if (!isTombstoned(id)) markUploaded(scope, marker)
       })
@@ -520,7 +665,7 @@ async function uploadOnce(id: string, operation: SyncOperation): Promise<UploadR
     const { sha256 } = target
     jobs.push(async () => {
       if (isTombstoned(id)) return
-      if ((await uploadRefPhoto(id, sha256)) === 'uploaded' && !isTombstoned(id)) markUploaded(scope, marker)
+      if ((await uploadRefPhoto(id, sha256, uploadToken)) === 'uploaded' && !isTombstoned(id)) markUploaded(scope, marker)
     })
   }
   let photoFailed = false
@@ -540,10 +685,21 @@ async function uploadOnce(id: string, operation: SyncOperation): Promise<UploadR
   // carries everything stored meanwhile (a signature landing, an end).
   const fresh = getSession(id)
   if (!fresh || fresh.shared_from) return { photoFailed }
-  const res = await authFetch('/sessions/upload', {
-    method: 'POST',
-    body: JSON.stringify({ session: uploadRow(fresh) }),
-  })
+  // With this upload's token (uploadToken). When this device was signed out
+  // meanwhile (its account was deleted: AuthProvider), that is the token the
+  // upload started with, so the row still goes out. The server refuses that
+  // row with 410 and sweeps the account's photos again, after every photo
+  // this upload sent has landed. Without the row, a photo
+  // presigned before the delete and landing after the last sweep would stay
+  // in S3 under an account no one can reach.
+  const res = await authFetch(
+    '/sessions/upload',
+    {
+      method: 'POST',
+      body: JSON.stringify({ session: uploadRow(fresh) }),
+    },
+    await uploadToken(),
+  )
   await expectJson<{ ok: true }>(res)
   // This device's "photo not backed up" flag clears on its own once every
   // photo it holds for the record is known to be in S3.
@@ -821,9 +977,32 @@ export const ACCOUNT_DELETE_UPLOAD_WAIT_MS = 15_000
  * Permanently delete the user's account + every byte of their data on the
  * server. The records on this device are the caller's to clear afterwards
  * (clearLocalRecords in local-wipe.ts), once the user is signed out.
+ *
+ * One at a time: a call while one runs shares it. While it runs, this tab's
+ * own refusals tell the app nothing (see "This tab's own Delete forever").
+ * A failed delete throws, and this device stays signed in. So does one whose
+ * answer was lost, which may have gone through: then the next refused call
+ * signs this device out, as for a delete run anywhere else, and its records
+ * stay.
  */
-export async function deleteAccount(): Promise<void> {
+export function deleteAccount(): Promise<void> {
+  if (!accountDeleteRun) {
+    const run = runAccountDelete()
+    accountDeleteRun = run
+    const settle = () => {
+      if (accountDeleteRun === run) accountDeleteRun = null
+    }
+    run.then(settle, settle)
+  }
+  return accountDeleteRun
+}
+
+async function runAccountDelete(): Promise<void> {
   const scope = tokenSubject(await getIdToken())
+  // From here until /me/delete answers, a refusal of this account is this
+  // tab's own (inDeleteWindow).
+  const running: { account: string | null; endedAt: number | null } = { account: scope, endedAt: null }
+  deleteWindow = running
   // Tombstone every record first (synchronously), as deleteCloudSession
   // does for one: an upload already running must not put a row back under
   // the account being deleted, nor send the photos it still has waiting.
@@ -837,9 +1016,14 @@ export async function deleteAccount(): Promise<void> {
     // lands before /me/delete sweeps the account's photos, not after it,
     // where nothing could delete it any more.
     await runningUploadsSettled(ACCOUNT_DELETE_UPLOAD_WAIT_MS)
-    const res = await authFetch('/me/delete', { method: 'POST' })
+    // The account the delete started with, and no other: signed out or
+    // signed in to another account meanwhile, nothing is deleted.
+    const token = await getIdToken()
+    if (!token || tokenSubject(token) !== scope) throw new Error('Not signed in')
+    const res = await authFetch('/me/delete', { method: 'POST' }, token)
     await expectJson<{ ok: true }>(res)
   } finally {
+    running.endedAt = ++callSeq
     for (const id of ids) markDeleteSettled(id)
   }
   if (scope) {
@@ -862,6 +1046,13 @@ export interface InitialSyncResult {
   // "we couldn't reach your sessions" — the latter shouldn't drop a returning
   // user onto the first-time landing with no explanation.
   listFailed: boolean
+  /**
+   * True when the listing was refused because the account was deleted (410
+   * ERR_ACCOUNT_DELETED; listFailed is true too). Nothing was reached and
+   * nothing can be: the run stops there. Not a "couldn't reach" for the
+   * banner. Optional, so a stand-in result can leave it out.
+   */
+  accountDeleted?: boolean
 }
 
 function payloadOf(bundle: SignatureBundle | undefined): Record<string, unknown> | null {
@@ -1017,16 +1208,24 @@ export async function performInitialSync(options: SyncOptions = {}): Promise<Ini
 async function syncOnce(options: SyncOptions, listing: SyncOperation): Promise<InitialSyncResult> {
   const uploadLocalOnly = options.uploadLocalOnly ?? true
   let listFailed = false
+  let accountDeleted = false
   const cloudSessions = await listCloudSessions().catch((err) => {
     console.warn('[sync] list failed, treating cloud as empty:', err)
     listFailed = true
+    accountDeleted = isAccountDeletedError(err)
     return [] as ParkingSession[]
   })
   const localSessions = loadSessions()
   const localById = new Map(localSessions.map((s) => [s.id, s]))
   const cloudById = new Map(cloudSessions.map((s) => [s.id, s]))
 
-  const result: InitialSyncResult = { uploaded: 0, pulled: 0, alreadyInSync: 0, merged: 0, listFailed }
+  const result: InitialSyncResult = { uploaded: 0, pulled: 0, alreadyInSync: 0, merged: 0, listFailed, accountDeleted }
+  // The account is deleted (by another device, or by this one): every
+  // upload would be refused too, so none is sent.
+  if (accountDeleted) {
+    console.log('[sync] initial sync: the account is deleted, nothing synced')
+    return result
+  }
 
   // Cloud-only → into local storage. The pulled mark goes first: a pulled
   // record must never be signed as if it were saved here. A record deleted
@@ -1304,9 +1503,10 @@ export function mirrorSessionUpdateToCloud(sessionId: string): void {
 }
 
 /**
- * Test-only: forget uploads in flight, tombstones, the cloud-photo caches
- * and this tab's wipe barrier. The stored wipe time is in localStorage,
- * which tests clear themselves.
+ * Test-only: forget uploads in flight, tombstones, the cloud-photo caches,
+ * this tab's wipe barrier and what it knows of its own account deletes (as
+ * another tab, or this one after a reload, would). The stored wipe time is
+ * in localStorage, which tests clear themselves.
  */
 export function resetSyncForTests(): void {
   uploadSlots.clear()
@@ -1315,6 +1515,8 @@ export function resetSyncForTests(): void {
   remoteInFlight.clear()
   remoteMisses.clear()
   wipedAt = 0
+  deleteWindow = null
+  accountDeleteRun = null
 }
 
 // Re-export updateSession so callers can do `updateSession + mirror` in one

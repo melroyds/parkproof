@@ -12,7 +12,7 @@
 // record is prepared (chain key, v1_hashes) before it is stored, and the
 // same draft reaches signNewRecord after the save. The result screen's gate
 // acknowledgements ride on that draft to the record (T2).
-import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import i18n from './lib/i18n'
 import { AuthContext, type AuthContextValue } from './lib/auth-context-shape'
@@ -1080,6 +1080,60 @@ describe("The 'couldn't load your records' banner", () => {
     } finally {
       now.mockRestore()
     }
+  })
+})
+
+// A device still signed in to a deleted account (another device after
+// Delete forever on the first, or the first itself when the answer to its
+// Delete forever was lost): its listing is refused (410
+// ERR_ACCOUNT_DELETED) and the AuthProvider signs it out. It used to say
+// nothing, and with no records here it showed "Couldn't load your saved
+// records" with a Retry that did nothing.
+describe('An account that was deleted', () => {
+  const syncResult = { uploaded: 0, pulled: 0, alreadyInSync: 0, merged: 0 }
+
+  it('Home says so, and that the records here stay, until the driver closes it', async () => {
+    const dismissAccountDeletedNotice = vi.fn()
+    render(
+      <AuthContext.Provider value={{ ...auth(false), configured: true, accountDeletedNotice: true, dismissAccountDeletedNotice }}>
+        <App />
+      </AuthContext.Provider>,
+    )
+    const notice = (await screen.findByText(i18n.t('settings.accountDeletedNotice'))).closest('div')!
+    fireEvent.click(within(notice).getByRole('button', { name: i18n.t('common.close') }))
+    expect(dismissAccountDeletedNotice).toHaveBeenCalledTimes(1)
+    expect(screen.queryByText(i18n.t('errors.syncFailed'))).toBeNull()
+  })
+
+  it("a listing refused for that reason never raises the couldn't-load banner", async () => {
+    const refused = { ...syncResult, listFailed: true, accountDeleted: true }
+    mocks.performInitialSync.mockResolvedValueOnce(refused)
+    renderApp(true)
+    await waitFor(() => expect(mocks.performInitialSync).toHaveBeenCalledTimes(1))
+    await act(async () => {})
+    expect(screen.queryByText(i18n.t('errors.syncFailed'))).toBeNull()
+  })
+
+  it('signed out, the banner goes: no sync runs then, so its Retry would do nothing', async () => {
+    mocks.performInitialSync.mockResolvedValueOnce({ ...syncResult, listFailed: true })
+    const view = renderApp(true)
+    expect(await screen.findByText(i18n.t('errors.syncFailed'))).toBeTruthy()
+    view.rerender(
+      <AuthContext.Provider value={auth(false)}>
+        <App />
+      </AuthContext.Provider>,
+    )
+    expect(screen.queryByText(i18n.t('errors.syncFailed'))).toBeNull()
+
+    // Signing in again doesn't bring the old banner back while the new sync runs.
+    mocks.performInitialSync.mockImplementationOnce(() => new Promise(() => {}))
+    view.rerender(
+      <AuthContext.Provider value={auth(true)}>
+        <App />
+      </AuthContext.Provider>,
+    )
+    await waitFor(() => expect(mocks.performInitialSync).toHaveBeenCalledTimes(2))
+    expect(screen.queryByText(i18n.t('errors.syncFailed'))).toBeNull()
   })
 })
 

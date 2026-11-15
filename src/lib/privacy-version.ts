@@ -8,9 +8,9 @@
  * update the fingerprint in privacy-version.test.tsx with it: that test fails
  * when the text changes and this date doesn't.
  */
-export const PRIVACY_LAST_UPDATED = '2026-11-09'
+export const PRIVACY_LAST_UPDATED = '2026-11-15'
 
-/** PRIVACY_LAST_UPDATED written the way the app writes dates ("9 November 2026"). */
+/** PRIVACY_LAST_UPDATED written the way the app writes dates ("15 November 2026"). */
 export function privacyLastUpdatedLabel(): string {
   return new Date(`${PRIVACY_LAST_UPDATED}T00:00:00Z`).toLocaleDateString('en-AU', {
     day: 'numeric',

@@ -9,7 +9,7 @@
 // - Account no longer has the push section, which moved to Settings.
 import { cleanup, render, screen } from '@testing-library/react'
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
-import i18n from '../lib/i18n'
+import i18n, { SUPPORTED_LANGUAGES } from '../lib/i18n'
 import { AuthContext, type AuthContextValue } from '../lib/auth-context-shape'
 import { RECURRING_SCHEDULE_DAYS } from '../../lambda/recurring-schedule.js'
 import AuthSettings from './AuthSettings'
@@ -105,6 +105,55 @@ describe('PrivacyPolicy', () => {
     expect(cloud.textContent).toMatch(/stored with that record in AWS DynamoDB/)
     expect(cloud.textContent).toMatch(/saved permits in Settings aren't/)
   })
+
+  it('says Delete removes every record and photo, not "every DynamoDB row": the delete itself writes one (the marker)', () => {
+    render(<PrivacyPolicy onBack={() => {}} />)
+    const deleteItem = screen.getByText('Delete.').closest('li')!
+    expect(deleteItem.textContent).toMatch(/Removes your sign-in record and every record and photo stored for your account, within seconds\./)
+    expect(deleteItem.textContent).not.toMatch(/DynamoDB row/)
+  })
+
+  it('says, right after Delete, what deleting the account keeps, what the logs record, and that records on another device stay there', () => {
+    render(<PrivacyPolicy onBack={() => {}} />)
+    const deleteItem = screen.getByText('Delete.').closest('li')!
+    const next = deleteItem.nextElementSibling as HTMLElement
+    expect(next.tagName).toBe('LI')
+    expect(next.textContent).toBe(i18n.t('privacy.rightsDeleteOtherDevices'))
+    // The marker holds the account's ID and when it was deleted, for a few
+    // days, so a device still signed in to it is refused (HTTP 410) instead
+    // of uploading into it again (src/lib/sync.ts authFetch).
+    expect(next.textContent).toMatch(
+      /we keep its random ID and the deletion time for a few days, so a device still signed in to it can't upload records again/,
+    )
+    // No "nothing else": the logs keep that ID too ([parkproof.me.delete]
+    // and [parkproof.account] in lambda/cloud-sync.js), for 90 days.
+    expect(next.textContent).not.toMatch(/nothing else/)
+    expect(next.textContent).toMatch(/Our server's logs also record that ID when you delete the account and each time such a device is refused/)
+    // A record's ID is logged only when the row a refused device uploaded
+    // can't be deleted again (deleteRowBestEffort), not for any failed removal.
+    expect(next.textContent).toMatch(
+      /If a record from such a device can't be removed, the log also gives that record's random ID\. The logs are deleted after 90 days\./,
+    )
+    // Signing that device out never clears it (src/lib/auth-context.tsx):
+    // its own records and those it pulled from the account alike.
+    expect(next.textContent).toMatch(/Your records on another device stay on that device until you delete them there/)
+    // Greek names the record whose ID is logged, not the log (both are αρχείο).
+    expect(i18n.t('privacy.rightsDeleteOtherDevices', { lng: 'el' })).toContain(
+      'το τυχαίο αναγνωριστικό εκείνου του αρχείου',
+    )
+  })
+
+  it.each(SUPPORTED_LANGUAGES.map((l) => l.code))(
+    'in %s, the delete statement says "a few days" in words, and its one number is the logs\' 90 days',
+    (lng) => {
+      const text = i18n.t('privacy.rightsDeleteOtherDevices', { lng })
+      expect(text).not.toBe('privacy.rightsDeleteOtherDevices')
+      if (lng !== 'en') expect(text).not.toBe(i18n.t('privacy.rightsDeleteOtherDevices', { lng: 'en' }))
+      expect(text).toMatch(/(^|\D)90(\D|$)/)
+      // ASCII, Devanagari, Gurmukhi and full-width digits, once the 90 is out.
+      expect(text.split('90').join('')).not.toMatch(/[0-9०-९੦-੯０-９]/)
+    },
+  )
 })
 
 describe('AuthSettings (Account)', () => {

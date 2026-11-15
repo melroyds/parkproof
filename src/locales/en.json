@@ -680,7 +680,8 @@
     "pushDisableNote": "This only unsubscribes this device. To fully revoke browser permission, change site settings in your browser.",
     "pushDenied": "You've blocked notifications for this site. To enable, change the permission in your browser's site settings, then revisit this page.",
     "pushRequesting": "Asking your browser…",
-    "pushErrorRetry": "Couldn't enable. Try again"
+    "pushErrorRetry": "Couldn't enable. Try again",
+    "accountDeletedNotice": "Your account was deleted, so you're signed out on this device. Your records on this device are still here."
   },
   "privacy": {
     "header": "Privacy",
@@ -712,7 +713,7 @@
     "rightsHeader": "Your rights",
     "rightsSignedIn": "If you sign in:",
     "rightsExport": "<strong>Export.</strong> Tap \"Download as PDF\" in Account to get a complete document with every record you've stored: cover page summary plus a per-record detail block with photos.",
-    "rightsDelete": "<strong>Delete.</strong> Tap \"Delete account\" in Account. Removes your sign-in record, every DynamoDB row, and every S3 photo within seconds. Irreversible.",
+    "rightsDelete": "<strong>Delete.</strong> Tap \"Delete account\" in Account. Removes your sign-in record and every record and photo stored for your account, within seconds. Irreversible.",
     "rightsCorrect": "<strong>Correct.</strong> You edit your records in-app. Every change syncs to the cloud immediately if signed in.",
     "rightsAnonymous": "If you don't sign in, your parking records are only on this device. Clear your browser storage to delete them. That doesn't delete what's already on our servers. A push reminder you set for a record is kept until it's sent or you cancel it. A weekly reminder by push is deleted within 90 days of the last time you opened ParkProof. This device's push registration (a random ID for this device, the push address and encryption keys your browser gave us, and when they were last renewed) is kept for about 90 days after ParkProof last renewed it. ParkProof renews it when you open the app with push reminders on and when you set a reminder. Switching push reminders off, in ParkProof or in your browser, doesn't tell our server, so the registration is kept as above. If the push service tells us the address no longer works (this can happen when a reminder you set earlier is sent after you switched them off), we delete the address and keys at once. We keep only this device's ID, a fingerprint of the address and when we found out, for about 90 days, so the address isn't stored again. Our server's logs also record this device's ID when it registers for push, sets a reminder or is sent one, with the push service it uses, the random ID of the record or weekly reminder, and when each reminder was set, sent or skipped. The logs are deleted after 90 days. Feedback you send, with your email if you add one, is kept for up to two years.",
     "photosHeader": "Photos taken inside ParkProof",
@@ -727,7 +728,8 @@
     "anonymousPush": "<strong>Push reminders</strong>, if you turn them on: the record's address, each reminder's time and its text (which can mention a permit time you entered) go to <strong>ParkProof's server</strong>, which keeps each one until it is sent, then deletes it.",
     "anonymousPermits": "<strong>A permit you use for a park</strong>: its type, its area or zone and any permit time you entered are kept with that record. Signing the record sends a fingerprint of these details, not the details, along with your answers to the permit questions. Deleting a permit in Settings doesn't change records already saved. Deleting the record removes them.",
     "signedInPermits": "<strong>Permit details</strong> kept with a record (the type, area or zone and any permit time you entered, for a park where you used a saved permit) are stored with that record in AWS DynamoDB. Your saved permits in Settings aren't. Deleting the record removes them.",
-    "anonymousWeeklyPush": "<strong>Weekly reminders by push</strong>, if you turn them on: each reminder's name and any address you entered, its days, times, repeat pattern and time zone, when it should remind you, and its notification text go to <strong>ParkProof's server</strong>, with a random ID for this device. The server keeps them while the reminder is on, so it can go out every week. They're deleted when you pause or delete the reminder or switch off its notifications, the next time ParkProof is open and online. Each time ParkProof sends them, the server keeps them for 90 days at most. ParkProof sends them again from time to time while you keep opening it, so if you stop, they're deleted within 90 days of the last time you opened ParkProof."
+    "anonymousWeeklyPush": "<strong>Weekly reminders by push</strong>, if you turn them on: each reminder's name and any address you entered, its days, times, repeat pattern and time zone, when it should remind you, and its notification text go to <strong>ParkProof's server</strong>, with a random ID for this device. The server keeps them while the reminder is on, so it can go out every week. They're deleted when you pause or delete the reminder or switch off its notifications, the next time ParkProof is open and online. Each time ParkProof sends them, the server keeps them for 90 days at most. ParkProof sends them again from time to time while you keep opening it, so if you stop, they're deleted within 90 days of the last time you opened ParkProof.",
+    "rightsDeleteOtherDevices": "When you delete your account, we keep its random ID and the deletion time for a few days, so a device still signed in to it can't upload records again. Our server's logs also record that ID when you delete the account and each time such a device is refused, with what was asked for, whether each step worked and how many records and photos were removed. If a record from such a device can't be removed, the log also gives that record's random ID. The logs are deleted after 90 days. Your records on another device stay on that device until you delete them there."
   },
   "loading": {
     "step1": "Reading the sign…",
@@ -785,7 +787,8 @@
     "noticeUnreadable": "We couldn't read that notice. Try a clearer photo of the whole notice, flat and in good light.",
     "notANotice": "That photo doesn't look like a parking fine notice. Take a photo of the infringement notice itself.",
     "noticeHeavyLoad": "ParkProof is busy right now and couldn't finish reading the notice in time. Wait a minute and try again.",
-    "noticeImageTooLarge": "That photo is too large. Try another photo of the notice."
+    "noticeImageTooLarge": "That photo is too large. Try another photo of the notice.",
+    "deleteAccountFailed": "Couldn't finish deleting your account. Your records on this device are still here. Check your connection, then try again."
   },
   "pdf": {
     "common": {

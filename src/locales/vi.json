@@ -527,7 +527,8 @@
     "pushDisableNote": "Việc này chỉ huỷ đăng ký trên thiết bị này. Để thu hồi hẳn quyền của trình duyệt, hãy đổi cài đặt trang trong trình duyệt.",
     "pushDenied": "Bạn đã chặn thông báo cho trang này. Để bật, hãy đổi quyền trong cài đặt trang của trình duyệt rồi quay lại trang này.",
     "pushRequesting": "Đang hỏi trình duyệt…",
-    "pushErrorRetry": "Không bật được. Hãy thử lại"
+    "pushErrorRetry": "Không bật được. Hãy thử lại",
+    "accountDeletedNotice": "Tài khoản của bạn đã bị xoá, nên thiết bị này đã được đăng xuất. Các bản ghi của bạn trên thiết bị này vẫn còn nguyên."
   },
   "privacy": {
     "header": "Quyền riêng tư",
@@ -559,7 +560,7 @@
     "rightsHeader": "Quyền của bạn",
     "rightsSignedIn": "Nếu bạn đăng nhập:",
     "rightsExport": "<strong>Xuất.</strong> Nhấn \"Tải về dạng PDF\" trong Tài khoản để có tài liệu đầy đủ với mọi bản ghi bạn đã lưu: tóm tắt trang bìa cộng với phần chi tiết từng bản ghi có ảnh.",
-    "rightsDelete": "<strong>Xoá.</strong> Nhấn \"Xoá tài khoản\" trong Tài khoản. Xoá bản ghi đăng nhập, mọi hàng DynamoDB, và mọi ảnh S3 trong vài giây. Không thể hoàn tác.",
+    "rightsDelete": "<strong>Xoá.</strong> Nhấn \"Xoá tài khoản\" trong Tài khoản. Xoá bản ghi đăng nhập của bạn cùng mọi bản ghi và mọi ảnh được lưu cho tài khoản của bạn trong vài giây. Không thể hoàn tác.",
     "rightsCorrect": "<strong>Sửa.</strong> Bạn sửa bản ghi ngay trong ứng dụng. Mọi thay đổi đồng bộ lên đám mây ngay nếu đã đăng nhập.",
     "rightsAnonymous": "Nếu bạn không đăng nhập, các bản ghi đỗ xe của bạn chỉ nằm trên thiết bị này. Hãy xoá bộ nhớ trình duyệt để xoá chúng. Việc đó không xoá những gì đã có trên máy chủ của chúng tôi. Lời nhắc đẩy bạn đặt cho một bản ghi được giữ đến khi được gửi đi hoặc bạn huỷ. Lời nhắc đẩy hằng tuần bị xoá trong vòng 90 ngày kể từ lần cuối bạn mở ParkProof. Đăng ký nhận thông báo đẩy của thiết bị này (một mã ngẫu nhiên của thiết bị, địa chỉ nhận thông báo đẩy và khoá mã hoá mà trình duyệt của bạn cung cấp cho chúng tôi, cùng thời điểm chúng được gia hạn lần cuối) được giữ khoảng 90 ngày sau lần cuối ParkProof gia hạn nó. ParkProof gia hạn đăng ký này khi bạn mở ứng dụng trong lúc đang bật lời nhắc đẩy và khi bạn đặt lời nhắc. Tắt lời nhắc đẩy, trong ParkProof hay trong trình duyệt, không báo cho máy chủ của chúng tôi, nên đăng ký này vẫn được giữ như trên. Nếu dịch vụ thông báo đẩy báo cho chúng tôi rằng địa chỉ đó không còn hoạt động (điều này có thể xảy ra khi một lời nhắc bạn đặt trước đó được gửi đi sau khi bạn đã tắt lời nhắc đẩy), chúng tôi xoá ngay địa chỉ và khoá mã hoá đó. Chúng tôi chỉ giữ mã của thiết bị này, dấu vân tay số của địa chỉ đó và thời điểm chúng tôi biết, trong khoảng 90 ngày, để địa chỉ đó không bị lưu lại. Nhật ký máy chủ của chúng tôi cũng ghi lại mã của thiết bị này khi thiết bị đăng ký nhận thông báo đẩy, đặt lời nhắc hoặc nhận một lời nhắc, cùng với dịch vụ thông báo đẩy mà thiết bị dùng, mã ngẫu nhiên của bản ghi hoặc lời nhắc hằng tuần, và thời điểm mỗi lời nhắc được đặt, gửi đi hoặc bỏ qua. Nhật ký này bị xoá sau 90 ngày. Phản hồi bạn gửi, kèm email nếu bạn có ghi, được giữ tối đa hai năm.",
     "photosHeader": "Ảnh chụp trong ParkProof",
@@ -574,7 +575,8 @@
     "anonymousPush": "<strong>Lời nhắc đẩy</strong>, nếu bạn bật: địa chỉ của bản ghi, thời gian và nội dung của từng lời nhắc (có thể nhắc tới thời gian giấy phép bạn đã nhập) được gửi tới <strong>máy chủ của ParkProof</strong>. Máy chủ giữ từng lời nhắc cho đến khi gửi đi, rồi xoá.",
     "anonymousPermits": "<strong>Giấy phép bạn dùng cho một lần đỗ xe</strong>: loại, khu vực và thời gian giấy phép bạn đã nhập được lưu cùng bản ghi đó. Khi ký bản ghi, điện thoại gửi dấu vân tay số của các chi tiết này, không phải bản thân chi tiết, cùng với câu trả lời của bạn cho các câu hỏi về giấy phép. Xoá giấy phép trong Cài đặt không thay đổi các bản ghi đã lưu. Xoá bản ghi sẽ xoá các chi tiết này.",
     "signedInPermits": "<strong>Chi tiết giấy phép</strong> lưu cùng một bản ghi (loại, khu vực và thời gian giấy phép bạn đã nhập, cho lần đỗ xe bạn dùng giấy phép đã lưu) được lưu cùng bản ghi đó trong AWS DynamoDB. Các giấy phép bạn lưu trong Cài đặt thì không. Xoá bản ghi sẽ xoá các chi tiết này.",
-    "anonymousWeeklyPush": "<strong>Lời nhắc đẩy hằng tuần</strong>, nếu bạn bật: tên của từng lời nhắc và địa chỉ bạn đã nhập (nếu có), các ngày, giờ, cách lặp lại và múi giờ của lời nhắc, thời điểm nhắc bạn, cùng nội dung thông báo được gửi tới <strong>máy chủ của ParkProof</strong>, kèm một mã ngẫu nhiên của thiết bị này. Máy chủ giữ các thông tin này khi lời nhắc còn bật, để có thể gửi lời nhắc mỗi tuần. Các thông tin này bị xoá khi bạn tạm dừng hoặc xoá lời nhắc, hoặc tắt thông báo của lời nhắc, vào lần tới ParkProof được mở và có kết nối mạng. Mỗi lần ParkProof gửi các thông tin này, máy chủ giữ chúng tối đa 90 ngày. ParkProof thỉnh thoảng gửi lại khi bạn vẫn mở ứng dụng, nên nếu bạn ngừng mở, chúng sẽ bị xoá trong vòng 90 ngày kể từ lần cuối bạn mở ParkProof."
+    "anonymousWeeklyPush": "<strong>Lời nhắc đẩy hằng tuần</strong>, nếu bạn bật: tên của từng lời nhắc và địa chỉ bạn đã nhập (nếu có), các ngày, giờ, cách lặp lại và múi giờ của lời nhắc, thời điểm nhắc bạn, cùng nội dung thông báo được gửi tới <strong>máy chủ của ParkProof</strong>, kèm một mã ngẫu nhiên của thiết bị này. Máy chủ giữ các thông tin này khi lời nhắc còn bật, để có thể gửi lời nhắc mỗi tuần. Các thông tin này bị xoá khi bạn tạm dừng hoặc xoá lời nhắc, hoặc tắt thông báo của lời nhắc, vào lần tới ParkProof được mở và có kết nối mạng. Mỗi lần ParkProof gửi các thông tin này, máy chủ giữ chúng tối đa 90 ngày. ParkProof thỉnh thoảng gửi lại khi bạn vẫn mở ứng dụng, nên nếu bạn ngừng mở, chúng sẽ bị xoá trong vòng 90 ngày kể từ lần cuối bạn mở ParkProof.",
+    "rightsDeleteOtherDevices": "Khi bạn xoá tài khoản, trong vài ngày chúng tôi vẫn giữ mã ngẫu nhiên của tài khoản đó và thời điểm xoá, để một thiết bị vẫn đang đăng nhập vào tài khoản đó không thể tải bản ghi lên lại. Nhật ký máy chủ của chúng tôi cũng ghi lại mã đó khi bạn xoá tài khoản và mỗi lần một thiết bị như vậy bị từ chối, cùng với yêu cầu đã gửi, việc mỗi bước có thành công hay không, và số bản ghi và ảnh đã bị xoá. Nếu một bản ghi từ thiết bị như vậy không xoá được, nhật ký còn ghi mã ngẫu nhiên của bản ghi đó. Nhật ký này bị xoá sau 90 ngày. Các bản ghi của bạn trên một thiết bị khác vẫn nằm trên thiết bị đó cho đến khi bạn xoá chúng ở đó."
   },
   "loading": {
     "step1": "Đang đọc biển báo…",
@@ -615,7 +617,8 @@
     "noticeUnreadable": "Chúng tôi không đọc được thông báo đó. Hãy chụp lại rõ hơn cả tờ thông báo, đặt phẳng và đủ sáng.",
     "notANotice": "Ảnh đó có vẻ không phải là thông báo phạt đỗ xe. Hãy chụp chính tờ thông báo vi phạm.",
     "noticeHeavyLoad": "ParkProof đang quá tải nên chưa kịp đọc xong thông báo. Hãy đợi một phút rồi thử lại.",
-    "noticeImageTooLarge": "Ảnh đó quá lớn. Hãy thử một ảnh khác của thông báo."
+    "noticeImageTooLarge": "Ảnh đó quá lớn. Hãy thử một ảnh khác của thông báo.",
+    "deleteAccountFailed": "Chưa xoá xong tài khoản của bạn. Các bản ghi của bạn trên thiết bị này vẫn còn nguyên. Hãy kiểm tra kết nối, rồi thử lại."
   },
   "pdf": {
     "common": {

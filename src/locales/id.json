@@ -646,7 +646,8 @@
     "pushDisableNote": "Ini cuma menghentikan langganan di perangkat ini. Untuk mencabut izin browser sepenuhnya, ubah pengaturan situs di browsermu.",
     "pushDenied": "Kamu memblokir notifikasi untuk situs ini. Untuk mengaktifkan, ubah izinnya di pengaturan situs browsermu, lalu kunjungi lagi halaman ini.",
     "pushRequesting": "Bertanya pada browser…",
-    "pushErrorRetry": "Tidak bisa mengaktifkan. Coba lagi"
+    "pushErrorRetry": "Tidak bisa mengaktifkan. Coba lagi",
+    "accountDeletedNotice": "Akunmu sudah dihapus, jadi kamu sudah keluar di perangkat ini. Catatanmu di perangkat ini masih ada."
   },
   "privacy": {
     "header": "Privasi",
@@ -678,7 +679,7 @@
     "rightsHeader": "Hakmu",
     "rightsSignedIn": "Jika kamu masuk:",
     "rightsExport": "<strong>Ekspor.</strong> Ketuk \"Unduh sebagai PDF\" di Akun untuk mendapat dokumen lengkap berisi setiap catatan yang kamu simpan, dengan ringkasan di halaman sampul lalu detail setiap catatan beserta fotonya.",
-    "rightsDelete": "<strong>Hapus.</strong> Ketuk \"Hapus akun\" di Akun. Menghapus catatan masukmu, setiap baris DynamoDB, dan setiap foto S3 dalam hitungan detik. Tidak bisa dibatalkan.",
+    "rightsDelete": "<strong>Hapus.</strong> Ketuk \"Hapus akun\" di Akun. Menghapus catatan masukmu serta setiap catatan dan foto yang tersimpan untuk akunmu dalam hitungan detik. Tidak bisa dibatalkan.",
     "rightsCorrect": "<strong>Perbaiki.</strong> Kamu bisa mengedit catatanmu di dalam aplikasi. Setiap perubahan langsung disinkronkan ke cloud kalau kamu sedang masuk.",
     "rightsAnonymous": "Jika kamu tidak masuk, catatan parkirmu hanya ada di perangkat ini. Hapus penyimpanan browsermu untuk menghapusnya. Itu tidak menghapus data yang sudah ada di server kami. Pengingat push yang kamu atur untuk sebuah catatan disimpan sampai terkirim atau kamu membatalkannya. Pengingat mingguan lewat push dihapus dalam 90 hari sejak terakhir kali kamu membuka ParkProof. Pendaftaran push perangkat ini (ID acak untuk perangkat ini, alamat push dan kunci enkripsi yang diberikan browsermu kepada kami, serta kapan semua itu terakhir diperbarui) disimpan sekitar 90 hari sejak ParkProof terakhir memperbaruinya. ParkProof memperbaruinya saat kamu membuka aplikasi dengan pengingat push menyala dan saat kamu mengatur pengingat. Mematikan pengingat push, di ParkProof atau di browsermu, tidak memberi tahu server kami, jadi pendaftaran itu tetap disimpan seperti di atas. Kalau layanan push memberi tahu kami bahwa alamat itu sudah tidak berfungsi (ini bisa terjadi saat pengingat yang kamu atur sebelumnya dikirim setelah kamu mematikan pengingat push), kami langsung menghapus alamat dan kunci itu. Kami hanya menyimpan ID perangkat ini, sidik jari alamat itu, dan waktu kami mengetahuinya, selama sekitar 90 hari, supaya alamat itu tidak disimpan lagi. Log server kami juga mencatat ID perangkat ini saat perangkat ini mendaftar push, mengatur pengingat, atau menerima pengingat, beserta layanan push yang dipakainya, ID acak catatan atau pengingat mingguan terkait, dan kapan setiap pengingat diatur, dikirim, atau dilewati. Log ini dihapus setelah 90 hari. Masukan yang kamu kirim, beserta emailmu kalau kamu mengisinya, disimpan paling lama dua tahun.",
     "photosHeader": "Foto diambil di dalam ParkProof",
@@ -693,7 +694,8 @@
     "anonymousPush": "<strong>Pengingat push</strong>, kalau kamu menyalakannya: alamat catatan, waktu setiap pengingat dan isinya (yang bisa menyebut waktu izin yang kamu isi) dikirim ke <strong>server ParkProof</strong>, yang menyimpan setiap pengingat sampai terkirim, lalu menghapusnya.",
     "anonymousPermits": "<strong>Izin yang kamu pakai untuk suatu parkir</strong>: jenisnya, area atau zonanya, dan waktu izin yang kamu isi disimpan bersama catatan itu. Saat catatan ditandatangani, yang dikirim adalah sidik jari detail ini, bukan detailnya, bersama jawabanmu atas pertanyaan tentang izin. Menghapus izin di Pengaturan tidak mengubah catatan yang sudah disimpan. Menghapus catatannya akan menghapus detail ini.",
     "signedInPermits": "<strong>Detail izin</strong> yang disimpan bersama catatan (jenis, area atau zona, dan waktu izin yang kamu isi, untuk parkir yang memakai izin tersimpan) disimpan bersama catatan itu di AWS DynamoDB. Izin yang kamu simpan di Pengaturan tidak. Menghapus catatannya akan menghapus detail ini.",
-    "anonymousWeeklyPush": "<strong>Pengingat mingguan lewat push</strong>, kalau kamu menyalakannya: nama setiap pengingat dan alamat yang kamu isi (kalau ada), hari, jam, pola pengulangan, dan zona waktunya, kapan kamu ingin diingatkan, serta teks notifikasinya dikirim ke <strong>server ParkProof</strong>, bersama ID acak untuk perangkat ini. Server menyimpannya selama pengingat itu aktif, supaya pengingatnya bisa dikirim setiap minggu. Semuanya dihapus saat kamu menjeda atau menghapus pengingat itu, atau mematikan notifikasinya, begitu ParkProof terbuka dan tersambung ke internet. Setiap kali ParkProof mengirimnya, server menyimpannya paling lama 90 hari. ParkProof mengirimnya lagi sesekali selama kamu terus membukanya, jadi kalau kamu berhenti, semuanya dihapus dalam 90 hari sejak terakhir kali kamu membuka ParkProof."
+    "anonymousWeeklyPush": "<strong>Pengingat mingguan lewat push</strong>, kalau kamu menyalakannya: nama setiap pengingat dan alamat yang kamu isi (kalau ada), hari, jam, pola pengulangan, dan zona waktunya, kapan kamu ingin diingatkan, serta teks notifikasinya dikirim ke <strong>server ParkProof</strong>, bersama ID acak untuk perangkat ini. Server menyimpannya selama pengingat itu aktif, supaya pengingatnya bisa dikirim setiap minggu. Semuanya dihapus saat kamu menjeda atau menghapus pengingat itu, atau mematikan notifikasinya, begitu ParkProof terbuka dan tersambung ke internet. Setiap kali ParkProof mengirimnya, server menyimpannya paling lama 90 hari. ParkProof mengirimnya lagi sesekali selama kamu terus membukanya, jadi kalau kamu berhenti, semuanya dihapus dalam 90 hari sejak terakhir kali kamu membuka ParkProof.",
+    "rightsDeleteOtherDevices": "Saat kamu menghapus akunmu, selama beberapa hari kami menyimpan ID acak akun itu dan waktu penghapusannya, supaya perangkat yang masih masuk ke akun itu tidak bisa mengunggah catatan lagi. Log server kami juga mencatat ID itu saat kamu menghapus akun dan setiap kali perangkat seperti itu ditolak, beserta apa yang diminta, apakah setiap langkah berhasil, dan berapa banyak catatan dan foto yang dihapus. Kalau catatan dari perangkat seperti itu tidak bisa dihapus, log itu juga mencatat ID acak catatan tersebut. Log ini dihapus setelah 90 hari. Catatanmu di perangkat lain tetap ada di perangkat itu sampai kamu menghapusnya di sana."
   },
   "loading": {
     "step1": "Membaca rambu…",
@@ -751,7 +753,8 @@
     "noticeUnreadable": "Kami tidak bisa membaca surat denda itu. Coba foto seluruh surat dengan lebih jelas, diletakkan rata dan di tempat yang terang.",
     "notANotice": "Foto itu sepertinya bukan surat denda parkir. Foto langsung surat dendanya.",
     "noticeHeavyLoad": "ParkProof sedang sibuk saat ini dan tidak sempat selesai membaca surat denda. Tunggu sebentar lalu coba lagi.",
-    "noticeImageTooLarge": "Foto itu terlalu besar. Coba foto lain dari surat dendanya."
+    "noticeImageTooLarge": "Foto itu terlalu besar. Coba foto lain dari surat dendanya.",
+    "deleteAccountFailed": "Akunmu belum selesai dihapus. Catatanmu di perangkat ini masih ada. Cek koneksimu, lalu coba lagi."
   },
   "pdf": {
     "common": {

@@ -341,18 +341,18 @@ describe('installSyncOnReturn', () => {
 
 describe('pull on return: a record deleted on another device stays deleted', () => {
   it('performInitialSync({ uploadLocalOnly: false }) pulls and merges but uploads no local-only record', async () => {
-    const deletedElsewhere = crypto.randomUUID()
+    const removedElsewhere = crypto.randomUUID()
     const pulledId = crypto.randomUUID()
-    saveSession(record(deletedElsewhere))
+    saveSession(record(removedElsewhere))
     cloud.rows.set(pulledId, { ...record(pulledId) })
 
     const result = await performInitialSync({ uploadLocalOnly: false })
 
     expect(result).toMatchObject({ pulled: 1, uploaded: 0, listFailed: false })
-    expect(cloud.rows.has(deletedElsewhere)).toBe(false)
+    expect(cloud.rows.has(removedElsewhere)).toBe(false)
     expect(getSession(pulledId)).toBeDefined()
     // Still on this device: only the next full sync decides about it.
-    expect(getSession(deletedElsewhere)).toBeDefined()
+    expect(getSession(removedElsewhere)).toBeDefined()
   })
 
   it('the full sync (app start, sign-in, retry) still uploads a local-only record', async () => {

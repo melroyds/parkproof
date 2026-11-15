@@ -42,7 +42,8 @@
 #      after its Hosted UI domain (setup-auth.sh).
 #   7. The DynamoDB tables: sessions (setup-auth.sh), push subscriptions
 #      (setup-push.sh) and jobs (made by hand; setup-jobs-table.sh grants on it).
-#   8. The evidence bucket (setup-auth.sh, versioned) and the feedback bucket
+#   8. The evidence bucket (setup-auth.sh, versioned; its lifecycle rule is
+#      setup-evidence-versions.sh's) and the feedback bucket
 #      (setup-feedback-bucket.sh), emptied first, old versions included.
 #   9. The KMS signing key (setup-signing.sh). KMS can't delete a key at once:
 #      it is scheduled for deletion after 7 days, the shortest wait KMS
@@ -107,7 +108,7 @@ BUDGET_NAME=$PROJECT-monthly
 
 # The inline policies the setup scripts put on the two roles. Step 10 deletes
 # whatever a role has, so a policy made by hand goes too.
-LAMBDA_INLINE_POLICIES="$PROJECT-data-access $PROJECT-user-feedback-write $PROJECT-push-subscriptions-rw $PROJECT-lambda-schedule-rw $PROJECT-kms-sign $PROJECT-jobs-delete"
+LAMBDA_INLINE_POLICIES="$PROJECT-data-access $PROJECT-user-feedback-write $PROJECT-push-subscriptions-rw $PROJECT-lambda-schedule-rw $PROJECT-kms-sign $PROJECT-jobs-delete $PROJECT-evidence-versions"
 SCHEDULER_INLINE_POLICIES="$PROJECT-push-scheduler-invoke"
 
 cd "$(dirname "$0")/.."

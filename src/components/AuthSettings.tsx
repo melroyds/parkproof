@@ -16,7 +16,7 @@ interface Props {
 
 export default function AuthSettings({ onBack, onOpenPrivacy, onDeleted }: Props) {
   const { t, i18n } = useTranslation()
-  const { user, signOut } = useAuth()
+  const { user, signOut, accountDeletedNotice, dismissAccountDeletedNotice } = useAuth()
   const [exportStatus, setExportStatus] = useState<'idle' | 'busy' | 'error'>('idle')
   const [exportError, setExportError] = useState<string | null>(null)
   const [deleteStage, setDeleteStage] = useState<'idle' | 'confirm' | 'busy' | 'error'>('idle')
@@ -24,14 +24,16 @@ export default function AuthSettings({ onBack, onOpenPrivacy, onDeleted }: Props
   const [deleteConfirmText, setDeleteConfirmText] = useState('')
 
   if (!user) {
-    // Defensive — shouldn't render unless signed in; App-level routing handles
-    // this but the type system can't know.
+    // Signed out while this screen is open: Sign out in another tab, or the
+    // account was deleted (then that's what it says, and that the records
+    // here stay: whichever device deleted it, this one included when the
+    // answer to its Delete forever was lost).
     return (
       <div className="min-h-screen flex flex-col p-6 max-w-md mx-auto w-full">
         <BackButton onClick={onBack}>
           {t('common.back')}
         </BackButton>
-        <p className="text-paper-50">{t('settings.youSignedOut')}</p>
+        <p className="text-paper-50">{t(accountDeletedNotice ? 'settings.accountDeletedNotice' : 'settings.youSignedOut')}</p>
       </div>
     )
   }
@@ -95,7 +97,11 @@ export default function AuthSettings({ onBack, onOpenPrivacy, onDeleted }: Props
       await deleteAccount()
     } catch (err) {
       setDeleteStage('error')
-      setDeleteError(err instanceof Error ? err.message : String(err))
+      // Never the raw API text ("API 500: …"), which is English and means
+      // nothing to a driver: a fixed line in their language, and the detail
+      // in the console.
+      console.error('[account] deleting the account failed:', err)
+      setDeleteError(t('errors.deleteAccountFailed'))
       return
     }
     // Sign out locally (the Cognito user is already gone server-side), and
@@ -106,6 +112,11 @@ export default function AuthSettings({ onBack, onOpenPrivacy, onDeleted }: Props
     // photo store is left to clear), so leave now rather than wait for
     // IndexedDB, which can be slow or hang.
     const wipe = clearLocalRecords()
+    // This device holds none of its records now, so the account-deleted
+    // notice, which says they are still here, must not show: not even for
+    // a refusal still on its way to this tab. Other tabs close theirs when
+    // they see the clear (AuthProvider).
+    dismissAccountDeletedNotice?.()
     onDeleted()
     try {
       await wipe

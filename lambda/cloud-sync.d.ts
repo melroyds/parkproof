@@ -18,6 +18,17 @@ export declare const MAX_UPLOAD_ATTEMPTS: number
 export declare const ERR_CONFLICT: 'ERR_CONFLICT'
 export declare const SHA256_HEX_RE: RegExp
 
+/** Deleted accounts: the refusal's code, the marker's kind and states, and how long a marker lives. */
+export declare const ERR_ACCOUNT_DELETED: 'ERR_ACCOUNT_DELETED'
+export declare const ACCOUNT_DELETED_KIND: 'account-deleted'
+export declare const MARKER_DELETING: 'deleting'
+export declare const MARKER_ROWS_DELETED: 'rows_deleted'
+export declare const DELETION_MARKER_TTL_SECONDS: number
+/** A failed /me/delete's marker removal: how many tries, and the wait before the second (doubled after). */
+export declare const MARKER_REMOVAL_TRIES: number
+export declare const MARKER_REMOVAL_BACKOFF_MS: number
+export declare function deletionMarkerKey(userId: string): string
+
 export declare function isValidSessionId(id: unknown): boolean
 export declare function legacyPhotoKey(userId: string, sessionId: string, role: 'sign' | 'car' | 'ambient'): string
 export declare function refPhotoKey(userId: string, sessionId: string, sha256: string): string
